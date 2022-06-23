@@ -650,7 +650,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void flush() throws IOException {
+        public void flush(boolean doCheckpointComplete) throws IOException {
         }
 
         @Override

@@ -227,7 +227,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         /*
          * flush ledgerStorage so that header of fileinfo is flushed.
          */
-        serverByIndex(0).getBookie().getLedgerStorage().flush();
+        serverByIndex(0).getBookie().getLedgerStorage().flush(true);
 
         ReadOnlyFileInfo fileInfo = getFileInfo(ledgerId,
                                                 BookieImpl.getCurrentDirectories(confByIndex(0).getLedgerDirs()));

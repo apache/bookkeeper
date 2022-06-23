@@ -283,9 +283,9 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush(boolean doCheckpointComplete) throws IOException {
         for (LedgerStorage ls : ledgerStorageList) {
-            ls.flush();
+            ls.flush(doCheckpointComplete);
         }
     }
 

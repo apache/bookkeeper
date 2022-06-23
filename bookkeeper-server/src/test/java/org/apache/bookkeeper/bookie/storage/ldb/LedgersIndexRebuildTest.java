@@ -100,7 +100,7 @@ public class LedgersIndexRebuildTest {
             }
         }
 
-        ledgerStorage.flush();
+        ledgerStorage.flush(true);
         ledgerStorage.shutdown();
 
         // Rebuild index through the tool

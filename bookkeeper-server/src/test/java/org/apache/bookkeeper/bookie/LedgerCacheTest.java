@@ -287,7 +287,7 @@ public class LedgerCacheTest {
         // Add entries
         ledgerStorage.addEntry(generateEntry(1, 1));
         ledgerStorage.addEntry(generateEntry(1, 2));
-        ledgerStorage.flush();
+        ledgerStorage.flush(true);
 
         ledgerStorage.addEntry(generateEntry(1, 3));
         // add the dir to failed dirs
@@ -295,7 +295,7 @@ public class LedgerCacheTest {
                 fileInfo.getLf().getParentFile().getParentFile().getParentFile());
         File before = fileInfo.getLf();
         // flush after disk is added as failed.
-        ledgerStorage.flush();
+        ledgerStorage.flush(true);
         File after = fileInfo.getLf();
 
         assertFalse("After flush index file should be changed", before.equals(after));

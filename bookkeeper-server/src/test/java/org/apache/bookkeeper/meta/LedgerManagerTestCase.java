@@ -238,7 +238,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void flush() throws IOException {
+        public void flush(boolean doCheckpointComplete) throws IOException {
         }
 
         @Override

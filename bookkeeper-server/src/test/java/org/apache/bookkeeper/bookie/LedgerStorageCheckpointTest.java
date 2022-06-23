@@ -566,7 +566,7 @@ public class LedgerStorageCheckpointTest {
         }
 
         @Override
-        public synchronized void flush() throws IOException {
+        public synchronized void flush(boolean doCheckpointComplete) throws IOException {
             // this method will be called by SyncThread.shutdown.
             // During BookieServer shutdown we want this method to be noop
             // do nothing

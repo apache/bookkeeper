@@ -63,15 +63,15 @@ public class BookieJournalBypassTest extends BookKeeperClusterTestCase {
         Journal journal1 = bookieImpl.journals.get(0);
         LedgerStorage ls1 = serverByIndex(1).getBookie().getLedgerStorage();
 
-        ls0.flush();
-        ls1.flush();
+        ls0.flush(true);
+        ls1.flush(true);
 
         long bk0OffsetBefore = journal0.getLastLogMark().getCurMark().getLogFileOffset();
         long bk1OffsetBefore = journal1.getLastLogMark().getCurMark().getLogFileOffset();
 
         writeEntries(conf);
-        ls0.flush();
-        ls1.flush();
+        ls0.flush(true);
+        ls1.flush(true);
 
         long bk0OffsetAfter = journal0.getLastLogMark().getCurMark().getLogFileOffset();
         long bk1OffsetAfter = journal1.getLastLogMark().getCurMark().getLogFileOffset();

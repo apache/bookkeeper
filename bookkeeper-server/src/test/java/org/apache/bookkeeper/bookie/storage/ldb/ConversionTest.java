@@ -108,7 +108,7 @@ public class ConversionTest {
             }
         }
 
-        interleavedStorage.flush();
+        interleavedStorage.flush(true);
         interleavedStorage.shutdown();
 
         // Run conversion tool

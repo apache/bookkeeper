@@ -158,7 +158,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
         dbStorage.shutdown();
 
         interleavedLedgerCache.flushLedger(true);
-        interleavedStorage.flush();
+        interleavedStorage.flush(true);
         interleavedStorage.shutdown();
 
         String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();

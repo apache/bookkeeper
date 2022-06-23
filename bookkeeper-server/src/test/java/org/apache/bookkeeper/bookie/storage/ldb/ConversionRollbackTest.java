@@ -110,7 +110,7 @@ public class ConversionRollbackTest {
             }
         }
 
-        dbStorage.flush();
+        dbStorage.flush(true);
         dbStorage.shutdown();
 
         // Run conversion tool

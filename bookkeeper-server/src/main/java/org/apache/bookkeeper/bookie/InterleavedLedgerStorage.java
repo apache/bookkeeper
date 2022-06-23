@@ -467,7 +467,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public synchronized void flush() throws IOException {
+    public synchronized void flush(boolean doCheckpointComplete) throws IOException {
         if (!somethingWritten.compareAndSet(true, false)) {
             return;
         }

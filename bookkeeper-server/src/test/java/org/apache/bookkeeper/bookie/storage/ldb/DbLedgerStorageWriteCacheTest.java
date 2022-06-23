@@ -72,7 +72,7 @@ public class DbLedgerStorageWriteCacheTest {
             }
 
           @Override
-          public void flush() throws IOException {
+          public void flush(boolean doCheckpointComplete) throws IOException {
               flushMutex.lock();
               try {
                   // Swap the write caches and block indefinitely to simulate a slow disk

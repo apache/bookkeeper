@@ -233,7 +233,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush(boolean doCheckpointComplete) throws IOException {
         // this is a noop, as we dont hit disk anyhow
     }
 

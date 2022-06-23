@@ -34,7 +34,7 @@ public class BookieAccessor {
     public static void forceFlush(BookieImpl b) throws IOException {
         CheckpointSourceList source = new CheckpointSourceList(b.journals);
         Checkpoint cp = source.newCheckpoint();
-        b.ledgerStorage.flush();
+        b.ledgerStorage.flush(true);
         source.checkpointComplete(cp, true);
     }
 }

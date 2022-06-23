@@ -108,7 +108,7 @@ public class LocationsIndexRebuildTest {
             }
         }
 
-        ledgerStorage.flush();
+        ledgerStorage.flush(true);
         ledgerStorage.shutdown();
 
         // Rebuild index through the tool

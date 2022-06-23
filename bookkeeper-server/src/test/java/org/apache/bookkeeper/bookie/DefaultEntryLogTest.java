@@ -604,7 +604,7 @@ public class DefaultEntryLogTest {
         @Override
         public Boolean call() throws IOException {
             try {
-                ledgerStorage.flush();
+                ledgerStorage.flush(true);
             } catch (IOException e) {
                 LOG.error("Got Exception for flush call", e);
                 throw new IOException("Got Exception for Flush call", e);

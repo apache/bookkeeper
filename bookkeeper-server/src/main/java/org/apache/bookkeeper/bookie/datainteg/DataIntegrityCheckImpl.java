@@ -129,7 +129,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                         promise.completeExceptionally(exception);
                     } else {
                         try {
-                            this.ledgerStorage.flush();
+                            this.ledgerStorage.flush(true);
 
                             updateMetadataCache(ledgersCache);
 
@@ -196,7 +196,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                     (ledgers) -> {
                         CompletableFuture<Void> promise = new CompletableFuture<>();
                         try {
-                            this.ledgerStorage.flush();
+                            this.ledgerStorage.flush(true);
                             if (ledgers.isEmpty()) {
                                 log.info("Event: {}, runId: {}", Events.CLEAR_INTEGCHECK_FLAG, runId);
                                 this.ledgerStorage.clearStorageStateFlag(

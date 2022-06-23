@@ -133,7 +133,7 @@ class SyncThread implements Checkpointer {
     private void flush() {
         Checkpoint checkpoint = checkpointSource.newCheckpoint();
         try {
-            ledgerStorage.flush();
+            ledgerStorage.flush(false);
         } catch (NoWritableLedgerDirException e) {
             log.error("No writeable ledger directories", e);
             dirsListener.allDisksFull(true);

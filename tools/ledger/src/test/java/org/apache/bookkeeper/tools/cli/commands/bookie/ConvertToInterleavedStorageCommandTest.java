@@ -84,7 +84,7 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
 
         mockConstruction(InterleavedLedgerStorage.class,
                 (interleavedLedgerStorage, context) -> {
-                    doNothing().when(interleavedLedgerStorage).flush();
+                    doNothing().when(interleavedLedgerStorage).flush(true);
                     doNothing().when(interleavedLedgerStorage).shutdown();
                     when(interleavedLedgerStorage.getLedgerCache()).thenReturn(interleavedLedgerCache);
                 });
@@ -135,7 +135,7 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
             verify(dbStorage, times(10)).getLocation(anyLong(), anyLong());
             verify(dbStorage, times(1)).shutdown();
             verify(interleavedLedgerCache, times(1)).flushLedger(true);
-            verify(interleavedLedgerStorage, times(1)).flush();
+            verify(interleavedLedgerStorage, times(1)).flush(true);
             verify(interleavedLedgerStorage, times(1)).shutdown();
         } catch (Exception e) {
             throw new UncheckedExecutionException(e.getMessage(), e);

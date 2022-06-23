@@ -225,9 +225,9 @@ public class DataIntegrityCheckTest {
                                                                  mock(EntryCopier.class),
                                                                  mock(BookKeeperAdmin.class),
                                                                  Schedulers.io());
-        verify(storage, times(0)).flush();
+        verify(storage, times(0)).flush(true);
         impl.runPreBootCheck("test").get();
-        verify(storage, times(1)).flush();
+        verify(storage, times(1)).flush(true);
 
         assertThat(storage.hasLimboState(0xbeefL), is(true));
         assertThat(storage.isFenced(0xbeefL), is(true));
@@ -409,7 +409,7 @@ public class DataIntegrityCheckTest {
 
         Set<DataIntegrityCheckImpl.LedgerResult> results = impl.checkAndRecoverLedgers(ledgers, "test").get();
 
-        verify(storage, times(0)).flush();
+        verify(storage, times(0)).flush(true);
     }
 
     // TODO: what is this test?
@@ -1333,7 +1333,7 @@ public class DataIntegrityCheckTest {
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    isIn(storage.getStorageStateFlags()));
-        verify(storage, times(1)).flush();
+        verify(storage, times(1)).flush(true);
 
         assertThat(storage.ledgerExists(id1), equalTo(true));
         assertThat(storage.ledgerExists(id2), equalTo(true));
@@ -1346,7 +1346,7 @@ public class DataIntegrityCheckTest {
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    not(isIn(storage.getStorageStateFlags())));
-        verify(storage, times(2)).flush();
+        verify(storage, times(2)).flush(true);
 
         assertThat(storage.ledgerExists(id3), equalTo(true));
         assertThat(storage.entryExists(id3, 0), equalTo(true));
@@ -1401,7 +1401,7 @@ public class DataIntegrityCheckTest {
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    isIn(storage.getStorageStateFlags()));
-        verify(storage, times(1)).flush();
+        verify(storage, times(1)).flush(true);
 
         assertThat(storage.ledgerExists(id1), equalTo(true));
         assertThat(storage.ledgerExists(id2), equalTo(true));
@@ -1417,7 +1417,7 @@ public class DataIntegrityCheckTest {
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    not(isIn(storage.getStorageStateFlags())));
-        verify(storage, times(2)).flush();
+        verify(storage, times(2)).flush(true);
 
         assertThat(storage.ledgerExists(id3), equalTo(true));
         assertThat(storage.entryExists(id3, 0), equalTo(true));
@@ -1474,7 +1474,7 @@ public class DataIntegrityCheckTest {
 
         impl.runFullCheck().get();
 
-        verify(storage, times(1)).flush();
+        verify(storage, times(1)).flush(true);
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    not(isIn(storage.getStorageStateFlags())));
@@ -1488,7 +1488,7 @@ public class DataIntegrityCheckTest {
         AtomicInteger count = new AtomicInteger(0);
         MockLedgerStorage storage = spy(new MockLedgerStorage() {
                 @Override
-                public void flush() throws IOException {
+                public void flush(boolean doCheckpointComplete) throws IOException {
                     if (count.getAndIncrement() == 0) {
                         throw new IOException("broken flush");
                     }
@@ -1528,7 +1528,7 @@ public class DataIntegrityCheckTest {
         }
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    isIn(storage.getStorageStateFlags()));
-        verify(storage, times(1)).flush();
+        verify(storage, times(1)).flush(true);
 
         assertThat(storage.ledgerExists(id1), equalTo(true));
         assertThat(storage.ledgerExists(id2), equalTo(true));
@@ -1539,7 +1539,7 @@ public class DataIntegrityCheckTest {
 
         assertThat(StorageState.NEEDS_INTEGRITY_CHECK,
                    not(isIn(storage.getStorageStateFlags())));
-        verify(storage, times(2)).flush();
+        verify(storage, times(2)).flush(true);
     }
 }
 

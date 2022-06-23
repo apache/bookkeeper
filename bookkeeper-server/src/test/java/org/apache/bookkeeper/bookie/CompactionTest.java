@@ -856,7 +856,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
         for (int i = 0; i < bookieCount(); i++) {
             BookieImpl bookie = ((BookieImpl) serverByIndex(i).getBookie());
-            bookie.getLedgerStorage().flush();
+            bookie.getLedgerStorage().flush(true);
             bookie.dirsMonitor.shutdown();
             LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
             List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
@@ -1117,7 +1117,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             lh.close();
         }
 
-        serverByIndex(0).getBookie().getLedgerStorage().flush();
+        serverByIndex(0).getBookie().getLedgerStorage().flush(true);
         assertTrue(
                 "entry log file ([0,1,2].log should be available in ledgerDirectory: "
                         + serverConfig.getLedgerDirs()[0],
@@ -1344,7 +1344,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.addEntry(genEntry(2, 1, ENTRY_SIZE));
         storage.addEntry(genEntry(2, 2, ENTRY_SIZE));
         storage.addEntry(genEntry(3, 2, ENTRY_SIZE));
-        storage.flush();
+        storage.flush(true);
         storage.shutdown();
 
         assertTrue("Log should exist", log0.exists());

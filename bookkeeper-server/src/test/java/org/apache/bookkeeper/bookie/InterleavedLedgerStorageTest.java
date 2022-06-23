@@ -220,7 +220,7 @@ public class InterleavedLedgerStorageTest {
 
     @Test
     public void testGetListOfEntriesOfLedgerAfterFlush() throws IOException {
-        interleavedStorage.flush();
+        interleavedStorage.flush(true);
 
         // Insert some more ledger & entries in the interleaved storage
         for (long entryId = numWrites; entryId < moreNumOfWrites; entryId++) {
@@ -253,7 +253,7 @@ public class InterleavedLedgerStorageTest {
         final LinkedBlockingQueue<Long> toCompact = new LinkedBlockingQueue<>();
         final Semaphore awaitingCompaction = new Semaphore(0);
 
-        interleavedStorage.flush();
+        interleavedStorage.flush(true);
         final long lastLogId = entryLogger.getLeastUnflushedLogId();
 
         final MutableInt counter = new MutableInt(0);
@@ -348,7 +348,7 @@ public class InterleavedLedgerStorageTest {
 
     @Test
     public void testShellCommands() throws Exception {
-        interleavedStorage.flush();
+        interleavedStorage.flush(true);
         interleavedStorage.shutdown();
         final Pattern entryPattern = Pattern.compile(
                 "entry (?<entry>\\d+)\t:\t((?<na>N/A)|\\(log:(?<logid>\\d+), pos: (?<pos>\\d+)\\))");

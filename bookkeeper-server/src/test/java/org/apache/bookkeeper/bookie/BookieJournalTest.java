@@ -695,7 +695,7 @@ public class BookieJournalTest {
 
         BookieImpl b = new TestBookieImpl(conf);
         b.readJournal();
-        b.ledgerStorage.flush();
+        b.ledgerStorage.flush(true);
         b.readEntry(1, 80);
         b.readEntry(1, 99);
     }

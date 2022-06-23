@@ -180,8 +180,9 @@ public interface LedgerStorage {
      * Flushes all data in the storage. Once this is called,
      * add data written to the LedgerStorage up until this point
      * has been persisted to perminant storage
+     * @param doCheckpointComplete
      */
-    void flush() throws IOException;
+    void flush(boolean doCheckpointComplete) throws IOException;
 
     /**
      * Ask the ledger storage to sync data until the given <i>checkpoint</i>.

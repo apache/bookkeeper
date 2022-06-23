@@ -168,7 +168,7 @@ public class SortedLedgerStorageTest {
             }
         }
 
-        sortedLedgerStorage.flush();
+        sortedLedgerStorage.flush(true);
 
         // Insert some more ledger & entries in the interleaved storage
         for (long entryId = numWrites; entryId < moreNumOfWrites; entryId++) {

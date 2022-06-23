@@ -143,7 +143,7 @@ public class DbLedgerStorageTest {
         ByteBuf res = storage.getEntry(4, 1);
         assertEquals(entry, res);
 
-        storage.flush();
+        storage.flush(true);
 
         assertEquals(false, ((DbLedgerStorage) storage).isFlushRequired());
 
@@ -199,7 +199,7 @@ public class DbLedgerStorageTest {
         assertEquals(false, storage.ledgerExists(4));
 
         // remove entries for ledger 4 from cache
-        storage.flush();
+        storage.flush(true);
 
         try {
             storage.getEntry(4, 4);
@@ -274,7 +274,7 @@ public class DbLedgerStorageTest {
         entry1.writeBytes("entry-1".getBytes());
 
         storage.addEntry(entry1);
-        storage.flush();
+        storage.flush(true);
 
         ByteBuf newEntry1 = Unpooled.buffer(1024);
         newEntry1.writeLong(1); // ledger id
@@ -282,7 +282,7 @@ public class DbLedgerStorageTest {
         newEntry1.writeBytes("new-entry-1".getBytes());
 
         storage.addEntry(newEntry1);
-        storage.flush();
+        storage.flush(true);
 
         ByteBuf response = storage.getEntry(1, 1);
         assertEquals(newEntry1, response);
@@ -322,7 +322,7 @@ public class DbLedgerStorageTest {
         res = storage.getEntry(1, 2);
         assertEquals(entry2, res);
 
-        storage.flush();
+        storage.flush(true);
 
         res = storage.getEntry(1, 1);
         assertEquals(entry1, res);
@@ -353,7 +353,7 @@ public class DbLedgerStorageTest {
         assertEquals(entry2, res);
         res.release();
 
-        storage.flush();
+        storage.flush(true);
 
         try {
             storage.getEntry(1, 1);
@@ -381,7 +381,7 @@ public class DbLedgerStorageTest {
         assertEquals(entry2, res);
         res.release();
 
-        storage.flush();
+        storage.flush(true);
 
         res = storage.getEntry(1, 1);
         assertEquals(entry1, res);
@@ -409,7 +409,7 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry0);
         storage.addEntry(entry1);
 
-        storage.flush();
+        storage.flush(true);
 
         storage.deleteLedger(1);
 
@@ -431,7 +431,7 @@ public class DbLedgerStorageTest {
         assertEquals(entry0, storage.getEntry(1, 0));
         assertEquals(entry1, storage.getEntry(1, 1));
 
-        storage.flush();
+        storage.flush(true);
     }
 
     @Test
@@ -444,7 +444,7 @@ public class DbLedgerStorageTest {
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
-        storage.flush();
+        storage.flush(true);
         storage.setLimboState(1);
 
         try {
@@ -466,7 +466,7 @@ public class DbLedgerStorageTest {
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
-        storage.flush();
+        storage.flush(true);
         storage.setLimboState(1);
 
         try {
@@ -503,7 +503,7 @@ public class DbLedgerStorageTest {
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
-        storage.flush();
+        storage.flush(true);
         storage.setLimboState(1);
 
         try {
@@ -534,7 +534,7 @@ public class DbLedgerStorageTest {
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
-        storage.flush();
+        storage.flush(true);
         storage.setFenced(1);
         storage.setLimboState(1);
 
@@ -557,7 +557,7 @@ public class DbLedgerStorageTest {
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
-        storage.flush();
+        storage.flush(true);
         storage.setLimboState(1);
 
         try {
@@ -586,7 +586,7 @@ public class DbLedgerStorageTest {
         assertTrue(storage.entryExists(ledgerId, 0));
         assertFalse(storage.entryExists(ledgerId, 1));
 
-        storage.flush();
+        storage.flush(true);
 
         // should come from storage
         assertTrue(storage.entryExists(ledgerId, 0));

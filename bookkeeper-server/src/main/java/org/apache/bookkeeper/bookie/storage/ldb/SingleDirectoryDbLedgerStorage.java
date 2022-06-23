@@ -263,7 +263,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void shutdown() throws InterruptedException {
         try {
-            flush();
+            flush(true);
 
             gcThread.shutdown();
             entryLogger.close();
@@ -447,7 +447,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 executor.execute(() -> {
                         long startTime = System.nanoTime();
                         try {
-                            flush();
+                            flush(true);
                         } catch (IOException e) {
                             log.error("Error during flush", e);
                         } finally {
@@ -820,10 +820,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush(boolean doCheckpointComplete) throws IOException {
         Checkpoint cp = checkpointSource.newCheckpoint();
         checkpoint(cp);
-        checkpointSource.checkpointComplete(cp, true);
+        if (doCheckpointComplete) {
+            checkpointSource.checkpointComplete(cp, true);
+        }
     }
 
     @Override
@@ -862,7 +864,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
         // Trigger a flush to have all the entries being compacted in the db storage
-        flush();
+        flush(true);
 
         entryLocationIndex.updateLocations(locations);
     }

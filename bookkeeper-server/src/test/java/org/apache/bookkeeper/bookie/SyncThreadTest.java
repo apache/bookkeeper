@@ -95,7 +95,7 @@ public class SyncThreadTest {
         final AtomicBoolean failedSomewhere = new AtomicBoolean(false);
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public void flush() throws IOException {
+                public void flush(boolean doCheckpointComplete) throws IOException {
                     flushCalledLatch.countDown();
                     try {
                         flushLatch.await();
@@ -346,7 +346,7 @@ public class SyncThreadTest {
         }
 
         @Override
-        public void flush() throws IOException {
+        public void flush(boolean doCheckpointComplete) throws IOException {
         }
 
         @Override

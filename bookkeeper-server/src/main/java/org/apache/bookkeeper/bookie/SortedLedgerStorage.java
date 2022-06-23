@@ -129,7 +129,7 @@ public class SortedLedgerStorage
     @Override
     public void start() {
         try {
-            flush();
+            flush(true);
         } catch (IOException e) {
             LOG.error("Exception thrown while flushing ledger cache.", e);
         }
@@ -291,9 +291,9 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush(boolean doCheckpointComplete) throws IOException {
         memTable.flush(this, Checkpoint.MAX);
-        interleavedLedgerStorage.flush();
+        interleavedLedgerStorage.flush(doCheckpointComplete);
     }
 
     // CacheCallback functions.
