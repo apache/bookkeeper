@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -58,6 +59,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
 
     private final ConcurrentHashMap<Long, LedgerInfo> ledgers = new ConcurrentHashMap<>();
     private final EnumSet<StorageState> storageStateFlags = EnumSet.noneOf(StorageState.class);
+    private final List<EntryLocation> entryLocations = new ArrayList<>();
 
     @Override
     public void initialize(ServerConfiguration conf,
@@ -301,14 +303,17 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
         throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
     }
 
-    @Override
-    public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
-            throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+    public List<EntryLocation> getUpdatedLocations() {
+        return entryLocations;
     }
 
     @Override
-    public void flushEntriesLocationsIndex() throws IOException {
-        throw new UnsupportedOperationException("Not supported in mock, implement if you need it");
+    public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
+        synchronized (entryLocations) {
+            for (EntryLocation l : locations) {
+                entryLocations.add(l);
+            }
+        }
     }
 
     @Override
@@ -325,4 +330,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public void clearStorageStateFlag(StorageState flag) throws IOException {
         storageStateFlags.remove(flag);
     }
+
+    @Override
+    public void flushEntriesLocationsIndex() throws IOException { }
 }
