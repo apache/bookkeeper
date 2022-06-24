@@ -403,6 +403,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     QueueEntry qe = forceWriteWaiters.get(i);
                     if (qe != null) {
                         qe.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
+                        journalStats.getJournalCbQueueSize().inc();
                         cbThreadPool.execute(qe);
                     }
                 }
@@ -946,7 +947,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         entry.retain();
 
         journalStats.getJournalQueueSize().inc();
-        journalStats.getJournalCbQueueSize().inc();
 
         memoryLimitController.reserveMemory(entry.readableBytes());
 
@@ -968,7 +968,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 callbackTime));
         // Increment afterwards because the add operation could fail.
         journalStats.getJournalQueueSize().inc();
-        journalStats.getJournalCbQueueSize().inc();
     }
 
     /**
@@ -1132,6 +1131,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
                                     entry.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
+                                    journalStats.getJournalCbQueueSize().inc();
                                     cbThreadPool.execute(entry);
                                 }
                             }
