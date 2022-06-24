@@ -363,6 +363,9 @@ public interface EnsemblePlacementPolicy {
      */
     default void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
     }
+    
+    Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
+            int ackQuorumSize);
 
     /**
      * Select one bookie to the "sticky" bookie where all reads for a particular

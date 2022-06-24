@@ -1336,7 +1336,7 @@ public class Auditor implements AutoCloseable {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.
                                 new ProcessLostFragmentsCb(lh, callback),
-                                conf.getAuditorLedgerVerificationPercentage());
+                                conf.getAuditorLedgerVerificationPercentage(), Collections.emptySet());
                         // we collect the following stats to get a measure of the
                         // distribution of a single ledger within the bk cluster
                         // the higher the number of fragments/bookies, the more distributed it is
@@ -1445,6 +1445,21 @@ public class Auditor implements AutoCloseable {
                             }
                             if (foundSegmentNotAdheringToPlacementPolicy) {
                                 numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
+                                //If user enable repaired, mark this ledger to under replication manager.
+                                if (conf.getRepairedPlacementPolicyNotAdheringBookieEnable()) {
+                                    ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
+                                            Collections.emptyList()).whenComplete((res, e) -> {
+                                        if (e != null) {
+                                            LOG.error("For ledger: {}, the placement policy not adhering bookie "
+                                                    + "storage, mark it to under replication manager failed.", ledgerId, e);
+                                            return;
+                                        }
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("For ledger: {}, the placement policy not adhering bookie"
+                                                    + " storage, mark it to under replication manager", ledgerId);
+                                        }
+                                    });
+                                }
                             } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
                                 numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.incrementAndGet();
                             }

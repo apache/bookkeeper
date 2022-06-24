@@ -89,6 +89,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -1128,17 +1129,29 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param ledgerFragment
      *            - LedgerFragment to replicate
      */
-    public void replicateLedgerFragment(LedgerHandle lh,
-            final LedgerFragment ledgerFragment,
-            final BiConsumer<Long, Long> onReadEntryFailureCallback)
-            throws InterruptedException, BKException {
-        Optional<Set<BookieId>> excludedBookies = Optional.empty();
-        Map<Integer, BookieId> targetBookieAddresses =
-                getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
-                        ledgerFragment.getBookiesIndexes(), excludedBookies);
-        replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
-    }
+    public void replicateLedgerFragment(LedgerHandle lh, final LedgerFragment ledgerFragment,
+            final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException, BKException {
+        Map<Integer, BookieId> targetBookieAddresses = null;
+        if (LedgerFragment.ReplicateType.DATA_LOSS == ledgerFragment.getReplicateType()) {
+            Optional<Set<BookieId>> excludedBookies = Optional.empty();
+            targetBookieAddresses = getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
+                    ledgerFragment.getBookiesIndexes(), excludedBookies);
 
+            replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
+        } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
+            targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
+                    lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());
+            ledgerFragment.getBookiesIndexes().addAll(targetBookieAddresses.keySet());
+        }
+        if (MapUtils.isEmpty(targetBookieAddresses)) {
+            LOG.warn("Could not replicate for {} ledger: {}, not find target bookie.",
+                    ledgerFragment.getReplicateType(), ledgerFragment.getLedgerId());
+            return;
+        }
+        replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
+    
+    }
+    
     private void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
             final Map<Integer, BookieId> targetBookieAddresses,
@@ -1774,6 +1787,12 @@ public class BookKeeperAdmin implements AutoCloseable {
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
+    }
+    
+    public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensembleBookiesList,
+            int writeQuorumSize, int ackQuorumSize) {
+        return bkc.getPlacementPolicy()
+                .replaceNotAdheringPlacementPolicyBookie(ensembleBookiesList, writeQuorumSize, ackQuorumSize);
     }
 
     /**

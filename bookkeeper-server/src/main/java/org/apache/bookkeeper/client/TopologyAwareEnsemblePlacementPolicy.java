@@ -32,13 +32,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.google.common.graph.Network;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.net.BookieId;
@@ -54,6 +59,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -789,7 +795,99 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             rwLock.writeLock().unlock();
         }
     }
-
+    
+    @Override
+    public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
+            int ackQuorumSize) {
+        Map<BookieId, Integer> bookieIndex = new HashMap<>();
+        for (int i = 0; i < ensemble.size(); i++) {
+            bookieIndex.put(ensemble.get(i), i);
+        }
+        
+        Map<BookieId, BookieNode> clone = new HashMap<>(knownBookies);
+        
+        Map<String, List<BookieNode>> toPlaceGroup = new HashMap<>();
+        for (BookieId bookieId : ensemble) {
+            //If the bookieId shutdown, put it to inactive.
+            BookieNode bookieNode = clone.get(bookieId);
+            if (bookieNode == null) {
+                List<BookieNode> list = toPlaceGroup.computeIfAbsent(NetworkTopology.INACTIVE, k -> new ArrayList<>());
+                list.add(new BookieNode(bookieId, NetworkTopology.INACTIVE));
+            } else {
+                List<BookieNode> list = toPlaceGroup.computeIfAbsent(bookieNode.getNetworkLocation(),
+                        k -> new ArrayList<>());
+                list.add(bookieNode);
+            }
+        }
+        
+        Map<String, List<BookieNode>> knowsGroup = clone.values().stream()
+                .collect(Collectors.groupingBy(NodeBase::getNetworkLocation));
+    
+        for (String key : toPlaceGroup.keySet()) {
+            knowsGroup.remove(key);
+        }
+        
+        if (knowsGroup.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Integer, BookieId> targetBookieAddresses = new HashMap<>();
+        boolean placeSucceed = false;
+        while (knowsGroup.size() > 0) {
+            doReplaceNotAdhering(toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
+            List<BookieId> ensembles = toPlaceGroup.values().stream().flatMap(Collection::stream).map(
+                    BookieNode::getAddr).collect(Collectors.toList());
+            PlacementPolicyAdherence ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensembles,
+                    writeQuorumSize, ackQuorumSize);
+            if (PlacementPolicyAdherence.FAIL != ensembleAdheringToPlacementPolicy) {
+                placeSucceed = true;
+                break;
+            }
+        }
+        
+        if (!placeSucceed) {
+            targetBookieAddresses.clear();
+            return Collections.emptyMap();
+        }
+        return targetBookieAddresses;
+    }
+    
+    private void doReplaceNotAdhering(Map<String, List<BookieNode>> toPlaceGroup, Map<String, List<BookieNode>> knowsGroup,
+            Map<Integer, BookieId> targetBookieAddresses, Map<BookieId, Integer> bookieIndex) {
+        if (knowsGroup.isEmpty()) {
+            return;
+        }
+        List<BookieNode> inactiveNodes = toPlaceGroup.get(NetworkTopology.INACTIVE);
+        if (!CollectionUtils.isEmpty(inactiveNodes)) {
+            BookieNode beReplaced = inactiveNodes.remove(inactiveNodes.size() - 1);
+            Integer index = bookieIndex.get(beReplaced.getAddr());
+            Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();
+            if (iterator.hasNext()) {
+                Map.Entry<String, List<BookieNode>> next = iterator.next();
+                List<BookieNode> list = toPlaceGroup.computeIfAbsent(next.getKey(), k -> new ArrayList<>());
+                BookieNode toReplaced = new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation());
+                list.add(toReplaced);
+                targetBookieAddresses.put(index, toReplaced.getAddr());
+                iterator.remove();
+            }
+            return;
+        }
+        Optional<Map.Entry<String, List<BookieNode>>> toPlaceEntry = toPlaceGroup.entrySet().stream()
+                .filter(ele -> ele.getValue().size() > 1).findAny();
+        if (!toPlaceEntry.isPresent()) {
+            return;
+        }
+    
+        Map.Entry<String, List<BookieNode>> entry = toPlaceEntry.get();
+        entry.getValue().remove(entry.getValue().size() - 1);
+        Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();
+        if (iterator.hasNext()) {
+            Map.Entry<String, List<BookieNode>> next = iterator.next();
+            List<BookieNode> list = toPlaceGroup.computeIfAbsent(next.getKey(), k -> new ArrayList<>());
+            list.add(new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation()));
+            iterator.remove();
+        }
+    }
+    
     protected BookieNode createBookieNode(BookieId addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
@@ -814,9 +912,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
-    protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
+    protected Set<Node> convertBookiesToNodes(Collection<BookieId> bookies) {
         Set<Node> nodes = new HashSet<Node>();
-        for (BookieId addr : excludeBookies) {
+        for (BookieId addr : bookies) {
             BookieNode bn = knownBookies.get(addr);
             if (null == bn) {
                 bn = createBookieNode(addr);

@@ -214,7 +214,14 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
             rwLock.writeLock().unlock();
         }
     }
-
+    
+    @Override
+    public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
+            int ackQuorumSize) {
+        //Default ensemble placement policy always adhering.
+        return Collections.emptyMap();
+    }
+    
     @Override
     public void uninitalize() {
         // do nothing
