@@ -303,15 +303,18 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         WriteCallback cb;
         Object ctx;
         long enqueueTime;
+        long enqueueCbThreadPooleQueueTime;
         boolean ackBeforeSync;
 
         OpStatsLogger journalAddEntryStats;
+        OpStatsLogger journalCbQueueLatency;
         Counter journalCbQueueSize;
         Counter callbackTime;
 
         static QueueEntry create(ByteBuf entry, boolean ackBeforeSync, long ledgerId, long entryId,
                 WriteCallback cb, Object ctx, long enqueueTime, OpStatsLogger journalAddEntryStats,
-                Counter journalCbQueueSize, Counter callbackTime) {
+                Counter journalCbQueueSize,OpStatsLogger journalCbQueueLatency,
+                Counter callbackTime) {
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
             qe.ackBeforeSync = ackBeforeSync;
@@ -321,13 +324,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             qe.entryId = entryId;
             qe.enqueueTime = enqueueTime;
             qe.journalAddEntryStats = journalAddEntryStats;
+            qe.journalCbQueueLatency = journalCbQueueLatency;
             qe.journalCbQueueSize = journalCbQueueSize;
             qe.callbackTime = callbackTime;
             return qe;
         }
 
+        public void setEnqueueCbThreadPooleQueueTime(long enqueueCbThreadPooleQueueTime) {
+            this.enqueueCbThreadPooleQueueTime = enqueueCbThreadPooleQueueTime;
+        }
+
         @Override
         public void run() {
+            journalCbQueueLatency.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueCbThreadPooleQueueTime), TimeUnit.NANOSECONDS);
             long startTime = System.nanoTime();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
@@ -943,6 +952,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
                 journalStats.getJournalCbQueueSize(),
+                journalStats.getJournalCbQueueLatency(),
                 callbackTime));
     }
 
@@ -952,6 +962,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 BookieImpl.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalForceLedgerStats(),
                 journalStats.getJournalCbQueueSize(),
+                journalStats.getJournalCbQueueLatency(),
                 callbackTime));
         // Increment afterwards because the add operation could fail.
         journalStats.getJournalQueueSize().inc();
@@ -1118,6 +1129,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 if (entry != null && (!syncData || entry.ackBeforeSync)) {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
+                                    entry.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
                                     cbThreadPool.execute(entry);
                                 }
                             }
