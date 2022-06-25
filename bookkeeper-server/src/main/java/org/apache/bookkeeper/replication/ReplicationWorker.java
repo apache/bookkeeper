@@ -399,11 +399,6 @@ public class ReplicationWorker implements Runnable {
                 }
                 if (curEntryId != null) {
                     long lastEntry = lh.getLastAddConfirmed();
-        
-                    if (!lh.isClosed() && lastEntry < curEntryId) {
-                        lastEntry = curEntryId;
-                    }
-                    
                     LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
                             Collections.emptySet());
                     ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
