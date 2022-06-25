@@ -1416,7 +1416,158 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // this is expected
         }
     }
-
+    
+    @Test
+    public void testReplaceNotAdheringPlacementPolicyBookie() throws Exception {
+        repp.uninitalize();
+        
+        int minNumRacksPerWriteQuorum = 3;
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
+        // set enforceMinNumRacksPerWriteQuorum
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+        
+        int numOfRacks = 3;
+        int numOfBookiesPerRack = 3;
+        String[] rackLocationNames = new String[numOfRacks];
+        List<BookieId> bookieSocketAddresses = new ArrayList<BookieId>();
+        Map<BookieId, String> bookieRackMap = new HashMap<BookieId, String>();
+        BookieId bookieAddress;
+        
+        for (int i = 0; i < numOfRacks; i++) {
+            rackLocationNames[i] = "/default-region/r" + i;
+            for (int j = 0; j < numOfBookiesPerRack; j++) {
+                int index = i * numOfBookiesPerRack + j;
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
+                StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
+                bookieSocketAddresses.add(bookieAddress);
+                bookieRackMap.put(bookieAddress, rackLocationNames[i]);
+            }
+        }
+        
+        repp.onClusterChanged(new HashSet<BookieId>(bookieSocketAddresses), new HashSet<BookieId>());
+        
+        int writeQuorum = 3;
+        int ackQuorum = 3;
+        
+        //test three knows bookie
+        List<BookieId> knowsEnsemble = new ArrayList<>();
+        knowsEnsemble.add(BookieId.parse("128.0.0.0:3181"));
+        knowsEnsemble.add(BookieId.parse("128.0.0.1:3181"));
+        knowsEnsemble.add(BookieId.parse("128.0.0.2:3181"));
+    
+        PlacementPolicyAdherence placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                knowsEnsemble, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
+    
+        Map<Integer, BookieId> targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum);
+        //should replace two bookie
+        assertEquals(targetBookie.size(), 2);
+    
+        for (Map.Entry<Integer, BookieId> entry : targetBookie.entrySet()) {
+            knowsEnsemble.set(entry.getKey(), entry.getValue());
+        }
+    
+        placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                knowsEnsemble, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
+    
+        //test three unknowns bookie
+        List<BookieId> unknownEnsembles = new ArrayList<>();
+        unknownEnsembles.add(BookieId.parse("128.0.0.100:3181"));
+        unknownEnsembles.add(BookieId.parse("128.0.0.101:3181"));
+        unknownEnsembles.add(BookieId.parse("128.0.0.102:3181"));
+    
+        placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                unknownEnsembles, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
+    
+        //should replace three bookie
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum);
+        assertEquals(targetBookie.size(), 3);
+    
+        for (Map.Entry<Integer, BookieId> entry : targetBookie.entrySet()) {
+            unknownEnsembles.set(entry.getKey(), entry.getValue());
+        }
+    
+        placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                unknownEnsembles, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
+    }
+    
+    @Test
+    public void testReplaceNotAdheringPlacementPolicyBookieWithNoMoreRackBookie() throws Exception {
+        repp.uninitalize();
+        
+        int minNumRacksPerWriteQuorum = 3;
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
+        // set enforceMinNumRacksPerWriteQuorum
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+        
+        int numOfRacks = 2;
+        int numOfBookiesPerRack = 3;
+        String[] rackLocationNames = new String[numOfRacks];
+        List<BookieId> bookieSocketAddresses = new ArrayList<BookieId>();
+        Map<BookieId, String> bookieRackMap = new HashMap<BookieId, String>();
+        BookieId bookieAddress;
+        
+        for (int i = 0; i < numOfRacks; i++) {
+            rackLocationNames[i] = "/default-region/r" + i;
+            for (int j = 0; j < numOfBookiesPerRack; j++) {
+                int index = i * numOfBookiesPerRack + j;
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181).toBookieId();
+                StaticDNSResolver.addNodeToRack("128.0.0." + index, rackLocationNames[i]);
+                bookieSocketAddresses.add(bookieAddress);
+                bookieRackMap.put(bookieAddress, rackLocationNames[i]);
+            }
+        }
+        
+        repp.onClusterChanged(new HashSet<BookieId>(bookieSocketAddresses),
+                new HashSet<BookieId>());
+        
+        
+        int writeQuorum = 3;
+        int ackQuorum = 3;
+    
+        //test three knows bookie
+        List<BookieId> knowsEnsemble = new ArrayList<>();
+        knowsEnsemble.add(BookieId.parse("128.0.0.0:3181"));
+        knowsEnsemble.add(BookieId.parse("128.0.0.1:3181"));
+        knowsEnsemble.add(BookieId.parse("128.0.0.2:3181"));
+    
+        PlacementPolicyAdherence placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                knowsEnsemble, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
+    
+        Map<Integer, BookieId> targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum);
+        //should not replace
+        assertEquals(targetBookie.size(), 0);
+        
+        //test three unknowns bookie
+        List<BookieId> unknownEnsembles = new ArrayList<>();
+        unknownEnsembles.add(BookieId.parse("128.0.0.100:3181"));
+        unknownEnsembles.add(BookieId.parse("128.0.0.101:3181"));
+        unknownEnsembles.add(BookieId.parse("128.0.0.102:3181"));
+    
+        placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                unknownEnsembles, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
+    
+        //should not replace
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum);
+        assertEquals(targetBookie.size(), 0);
+    }
+    
+    
     @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);

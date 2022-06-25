@@ -366,10 +366,11 @@ public class ReplicationWorker implements Runnable {
         return (returnRCValue.get() == BKException.Code.OK);
     }
     
-    private Set<LedgerFragment> checkLedgerNeedRepairedPlacementNotAdheringBookie(long ledgerId, LedgerHandle lh) {
+    private Set<LedgerFragment> getNeedRepairedPlacementNotAdheringFragments(LedgerHandle lh) {
         if (!conf.getRepairedPlacementPolicyNotAdheringBookieEnable()) {
             return Collections.emptySet();
         }
+        long ledgerId = lh.getId();
         Set<LedgerFragment> placementNotAdheringFragments = new HashSet<>();
         CompletableFuture<Versioned<LedgerMetadata>> future = ledgerManager.readLedgerMetadata(
                 ledgerId).whenComplete((metadataVer, exception) -> {
@@ -396,6 +397,18 @@ public class ReplicationWorker implements Runnable {
                     curEntryId = entry.getKey();
                     curEnsemble = entry.getValue();
                 }
+                if (curEntryId != null) {
+                    long lastEntry = lh.getLastAddConfirmed();
+        
+                    if (!lh.isClosed() && lastEntry < curEntryId) {
+                        lastEntry = curEntryId;
+                    }
+                    
+                    LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
+                            Collections.emptySet());
+                    ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
+                    placementNotAdheringFragments.add(ledgerFragment);
+                }
             } else if (BKException.getExceptionCode(exception)
                     == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                 LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
@@ -411,7 +424,7 @@ public class ReplicationWorker implements Runnable {
         }
         return placementNotAdheringFragments;
     }
-
+    
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
@@ -422,12 +435,8 @@ public class ReplicationWorker implements Runnable {
         boolean deferLedgerLockRelease = false;
 
         try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
-    
-            Set<LedgerFragment> ledgerFragments =
-                    checkLedgerNeedRepairedPlacementNotAdheringBookie(ledgerIdToReplicate, lh);
-    
-            Set<LedgerFragment> fragments =
-                    getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage(), ledgerFragments);
+            Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh,
+                    conf.getAuditorLedgerVerificationPercentage());
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
@@ -558,20 +567,14 @@ public class ReplicationWorker implements Runnable {
      * Gets the under replicated fragments.
      */
     private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage) throws InterruptedException {
-        return getUnderreplicatedFragments(lh, ledgerVerificationPercentage, Collections.emptySet());
-    }
-    
-    /**
-     * Gets the under replicated fragments.
-     */
-    private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage,
-            Set<LedgerFragment> ignoreFragments) throws InterruptedException {
+        Set<LedgerFragment> notAdheringFragments = getNeedRepairedPlacementNotAdheringFragments(lh);
         CheckerCallback checkerCb = new CheckerCallback();
-        ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage, ignoreFragments);
+        ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage, notAdheringFragments);
         Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
+        fragments.addAll(notAdheringFragments);
         return fragments;
     }
-
+    
     void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
         pendingReplicationTimer.schedule(timerTask, delayPeriod);
     }

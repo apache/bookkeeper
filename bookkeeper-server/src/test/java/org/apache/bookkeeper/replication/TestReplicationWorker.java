@@ -19,6 +19,7 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,23 +29,29 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.Cleanup;
 
+import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -54,19 +61,23 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -1077,4 +1088,101 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             bkWithMockZK.close();
         }
     }
+    
+    @Test
+    public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsWithNoMoreRackBookie() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            startNewBookie();
+        }
+        assertEquals(servers.size(), 5);
+        
+        for (int i = 0; i < servers.size(); i++) {
+            //0,1,2 at rack1
+            if (i < 3) {
+                StaticDNSResolver.addNodeToRack(servers.get(i).getServer().getLocalAddress().getHostName(), "/rack1");
+            } else {
+                StaticDNSResolver.addNodeToRack(servers.get(i).getServer().getLocalAddress().getHostName(), "/rack2");
+            }
+            //3,4 at rack2
+        }
+        //This ledger not adhering placement policy, the combine(0,1,2) rack is 1.
+        LedgerHandle lh = bkc.createLedger(5, 3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        
+        for (int i = 0; i < 100; i++) {
+            lh.addEntry(data);
+        }
+        lh.close();
+        
+        int minNumRacksPerWriteQuorumConfValue = 2;
+    
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        servConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
+        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY, RackawareEnsemblePlacementPolicy.class.getName());
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
+        servConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
+    
+    
+        MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
+        try {
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    1, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    0, ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
+        } finally {
+            Auditor auditor = auditorRef.getValue();
+            if (auditor != null) {
+                auditor.close();
+            }
+        }
+    
+        baseConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        baseConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
+        baseConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY, RackawareEnsemblePlacementPolicy.class.getName());
+        baseConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
+        baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
+        baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
+        ReplicationWorker rw = new ReplicationWorker(baseConf);
+        rw.start();
+        System.in.read();
+    }
+    
+    private TestStatsLogger startAuditorAndWaitForPlacementPolicyCheck(ServerConfiguration servConf,
+            MutableObject<Auditor> auditorRef) throws MetadataException, CompatibilityException, KeeperException,
+            InterruptedException, ReplicationException.UnavailableException, UnknownHostException {
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        TestStatsProvider.TestOpStatsLogger placementPolicyCheckStatsLogger = (TestStatsProvider.TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
+        
+        final AuditorPeriodicCheckTest.TestAuditor auditor = new AuditorPeriodicCheckTest.TestAuditor(
+                BookieImpl.getBookieId(servConf).toString(), servConf,
+                statsLogger);
+        auditorRef.setValue(auditor);
+        CountDownLatch latch = auditor.getLatch();
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
+        urm.setPlacementPolicyCheckCTime(-1);
+        auditor.start();
+        /*
+         * since placementPolicyCheckCTime is set to -1, placementPolicyCheck should be
+         * scheduled to run with no initialdelay
+         */
+        assertTrue("placementPolicyCheck should have executed", latch.await(20, TimeUnit.SECONDS));
+        for (int i = 0; i < 20; i++) {
+            Thread.sleep(100);
+            if (placementPolicyCheckStatsLogger.getSuccessCount() >= 1) {
+                break;
+            }
+        }
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 1, placementPolicyCheckStatsLogger.getSuccessCount());
+        return statsLogger;
+    }
+    
 }

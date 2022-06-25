@@ -364,6 +364,14 @@ public interface EnsemblePlacementPolicy {
     default void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
     }
     
+    /**
+     * Replace some bookie to adhering placement policy.
+     *
+     * @param ensemble
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @return Map: key means ensemble index, value means target replace bookieId.
+     */
     Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
             int ackQuorumSize);
 

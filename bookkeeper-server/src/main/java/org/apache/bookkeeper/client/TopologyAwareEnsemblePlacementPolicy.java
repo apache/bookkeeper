@@ -878,12 +878,16 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     
         Map.Entry<String, List<BookieNode>> entry = toPlaceEntry.get();
-        entry.getValue().remove(entry.getValue().size() - 1);
+        BookieNode beReplaced = entry.getValue().remove(entry.getValue().size() - 1);
+        Integer index = bookieIndex.get(beReplaced.getAddr());
+    
         Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();
         if (iterator.hasNext()) {
             Map.Entry<String, List<BookieNode>> next = iterator.next();
             List<BookieNode> list = toPlaceGroup.computeIfAbsent(next.getKey(), k -> new ArrayList<>());
-            list.add(new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation()));
+            BookieNode toReplaced = new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation());
+            list.add(toReplaced);
+            targetBookieAddresses.put(index, toReplaced.getAddr());
             iterator.remove();
         }
     }
