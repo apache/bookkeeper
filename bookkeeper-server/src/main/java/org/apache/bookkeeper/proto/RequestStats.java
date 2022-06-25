@@ -51,6 +51,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_THREAD_QUEUE_LATENCY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 
@@ -92,6 +93,14 @@ public class RequestStats {
         parent = ADD_ENTRY_REQUEST
     )
     private final OpStatsLogger addEntryStats;
+
+    @StatsDoc(
+            name = WRITE_THREAD_QUEUE_LATENCY,
+            help = "operation stats of enqueuing requests to write threadpool queue",
+            parent = ADD_ENTRY_REQUEST
+    )
+    private final OpStatsLogger writeThreadQueueStats;
+
     @StatsDoc(
             name = ADD_ENTRY_REJECTED,
             help = "Counter for rejected adds on a bookie",
@@ -240,6 +249,7 @@ public class RequestStats {
 
     public RequestStats(StatsLogger statsLogger) {
         this.addEntryStats = statsLogger.getThreadScopedOpStatsLogger(ADD_ENTRY);
+        this.writeThreadQueueStats = statsLogger.getThreadScopedOpStatsLogger(WRITE_THREAD_QUEUE_LATENCY);
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.addEntryRejectedCounter = statsLogger.getCounter(ADD_ENTRY_REJECTED);
         this.readEntryStats = statsLogger.getThreadScopedOpStatsLogger(READ_ENTRY);
