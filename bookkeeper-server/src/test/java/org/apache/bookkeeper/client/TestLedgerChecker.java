@@ -517,7 +517,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
 
     private Set<LedgerFragment> getUnderReplicatedFragments(LedgerHandle lh)
             throws InterruptedException {
-        LedgerChecker checker = new LedgerChecker(bkc, 10);
+        LedgerChecker checker = new LedgerChecker(bkc);
         CheckerCallback cb = new CheckerCallback();
         checker.checkLedger(lh, cb);
         Set<LedgerFragment> result = cb.waitAndGetResult();
