@@ -123,7 +123,8 @@ public class LocationsIndexRebuildOp {
 
     private Set<Long> getActiveLedgers(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath)
             throws IOException {
-        LedgerMetadataIndex ledgers = new LedgerMetadataIndex(conf, storageFactory, basePath, NullStatsLogger.INSTANCE);
+        LedgerMetadataIndex ledgers = LedgerMetadataIndex.newInstance(conf,
+                storageFactory, basePath, NullStatsLogger.INSTANCE);
         Set<Long> activeLedgers = Sets.newHashSet();
         for (Long ledger : ledgers.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
             activeLedgers.add(ledger);

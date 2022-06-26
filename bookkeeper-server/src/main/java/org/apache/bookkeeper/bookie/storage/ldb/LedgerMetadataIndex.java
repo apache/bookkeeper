@@ -50,22 +50,22 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The key is the ledgerId and the value is the {@link LedgerData} content.
  */
-public class LedgerMetadataIndex implements Closeable {
+public abstract class LedgerMetadataIndex implements Closeable {
     // Non-ledger data should have negative ID
-    private static final long STORAGE_FLAGS = -0xeefd;
+    protected static final long STORAGE_FLAGS = -0xeefd;
 
     // Contains all ledgers stored in the bookie
     private final ConcurrentLongHashMap<LedgerData> ledgers;
     private final AtomicInteger ledgersCount;
 
-    private final KeyValueStorage ledgersDb;
+    protected final KeyValueStorage ledgersDb;
     private final LedgerMetadataIndexStats stats;
 
     // Holds ledger modifications applied in memory map, and pending to be flushed on db
-    private final ConcurrentLinkedQueue<Entry<Long, LedgerData>> pendingLedgersUpdates;
+    protected final ConcurrentLinkedQueue<Entry<Long, LedgerData>> pendingLedgersUpdates;
 
     // Holds ledger ids that were delete from memory map, and pending to be flushed on db
-    private final ConcurrentLinkedQueue<Long> pendingDeletedLedgers;
+    protected final ConcurrentLinkedQueue<Long> pendingDeletedLedgers;
     private final ReentrantLock[] locks = new ReentrantLock[16];
 
     public LedgerMetadataIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
@@ -302,43 +302,9 @@ public class LedgerMetadataIndex implements Closeable {
     /**
      * Flushes all pending changes.
      */
-    public void flush() throws IOException {
-        LongWrapper key = LongWrapper.get();
+    public abstract void flush() throws IOException;
 
-        int updatedLedgers = 0;
-        while (!pendingLedgersUpdates.isEmpty()) {
-            Entry<Long, LedgerData> entry = pendingLedgersUpdates.poll();
-            key.set(entry.getKey());
-            byte[] value = entry.getValue().toByteArray();
-            ledgersDb.put(key.array, value);
-            ++updatedLedgers;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Persisting updates to {} ledgers", updatedLedgers);
-        }
-
-        ledgersDb.sync();
-        key.recycle();
-    }
-
-    public void removeDeletedLedgers() throws IOException {
-        LongWrapper key = LongWrapper.get();
-
-        int deletedLedgers = 0;
-        while (!pendingDeletedLedgers.isEmpty()) {
-            long ledgerId = pendingDeletedLedgers.poll();
-            key.set(ledgerId);
-            ledgersDb.delete(key.array);
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Persisting deletes of ledgers {}", deletedLedgers);
-        }
-
-        ledgersDb.sync();
-        key.recycle();
-    }
+    public abstract void removeDeletedLedgers() throws IOException;
 
     private ReentrantLock lockForLedger(long ledgerId) {
         return locks[Math.abs((int) ledgerId) % locks.length];
@@ -363,32 +329,7 @@ public class LedgerMetadataIndex implements Closeable {
         }
     }
 
-    boolean setStorageStateFlags(int expected, int newFlags) throws IOException {
-        LongWrapper keyWrapper = LongWrapper.get();
-        LongWrapper currentWrapper = LongWrapper.get();
-        LongWrapper newFlagsWrapper = LongWrapper.get();
-
-        try {
-            keyWrapper.set(STORAGE_FLAGS);
-            newFlagsWrapper.set(newFlags);
-            synchronized (ledgersDb) {
-                int current = 0;
-                if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
-                    current = (int) currentWrapper.getValue();
-                }
-                if (current == expected) {
-                    ledgersDb.put(keyWrapper.array, newFlagsWrapper.array);
-                    ledgersDb.sync();
-                    return true;
-                }
-            }
-        } finally {
-            keyWrapper.recycle();
-            currentWrapper.recycle();
-            newFlagsWrapper.recycle();
-        }
-        return false;
-    }
+    abstract boolean setStorageStateFlags(int expected, int newFlags) throws IOException;
 
     private static final Logger log = LoggerFactory.getLogger(LedgerMetadataIndex.class);
 
@@ -412,4 +353,11 @@ public class LedgerMetadataIndex implements Closeable {
         }
     }
 
+    public static LedgerMetadataIndex newInstance(ServerConfiguration conf, KeyValueStorageFactory storageFactory,
+                                                  String basePath, StatsLogger stats) throws IOException {
+        if (!conf.getDbLedgerMetadataIndexSyncEnable()) {
+            return new LedgerMetadataIndexAsync(conf, storageFactory, basePath, stats);
+        }
+        return new LedgerMetadataIndexSync(conf, storageFactory, basePath, stats);
+    }
 }

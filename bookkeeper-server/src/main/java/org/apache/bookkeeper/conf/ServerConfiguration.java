@@ -171,6 +171,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_DIRS = "journalDirectories";
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
+    protected static final String DB_LEDGER_METADATA_INDEX_SYNC_ENABLE = "dbLedgerMetadataIndexSyncEnable";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
@@ -3964,6 +3965,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Get db ledger metadata index sync enable.
+     *
+     * @return true  - sync operate ledger metadata index,
+     *         false - async operate ledger metadata index.
+     */
+    public boolean getDbLedgerMetadataIndexSyncEnable() {
+        return getBoolean(DB_LEDGER_METADATA_INDEX_SYNC_ENABLE, false);
+    }
+
+    /**
+     * Set db ledger metadata index sync enable.
+     *
+     * @param syncSwitch true to sync operate ledger metadata index
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setDbLedgerMetadataIndexSyncEnable(boolean syncSwitch) {
+        setProperty(DB_LEDGER_METADATA_INDEX_SYNC_ENABLE, syncSwitch);
         return this;
     }
 }
