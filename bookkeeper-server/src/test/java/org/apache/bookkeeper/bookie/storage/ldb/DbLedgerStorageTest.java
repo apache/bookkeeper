@@ -58,7 +58,7 @@ public class DbLedgerStorageTest {
     private DbLedgerStorage storage;
     private File tmpDir;
     private LedgerDirsManager ledgerDirsManager;
-    private ServerConfiguration conf;
+    protected ServerConfiguration conf;
 
     @Before
     public void setup() throws Exception {
