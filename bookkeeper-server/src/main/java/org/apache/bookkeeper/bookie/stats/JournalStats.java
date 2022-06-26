@@ -157,7 +157,7 @@ public class JournalStats {
 
     @StatsDoc(
             name = JOURNAL_CB_QUEUE_LATENCY,
-            help = "The journal callback queue size"
+            help = "The journal callback queued latency"
     )
     private final OpStatsLogger journalCbQueueLatency;
 

@@ -401,6 +401,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
                     QueueEntry qe = forceWriteWaiters.get(i);
                     if (qe != null) {
+                        qe.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
                         cbThreadPool.execute(qe);
                     }
                 }
