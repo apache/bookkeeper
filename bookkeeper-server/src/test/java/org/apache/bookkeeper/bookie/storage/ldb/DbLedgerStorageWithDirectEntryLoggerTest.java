@@ -22,6 +22,9 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import org.junit.Before;
 
+/**
+ * Unit test for {@link DbLedgerStorage} with directIO entrylogger.
+ */
 public class DbLedgerStorageWithDirectEntryLoggerTest extends DbLedgerStorageTest {
 
     @Override
