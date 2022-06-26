@@ -1336,7 +1336,7 @@ public class Auditor implements AutoCloseable {
                         checker.checkLedger(lh,
                                 // the ledger handle will be closed after checkLedger is done.
                                 new ProcessLostFragmentsCb(lh, callback),
-                                conf.getAuditorLedgerVerificationPercentage(), Collections.emptySet());
+                                conf.getAuditorLedgerVerificationPercentage());
                         // we collect the following stats to get a measure of the
                         // distribution of a single ledger within the bk cluster
                         // the higher the number of fragments/bookies, the more distributed it is

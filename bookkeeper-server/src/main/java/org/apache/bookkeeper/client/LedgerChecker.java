@@ -370,12 +370,12 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
-        checkLedger(lh, cb, 0L, Collections.emptySet());
+        checkLedger(lh, cb, 0L);
     }
     
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
-                            long percentageOfLedgerFragmentToBeVerified, Set<LedgerFragment> ignoreFragments) {
+                            long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
@@ -388,9 +388,7 @@ public class LedgerChecker {
                 for (int i = 0; i < curEnsemble.size(); i++) {
                     bookieIndexes.add(i);
                 }
-                if (!isRepeatFragment(ignoreFragments, lh.getId(), curEntryId, e.getKey() - 1)) {
-                    fragments.add(new LedgerFragment(lh, curEntryId, e.getKey() - 1, bookieIndexes));
-                }
+                fragments.add(new LedgerFragment(lh, curEntryId, e.getKey() - 1, bookieIndexes));
             }
             curEntryId = e.getKey();
             curEnsemble = e.getValue();
@@ -433,12 +431,7 @@ public class LedgerChecker {
                                                   @Override
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
-                                                          if (!isRepeatFragment(ignoreFragments,
-                                                                  lastLedgerFragment.getLedgerId(),
-                                                                  lastLedgerFragment.getFirstEntryId(),
-                                                                  lastLedgerFragment.getLastKnownEntryId())) {
-                                                              fragments.add(lastLedgerFragment);
-                                                          }
+                                                          fragments.add(lastLedgerFragment);
                                                       }
                                                       checkFragments(fragments, cb,
                                                           percentageOfLedgerFragmentToBeVerified);
@@ -459,27 +452,12 @@ public class LedgerChecker {
                 writeSet.recycle();
                 return;
             } else {
-                if (!isRepeatFragment(ignoreFragments, lastLedgerFragment.getLedgerId(),
-                        lastLedgerFragment.getFirstEntryId(), lastLedgerFragment.getLastKnownEntryId())) {
-                    fragments.add(lastLedgerFragment);
-                }
+                fragments.add(lastLedgerFragment);
             }
         }
         checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
     }
     
-    private boolean isRepeatFragment(Set<LedgerFragment> fragments, long ledgerId, long firstEntryId, long lastEntryId) {
-        boolean repeat = false;
-        for (LedgerFragment fragment : fragments) {
-            if (fragment.getLedgerId() == ledgerId && fragment.getFirstEntryId() == firstEntryId
-                    && fragment.getLastKnownEntryId() == lastEntryId) {
-                repeat = true;
-                break;
-            }
-        }
-        return repeat;
-    }
-
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
                                 long percentageOfLedgerFragmentToBeVerified) {

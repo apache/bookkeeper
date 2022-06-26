@@ -1497,6 +1497,21 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
                 unknownEnsembles, writeQuorum, ackQuorum);
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
+    
+    
+        //test three knows bookie
+        List<BookieId> adheringEnsemble = new ArrayList<>();
+        adheringEnsemble.add(BookieId.parse("128.0.0.0:3181"));
+        adheringEnsemble.add(BookieId.parse("128.0.0.3:3181"));
+        adheringEnsemble.add(BookieId.parse("128.0.0.6:3181"));
+    
+        placementPolicyAdherence = repp.isEnsembleAdheringToPlacementPolicy(
+                adheringEnsemble, writeQuorum, ackQuorum);
+        assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
+    
+        //should replace three bookie
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(adheringEnsemble, ackQuorum, writeQuorum);
+        assertEquals(targetBookie.size(), 0);
     }
     
     @Test

@@ -795,10 +795,18 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             rwLock.writeLock().unlock();
         }
     }
-    
+
     @Override
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
             int ackQuorumSize) {
+        if (CollectionUtils.isEmpty(ensemble)) {
+            return Collections.emptyMap();
+        }
+        PlacementPolicyAdherence ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensemble,
+                writeQuorumSize, ackQuorumSize);
+        if (PlacementPolicyAdherence.FAIL != ensembleAdheringToPlacementPolicy) {
+            return Collections.emptyMap();
+        }
         Map<BookieId, Integer> bookieIndex = new HashMap<>();
         for (int i = 0; i < ensemble.size(); i++) {
             bookieIndex.put(ensemble.get(i), i);
@@ -836,14 +844,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             doReplaceNotAdhering(toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
             List<BookieId> ensembles = toPlaceGroup.values().stream().flatMap(Collection::stream).map(
                     BookieNode::getAddr).collect(Collectors.toList());
-            PlacementPolicyAdherence ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensembles,
+            ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensembles,
                     writeQuorumSize, ackQuorumSize);
             if (PlacementPolicyAdherence.FAIL != ensembleAdheringToPlacementPolicy) {
                 placeSucceed = true;
                 break;
             }
         }
-        
         if (!placeSucceed) {
             targetBookieAddresses.clear();
             return Collections.emptyMap();

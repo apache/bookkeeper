@@ -92,7 +92,7 @@ public class LedgerFragment {
         return isLedgerClosed;
     }
 
-    long getLedgerId() {
+    public long getLedgerId() {
         return ledgerId;
     }
 

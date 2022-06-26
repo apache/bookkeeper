@@ -1136,8 +1136,6 @@ public class BookKeeperAdmin implements AutoCloseable {
             Optional<Set<BookieId>> excludedBookies = Optional.empty();
             targetBookieAddresses = getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
                     ledgerFragment.getBookiesIndexes(), excludedBookies);
-
-            replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
         } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
             targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
                     lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());

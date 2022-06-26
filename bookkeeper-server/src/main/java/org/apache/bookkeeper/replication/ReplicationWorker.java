@@ -382,27 +382,28 @@ public class ReplicationWorker implements Runnable {
                     return;
                 }
                 Long curEntryId = null;
-                List<BookieId> curEnsemble = null;
+                EnsemblePlacementPolicy.PlacementPolicyAdherence previousSegmentAdheringToPlacementPolicy = null;
+                
                 for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
                     if (curEntryId != null) {
-                        EnsemblePlacementPolicy.PlacementPolicyAdherence segmentAdheringToPlacementPolicy
-                                = admin.isEnsembleAdheringToPlacementPolicy(curEnsemble, writeQuorumSize, ackQuorumSize);
-                        if (segmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
+                        if (previousSegmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
                             LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, entry.getKey() - 1,
                                     Collections.emptySet());
                             ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
                             placementNotAdheringFragments.add(ledgerFragment);
                         }
                     }
+                    previousSegmentAdheringToPlacementPolicy = admin.isEnsembleAdheringToPlacementPolicy(entry.getValue(), writeQuorumSize, ackQuorumSize);
                     curEntryId = entry.getKey();
-                    curEnsemble = entry.getValue();
                 }
                 if (curEntryId != null) {
-                    long lastEntry = lh.getLastAddConfirmed();
-                    LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
-                            Collections.emptySet());
-                    ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
-                    placementNotAdheringFragments.add(ledgerFragment);
+                    if (previousSegmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
+                        long lastEntry = lh.getLedgerMetadata().getLastEntryId();
+                        LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
+                                Collections.emptySet());
+                        ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
+                        placementNotAdheringFragments.add(ledgerFragment);
+                    }
                 }
             } else if (BKException.getExceptionCode(exception)
                     == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
@@ -562,12 +563,36 @@ public class ReplicationWorker implements Runnable {
      * Gets the under replicated fragments.
      */
     private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage) throws InterruptedException {
+        Set<LedgerFragment> underreplicatedFragments = new HashSet<>();
+        
+        Set<LedgerFragment> dataLossFragments = getDataLossFragments(lh, ledgerVerificationPercentage);
+        underreplicatedFragments.addAll(dataLossFragments);
+        
         Set<LedgerFragment> notAdheringFragments = getNeedRepairedPlacementNotAdheringFragments(lh);
+        
+        for (LedgerFragment notAdheringFragment : notAdheringFragments) {
+            if (!checkFragmentRepeat(underreplicatedFragments, notAdheringFragment)) {
+                underreplicatedFragments.add(notAdheringFragment);
+            }
+        }
+        return underreplicatedFragments;
+    }
+    
+    private Set<LedgerFragment> getDataLossFragments(LedgerHandle lh, Long ledgerVerificationPercentage) throws InterruptedException {
         CheckerCallback checkerCb = new CheckerCallback();
-        ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage, notAdheringFragments);
-        Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
-        fragments.addAll(notAdheringFragments);
-        return fragments;
+        ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage);
+        return checkerCb.waitAndGetResult();
+    }
+    
+    private boolean checkFragmentRepeat(Set<LedgerFragment> fragments, LedgerFragment needChecked) {
+        for (LedgerFragment fragment : fragments) {
+            if (fragment.getLedgerId() == needChecked.getLedgerId()
+                    && fragment.getFirstEntryId() == needChecked.getFirstEntryId()
+                    && fragment.getLastKnownEntryId() == needChecked.getLastKnownEntryId()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
