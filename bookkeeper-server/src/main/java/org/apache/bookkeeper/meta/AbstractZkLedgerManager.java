@@ -402,6 +402,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 }
             }
             synchronized (listenerSet) {
+                listenerSet = listeners.computeIfAbsent(ledgerId, k -> new HashSet<>());
                 listenerSet.add(listener);
             }
             new ReadLedgerMetadataTask(ledgerId).run();
