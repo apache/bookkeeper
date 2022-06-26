@@ -51,7 +51,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_THREAD_QUEUE_LATENCY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_THREAD_QUEUED_LATENCY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 
@@ -95,7 +95,7 @@ public class RequestStats {
     private final OpStatsLogger addEntryStats;
 
     @StatsDoc(
-            name = WRITE_THREAD_QUEUE_LATENCY,
+            name = WRITE_THREAD_QUEUED_LATENCY,
             help = "operation stats of enqueuing requests to write threadpool queue",
             parent = ADD_ENTRY_REQUEST
     )
