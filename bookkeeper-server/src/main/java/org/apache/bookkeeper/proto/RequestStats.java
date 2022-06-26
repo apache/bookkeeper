@@ -249,7 +249,7 @@ public class RequestStats {
 
     public RequestStats(StatsLogger statsLogger) {
         this.addEntryStats = statsLogger.getThreadScopedOpStatsLogger(ADD_ENTRY);
-        this.writeThreadQueueStats = statsLogger.getThreadScopedOpStatsLogger(WRITE_THREAD_QUEUE_LATENCY);
+        this.writeThreadQueueStats = statsLogger.getThreadScopedOpStatsLogger(WRITE_THREAD_QUEUED_LATENCY);
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.addEntryRejectedCounter = statsLogger.getCounter(ADD_ENTRY_REJECTED);
         this.readEntryStats = statsLogger.getThreadScopedOpStatsLogger(READ_ENTRY);
