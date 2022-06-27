@@ -844,14 +844,14 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         verify(mockZk, times(1))
             .getData(anyString(), any(Watcher.class), any(DataCallback.class), any());
     }
-    
+
     @Test
     public void testRegisterAndUnRegisterRaceCondition() throws Exception {
         long ledgerId = System.currentTimeMillis();
         
         LedgerMetadataListener listener1 = (ledgerId1, metadata) -> {
         };
-    
+
         AbstractZkLedgerManager raceConditionLedgerManagerHelper =
                 new AbstractZkLedgerManagedRaceConditionHelper(conf, mockZk, ledgerId, listener1);
         new Thread(() -> {
@@ -873,15 +873,15 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         }
         assertEquals(raceConditionLedgerManagerHelper.listeners.size(), 1);
     }
-    
+
     /**
      * For registerLedgerMetadataListener and unregisterLedgerMetadataListener race condition test, override
      * registerLedgerMetadataListener and unregisterLedgerMetadataListener, the logic followed original.
      */
     private static class AbstractZkLedgerManagedRaceConditionHelper extends AbstractZkLedgerManager {
-        
+
         private CountDownLatch latch = new CountDownLatch(1);
-        
+
         protected AbstractZkLedgerManagedRaceConditionHelper(AbstractConfiguration conf, ZooKeeper zk,
                 long ledgerId, LedgerMetadataListener listener) {
             super(conf, zk);
@@ -889,33 +889,33 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             listenerSet.add(listener);
             listeners.put(ledgerId, listenerSet);
         }
-    
+
         @Override
         public String getLedgerPath(long ledgerId) {
             return null;
         }
-    
+
         @Override
         protected long getLedgerId(String ledgerPath) throws IOException {
             return 0;
         }
-    
+
         @Override
         protected String getLedgerParentNodeRegex() {
             return null;
         }
-    
+
         @Override
         public void asyncProcessLedgers(BookkeeperInternalCallbacks.Processor<Long> processor, VoidCallback finalCb,
                 Object context, int successRc, int failureRc) {
         
         }
-    
+
         @Override
         public LedgerRangeIterator getLedgerRanges(long zkOpTimeOutMs) {
             return null;
         }
-    
+
         @Override
         public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
             if (null != listener) {
@@ -936,7 +936,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
                 }
             }
         }
-    
+
         @Override
         public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
             Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
