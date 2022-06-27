@@ -41,9 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.google.common.graph.Network;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.net.BookieId;
@@ -866,26 +864,27 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         List<BookieNode> inactiveNodes = toPlaceGroup.get(NetworkTopology.INACTIVE);
         if (!CollectionUtils.isEmpty(inactiveNodes)) {
             BookieNode beReplaced = inactiveNodes.remove(inactiveNodes.size() - 1);
-            Integer index = bookieIndex.get(beReplaced.getAddr());
-            Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();
-            if (iterator.hasNext()) {
-                Map.Entry<String, List<BookieNode>> next = iterator.next();
-                List<BookieNode> list = toPlaceGroup.computeIfAbsent(next.getKey(), k -> new ArrayList<>());
-                BookieNode toReplaced = new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation());
-                list.add(toReplaced);
-                targetBookieAddresses.put(index, toReplaced.getAddr());
-                iterator.remove();
-            }
+            doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
             return;
         }
         Optional<Map.Entry<String, List<BookieNode>>> toPlaceEntry = toPlaceGroup.entrySet().stream()
                 .filter(ele -> ele.getValue().size() > 1).findAny();
         if (!toPlaceEntry.isPresent()) {
+            Iterator<Map.Entry<String, List<BookieNode>>> iterator = toPlaceGroup.entrySet().stream().iterator();
+            Map.Entry<String, List<BookieNode>> entry = iterator.next();
+            BookieNode beReplaced = entry.getValue().get(0);
+            iterator.remove();
+            doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
             return;
         }
     
         Map.Entry<String, List<BookieNode>> entry = toPlaceEntry.get();
         BookieNode beReplaced = entry.getValue().remove(entry.getValue().size() - 1);
+        doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
+    }
+
+    private void doReplace(BookieNode beReplaced, Map<String, List<BookieNode>> toPlaceGroup, Map<String, List<BookieNode>> knowsGroup,
+            Map<Integer, BookieId> targetBookieAddresses, Map<BookieId, Integer> bookieIndex) {
         Integer index = bookieIndex.get(beReplaced.getAddr());
     
         Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();

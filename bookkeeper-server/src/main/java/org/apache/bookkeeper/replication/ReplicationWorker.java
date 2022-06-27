@@ -388,7 +388,7 @@ public class ReplicationWorker implements Runnable {
                     if (curEntryId != null) {
                         if (previousSegmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
                             LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, entry.getKey() - 1,
-                                    Collections.emptySet());
+                                    new HashSet<>());
                             ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
                             placementNotAdheringFragments.add(ledgerFragment);
                         }
@@ -400,7 +400,7 @@ public class ReplicationWorker implements Runnable {
                     if (previousSegmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
                         long lastEntry = lh.getLedgerMetadata().getLastEntryId();
                         LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
-                                Collections.emptySet());
+                                new HashSet<>());
                         ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
                         placementNotAdheringFragments.add(ledgerFragment);
                     }
