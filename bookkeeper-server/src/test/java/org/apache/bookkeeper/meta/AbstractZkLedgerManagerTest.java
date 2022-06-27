@@ -848,7 +848,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
     @Test
     public void testRegisterAndUnRegisterRaceCondition() throws Exception {
         long ledgerId = System.currentTimeMillis();
-        
+
         LedgerMetadataListener listener1 = (ledgerId1, metadata) -> {
         };
 
@@ -908,7 +908,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         @Override
         public void asyncProcessLedgers(BookkeeperInternalCallbacks.Processor<Long> processor, VoidCallback finalCb,
                 Object context, int successRc, int failureRc) {
-        
+
         }
 
         @Override
