@@ -830,7 +830,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         ledgerManager.unregisterLedgerMetadataListener(ledgerId, listener);
         assertFalse(ledgerManager.listeners.containsKey(ledgerId));
         assertFalse(watchers.containsKey(ledgerStr));
-        verify(mockZk, times(1)).removeWatches(any(String.class),
+        verify(mockZk, times(1)).removeWatches(eq(ledgerManager.getLedgerPath(ledgerId)),
                 any(Watcher.class), any(Watcher.WatcherType.class), any(Boolean.class),
                 any(VoidCallback.class), any());
 
