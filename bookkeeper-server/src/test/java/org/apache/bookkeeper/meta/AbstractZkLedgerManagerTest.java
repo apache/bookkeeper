@@ -40,10 +40,14 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import com.google.common.collect.Lists;
+
+import java.io.IOException;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,10 +58,12 @@ import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -72,6 +78,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
@@ -837,5 +844,116 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         verify(mockZk, times(1))
             .getData(anyString(), any(Watcher.class), any(DataCallback.class), any());
     }
-
+    
+    @Test
+    public void testRegisterAndUnRegisterRaceCondition() throws Exception {
+        long ledgerId = System.currentTimeMillis();
+        
+        LedgerMetadataListener listener1 = (ledgerId1, metadata) -> {
+        };
+    
+        AbstractZkLedgerManager raceConditionLedgerManagerHelper =
+                new AbstractZkLedgerManagedRaceConditionHelper(conf, mockZk, ledgerId, listener1);
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            LedgerMetadataListener listener2 = (ledgerId1, metadata) -> {
+            };
+            raceConditionLedgerManagerHelper.registerLedgerMetadataListener(ledgerId, listener2);
+        }).start();
+        raceConditionLedgerManagerHelper.unregisterLedgerMetadataListener(ledgerId, listener1);
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(100);
+            if (raceConditionLedgerManagerHelper.listeners.size() == 1) {
+                break;
+            }
+        }
+        assertEquals(raceConditionLedgerManagerHelper.listeners.size(), 1);
+    }
+    
+    /**
+     * For registerLedgerMetadataListener and unregisterLedgerMetadataListener race condition test, override
+     * registerLedgerMetadataListener and unregisterLedgerMetadataListener, the logic followed original.
+     */
+    private static class AbstractZkLedgerManagedRaceConditionHelper extends AbstractZkLedgerManager {
+        
+        private CountDownLatch latch = new CountDownLatch(1);
+        
+        protected AbstractZkLedgerManagedRaceConditionHelper(AbstractConfiguration conf, ZooKeeper zk,
+                long ledgerId, LedgerMetadataListener listener) {
+            super(conf, zk);
+            Set<LedgerMetadataListener> listenerSet = new HashSet<>();
+            listenerSet.add(listener);
+            listeners.put(ledgerId, listenerSet);
+        }
+    
+        @Override
+        public String getLedgerPath(long ledgerId) {
+            return null;
+        }
+    
+        @Override
+        protected long getLedgerId(String ledgerPath) throws IOException {
+            return 0;
+        }
+    
+        @Override
+        protected String getLedgerParentNodeRegex() {
+            return null;
+        }
+    
+        @Override
+        public void asyncProcessLedgers(BookkeeperInternalCallbacks.Processor<Long> processor, VoidCallback finalCb,
+                Object context, int successRc, int failureRc) {
+        
+        }
+    
+        @Override
+        public LedgerRangeIterator getLedgerRanges(long zkOpTimeOutMs) {
+            return null;
+        }
+    
+        @Override
+        public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
+            if (null != listener) {
+                Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+                if (listenerSet == null) {
+                    Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
+                    Set<LedgerMetadataListener> oldListenerSet = listeners.putIfAbsent(ledgerId, newListenerSet);
+                    if (null != oldListenerSet) {
+                        listenerSet = oldListenerSet;
+                    } else {
+                        listenerSet = newListenerSet;
+                    }
+                }
+                latch.countDown();
+                synchronized (listenerSet) {
+                    listenerSet = listeners.computeIfAbsent(ledgerId, k -> new HashSet<>());
+                    listenerSet.add(listener);
+                }
+            }
+        }
+    
+        @Override
+        public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
+            Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+            if (listenerSet != null) {
+                synchronized (listenerSet) {
+                    //Make unregister thread wait register thread to get same listenerSet.
+                    try {
+                        latch.await();
+                    } catch (InterruptedException ignore) {
+                    }
+                    if (listenerSet.remove(listener)) {
+                    }
+                    if (listenerSet.isEmpty()) {
+                        listeners.remove(ledgerId, listenerSet);
+                    }
+                }
+            }
+        }
+    }
 }
