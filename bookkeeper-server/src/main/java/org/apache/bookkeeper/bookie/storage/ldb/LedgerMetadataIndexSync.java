@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Maintains an index for the ledgers metadata.
  *
- *  <p>Synchronous write mode class.
- * <p>The key is the ledgerId and the value is the {@link LedgerData} content.
+ * <p>Synchronous write mode class,
+ * the key is the ledgerId and the value is the {@link LedgerData} content.
  */
 public class LedgerMetadataIndexSync extends LedgerMetadataIndex {
 

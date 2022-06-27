@@ -20,16 +20,16 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.ByteString;
+
+import java.io.File;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit test for {@link EntryLocationIndex}.
@@ -49,13 +49,17 @@ public class LedgerMetadataIndexAsyncTest {
                 tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
-        idx.set(40312, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(true).setMasterKey(ByteString.EMPTY).build());
-        idx.set(40313, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(false).setMasterKey(ByteString.EMPTY).build());
+        idx.set(40312, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(true)
+                .setMasterKey(ByteString.EMPTY).build());
+        idx.set(40313, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(false)
+                .setMasterKey(ByteString.EMPTY).build());
         idx.flush();
 
         // Add more indexes in a different batch
-        idx.set(40314, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(true).setMasterKey(ByteString.EMPTY).build());
-        idx.set(40315, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(false).setMasterKey(ByteString.EMPTY).build());
+        idx.set(40314, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(true)
+                .setMasterKey(ByteString.EMPTY).build());
+        idx.set(40315, DbLedgerStorageDataFormats.LedgerData.newBuilder().setExists(true).setFenced(false)
+                .setMasterKey(ByteString.EMPTY).build());
         idx.flush();
 
         assertEquals(true, idx.get(40312).getExists());
@@ -77,7 +81,7 @@ public class LedgerMetadataIndexAsyncTest {
         try {
             idx.get(40313);
         } catch (Bookie.NoLedgerException e) {
-            assertEquals(Bookie.NoLedgerException.class,e.getClass());
+            assertEquals(Bookie.NoLedgerException.class, e.getClass());
         }
 
         assertEquals(true, idx.get(40314).getExists());
