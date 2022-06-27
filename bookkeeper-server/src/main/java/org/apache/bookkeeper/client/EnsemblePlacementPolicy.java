@@ -363,7 +363,7 @@ public interface EnsemblePlacementPolicy {
      */
     default void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
     }
-    
+
     /**
      * Replace some bookie to adhering placement policy. If the all kinds of replacement
      * didn't adhere placement policy, return empty map.

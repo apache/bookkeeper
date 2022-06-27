@@ -809,9 +809,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         for (int i = 0; i < ensemble.size(); i++) {
             bookieIndex.put(ensemble.get(i), i);
         }
-        
+
         Map<BookieId, BookieNode> clone = new HashMap<>(knownBookies);
-        
+
         Map<String, List<BookieNode>> toPlaceGroup = new HashMap<>();
         for (BookieId bookieId : ensemble) {
             //If the bookieId shutdown, put it to inactive.
@@ -825,14 +825,14 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 list.add(bookieNode);
             }
         }
-        
+
         Map<String, List<BookieNode>> knowsGroup = clone.values().stream()
                 .collect(Collectors.groupingBy(NodeBase::getNetworkLocation));
-    
+
         for (String key : toPlaceGroup.keySet()) {
             knowsGroup.remove(key);
         }
-        
+
         if (knowsGroup.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -855,9 +855,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
         return targetBookieAddresses;
     }
-    
-    private void doReplaceNotAdhering(Map<String, List<BookieNode>> toPlaceGroup, Map<String, List<BookieNode>> knowsGroup,
-            Map<Integer, BookieId> targetBookieAddresses, Map<BookieId, Integer> bookieIndex) {
+
+    private void doReplaceNotAdhering(Map<String, List<BookieNode>> toPlaceGroup,
+            Map<String, List<BookieNode>> knowsGroup, Map<Integer, BookieId> targetBookieAddresses,
+            Map<BookieId, Integer> bookieIndex) {
         if (knowsGroup.isEmpty()) {
             return;
         }
@@ -877,27 +878,29 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
             return;
         }
-    
+
         Map.Entry<String, List<BookieNode>> entry = toPlaceEntry.get();
         BookieNode beReplaced = entry.getValue().remove(entry.getValue().size() - 1);
         doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
     }
 
-    private void doReplace(BookieNode beReplaced, Map<String, List<BookieNode>> toPlaceGroup, Map<String, List<BookieNode>> knowsGroup,
-            Map<Integer, BookieId> targetBookieAddresses, Map<BookieId, Integer> bookieIndex) {
+    private void doReplace(BookieNode beReplaced, Map<String, List<BookieNode>> toPlaceGroup,
+            Map<String, List<BookieNode>> knowsGroup, Map<Integer, BookieId> targetBookieAddresses,
+            Map<BookieId, Integer> bookieIndex) {
         Integer index = bookieIndex.get(beReplaced.getAddr());
-    
+
         Iterator<Map.Entry<String, List<BookieNode>>> iterator = knowsGroup.entrySet().iterator();
         if (iterator.hasNext()) {
             Map.Entry<String, List<BookieNode>> next = iterator.next();
             List<BookieNode> list = toPlaceGroup.computeIfAbsent(next.getKey(), k -> new ArrayList<>());
-            BookieNode toReplaced = new BookieNode(next.getValue().get(0).getAddr(), next.getValue().get(0).getNetworkLocation());
+            BookieNode toReplaced = new BookieNode(next.getValue().get(0).getAddr(),
+                    next.getValue().get(0).getNetworkLocation());
             list.add(toReplaced);
             targetBookieAddresses.put(index, toReplaced.getAddr());
             iterator.remove();
         }
     }
-    
+
     protected BookieNode createBookieNode(BookieId addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }

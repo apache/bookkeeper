@@ -1451,7 +1451,8 @@ public class Auditor implements AutoCloseable {
                                             Collections.emptyList()).whenComplete((res, e) -> {
                                         if (e != null) {
                                             LOG.error("For ledger: {}, the placement policy not adhering bookie "
-                                                    + "storage, mark it to under replication manager failed.", ledgerId, e);
+                                                    + "storage, mark it to under replication manager failed.",
+                                                    ledgerId, e);
                                             return;
                                         }
                                         if (LOG.isDebugEnabled()) {

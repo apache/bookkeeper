@@ -27,6 +27,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.netty.util.HashedWheelTimer;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -44,7 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import io.netty.util.HashedWheelTimer;
 import lombok.Cleanup;
 
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -1098,7 +1099,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             bkWithMockZK.close();
         }
     }
-    
+
     @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsWithNoMoreRackBookie() throws Exception {
         List<BookieId> rack1Bookie = servers.stream().map(ele -> {
@@ -1108,13 +1109,14 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        
+
         bkc = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                     DNSToSwitchMapping dnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
                     StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
-                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy = new RackawareEnsemblePlacementPolicy() {
+                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
+                        new RackawareEnsemblePlacementPolicy() {
                     @Override
                     public String resolveNetworkLocation(BookieId addr) {
                         //The first five bookie is /rack1
@@ -1130,26 +1132,26 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 return rackawareEnsemblePlacementPolicy;
             }
         };
-        
+
         //This ledger not adhering placement policy, the combine(0,1,2) rack is 1.
         LedgerHandle lh = bkc.createLedger(3, 3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
-        
+
         int entrySize = 10;
         for (int i = 0; i < entrySize; i++) {
             lh.addEntry(data);
         }
         lh.close();
-        
+
         int minNumRacksPerWriteQuorumConfValue = 2;
-    
+
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
         servConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
-        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY, RackawareEnsemblePlacementPolicy.class.getName());
+        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY,
+                RackawareEnsemblePlacementPolicy.class.getName());
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
         servConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
-    
-    
+
         MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
         try {
             TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
@@ -1167,14 +1169,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 auditor.close();
             }
         }
-    
+
         baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
         BookKeeper bookKeeper = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                     DNSToSwitchMapping dnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
                     StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
-                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy = new RackawareEnsemblePlacementPolicy() {
+                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
+                        new RackawareEnsemblePlacementPolicy() {
                     @Override
                     public String resolveNetworkLocation(BookieId addr) {
                         //The first five bookie is /rack1
@@ -1192,10 +1195,10 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         };
         ReplicationWorker rw = new ReplicationWorker(baseConf, bookKeeper, false, NullStatsLogger.INSTANCE);
         rw.start();
-        
+
         //start new bookie, the rack is /rack2
         BookieId newBookieId = startNewBookieAndReturnBookieId();
-        
+
         CountDownLatch latch = new CountDownLatch(1);
         new Thread(() -> {
             for (int i = 0; i < 200; i++) {
@@ -1213,12 +1216,12 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             }
         }).start();
         assertTrue("New bookie should take replace of old bookie.", latch.await(20, TimeUnit.SECONDS));
-        
+
         killAllBookies(lh, newBookieId);
-    
+
         verifyRecoveredLedgers(lh, 0, entrySize - 1);
     }
-    
+
     private TestStatsLogger startAuditorAndWaitForPlacementPolicyCheck(ServerConfiguration servConf,
             MutableObject<Auditor> auditorRef) throws MetadataException, CompatibilityException, KeeperException,
             InterruptedException, ReplicationException.UnavailableException, UnknownHostException {
@@ -1226,14 +1229,16 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
-        TestStatsProvider.TestOpStatsLogger placementPolicyCheckStatsLogger = (TestStatsProvider.TestOpStatsLogger) statsLogger
+        TestStatsProvider.TestOpStatsLogger placementPolicyCheckStatsLogger =
+                (TestStatsProvider.TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
-        
+
         final AuditorPeriodicCheckTest.TestAuditor auditor = new AuditorPeriodicCheckTest.TestAuditor(
                 BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
-        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0,
+                placementPolicyCheckStatsLogger.getSuccessCount());
         urm.setPlacementPolicyCheckCTime(-1);
         auditor.start();
         /*
@@ -1247,8 +1252,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 break;
             }
         }
-        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 1, placementPolicyCheckStatsLogger.getSuccessCount());
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 1,
+                placementPolicyCheckStatsLogger.getSuccessCount());
         return statsLogger;
     }
-    
 }

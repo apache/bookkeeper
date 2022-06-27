@@ -1147,9 +1147,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             return;
         }
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
-    
     }
-    
+
     private void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
             final Map<Integer, BookieId> targetBookieAddresses,
@@ -1786,7 +1785,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
     }
-    
+
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensembleBookiesList,
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy()

@@ -66,7 +66,7 @@ public class LedgerFragment {
         this.schedule = lf.schedule;
         this.isLedgerClosed = lf.isLedgerClosed;
     }
-    
+
     /**
      * Return a ledger fragment contains subset of bookies.
      *
@@ -217,11 +217,11 @@ public class LedgerFragment {
     public List<BookieId> getEnsemble() {
         return this.ensemble;
     }
-    
+
     public ReplicateType getReplicateType() {
         return replicateType;
     }
-    
+
     public void setReplicateType(ReplicateType replicateType) {
         this.replicateType = replicateType;
     }
@@ -233,7 +233,10 @@ public class LedgerFragment {
                 getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
                 getAddresses(), isLedgerClosed);
     }
-    
+
+    /**
+     * ReplicateType.
+     */
     public enum ReplicateType {
         DATA_LOSS,
         DATA_NOT_ADHERING_PLACEMENT

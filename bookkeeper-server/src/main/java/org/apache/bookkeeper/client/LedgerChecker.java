@@ -21,7 +21,6 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -372,7 +371,7 @@ public class LedgerChecker {
                             final GenericCallback<Set<LedgerFragment>> cb) {
         checkLedger(lh, cb, 0L);
     }
-    
+
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
                             long percentageOfLedgerFragmentToBeVerified) {
@@ -457,7 +456,7 @@ public class LedgerChecker {
         }
         checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
     }
-    
+
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
                                 long percentageOfLedgerFragmentToBeVerified) {

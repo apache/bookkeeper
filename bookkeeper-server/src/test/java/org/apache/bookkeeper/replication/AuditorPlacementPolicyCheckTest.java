@@ -292,9 +292,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
             }
         }
     }
-    
+
     @Test
-    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndNotMarkToUnderreplication() throws Exception {
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndNotMarkToUnderreplication()
+            throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieId> bookieAddresses = new ArrayList<>();
@@ -305,21 +306,21 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
             }
         }
-        
+
         // only three racks
         StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
         StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
         StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
         StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack1");
         StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack2");
-        
+
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
         int ensembleSize = 5;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
         int minNumRacksPerWriteQuorumConfValue = 3;
-        
+
         /*
          * this closed ledger doesn't adhere to placement policy because there are only
          * 3 racks, and the ensembleSize is 5.
@@ -338,7 +339,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .build();
         lm.createLedgerMetadata(1L, initMeta).get();
         numOfLedgersNotAdheringToPlacementPolicy++;
-        
+
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
         setServerConfigPropertiesForRackPlacement(servConf);
@@ -363,9 +364,10 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         long unnderReplicateLedgerId = underreplicationManager.pollLedgerToRereplicate();
         assertEquals(unnderReplicateLedgerId, -1);
     }
-    
+
     @Test
-    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndMarkToUnderreplication() throws Exception {
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndMarkToUnderreplication()
+            throws Exception {
         int numOfBookies = 5;
         int numOfLedgersNotAdheringToPlacementPolicy = 0;
         List<BookieId> bookieAddresses = new ArrayList<>();
@@ -376,21 +378,21 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
             }
         }
-        
+
         // only three racks
         StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
         StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
         StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
         StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack1");
         StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack2");
-        
+
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
         int ensembleSize = 5;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
         int minNumRacksPerWriteQuorumConfValue = 3;
-        
+
         /*
          * this closed ledger doesn't adhere to placement policy because there are only
          * 3 racks, and the ensembleSize is 5.
@@ -409,7 +411,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .build();
         lm.createLedgerMetadata(1L, initMeta).get();
         numOfLedgersNotAdheringToPlacementPolicy++;
-        
+
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
         servConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);

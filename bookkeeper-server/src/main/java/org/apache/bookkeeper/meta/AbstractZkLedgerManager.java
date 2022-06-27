@@ -385,8 +385,6 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         return promise;
     }
 
-    //thread 2 registerLedgerMetadataListener (1, watcher2)
-    //thread 3 register (1, watcher3)
     @Override
     public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
         if (null != listener) {
@@ -394,7 +392,6 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 LOG.debug("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
             }
             Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
-            //set(watcher1, watcher2)
             if (listenerSet == null) {
                 Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
                 Set<LedgerMetadataListener> oldListenerSet = listeners.putIfAbsent(ledgerId, newListenerSet);
@@ -404,7 +401,6 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     listenerSet = newListenerSet;
                 }
             }
-            //set(watcher 2)
             synchronized (listenerSet) {
                 listenerSet = listeners.computeIfAbsent(ledgerId, k -> new HashSet<>());
                 listenerSet.add(listener);
@@ -412,29 +408,19 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             new ReadLedgerMetadataTask(ledgerId).run();
         }
     }
-    
-    //1 -> set(watcher 2)
 
-    //1 -> set<watcher 1>
-    //thread 1 unregisterLedgerMetadataListener (1, watcher1)
     @Override
     public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
         Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
-        //set(watcher1)
         if (listenerSet != null) {
-            //set(watcher1, watcher2)
-    
             synchronized (listenerSet) {
                 if (listenerSet.remove(listener)) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
                     }
                 }
-                //set()
                 if (listenerSet.isEmpty()) {
                     listeners.remove(ledgerId, listenerSet);
-                    //1 -> set()
-                    //listeners empty map
                 }
             }
         }

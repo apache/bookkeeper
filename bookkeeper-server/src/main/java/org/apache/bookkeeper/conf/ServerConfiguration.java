@@ -202,7 +202,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected static final String AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL =
                                                                 "auditorPeriodicPlacementPolicyCheckInterval";
-    protected static final String REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED = "repairedPlacementPolicyNotAdheringBookieEnabled";
+    protected static final String REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED =
+                                                                "repairedPlacementPolicyNotAdheringBookieEnabled";
     protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
@@ -215,7 +216,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
     protected static final String IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER = "inFlightReadEntryNumInLedgerChecker";
-    
+
 
     // Worker Thread parameters.
     protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -2575,11 +2576,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public long getAuditorPeriodicPlacementPolicyCheckInterval() {
         return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
     }
-    
+
     public void setRepairedPlacementPolicyNotAdheringBookieEnable(boolean enabled) {
         setProperty(REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED, enabled);
     }
-    
+
     public boolean getRepairedPlacementPolicyNotAdheringBookieEnable() {
         return getBoolean(REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED, false);
     }
