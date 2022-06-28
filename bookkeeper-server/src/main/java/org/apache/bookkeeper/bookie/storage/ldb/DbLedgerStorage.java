@@ -140,6 +140,10 @@ public class DbLedgerStorage implements LedgerStorage {
             throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
         }
 
+        if (ledgerDirsManager.getAllLedgerDirs().size() != indexDirsManager.getAllLedgerDirs().size()) {
+            throw new IOException("ledger and index dirs size not matched");
+        }
+
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
         int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
@@ -147,16 +151,28 @@ public class DbLedgerStorage implements LedgerStorage {
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
         ledgerStorageList = Lists.newArrayList();
-        for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
+        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
+            File ledgerDir = ledgerDirsManager.getAllLedgerDirs().get(i);
+            File indexDir = indexDirsManager.getAllLedgerDirs().get(i);
             // Create a ledger dirs manager for the single directory
-            File[] dirs = new File[1];
+            File[] lDirs = new File[1];
             // Remove the `/current` suffix which will be appended again by LedgersDirManager
-            dirs[0] = ledgerDir.getParentFile();
-            LedgerDirsManager ldm = new LedgerDirsManager(conf, dirs, ledgerDirsManager.getDiskChecker(), statsLogger);
-            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, indexDirsManager,
+            lDirs[0] = ledgerDir.getParentFile();
+            LedgerDirsManager ldm = new LedgerDirsManager(conf, lDirs, ledgerDirsManager.getDiskChecker(), statsLogger);
+
+            // Create a index dirs manager for the single directory
+            File[] iDirs = new File[1];
+            // Remove the `/current` suffix which will be appended again by LedgersDirManager
+            iDirs[0] = indexDir.getParentFile();
+            LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(), statsLogger);
+
+            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, idm,
                     statsLogger, gcExecutor, perDirectoryWriteCacheSize,
                     perDirectoryReadCacheSize, readAheadCacheBatchSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
+            if (!lDirs[0].getPath().equals(iDirs[0].getPath())) {
+                idm.getListeners().forEach(indexDirsManager::addLedgerDirsListener);
+            }
         }
 
         // parent DbLedgerStorage stats (not per directory)
