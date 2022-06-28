@@ -452,8 +452,6 @@ public class DbLedgerStorageTest {
         } catch (BookieException.DataUnknownException e) {
             fail("Should have been able to read entry");
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -462,7 +460,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -491,6 +489,8 @@ public class DbLedgerStorageTest {
         } finally {
             restartedStorage.shutdown();
         }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
     }
 
     @Test
@@ -499,7 +499,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -530,7 +530,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -543,8 +543,6 @@ public class DbLedgerStorageTest {
         } catch (IOException ioe) {
             fail("Should have been able to get isFenced response");
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -553,7 +551,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -566,8 +564,6 @@ public class DbLedgerStorageTest {
         } catch (BookieException.DataUnknownException e) {
             // expected
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -631,5 +627,7 @@ public class DbLedgerStorageTest {
         } finally {
             restartedStorage2.shutdown();
         }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
     }
 }
