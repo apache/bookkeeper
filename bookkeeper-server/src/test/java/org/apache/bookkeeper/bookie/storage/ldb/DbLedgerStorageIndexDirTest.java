@@ -37,9 +37,9 @@ import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit test for {@link DbLedgerStorage}.
@@ -52,7 +52,7 @@ public class DbLedgerStorageIndexDirTest {
     private static final String LOCATION_INDEX_SUB_PATH = "locations";
     private static final String METADATA_INDEX_SUB_PATH = "ledgers";
 
-    @BeforeEach
+    @Before
     public void setup() throws Exception {
         tmpLedgerDir = File.createTempFile("ledgerDir", ".dir");
         tmpLedgerDir.delete();
@@ -79,7 +79,7 @@ public class DbLedgerStorageIndexDirTest {
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
     }
 
-    @AfterEach
+    @After
     public void teardown() throws Exception {
         storage.shutdown();
         tmpLedgerDir.delete();
