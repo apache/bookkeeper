@@ -998,6 +998,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
         }
 
+        ledgerIndex.flush();
         batch.flush();
         batch.close();
 
