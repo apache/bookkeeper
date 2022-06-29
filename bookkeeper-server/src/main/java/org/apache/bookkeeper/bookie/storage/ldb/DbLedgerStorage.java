@@ -155,7 +155,6 @@ public class DbLedgerStorage implements LedgerStorage {
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
                 DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
         boolean directIOEntryLogger = getBooleanVariableOrDefault(conf, DIRECT_IO_ENTRYLOGGER, false);
-        PlatformDependent.estimateMaxDirectMemory()
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
