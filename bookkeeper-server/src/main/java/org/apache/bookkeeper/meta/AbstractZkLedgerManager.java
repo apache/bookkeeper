@@ -391,16 +391,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
             }
-            Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
-            if (listenerSet == null) {
-                Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
-                Set<LedgerMetadataListener> oldListenerSet = listeners.putIfAbsent(ledgerId, newListenerSet);
-                if (null != oldListenerSet) {
-                    listenerSet = oldListenerSet;
-                } else {
-                    listenerSet = newListenerSet;
-                }
-            }
+            Set<LedgerMetadataListener> listenerSet = listeners.computeIfAbsent(ledgerId, k -> new HashSet<>());
             synchronized (listenerSet) {
                 listenerSet = listeners.computeIfAbsent(ledgerId, k -> new HashSet<>());
                 listenerSet.add(listener);
