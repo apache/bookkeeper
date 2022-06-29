@@ -107,10 +107,10 @@ public class DbLedgerStorage implements LedgerStorage {
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
 
     private static final long DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB =
-        (long) (0.125 * PlatformDependent.maxDirectMemory())
+        (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
             / MB;
     private static final long DEFAULT_DIRECT_IO_TOTAL_READBUFFER_SIZE_MB =
-        (long) (0.125 * PlatformDependent.maxDirectMemory())
+        (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
             / MB;
     private static final long DEFAULT_DIRECT_IO_READBUFFER_SIZE_MB = 8;
 
@@ -127,7 +127,6 @@ public class DbLedgerStorage implements LedgerStorage {
     private ScheduledExecutorService gcExecutor;
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
-    private DbLedgerStorageStats stats;
 
     protected ByteBufAllocator allocator;
 
@@ -156,6 +155,7 @@ public class DbLedgerStorage implements LedgerStorage {
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
                 DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
         boolean directIOEntryLogger = getBooleanVariableOrDefault(conf, DIRECT_IO_ENTRYLOGGER, false);
+        PlatformDependent.estimateMaxDirectMemory()
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
