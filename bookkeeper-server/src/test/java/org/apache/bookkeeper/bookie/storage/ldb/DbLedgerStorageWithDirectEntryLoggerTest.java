@@ -20,21 +20,12 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-import com.google.common.collect.Lists;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 import java.io.File;
-import java.util.List;
 import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
-import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
