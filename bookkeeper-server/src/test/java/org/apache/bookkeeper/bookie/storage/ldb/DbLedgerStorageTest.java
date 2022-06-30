@@ -55,9 +55,9 @@ import org.slf4j.LoggerFactory;
  */
 public class DbLedgerStorageTest {
     private static final Logger log = LoggerFactory.getLogger(DbLedgerStorageTest.class);
-    private DbLedgerStorage storage;
-    private File tmpDir;
-    private LedgerDirsManager ledgerDirsManager;
+    protected DbLedgerStorage storage;
+    protected File tmpDir;
+    protected LedgerDirsManager ledgerDirsManager;
     protected ServerConfiguration conf;
 
     @Before

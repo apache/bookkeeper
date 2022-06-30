@@ -120,10 +120,8 @@ class Buffer {
      * bytebuf by the number of bytes read (i.e. to the end).
      */
     void writeByteBuf(ByteBuf bytebuf) throws IOException {
-        int bytesWritten = bytebuf.readableBytes();
         ByteBuffer bytesToPut = bytebuf.nioBuffer();
         byteBuffer.put(bytesToPut);
-        bytebuf.skipBytes(bytesWritten);
     }
 
     /**

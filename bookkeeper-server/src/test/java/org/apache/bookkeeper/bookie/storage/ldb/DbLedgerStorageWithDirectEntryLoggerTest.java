@@ -20,7 +20,22 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import com.google.common.collect.Lists;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
+import java.io.File;
+import java.util.List;
+import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.EntryLocation;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link DbLedgerStorage} with directIO entrylogger.
@@ -30,7 +45,25 @@ public class DbLedgerStorageWithDirectEntryLoggerTest extends DbLedgerStorageTes
     @Override
     @Before
     public void setup() throws Exception {
-        super.setup();
+        tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File curDir = BookieImpl.getCurrentDirectory(tmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
+
+        int gcWaitTime = 1000;
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setProperty("dbStorage_directIOEntryLogger", true);
+        BookieImpl bookie = new TestBookieImpl(conf);
+
+        ledgerDirsManager = bookie.getLedgerDirsManager();
+        storage = (DbLedgerStorage) bookie.getLedgerStorage();
+
+        storage.getLedgerStorageList().forEach(singleDirectoryDbLedgerStorage -> {
+            assertTrue(singleDirectoryDbLedgerStorage.getEntryLogger() instanceof DirectEntryLogger);
+        });
     }
 }
