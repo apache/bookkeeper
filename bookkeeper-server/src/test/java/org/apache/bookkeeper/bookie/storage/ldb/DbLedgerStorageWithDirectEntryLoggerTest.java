@@ -20,13 +20,13 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.Before;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link DbLedgerStorage} with directIO entrylogger.
