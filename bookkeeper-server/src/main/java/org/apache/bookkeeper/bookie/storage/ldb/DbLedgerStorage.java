@@ -83,10 +83,10 @@ public class DbLedgerStorage implements LedgerStorage {
 
     private static final int MB = 1024 * 1024;
 
-    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
-            / MB;
-    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
-            / MB;
+    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB =
+        (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
+    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB =
+        (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
@@ -136,7 +136,7 @@ public class DbLedgerStorage implements LedgerStorage {
         log.info(" - Write cache size: {} MB", writeCacheMaxSize / MB);
         log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
 
-        if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.maxDirectMemory()) {
+        if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.estimateMaxDirectMemory()) {
             throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
         }
 

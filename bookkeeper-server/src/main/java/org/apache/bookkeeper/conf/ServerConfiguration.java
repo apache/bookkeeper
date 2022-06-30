@@ -943,7 +943,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalMaxMemorySizeMb() {
         // Default is taking 5% of max direct memory (and convert to MB).
-        long defaultValue = (long) (PlatformDependent.maxDirectMemory() * 0.05 / 1024 / 1024);
+        long defaultValue = (long) (PlatformDependent.estimateMaxDirectMemory() * 0.05 / 1024 / 1024);
         return this.getLong(JOURNAL_MAX_MEMORY_SIZE_MB, defaultValue);
     }
 
