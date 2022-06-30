@@ -41,7 +41,6 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
-import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
