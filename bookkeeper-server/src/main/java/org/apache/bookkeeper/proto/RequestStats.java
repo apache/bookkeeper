@@ -99,7 +99,7 @@ public class RequestStats {
             help = "operation stats of enqueuing requests to write threadpool queue",
             parent = ADD_ENTRY_REQUEST
     )
-    private final OpStatsLogger writeThreadQueueStats;
+    private final OpStatsLogger writeThreadQueuedLatency;
 
     @StatsDoc(
             name = ADD_ENTRY_REJECTED,
@@ -249,7 +249,7 @@ public class RequestStats {
 
     public RequestStats(StatsLogger statsLogger) {
         this.addEntryStats = statsLogger.getThreadScopedOpStatsLogger(ADD_ENTRY);
-        this.writeThreadQueueStats = statsLogger.getThreadScopedOpStatsLogger(WRITE_THREAD_QUEUED_LATENCY);
+        this.writeThreadQueuedLatency = statsLogger.getThreadScopedOpStatsLogger(WRITE_THREAD_QUEUED_LATENCY);
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.addEntryRejectedCounter = statsLogger.getCounter(ADD_ENTRY_REJECTED);
         this.readEntryStats = statsLogger.getThreadScopedOpStatsLogger(READ_ENTRY);
