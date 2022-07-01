@@ -61,9 +61,9 @@ public class TestBKConfiguration {
         confReturn.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 4);
         confReturn.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
         /**
-         * if testcase has zk error,just try 3 time for fast running
+         * if testcase has zk error,try Integer.MAX_VALUE time for running
          */
-        confReturn.setZkRetryBackoffMaxRetries(3);
+        confReturn.setZkRetryBackoffMaxRetries(Integer.MAX_VALUE);
         setLoopbackInterfaceAndAllowLoopback(confReturn);
         return confReturn;
     }
