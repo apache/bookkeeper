@@ -174,7 +174,7 @@ public class BKException extends Exception {
         case Code.DataUnknownException:
             return "Ledger in limbo";
         default:
-            return "Unexpected condition";
+            return "Unexpected condition: " + code;
         }
     }
 
