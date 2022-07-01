@@ -307,13 +307,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         boolean ackBeforeSync;
 
         OpStatsLogger journalAddEntryStats;
-        OpStatsLogger journalCbQueueLatency;
+        OpStatsLogger journalCbQueuedLatency;
         Counter journalCbQueueSize;
         Counter callbackTime;
 
         static QueueEntry create(ByteBuf entry, boolean ackBeforeSync, long ledgerId, long entryId,
                 WriteCallback cb, Object ctx, long enqueueTime, OpStatsLogger journalAddEntryStats,
-                Counter journalCbQueueSize, OpStatsLogger journalCbQueueLatency,
+                Counter journalCbQueueSize, OpStatsLogger journalCbQueuedLatency,
                 Counter callbackTime) {
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
@@ -324,7 +324,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             qe.entryId = entryId;
             qe.enqueueTime = enqueueTime;
             qe.journalAddEntryStats = journalAddEntryStats;
-            qe.journalCbQueueLatency = journalCbQueueLatency;
+            qe.journalCbQueuedLatency = journalCbQueuedLatency;
             qe.journalCbQueueSize = journalCbQueueSize;
             qe.callbackTime = callbackTime;
             return qe;
@@ -336,7 +336,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         @Override
         public void run() {
-            journalCbQueueLatency.registerSuccessfulEvent(
+            journalCbQueuedLatency.registerSuccessfulEvent(
                     MathUtils.elapsedNanos(enqueueCbThreadPooleQueueTime), TimeUnit.NANOSECONDS);
             long startTime = System.nanoTime();
             if (LOG.isDebugEnabled()) {
