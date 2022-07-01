@@ -401,24 +401,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             log.debug("Add entry. {}@{}, lac = {}", ledgerId, entryId, lac);
         }
 
-        // First we try to do an optimistic locking to get access to the current write cache.
-        // This is based on the fact that the write cache is only being rotated (swapped) every 1 minute. During the
-        // rest of the time, we can have multiple thread using the optimistic lock here without interfering.
-        long stamp = writeCacheRotationLock.tryOptimisticRead();
-        boolean inserted = false;
-
-        inserted = writeCache.put(ledgerId, entryId, entry);
-        if (!writeCacheRotationLock.validate(stamp)) {
-            // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
-            // the operation because we might have inserted in a write cache that was already being flushed and cleared,
-            // without being sure about this last entry being flushed or not.
-            stamp = writeCacheRotationLock.readLock();
-            try {
-                inserted = writeCache.put(ledgerId, entryId, entry);
-            } finally {
-                writeCacheRotationLock.unlockRead(stamp);
-            }
-        }
+       boolean inserted = writeCache.put(ledgerId, entryId, entry);
 
         if (!inserted) {
             triggerFlushAndAddEntry(ledgerId, entryId, entry);
