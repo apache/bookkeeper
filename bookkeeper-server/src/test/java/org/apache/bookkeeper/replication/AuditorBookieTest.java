@@ -26,9 +26,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -52,6 +63,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     private String electionPath;
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
+    private static final int MAX_CLOSE_WAIT_SECS = 3;
 
     public AuditorBookieTest() {
         super(6);
@@ -210,11 +222,37 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private void stopAuditorElectors() throws Exception {
+    private void stopAuditorElectors() {
+        final ExecutorService closePool = Executors.newFixedThreadPool(
+                auditorElectors.size(), new ThreadFactoryBuilder().setNameFormat("StopAuditorService-%d").build());
+        List<Future<Boolean>> futures = Lists.newArrayListWithCapacity(auditorElectors.size());
         for (AuditorElector auditorElector : auditorElectors.values()) {
-            auditorElector.shutdown();
-            LOG.debug("Stopping Auditor Elector!");
+            futures.add(closePool.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws IOException {
+                    try {
+                        auditorElector.shutdown();
+                        return true;
+                    } catch (Throwable e) {
+                        LOG.error("Stopping Auditor Elector has error", e);
+                        return false;
+                    }
+                }
+            }));
         }
+        futures.forEach(f -> {
+            try {
+                Boolean closeResult = f.get(MAX_CLOSE_WAIT_SECS, TimeUnit.SECONDS);
+                if (!closeResult) {
+                    throw new RuntimeException("stop auditor electors has error");
+                }
+            } catch (TimeoutException te) {
+                LOG.warn("stop auditor elector timeout");
+            } catch (Throwable e) {
+                throw new RuntimeException("failed to stop auditor electors,error info:", e);
+            }
+        });
+        LOG.debug("stopping auditor elector!");
     }
 
     private BookieServer verifyAuditor() throws Exception {
