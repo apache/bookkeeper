@@ -173,8 +173,10 @@ public class BKException extends Exception {
             return "Failed to serialize metadata";
         case Code.DataUnknownException:
             return "Ledger in limbo";
+        case Code.UnexpectedConditionException:
+            return "Unexpected condition";
         default:
-            return "Unexpected condition: " + code;
+            return "Unknown code: " + code;
         }
     }
 
