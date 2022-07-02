@@ -995,7 +995,7 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
-            <!-- Intellij -->
+            <!-- IntelliJ -->
             <exclude>**/.idea/**</exclude>
 
             <!-- Git -->
@@ -1016,7 +1016,7 @@
             <exclude>**/src/main/resources/deps/**</exclude>
             <exclude>**/META-INF/**</exclude>
 
-            <!-- IDE files (eclipse & intellij) -->
+            <!-- IDE files (eclipse & intelliJ) -->
             <exclude>**/.classpath</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.checkstyle</exclude>
