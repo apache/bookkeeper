@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -49,18 +50,24 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.StateManager;
+import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.slogger.slf4j.Slf4jSlogger;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -76,8 +83,16 @@ import org.apache.commons.lang3.StringUtils;
 public class DbLedgerStorage implements LedgerStorage {
 
     public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
-
     public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
+    public static final String DIRECT_IO_ENTRYLOGGER = "dbStorage_directIOEntryLogger";
+    public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB =
+        "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMb";
+    public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB =
+        "dbStorage_directIOEntryLoggerTotalReadBufferSizeMb";
+    public static final String DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB =
+        "dbStorage_directIOEntryLoggerReadBufferSizeMb";
+    public static final String DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS =
+        "dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds";
 
     static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
 
@@ -91,6 +106,16 @@ public class DbLedgerStorage implements LedgerStorage {
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
 
+    private static final long DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB =
+        (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
+            / MB;
+    private static final long DEFAULT_DIRECT_IO_TOTAL_READBUFFER_SIZE_MB =
+        (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
+            / MB;
+    private static final long DEFAULT_DIRECT_IO_READBUFFER_SIZE_MB = 8;
+
+    private static final int DEFAULT_DIRECT_IO_MAX_FD_CACHE_TIME_SECONDS = 300;
+
     // use the storage assigned to ledger 0 for flags.
     // if the storage configuration changes, the flags may be lost
     // but in that case data integrity should kick off anyhow.
@@ -100,6 +125,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     // Keep 1 single Bookie GC thread so the the compactions from multiple individual directories are serialized
     private ScheduledExecutorService gcExecutor;
+    private ExecutorService entryLoggerWriteExecutor = null;
+    private ExecutorService entryLoggerFlushExecutor = null;
 
     protected ByteBufAllocator allocator;
 
@@ -127,6 +154,7 @@ public class DbLedgerStorage implements LedgerStorage {
                 DEFAULT_WRITE_CACHE_MAX_SIZE_MB) * MB;
         long readCacheMaxSize = getLongVariableOrDefault(conf, READ_AHEAD_CACHE_MAX_SIZE_MB,
                 DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
+        boolean directIOEntryLogger = getBooleanVariableOrDefault(conf, DIRECT_IO_ENTRYLOGGER, false);
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
@@ -166,9 +194,54 @@ public class DbLedgerStorage implements LedgerStorage {
             iDirs[0] = indexDir.getParentFile();
             LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(), statsLogger);
 
-            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm, idm,
-                    statsLogger, gcExecutor, perDirectoryWriteCacheSize,
-                    perDirectoryReadCacheSize, readAheadCacheBatchSize));
+            EntryLogger entrylogger;
+            if (directIOEntryLogger) {
+                long perDirectoryTotalWriteBufferSize = MB * getLongVariableOrDefault(
+                    conf,
+                    DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB,
+                    DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB) / numberOfDirs;
+                long perDirectoryTotalReadBufferSize = MB * getLongVariableOrDefault(
+                    conf,
+                    DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB,
+                    DEFAULT_DIRECT_IO_TOTAL_READBUFFER_SIZE_MB) / numberOfDirs;
+                int readBufferSize = MB * (int) getLongVariableOrDefault(
+                    conf,
+                    DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB,
+                    DEFAULT_DIRECT_IO_READBUFFER_SIZE_MB);
+                int maxFdCacheTimeSeconds = (int) getLongVariableOrDefault(
+                    conf,
+                    DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS,
+                    DEFAULT_DIRECT_IO_MAX_FD_CACHE_TIME_SECONDS);
+                Slf4jSlogger slog = new Slf4jSlogger(DbLedgerStorage.class);
+                entryLoggerWriteExecutor = Executors.newSingleThreadExecutor(
+                    new DefaultThreadFactory("EntryLoggerWrite"));
+                entryLoggerFlushExecutor = Executors.newSingleThreadExecutor(
+                    new DefaultThreadFactory("EntryLoggerFlush"));
+
+                int numReadThreads = conf.getNumReadWorkerThreads();
+                if (numReadThreads == 0) {
+                    numReadThreads = conf.getServerNumIOThreads();
+                }
+
+                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ledgerDirsManager, slog),
+                    new NativeIOImpl(),
+                    allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
+                    conf.getEntryLogSizeLimit(),
+                    conf.getNettyMaxFrameSizeBytes() - 500,
+                    perDirectoryTotalWriteBufferSize,
+                    perDirectoryTotalReadBufferSize,
+                    readBufferSize,
+                    numReadThreads,
+                    maxFdCacheTimeSeconds,
+                    slog, statsLogger);
+            } else {
+                entrylogger = new DefaultEntryLogger(conf, ldm, null, statsLogger, allocator);
+            }
+            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm,
+                idm, entrylogger,
+                statsLogger, gcExecutor, perDirectoryWriteCacheSize,
+                perDirectoryReadCacheSize,
+                readAheadCacheBatchSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
             if (!lDirs[0].getPath().equals(iDirs[0].getPath())) {
                 idm.getListeners().forEach(indexDirsManager::addLedgerDirsListener);
@@ -206,10 +279,11 @@ public class DbLedgerStorage implements LedgerStorage {
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
+            EntryLogger entryLogger, StatsLogger statsLogger,
+            ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
             int readAheadCacheBatchSize)
             throws IOException {
-        return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+        return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
                                                   statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize,
                                                   readAheadCacheBatchSize);
     }
@@ -236,6 +310,13 @@ public class DbLedgerStorage implements LedgerStorage {
     public void shutdown() throws InterruptedException {
         for (LedgerStorage ls : ledgerStorageList) {
             ls.shutdown();
+        }
+
+        if (entryLoggerWriteExecutor != null) {
+            entryLoggerWriteExecutor.shutdown();
+        }
+        if (entryLoggerFlushExecutor != null) {
+            entryLoggerFlushExecutor.shutdown();
         }
     }
 
@@ -445,6 +526,19 @@ public class DbLedgerStorage implements LedgerStorage {
             return defaultValue;
         } else {
             return conf.getLong(keyName);
+        }
+    }
+
+    static boolean getBooleanVariableOrDefault(ServerConfiguration conf, String keyName, boolean defaultValue) {
+        Object obj = conf.getProperty(keyName);
+        if (obj instanceof Boolean) {
+            return (Boolean) obj;
+        } else if (obj == null) {
+            return defaultValue;
+        } else if (StringUtils.isEmpty(conf.getString(keyName))) {
+            return defaultValue;
+        } else {
+            return conf.getBoolean(keyName);
         }
     }
 
