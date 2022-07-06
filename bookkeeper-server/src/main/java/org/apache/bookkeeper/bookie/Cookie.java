@@ -475,8 +475,9 @@ public class Cookie {
             return this;
         }
 
-        public void setIndexDirs(String indexDirs) {
+        public Builder setIndexDirs(String indexDirs) {
             this.indexDirs = indexDirs;
+            return this;
         }
 
         public Cookie build() {
