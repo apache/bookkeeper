@@ -28,6 +28,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -547,6 +549,9 @@ public class GarbageCollectorThread extends SafeRunnable {
         MutableLong end = new MutableLong(start);
         MutableLong timeDiff = new MutableLong(0);
 
+        PriorityQueue<EntryLogMetadata> pq = new PriorityQueue<>(entryLogMetaMap.size() / 10,
+                Comparator.comparingDouble(EntryLogMetadata::getUsage));
+
         entryLogMetaMap.forEach((entryLogId, meta) -> {
             int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
             entryLogUsageBuckets[bucketIndex]++;
@@ -557,10 +562,32 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
             if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
                     || !running) {
-                // We allow the usage limit calculation to continue so that we get a accurate
+                // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;
             }
+
+            pq.add(meta);
+        });
+
+        LOG.info(
+                "Compaction: entry log usage buckets before compaction [10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
+                entryLogUsageBuckets);
+
+        while (!pq.isEmpty()) {
+            if (timeDiff.getValue() < maxTimeMillis) {
+                end.setValue(System.currentTimeMillis());
+                timeDiff.setValue(end.getValue() - start);
+            }
+
+            if ((maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis) || !running) {
+                // We allow the usage limit calculation to continue so that we get an accurate
+                // report of where the usage was prior to running compaction.
+                break;
+            }
+
+            final EntryLogMetadata meta = pq.remove();
+            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Compacting entry log {} with usage {} below threshold {}",
                         meta.getEntryLogId(), meta.getUsage(), threshold);
@@ -570,12 +597,13 @@ public class GarbageCollectorThread extends SafeRunnable {
             compactEntryLog(meta);
             gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
             compactedBuckets[bucketIndex]++;
-        });
+        }
+
         if (LOG.isDebugEnabled()) {
             if (!running) {
                 LOG.debug("Compaction exited due to gc not running");
             }
-            if (timeDiff.getValue() > maxTimeMillis) {
+            if (maxTimeMillis > 0 && timeDiff.getValue() > maxTimeMillis) {
                 LOG.debug("Compaction ran for {}ms but was limited by {}ms", timeDiff, maxTimeMillis);
             }
         }
