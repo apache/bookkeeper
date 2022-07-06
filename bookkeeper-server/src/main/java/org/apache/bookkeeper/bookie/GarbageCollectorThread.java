@@ -549,8 +549,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         MutableLong end = new MutableLong(start);
         MutableLong timeDiff = new MutableLong(0);
 
-        PriorityQueue<EntryLogMetadata> pq = new PriorityQueue<>(entryLogMetaMap.size() / 10,
-                Comparator.comparingDouble(EntryLogMetadata::getUsage));
+        PriorityQueue<EntryLogMetadata> pq = new PriorityQueue<>(Comparator
+                .comparingDouble(EntryLogMetadata::getUsage));
 
         entryLogMetaMap.forEach((entryLogId, meta) -> {
             int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
