@@ -128,24 +128,6 @@
     <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
 
-  <!-- microbenchmarks -->
-  <!-- jmh generated code -->
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.proto\.generated.*" />
-  </Match>
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
-  </Match>
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.stats\.generated.*" />
-  </Match>
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.stats\.codahale\.generated.*" />
-  </Match>
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.common\.generated.*" />
-  </Match>
-
   <!-- modules under stream/ -->
 
   <!-- common -->
