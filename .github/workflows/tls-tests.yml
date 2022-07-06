@@ -50,7 +50,7 @@ jobs:
           distribution: 'temurin'
           java-version: 11
       - name: Run tls tests
-        run: mvn -B -am -nsu -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.tls.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./mvnw -B -am -nsu -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.tls.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
         if: failure()

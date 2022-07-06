@@ -49,7 +49,7 @@ jobs:
           distribution: 'temurin'
           java-version: 17
       - name: Build with Maven
-        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./mvnw clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
       - name: print JVM thread dumps when cancelled
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps

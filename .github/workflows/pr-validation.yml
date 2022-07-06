@@ -50,10 +50,10 @@ jobs:
           distribution: 'temurin'
           java-version: 11
       - name: Validate pull request
-        run: mvn clean -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: ./mvnw clean -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         
       - name: Check license files
         run: dev/check-all-licenses
 
       - name: Generate Javadoc
-        run: mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
+        run: ./mvnw clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
