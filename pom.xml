@@ -1038,7 +1038,10 @@
 
             <!-- logs -->
             <exclude>**/*.log</exclude>
-
+              
+            <!-- json files -->
+            <exclude>**/*.json</exclude>
+              
             <!-- data -->
             <exclude>data/**</exclude>
 
@@ -1058,7 +1061,6 @@
             <exclude>**/.pytest_cache/**</exclude>
             <exclude>**/__pycache__/**</exclude>
             <exclude>**/bookkeeper.egg-info/**</exclude>
-            <exclude>**/pip-selfcheck.json</exclude>
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>

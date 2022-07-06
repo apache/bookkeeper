@@ -3,7 +3,7 @@ id: bookies
 title: BookKeeper administration
 ---
 
-This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses [best practices](#best-practices) and [common problems](#common-problems).
+This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses best practices and common problems.
 
 ## Requirements
 

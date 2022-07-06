@@ -146,7 +146,7 @@ Optional settings that are worth considering:
     of the communication channel. It should be enabled on both bookies and clients for mutual TLS.
 2. tlsEnabledCipherSuites= A cipher suite is a named combination of authentication, encryption, MAC and key exchange
     algorithm used to negotiate the security settings for a network connection using TLS network protocol. By default,
-    it is null. [OpenSSL Ciphers](https://www.openssl.org/docs/man1.0.2/apps/ciphers.html)
+    it is null. [OpenSSL Ciphers](https://www.openssl.org/docs/man1.0.2/man1/ciphers.html)
     [JDK Ciphers](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#ciphersuites)
 3. tlsEnabledProtocols = TLSv1.2,TLSv1.1,TLSv1 (list out the TLS protocols that you are going to accept from clients).
     By default, it is not set.

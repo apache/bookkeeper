@@ -4,9 +4,9 @@ Rejected due to lack of agreement that the issues raised in the motivation are v
 
 ### Motivation
 
-The [Handle](http://bookkeeper.apache.org/docs/latest/api/javadoc/org/apache/bookkeeper/client/api/Handle.html) interface provides two methods, #asyncClose and #close (overriding AutoCloseable). 
+The [Handle](https://bookkeeper.apache.org/docs/api/javadoc/org/apache/bookkeeper/client/api/Handle.html) interface provides two methods, #asyncClose and #close (overriding AutoCloseable). 
 
-#close is implemented in both [ReadHandle](http://bookkeeper.apache.org/docs/latest/api/javadoc/org/apache/bookkeeper/client/api/ReadHandle.html) and [WriteHandle](http://bookkeeper.apache.org/docs/latest/api/javadoc/org/apache/bookkeeper/client/api/WriteHandle.html). 
+#close is implemented in both [ReadHandle](https://bookkeeper.apache.org/docs/api/javadoc/org/apache/bookkeeper/client/api/ReadHandle.html) and [WriteHandle](https://bookkeeper.apache.org/docs/api/javadoc/org/apache/bookkeeper/client/api/WriteHandle.html). 
 
 1. The implementations in ReadHandle and WriteHandle do vastly different things. In ReadHandle, #close unregisters listeners from the ledger manager. This is local resource cleanup, which is in line with what AutoCloseable is designed for. In WriteHandle, #close calls #asyncClose which writes the lastAddConfirmed to the LedgerMetadata. This violates the principle of separation of concerns, and overloads the meaning of the term "close".
 

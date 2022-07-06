@@ -26,7 +26,7 @@ Here is an very useful artical [How to report bugs effectively]( http://www.chia
 -  Please describe the feature you are requesting.
 -  Indicate the importance of this issue to you (_blocker_, _must-have_, _should-have_, _nice-to-have_). Are you currently using any workarounds to address this issue?
 -  Provide any additional detail on your proposed use case for this feature.
--  If it is a [BookKeeper Proposal](http://bookkeeper.apache.org/community/bookkeeper_proposals/), please label this issue as `BP`.
+-  If it is a [BookKeeper Proposal](https://bookkeeper.apache.org/community/bookkeeper-proposals/), please label this issue as `BP`.
 
 #### If it is a **BUG REPORT**
 

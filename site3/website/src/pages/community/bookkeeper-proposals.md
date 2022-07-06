@@ -65,7 +65,7 @@ using Google Doc.
         - add this BP to `Inprogress` section
 1. You can tag committers on this RP for reviewers, or start a `[DISCUSS]` thread on Apache mailing list. If you are sending an email, please make sure that the subject
    of the thread is of the format `[DISCUSS] BP-<number>: capation of bookkeeper proposal`.
-1. Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is [lazy majority](http://bookkeeper.apache.org/bylaws.html).
+1. Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is [lazy majority](https://bookkeeper.apache.org/project/bylaws).
     1. Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during implementing it.
     1. After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
         - state: "Adopted"

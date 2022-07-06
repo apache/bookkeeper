@@ -7,7 +7,7 @@ You can install BookKeeper either by [downloading](#download) a [GZipped](http:/
 
 ## Requirements
 
-* [Unix environment](http://www.opengroup.org/unix)
+* [Unix environment](https://www.opengroup.org/membership/forums/platform/unix)
 * [Java Development Kit 1.8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or later
 
 ## Download

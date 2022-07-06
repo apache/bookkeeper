@@ -8,7 +8,7 @@ The Apache BookKeeper project periodically declares and publishes releases. A re
 
 The BookKeeper community treats releases with great importance. They are a public face of the project and most users interact with the project only through the releases. Releases are signed off by the entire BookKeeper community in a public vote.
 
-Each release is executed by a *Release Manager*, who is selected among the [BookKeeper committers](http://bookkeeper.apache.org/credits.html). This document describes the process that the Release Manager follows to perform a release. Any changes to this process should be discussed and adopted on the [dev@ mailing list](http://bookkeeper.apache.org/lists.html).
+Each release is executed by a *Release Manager*, who is selected among the [BookKeeper committers](https://bookkeeper.apache.org/project/who). This document describes the process that the Release Manager follows to perform a release. Any changes to this process should be discussed and adopted on the [dev@ mailing list](https://lists.apache.org/list.html?dev@bookkeeper.apache.org).
 
 Please remember that publishing software has legal consequences. This guide complements the foundation-wide [Product Release Policy](http://www.apache.org/dev/release.html) and [Release Distribution Policy](http://www.apache.org/dev/release-distribution).
 
