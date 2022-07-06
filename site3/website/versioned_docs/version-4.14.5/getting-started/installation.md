@@ -7,7 +7,7 @@ You can install BookKeeper either by [downloading](#download) a [GZipped](http:/
 
 ## Requirements
 
-* [Unix environment](http://www.opengroup.org/unix)
+* [Unix environment](https://www.opengroup.org/membership/forums/platform/unix)
 * [Java Development Kit 1.8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or later
 * [Maven 3.0](https://maven.apache.org/install.html) or later
 
@@ -17,7 +17,7 @@ You can download Apache BookKeeper releases from one of many [Apache mirrors](ht
 
 ## Clone
 
-To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](http://git.apache.org/bookkeeper.git/):
+To build BookKeeper from source, clone the repository, either from the [GitHub mirror]({{ site.github_repo }}) or from the [Apache repository](https://git.apache.org/bookkeeper.git):
 
 ```shell
 # From the GitHub mirror
