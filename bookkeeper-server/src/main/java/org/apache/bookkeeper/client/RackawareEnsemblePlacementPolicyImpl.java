@@ -1026,7 +1026,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             for (int j = 0; j < writeQuorumSize; j++) {
                 bookie = ensembleList.get((i + j) % ensembleSize);
                 try {
-                    racksInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
+                    if (knownBookies.containsKey(bookie)) {
+                        racksInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
+                    } else {
+                        LOG.debug("bookie {} is not in the list of knownBookies", bookie);
+                    }
                 } catch (Exception e) {
                     /*
                      * any issue/exception in analyzing whether ensemble is
@@ -1055,7 +1059,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         readLock.lock();
         try {
             for (BookieId bookie : ackedBookies) {
-                rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
+                if (knownBookies.containsKey(bookie)) {
+                    rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
+                } else {
+                    LOG.debug("bookie {} is not in the list of knownBookies", bookie);
+                }
             }
 
             // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
