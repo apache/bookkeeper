@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -387,7 +386,8 @@ public class LedgerChecker {
                 for (int i = 0; i < curEnsemble.size(); i++) {
                     bookieIndexes.add(i);
                 }
-                fragments.add(new LedgerFragment(lh, curEntryId, e.getKey() - 1, bookieIndexes));
+                fragments.add(new LedgerFragment(lh, curEntryId,
+                        e.getKey() - 1, bookieIndexes));
             }
             curEntryId = e.getKey();
             curEnsemble = e.getValue();
