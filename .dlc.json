@@ -59,6 +59,9 @@
     },
     {
       "pattern": "^https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html"
+    },
+    {
+      "pattern": "^http://daxue.qq.com/content/content/id/2492"
     }
   ],
   "timeout": "10s",
