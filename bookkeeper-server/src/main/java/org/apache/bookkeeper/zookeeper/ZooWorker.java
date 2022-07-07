@@ -23,6 +23,8 @@ package org.apache.bookkeeper.zookeeper;
 import com.google.common.util.concurrent.RateLimiter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.KeeperException;
@@ -122,13 +124,14 @@ class ZooWorker {
                                            ZooCallable<T> proc,
                                            RetryPolicy retryPolicy,
                                            RateLimiter rateLimiter,
-                                           OpStatsLogger statsLogger)
+                                           OpStatsLogger statsLogger,
+                                           AtomicBoolean isZkClosed)
     throws KeeperException, InterruptedException {
         T result = null;
         boolean isDone = false;
         int attempts = 0;
         long startTimeNanos = MathUtils.nowInNano();
-        while (!isDone) {
+        while (!isDone && !isZkClosed.get()) {
             try {
                 if (null != client) {
                     client.waitForConnection();

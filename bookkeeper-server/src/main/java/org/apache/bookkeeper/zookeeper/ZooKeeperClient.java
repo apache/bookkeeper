@@ -137,7 +137,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                         return String.format("ZooKeeper Client Creator (%s)", connectString);
                     }
 
-                }, connectRetryPolicy, rateLimiter, createClientStats);
+                }, connectRetryPolicy, rateLimiter, createClientStats, closed);
             } catch (Exception e) {
                 logger.error("Gave up reconnecting to ZooKeeper : ", e);
                 Runtime.getRuntime().exit(-1);
@@ -317,6 +317,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
     @Override
     public void close() throws InterruptedException {
+        logger.debug("zooKeeper client start to close...");
         closed.set(true);
         connectExecutor.shutdown();
         retryExecutor.shutdown();
@@ -351,6 +352,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
     private void onExpired() {
         if (closed.get()) {
             // we don't schedule any tries if the client is closed.
+            logger.debug("we don't schedule any tries if the client is closed");
             return;
         }
 
@@ -471,7 +473,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return zkHandle.multi(ops);
             }
 
-        }, operationRetryPolicy, rateLimiter, multiStats);
+        }, operationRetryPolicy, rateLimiter, multiStats, closed);
     }
 
     @Override
@@ -544,7 +546,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return zkHandle.getACL(path, stat);
             }
 
-        }, operationRetryPolicy, rateLimiter, getACLStats);
+        }, operationRetryPolicy, rateLimiter, getACLStats, closed);
     }
 
     @Override
@@ -603,7 +605,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return zkHandle.setACL(path, acl, version);
             }
 
-        }, operationRetryPolicy, rateLimiter, setACLStats);
+        }, operationRetryPolicy, rateLimiter, setACLStats, closed);
     }
 
     @Override
@@ -721,7 +723,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("create (%s, acl = %s, mode = %s)", path, acl, createMode);
             }
 
-        }, operationRetryPolicy, rateLimiter, createStats);
+        }, operationRetryPolicy, rateLimiter, createStats, closed);
     }
 
     @Override
@@ -782,7 +784,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("delete (%s, version = %d)", path, version);
             }
 
-        }, operationRetryPolicy, rateLimiter, deleteStats);
+        }, operationRetryPolicy, rateLimiter, deleteStats, closed);
     }
 
     @Override
@@ -840,7 +842,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("exists (%s, watcher = %s)", path, watcher);
             }
 
-        }, operationRetryPolicy, rateLimiter, existsStats);
+        }, operationRetryPolicy, rateLimiter, existsStats, closed);
     }
 
     @Override
@@ -861,7 +863,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("exists (%s, watcher = %s)", path, watch);
             }
 
-        }, operationRetryPolicy, rateLimiter, existsStats);
+        }, operationRetryPolicy, rateLimiter, existsStats, closed);
     }
 
     @Override
@@ -957,7 +959,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getData (%s, watcher = %s)", path, watcher);
             }
 
-        }, operationRetryPolicy, rateLimiter, getStats);
+        }, operationRetryPolicy, rateLimiter, getStats, closed);
     }
 
     @Override
@@ -979,7 +981,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getData (%s, watcher = %s)", path, watch);
             }
 
-        }, operationRetryPolicy, rateLimiter, getStats);
+        }, operationRetryPolicy, rateLimiter, getStats, closed);
     }
 
     @Override
@@ -1075,7 +1077,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("setData (%s, version = %d)", path, version);
             }
 
-        }, operationRetryPolicy, rateLimiter, setStats);
+        }, operationRetryPolicy, rateLimiter, setStats, closed);
     }
 
     @Override
@@ -1135,7 +1137,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getChildren (%s, watcher = %s)", path, watcher);
             }
 
-        }, operationRetryPolicy, rateLimiter, getChildrenStats);
+        }, operationRetryPolicy, rateLimiter, getChildrenStats, closed);
     }
 
     @Override
@@ -1157,7 +1159,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getChildren (%s, watcher = %s)", path, watch);
             }
 
-        }, operationRetryPolicy, rateLimiter, getChildrenStats);
+        }, operationRetryPolicy, rateLimiter, getChildrenStats, closed);
     }
 
     @Override
@@ -1258,7 +1260,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getChildren (%s, watcher = %s)", path, watcher);
             }
 
-        }, operationRetryPolicy, rateLimiter, getChildrenStats);
+        }, operationRetryPolicy, rateLimiter, getChildrenStats, closed);
     }
 
     @Override
@@ -1280,7 +1282,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                 return String.format("getChildren (%s, watcher = %s)", path, watch);
             }
 
-        }, operationRetryPolicy, rateLimiter, getChildrenStats);
+        }, operationRetryPolicy, rateLimiter, getChildrenStats, closed);
     }
 
     @Override
