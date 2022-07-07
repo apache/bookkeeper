@@ -19,11 +19,12 @@
 
 package org.apache.bookkeeper.bookie.datainteg;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.in;
 
 import com.google.common.collect.ImmutableList;
 
@@ -168,7 +169,7 @@ public class WriteSetsTest {
         }
 
         for (int i = 0; i < distWriteSet.size(); i++) {
-            assertThat(distWriteSet.get(i), isIn(writeSet));
+            assertThat(distWriteSet.get(i), is(in(writeSet)));
         }
     }
 }
