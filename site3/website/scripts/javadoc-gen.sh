@@ -6,36 +6,25 @@ function build_javadoc() {
 
   echo "Building the javadoc for version ${version}."
   if [ "$version" == "latest" ]; then
-    javadoc_gen_dir="${ROOT_DIR}/build/docs/javadoc"
+    javadoc_gen_dir="${ROOT_DIR}/target/site/apidocs"
     
     mkdir -p ${ROOT_DIR}/site3/website/build/docs/latest
     mkdir -p ${ROOT_DIR}/site3/website/build/docs/latest/api
     # keep url compatibility
     javadoc_dest_dir="${ROOT_DIR}/site3/website/build/docs/latest/api/javadoc"
-    use_gradle=true
     cd $ROOT_DIR
   else
     rm -rf /tmp/bookkeeper-${version}
     git clone https://github.com/apache/bookkeeper -b "release-${version}" /tmp/bookkeeper-${version}
     cd /tmp/bookkeeper-${version}
-    if [[ -f "pom.xml" ]]; then
-      use_gradle=false
-      javadoc_gen_dir="/tmp/bookkeeper-${version}/target/site/apidocs"
-    else
-      use_gradle=true
-      javadoc_gen_dir="/tmp/bookkeeper-${version}/build/docs/javadoc"
-    fi
+    javadoc_gen_dir="/tmp/bookkeeper-${version}/target/site/apidocs"
     # keep url compatibility
     javadoc_dest_dir="${ROOT_DIR}/site3/website/build/docs/${version}/api/javadoc"
 
   fi
   
   rm -rf $javadoc_dest_dir
-  if [[ "$use_gradle" == "true" ]]; then
-    ./gradlew generateApiJavadoc
-  else
-    mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
-  fi
+  mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
 
   mv $javadoc_gen_dir $javadoc_dest_dir
 
