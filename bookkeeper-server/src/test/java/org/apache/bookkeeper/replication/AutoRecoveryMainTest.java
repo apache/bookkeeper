@@ -52,8 +52,9 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         AutoRecoveryMain main = new AutoRecoveryMain(confByIndex(0));
         try {
             main.start();
-            await().atMost(1,SECONDS).untilAsserted(() ->
-                    assertTrue("AuditorElector and Replication Worker should be running",main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
+            await().atMost(1, SECONDS).untilAsserted(() ->
+                    assertTrue("AuditorElector and Replication Worker should be running",
+                            main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
         } finally {
             main.shutdown();
         }
@@ -66,8 +67,9 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
     public void testShutdown() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(confByIndex(0));
         main.start();
-        await().atMost(1,SECONDS).untilAsserted(()->
-                assertTrue("AuditorElector and ReplicationWorker should be running",main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
+        await().atMost(1, SECONDS).untilAsserted(()->
+                assertTrue("AuditorElector and ReplicationWorker should be running",
+                        main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
         main.shutdown();
         assertFalse("AuditorElector should not be running",
                 main.auditorElector.isRunning());
@@ -130,7 +132,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * wait for some time for all the components of AR1 and AR2 are
          * shutdown.
          */
-        await().atMost(20,SECONDS).until(()->!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
+        await().atMost(20, SECONDS).until(()->!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
                 && !main1.isAutoRecoveryRunning() && !main2.auditorElector.isRunning()
                 && !main2.replicationWorker.isRunning() && !main2.isAutoRecoveryRunning());
 
