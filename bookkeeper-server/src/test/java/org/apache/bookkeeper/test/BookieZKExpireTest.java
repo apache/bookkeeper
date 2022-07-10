@@ -74,7 +74,6 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                     NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                     new MockUncleanShutdownDetection());
             server.start();
-            
             BookieServer finalServer = server;
             await().atMost(5, SECONDS).until(finalServer::isRunning);
             Thread sendthread = null;
@@ -88,14 +87,13 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                     break;
                 }
             }
-            
             assertNotNull("Send thread not found", sendthread);
-            sendthread.suspend(); 
+            sendthread.suspend();
             sendthread.resume();
             // allow watcher thread to run
-            await().atMost(5, SECONDS).untilAsserted(() -> 
-                assertTrue("Bookie and Bookie Server should not shutdown on losing zk session", finalServer.isBookieRunning() && finalServer.isRunning()));
-
+            await().atMost(5, SECONDS).untilAsserted(() ->
+                assertTrue("Bookie and Bookie Server should not shutdown on losing zk session",
+                        finalServer.isBookieRunning() && finalServer.isRunning()));
         } finally {
             server.shutdown();
         }
