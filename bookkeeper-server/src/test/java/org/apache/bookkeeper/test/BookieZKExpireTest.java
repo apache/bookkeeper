@@ -21,16 +21,15 @@
 
 package org.apache.bookkeeper.test;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.util.HashSet;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
@@ -75,35 +74,28 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                     NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                     new MockUncleanShutdownDetection());
             server.start();
-
-            int secondsToWait = 5;
-            while (!server.isRunning()) {
-                await().atMost(1000, TimeUnit.MILLISECONDS);
-                if (secondsToWait-- <= 0) {
-                    fail("Bookie never started");
-                }
-            }
+            
+            BookieServer finalServer = server;
+            await().atMost(5, SECONDS).until(finalServer::isRunning);
             Thread sendthread = null;
             threadCount = Thread.activeCount();
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
+                if (threads[i].getName().contains("SendThread")
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
                 }
             }
+            
             assertNotNull("Send thread not found", sendthread);
-
-            sendthread.suspend();
-            await().atMost(2L * conf.getZkTimeout(), TimeUnit.MILLISECONDS).await();
+            sendthread.suspend(); 
             sendthread.resume();
-
             // allow watcher thread to run
-            await().atMost(3, TimeUnit.SECONDS).await();
-            assertTrue("Bookie should not shutdown on losing zk session", server.isBookieRunning());
-            assertTrue("Bookie Server should not shutdown on losing zk session", server.isRunning());
+            await().atMost(5, SECONDS).untilAsserted(() -> 
+                assertTrue("Bookie and Bookie Server should not shutdown on losing zk session", finalServer.isBookieRunning() && finalServer.isRunning()));
+
         } finally {
             server.shutdown();
         }

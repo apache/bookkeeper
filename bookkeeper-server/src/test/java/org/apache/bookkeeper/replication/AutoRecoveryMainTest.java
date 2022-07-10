@@ -96,7 +96,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          */
         ZKMetadataClientDriver zkMetadataClientDriver1 = startAutoRecoveryMain(main1);
         ZooKeeper zk1 = zkMetadataClientDriver1.getZk();
-        await().atMost(20, SECONDS).until(() -> main1.auditorElector.getAuditor() != null);
+        await().until(() -> main1.auditorElector.getAuditor() != null);
         BookieId currentAuditor = main1.auditorElector.getCurrentAuditor();
         assertNotNull(currentAuditor);
         Auditor auditor1 = main1.auditorElector.getAuditor();
@@ -132,7 +132,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * wait for some time for all the components of AR1 and AR2 are
          * shutdown.
          */
-        await().atMost(20, SECONDS).until(()->!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
+        await().until(()->!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
                 && !main1.isAutoRecoveryRunning() && !main2.auditorElector.isRunning()
                 && !main2.replicationWorker.isRunning() && !main2.isAutoRecoveryRunning());
 
