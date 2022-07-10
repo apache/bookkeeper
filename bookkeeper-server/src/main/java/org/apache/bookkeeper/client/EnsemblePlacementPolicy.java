@@ -374,7 +374,7 @@ public interface EnsemblePlacementPolicy {
      * @return Map: key means ensemble index, value means target replace bookieId.
      */
     Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize);
+            int ackQuorumSize, Map<String, byte[]> customMetadata);
 
     /**
      * Select one bookie to the "sticky" bookie where all reads for a particular

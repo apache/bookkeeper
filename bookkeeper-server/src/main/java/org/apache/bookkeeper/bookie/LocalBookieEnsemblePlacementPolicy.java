@@ -128,7 +128,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
 
     @Override
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize) {
+            int ackQuorumSize, Map<String, byte[]> customMetadata) {
         //local bookie needn't support it.
         return Collections.emptyMap();
     }

@@ -1465,7 +1465,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
 
         Map<Integer, BookieId> targetBookie =
-                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum);
+                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum, Collections.emptyMap());
         //should replace two bookie
         assertEquals(targetBookie.size(), 2);
 
@@ -1488,7 +1488,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
 
         //should replace three bookie
-        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum);
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum,
+                Collections.emptyMap());
         assertEquals(targetBookie.size(), 3);
 
         for (Map.Entry<Integer, BookieId> entry : targetBookie.entrySet()) {
@@ -1510,7 +1511,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
 
         //should replace three bookie
-        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(adheringEnsemble, ackQuorum, writeQuorum);
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(adheringEnsemble, ackQuorum, writeQuorum,
+                Collections.emptyMap());
         assertEquals(targetBookie.size(), 0);
     }
 
@@ -1563,7 +1565,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
 
         Map<Integer, BookieId> targetBookie =
-                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum);
+                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum,
+                        Collections.emptyMap());
         //should not replace
         assertEquals(targetBookie.size(), 0);
 
@@ -1578,7 +1581,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
 
         //should not replace
-        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum);
+        targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, ackQuorum, writeQuorum,
+                Collections.emptyMap());
         assertEquals(targetBookie.size(), 0);
     }
 

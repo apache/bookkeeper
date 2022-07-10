@@ -1138,7 +1138,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                     ledgerFragment.getBookiesIndexes(), excludedBookies);
         } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
             targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
-                    lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());
+                    lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize(),
+                    lh.getLedgerMetadata().getCustomMetadata());
             ledgerFragment.getBookiesIndexes().addAll(targetBookieAddresses.keySet());
         }
         if (MapUtils.isEmpty(targetBookieAddresses)) {
@@ -1787,9 +1788,10 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensembleBookiesList,
-            int writeQuorumSize, int ackQuorumSize) {
+            int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata) {
         return bkc.getPlacementPolicy()
-                .replaceNotAdheringPlacementPolicyBookie(ensembleBookiesList, writeQuorumSize, ackQuorumSize);
+                .replaceNotAdheringPlacementPolicyBookie(ensembleBookiesList, writeQuorumSize, ackQuorumSize,
+                        customMetadata);
     }
 
     /**
