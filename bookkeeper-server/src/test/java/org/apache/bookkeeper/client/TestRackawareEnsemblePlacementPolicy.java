@@ -1465,7 +1465,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.FAIL);
 
         Map<Integer, BookieId> targetBookie =
-                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum, Collections.emptyMap());
+                repp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, ackQuorum, writeQuorum,
+                        Collections.emptyMap());
         //should replace two bookie
         assertEquals(targetBookie.size(), 2);
 

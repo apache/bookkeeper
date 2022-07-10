@@ -572,7 +572,7 @@ public class ReplicationWorker implements Runnable {
         //at the same time, we only fix data_loss in this time. After fix data_loss, the fragment is still
         //not_adhering_placement, Auditor will mark this ledger again.
         Set<LedgerFragment> underreplicatedFragments = new HashSet<>();
-        
+
         Set<LedgerFragment> dataLossFragments = getDataLossFragments(lh, ledgerVerificationPercentage);
         underreplicatedFragments.addAll(dataLossFragments);
 

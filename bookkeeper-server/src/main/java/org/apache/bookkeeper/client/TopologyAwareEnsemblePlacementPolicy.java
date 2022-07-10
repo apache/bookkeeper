@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -813,16 +812,17 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             }
 
             Map<BookieId, BookieNode> clone = new HashMap<>(knownBookies);
-    
+
             Map<String, List<BookieNode>> toPlaceGroup = new HashMap<>();
             for (BookieId bookieId : ensemble) {
-                //When ReplicationWorker.getUnderreplicatedFragments, the bookie is alive, so the fragment is not data_loss.
-                //When find other rack bookie to replace, the bookie maybe shutdown, so here we should pick the shutdown
-                // bookies. If the bookieId shutdown, put it to inactive. When do replace, we should replace inactive
-                // bookie firstly.
+                //When ReplicationWorker.getUnderreplicatedFragments, the bookie is alive, so the fragment is not
+                // data_loss. When find other rack bookie to replace, the bookie maybe shutdown, so here we should pick
+                // the shutdown bookies. If the bookieId shutdown, put it to inactive. When do replace, we should
+                // replace inactive bookie firstly.
                 BookieNode bookieNode = clone.get(bookieId);
                 if (bookieNode == null) {
-                    List<BookieNode> list = toPlaceGroup.computeIfAbsent(NetworkTopology.INACTIVE, k -> new ArrayList<>());
+                    List<BookieNode> list = toPlaceGroup.computeIfAbsent(NetworkTopology.INACTIVE,
+                            k -> new ArrayList<>());
                     list.add(new BookieNode(bookieId, NetworkTopology.INACTIVE));
                 } else {
                     List<BookieNode> list = toPlaceGroup.computeIfAbsent(bookieNode.getNetworkLocation(),
@@ -830,7 +830,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     list.add(bookieNode);
                 }
             }
-       
+
             Map<String, List<BookieNode>> knownRackToBookies = clone.values().stream()
                     .collect(Collectors.groupingBy(NodeBase::getNetworkLocation));
             HashSet<String> knownRacks = new HashSet<>(knownRackToBookies.keySet());
@@ -870,7 +870,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 } catch (BKException.BKNotEnoughBookiesException e) {
                     return Collections.emptyMap();
                 }
-    
+
                 List<BookieId> ensembles = toPlaceGroup.values().stream().flatMap(Collection::stream).map(
                         BookieNode::getAddr).collect(Collectors.toList());
                 ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensembles,
