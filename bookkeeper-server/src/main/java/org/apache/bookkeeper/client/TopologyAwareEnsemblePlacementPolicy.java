@@ -871,11 +871,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         Optional<Map.Entry<String, List<BookieNode>>> toPlaceEntry = toPlaceGroup.entrySet().stream()
                 .filter(ele -> ele.getValue().size() > 1).findAny();
         if (!toPlaceEntry.isPresent()) {
-            Iterator<Map.Entry<String, List<BookieNode>>> iterator = toPlaceGroup.entrySet().stream().iterator();
-            Map.Entry<String, List<BookieNode>> entry = iterator.next();
-            BookieNode beReplaced = entry.getValue().get(0);
-            iterator.remove();
-            doReplace(beReplaced, toPlaceGroup, knowsGroup, targetBookieAddresses, bookieIndex);
+            toPlaceGroup.clear();
             return;
         }
 
