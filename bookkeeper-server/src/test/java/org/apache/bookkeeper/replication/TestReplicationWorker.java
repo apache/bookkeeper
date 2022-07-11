@@ -1191,8 +1191,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 EnsemblePlacementPolicy ensemblePlacementPolicy = null;
                 if (ZoneawareEnsemblePlacementPolicy.class == placementPolicyClass) {
                     ensemblePlacementPolicy = buildZoneAwareEnsemblePlacementPolicy(firstThreeBookies);
-                } else if (RegionAwareEnsemblePlacementPolicy.class == placementPolicyClass) {
-                    ensemblePlacementPolicy = buildRegionAwareEnsemblePlacementPolicy(firstThreeBookies);
                 } else if (RackawareEnsemblePlacementPolicy.class == placementPolicyClass) {
                     ensemblePlacementPolicy = buildRackAwareEnsemblePlacementPolicy(firstThreeBookies);
                 }
@@ -1213,9 +1211,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             assertTrue(newBookies.contains(newBookieId));
         });
 
-        stat = bkc.getZkHandle()
-                .exists("/ledgers/underreplication/ledgers/0000/0000/0000/0000/urL0000000000", false);
-        assertNull(stat);
+        Awaitility.await().untilAsserted(() -> {
+            Stat stat1 = bkc.getZkHandle()
+                    .exists("/ledgers/underreplication/ledgers/0000/0000/0000/0000/urL0000000000", false);
+            assertNull(stat1);
+        });
 
         for (BookieId rack1Book : firstThreeBookies) {
             killBookie(rack1Book);
@@ -1229,20 +1229,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             @Override
             public String resolveNetworkLocation(BookieId addr) {
                 if (bookieIds.contains(addr)) {
-                    return "/rack1";
-                }
-                //The other bookie is /rack2
-                return "/rack2";
-            }
-        };
-    }
-
-    private EnsemblePlacementPolicy buildRegionAwareEnsemblePlacementPolicy(List<BookieId> firstThreeBookies) {
-        return new RegionAwareEnsemblePlacementPolicy() {
-            @Override
-            protected String resolveNetworkLocation(BookieId addr) {
-                //The first three bookie is /rack1
-                if (firstThreeBookies.contains(addr)) {
                     return "/rack1";
                 }
                 //The other bookie is /rack2
