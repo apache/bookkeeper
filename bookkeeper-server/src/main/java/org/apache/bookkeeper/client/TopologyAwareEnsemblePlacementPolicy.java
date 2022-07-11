@@ -829,6 +829,9 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     list.add(bookieNode);
                 }
             }
+            for (List<BookieNode> bookieNodes : toPlaceGroup.values()) {
+                Collections.shuffle(bookieNodes);
+            }
 
             Map<String, List<BookieNode>> knownRackToBookies = clone.values().stream()
                     .collect(Collectors.groupingBy(NodeBase::getNetworkLocation));

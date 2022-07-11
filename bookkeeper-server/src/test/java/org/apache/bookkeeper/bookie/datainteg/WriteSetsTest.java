@@ -34,6 +34,7 @@ import java.util.List;
 import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
 
+import org.hamcrest.collection.IsIn;
 import org.junit.Test;
 
 import org.slf4j.Logger;
@@ -168,7 +169,7 @@ public class WriteSetsTest {
         }
 
         for (int i = 0; i < distWriteSet.size(); i++) {
-            assertThat(distWriteSet.get(i), isIn(writeSet));
+            assertThat(distWriteSet.get(i), new IsIn<>(writeSet));
         }
     }
 }

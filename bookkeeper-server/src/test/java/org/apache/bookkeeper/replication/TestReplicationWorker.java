@@ -24,6 +24,8 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -40,7 +42,6 @@ import java.util.Optional;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,6 +58,8 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -97,6 +100,8 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1101,8 +1106,17 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsWithNoMoreRackBookie() throws Exception {
-        List<BookieId> rack1Bookie = servers.stream().map(ele -> {
+    public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnZone() throws Exception {
+        testRepairedNotAdheringPlacementPolicyLedgerFragments(ZoneawareEnsemblePlacementPolicy.class);
+    }
+
+    @Test
+    public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
+        testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class);
+    }
+
+    private void testRepairedNotAdheringPlacementPolicyLedgerFragments(Class<? extends EnsemblePlacementPolicy> placementPolicyClass) throws Exception {
+        List<BookieId> firstThreeBookies = servers.stream().map(ele -> {
             try {
                 return ele.getServer().getBookieId();
             } catch (UnknownHostException e) {
@@ -1110,26 +1124,22 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
 
+        baseClientConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
+        baseClientConf.setProperty("enforceStrictZoneawarePlacement", false);
         bkc = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                     DNSToSwitchMapping dnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
                     StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
-                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
-                        new RackawareEnsemblePlacementPolicy() {
-                    @Override
-                    public String resolveNetworkLocation(BookieId addr) {
-                        //The first five bookie is /rack1
-                        if (rack1Bookie.contains(addr)) {
-                            return "/rack1";
-                        }
-                        //The other bookie is /rack2
-                        return "/rack2";
-                    }
-                };
-                rackawareEnsemblePlacementPolicy.initialize(conf, Optional.ofNullable(dnsResolver), timer,
+                EnsemblePlacementPolicy ensemblePlacementPolicy = null;
+                if (ZoneawareEnsemblePlacementPolicy.class == placementPolicyClass) {
+                    ensemblePlacementPolicy = buildZoneAwareEnsemblePlacementPolicy(firstThreeBookies);
+                } else if (RackawareEnsemblePlacementPolicy.class == placementPolicyClass) {
+                    ensemblePlacementPolicy = buildRackAwareEnsemblePlacementPolicy(firstThreeBookies);
+                }
+                ensemblePlacementPolicy.initialize(conf, Optional.ofNullable(dnsResolver), timer,
                         featureProvider, statsLogger, bookieAddressResolver);
-                return rackawareEnsemblePlacementPolicy;
+                return ensemblePlacementPolicy;
             }
         };
 
@@ -1147,8 +1157,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
         servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
         servConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
-        servConf.setProperty(ClientConfiguration.ENSEMBLE_PLACEMENT_POLICY,
-                RackawareEnsemblePlacementPolicy.class.getName());
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1000);
         servConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
 
@@ -1170,27 +1178,27 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             }
         }
 
+        Stat stat = bkc.getZkHandle()
+                .exists("/ledgers/underreplication/ledgers/0000/0000/0000/0000/urL0000000000", false);
+        assertNotNull(stat);
+
         baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
         BookKeeper bookKeeper = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                     DNSToSwitchMapping dnsResolver, HashedWheelTimer timer, FeatureProvider featureProvider,
                     StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) throws IOException {
-                RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
-                        new RackawareEnsemblePlacementPolicy() {
-                    @Override
-                    public String resolveNetworkLocation(BookieId addr) {
-                        //The first five bookie is /rack1
-                        if (rack1Bookie.contains(addr)) {
-                            return "/rack1";
-                        }
-                        //The other bookie is /rack2
-                        return "/rack2";
-                    }
-                };
-                rackawareEnsemblePlacementPolicy.initialize(conf, Optional.ofNullable(dnsResolver), timer,
+                EnsemblePlacementPolicy ensemblePlacementPolicy = null;
+                if (ZoneawareEnsemblePlacementPolicy.class == placementPolicyClass) {
+                    ensemblePlacementPolicy = buildZoneAwareEnsemblePlacementPolicy(firstThreeBookies);
+                } else if (RegionAwareEnsemblePlacementPolicy.class == placementPolicyClass) {
+                    ensemblePlacementPolicy = buildRegionAwareEnsemblePlacementPolicy(firstThreeBookies);
+                } else if (RackawareEnsemblePlacementPolicy.class == placementPolicyClass) {
+                    ensemblePlacementPolicy = buildRackAwareEnsemblePlacementPolicy(firstThreeBookies);
+                }
+                ensemblePlacementPolicy.initialize(conf, Optional.ofNullable(dnsResolver), timer,
                         featureProvider, statsLogger, bookieAddressResolver);
-                return rackawareEnsemblePlacementPolicy;
+                return ensemblePlacementPolicy;
             }
         };
         ReplicationWorker rw = new ReplicationWorker(baseConf, bookKeeper, false, NullStatsLogger.INSTANCE);
@@ -1199,27 +1207,65 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         //start new bookie, the rack is /rack2
         BookieId newBookieId = startNewBookieAndReturnBookieId();
 
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-            for (int i = 0; i < 200; i++) {
-                try {
-                    LedgerMetadata metadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
-                    List<BookieId> newBookies = metadata.getAllEnsembles().get(0L);
-                    if (newBookies.contains(newBookieId)) {
-                        latch.countDown();
-                        break;
-                    }
-                    Thread.sleep(100);
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }).start();
-        assertTrue("New bookie should take replace of old bookie.", latch.await(20, TimeUnit.SECONDS));
+        Awaitility.await().untilAsserted(() -> {
+            LedgerMetadata metadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
+            List<BookieId> newBookies = metadata.getAllEnsembles().get(0L);
+            assertTrue(newBookies.contains(newBookieId));
+        });
 
-        killAllBookies(lh, newBookieId);
+        stat = bkc.getZkHandle()
+                .exists("/ledgers/underreplication/ledgers/0000/0000/0000/0000/urL0000000000", false);
+        assertNull(stat);
+
+        for (BookieId rack1Book : firstThreeBookies) {
+            killBookie(rack1Book);
+        }
 
         verifyRecoveredLedgers(lh, 0, entrySize - 1);
+    }
+
+    private EnsemblePlacementPolicy buildRackAwareEnsemblePlacementPolicy(List<BookieId> bookieIds) {
+        return new RackawareEnsemblePlacementPolicy() {
+            @Override
+            public String resolveNetworkLocation(BookieId addr) {
+                if (bookieIds.contains(addr)) {
+                    return "/rack1";
+                }
+                //The other bookie is /rack2
+                return "/rack2";
+            }
+        };
+    }
+
+    private EnsemblePlacementPolicy buildRegionAwareEnsemblePlacementPolicy(List<BookieId> firstThreeBookies) {
+        return new RegionAwareEnsemblePlacementPolicy() {
+            @Override
+            protected String resolveNetworkLocation(BookieId addr) {
+                //The first three bookie is /rack1
+                if (firstThreeBookies.contains(addr)) {
+                    return "/rack1";
+                }
+                //The other bookie is /rack2
+                return "/rack2";
+            }
+        };
+    }
+
+    private EnsemblePlacementPolicy buildZoneAwareEnsemblePlacementPolicy(List<BookieId> firstThreeBookies) {
+        return new ZoneawareEnsemblePlacementPolicy() {
+            @Override
+            protected String resolveNetworkLocation(BookieId addr) {
+                //The first three bookie 1 is /zone1/ud1
+                //The first three bookie 2,3 is /zone1/ud2
+                if (firstThreeBookies.get(0).equals(addr)) {
+                    return "/zone1/ud1";
+                } else if (firstThreeBookies.contains(addr)) {
+                    return "/zone1/ud2";
+                }
+                //The other bookie is /zone2/ud1
+                return "/zone2/ud1";
+            }
+        };
     }
 
     private TestStatsLogger startAuditorAndWaitForPlacementPolicyCheck(ServerConfiguration servConf,
