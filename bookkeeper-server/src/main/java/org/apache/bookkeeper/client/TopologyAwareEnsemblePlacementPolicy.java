@@ -810,7 +810,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             for (int i = 0; i < ensemble.size(); i++) {
                 bookieIndex.put(ensemble.get(i), i);
             }
-
             Map<BookieId, BookieNode> clone = new HashMap<>(knownBookies);
 
             Map<String, List<BookieNode>> toPlaceGroup = new HashMap<>();
@@ -868,7 +867,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                                 bookieNodes.stream().map(BookieNode::getAddr).collect(Collectors.toSet()));
                     }
                 } catch (BKException.BKNotEnoughBookiesException e) {
-                    return Collections.emptyMap();
+                    LOG.warn("Didn't find replaced bookie to adhere placement policy.", e);
+                    break;
                 }
 
                 List<BookieId> ensembles = toPlaceGroup.values().stream().flatMap(Collection::stream).map(
@@ -880,10 +880,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     break;
                 }
             }
-            if (!placeSucceed) {
-                return Collections.emptyMap();
-            }
-            return targetBookieAddresses;
+            return placeSucceed ? targetBookieAddresses : Collections.emptyMap();
         } finally {
             rwLock.readLock().unlock();
         }
