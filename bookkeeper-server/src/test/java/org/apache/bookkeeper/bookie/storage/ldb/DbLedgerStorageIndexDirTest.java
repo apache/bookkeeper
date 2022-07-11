@@ -69,6 +69,7 @@ public class DbLedgerStorageIndexDirTest {
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
+        /** the testcase cover specify indexDir for the class {@link SingleDirectoryDbLedgerStorage} */
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
         conf.setProperty(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS, 1000);
@@ -124,8 +125,14 @@ public class DbLedgerStorageIndexDirTest {
     }
 
     @Test
-    public void checkIndexDirectoryStructure() {
+    public void checkIndexNotExistsInLedgerDirStructure() {
+        // old logic bugfix
         assertEquals(false, hasIndexStructure(tmpLedgerDir));
+    }
+
+    @Test
+    public void checkIndexDirectoryStructure() {
+        // index new logic
         assertEquals(true, hasIndexStructure(tmpIndexDir));
     }
 
