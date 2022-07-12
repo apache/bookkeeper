@@ -50,6 +50,14 @@ public abstract class BookieCommandTestBase extends CommandTestBase {
             ledgerDirs[i] = dir.getAbsolutePath();
         }
         ledgerDirNames = ledgerDirs;
+
+        String[] indexDirs = new String[numLedgerDirs];
+        for (int i = 0; i < numLedgerDirs; i++) {
+            File dir = testDir.newFile();
+            dir.mkdirs();
+            indexDirs[i] = dir.getAbsolutePath();
+        }
+        indexDirNames = indexDirs;
     }
 
 }

@@ -24,6 +24,7 @@ import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -57,68 +58,79 @@ public class LocationsIndexRebuildOp {
 
     public void initiate() throws IOException {
         LOG.info("Starting locations index rebuilding");
-
-        // Move locations index to a backup directory
-        String basePath = BookieImpl.getCurrentDirectory(conf.getLedgerDirs()[0]).toString();
-        Path currentPath = FileSystems.getDefault().getPath(basePath, "locations");
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
-        Path backupPath = FileSystems.getDefault().getPath(basePath, "locations.BACKUP-" + timestamp);
-        Files.move(currentPath, backupPath);
-
-        LOG.info("Created locations index backup at {}", backupPath);
-
+        File[] indexDirs = conf.getIndexDirs();
+        if (indexDirs == null) {
+            indexDirs = conf.getLedgerDirs();
+        }
+        if (indexDirs.length != conf.getLedgerDirs().length) {
+            throw new IOException("ledger and index dirs size not matched");
+        }
         long startTime = System.nanoTime();
+        // Move locations index to a backup directory
+        for (int i = 0; i < conf.getLedgerDirs().length; i++) {
+            File ledgerDir = conf.getLedgerDirs()[i];
+            File indexDir = indexDirs[i];
+            String iBasePath = BookieImpl.getCurrentDirectory(indexDir).toString();
+            Path indexCurrentPath = FileSystems.getDefault().getPath(iBasePath, "locations");
+            String timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
+            Path backupPath = FileSystems.getDefault().getPath(iBasePath, "locations.BACKUP-" + timestamp);
+            Files.move(indexCurrentPath, backupPath);
 
-        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
-                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
-        Set<Long> entryLogs = entryLogger.getEntryLogsSet();
+            LOG.info("Created locations index backup at {}", backupPath);
 
-        Set<Long> activeLedgers = getActiveLedgers(conf, KeyValueStorageRocksDB.factory, basePath);
-        LOG.info("Found {} active ledgers in ledger manager", activeLedgers.size());
+            File[] lDirs = new File[1];
+            lDirs[0] = ledgerDir;
+            DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, new LedgerDirsManager(conf, lDirs,
+                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
+            Set<Long> entryLogs = entryLogger.getEntryLogsSet();
 
-        KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(basePath, "locations",
-                DbConfigType.Default, conf);
+            Set<Long> activeLedgers = getActiveLedgers(conf, KeyValueStorageRocksDB.factory, iBasePath);
+            LOG.info("Found {} active ledgers in ledger manager", activeLedgers.size());
 
-        int totalEntryLogs = entryLogs.size();
-        int completedEntryLogs = 0;
-        LOG.info("Scanning {} entry logs", totalEntryLogs);
+            KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(iBasePath, "locations",
+                    DbConfigType.Default, conf);
 
-        for (long entryLogId : entryLogs) {
-            entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
-                @Override
-                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
-                    long entryId = entry.getLong(8);
+            int totalEntryLogs = entryLogs.size();
+            int completedEntryLogs = 0;
+            LOG.info("Scanning {} entry logs", totalEntryLogs);
 
-                    // Actual location indexed is pointing past the entry size
-                    long location = (entryLogId << 32L) | (offset + 4);
+            for (long entryLogId : entryLogs) {
+                entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
+                    @Override
+                    public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                        long entryId = entry.getLong(8);
 
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Rebuilding {}:{} at location {} / {}", ledgerId, entryId, location >> 32,
-                                location & (Integer.MAX_VALUE - 1));
+                        // Actual location indexed is pointing past the entry size
+                        long location = (entryLogId << 32L) | (offset + 4);
+
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Rebuilding {}:{} at location {} / {}", ledgerId, entryId, location >> 32,
+                                    location & (Integer.MAX_VALUE - 1));
+                        }
+
+                        // Update the ledger index page
+                        LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
+                        LongWrapper value = LongWrapper.get(location);
+                        newIndex.put(key.array, value.array);
                     }
 
-                    // Update the ledger index page
-                    LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
-                    LongWrapper value = LongWrapper.get(location);
-                    newIndex.put(key.array, value.array);
-                }
+                    @Override
+                    public boolean accept(long ledgerId) {
+                        return activeLedgers.contains(ledgerId);
+                    }
+                });
 
-                @Override
-                public boolean accept(long ledgerId) {
-                    return activeLedgers.contains(ledgerId);
-                }
-            });
+                ++completedEntryLogs;
+                LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId),
+                        completedEntryLogs, totalEntryLogs);
+            }
 
-            ++completedEntryLogs;
-            LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId), completedEntryLogs,
-                    totalEntryLogs);
+            newIndex.sync();
+            newIndex.close();
         }
-
-        newIndex.sync();
-        newIndex.close();
-
         LOG.info("Rebuilding index is done. Total time: {}",
-                DurationFormatUtils.formatDurationHMS(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
+                DurationFormatUtils.formatDurationHMS(
+                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
     }
 
     private Set<Long> getActiveLedgers(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath)

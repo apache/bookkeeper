@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 
-import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +50,7 @@ public class CommandTestBase extends MockCommandSupport {
     public final TemporaryFolder testDir = new TemporaryFolder();
     protected String[] journalDirsName;
     protected String[] ledgerDirNames;
+    protected String[] indexDirNames;
 
     protected final BKFlags bkFlags;
     protected MockedStatic<MetadataDrivers> mockMetadataDrivers() {
@@ -98,14 +98,6 @@ public class CommandTestBase extends MockCommandSupport {
         mockConstruction(ServerConfiguration.class, (serverConfiguration, context) -> {
             final ServerConfiguration defaultConf = new ServerConfiguration();
             doReturn("zk://127.0.0.1/path/to/ledgers").when(serverConfiguration).getMetadataServiceUri();
-            String[] indexDirs = new String[3];
-            for (int i = 0; i < indexDirs.length; i++) {
-                File dir = this.testDir.newFile();
-                dir.mkdirs();
-                indexDirs[i] = dir.getAbsolutePath();
-            }
-            doReturn(indexDirs).when(serverConfiguration).getIndexDirNames();
-            doCallRealMethod().when(serverConfiguration).getIndexDirs();
             if (journalDirsName != null) {
                 doReturn(journalDirsName).when(serverConfiguration).getJournalDirNames();
                 doCallRealMethod().when(serverConfiguration).getJournalDirs();
@@ -113,6 +105,10 @@ public class CommandTestBase extends MockCommandSupport {
             if (ledgerDirNames != null) {
                 doReturn(ledgerDirNames).when(serverConfiguration).getLedgerDirNames();
                 doCallRealMethod().when(serverConfiguration).getLedgerDirs();
+            }
+            if (indexDirNames != null) {
+                doReturn(indexDirNames).when(serverConfiguration).getLedgerDirNames();
+                doCallRealMethod().when(serverConfiguration).getIndexDirs();
             }
             doReturn(defaultConf.getDiskUsageThreshold()).when(serverConfiguration).getDiskUsageThreshold();
             doReturn(defaultConf.getDiskUsageWarnThreshold()).when(serverConfiguration).getDiskUsageWarnThreshold();

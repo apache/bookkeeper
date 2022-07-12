@@ -28,6 +28,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
@@ -38,6 +39,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -70,6 +72,16 @@ public class LocationsIndexRebuildTest {
             // no-op
         }
     };
+
+    protected final TmpDirs tmpDirs = new TmpDirs();
+    private String newDirectory() throws Exception {
+        File d = tmpDirs.createNew("bkTest", ".dir");
+        d.delete();
+        d.mkdir();
+        File curDir = BookieImpl.getCurrentDirectory(d);
+        BookieImpl.checkDirectoryStructure(curDir);
+        return d.getPath();
+    }
 
     @Test
     public void test() throws Exception {
@@ -150,5 +162,84 @@ public class LocationsIndexRebuildTest {
 
         ledgerStorage.shutdown();
         FileUtils.forceDelete(tmpDir);
+    }
+
+    @Test
+    public void testMultiLedgerIndexDiffDirs() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(new String[] { newDirectory(), newDirectory() });
+        conf.setIndexDirName(new String[] { newDirectory(), newDirectory() });
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker);
+        LedgerDirsManager indexDirsManager = new LedgerDirsManager(conf, conf.getIndexDirs(), diskChecker);
+
+        DbLedgerStorage ledgerStorage = new DbLedgerStorage();
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, indexDirsManager,
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.setCheckpointer(checkpointer);
+        ledgerStorage.setCheckpointSource(checkpointSource);
+
+        // Insert some ledger & entries in the storage
+        for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
+            ledgerStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+            ledgerStorage.setFenced(ledgerId);
+
+            for (long entryId = 0; entryId < 100; entryId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                entry.writeLong(ledgerId);
+                entry.writeLong(entryId);
+                entry.writeBytes(("entry-" + entryId).getBytes());
+
+                ledgerStorage.addEntry(entry);
+            }
+        }
+
+        ledgerStorage.flush();
+        ledgerStorage.shutdown();
+
+        // Rebuild index through the tool
+        new LocationsIndexRebuildOp(conf).initiate();
+
+        // Verify that db index has the same entries
+        ledgerStorage = new DbLedgerStorage();
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, indexDirsManager,
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+        ledgerStorage.setCheckpointSource(checkpointSource);
+        ledgerStorage.setCheckpointer(checkpointer);
+
+        Set<Long> ledgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
+        Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);
+
+        for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
+            Assert.assertEquals(true, ledgerStorage.isFenced(ledgerId));
+            Assert.assertEquals("ledger-" + ledgerId, new String(ledgerStorage.readMasterKey(ledgerId)));
+
+            ByteBuf lastEntry = ledgerStorage.getLastEntry(ledgerId);
+            assertEquals(ledgerId, lastEntry.readLong());
+            long lastEntryId = lastEntry.readLong();
+            assertEquals(99, lastEntryId);
+
+            for (long entryId = 0; entryId < 100; entryId++) {
+                ByteBuf entry = Unpooled.buffer(1024);
+                entry.writeLong(ledgerId);
+                entry.writeLong(entryId);
+                entry.writeBytes(("entry-" + entryId).getBytes());
+
+                ByteBuf result = ledgerStorage.getEntry(ledgerId, entryId);
+                Assert.assertEquals(entry, result);
+            }
+        }
+
+        ledgerStorage.shutdown();
+        List<String> toDeleted = Lists.newArrayList(conf.getLedgerDirNames());
+        toDeleted.addAll(Lists.newArrayList(conf.getIndexDirNames()));
+        toDeleted.forEach(d -> {
+            try {
+                FileUtils.forceDelete(new File(d));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
