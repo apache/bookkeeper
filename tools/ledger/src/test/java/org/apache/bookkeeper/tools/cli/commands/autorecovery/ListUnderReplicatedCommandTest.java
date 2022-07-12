@@ -88,7 +88,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testWithoutArgs()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -98,7 +98,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("-mr", "");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -108,7 +108,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testExcludingMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("-emr", "");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -118,7 +118,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testPrintMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
 
         ArrayList<String> list = new ArrayList<>();
         list.add("replica");

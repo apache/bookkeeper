@@ -61,6 +61,7 @@ import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.commons.io.FileUtils;
@@ -827,6 +828,10 @@ public abstract class BookKeeperClusterTestCase {
             Thread.sleep(100);
         }
         throw new Exception("No auditor found");
+    }
+
+    public AutoRecoveryMain getAutoRecovery(BookieServer bServer) throws Exception {
+        return autoRecoveryProcesses.get(bServer);
     }
 
     /**

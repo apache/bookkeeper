@@ -499,9 +499,6 @@ public class Auditor implements AutoCloseable {
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
-        } catch (KeeperException ioe) {
-            throw new UnavailableException(
-                    "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new UnavailableException(
@@ -666,6 +663,9 @@ public class Auditor implements AutoCloseable {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     LOG.error("Interrupted while for LedgersReplication to be enabled ", ie);
+                } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                    submitShutdownTask();
                 } catch (UnavailableException ue) {
                     LOG.error("Exception while reading from ZK", ue);
                 } finally {
@@ -734,6 +734,10 @@ public class Auditor implements AutoCloseable {
             long initialDelay;
             try {
                 checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                submitShutdownTask();
+                return;
             } catch (UnavailableException ue) {
                 LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
                 checkAllLedgersLastExecutedCTime = -1;
@@ -771,8 +775,6 @@ public class Auditor implements AutoCloseable {
                         long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
                         LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
                         checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
-                    } catch (KeeperException ke) {
-                        LOG.error("Exception while running periodic check", ke);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         LOG.error("Interrupted while running periodic check", ie);
@@ -780,6 +782,9 @@ public class Auditor implements AutoCloseable {
                         LOG.error("Exception running periodic check", bke);
                     } catch (IOException ioe) {
                         LOG.error("I/O exception running periodic check", ioe);
+                    } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                        LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                        submitShutdownTask();
                     } catch (ReplicationException.UnavailableException ue) {
                         LOG.error("Underreplication manager unavailable running periodic check", ue);
                     }
@@ -802,6 +807,10 @@ public class Auditor implements AutoCloseable {
             long initialDelay;
             try {
                 placementPolicyCheckLastExecutedCTime = ledgerUnderreplicationManager.getPlacementPolicyCheckCTime();
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                submitShutdownTask();
+                return;
             } catch (UnavailableException ue) {
                 LOG.error("Got UnavailableException while trying to get placementPolicyCheckCTime", ue);
                 placementPolicyCheckLastExecutedCTime = -1;
@@ -925,6 +934,10 @@ public class Auditor implements AutoCloseable {
         long initialDelay;
         try {
             replicasCheckLastExecutedCTime = ledgerUnderreplicationManager.getReplicasCheckCTime();
+        } catch (ReplicationException.NonRecoverableReplicationException nre) {
+            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            submitShutdownTask();
+            return;
         } catch (UnavailableException ue) {
             LOG.error("Got UnavailableException while trying to get replicasCheckCTime", ue);
             replicasCheckLastExecutedCTime = -1;
@@ -1016,6 +1029,9 @@ public class Auditor implements AutoCloseable {
             try {
                 Auditor.this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(LostBookieRecoveryDelayChangedCb.this);
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                submitShutdownTask();
             } catch (UnavailableException ae) {
                 LOG.error("Exception while registering for a LostBookieRecoveryDelay notification", ae);
             }
@@ -1080,6 +1096,10 @@ public class Auditor implements AutoCloseable {
             throws BKAuditException, InterruptedException, BKException {
         try {
             waitIfLedgerReplicationDisabled();
+        } catch (ReplicationException.NonRecoverableReplicationException nre) {
+            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            submitShutdownTask();
+            return;
         } catch (UnavailableException ue) {
             LOG.error("Underreplication unavailable, skipping audit."
                       + "Will retry after a period");
@@ -1240,7 +1260,7 @@ public class Auditor implements AutoCloseable {
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
-    void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
+    void checkAllLedgers() throws BKException, IOException, InterruptedException {
         final BookKeeper localClient = getBookKeeper(conf);
         final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
         try {
@@ -1255,6 +1275,10 @@ public class Auditor implements AutoCloseable {
                         FutureUtils.complete(processFuture, null);
                         return;
                     }
+                } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                    submitShutdownTask();
+                    return;
                 } catch (UnavailableException ue) {
                     LOG.error("Underreplication manager unavailable running periodic check", ue);
                     FutureUtils.complete(processFuture, null);
@@ -1312,6 +1336,9 @@ public class Auditor implements AutoCloseable {
             FutureUtils.result(processFuture, BKException.HANDLER);
             try {
                 ledgerUnderreplicationManager.setCheckAllLedgersCTime(System.currentTimeMillis());
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                submitShutdownTask();
             } catch (UnavailableException ue) {
                 LOG.error("Got exception while trying to set checkAllLedgersCTime", ue);
             }
@@ -1435,6 +1462,9 @@ public class Auditor implements AutoCloseable {
         }
         try {
             ledgerUnderreplicationManager.setPlacementPolicyCheckCTime(System.currentTimeMillis());
+        } catch (ReplicationException.NonRecoverableReplicationException nre) {
+            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            submitShutdownTask();
         } catch (UnavailableException ue) {
             LOG.error("Got exception while trying to set PlacementPolicyCheckCTime", ue);
         }
@@ -1898,6 +1928,9 @@ public class Auditor implements AutoCloseable {
         }
         try {
             ledgerUnderreplicationManager.setReplicasCheckCTime(System.currentTimeMillis());
+        } catch (ReplicationException.NonRecoverableReplicationException nre) {
+            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            submitShutdownTask();
         } catch (UnavailableException ue) {
             LOG.error("Got exception while trying to set ReplicasCheckCTime", ue);
         }
@@ -1998,6 +2031,10 @@ public class Auditor implements AutoCloseable {
             LOG.debug("Ledger: {} is marked underrreplicated, ignore this ledger for replicasCheck",
                     ledgerInRange);
             mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
+            return true;
+        } catch (ReplicationException.NonRecoverableReplicationException nre) {
+            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            submitShutdownTask();
             return true;
         } catch (UnavailableException une) {
             LOG.error("Got exception while trying to check if ledger: {} is underreplicated", ledgerInRange, une);
