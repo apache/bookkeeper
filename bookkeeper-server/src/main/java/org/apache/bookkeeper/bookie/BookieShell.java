@@ -106,7 +106,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1897,7 +1896,7 @@ public class BookieShell implements Tool {
                                 underreplicationManager.setReplicasCheckCTime(time);
                             }
                         }
-                    } catch (InterruptedException | KeeperException | ReplicationException e) {
+                    } catch (InterruptedException | ReplicationException e) {
                         LOG.error("Exception while trying to reset last run time ", e);
                         return -1;
                     }
