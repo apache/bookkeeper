@@ -1544,7 +1544,6 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         Map<Integer, BookieId> targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, 3, 2,
                 Collections.emptyMap());
 
-        
         assertEquals(0, targetBookie.size());
 
         List<BookieId> unknownEnsembles = new ArrayList<BookieId>();
