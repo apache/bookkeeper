@@ -1457,9 +1457,9 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
 
         //test three knows bookie
         List<BookieId> adheringStrictEnsemble = new ArrayList<>();
-        adheringStrictEnsemble.add(BookieId.parse("127.0.0.2:3181")); // /zone1/ud1
-        adheringStrictEnsemble.add(BookieId.parse("127.0.0.6:3181")); // /zone2/ud2
-        adheringStrictEnsemble.add(BookieId.parse("127.0.0.10:3181"));// /zone3/ud2
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.2:3181"));  // /zone1/ud1
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.6:3181"));  // /zone2/ud2
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.10:3181")); // /zone3/ud2
 
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
                 zepp.isEnsembleAdheringToPlacementPolicy(adheringStrictEnsemble, 3, 2));
@@ -1540,10 +1540,11 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
 
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
                 zepp.isEnsembleAdheringToPlacementPolicy(knowsEnsemble, 3, 2));
-    
+
         Map<Integer, BookieId> targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, 3, 2,
                 Collections.emptyMap());
 
+        
         assertEquals(0, targetBookie.size());
 
         List<BookieId> unknownEnsembles = new ArrayList<BookieId>();

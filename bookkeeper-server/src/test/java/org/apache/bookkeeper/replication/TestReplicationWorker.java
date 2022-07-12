@@ -58,7 +58,6 @@ import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
-import org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -1115,7 +1114,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class);
     }
 
-    private void testRepairedNotAdheringPlacementPolicyLedgerFragments(Class<? extends EnsemblePlacementPolicy> placementPolicyClass) throws Exception {
+    private void testRepairedNotAdheringPlacementPolicyLedgerFragments(
+            Class<? extends EnsemblePlacementPolicy> placementPolicyClass) throws Exception {
         List<BookieId> firstThreeBookies = servers.stream().map(ele -> {
             try {
                 return ele.getServer().getBookieId();
