@@ -28,7 +28,6 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
 
 /**
@@ -86,7 +85,8 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     @Override
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
-            throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
+            throws ReplicationException.UnavailableException, InterruptedException,
+            ReplicationException.CompatibilityException {
         return new ZkLedgerUnderreplicationManager(conf, zk);
     }
 

@@ -25,7 +25,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,7 +61,7 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
                 urM.setCheckAllLedgersCTime(curTime);
                 urM.setPlacementPolicyCheckCTime(curTime);
                 urM.setReplicasCheckCTime(curTime);
-            } catch (InterruptedException | KeeperException | ReplicationException e) {
+            } catch (InterruptedException | ReplicationException e) {
                 throw new UncheckedExecutionException(e);
             }
             return null;
@@ -87,7 +86,7 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
                 if (replicasCheckCTime > (curTime - (20 * 24 * 60 * 60 * 1000))) {
                     Assert.fail("The replicasCheckCTime should have been reset to atleast 20 days old");
                 }
-            } catch (InterruptedException | KeeperException | ReplicationException e) {
+            } catch (InterruptedException | ReplicationException e) {
                 throw new UncheckedExecutionException(e);
             }
             return null;

@@ -32,7 +32,6 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +112,7 @@ public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new UncheckedExecutionException(e);
-            } catch (KeeperException | ReplicationException e) {
+            } catch (ReplicationException e) {
                 throw new UncheckedExecutionException(e);
             }
             return null;

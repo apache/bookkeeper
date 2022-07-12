@@ -1471,7 +1471,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     private LedgerUnderreplicationManager getUnderreplicationManager()
-            throws CompatibilityException, KeeperException, InterruptedException {
+            throws CompatibilityException, UnavailableException, InterruptedException {
         if (underreplicationManager == null) {
             underreplicationManager = mFactory.newLedgerUnderreplicationManager();
         }

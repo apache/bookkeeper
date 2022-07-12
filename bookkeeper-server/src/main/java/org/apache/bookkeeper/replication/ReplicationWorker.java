@@ -69,7 +69,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,7 +141,7 @@ public class ReplicationWorker implements Runnable {
      *            - configurations
      */
     public ReplicationWorker(final ServerConfiguration conf)
-            throws CompatibilityException, KeeperException,
+            throws CompatibilityException, UnavailableException,
             InterruptedException, IOException {
         this(conf, NullStatsLogger.INSTANCE);
     }
@@ -159,8 +158,7 @@ public class ReplicationWorker implements Runnable {
      */
     public ReplicationWorker(final ServerConfiguration conf,
                              StatsLogger statsLogger)
-            throws CompatibilityException, KeeperException,
-
+            throws CompatibilityException, UnavailableException,
             InterruptedException, IOException {
         this(conf, Auditor.createBookKeeperClient(conf), true, statsLogger);
     }
@@ -169,8 +167,7 @@ public class ReplicationWorker implements Runnable {
                       BookKeeper bkc,
                       boolean ownBkc,
                       StatsLogger statsLogger)
-            throws CompatibilityException, KeeperException,
-            InterruptedException, IOException {
+            throws CompatibilityException, InterruptedException, UnavailableException {
         this.conf = conf;
         this.bkc = bkc;
         this.ownBkc = ownBkc;
@@ -243,6 +240,11 @@ public class ReplicationWorker implements Runnable {
             } catch (BKException e) {
                 LOG.error("BKException while replicating fragments", e);
                 waitBackOffTime(rwRereplicateBackoffMs);
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("NonRecoverableReplicationException "
+                        + "while replicating fragments", nre);
+                shutdown();
+                return;
             } catch (UnavailableException e) {
                 LOG.error("UnavailableException "
                         + "while replicating fragments", e);

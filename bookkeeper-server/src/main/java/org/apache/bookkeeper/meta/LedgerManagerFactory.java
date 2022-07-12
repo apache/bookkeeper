@@ -84,7 +84,8 @@ public interface LedgerManagerFactory extends AutoCloseable {
      * @see LedgerUnderreplicationManager
      */
     LedgerUnderreplicationManager newLedgerUnderreplicationManager()
-            throws KeeperException, InterruptedException, ReplicationException.CompatibilityException;
+            throws ReplicationException.UnavailableException,
+            InterruptedException, ReplicationException.CompatibilityException;
 
 
     /**
