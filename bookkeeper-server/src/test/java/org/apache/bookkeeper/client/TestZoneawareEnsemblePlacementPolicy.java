@@ -1364,4 +1364,199 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
                 zepp.isEnsembleAdheringToPlacementPolicy(ensemble, 3, 2));
     }
+
+    @Test
+    public void testReplaceNotAdheringPlacementPolicyBookie() throws Exception {
+        zepp.uninitalize();
+        updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        // Update cluster
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/zone1/ud2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/zone1/ud2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/zone2/ud1");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/zone2/ud2");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/zone2/ud2");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/zone3/ud1");
+        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/zone3/ud2");
+        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/zone3/ud2");
+        StaticDNSResolver.addNodeToRack(addr10.getHostName(), NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        zepp = new ZoneawareEnsemblePlacementPolicy();
+        ClientConfiguration confLocal = new ClientConfiguration();
+        confLocal.addConfiguration(conf);
+        confLocal.setEnforceStrictZoneawarePlacement(true);
+        confLocal.setMinNumZonesPerWriteQuorum(2);
+        confLocal.setDesiredNumZonesPerWriteQuorum(3);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        Set<BookieId> writableBookies = new HashSet<>();
+        writableBookies.add(addr1.toBookieId());
+        writableBookies.add(addr2.toBookieId());
+        writableBookies.add(addr3.toBookieId());
+        writableBookies.add(addr4.toBookieId());
+        writableBookies.add(addr5.toBookieId());
+        writableBookies.add(addr6.toBookieId());
+        writableBookies.add(addr7.toBookieId());
+        writableBookies.add(addr8.toBookieId());
+        writableBookies.add(addr9.toBookieId());
+
+        zepp.onClusterChanged(new HashSet<BookieId>(writableBookies), new HashSet<BookieId>());
+
+        //all bookie in /zone1
+        List<BookieId> knowsEnsemble = new ArrayList<BookieId>();
+
+        knowsEnsemble.add(BookieId.parse("127.0.0.2:3181")); // /zone1/ud1
+        knowsEnsemble.add(BookieId.parse("127.0.0.3:3181")); // /zone1/ud2
+        knowsEnsemble.add(BookieId.parse("127.0.0.4:3181")); // /zone1/ud2
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(knowsEnsemble, 3, 2));
+
+        Map<Integer, BookieId> targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, 3, 2,
+                Collections.emptyMap());
+
+        assertEquals(1, targetBookie.size());
+
+        for (Map.Entry<Integer, BookieId> entry : targetBookie.entrySet()) {
+            knowsEnsemble.set(entry.getKey(), entry.getValue());
+        }
+
+        assertNotEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(knowsEnsemble, 3, 2));
+
+        List<BookieId> unknownEnsembles = new ArrayList<BookieId>();
+        unknownEnsembles.add(BookieId.parse("127.0.0.100:3181")); // /inactive
+        unknownEnsembles.add(BookieId.parse("127.0.0.101:3181")); // /inactive
+        unknownEnsembles.add(BookieId.parse("127.0.0.102:3181")); // /inactive
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(unknownEnsembles, 3, 2));
+
+        targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, 3, 2,
+                Collections.emptyMap());
+
+        assertEquals(3, targetBookie.size());
+
+        for (Map.Entry<Integer, BookieId> entry : targetBookie.entrySet()) {
+            unknownEnsembles.set(entry.getKey(), entry.getValue());
+        }
+
+        assertNotEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(unknownEnsembles, 3, 2));
+
+        //test three knows bookie
+        List<BookieId> adheringStrictEnsemble = new ArrayList<>();
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.2:3181")); // /zone1/ud1
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.6:3181")); // /zone2/ud2
+        adheringStrictEnsemble.add(BookieId.parse("127.0.0.10:3181"));// /zone3/ud2
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
+                zepp.isEnsembleAdheringToPlacementPolicy(adheringStrictEnsemble, 3, 2));
+
+        //shouldn't replace already meets_strict ensemble
+        targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(adheringStrictEnsemble, 3, 2,
+                Collections.emptyMap());
+        assertEquals(targetBookie.size(), 0);
+
+        //test three knows bookie
+        List<BookieId> adheringSoftEnsemble = new ArrayList<>();
+        adheringSoftEnsemble.add(BookieId.parse("127.0.0.2:3181")); // /zone1/ud1
+        adheringSoftEnsemble.add(BookieId.parse("127.0.0.8:3181")); // /zone3/ud1
+        adheringSoftEnsemble.add(BookieId.parse("127.0.0.9:3181")); // /zone3/ud2
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
+                zepp.isEnsembleAdheringToPlacementPolicy(adheringSoftEnsemble, 3, 2));
+
+        //shouldn't replace already meets_soft ensemble
+        targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(adheringSoftEnsemble, 3, 2,
+                Collections.emptyMap());
+        assertEquals(targetBookie.size(), 0);
+    }
+
+    @Test
+    public void testReplaceNotAdheringPlacementPolicyBookieWithNoMoreRackBookie() throws Exception {
+        zepp.uninitalize();
+        updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        // Update cluster
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
+        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/zone1/ud1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/zone1/ud2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/zone1/ud3");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/zone1/ud4");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/zone1/ud5");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/zone1/ud6");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/zone1/ud7");
+        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/zone1/ud8");
+        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/zone1/ud9");
+        StaticDNSResolver.addNodeToRack(addr10.getHostName(), NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        zepp = new ZoneawareEnsemblePlacementPolicy();
+        ClientConfiguration confLocal = new ClientConfiguration();
+        confLocal.addConfiguration(conf);
+        confLocal.setEnforceStrictZoneawarePlacement(true);
+        confLocal.setMinNumZonesPerWriteQuorum(2);
+        confLocal.setDesiredNumZonesPerWriteQuorum(3);
+        zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        Set<BookieId> writableBookies = new HashSet<>();
+        writableBookies.add(addr1.toBookieId());
+        writableBookies.add(addr2.toBookieId());
+        writableBookies.add(addr3.toBookieId());
+        writableBookies.add(addr4.toBookieId());
+        writableBookies.add(addr5.toBookieId());
+        writableBookies.add(addr6.toBookieId());
+        writableBookies.add(addr7.toBookieId());
+        writableBookies.add(addr8.toBookieId());
+        writableBookies.add(addr9.toBookieId());
+
+        zepp.onClusterChanged(new HashSet<BookieId>(writableBookies), new HashSet<BookieId>());
+
+        //all bookie in /zone1
+        List<BookieId> knowsEnsemble = new ArrayList<BookieId>();
+        knowsEnsemble.add(BookieId.parse("127.0.0.2:3181")); // /zone1/ud1
+        knowsEnsemble.add(BookieId.parse("127.0.0.3:3181")); // /zone1/ud2
+        knowsEnsemble.add(BookieId.parse("127.0.0.4:3181")); // /zone1/ud3
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(knowsEnsemble, 3, 2));
+    
+        Map<Integer, BookieId> targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(knowsEnsemble, 3, 2,
+                Collections.emptyMap());
+
+        assertEquals(0, targetBookie.size());
+
+        List<BookieId> unknownEnsembles = new ArrayList<BookieId>();
+        unknownEnsembles.add(BookieId.parse("127.0.0.100:3181")); // /inactive
+        unknownEnsembles.add(BookieId.parse("127.0.0.101:3181")); // /inactive
+        unknownEnsembles.add(BookieId.parse("127.0.0.102:3181")); // /inactive
+
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(unknownEnsembles, 3, 2));
+        //no more bookie can be replaced
+        targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(unknownEnsembles, 3, 2,
+                Collections.emptyMap());
+
+        assertEquals(0, targetBookie.size());
+    }
 }

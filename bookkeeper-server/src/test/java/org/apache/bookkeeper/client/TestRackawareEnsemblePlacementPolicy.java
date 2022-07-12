@@ -1511,7 +1511,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 adheringEnsemble, writeQuorum, ackQuorum);
         assertEquals(placementPolicyAdherence, PlacementPolicyAdherence.MEETS_STRICT);
 
-        //should replace three bookie
+        //shouldn't replace already meets_strict ensemble
         targetBookie = repp.replaceNotAdheringPlacementPolicyBookie(adheringEnsemble, ackQuorum, writeQuorum,
                 Collections.emptyMap());
         assertEquals(targetBookie.size(), 0);
