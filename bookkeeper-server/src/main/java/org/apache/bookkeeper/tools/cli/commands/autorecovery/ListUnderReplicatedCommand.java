@@ -39,7 +39,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,7 +140,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             LedgerUnderreplicationManager underreplicationManager;
             try {
                 underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-            } catch (KeeperException | ReplicationException.CompatibilityException e) {
+            } catch (ReplicationException e) {
                 throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

@@ -1,3 +1,5 @@
+<!-- markdown-link-check-disable -->
+
 ---
 id: releases
 title: Apache BookKeeper Releases

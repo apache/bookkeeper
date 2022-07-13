@@ -240,9 +240,13 @@ public class LegacyCookieValidation implements CookieValidation {
 
     private static Set<File> getKnownDirs(List<Cookie> cookies) {
         return cookies.stream()
-                .flatMap((c) -> Arrays.stream(c.getLedgerDirPathsFromCookie()))
-                .map((s) -> new File(s))
-                .collect(Collectors.toSet());
+                .flatMap((c) -> {
+                    List<String> dirs = new ArrayList<>(Arrays.asList(c.getLedgerDirPathsFromCookie()));
+                    if (null != c.getIndexDirPathsFromCookie()) {
+                        dirs.addAll(Arrays.asList(c.getIndexDirPathsFromCookie()));
+                    }
+                    return Arrays.stream(dirs.toArray(new String[]{}));
+                }).map((s) -> new File(s)).collect(Collectors.toSet());
     }
 
     private static void verifyDirsForStorageExpansion(

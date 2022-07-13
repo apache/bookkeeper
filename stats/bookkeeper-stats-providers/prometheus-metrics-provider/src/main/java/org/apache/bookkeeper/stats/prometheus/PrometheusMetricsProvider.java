@@ -137,7 +137,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
         registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
             @Override
             public double get() {
-                return PlatformDependent.maxDirectMemory();
+                return PlatformDependent.estimateMaxDirectMemory();
             }
         }));
 

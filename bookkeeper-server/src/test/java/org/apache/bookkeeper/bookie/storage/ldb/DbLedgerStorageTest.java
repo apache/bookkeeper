@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -55,10 +56,10 @@ import org.slf4j.LoggerFactory;
  */
 public class DbLedgerStorageTest {
     private static final Logger log = LoggerFactory.getLogger(DbLedgerStorageTest.class);
-    private DbLedgerStorage storage;
-    private File tmpDir;
-    private LedgerDirsManager ledgerDirsManager;
-    private ServerConfiguration conf;
+    protected DbLedgerStorage storage;
+    protected File tmpDir;
+    protected LedgerDirsManager ledgerDirsManager;
+    protected ServerConfiguration conf;
 
     @Before
     public void setup() throws Exception {
@@ -77,6 +78,10 @@ public class DbLedgerStorageTest {
 
         ledgerDirsManager = bookie.getLedgerDirsManager();
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
+
+        storage.getLedgerStorageList().forEach(singleDirectoryDbLedgerStorage -> {
+            assertTrue(singleDirectoryDbLedgerStorage.getEntryLogger() instanceof DefaultEntryLogger);
+        });
     }
 
     @After
@@ -228,6 +233,7 @@ public class DbLedgerStorageTest {
         newEntry3.writeLong(3); // entry id
         newEntry3.writeBytes("new-entry-3".getBytes());
         long location = entryLogger.addEntry(4L, newEntry3);
+        newEntry3.resetReaderIndex();
 
         List<EntryLocation> locations = Lists.newArrayList(new EntryLocation(4, 3, location));
         singleDirStorage.updateEntriesLocations(locations);
@@ -452,8 +458,6 @@ public class DbLedgerStorageTest {
         } catch (BookieException.DataUnknownException e) {
             fail("Should have been able to read entry");
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -462,7 +466,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -491,6 +495,8 @@ public class DbLedgerStorageTest {
         } finally {
             restartedStorage.shutdown();
         }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
     }
 
     @Test
@@ -499,7 +505,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -530,7 +536,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -543,8 +549,6 @@ public class DbLedgerStorageTest {
         } catch (IOException ioe) {
             fail("Should have been able to get isFenced response");
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -553,7 +557,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf entry0 = Unpooled.buffer(1024);
         entry0.writeLong(1); // ledger id
-        entry0.writeLong(0); // entry id
+        entry0.writeLong(1); // entry id
         entry0.writeBytes("entry-0".getBytes());
 
         storage.addEntry(entry0);
@@ -566,8 +570,6 @@ public class DbLedgerStorageTest {
         } catch (BookieException.DataUnknownException e) {
             // expected
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -631,5 +633,7 @@ public class DbLedgerStorageTest {
         } finally {
             restartedStorage2.shutdown();
         }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
     }
 }
