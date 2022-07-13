@@ -467,17 +467,27 @@ public class DbLedgerStorage implements LedgerStorage {
         checkNotNull(serverConf, "ServerConfiguration can't be null");
         checkNotNull(processor, "LedgerLoggger info processor can't null");
 
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs(),
-                new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
+        DiskChecker diskChecker = new DiskChecker(serverConf.getDiskUsageThreshold(),
+                serverConf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf,
+                serverConf.getLedgerDirs(), diskChecker);
+        LedgerDirsManager indexDirsManager = ledgerDirsManager;
+        File[] idxDirs = serverConf.getIndexDirs();
+        if (null != idxDirs) {
+            indexDirsManager = new LedgerDirsManager(serverConf, idxDirs, diskChecker);
+        }
         List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
-
+        List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
+        if (ledgerDirs.size() != indexDirs.size()) {
+            throw new IOException("ledger and index dirs size not matched");
+        }
         int dirIndex = MathUtils.signSafeMod(ledgerId, ledgerDirs.size());
-        String ledgerBasePath = ledgerDirs.get(dirIndex).toString();
+        String indexBasePath = indexDirs.get(dirIndex).toString();
 
         EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
                 (basePath, subPath, dbConfigType, conf1) ->
                         new KeyValueStorageRocksDB(basePath, subPath, DbConfigType.Default, conf1, true),
-                ledgerBasePath, NullStatsLogger.INSTANCE);
+                indexBasePath, NullStatsLogger.INSTANCE);
         try {
             long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
             for (long currentEntry = 0; currentEntry <= lastEntryId; currentEntry++) {
