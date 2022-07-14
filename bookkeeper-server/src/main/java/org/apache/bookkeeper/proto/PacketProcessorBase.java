@@ -152,6 +152,8 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
 
     @Override
     public void safeRun() {
+        requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!isVersionCompatible()) {
             sendResponse(BookieProtocol.EBADVERSION,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),
