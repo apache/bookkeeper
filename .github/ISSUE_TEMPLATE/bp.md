@@ -9,7 +9,7 @@ assignees: ''
 
 **BP**
 
-> Follow the instructions at http://bookkeeper.apache.org/community/bookkeeper_proposals/ to create a proposal.
+> Follow the instructions at https://bookkeeper.apache.org/community/bookkeeper-proposals/ to create a proposal.
 
 This is the master ticket for tracking BP-xyz :
 

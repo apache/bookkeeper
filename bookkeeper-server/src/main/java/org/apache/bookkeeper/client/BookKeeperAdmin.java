@@ -1471,7 +1471,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     private LedgerUnderreplicationManager getUnderreplicationManager()
-            throws CompatibilityException, KeeperException, InterruptedException {
+            throws CompatibilityException, UnavailableException, InterruptedException {
         if (underreplicationManager == null) {
             underreplicationManager = mFactory.newLedgerUnderreplicationManager();
         }
@@ -1649,7 +1649,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 LOG.debug("Ledger: {} has been deleted", ledgerId);
                 return false;
             } else {
-                LOG.error("Got exception while trying to read LedgerMeatadata of " + ledgerId, e);
+                LOG.error("Got exception while trying to read LedgerMetadata of " + ledgerId, e);
                 throw new RuntimeException(e);
             }
         }

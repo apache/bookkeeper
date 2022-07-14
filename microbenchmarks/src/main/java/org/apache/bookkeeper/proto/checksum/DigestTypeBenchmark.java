@@ -61,8 +61,8 @@ public class DigestTypeBenchmark {
      * BufferType.
      */
     public enum BufferType {
-        ARRAY_BACKED,
-        NOT_ARRAY_BACKED,
+//        ARRAY_BACKED,
+//        NOT_ARRAY_BACKED,
         BYTE_BUF_DEFAULT_ALLOC
     }
 
@@ -70,8 +70,8 @@ public class DigestTypeBenchmark {
      * Digest.
      */
     public enum Digest {
-        MAC,
-        CRC32,
+//        MAC,
+//        CRC32,
         CRC32_C,
     }
 
@@ -91,7 +91,7 @@ public class DigestTypeBenchmark {
         public BufferType bufferType;
         @Param
         public Digest digest;
-        @Param({"1024", "4086", "8192", "16384", "65536"})
+        @Param({"64", "1024", "4086", "8192", "16384", "65536"})
         public int entrySize;
 
         private DigestManager crc32;
@@ -139,10 +139,10 @@ public class DigestTypeBenchmark {
 
         public ByteBuf getByteBuff(BufferType bType) {
             switch (bType) {
-                case ARRAY_BACKED:
-                    return arrayBackedBuffer;
-                case NOT_ARRAY_BACKED:
-                    return notArrayBackedBuffer;
+//                case ARRAY_BACKED:
+//                    return arrayBackedBuffer;
+//                case NOT_ARRAY_BACKED:
+//                    return notArrayBackedBuffer;
                 case BYTE_BUF_DEFAULT_ALLOC:
                     return byteBufDefaultAlloc;
                 default:
@@ -152,12 +152,12 @@ public class DigestTypeBenchmark {
 
         public DigestManager getDigestManager(Digest digest) {
             switch (digest) {
-                case CRC32:
-                    return crc32;
+//                case CRC32:
+//                    return crc32;
                 case CRC32_C:
                     return crc32c;
-                case MAC:
-                    return mac;
+//                case MAC:
+//                    return mac;
                 default:
                     throw new IllegalArgumentException("unknown digest " + digest);
             }
@@ -168,7 +168,7 @@ public class DigestTypeBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 12, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 2, time = 10, timeUnit = TimeUnit.SECONDS)
     @Threads(2)
     @Fork(value = 1, warmups = 1)
     public void digestManager(MyState state) {

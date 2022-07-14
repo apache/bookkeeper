@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 # Release notes
 
 ## 4.15.0
@@ -1289,7 +1290,7 @@ The second change provides a new `long poll` read API, allowing tailing-reads wi
 Although `long poll` API brings great latency improvements on tailing reads, it is still a very low-level primitive.
 It is still recommended to use high level API (e.g. [DistributedLog API](docs/api/distributedlog-api)) for tailing and streaming use cases.
 
-See [Streaming Reads](https://bookkeeper.apache.org/distributedlog/docs/latest/user_guide/design/main.html#streaming-reads) for more details.
+See [Streaming Reads](https://bookkeeper.apache.org/docs/next/api/distributedlog-api) for more details.
 
 ##### Explicit LAC
 
