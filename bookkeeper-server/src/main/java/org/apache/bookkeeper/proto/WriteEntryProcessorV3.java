@@ -163,6 +163,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     @Override
     public void safeRun() {
+        requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         AddResponse addResponse = getAddResponse();
         if (null != addResponse) {
             // This means there was an error and we should send this back.
