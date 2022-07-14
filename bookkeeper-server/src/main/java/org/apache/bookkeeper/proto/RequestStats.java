@@ -51,6 +51,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_THREAD_QUEUED_LATENCY;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,6 +91,14 @@ public class RequestStats {
         parent = ADD_ENTRY_REQUEST
     )
     private final OpStatsLogger addEntryStats;
+
+    @StatsDoc(
+            name = WRITE_THREAD_QUEUED_LATENCY,
+            help = "operation stats of enqueuing requests to write threadpool queue",
+            parent = ADD_ENTRY_REQUEST
+    )
+    private final OpStatsLogger writeThreadQueuedLatency;
+
     @StatsDoc(
         name = READ_ENTRY_REQUEST,
         help = "request stats of ReadEntry on a bookie"
@@ -226,6 +235,7 @@ public class RequestStats {
 
     public RequestStats(StatsLogger statsLogger) {
         this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
+        this.writeThreadQueuedLatency = statsLogger.getOpStatsLogger(WRITE_THREAD_QUEUED_LATENCY);
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
         this.forceLedgerStats = statsLogger.getOpStatsLogger(FORCE_LEDGER);
