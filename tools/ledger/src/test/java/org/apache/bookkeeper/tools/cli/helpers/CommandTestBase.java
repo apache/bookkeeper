@@ -107,7 +107,7 @@ public class CommandTestBase extends MockCommandSupport {
                 doCallRealMethod().when(serverConfiguration).getLedgerDirs();
             }
             if (indexDirNames != null) {
-                doReturn(indexDirNames).when(serverConfiguration).getLedgerDirNames();
+                doReturn(indexDirNames).when(serverConfiguration).getIndexDirNames();
                 doCallRealMethod().when(serverConfiguration).getIndexDirs();
             }
             doReturn(defaultConf.getDiskUsageThreshold()).when(serverConfiguration).getDiskUsageThreshold();
