@@ -28,5 +28,5 @@ interface HandleFactory {
             throws IOException, BookieException;
 
     LedgerDescriptor getReadOnlyHandle(long ledgerId)
-            throws IOException ;
+            throws IOException;
 }
