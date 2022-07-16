@@ -27,9 +27,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -101,7 +102,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                     }
                     try {
                         return super.readEntry(readResponseBuilder, entryId, true, startTimeSw);
-                    } catch (Bookie.NoEntryException e) {
+                    } catch (NoEntryException e) {
                         requestProcessor.getRequestStats().getReadLastEntryNoEntryErrorCounter().inc();
                         logger.info(
                                 "No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
@@ -144,7 +145,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
             final boolean watched;
             try {
                 watched = requestProcessor.getBookie().waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
-            } catch (Bookie.NoLedgerException e) {
+            } catch (NoLedgerException e) {
                 logger.info("No ledger found while longpoll reading ledger {}, previous lac = {}.",
                         ledgerId, previousLAC);
                 return buildErrorResponse(StatusCode.ENOLEDGER, startTimeSw);

@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
@@ -214,7 +215,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 }
             }
             return readEntry(readResponse, entryId, startTimeSw);
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             if (RequestUtils.isFenceRequest(readRequest)) {
                 LOG.info("No ledger found reading entry {} when fencing ledger {}", entryId, ledgerId);
             } else if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
@@ -224,7 +225,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 LOG.debug("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
             }
             return buildResponse(readResponse, StatusCode.ENOLEDGER, startTimeSw);
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("No entry found while reading entry: {} from ledger: {}", entryId, ledgerId);
             }

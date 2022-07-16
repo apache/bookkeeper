@@ -26,6 +26,7 @@ import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 
 @Slf4j
@@ -51,7 +52,7 @@ class FileInfoBackingCache {
         if (!retained) {
             throw new IOException("FileInfo " + fi + " is already marked dead");
         } else if (fi.isDeleted()) {
-            throw new Bookie.NoLedgerException(fi.ledgerId);
+            throw new NoLedgerException(fi.ledgerId);
         }
         return fi;
     }

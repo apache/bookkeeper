@@ -22,6 +22,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 
@@ -85,46 +86,5 @@ public interface Bookie {
 
     // TODO: Should be constructed and passed in as a parameter
     LedgerStorage getLedgerStorage();
-
-    // TODO: Move this exceptions somewhere else
-    /**
-     * Exception is thrown when no such a ledger is found in this bookie.
-     */
-    class NoLedgerException extends IOException {
-        private static final long serialVersionUID = 1L;
-        private final long ledgerId;
-        public NoLedgerException(long ledgerId) {
-            super("Ledger " + ledgerId + " not found");
-            this.ledgerId = ledgerId;
-        }
-        public long getLedgerId() {
-            return ledgerId;
-        }
-    }
-
-    /**
-     * Exception is thrown when no such an entry is found in this bookie.
-     */
-    class NoEntryException extends IOException {
-        private static final long serialVersionUID = 1L;
-        private final long ledgerId;
-        private final long entryId;
-        public NoEntryException(long ledgerId, long entryId) {
-            this("Entry " + entryId + " not found in " + ledgerId, ledgerId, entryId);
-        }
-
-        public NoEntryException(String msg, long ledgerId, long entryId) {
-            super(msg);
-            this.ledgerId = ledgerId;
-            this.entryId = entryId;
-        }
-
-        public long getLedger() {
-            return ledgerId;
-        }
-        public long getEntry() {
-            return entryId;
-        }
-    }
 
 }

@@ -25,12 +25,10 @@ import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -73,7 +71,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             if (lac != null) {
                 readLacResponse.setLacBody(ByteString.copyFrom(lac.nioBuffer()));
             }
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
             logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
         } catch (BookieException.DataUnknownException e) {
@@ -91,7 +89,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             if (lastEntry != null) {
                 readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
             }
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
             logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
         } catch (BookieException.DataUnknownException e) {

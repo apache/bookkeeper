@@ -34,6 +34,8 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -142,14 +144,14 @@ public class DbLedgerStorageIndexDirTest {
         try {
             storage.isFenced(3);
             fail("should have failed");
-        } catch (Bookie.NoLedgerException nle) {
+        } catch (NoLedgerException nle) {
             // OK
         }
         assertEquals(false, storage.ledgerExists(3));
         try {
             storage.setFenced(3);
             fail("should have failed");
-        } catch (Bookie.NoLedgerException nle) {
+        } catch (NoLedgerException nle) {
             // OK
         }
         storage.setMasterKey(3, "key".getBytes());
@@ -206,7 +208,7 @@ public class DbLedgerStorageIndexDirTest {
         try {
             storage.getEntry(4, 2);
             fail("Should have thrown exception");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // ok
         }
 
@@ -255,7 +257,7 @@ public class DbLedgerStorageIndexDirTest {
         try {
             storage.getEntry(4, 4);
             fail("Should have thrown exception since the ledger was deleted");
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             // ok
         }
     }

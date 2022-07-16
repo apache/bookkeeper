@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -376,7 +377,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 101);
             fail("Shouldn't have found entry 101");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behaviour
         }
 
@@ -404,7 +405,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 101);
             fail("Shouldn't have found entry 101");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behaviour
         }
         assertTrue(b.handles.getHandle(1, "testPasswd".getBytes()).isFenced());
@@ -436,7 +437,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 2 * JournalChannel.SECTOR_SIZE + 1);
             fail("Shouldn't have found entry " + (2 * JournalChannel.SECTOR_SIZE + 1));
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behavior
         }
         assertTrue(b.handles.getHandle(1, "testV5Journal".getBytes()).isFenced());
@@ -595,7 +596,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 100);
             fail("Shouldn't have found entry 100");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behaviour
         }
     }
@@ -652,7 +653,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 101);
             fail("Shouldn't have found entry 101");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behaviour
         }
     }
@@ -750,7 +751,7 @@ public class BookieJournalTest {
             try {
                 b.readEntry(1, 101);
                 fail("Shouldn't have found entry 101");
-            } catch (Bookie.NoEntryException e) {
+            } catch (NoEntryException e) {
                 // correct behaviour
             }
         }
@@ -800,7 +801,7 @@ public class BookieJournalTest {
         try {
             b.readEntry(1, 101);
             fail("Shouldn't have found entry 101");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // correct behaviour
         }
     }

@@ -31,6 +31,7 @@ import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -145,7 +146,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
                     if (location != 0L) {
                         interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
                     }
-                } catch (Bookie.NoEntryException e) {
+                } catch (NoEntryException e) {
                     // Ignore entry
                 }
             }

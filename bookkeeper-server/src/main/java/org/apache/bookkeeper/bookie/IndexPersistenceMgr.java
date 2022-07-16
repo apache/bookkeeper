@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.bookie.stats.IndexPersistenceMgrStats;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -146,7 +147,7 @@ public class IndexPersistenceMgr {
         File lf = findIndexFile(ledger);
         if (null == lf) {
             if (!createIfMissing) {
-                throw new Bookie.NoLedgerException(ledger);
+                throw new NoLedgerException(ledger);
             }
             // We don't have a ledger index file on disk or in cache, so create it.
             lf = getNewLedgerIndexFile(ledger, null);
@@ -514,7 +515,7 @@ public class IndexPersistenceMgr {
             fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastWrite());
         } catch (FileInfo.FileInfoDeletedException fileInfoDeleted) {
             // File concurrently deleted
-            throw new Bookie.NoLedgerException(l);
+            throw new NoLedgerException(l);
         }
     }
 
@@ -523,7 +524,7 @@ public class IndexPersistenceMgr {
         try {
             fi = getFileInfo(ledger, null);
             relocateIndexFileAndFlushHeader(ledger, fi);
-        } catch (Bookie.NoLedgerException nle) {
+        } catch (NoLedgerException nle) {
             // ledger has been deleted
             LOG.info("No ledger {} found when flushing header.", ledger);
             return;
@@ -546,7 +547,7 @@ public class IndexPersistenceMgr {
             int[] versions = new int[entries.size()];
             try {
                 fi = getFileInfo(l, null);
-            } catch (Bookie.NoLedgerException nle) {
+            } catch (NoLedgerException nle) {
                 // ledger has been deleted
                 LOG.info("No ledger {} found when flushing entries.", l);
                 return;
@@ -589,7 +590,7 @@ public class IndexPersistenceMgr {
 
     private void writeBuffers(Long ledger,
                               List<LedgerEntryPage> entries, FileInfo fi,
-                              int start, int count) throws IOException, Bookie.NoLedgerException {
+                              int start, int count) throws IOException, NoLedgerException {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Writing {} buffers of {}", count, Long.toHexString(ledger));
         }
@@ -610,7 +611,7 @@ public class IndexPersistenceMgr {
             try {
                 rc = fi.write(buffs, entries.get(start + 0).getFirstEntryPosition());
             } catch (FileInfo.FileInfoDeletedException e) {
-                throw new Bookie.NoLedgerException(ledger);
+                throw new NoLedgerException(ledger);
             }
             if (rc <= 0) {
                 throw new IOException("Short write to ledger " + ledger + " rc = " + rc);

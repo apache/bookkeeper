@@ -28,8 +28,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.EntryLocation;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -101,7 +101,7 @@ public class EntryLocationIndex implements Closeable {
              * throw Bookie.NoEntryException same like  the method
              * {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found.
              * */
-            throw new Bookie.NoEntryException(ledgerId, -1);
+            throw new NoEntryException(ledgerId, -1);
         }
         return getLastEntryInLedgerInternal(ledgerId);
     }
@@ -114,7 +114,7 @@ public class EntryLocationIndex implements Closeable {
         maxEntryId.recycle();
 
         if (entry == null) {
-            throw new Bookie.NoEntryException(ledgerId, -1);
+            throw new NoEntryException(ledgerId, -1);
         } else {
             long foundLedgerId = ArrayUtil.getLong(entry.getKey(), 0);
             long lastEntryId = ArrayUtil.getLong(entry.getKey(), 8);
@@ -125,7 +125,7 @@ public class EntryLocationIndex implements Closeable {
                 }
                 return lastEntryId;
             } else {
-                throw new Bookie.NoEntryException(ledgerId, -1);
+                throw new NoEntryException(ledgerId, -1);
             }
         }
     }
@@ -224,7 +224,7 @@ public class EntryLocationIndex implements Closeable {
                 long lastEntryId;
                 try {
                     lastEntryId = getLastEntryInLedgerInternal(ledgerId);
-                } catch (Bookie.NoEntryException nee) {
+                } catch (NoEntryException nee) {
                     if (log.isDebugEnabled()) {
                         log.debug("No last entry id found for ledger {}", ledgerId);
                     }

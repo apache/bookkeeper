@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 
 import org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 
 class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
@@ -54,7 +55,7 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
     }
 
     @Override
-    public LedgerDescriptor getReadOnlyHandle(final long ledgerId) throws IOException, Bookie.NoLedgerException {
+    public LedgerDescriptor getReadOnlyHandle(final long ledgerId) throws IOException, NoLedgerException {
         LedgerDescriptor handle = readOnlyLedgers.get(ledgerId);
 
         if (handle == null) {

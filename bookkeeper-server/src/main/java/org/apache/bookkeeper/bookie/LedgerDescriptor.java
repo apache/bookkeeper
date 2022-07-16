@@ -27,6 +27,8 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CompletableFuture;
+
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.util.Watcher;
 
 /**
@@ -45,9 +47,9 @@ public abstract class LedgerDescriptor {
 
     static LedgerDescriptor createReadOnly(long ledgerId,
                                            LedgerStorage ledgerStorage)
-            throws IOException, Bookie.NoLedgerException {
+            throws IOException {
         if (!ledgerStorage.ledgerExists(ledgerId)) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return new LedgerDescriptorReadOnlyImpl(ledgerId, ledgerStorage);
     }

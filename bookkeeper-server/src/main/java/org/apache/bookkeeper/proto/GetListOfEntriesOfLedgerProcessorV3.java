@@ -24,8 +24,7 @@ import com.google.protobuf.ByteString;
 import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -77,7 +76,7 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
             getListOfEntriesOfLedgerResponse.setAvailabilityOfEntriesOfLedger(
                     ByteString.copyFrom(availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger()));
 
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
             LOG.error("No ledger found while performing getListOfEntriesOfLedger from ledger: {}", ledgerId, e);
         } catch (IOException e) {

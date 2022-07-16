@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Collection;
 import org.apache.bookkeeper.bookie.AbstractLogCompactor;
-import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 
 
@@ -55,7 +54,7 @@ public interface EntryLogger extends AutoCloseable {
      * @return the entry
      */
     ByteBuf readEntry(long entryLocation)
-            throws IOException, NoEntryException;
+            throws IOException;
     /**
      * Read an entry from an entrylog location, and verify that is matches the
      * expected ledger and entry ID.
@@ -65,7 +64,7 @@ public interface EntryLogger extends AutoCloseable {
      * @return the entry
      */
     ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
-            throws IOException, NoEntryException;
+            throws IOException;
 
     /**
      * Flush any outstanding writes to disk.

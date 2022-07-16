@@ -54,11 +54,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Cleanup;
 import lombok.Getter;
-
-import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -399,7 +399,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         try {
             offset = ledgerCache.getEntryOffset(ledgerId, entryId);
             if (offset == 0) {
-                throw new Bookie.NoEntryException(ledgerId, entryId);
+                throw new NoEntryException(ledgerId, entryId);
             }
             success = true;
         } finally {

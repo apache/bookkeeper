@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -812,18 +813,18 @@ public class DefaultEntryLogger implements EntryLogger {
 
     @Override
     public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
-            throws IOException, Bookie.NoEntryException {
+            throws IOException, NoEntryException {
         return internalReadEntry(ledgerId, entryId, entryLocation, true /* validateEntry */);
     }
 
     @Override
-    public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
+    public ByteBuf readEntry(long location) throws IOException, NoEntryException {
         return internalReadEntry(location, -1L, -1L, false /* validateEntry */);
     }
 
 
     private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
-            throws IOException, Bookie.NoEntryException {
+            throws IOException, NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = posForOffset(location);
 
@@ -839,7 +840,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);
             }
         } catch (EntryLookupException.MissingEntryException entryLookupError) {
-            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
+            throw new NoEntryException("Short read from entrylog " + entryLogId,
                     ledgerId, entryId);
         } catch (EntryLookupException e) {
             throw new IOException(e.toString());
@@ -856,7 +857,7 @@ public class DefaultEntryLogger implements EntryLogger {
             // replicas. However, the chance of this happening is very very low, so
             // returning NoEntryException is mostly safe.
             data.release();
-            throw new Bookie.NoEntryException("Short read for " + ledgerId + "@"
+            throw new NoEntryException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
                                               + pos + "(" + rc + "!=" + entrySize + ")", ledgerId, entryId);
         }

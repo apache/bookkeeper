@@ -48,10 +48,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.AbstractLogCompactor;
-import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
@@ -202,13 +201,13 @@ public class DirectEntryLogger implements EntryLogger {
 
     @Override
     public ByteBuf readEntry(long entryLocation)
-            throws IOException, NoEntryException {
+            throws IOException{
         return internalReadEntry(-1L, -1L, entryLocation, false);
     }
 
     @Override
     public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
-            throws IOException, NoEntryException {
+            throws IOException {
         return internalReadEntry(ledgerId, entryId, entryLocation, true);
     }
 
@@ -239,7 +238,7 @@ public class DirectEntryLogger implements EntryLogger {
     }
 
     private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
-            throws IOException, NoEntryException {
+            throws IOException {
         int logId = (int) (location >> 32);
         int pos = (int) (location & 0xFFFFFFFF);
 

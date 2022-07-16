@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.CloseableIterator;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
@@ -114,7 +115,7 @@ public class LedgerMetadataIndex implements Closeable {
             if (log.isDebugEnabled()) {
                 log.debug("Ledger not found {}", ledgerId);
             }
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
 
         return ledgerData;
@@ -236,7 +237,7 @@ public class LedgerMetadataIndex implements Closeable {
         try {
             LedgerData ledgerData = get(ledgerId);
             if (ledgerData == null) {
-                throw new Bookie.NoLedgerException(ledgerId);
+                throw new NoLedgerException(ledgerId);
             }
             final boolean oldValue = ledgerData.getLimbo();
             LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setLimbo(false).build();

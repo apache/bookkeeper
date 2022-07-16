@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -157,7 +158,7 @@ public class IndexPersistenceMgrTest {
             try {
                 indexPersistenceMgr.getFileInfo(lid, null);
                 fail("Should fail get file info for reading if the file doesn't exist");
-            } catch (Bookie.NoLedgerException nle) {
+            } catch (NoLedgerException nle) {
                 // exepcted
             }
             assertEquals(0, indexPersistenceMgr.writeFileInfoCache.size());

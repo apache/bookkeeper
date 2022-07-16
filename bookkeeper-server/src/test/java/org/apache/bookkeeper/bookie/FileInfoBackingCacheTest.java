@@ -46,6 +46,7 @@ import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -115,7 +116,7 @@ public class FileInfoBackingCacheTest {
         FileInfoBackingCache cache = new FileInfoBackingCache(
                 (ledgerId, createIfNotFound) -> {
                     Assert.assertFalse(createIfNotFound);
-                    throw new Bookie.NoLedgerException(ledgerId);
+                    throw new NoLedgerException(ledgerId);
                 }, FileInfo.CURRENT_HEADER_VERSION);
         cache.loadFileInfo(1, null);
     }

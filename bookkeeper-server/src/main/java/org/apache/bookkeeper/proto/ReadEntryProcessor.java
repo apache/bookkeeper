@@ -27,8 +27,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -85,12 +86,12 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 return;
             }
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error reading {}", request, e);
             }
             errorCode = BookieProtocol.ENOLEDGER;
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error reading {}", request, e);
             }

@@ -44,6 +44,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.bookie.stats.IndexInMemPageMgrStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
@@ -517,7 +519,7 @@ class IndexInMemPageMgr {
         for (Long potentiallyDirtyLedger : ledgersToFlush) {
             try {
                 flushSpecificLedger(potentiallyDirtyLedger);
-            } catch (Bookie.NoLedgerException e) {
+            } catch (NoLedgerException e) {
                 continue;
             }
             if (!doAll) {
@@ -574,7 +576,7 @@ class IndexInMemPageMgr {
             assert lep != null;
             lep.setOffset(offset, offsetInPage * LedgerEntryPage.getIndexEntrySize());
         } catch (FileInfo.FileInfoDeletedException e) {
-            throw new Bookie.NoLedgerException(ledger);
+            throw new NoLedgerException(ledger);
         } finally {
             if (null != lep) {
                 lep.releasePage();

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,17 +15,24 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-
-package org.apache.bookkeeper.bookie;
+package org.apache.bookkeeper.bookie.exceptions;
 
 import java.io.IOException;
 
-interface HandleFactory {
-    LedgerDescriptor getHandle(long ledgerId, byte[] masterKey)
-            throws IOException, BookieException;
+/**
+ * Exception is thrown when no such a ledger is found in this bookie.
+ */
+public class NoLedgerException extends IOException {
+    private static final long serialVersionUID = 1L;
+    private final long ledgerId;
 
-    LedgerDescriptor getReadOnlyHandle(long ledgerId)
-            throws IOException ;
+    public NoLedgerException(long ledgerId) {
+        super("Ledger " + ledgerId + " not found");
+        this.ledgerId = ledgerId;
+    }
+
+    public long getLedgerId() {
+        return ledgerId;
+    }
 }

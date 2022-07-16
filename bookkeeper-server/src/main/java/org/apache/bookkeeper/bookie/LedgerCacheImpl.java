@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator.OfLong;
 
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -199,7 +200,7 @@ public class LedgerCacheImpl implements LedgerCache {
         Iterator<LedgerCache.PageEntries> pageEntriesIteratorNonFinal = null;
         try {
             pageEntriesIteratorNonFinal = listEntries(ledgerId).iterator();
-        } catch (Bookie.NoLedgerException noLedgerException) {
+        } catch (NoLedgerException noLedgerException) {
             pageEntriesIteratorNonFinal = Collections.emptyIterator();
         }
         final Iterator<LedgerCache.PageEntries> pageEntriesIterator = pageEntriesIteratorNonFinal;

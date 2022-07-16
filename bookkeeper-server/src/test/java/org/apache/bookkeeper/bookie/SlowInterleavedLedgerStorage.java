@@ -27,6 +27,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.IOException;
 
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -85,7 +86,7 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
 
         @Override
         public ByteBuf readEntry(long ledgerId, long entryId, long location)
-                throws IOException, Bookie.NoEntryException {
+                throws IOException, NoEntryException {
             delayMs(getDelay);
             return super.readEntry(ledgerId, entryId, location);
         }

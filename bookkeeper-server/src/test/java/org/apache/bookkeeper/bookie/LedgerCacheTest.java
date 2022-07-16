@@ -40,9 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -344,11 +345,11 @@ public class LedgerCacheTest {
         for (int i = 1; i <= numLedgers; i++) {
             try {
                 b.readEntry(i, 1);
-            } catch (Bookie.NoLedgerException nle) {
+            } catch (NoLedgerException nle) {
                 // this is fine, means the ledger was never written to the index cache
                 assertEquals("No ledger should only happen for the last ledger",
                              i, numLedgers);
-            } catch (Bookie.NoEntryException nee) {
+            } catch (NoEntryException nee) {
                 // this is fine, means the ledger was written to the index cache, but not
                 // the entry log
             } catch (IOException ioe) {

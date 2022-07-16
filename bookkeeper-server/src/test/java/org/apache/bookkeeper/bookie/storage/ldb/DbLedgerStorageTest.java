@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
@@ -40,6 +39,8 @@ import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.bookie.exceptions.NoEntryException;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -96,14 +97,14 @@ public class DbLedgerStorageTest {
         try {
             storage.isFenced(3);
             fail("should have failed");
-        } catch (Bookie.NoLedgerException nle) {
+        } catch (NoLedgerException nle) {
             // OK
         }
         assertEquals(false, storage.ledgerExists(3));
         try {
             storage.setFenced(3);
             fail("should have failed");
-        } catch (Bookie.NoLedgerException nle) {
+        } catch (NoLedgerException nle) {
             // OK
         }
         storage.setMasterKey(3, "key".getBytes());
@@ -209,7 +210,7 @@ public class DbLedgerStorageTest {
         try {
             storage.getEntry(4, 4);
             fail("Should have thrown exception since the ledger was deleted");
-        } catch (Bookie.NoLedgerException e) {
+        } catch (NoLedgerException e) {
             // ok
         }
     }
@@ -270,7 +271,7 @@ public class DbLedgerStorageTest {
         try {
             storage.getEntry(1, -1);
             fail("Should throw exception");
-        } catch (Bookie.NoEntryException e) {
+        } catch (NoEntryException e) {
             // ok
         }
 

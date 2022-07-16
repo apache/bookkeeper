@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.exceptions.NoLedgerException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -91,7 +92,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public boolean entryExists(long ledgerId, long entryId) throws IOException {
         LedgerInfo info = ledgers.get(ledgerId);
         if (info == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return info != null && info.entries.containsKey(entryId);
     }
@@ -109,7 +110,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
                 return current;
             });
         if (previous == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return ret.get();
     }
@@ -118,7 +119,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public boolean isFenced(long ledgerId) throws IOException {
         LedgerInfo info = ledgers.get(ledgerId);
         if (info == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return info != null && info.fenced;
     }
@@ -130,7 +131,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
                 return current;
             });
         if (previous == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
     }
 
@@ -138,7 +139,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public boolean hasLimboState(long ledgerId) throws IOException {
         LedgerInfo info = ledgers.get(ledgerId);
         if (info == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return info.limbo;
     }
@@ -149,7 +150,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
                 return current;
             });
         if (previous == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
     }
 
@@ -169,7 +170,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
         LedgerInfo info = ledgers.get(ledgerId);
         if (info == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return Arrays.copyOf(info.masterKey, info.masterKey.length);
     }
@@ -202,7 +203,7 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
                 return current;
             });
         if (previous == null) {
-            throw new Bookie.NoLedgerException(ledgerId);
+            throw new NoLedgerException(ledgerId);
         }
         return entryId;
     }

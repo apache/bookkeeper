@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,17 +15,8 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-
-package org.apache.bookkeeper.bookie;
-
-import java.io.IOException;
-
-interface HandleFactory {
-    LedgerDescriptor getHandle(long ledgerId, byte[] masterKey)
-            throws IOException, BookieException;
-
-    LedgerDescriptor getReadOnlyHandle(long ledgerId)
-            throws IOException ;
-}
+/**
+ * Provides a <i>Bookie</i> server that stores entries for clients.
+ */
+package org.apache.bookkeeper.bookie.exceptions;
