@@ -20,7 +20,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_JOINED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_LEFT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNT;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -533,7 +533,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final Supplier<String> defaultRackSupplier;
         final DNSToSwitchMapping resolver;
         @StatsDoc(
-                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER,
+                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNT,
                 help = "total number of times Resolver failed to resolve rack information of a node"
         )
         final Counter failedToResolveNetworkLocationCounter;
