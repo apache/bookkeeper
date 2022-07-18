@@ -45,7 +45,7 @@
 SS_MEM=" -Xms2g -Xmx2g -XX:MaxDirectMemorySize=4g"
 
 # Garbage collection options
-SS_GC=" -XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB"
+SS_GC=" -XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB"
 
 # Extra options to be passed to the jvm
 SS_EXTRA_OPTS="${SS_EXTRA_OPTS} ${SS_MEM} ${SS_GC} -Dio.netty.leakDetectionLevel=disabled"
