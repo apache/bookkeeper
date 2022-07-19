@@ -56,8 +56,9 @@ public class ConvertToInterleavedStorageCommandTest extends BookieCommandTestBas
     private LedgerCache interleavedLedgerCache;
 
 
+    // create multi ledger dirs and multi index dirs
     public ConvertToInterleavedStorageCommandTest() {
-        super(3, 0);
+        super(3, 3);
     }
 
     @Override

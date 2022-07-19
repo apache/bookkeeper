@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -88,10 +89,10 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
     private boolean handle(ServerConfiguration bkConf) throws Exception {
         LOG.info("=== Converting DbLedgerStorage ===");
         ServerConfiguration conf = new ServerConfiguration(bkConf);
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-            new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
-        LedgerDirsManager ledgerIndexManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
-            new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
+        DiskChecker diskChecker = new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(), diskChecker);
+        LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
+                conf, diskChecker, NullStatsLogger.INSTANCE, ledgerDirsManager);
 
         DbLedgerStorage dbStorage = new DbLedgerStorage();
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
@@ -117,11 +118,11 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
             }
         };
 
-        dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+        dbStorage.initialize(conf, null, ledgerDirsManager, indexDirsManager,
                              NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         dbStorage.setCheckpointSource(checkpointSource);
         dbStorage.setCheckpointer(checkpointer);
-        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+        interleavedStorage.initialize(conf, null, ledgerDirsManager, indexDirsManager,
                                       NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
         interleavedStorage.setCheckpointSource(checkpointSource);
         interleavedStorage.setCheckpointer(checkpointer);
