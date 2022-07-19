@@ -77,12 +77,14 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         String hello = String.format(
             "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
-                + " Journals are in %4$s. Ledgers are stored in %5$s.",
+                + " Journals are in %4$s. Ledgers are stored in %5$s. Indexes are stored in %6$s.",
             serverConf.getBookieId() != null ? serverConf.getBookieId() : "<not-set>",
             serverConf.getBookiePort(),
             serverConf.getMetadataServiceUriUnchecked(),
             Arrays.asList(serverConf.getJournalDirNames()),
-            Arrays.asList(serverConf.getLedgerDirNames()));
+            Arrays.asList(serverConf.getLedgerDirNames()),
+            Arrays.asList(serverConf.getIndexDirNames() != null
+                    ? serverConf.getIndexDirNames() : serverConf.getLedgerDirNames()));
 
         ByteBufAllocator allocator = BookieResources.createAllocator(serverConf);
 
