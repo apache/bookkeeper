@@ -37,6 +37,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.PortManager;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -207,6 +208,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
      * Check multiple ledger dirs.
      */
     @Test
+    @Ignore
     public void testBookieContinueWritingIfMultipleLedgersPresent()
             throws Exception {
         startNewBookieWithMultipleLedgerDirs(2);

@@ -36,6 +36,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -52,6 +53,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
     @SuppressWarnings("deprecation")
     @Test
+    @Ignore
     public void testBookieServerZKExpireBehaviour() throws Exception {
         BookieServer server = null;
         try {
