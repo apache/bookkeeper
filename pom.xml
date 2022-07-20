@@ -147,7 +147,7 @@
     <jna.version>5.12.1</jna.version>
     <junit.version>4.12</junit.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
-    <junit5.version>5.8.2</junit5.version>
+    <junit5.version>5.9.0-RC1</junit5.version>
     <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.22</lombok.version>
     <log4j.version>2.17.2</log4j.version>
