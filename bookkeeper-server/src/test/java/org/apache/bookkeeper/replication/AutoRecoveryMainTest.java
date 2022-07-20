@@ -20,10 +20,13 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import java.io.IOException;
+
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
@@ -49,11 +52,9 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         AutoRecoveryMain main = new AutoRecoveryMain(confByIndex(0));
         try {
             main.start();
-            Thread.sleep(500);
-            assertTrue("AuditorElector should be running",
-                    main.auditorElector.isRunning());
-            assertTrue("Replication worker should be running",
-                    main.replicationWorker.isRunning());
+            await().atMost(1, SECONDS).untilAsserted(() ->
+                    assertTrue("AuditorElector and Replication Worker should be running",
+                            main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
         } finally {
             main.shutdown();
         }
@@ -66,12 +67,9 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
     public void testShutdown() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(confByIndex(0));
         main.start();
-        Thread.sleep(500);
-        assertTrue("AuditorElector should be running",
-                main.auditorElector.isRunning());
-        assertTrue("Replication worker should be running",
-                main.replicationWorker.isRunning());
-
+        await().atMost(1, SECONDS).untilAsserted(()->
+                assertTrue("AuditorElector and ReplicationWorker should be running",
+                        main.auditorElector.isRunning() && main.replicationWorker.isRunning()));
         main.shutdown();
         assertFalse("AuditorElector should not be running",
                 main.auditorElector.isRunning());
@@ -98,19 +96,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          */
         ZKMetadataClientDriver zkMetadataClientDriver1 = startAutoRecoveryMain(main1);
         ZooKeeper zk1 = zkMetadataClientDriver1.getZk();
-
-        // Wait until auditor gets elected
-        for (int i = 0; i < 10; i++) {
-            try {
-                if (main1.auditorElector.getCurrentAuditor() != null) {
-                    break;
-                } else {
-                    Thread.sleep(1000);
-                }
-            } catch (IOException e) {
-                Thread.sleep(1000);
-            }
-        }
+        await().until(() -> main1.auditorElector.getAuditor() != null);
         BookieId currentAuditor = main1.auditorElector.getCurrentAuditor();
         assertNotNull(currentAuditor);
         Auditor auditor1 = main1.auditorElector.getAuditor();
@@ -146,20 +132,15 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * wait for some time for all the components of AR1 and AR2 are
          * shutdown.
          */
-        for (int i = 0; i < 10; i++) {
-            if (!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
-                    && !main1.isAutoRecoveryRunning() && !main2.auditorElector.isRunning()
-                    && !main2.replicationWorker.isRunning() && !main2.isAutoRecoveryRunning()) {
-                break;
-            }
-            Thread.sleep(1000);
-        }
+        await().until(()->!main1.auditorElector.isRunning() && !main1.replicationWorker.isRunning()
+                && !main1.isAutoRecoveryRunning() && !main2.auditorElector.isRunning()
+                && !main2.replicationWorker.isRunning() && !main2.isAutoRecoveryRunning());
 
         /*
          * the AR3 should be current auditor.
          */
         currentAuditor = main3.auditorElector.getCurrentAuditor();
-        assertTrue("Current Auditor should be AR3", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(2))));
+        assertEquals("Current Auditor should be AR3", currentAuditor, BookieImpl.getBookieId(confByIndex(2)));
         auditor3 = main3.auditorElector.getAuditor();
         assertTrue("Auditor of AR3 should be running", auditor3.isRunning());
 
