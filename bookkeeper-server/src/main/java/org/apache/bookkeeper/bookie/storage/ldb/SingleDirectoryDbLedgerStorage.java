@@ -178,7 +178,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Do not attempt to perform read-ahead more than half the total size of the cache
         maxReadAheadBytesSize = readCacheMaxSize / 2;
 
-        long maxThrottleTimeMillis = conf.getLong(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS,
+        long maxThrottleTimeMillis =
+                DbLedgerStorage.getLongVariableOrDefault(conf, DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS,
                 DEFAULT_MAX_THROTTLE_TIME_MILLIS);
         maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 

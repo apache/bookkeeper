@@ -174,7 +174,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
-        int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
+        int readAheadCacheBatchSize = getIntVariableOrDefault(conf, READ_AHEAD_CACHE_BATCH_SIZE,
+                DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
 
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
@@ -524,6 +525,19 @@ public class DbLedgerStorage implements LedgerStorage {
     public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
         return ledgerStorageList.stream()
             .map(single -> single.getGarbageCollectionStatus().get(0)).collect(Collectors.toList());
+    }
+
+    static int getIntVariableOrDefault(ServerConfiguration conf, String keyName, int defaultValue) {
+        Object obj = conf.getProperty(keyName);
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        } else if (obj == null) {
+            return defaultValue;
+        } else if (StringUtils.isEmpty(conf.getString(keyName))) {
+            return defaultValue;
+        } else {
+            return conf.getInt(keyName);
+        }
     }
 
     static long getLongVariableOrDefault(ServerConfiguration conf, String keyName, long defaultValue) {
