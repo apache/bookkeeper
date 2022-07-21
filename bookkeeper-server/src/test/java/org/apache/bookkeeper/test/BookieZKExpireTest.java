@@ -112,6 +112,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             assertTrue("Bookie should not shutdown on zk timeout", server.isBookieRunning());
             assertTrue("Bookie Server should not shutdown on zk timeout", server.isRunning());
         } finally {
+            System.clearProperty("zookeeper.request.timeout");
             server.shutdown();
         }
     }
@@ -181,6 +182,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             assertFalse("Bookie should shutdown on losing zk session", server.isBookieRunning());
             assertFalse("Bookie Server should shutdown on losing zk session", server.isRunning());
         } finally {
+            System.clearProperty("zookeeper.request.timeout");
             server.shutdown();
         }
     }
