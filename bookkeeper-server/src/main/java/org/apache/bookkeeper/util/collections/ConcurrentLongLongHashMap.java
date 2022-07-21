@@ -657,7 +657,11 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        // Shrinking must at least ensure initCapacity,
+                        // so as to avoid frequent shrinking and expansion near initCapacity,
+                        // frequent shrinking and expansion,
+                        // additionally opened arrays will consume more memory and affect GC
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -695,7 +699,7 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -734,7 +738,7 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap

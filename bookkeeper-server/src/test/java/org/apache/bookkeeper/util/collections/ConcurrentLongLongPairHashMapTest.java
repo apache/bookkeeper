@@ -201,13 +201,12 @@ public class ConcurrentLongLongPairHashMapTest {
         assertTrue(map.capacity() == 4);
 
         assertTrue(map.remove(3, 3, 33, 33));
-        // shrink hashmap again
-        assertTrue(map.capacity() == 2);
-        // after shrink, current capacity is less than the initial capacity
-        assertTrue(map.capacity() < initCapacity);
+        // Will not shrink the hashmap again because shrink capacity is less than initCapacity
+        // current capacity is equal than the initial capacity
+        assertTrue(map.capacity() == initCapacity);
         map.clear();
-        // after clear, because current capacity is less than the initial capacity, so not shrinkToInitCapacity
-        assertTrue(map.capacity() == 2);
+        // after clear, because current capacity is equal than the initial capacity, so not shrinkToInitCapacity
+        assertTrue(map.capacity() == initCapacity);
     }
 
     @Test
