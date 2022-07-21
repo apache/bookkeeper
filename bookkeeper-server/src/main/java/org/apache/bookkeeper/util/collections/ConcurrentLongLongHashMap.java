@@ -775,11 +775,12 @@ public class ConcurrentLongLongHashMap {
             long stamp = writeLock();
 
             try {
-                Arrays.fill(table, EmptyKey);
-                this.size = 0;
-                this.usedBuckets = 0;
-                if (autoShrink) {
-                    rehash(initCapacity);
+                if (autoShrink && capacity > initCapacity) {
+                    shrinkToInitCapacity();
+                } else {
+                    Arrays.fill(table, EmptyKey);
+                    this.size = 0;
+                    this.usedBuckets = 0;
                 }
             } finally {
                 unlockWrite(stamp);
@@ -846,6 +847,20 @@ public class ConcurrentLongLongHashMap {
             // Capacity needs to be updated after the values, so that we won't see
             // a capacity value bigger than the actual array size
             capacity = newCapacity;
+            resizeThresholdUp = (int) (capacity * mapFillFactor);
+            resizeThresholdBelow = (int) (capacity * mapIdleFactor);
+        }
+
+        private void shrinkToInitCapacity() {
+            long[] newTable = new long[2 * initCapacity];
+            Arrays.fill(newTable, EmptyKey);
+
+            table = newTable;
+            size = 0;
+            usedBuckets = 0;
+            // Capacity needs to be updated after the values, so that we won't see
+            // a capacity value bigger than the actual array size
+            capacity = initCapacity;
             resizeThresholdUp = (int) (capacity * mapFillFactor);
             resizeThresholdBelow = (int) (capacity * mapIdleFactor);
         }

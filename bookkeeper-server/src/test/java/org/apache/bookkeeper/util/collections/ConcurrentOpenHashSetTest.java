@@ -159,6 +159,41 @@ public class ConcurrentOpenHashSetTest {
     }
 
     @Test
+    public void testExpandShrinkAndClear() {
+        ConcurrentOpenHashSet<String> map = ConcurrentOpenHashSet.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        final long initCapacity = map.capacity();
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.add("k1"));
+        assertTrue(map.add("k2"));
+        assertTrue(map.add("k3"));
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove("k1"));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove("k2"));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.remove("k3"));
+        // shrink hashmap again
+        assertTrue(map.capacity() == 2);
+        // after shrink, current capacity is less than the initial capacity
+        assertTrue(map.capacity() < initCapacity);
+        map.clear();
+        // after clear, because current capacity is less than the initial capacity, so not shrinkToInitCapacity
+        assertTrue(map.capacity() == 2);
+    }
+
+    @Test
     public void testReduceUnnecessaryExpansions(){
         ConcurrentOpenHashSet<String> set =
                 ConcurrentOpenHashSet.<String>newBuilder()

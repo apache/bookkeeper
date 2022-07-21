@@ -178,6 +178,39 @@ public class ConcurrentLongLongPairHashMapTest {
     }
 
     @Test
+    public void testExpandShrinkAndClear() {
+        ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        final long initCapacity = map.capacity();
+        assertTrue(map.put(1, 1, 11, 11));
+        assertTrue(map.put(2, 2, 22, 22));
+        assertTrue(map.put(3, 3, 33, 33));
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove(1, 1, 11, 11));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove(2, 2, 22, 22));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.remove(3, 3, 33, 33));
+        // shrink hashmap again
+        assertTrue(map.capacity() == 2);
+        // after shrink, current capacity is less than the initial capacity
+        assertTrue(map.capacity() < initCapacity);
+        map.clear();
+        // after clear, because current capacity is less than the initial capacity, so not shrinkToInitCapacity
+        assertTrue(map.capacity() == 2);
+    }
+
+    @Test
     public void testNegativeUsedBucketCount() {
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
                 .expectedItems(16)
