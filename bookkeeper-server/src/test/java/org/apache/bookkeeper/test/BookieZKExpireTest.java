@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -30,6 +31,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.util.HashSet;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -41,18 +43,23 @@ import org.junit.Test;
 /**
  * Test bookie expiration.
  */
+@Slf4j
 public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
     public BookieZKExpireTest() {
         super(0);
-        // 6000 is minimum due to default tick time
-        baseConf.setZkTimeout(6000);
-        baseClientConf.setZkTimeout(6000);
     }
 
-    @SuppressWarnings("deprecation")
+    /*
+    Should recover from request timeout.
+    */
     @Test
-    public void testBookieServerZKExpireBehaviour() throws Exception {
+    @SuppressWarnings("deprecation")
+    public void testBookieServerZKRequestTimeoutBehaviour() throws Exception {
+        // 6000 is minimum due to default tick time
+        System.setProperty("zookeeper.request.timeout", "6000");
+        baseConf.setZkTimeout(24000);
+        baseClientConf.setZkTimeout(24000);
         BookieServer server = null;
         try {
             File f = tmpDirs.createNew("bookieserver", "test");
@@ -94,16 +101,90 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             }
             assertNotNull("Send thread not found", sendthread);
 
+            log.info("Suspending threads");
             sendthread.suspend();
-            Thread.sleep(2 * conf.getZkTimeout());
+            Thread.sleep(12000);
+            log.info("Resuming threads");
             sendthread.resume();
 
             // allow watcher thread to run
             Thread.sleep(3000);
-            assertTrue("Bookie should not shutdown on losing zk session", server.isBookieRunning());
-            assertTrue("Bookie Server should not shutdown on losing zk session", server.isRunning());
+            assertTrue("Bookie should not shutdown on zk timeout", server.isBookieRunning());
+            assertTrue("Bookie Server should not shutdown on zk timeout", server.isRunning());
         } finally {
+            System.clearProperty("zookeeper.request.timeout");
             server.shutdown();
         }
     }
+
+    /*
+    Bookie cannot recover from ZK Client's SessionExpired error.
+    In this case the ZK client must be recreated, reconnect does not work.
+    Attempt to reconnect by BookieStateManager's RegistrationManager listener
+    will fail (even if retry it many times).
+    */
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testBookieServerZKSessionExpireBehaviour() throws Exception {
+        // 6000 is minimum due to default tick time
+        System.setProperty("zookeeper.request.timeout", "0");
+        baseConf.setZkTimeout(6000);
+        baseClientConf.setZkTimeout(6000);
+        BookieServer server = null;
+        try {
+            File f = tmpDirs.createNew("bookieserver", "test");
+
+            HashSet<Thread> threadset = new HashSet<Thread>();
+            int threadCount = Thread.activeCount();
+            Thread[] threads = new Thread[threadCount * 2];
+            threadCount = Thread.enumerate(threads);
+            for (int i = 0; i < threadCount; i++) {
+                if (threads[i].getName().indexOf("SendThread") != -1) {
+                    threadset.add(threads[i]);
+                }
+            }
+
+            ServerConfiguration conf = newServerConfiguration(PortManager.nextFreePort(), f, new File[] { f });
+            server = new BookieServer(
+                    conf, new TestBookieImpl(conf),
+                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                    new MockUncleanShutdownDetection());
+            server.start();
+
+            int secondsToWait = 5;
+            while (!server.isRunning()) {
+                Thread.sleep(1000);
+                if (secondsToWait-- <= 0) {
+                    fail("Bookie never started");
+                }
+            }
+            Thread sendthread = null;
+            threadCount = Thread.activeCount();
+            threads = new Thread[threadCount * 2];
+            threadCount = Thread.enumerate(threads);
+            for (int i = 0; i < threadCount; i++) {
+                if (threads[i].getName().indexOf("SendThread") != -1
+                        && !threadset.contains(threads[i])) {
+                    sendthread = threads[i];
+                    break;
+                }
+            }
+            assertNotNull("Send thread not found", sendthread);
+
+            log.info("Suspending threads");
+            sendthread.suspend();
+            Thread.sleep(2L * conf.getZkTimeout());
+            log.info("Resuming threads");
+            sendthread.resume();
+
+            // allow watcher thread to run
+            Thread.sleep(3000);
+            assertFalse("Bookie should shutdown on losing zk session", server.isBookieRunning());
+            assertFalse("Bookie Server should shutdown on losing zk session", server.isRunning());
+        } finally {
+            System.clearProperty("zookeeper.request.timeout");
+            server.shutdown();
+        }
+    }
+
 }
