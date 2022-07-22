@@ -139,20 +139,7 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
                 }
                 Entry<byte[], byte[]> entry = iterator.next();
                 long entryLogId = ArrayUtil.getLong(entry.getKey(), 0);
-                ByteArrayInputStream localBais = bais.get();
-                DataInputStream localDatais = datais.get();
-                if (localBais.available() < entry.getValue().length) {
-                    localBais.close();
-                    localDatais.close();
-                    ByteArrayInputStream newBais = new ByteArrayInputStream(entry.getValue());
-                    bais.set(newBais);
-                    datais.set(new DataInputStream(newBais));
-                } else {
-                    localBais.read(entry.getValue(), 0, entry.getValue().length);
-                }
-                localBais.reset();
-                localDatais.reset();
-                EntryLogMetadataRecyclable metadata = EntryLogMetadata.deserialize(datais.get());
+                EntryLogMetadataRecyclable metadata = getEntryLogMetadataRecyclable(entry.getValue());
                 try {
                     action.accept(entryLogId, metadata);
                 } finally {
@@ -169,6 +156,52 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
                 log.error("Failed to close entry-log metadata-map rocksDB iterator {}", e.getMessage(), e);
             }
         }
+    }
+
+    /**
+     * {@link EntryLogMetadata} life-cycle in supplied action will be transient
+     * and it will be recycled as soon as supplied action is completed.
+     */
+    @Override
+    public void forKey(long entryLogId, BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException {
+        throwIfClosed();
+        LongWrapper key = LongWrapper.get(entryLogId);
+        try {
+            byte[] value = metadataMapDB.get(key.array);
+            if (value == null || value.length == 0) {
+                action.accept(entryLogId, null);
+                return;
+            }
+            EntryLogMetadataRecyclable metadata = getEntryLogMetadataRecyclable(value);
+            try {
+                action.accept(entryLogId, metadata);
+            } finally {
+                metadata.recycle();
+            }
+        } catch (IOException e) {
+            log.error("Failed to get metadata for entryLogId {}: {}", entryLogId, e.getMessage(), e);
+            throw new EntryLogMetadataMapException(e);
+        } finally {
+            key.recycle();
+        }
+    }
+
+    private EntryLogMetadataRecyclable getEntryLogMetadataRecyclable(byte[] value) throws IOException {
+        ByteArrayInputStream localBais = bais.get();
+        DataInputStream localDatais = datais.get();
+        if (localBais.available() < value.length) {
+            localBais.close();
+            localDatais.close();
+            ByteArrayInputStream newBais = new ByteArrayInputStream(value);
+            bais.set(newBais);
+            datais.set(new DataInputStream(newBais));
+        } else {
+            localBais.read(value, 0, value.length);
+        }
+        localBais.reset();
+        localDatais.reset();
+        EntryLogMetadataRecyclable metadata = EntryLogMetadata.deserialize(datais.get());
+        return metadata;
     }
 
     @Override

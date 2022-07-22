@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.List;
 
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Rule;
@@ -77,6 +78,19 @@ public class PersistentEntryLogMetadataMapTest {
             assertEquals(metadatas.get(logId.intValue() - 1).getTotalSize(), metadata.getTotalSize());
             for (int i = 0; i < logId.intValue(); i++) {
                 assertTrue(metadata.containsLedger(i));
+            }
+        });
+
+        metadatas.forEach(meta -> {
+            long logId = meta.getEntryLogId();
+            try {
+                entryMetadataMap.forKey(logId, (entryLogId, persistedMeta) -> {
+                    assertEquals(meta.getEntryLogId(), persistedMeta.getEntryLogId());
+                    assertEquals(meta.getTotalSize(), persistedMeta.getTotalSize());
+                    assertEquals(logId, (long) entryLogId);
+                });
+            } catch (BookieException.EntryLogMetadataMapException e) {
+                throw new RuntimeException(e);
             }
         });
 
