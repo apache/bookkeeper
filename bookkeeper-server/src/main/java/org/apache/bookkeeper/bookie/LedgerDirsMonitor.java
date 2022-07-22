@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.IOException;
