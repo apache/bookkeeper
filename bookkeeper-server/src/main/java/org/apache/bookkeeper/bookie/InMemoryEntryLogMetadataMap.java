@@ -48,6 +48,12 @@ public class InMemoryEntryLogMetadataMap implements EntryLogMetadataMap {
     }
 
     @Override
+    public void forKey(long entryLogId, BiConsumer<Long, EntryLogMetadata> action)
+            throws BookieException.EntryLogMetadataMapException {
+        action.accept(entryLogId, entryLogMetaMap.get(entryLogId));
+    }
+
+    @Override
     public void remove(long entryLogId) {
         entryLogMetaMap.remove(entryLogId);
     }

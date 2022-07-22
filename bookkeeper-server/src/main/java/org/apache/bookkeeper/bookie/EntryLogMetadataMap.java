@@ -59,6 +59,14 @@ public interface EntryLogMetadataMap extends Closeable {
     void forEach(BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException;
 
     /**
+     * Performs the given action for the key.
+     *
+     * @param action
+     * @throws EntryLogMetadataMapException
+     */
+    void forKey(long entryLogId, BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException;
+
+    /**
      * Removes entryLogMetadata record from the map.
      *
      * @param entryLogId
