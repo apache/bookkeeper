@@ -23,9 +23,9 @@ package org.apache.bookkeeper.client;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -59,7 +59,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     private ScheduledFuture<?> speculativeTask = null;
-    protected final List<LedgerEntryRequest> seq;
+    protected final LinkedList<LedgerEntryRequest> seq;
     private final CompletableFuture<LedgerEntries> future;
     private final Set<BookieId> heardFromHosts;
     private final BitSet heardFromHostsBitSet;
@@ -463,7 +463,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                   long startEntryId,
                   long endEntryId,
                   boolean isRecoveryRead) {
-        this.seq = new ArrayList<>((int) ((endEntryId + 1) - startEntryId));
+        this.seq = new LinkedList<>();
         this.future = new CompletableFuture<>();
         this.lh = lh;
         this.clientCtx = clientCtx;
