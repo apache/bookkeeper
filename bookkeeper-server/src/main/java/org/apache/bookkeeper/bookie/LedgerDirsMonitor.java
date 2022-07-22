@@ -232,11 +232,6 @@ class LedgerDirsMonitor {
         ldm.getWritableLedgerDirs();
     }
 
-    @VisibleForTesting
-    void setDiskSpaceThreshold(float diskSpaceThreshold, float diskUsageLwmThreshold) {
-        validateThreshold(diskSpaceThreshold, diskUsageLwmThreshold);
-    }
-
     private void validateThreshold(float diskSpaceThreshold, float diskSpaceLwmThreshold) {
         if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceLwmThreshold - diskSpaceThreshold > 1e-6) {
             throw new IllegalArgumentException("Disk space threashold: "
