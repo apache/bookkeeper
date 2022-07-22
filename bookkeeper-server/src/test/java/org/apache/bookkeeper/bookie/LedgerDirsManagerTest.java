@@ -241,6 +241,76 @@ public class LedgerDirsManagerTest {
     }
 
     @Test
+    public void testIsReadOnlyModeOnAnyDiskFullEnabled() throws Exception {
+        testAnyLedgerFullTransitToReadOnly(true);
+        testAnyLedgerFullTransitToReadOnly(false);
+    }
+
+    public void testAnyLedgerFullTransitToReadOnly(boolean isReadOnlyModeOnAnyDiskFullEnabled) throws Exception {
+        ledgerMonitor.shutdown();
+
+        final float nospace = 0.90f;
+        final float lwm = 0.80f;
+        HashMap<File, Float> usageMap;
+
+        File tmpDir1 = createTempDir("bkTest", ".dir");
+        File curDir1 = BookieImpl.getCurrentDirectory(tmpDir1);
+        BookieImpl.checkDirectoryStructure(curDir1);
+
+        File tmpDir2 = createTempDir("bkTest", ".dir");
+        File curDir2 = BookieImpl.getCurrentDirectory(tmpDir2);
+        BookieImpl.checkDirectoryStructure(curDir2);
+
+        conf.setDiskUsageThreshold(nospace);
+        conf.setDiskLowWaterMarkUsageThreshold(lwm);
+        conf.setDiskUsageWarnThreshold(nospace);
+        conf.setReadOnlyModeOnAnyDiskFullEnabled(isReadOnlyModeOnAnyDiskFullEnabled);
+        conf.setLedgerDirNames(new String[] { tmpDir1.toString(), tmpDir2.toString() });
+
+        mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+            new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
+        usageMap = new HashMap<>();
+        usageMap.put(curDir1, 0.1f);
+        usageMap.put(curDir2, 0.1f);
+        mockDiskChecker.setUsageMap(usageMap);
+        ledgerMonitor.init();
+        final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        ledgerMonitor.start();
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        if (isReadOnlyModeOnAnyDiskFullEnabled) {
+            setUsageAndThenVerify(curDir1, 0.1f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+            setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, 0.1f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+            setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+            setUsageAndThenVerify(curDir1, nospace - 0.30f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+            setUsageAndThenVerify(curDir1, nospace - 0.20f, curDir2, nospace - 0.20f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+        } else {
+            setUsageAndThenVerify(curDir1, 0.1f, curDir2, 0.1f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+            setUsageAndThenVerify(curDir1, 0.1f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+            setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, 0.1f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+            setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+            setUsageAndThenVerify(curDir1, nospace - 0.30f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+            setUsageAndThenVerify(curDir1, nospace - 0.20f, curDir2, nospace - 0.20f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+        }
+    }
+
+    @Test
     public void testLedgerDirsMonitorHandlingLowWaterMark() throws Exception {
         ledgerMonitor.shutdown();
 
@@ -517,12 +587,18 @@ public class LedgerDirsManagerTest {
 
         @Override
         public void diskWritable(File disk) {
+            if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                return;
+            }
             readOnly = false;
             highPriorityWritesAllowed = true;
         }
 
         @Override
         public void diskJustWritable(File disk) {
+            if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                return;
+            }
             readOnly = false;
             highPriorityWritesAllowed = true;
         }
@@ -531,6 +607,20 @@ public class LedgerDirsManagerTest {
         public void allDisksFull(boolean highPriorityWritesAllowed) {
             this.readOnly = true;
             this.highPriorityWritesAllowed = highPriorityWritesAllowed;
+        }
+
+        @Override
+        public void anyDiskFull(boolean highPriorityWritesAllowed) {
+            if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                this.readOnly = true;
+                this.highPriorityWritesAllowed = highPriorityWritesAllowed;
+            }
+        }
+
+        @Override
+        public void allDisksWritable() {
+            this.readOnly = false;
+            this.highPriorityWritesAllowed = true;
         }
 
         public void reset() {

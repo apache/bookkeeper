@@ -187,6 +187,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
     //ReadOnly mode support on all disk full
     protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    protected static final String READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED = "readOnlyModeOnAnyDiskFullEnabled";
     //Whether the bookie is force started in ReadOnly mode
     protected static final String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
     //Whether to persist the bookie status
@@ -2393,6 +2394,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isReadOnlyModeEnabled() {
         return getBoolean(READ_ONLY_MODE_ENABLED, true);
+    }
+
+    /**
+     * Set whether the bookie is able to go into read-only mode when any disk is full.
+     * If this set to false, it will behave to READ_ONLY_MODE_ENABLED flag.
+     *
+     * @param enabled whether to enable read-only mode when any disk is full.
+     * @return
+     */
+    public ServerConfiguration setReadOnlyModeOnAnyDiskFullEnabled(boolean enabled) {
+        setProperty(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether read-only mode is enable when any disk is full. The default is false.
+     *
+     * @return boolean
+     */
+    public boolean isReadOnlyModeOnAnyDiskFullEnabled() {
+        return getBoolean(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, false);
     }
 
     /**
