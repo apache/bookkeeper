@@ -435,6 +435,19 @@ public class LedgerDirsManager {
         default void allDisksFull(boolean highPriorityWritesAllowed) {}
 
         /**
+         * This will be notified whenever all disks are detected as not full.
+         *
+         */
+        default void allDisksWritable() {}
+
+        /**
+         * This will be notified whenever any disks are detected as full.
+         *
+         * @param highPriorityWritesAllowed the parameter indicates we are still have disk spaces for high priority
+         *          *                                  writes even disks are detected as "full"
+         */
+        default void anyDiskFull(boolean highPriorityWritesAllowed) {}
+        /**
          * This will notify the fatal errors.
          */
         default void fatalError() {}
