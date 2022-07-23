@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.meta.zk;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,6 +58,7 @@ public abstract class ZKMetadataDriverTestBase {
             .thenReturn(mockZkBuilder);
         when(mockZkBuilder.requestRateLimit(anyDouble())).thenReturn(mockZkBuilder);
         when(mockZkBuilder.statsLogger(any(StatsLogger.class))).thenReturn(mockZkBuilder);
+        when(mockZkBuilder.retryExpired(anyBoolean())).thenReturn(mockZkBuilder);
 
         this.mockZkc = mock(ZooKeeperClient.class);
         when(mockZkc.exists(anyString(), eq(false)))
