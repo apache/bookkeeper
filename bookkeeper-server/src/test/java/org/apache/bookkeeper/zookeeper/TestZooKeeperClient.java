@@ -141,7 +141,7 @@ public abstract class TestZooKeeperClient extends TestCase {
             super(connectString, sessionTimeoutMs, watcher,
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
                     operationRetryPolicy,
-                    NullStatsLogger.INSTANCE, 1, 0, false);
+                    NullStatsLogger.INSTANCE, 1, 0, false, true);
         }
 
         @Override

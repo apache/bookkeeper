@@ -69,7 +69,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
     @Test
     public void testInitialize() throws Exception {
         driver.initialize(
-            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty(), false);
 
         assertEquals(
             "/path/to/ledgers",
@@ -97,7 +97,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         ZooKeeperClient anotherZk = mock(ZooKeeperClient.class);
 
         driver.initialize(
-            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.of(anotherZk));
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.of(anotherZk), false);
 
         assertEquals(
             "/ledgers",
@@ -123,7 +123,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
     @Test
     public void testGetLedgerManagerFactory() throws Exception {
         driver.initialize(
-            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty(), false);
 
         mockStatic(AbstractZkLedgerManagerFactory.class);
         LedgerManagerFactory factory = mock(LedgerManagerFactory.class);
