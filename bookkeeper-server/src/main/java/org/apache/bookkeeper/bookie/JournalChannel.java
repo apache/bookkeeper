@@ -105,7 +105,7 @@ class JournalChannel implements Closeable {
                    FileChannelProvider provider) throws IOException {
          this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE,
                  position, false, V5, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER,
-             conf, provider);
+             conf, provider, null);
     }
 
     // Open journal to write
@@ -114,16 +114,16 @@ class JournalChannel implements Closeable {
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
                    ServerConfiguration conf, FileChannelProvider provider) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize, fRemoveFromPageCache,
-                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf, provider);
+                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf, provider, null);
     }
 
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
                    Journal.BufferedChannelBuilder bcBuilder, ServerConfiguration conf,
-                   FileChannelProvider provider) throws IOException {
+                   FileChannelProvider provider, Long toReplaceLogId) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, conf, provider);
+                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, conf, provider, toReplaceLogId);
     }
 
     /**
@@ -153,14 +153,23 @@ class JournalChannel implements Closeable {
                            long position, boolean fRemoveFromPageCache,
                            int formatVersionToWrite, Journal.BufferedChannelBuilder bcBuilder,
                            ServerConfiguration conf,
-                           FileChannelProvider provider) throws IOException {
+                           FileChannelProvider provider, Long toReplaceLogId) throws IOException {
         this.journalAlignSize = journalAlignSize;
         this.zeros = ByteBuffer.allocate(journalAlignSize);
         this.preAllocSize = preAllocSize - preAllocSize % journalAlignSize;
         this.fRemoveFromPageCache = fRemoveFromPageCache;
         this.configuration = conf;
 
+        boolean reuseFile = false;
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
+        if (toReplaceLogId != null && logId != toReplaceLogId && provider.supportReuseFile()) {
+            File toReplaceFile = new File(journalDirectory, Long.toHexString(toReplaceLogId) + ".txn");
+            if (toReplaceFile.exists()) {
+                renameJournalFile(toReplaceFile, fn);
+                provider.notifyRename(toReplaceFile, fn);
+                reuseFile = true;
+            }
+        }
         channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
@@ -168,8 +177,8 @@ class JournalChannel implements Closeable {
         }
 
         LOG.info("Opening journal {}", fn);
-        if (!channel.fileExists(fn)) { // new file, write version
-            if (!fn.createNewFile()) {
+        if (!channel.fileExists(fn) || reuseFile) { // new file, write version
+            if (!reuseFile && !fn.createNewFile()) {
                 LOG.error("Journal file {}, that shouldn't exist, already exists. "
                           + " is there another bookie process running?", fn);
                 throw new IOException("File " + fn
@@ -245,6 +254,13 @@ class JournalChannel implements Closeable {
             this.fd = NativeIO.getSysFileDescriptor(channel.getFD());
         } else {
             this.fd = -1;
+        }
+    }
+
+    public static void renameJournalFile(File source, File target) throws IOException {
+        if (!source.renameTo(target)) {
+            LOG.error("Failed to rename file {} to {}", source, target);
+            throw new IOException("Failed to rename file " + source + " to " + target);
         }
     }
 
