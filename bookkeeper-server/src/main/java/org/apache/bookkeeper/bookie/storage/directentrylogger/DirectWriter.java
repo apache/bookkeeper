@@ -49,7 +49,7 @@ class DirectWriter implements LogWriter {
     final List<Future<?>> outstandingWrites = new ArrayList<Future<?>>();
     Buffer nativeBuffer;
     long offset;
-    private volatile boolean useFallocate = true;
+    private static volatile boolean useFallocate = true;
 
     DirectWriter(int id,
                  String filename,
@@ -77,7 +77,7 @@ class DirectWriter implements LogWriter {
 
         if (useFallocate) {
             if (!SystemUtils.IS_OS_LINUX) {
-                useFallocate = false;
+                disableUseFallocate();
                 slog.warn(Events.FALLOCATE_NOT_AVAILABLE);
             } else {
                 try {
@@ -86,7 +86,7 @@ class DirectWriter implements LogWriter {
                 } catch (NativeIOException ex) {
                     // fallocate(2) is not supported on all filesystems.  Since this is an optimization, disable
                     // subsequent usage instead of failing the operation.
-                    useFallocate = false;
+                    disableUseFallocate();
                     slog.kv("message", ex.getMessage())
                         .kv("file", filename)
                         .kv("errno", ex.getErrno())
@@ -97,6 +97,10 @@ class DirectWriter implements LogWriter {
 
         this.bufferPool = bufferPool;
         this.nativeBuffer = bufferPool.acquire();
+    }
+
+    private static void disableUseFallocate() {
+        DirectWriter.useFallocate = false;
     }
 
     @Override

@@ -31,7 +31,7 @@ $ bin/bkctl -u 'zk://localhost:2181/ledgers' ledger simpletest
 ### DistributedLog
 
 You can use `distributedlog://localhost:2181/distributedlog` as dlog uri to access ledger storage service
-using [distributedlog](http://bookkeeper.apache.org/docs/latest/api/distributedlog-api/) API.
+using [distributedlog](https://bookkeeper.apache.org/docs/api/distributedlog-api/) API.
 
 ```bash
 $ bin/dlog tool create -u 'distributedlog://localhost:2181/distributedlog' --prefix test-stream -e 0-99

@@ -118,10 +118,11 @@ public class BookieStateManager implements StateManager {
         this.rm = rm;
         if (this.rm != null) {
             rm.addRegistrationListener(() -> {
-                    forceToUnregistered();
-                    // schedule a re-register operation
-                    registerBookie(false);
-                });
+                log.info("Trying to re-register the bookie");
+                forceToUnregistered();
+                // schedule a re-register operation
+                registerBookie(false);
+            });
         }
 
         this.statusDirs = statusDirs;
@@ -228,6 +229,7 @@ public class BookieStateManager implements StateManager {
             @Override
             public Void call() throws IOException {
                 try {
+                    log.info("Re-registering the bookie");
                     doRegisterBookie();
                 } catch (IOException ioe) {
                     if (throwException) {
