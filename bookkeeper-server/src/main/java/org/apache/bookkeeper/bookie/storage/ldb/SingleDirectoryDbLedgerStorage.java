@@ -185,9 +185,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         readCache = new ReadCache(allocator, readCacheMaxSize);
 
         ledgerIndex = LedgerMetadataIndex.newInstance(conf,
-                KeyValueStorageRocksDB.factory, indexBaseDir, ledgerDirStatsLogger);
-
-        ledgerIndex = new LedgerMetadataIndex(conf,
+                KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
+        entryLocationIndex = new EntryLocationIndex(conf,
                 KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
 
         transientLedgerInfoCache = ConcurrentLongHashMap.<TransientLedgerInfo>newBuilder()
