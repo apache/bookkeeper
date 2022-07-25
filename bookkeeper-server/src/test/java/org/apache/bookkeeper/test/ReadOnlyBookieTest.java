@@ -101,6 +101,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     public void testBookieShouldTurnWritableFromReadOnly() throws Exception {
         killBookie(0);
         baseConf.setReadOnlyModeEnabled(true);
+        baseConf.setDiskCheckInterval(Integer.MAX_VALUE);
         startNewBookie();
         LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC,
                 "".getBytes());
@@ -128,8 +129,10 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
-        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(1)))
-            .get(30, TimeUnit.SECONDS);
+        // waitForReadOnlyBookie adds another listener thread to observe the node status of bookie,
+        // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
+        // This sequence leads to flaky test. So change from watching zk to thread sleep.
+        Thread.sleep(3000);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted to readonly mode",
@@ -146,8 +149,10 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
 
-        bkc.waitForWritableBookie(BookieImpl.getBookieId(confByIndex(1)))
-            .get(30, TimeUnit.SECONDS);
+        // waitForWritableBookie adds another listener thread to observe the node status of bookie,
+        // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
+        // This sequence leads to flaky test. So change from watching zk to thread sleep.
+        Thread.sleep(3000);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
