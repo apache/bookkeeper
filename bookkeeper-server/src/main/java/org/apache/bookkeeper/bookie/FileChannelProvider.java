@@ -70,6 +70,11 @@ public interface FileChannelProvider extends Closeable {
         return false;
     }
 
+    /**
+     * Notify the rename source file name to the target file name operation.
+     * @param source
+     * @param target
+     */
     default void notifyRename(File source, File target) {
 
     }

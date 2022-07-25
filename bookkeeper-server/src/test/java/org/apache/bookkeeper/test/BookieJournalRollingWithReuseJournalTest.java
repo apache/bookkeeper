@@ -20,13 +20,13 @@
  */
 package org.apache.bookkeeper.test;
 
-    import static org.junit.Assert.assertTrue;
-    import java.io.File;
-    import lombok.extern.slf4j.Slf4j;
-    import org.apache.bookkeeper.client.LedgerHandle;
-    import org.awaitility.Awaitility;
-    import org.junit.Before;
-    import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+import java.io.File;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.awaitility.Awaitility;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * This class tests that bookie rolling journals for reuse journal files.
