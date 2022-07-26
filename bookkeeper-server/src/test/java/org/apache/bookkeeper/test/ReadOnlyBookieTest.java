@@ -248,6 +248,8 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         ServerConfiguration newConf = newServerConfiguration(
                 PortManager.nextFreePort(),
                 ledgerDirs[0], ledgerDirs);
+
+        newConf.setDiskCheckInterval(Integer.MAX_VALUE);
         bsConfs.add(newConf);
         bs.add(startBookie(newConf));
     }
