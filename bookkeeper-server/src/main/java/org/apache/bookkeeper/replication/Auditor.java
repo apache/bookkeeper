@@ -1187,8 +1187,9 @@ public class Auditor implements AutoCloseable {
                         if (exception == null) {
                             underReplicatedSize.add(metadata.getValue().getLength());
                         }
-                    }), null);
-        underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+                    }), null).whenComplete((res, e) -> {
+            underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+        });
 
         return FutureUtils.processList(
             Lists.newArrayList(ledgers),
