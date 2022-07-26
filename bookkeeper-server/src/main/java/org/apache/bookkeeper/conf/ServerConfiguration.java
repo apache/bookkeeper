@@ -187,6 +187,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
     //ReadOnly mode support on all disk full
     protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    protected static final String READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED = "readOnlyModeOnAnyDiskFullEnabled";
     //Whether the bookie is force started in ReadOnly mode
     protected static final String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
     //Whether to persist the bookie status
@@ -562,14 +563,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get local scrub interval.
      *
-     * @return Number of seconds between scrubs, <= 0 for disabled.
+     * @return Number of seconds between scrubs, {@literal <=}0 for disabled.
      */
     public long getLocalScrubPeriod() {
         return this.getLong(LOCAL_SCRUB_PERIOD, 0);
     }
 
     /**
-     * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
+     * Set local scrub period in seconds ({@literal <=}0 for disabled). Scrub will be scheduled at delays
      * chosen from the interval (.5 * interval, 1.5 * interval)
      */
     public void setLocalScrubPeriod(long period) {
@@ -943,7 +944,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalMaxMemorySizeMb() {
         // Default is taking 5% of max direct memory (and convert to MB).
-        long defaultValue = (long) (PlatformDependent.maxDirectMemory() * 0.05 / 1024 / 1024);
+        long defaultValue = (long) (PlatformDependent.estimateMaxDirectMemory() * 0.05 / 1024 / 1024);
         return this.getLong(JOURNAL_MAX_MEMORY_SIZE_MB, defaultValue);
     }
 
@@ -1680,7 +1681,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run major compaction. If <= 0 the
+     * Get the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1691,7 +1692,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run major compaction. If <= 0 the
+     * Set the maximum milliseconds to run major compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMajorCompactionMaxTimeMillis()
@@ -1757,7 +1758,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the maximum milliseconds to run minor compaction. If <= 0 the
+     * Get the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @return limit
@@ -1768,7 +1769,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the maximum milliseconds to run minor compaction. If <= 0 the
+     * Set the maximum milliseconds to run minor compaction. If {@literal <=}0 the
      * thread will run until all compaction is completed.
      *
      * @see #getMinorCompactionMaxTimeMillis()
@@ -2393,6 +2394,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isReadOnlyModeEnabled() {
         return getBoolean(READ_ONLY_MODE_ENABLED, true);
+    }
+
+    /**
+     * Set whether the bookie is able to go into read-only mode when any disk is full.
+     * If this set to false, it will behave to READ_ONLY_MODE_ENABLED flag.
+     *
+     * @param enabled whether to enable read-only mode when any disk is full.
+     * @return
+     */
+    public ServerConfiguration setReadOnlyModeOnAnyDiskFullEnabled(boolean enabled) {
+        setProperty(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether read-only mode is enable when any disk is full. The default is false.
+     *
+     * @return boolean
+     */
+    public boolean isReadOnlyModeOnAnyDiskFullEnabled() {
+        return getBoolean(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, false);
     }
 
     /**

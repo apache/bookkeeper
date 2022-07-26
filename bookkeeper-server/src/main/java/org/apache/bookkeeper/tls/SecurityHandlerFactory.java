@@ -41,4 +41,8 @@ public interface SecurityHandlerFactory {
     void init(NodeType type, AbstractConfiguration conf, ByteBufAllocator allocator) throws SecurityException;
 
     SslHandler newTLSHandler();
+
+    default SslHandler newTLSHandler(String host, int port) {
+        return this.newTLSHandler();
+    }
 }

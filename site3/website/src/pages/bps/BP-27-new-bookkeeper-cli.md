@@ -79,7 +79,7 @@ Usage: bookie-shell cluster [options] [command] [command options]
 - Introduced a new module called `bookkeeper-tools` for developing the new CLI.
 - The new CLI will use [JCommander](http://jcommander.org) for parse command line paramters: better on supporting this proposal commandline syntax.
 - All the actual logic of the commands will be organized under `org.apache.bookkeeper.tools.cli.commands`. Each command group has its own subpackage and each command will be a class file under that command-group subpackage.
-  Doing this provides better testability, since the command logic is limited in one file rather than in a gaint shell class. Proposed layout can be found [here](https://github.com/sijie/bookkeeper/tree/bookie_shell_refactor/bookkeeper-server/src/main/java/org/apache/bookkeeper/tools/cli/commands).
+  Doing this provides better testability, since the command logic is limited in one file rather than in a gaint shell class. Proposed layout can be found [here](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/src/main/java/org/apache/bookkeeper/tools/cli/commands).
 - For each command: the logic of a command will be moved out of `BookieShell` to its own class `org.apache.bookkeeper.tools.cli.commands.<command-group>.<CommandClass>.java`. The old BookieShell will use the new Command class and delegate the actual logic.
 
 An initial prototype is available: https://github.com/sijie/bookkeeper/tree/bookie_shell_refactor

@@ -51,11 +51,11 @@ The table below lists parameters that you can set to configure bookies. All conf
 ## Read-only mode support
 
 | Parameter | Description | Default
-| --------- | ----------- | ------- | 
-| readOnlyModeEnabled | If all ledger directories configured are full, then support only read requests for clients. If "readOnlyModeEnabled=true" then on all ledger disks full, bookie will be converted to read-only mode and serve only read requests. Otherwise the bookie will be shutdown. By default this will be disabled. | true | 
+| -- | ----------- | ------- | 
+| readOnlyModeEnabled | If all ledger directories configured are full, then support only read requests for clients. If "readOnlyModeEnabled=true" then on all ledger disks full, bookie will be converted to read-only mode and serve only read requests. Otherwise the bookie will be shutdown. By default, this will be enabled. | true | 
 | forceReadOnlyBookie | Whether the bookie is force started in read only mode or not. | false | 
 | persistBookieStatusEnabled | Persist the bookie status locally on the disks. So the bookies can keep their status upon restarts. | false | 
-
+| readOnlyModeOnAnyDiskFullEnabled | If any ledger directories configured are full, then support only read requests for clients. If "readOnlyModeOnAnyDiskFullEnabled=true" then on any ledger disks full, bookie will be converted to read-only mode and serve only read requests. When all disks recovered, the bookie will be converted to read-write mode.Otherwise it will obey the `readOnlyModeEnabled` behavior. By default, this will be disabled. | false |
 
 ## Netty server settings
 

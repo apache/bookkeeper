@@ -741,6 +741,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
@@ -748,6 +751,24 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskJustWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
+                // Transition to writable mode when a disk becomes writable again.
+                stateManager.setHighPriorityWritesAvailability(true);
+                stateManager.transitionToWritableMode();
+            }
+
+            @Override
+            public void anyDiskFull(boolean highPriorityWritesAllowed) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    stateManager.setHighPriorityWritesAvailability(highPriorityWritesAllowed);
+                    stateManager.transitionToReadOnlyMode();
+                }
+            }
+
+            @Override
+            public void allDisksWritable() {
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();

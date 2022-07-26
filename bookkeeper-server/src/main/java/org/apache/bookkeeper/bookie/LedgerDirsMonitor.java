@@ -52,13 +52,14 @@ class LedgerDirsMonitor {
     private final ServerConfiguration conf;
     private final DiskChecker diskChecker;
     private final List<LedgerDirsManager> dirsManagers;
-    private long minUsableSizeForHighPriorityWrites;
+    private final long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
                              final List<LedgerDirsManager> dirsManagers) {
+        validateThreshold(conf.getDiskUsageThreshold(), conf.getDiskLowWaterMarkUsageThreshold());
         this.interval = conf.getDiskCheckInterval();
         this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
@@ -68,6 +69,10 @@ class LedgerDirsMonitor {
 
     private void check(final LedgerDirsManager ldm) {
         final ConcurrentMap<File, Float> diskUsages = ldm.getDiskUsages();
+        boolean someDiskFulled = false;
+        boolean highPriorityWritesAllowed = true;
+        boolean someDiskRecovered = false;
+
         try {
             List<File> writableDirs = ldm.getWritableLedgerDirs();
             // Check all writable dirs disk space usage.
@@ -99,6 +104,7 @@ class LedgerDirsMonitor {
                     });
                     // Notify disk full to all listeners
                     ldm.addToFilledDirs(dir);
+                    someDiskFulled = true;
                 }
             }
             // Let's get NoWritableLedgerDirException without waiting for the next iteration
@@ -108,7 +114,6 @@ class LedgerDirsMonitor {
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
             LOG.warn("LedgerDirsMonitor check process: All ledger directories are non writable");
-            boolean highPriorityWritesAllowed = true;
             try {
                 // disk check can be frequent, so disable 'loggingNoWritable' to avoid log flooding.
                 ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites, false);
@@ -146,6 +151,7 @@ class LedgerDirsMonitor {
                     if (makeWritable) {
                         ldm.addToWritableDirs(dir, true);
                     }
+                    someDiskRecovered = true;
                 } catch (DiskErrorException e) {
                     // Notify disk failure to all the listeners
                     for (LedgerDirsListener listener : ldm.getListeners()) {
@@ -157,6 +163,7 @@ class LedgerDirsMonitor {
                     if (makeWritable) {
                         ldm.addToWritableDirs(dir, false);
                     }
+                    someDiskRecovered = true;
                 } catch (DiskOutOfSpaceException e) {
                     // the full-filled dir is still full-filled
                     diskUsages.put(dir, e.getUsage());
@@ -166,6 +173,22 @@ class LedgerDirsMonitor {
             LOG.error("Got IOException while monitoring Dirs", ioe);
             for (LedgerDirsListener listener : ldm.getListeners()) {
                 listener.fatalError();
+            }
+        }
+
+        if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+            if (someDiskFulled && !ldm.getFullFilledLedgerDirs().isEmpty()) {
+                // notify any disk full.
+                for (LedgerDirsListener listener : ldm.getListeners()) {
+                    listener.anyDiskFull(highPriorityWritesAllowed);
+                }
+            }
+
+            if (someDiskRecovered && ldm.getFullFilledLedgerDirs().isEmpty()) {
+                // notify all disk recovered.
+                for (LedgerDirsListener listener : ldm.getListeners()) {
+                    listener.allDisksWritable();
+                }
             }
         }
     }
@@ -228,6 +251,14 @@ class LedgerDirsMonitor {
             }
         }
         ldm.getWritableLedgerDirs();
+    }
+
+    private void validateThreshold(float diskSpaceThreshold, float diskSpaceLwmThreshold) {
+        if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceLwmThreshold - diskSpaceThreshold > 1e-6) {
+            throw new IllegalArgumentException("Disk space threashold: "
+                    + diskSpaceThreshold + " and lwm threshold: " + diskSpaceLwmThreshold
+                    + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceLwmThreshold");
+        }
     }
 }
 

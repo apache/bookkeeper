@@ -58,7 +58,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
-import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
@@ -81,6 +80,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,17 +146,27 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final Counter flushExecutorTime;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StatsLogger statsLogger,
-            ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize) throws IOException {
+            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
+            StatsLogger statsLogger, ByteBufAllocator allocator, ScheduledExecutorService gcExecutor,
+            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize) throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
-        String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
-        log.info("Creating single directory db ledger storage on {}", baseDir);
+        String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
+        // indexBaseDir default use ledgerBaseDir
+        String indexBaseDir = ledgerBaseDir;
+        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())) {
+            log.info("indexDir is not specified, use default, creating single directory db ledger storage on {}",
+                    indexBaseDir);
+        } else {
+            // if indexDir is specified, set new value
+            indexBaseDir = indexDirsManager.getAllLedgerDirs().get(0).getPath();
+            log.info("indexDir is specified, creating single directory db ledger storage on {}", indexBaseDir);
+        }
 
-        StatsLogger ledgerDirStatsLogger = statsLogger.scopeLabel("ledgerDir",
-                ledgerDirsManager.getAllLedgerDirs().get(0).getPath());
+        StatsLogger ledgerIndexDirStatsLogger = statsLogger
+                .scopeLabel("ledgerDir", ledgerBaseDir)
+                .scopeLabel("indexDir", indexBaseDir);
 
         this.writeCacheMaxSize = writeCacheSize;
         this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
@@ -174,9 +184,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         readCache = new ReadCache(allocator, readCacheMaxSize);
 
-        ledgerIndex = new LedgerMetadataIndex(conf, KeyValueStorageRocksDB.factory, baseDir, ledgerDirStatsLogger);
+        ledgerIndex = new LedgerMetadataIndex(conf,
+                KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
         entryLocationIndex = new EntryLocationIndex(conf,
-                KeyValueStorageRocksDB.factory, baseDir, ledgerDirStatsLogger);
+                KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
 
         transientLedgerInfoCache = ConcurrentLongHashMap.<TransientLedgerInfo>newBuilder()
                 .expectedItems(16 * 1024)
@@ -186,18 +197,19 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
-        entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager, null, statsLogger, allocator);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager, this, entryLogger, statsLogger);
+        this.entryLogger = entryLogger;
+        gcThread = new GarbageCollectorThread(conf,
+                ledgerManager, ledgerDirsManager, this, entryLogger, ledgerIndexDirStatsLogger);
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
-                ledgerDirStatsLogger,
+            ledgerIndexDirStatsLogger,
             () -> writeCache.size() + writeCacheBeingFlushed.size(),
             () -> writeCache.count() + writeCacheBeingFlushed.count(),
             () -> readCache.size(),
             () -> readCache.count()
         );
 
-        flushExecutorTime = ledgerDirStatsLogger.getThreadScopedCounter("db-storage-thread-time");
+        flushExecutorTime = ledgerIndexDirStatsLogger.getThreadScopedCounter("db-storage-thread-time");
 
         executor.submit(() -> {
             ThreadRegistry.register(dbStoragerExecutorName, 0);
@@ -207,6 +219,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         });
 
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        if (!ledgerBaseDir.equals(indexBaseDir)) {
+            indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        }
     }
 
     @Override
@@ -707,6 +722,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Only a single flush operation can happen at a time
         flushMutex.lock();
         try {
+            if (writeCache.isEmpty()) {
+                return;
+            }
             // Swap the write cache so that writes can continue to happen while the flush is
             // ongoing
             swapWriteCache();
@@ -988,6 +1006,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
         }
 
+        ledgerIndex.flush();
         batch.flush();
         batch.close();
 

@@ -82,6 +82,7 @@ message CookieFormat {
     required string journalDir = 2;
     required string ledgerDirs = 3;
     optional string instanceId = 4;
+    optional string indexDirs = 5;
 }
 
 /**

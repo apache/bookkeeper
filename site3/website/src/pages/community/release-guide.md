@@ -8,7 +8,7 @@ The Apache BookKeeper project periodically declares and publishes releases. A re
 
 The BookKeeper community treats releases with great importance. They are a public face of the project and most users interact with the project only through the releases. Releases are signed off by the entire BookKeeper community in a public vote.
 
-Each release is executed by a *Release Manager*, who is selected among the [BookKeeper committers](http://bookkeeper.apache.org/credits.html). This document describes the process that the Release Manager follows to perform a release. Any changes to this process should be discussed and adopted on the [dev@ mailing list](http://bookkeeper.apache.org/lists.html).
+Each release is executed by a *Release Manager*, who is selected among the [BookKeeper committers](https://bookkeeper.apache.org/project/who). This document describes the process that the Release Manager follows to perform a release. Any changes to this process should be discussed and adopted on the [dev@ mailing list](https://lists.apache.org/list.html?dev@bookkeeper.apache.org).
 
 Please remember that publishing software has legal consequences. This guide complements the foundation-wide [Product Release Policy](http://www.apache.org/dev/release.html) and [Release Distribution Policy](http://www.apache.org/dev/release-distribution).
 
@@ -460,11 +460,14 @@ Copy the source release from the `dev` repository to the `release` repository at
         export NEW_RELEASE=${VERSION}
         ./site3/website/scripts/release-major.sh
    
+   Update the `latest_release` and `stable_release` in the docusaurus.config.js file if needed. 
    Once run the above commands, please send a pull request for it and get approval from any committers, then merge it.
    The CI job will automatically update the website in a few minutes. Please review the website to make sure the
    documentation for `${VERSION}` is live.
 
 2. Merge the Release Notes pull request and make sure the [release notes page](/release-notes) is updated.
+
+Note: you can put the 1. and 2. in the same pull. 
 
 ### Git tag
 
@@ -474,6 +477,7 @@ Create and push a new signed for the released version by copying the tag for the
 
 ```shell
 git tag -s "${TAG}" "${RC_TAG}"
+# Message: "Release ${VERSION}"
 git push apache "${TAG}"
 ```
 
@@ -485,73 +489,6 @@ for num in $(seq 0 ${RC_NUM}); do
     git push apache :"v${VERSION}-rc${num}"
 done
 ```
-
-### Update DC/OS BookKeeper package
-
-> NOTE: Please update DC/OS bookkeeper package only after the release package is showed up under https://archive.apache.org/dist/bookkeeper/
-
-Once we have new version of BookKeeper docker image available at [docker hub](https://hub.docker.com/r/apache/bookkeeper/), We could update DC/OS BookKeeper package in [mesosphere universe](https://github.com/mesosphere/universe). A new pull request is needed in it. 
-
-It is easy if only version need be bump.
-
-1. Clone repo [mesosphere universe](https://github.com/mesosphere/universe).
-
-    ```shell
-    $ git clone https://github.com/mesosphere/universe
-    ```
-
-2. cd into the repo, Checkout a branch for the changes.
-
-    ```shell
-    $ cd universe
-    $ git checkout -b bookkeeper_new_version
-    ```
-
-3. Make a copy of latest code of BookKeeper package.
-
-    ```shell
-    $ cp -rf repo/packages/B/bookkeeper/1 repo/packages/B/bookkeeper/2
-    $ git add repo/packages/B/bookkeeper/2
-    $ git commit -m "copy old version"
-    ```
-
-4. Bump the version of BookKeeper docker image in file [resource.json](https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/resource.json#L5) and [package.json](https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/package.json#L4).
-
-    ```
-    diff --git repo/packages/B/bookkeeper/2/package.json repo/packages/B/bookkeeper/2/package.json
-    index 07199d56..75f4aa81 100644
-    --- repo/packages/B/bookkeeper/2/package.json
-    +++ repo/packages/B/bookkeeper/2/package.json
-    @@ -1,7 +1,7 @@
-     {
-       "packagingVersion": "3.0",
-       "name": "bookkeeper",
-    -  "version": "4.5.1",
-    +  "version": "4.7.0",
-       "scm": "https://github.com/apache/bookkeeper",
-       "maintainer": "zhaijia@apache.org",
-       "description": "BookKeeper is A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads.Further information can be found here: http://bookkeeper.apache.org/",
-    diff --git repo/packages/B/bookkeeper/2/resource.json repo/packages/B/bookkeeper/2/resource.json
-    index 3801750e..72690ea0 100644
-    --- repo/packages/B/bookkeeper/2/resource.json
-    +++ repo/packages/B/bookkeeper/2/resource.json
-    @@ -2,7 +2,7 @@
-       "assets": {
-         "container": {
-           "docker": {
-    -        "bookkeeper": "apache/bookkeeper:4.5.1"
-    +        "bookkeeper": "apache/bookkeeper:4.7.0"
-           }
-         }
-       },
-    ```
-
-5. Commit the change, create a pull request and wait for it to be approved and merged.
-
-    ```shell
-    $ git add repo/packages/B/bookkeeper/2
-    $ git commit -m "new bookkeeper version"
-    ```
 
 ### Verify Docker Image
 
@@ -586,7 +523,7 @@ Now, you are ready to publish the python client.
 
 ```bash
 cd stream/clients/python
-./publish.sh
+./scripts/publish.sh
 ```
 
 Check the PyPi project package to make sure the python client is uploaded to  https://pypi.org/project/apache-bookkeeper-client/ .
@@ -608,15 +545,9 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
-### Advance python client version
+### Create release in Github
 
-If you are doing a major release, you need to update the python client version to next major development version in master
-and next minor development version in the branch. For example, if you are doing 4.9.0 release, you need to bump the version
-in master to `4.10.0-alpha-0` (NOTE: we are using `alpha-0` as `SNAPSHOT`, otherwise pypi doesn't work), and the version in
-`branch-4.9` to `4.9.1-alpha-0`.
-
-If you are only doing a minor release, you just need to update the version in release branch. For example, if you are doing
-4.9.1 release, you need to bump the version in `branch-4.9` to `4.9.2-alpha-0`.
+Create a new release on Github. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
 
 ### Mark the version as released in Github
 
@@ -640,8 +571,8 @@ Update the [release schedule](releases) page:
 * Website is updated with new release
 * Docker image is built with new release
 * Release tagged in the source code repository
+* Release exists in Github
 * Release version finalized in Github
-* Release section with release summary is added in [releases.md](https://github.com/apache/bookkeeper/blob/master/site/releases.md)
 * Release schedule page is updated
 
 **********

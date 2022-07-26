@@ -60,6 +60,7 @@ import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.security.cert.Certificate;
@@ -1134,6 +1135,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
+
+            // If the request is a V2 add request, we retained the data's reference when creating the AddRequest
+            // object. To avoid the object leak, we need to release the reference if we met any errors
+            // before sending it.
+            if (request instanceof BookieProtocol.AddRequest) {
+                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) request;
+                ar.recycle();
+            }
             return;
         }
 
@@ -1288,6 +1297,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (c != null) {
                 closeChannel(c);
             }
+            return;
         }
 
         if (cause instanceof IOException) {
@@ -1488,7 +1498,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void initTLSHandshake() {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-        SslHandler handler = parentObj.shFactory.newTLSHandler();
+        InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
+        SslHandler handler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
         channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
@@ -1512,14 +1523,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             state = ConnectionState.CONNECTED;
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
                                     .get(AuthHandler.ClientSideHandler.class);
-                        if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
-                            // add HostnameVerification or private classes not
-                            // for validation
-                            rc = BKException.Code.UnauthorizedAccessException;
-                        } else {
-                                authHandler.authProvider.onProtocolUpgrade();
-                                activeTlsChannelCounter.inc();
-                            }
+                            authHandler.authProvider.onProtocolUpgrade();
+                            activeTlsChannelCounter.inc();
                         } else if (future.isSuccess()
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
                             LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
@@ -2472,12 +2477,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     state = ConnectionState.CONNECTED;
                     AuthHandler.ClientSideHandler authHandler = future.channel().pipeline()
                             .get(AuthHandler.ClientSideHandler.class);
-                    if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
-                        rc = BKException.Code.UnauthorizedAccessException;
-                    } else {
-                        authHandler.authProvider.onProtocolUpgrade();
-                        activeTlsChannelCounter.inc();
-                    }
+                    authHandler.authProvider.onProtocolUpgrade();
+                    activeTlsChannelCounter.inc();
                 } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                     || state == ConnectionState.DISCONNECTED)) {
                     LOG.warn("Closed before connection completed, clean up: {}, current state {}",

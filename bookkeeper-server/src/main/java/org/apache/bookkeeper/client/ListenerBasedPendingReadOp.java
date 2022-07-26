@@ -46,11 +46,11 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
     @Override
     protected void submitCallback(int code) {
         LedgerEntryRequest request;
-        while (!seq.isEmpty() && (request = seq.get(0)) != null) {
+        while (!seq.isEmpty() && (request = seq.getFirst()) != null) {
             if (!request.isComplete()) {
                 return;
             }
-            seq.remove(0);
+            seq.removeFirst();
             long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
             LedgerEntry entry;
             if (BKException.Code.OK == request.getRc()) {

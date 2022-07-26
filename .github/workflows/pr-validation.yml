@@ -31,7 +31,6 @@ on:
 
 env:
   MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-  GRADLE_ARGS: -Dtestlogger.theme=plain -DtestHideStandardOut=true
 
 jobs:
   check:
@@ -56,6 +55,5 @@ jobs:
       - name: Check license files
         run: dev/check-all-licenses
 
-      # keeping on gradle, `mvn site javadoc:javadoc`, to figure out later
       - name: Generate Javadoc
-        run: ./gradlew generateApiJavadoc
+        run: mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok

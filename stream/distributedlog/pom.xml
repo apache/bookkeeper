@@ -47,8 +47,9 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
+          <sourcepath>${src.dir}</sourcepath>
+          <notimestamp>true</notimestamp>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-notimestamp</additionalparam>
           <doclint>none</doclint>
           <groups>
             <group>
@@ -100,11 +101,6 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 </project>
 
