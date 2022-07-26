@@ -210,6 +210,7 @@
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
     <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
+    <awaitility.version>4.0.3</awaitility.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -759,6 +760,18 @@
         <groupId>org.jsoup</groupId>
         <artifactId>jsoup</artifactId>
         <version>${jsoup.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>${awaitility.version}</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <!-- benchmark dependencies -->

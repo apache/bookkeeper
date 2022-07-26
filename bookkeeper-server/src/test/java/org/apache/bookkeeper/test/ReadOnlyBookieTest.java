@@ -25,6 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
+import java.time.Duration;
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -37,6 +38,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.PortManager;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -131,12 +133,12 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         // waitForReadOnlyBookie adds another listener thread to observe the node status of bookie,
         // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
-        // This sequence leads to flaky test. So change from watching zk to thread sleep.
-        Thread.sleep(3000);
-
+        // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
+        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+            assertTrue("Bookie should be running and converted to readonly mode",
+                    bookie.isRunning() && bookie.isReadOnly());
+        });
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
-        assertTrue("Bookie should be running and converted to readonly mode",
-                bookie.isRunning() && bookie.isReadOnly());
 
         // should fail to create ledger
         try {
@@ -151,12 +153,12 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         // waitForWritableBookie adds another listener thread to observe the node status of bookie,
         // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
-        // This sequence leads to flaky test. So change from watching zk to thread sleep.
-        Thread.sleep(3000);
-
+        // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
+        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+            assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
+                    && !bookie.isReadOnly());
+        });
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
-        assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
-                && !bookie.isReadOnly());
 
         LedgerHandle newLedger = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         for (int i = 0; i < 10; i++) {
