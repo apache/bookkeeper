@@ -1263,6 +1263,10 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
 
+        List<BookieId> emptyEnsmeble = new ArrayList<>();
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(emptyEnsmeble, 3, 2));
+
         List<BookieId> ensemble = new ArrayList<BookieId>();
         ensemble.add(addr1.toBookieId());
         ensemble.add(addr2.toBookieId());

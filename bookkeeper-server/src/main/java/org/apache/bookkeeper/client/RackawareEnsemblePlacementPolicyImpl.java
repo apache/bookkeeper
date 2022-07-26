@@ -1017,6 +1017,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     @Override
     public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
+        if (CollectionUtils.isEmpty(ensembleList)) {
+            return PlacementPolicyAdherence.FAIL;
+        }
         int ensembleSize = ensembleList.size();
         int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
         HashSet<String> racksInQuorum = new HashSet<String>();
