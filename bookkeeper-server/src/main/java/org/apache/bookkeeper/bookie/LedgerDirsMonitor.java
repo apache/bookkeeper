@@ -59,6 +59,7 @@ class LedgerDirsMonitor {
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
                              final List<LedgerDirsManager> dirsManagers) {
+        validateThreshold(conf.getDiskUsageThreshold(), conf.getDiskLowWaterMarkUsageThreshold());
         this.interval = conf.getDiskCheckInterval();
         this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
@@ -250,6 +251,14 @@ class LedgerDirsMonitor {
             }
         }
         ldm.getWritableLedgerDirs();
+    }
+
+    private void validateThreshold(float diskSpaceThreshold, float diskSpaceLwmThreshold) {
+        if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceLwmThreshold - diskSpaceThreshold > 1e-6) {
+            throw new IllegalArgumentException("Disk space threashold: "
+                    + diskSpaceThreshold + " and lwm threshold: " + diskSpaceLwmThreshold
+                    + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceLwmThreshold");
+        }
     }
 }
 

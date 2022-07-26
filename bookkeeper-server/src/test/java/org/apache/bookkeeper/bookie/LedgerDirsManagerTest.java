@@ -498,6 +498,35 @@ public class LedgerDirsManagerTest {
         verifyUsage(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockLedgerDirsListener, true);
     }
 
+    @Test
+    public void testValidateLwmThreshold() {
+        final ServerConfiguration configuration = TestBKConfiguration.newServerConfiguration();
+        // check failed because diskSpaceThreshold < diskSpaceLwmThreshold
+        configuration.setDiskUsageThreshold(0.65f);
+        configuration.setDiskLowWaterMarkUsageThreshold(0.90f);
+        try {
+            new LedgerDirsMonitor(configuration, mockDiskChecker, Collections.singletonList(dirsManager));
+            fail("diskSpaceThreshold < diskSpaceLwmThreshold, should be failed.");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("diskSpaceThreshold >= diskSpaceLwmThreshold"));
+        }
+
+        // check failed because diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1
+        configuration.setDiskUsageThreshold(0f);
+        configuration.setDiskLowWaterMarkUsageThreshold(1f);
+        try {
+            new LedgerDirsMonitor(configuration, mockDiskChecker, Collections.singletonList(dirsManager));
+            fail("diskSpaceThreshold = 0 and diskUsageLwmThreshold = 1, should be failed.");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Should be > 0 and < 1"));
+        }
+
+        // check succeeded
+        configuration.setDiskUsageThreshold(0.95f);
+        configuration.setDiskLowWaterMarkUsageThreshold(0.90f);
+        new LedgerDirsMonitor(configuration, mockDiskChecker, Collections.singletonList(dirsManager));
+    }
+
     private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
             MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly)
             throws InterruptedException {
