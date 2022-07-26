@@ -243,6 +243,7 @@ public class EntryLocationIndex implements Closeable {
                     }
                     batch.remove(keyToDelete.array);
                     ++deletedEntriesInBatch;
+                    ++deletedEntries;
                 }
 
                 if (deletedEntriesInBatch > DELETE_ENTRIES_BATCH_SIZE) {
