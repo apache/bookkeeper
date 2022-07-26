@@ -263,9 +263,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             return;
         }
 
-        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
-                    0, clientCtx.getConf().waitForWriteSetMs)) {
-            op.allowFailFastOnUnwritableChannel();
+        if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+            try {
+                if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
+            }
         }
 
         try {
