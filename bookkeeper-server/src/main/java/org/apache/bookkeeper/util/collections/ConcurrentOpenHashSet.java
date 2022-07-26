@@ -415,7 +415,11 @@ public class ConcurrentOpenHashSet<V> {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        // Shrinking must at least ensure initCapacity,
+                        // so as to avoid frequent shrinking and expansion near initCapacity,
+                        // frequent shrinking and expansion,
+                        // additionally opened arrays will consume more memory and affect GC
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -434,11 +438,12 @@ public class ConcurrentOpenHashSet<V> {
             long stamp = writeLock();
 
             try {
-                Arrays.fill(values, EmptyValue);
-                this.size = 0;
-                this.usedBuckets = 0;
-                if (autoShrink) {
-                    rehash(initCapacity);
+                if (autoShrink && capacity > initCapacity) {
+                    shrinkToInitCapacity();
+                } else {
+                    Arrays.fill(values, EmptyValue);
+                    this.size = 0;
+                    this.usedBuckets = 0;
                 }
             } finally {
                 unlockWrite(stamp);
@@ -505,6 +510,19 @@ public class ConcurrentOpenHashSet<V> {
             // Capacity needs to be updated after the values, so that we won't see
             // a capacity value bigger than the actual array size
             capacity = newCapacity;
+            resizeThresholdUp = (int) (capacity * mapFillFactor);
+            resizeThresholdBelow = (int) (capacity * mapIdleFactor);
+        }
+
+        private void shrinkToInitCapacity() {
+            V[] newValues = (V[]) new Object[initCapacity];
+
+            values = newValues;
+            size = 0;
+            usedBuckets = 0;
+            // Capacity needs to be updated after the values, so that we won't see
+            // a capacity value bigger than the actual array size
+            capacity = initCapacity;
             resizeThresholdUp = (int) (capacity * mapFillFactor);
             resizeThresholdBelow = (int) (capacity * mapIdleFactor);
         }
