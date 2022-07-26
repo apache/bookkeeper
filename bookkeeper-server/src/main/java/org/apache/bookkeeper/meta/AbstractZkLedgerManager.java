@@ -51,6 +51,7 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -151,6 +152,30 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                          ledgerId, BKException.getExceptionCode(exception));
                 scheduler.schedule(this, ZK_CONNECT_BACKOFF_MS, TimeUnit.MILLISECONDS);
             }
+        }
+    }
+
+    /**
+     * CancelWatchLedgerMetadataTask class.
+     */
+    protected class CancelWatchLedgerMetadataTask implements Runnable {
+
+        final long ledgerId;
+
+        CancelWatchLedgerMetadataTask(long ledgerId) {
+            this.ledgerId = ledgerId;
+        }
+
+        @Override
+        public void run() {
+            Set<LedgerMetadataListener> listeners = AbstractZkLedgerManager.this.listeners.get(ledgerId);
+            if (!CollectionUtils.isEmpty(listeners)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Still watch ledgerId: {}, ignore this unwatch task.", ledgerId);
+                }
+                return;
+            }
+            cancelMetadataWatch(ledgerId, AbstractZkLedgerManager.this);
         }
     }
 
@@ -420,9 +445,26 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 }
                 if (listenerSet.isEmpty()) {
                     listeners.remove(ledgerId, listenerSet);
+                    new CancelWatchLedgerMetadataTask(ledgerId).run();
                 }
             }
         }
+    }
+
+    private void cancelMetadataWatch(long ledgerId, Watcher watcher) {
+        zk.removeWatches(getLedgerPath(ledgerId), watcher, WatcherType.Data, true, new VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object o) {
+                if (rc != KeeperException.Code.OK.intValue()) {
+                    LOG.error("Cancel watch ledger {} metadata failed.", ledgerId,
+                            KeeperException.create(KeeperException.Code.get(rc), path));
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Cancel watch ledger {} metadata succeed.", ledgerId);
+                }
+            }
+        }, null);
     }
 
     @Override

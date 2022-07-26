@@ -40,6 +40,7 @@ import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -81,6 +82,20 @@ public abstract class MockZooKeeperTestCase {
             watchers.put(path, watcherSet);
         }
         watcherSet.add(watcher);
+    }
+
+    private void removeWatcher(String path, Watcher watcher) {
+        if (watcher == null) {
+            return;
+        }
+        Set<Watcher> watcherSet = watchers.get(path);
+        if (null == watcherSet) {
+            return;
+        }
+        watcherSet.remove(watcher);
+        if (watcherSet.isEmpty()) {
+            watchers.remove(path);
+        }
     }
 
     protected void mockZkUtilsAsyncCreateFullPathOptimistic(
@@ -187,7 +202,24 @@ public abstract class MockZooKeeperTestCase {
             expectedWatcher ? any(Watcher.class) : eq(null),
             any(DataCallback.class),
             any());
+    }
 
+    protected void mockZkRemoveWatcher () throws Exception {
+        doAnswer(invocationOnMock -> {
+            String path = invocationOnMock.getArgument(0);
+            Watcher watcher = invocationOnMock.getArgument(1);
+            VoidCallback callback = invocationOnMock.getArgument(4);
+            removeWatcher(path, watcher);
+
+            callback.processResult(KeeperException.Code.OK.intValue(), path, null);
+            return null;
+        }).when(mockZk).removeWatches(
+                any(String.class),
+                any(Watcher.class),
+                any(Watcher.WatcherType.class),
+                any(Boolean.class),
+                any(VoidCallback.class),
+                any());
     }
 
     protected void mockZkSetData(
