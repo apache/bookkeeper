@@ -20,10 +20,13 @@
  */
 package org.apache.bookkeeper.test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -56,7 +59,7 @@ public interface ZooKeeperCluster {
 
     void killCluster() throws Exception;
 
-    void sleepCluster(final int time, final TimeUnit timeUnit, final CountDownLatch l)
+    void sleepCluster(int time, final TimeUnit timeUnit, final CountDownLatch l)
             throws InterruptedException, IOException;
 
     default void expireSession(ZooKeeper zk) throws Exception {
@@ -74,6 +77,9 @@ public interface ZooKeeperCluster {
         txn.create(ledgersPath + "/" + AVAILABLE_NODE, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         txn.create(ledgersPath + "/" + AVAILABLE_NODE + "/" + READONLY, new byte[0], Ids.OPEN_ACL_UNSAFE,
                 CreateMode.PERSISTENT);
+        String instanceId = UUID.randomUUID().toString();
+        txn.create(ledgersPath + "/" + INSTANCEID, instanceId.getBytes(UTF_8),
+                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         txn.commit();
     }
 }

@@ -18,78 +18,47 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClientImpl;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link ReadLedgerCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ReadLedgerCommand.class, BookKeeperAdmin.class, ClientConfiguration.class,
-    LedgerHandle.class, LedgerEntry.class, OrderedExecutor.class })
 public class ReadLedgerCommandTest extends BookieCommandTestBase {
 
-    private BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
+    private static final BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
-    @Mock
-    private ClientConfiguration clientConfiguration;
-
-    @Mock
-    private BookKeeperAdmin bookKeeperAdmin;
-
-    @Mock
     private LedgerHandle ledgerHandle;
-
-    @Mock
     private LedgerEntry entry;
-
-    @Mock
-    private NioEventLoopGroup nioEventLoopGroup;
-
-    @Mock
     private OrderedExecutor orderedExecutor;
-
-    @Mock
     private ScheduledExecutorService scheduledExecutorService;
 
-    @Mock
-    private DefaultThreadFactory defaultThreadFactory;
-
-    @Mock
-    private BookieClientImpl bookieClient;
 
     public ReadLedgerCommandTest() {
         super(3, 0);
@@ -99,13 +68,13 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-        PowerMockito.whenNew(ClientConfiguration.class).withNoArguments().thenReturn(clientConfiguration);
-        PowerMockito.whenNew(BookKeeperAdmin.class).withParameterTypes(ClientConfiguration.class)
-                    .withArguments(eq(clientConfiguration)).thenReturn(bookKeeperAdmin);
-        when(bookKeeperAdmin.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        mockServerConfigurationConstruction();
+        mockClientConfigurationConstruction();
+        ledgerHandle = mock(LedgerHandle.class);
+        entry = mock(LedgerEntry.class);
+        orderedExecutor = mock(OrderedExecutor.class);
+        scheduledExecutorService = mock(ScheduledExecutorService.class);
 
-        when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
         when(ledgerHandle.getLastAddConfirmed()).thenReturn(1L);
 
         List<LedgerEntry> entries = new LinkedList<>();
@@ -114,24 +83,35 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         when(entry.getEntryId()).thenReturn(1L);
         when(entry.getLength()).thenReturn(1L);
 
-        when(bookKeeperAdmin.readEntries(anyLong(), anyLong(), anyLong())).thenReturn(entries);
+        mockBookKeeperAdminConstruction(new Consumer<BookKeeperAdmin>() {
+            @Override
+            @SneakyThrows
+            public void accept(BookKeeperAdmin bookKeeperAdmin) {
+                when(bookKeeperAdmin.getBookieAddressResolver())
+                        .thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+                when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
+                when(bookKeeperAdmin.readEntries(anyLong(), anyLong(), anyLong())).thenReturn(entries);
+            }
+        });
 
-        PowerMockito.whenNew(NioEventLoopGroup.class).withNoArguments().thenReturn(nioEventLoopGroup);
+        mockConstruction(NioEventLoopGroup.class);
 
-        PowerMockito.mockStatic(OrderedExecutor.class);
+
+
         OrderedExecutor.Builder builder = mock(OrderedExecutor.Builder.class);
-        when(OrderedExecutor.newBuilder()).thenReturn(builder);
+        mockStatic(OrderedExecutor.class).when(() -> OrderedExecutor.newBuilder()).thenReturn(builder);
+
         when(builder.numThreads(anyInt())).thenCallRealMethod();
         when(builder.name(anyString())).thenCallRealMethod();
         when(builder.build()).thenReturn(orderedExecutor);
 
-        PowerMockito.mockStatic(Executors.class);
-        PowerMockito.whenNew(DefaultThreadFactory.class).withArguments(anyString()).thenReturn(defaultThreadFactory);
-        when(Executors.newSingleThreadScheduledExecutor(eq(defaultThreadFactory))).thenReturn(scheduledExecutorService);
+        mockConstruction(DefaultThreadFactory.class);
 
-        PowerMockito.whenNew(BookieClientImpl.class)
-                    .withAnyArguments()
-                    .thenReturn(bookieClient);
+        mockStatic(Executors.class).when(() -> Executors
+                .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class)))
+                .thenReturn(scheduledExecutorService);
+
+        mockConstruction(BookieClientImpl.class);
 
 
     }
@@ -140,12 +120,9 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     public void testWithoutBookieAddress() throws Exception {
         ReadLedgerCommand cmd = new ReadLedgerCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-r" }));
-        verifyNew(ClientConfiguration.class, times(1)).withNoArguments();
-        verify(clientConfiguration, times(1)).addConfiguration(eq(conf));
-        verifyNew(BookKeeperAdmin.class, times(1)).withArguments(eq(clientConfiguration));
-        verify(bookKeeperAdmin, times(1)).openLedger(anyLong());
         verify(ledgerHandle, times(1)).getLastAddConfirmed();
-        verify(bookKeeperAdmin, times(1)).readEntries(anyLong(), anyLong(), anyLong());
+        verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
+                times(1)).readEntries(anyLong(), anyLong(), anyLong());
         verify(entry, times(1)).getLedgerId();
         verify(entry, times(1)).getEntryId();
         verify(entry, times(1)).getLength();
@@ -155,15 +132,12 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     public void testWithBookieAddress() throws Exception {
         ReadLedgerCommand cmd = new ReadLedgerCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
-        verifyNew(NioEventLoopGroup.class, times(1)).withNoArguments();
-        verifyNew(DefaultThreadFactory.class, times(1)).withArguments(anyString());
-        verifyNew(BookieClientImpl.class, times(1))
-            .withArguments(eq(clientConfiguration), eq(nioEventLoopGroup), eq(UnpooledByteBufAllocator.DEFAULT),
-                           eq(orderedExecutor), eq(scheduledExecutorService),
-                           eq(NullStatsLogger.INSTANCE), eq(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER));
-        verify(nioEventLoopGroup, times(1)).shutdownGracefully();
+        Assert.assertEquals(1, getMockedConstruction(NioEventLoopGroup.class).constructed().size());
+        Assert.assertEquals(1, getMockedConstruction(DefaultThreadFactory.class).constructed().size());
+        Assert.assertEquals(1, getMockedConstruction(BookieClientImpl.class).constructed().size());
+        verify(getMockedConstruction(NioEventLoopGroup.class).constructed().get(0), times(1)).shutdownGracefully();
         verify(orderedExecutor, times(1)).shutdown();
-        verify(bookieClient, times(1)).close();
+        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(1)).close();
     }
 
 }

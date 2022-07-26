@@ -34,6 +34,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Read cache implementation.
@@ -46,6 +48,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.Long
  * the read cache.
  */
 public class ReadCache implements Closeable {
+    private static final Logger log = LoggerFactory.getLogger(ReadCache.class);
 
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1 * 1024 * 1024 * 1024;
 
@@ -74,7 +77,11 @@ public class ReadCache implements Closeable {
 
         for (int i = 0; i < segmentsCount; i++) {
             cacheSegments.add(Unpooled.directBuffer(segmentSize, segmentSize));
-            cacheIndexes.add(new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors()));
+            ConcurrentLongLongPairHashMap concurrentLongLongPairHashMap = ConcurrentLongLongPairHashMap.newBuilder()
+                    .expectedItems(4096)
+                    .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+                    .build();
+            cacheIndexes.add(concurrentLongLongPairHashMap);
         }
     }
 
@@ -90,6 +97,10 @@ public class ReadCache implements Closeable {
         lock.readLock().lock();
 
         try {
+            if (entrySize > segmentSize) {
+                log.warn("entrySize {} > segmentSize {}, skip update read cache!", entrySize, segmentSize);
+                return;
+            }
             int offset = currentSegmentOffset.getAndAdd(alignedSize);
             if (offset + entrySize > segmentSize) {
                 // Roll-over the segment (outside the read-lock)
@@ -142,7 +153,7 @@ public class ReadCache implements Closeable {
                     int entryOffset = (int) res.first;
                     int entryLen = (int) res.second;
 
-                    ByteBuf entry = allocator.directBuffer(entryLen, entryLen);
+                    ByteBuf entry = allocator.buffer(entryLen, entryLen);
                     entry.writeBytes(cacheSegments.get(segmentIdx), entryOffset, entryLen);
                     return entry;
                 }
@@ -153,6 +164,27 @@ public class ReadCache implements Closeable {
 
         // Entry not found in any segment
         return null;
+    }
+
+    public boolean hasEntry(long ledgerId, long entryId) {
+        lock.readLock().lock();
+
+        try {
+            int size = cacheSegments.size();
+            for (int i = 0; i < size; i++) {
+                int segmentIdx = (currentSegmentIdx + (size - i)) % size;
+
+                LongPair res = cacheIndexes.get(segmentIdx).get(ledgerId, entryId);
+                if (res != null) {
+                    return true;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        // Entry not found in any segment
+        return false;
     }
 
     /**

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-java-client-parent</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-java-client-base</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Clients :: Java Client :: Base</name>
@@ -35,6 +35,12 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-proto</artifactId>
       <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

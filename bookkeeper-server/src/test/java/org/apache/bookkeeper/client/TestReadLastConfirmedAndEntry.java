@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -88,7 +89,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
 
         @Override
         public ByteBuf readEntry(long ledgerId, long entryId)
-                throws IOException, NoLedgerException {
+                throws IOException, NoLedgerException, BookieException {
             if (entryId == expectedEntryToFail) {
                 if (stallOrRespondNull) {
                     try {
@@ -185,7 +186,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public long readLastAddConfirmed(long ledgerId) throws IOException {
+        public long readLastAddConfirmed(long ledgerId) throws IOException, BookieException {
             long lac = super.readLastAddConfirmed(ledgerId);
             logger.info("Last Add Confirmed for ledger {} is {}", ledgerId, lac);
             if (lacToSlowRead == lac) {

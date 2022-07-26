@@ -87,7 +87,7 @@ public class ListBookiesService implements HttpEndpointService {
                     hostname = resolved.getHostName();
                 }
                 output.putIfAbsent(b.toString(), hostname);
-                LOG.debug("bookie: " + b.toString() + " hostname:" + hostname);
+                LOG.debug("bookie: " + b + " hostname:" + hostname);
             }
             String jsonResponse = JsonUtil.toJson(output);
 

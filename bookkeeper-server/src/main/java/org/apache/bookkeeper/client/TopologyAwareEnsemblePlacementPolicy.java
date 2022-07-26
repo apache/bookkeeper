@@ -20,7 +20,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_JOINED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIES_LEFT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNT;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -47,6 +47,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NetworkTopologyImpl;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -61,6 +62,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     protected final Map<BookieId, BookieNode> knownBookies = new HashMap<BookieId, BookieNode>();
+    protected final Map<BookieId, BookieNode> historyBookies = new HashMap<BookieId, BookieNode>();
     protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     protected Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     // Initialize to empty set
@@ -531,7 +533,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final Supplier<String> defaultRackSupplier;
         final DNSToSwitchMapping resolver;
         @StatsDoc(
-                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNTER,
+                name = FAILED_TO_RESOLVE_NETWORK_LOCATION_COUNT,
                 help = "total number of times Resolver failed to resolve rack information of a node"
         )
         final Counter failedToResolveNetworkLocationCounter;
@@ -716,6 +718,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 BookieNode node = createBookieNode(addr);
                 topology.add(node);
                 knownBookies.put(addr, node);
+                historyBookies.put(addr, node);
                 if (this.isWeighted) {
                     this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
                 }
@@ -740,16 +743,23 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     public void onBookieRackChange(List<BookieId> bookieAddressList) {
         rwLock.writeLock().lock();
         try {
-            for (BookieId bookieAddress : bookieAddressList) {
-                BookieNode node = knownBookies.get(bookieAddress);
-                if (node != null) {
-                    // refresh the rack info if its a known bookie
-                    BookieNode newNode = createBookieNode(bookieAddress);
-                    topology.remove(node);
-                    topology.add(newNode);
-                    knownBookies.put(bookieAddress, newNode);
+            bookieAddressList.forEach(bookieAddress -> {
+                try {
+                    BookieNode node = knownBookies.get(bookieAddress);
+                    if (node != null) {
+                        // refresh the rack info if its a known bookie
+                        BookieNode newNode = createBookieNode(bookieAddress);
+                        if (!newNode.getNetworkLocation().equals(node.getNetworkLocation())) {
+                            topology.remove(node);
+                            topology.add(newNode);
+                            knownBookies.put(bookieAddress, newNode);
+                            historyBookies.put(bookieAddress, newNode);
+                        }
+                    }
+                } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
+                    LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
                 }
-            }
+            });
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -793,6 +803,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         try {
             return NetUtils.resolveNetworkLocation(dnsResolver, bookieAddressResolver.resolve(addr));
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
+            BookieNode historyBookie = historyBookies.get(addr);
+            if (null != historyBookie) {
+                return historyBookie.getNetworkLocation();
+            }
+
             LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
                       NetworkTopology.DEFAULT_REGION_AND_RACK, err);
             return NetworkTopology.DEFAULT_REGION_AND_RACK;

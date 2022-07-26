@@ -642,7 +642,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 }
                 getRequestStats().getAddEntryRejectedCounter().inc();
 
-                write.sendResponse(
+                write.sendWriteReqResponse(
                     BookieProtocol.ETOOMANYREQUESTS,
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getAddRequestStats());

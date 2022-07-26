@@ -31,7 +31,7 @@ public class BookKeeperConstants {
     public static final String BOOKIE_STATUS_FILENAME = "BOOKIE_STATUS";
     public static final String PASSWD = "passwd";
     public static final String CURRENT_DIR = "current";
-    public static final String ENTRYLOG_INDEX_CACHE = "entrylogIndexCache";
+    public static final String METADATA_CACHE = "metadata-cache";
     public static final String READONLY = "readonly";
 
     // //////////////////////////
@@ -49,6 +49,7 @@ public class BookKeeperConstants {
     public static final String DEFAULT_ZK_LEDGERS_ROOT_PATH = "/ledgers";
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
+    public static final String DISABLE_HEALTH_CHECK = "disableHealthCheck";
 
     /**
      * Set the max log size limit to 1GB. It makes extra room for entry log file before

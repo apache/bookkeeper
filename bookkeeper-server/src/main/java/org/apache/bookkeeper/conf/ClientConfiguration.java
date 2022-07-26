@@ -200,30 +200,6 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
 
-    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
-
-    /**
-     * Get the bytes rate of re-replication.
-     * Default value is -1 which it means entries will replicated without any throttling activity.
-     *
-     * @return bytes rate of re-replication.
-     */
-    public int getReplicationRateByBytes() {
-        return getInt(REPLICATION_RATE_BY_BYTES, -1);
-    }
-
-    /**
-     * Set the bytes rate of re-replication.
-     *
-     * @param rate bytes rate of re-replication.
-     *
-     * @return ClientConfiguration
-     */
-    public ClientConfiguration setReplicationRateByBytes(int rate) {
-        this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
-        return this;
-    }
-
     /**
      * Construct a default client-side configuration.
      */
@@ -1177,10 +1153,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Enable/disable reordering read sequence on reading entries.
      *
      * <p>If this flag is enabled, the client will use
-     * {@link EnsemblePlacementPolicy#reorderReadSequence(java.util.ArrayList,
+     * {@link EnsemblePlacementPolicy#reorderReadSequence(java.util.List,
      * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt reads from replicas and use
-     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(java.util.ArrayList,
+     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(java.util.List,
      * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt long poll reads from replicas.
      *

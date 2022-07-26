@@ -28,4 +28,5 @@ message LedgerData {
     required bool fenced = 2;
     required bytes masterKey = 3;
     optional bytes explicitLac = 4;
+    optional bool limbo = 5;
 }

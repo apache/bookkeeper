@@ -17,7 +17,9 @@
  */
 package org.apache.bookkeeper.net;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Set;
 import org.junit.Test;
@@ -96,5 +98,32 @@ public class NetworkTopologyImplTest {
       assertTrue(leavesExcludingRack2Scope.size() == 2);
       assertTrue(leavesExcludingRack2Scope.contains(bookieRack0ScopeNode));
       assertTrue(leavesExcludingRack2Scope.contains(bookieRack2ScopeNode));
+  }
+
+  @Test
+  public void testInvalidRackName() {
+      NetworkTopologyImpl networkTopology = new NetworkTopologyImpl();
+      String rack0Scope = "";
+      BookieId bookieIdScopeRack0 = BookieId.parse("bookieIdScopeRack0");
+      BookieNode bookieRack0ScopeNode = new BookieNode(bookieIdScopeRack0, rack0Scope);
+
+      String rack1Scope = "/";
+      BookieId bookieIdScopeRack1 = BookieId.parse("bookieIdScopeRack1");
+      BookieNode bookieRack1ScopeNode = new BookieNode(bookieIdScopeRack1, rack1Scope);
+
+      try {
+          networkTopology.add(bookieRack0ScopeNode);
+          fail();
+      } catch (IllegalArgumentException e) {
+          assertEquals("bookieIdScopeRack0, which is located at , is not a decendent of /", e.getMessage());
+      }
+
+      try {
+          networkTopology.add(bookieRack1ScopeNode);
+          fail();
+      } catch (IllegalArgumentException e) {
+          assertEquals("bookieIdScopeRack1, which is located at , is not a decendent of /", e.getMessage());
+      }
+
   }
 }

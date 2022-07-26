@@ -78,6 +78,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -85,6 +86,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link AbstractZkLedgerManager}.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 @PrepareForTest({ AbstractZkLedgerManager.class, ZkUtils.class })
 public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
@@ -822,9 +824,16 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, true,
             KeeperException.Code.OK.intValue(), serDe.serialize(metadata), stat);
 
+        mockZkRemoveWatcher();
+
         // unregister the listener
         ledgerManager.unregisterLedgerMetadataListener(ledgerId, listener);
         assertFalse(ledgerManager.listeners.containsKey(ledgerId));
+        assertFalse(watchers.containsKey(ledgerStr));
+        verify(mockZk, times(1)).removeWatches(eq(ledgerManager.getLedgerPath(ledgerId)),
+                any(Watcher.class), any(Watcher.WatcherType.class), any(Boolean.class),
+                any(VoidCallback.class), any());
+
 
         // notify the watcher event
         notifyWatchedEvent(

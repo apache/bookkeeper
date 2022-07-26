@@ -118,7 +118,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
 
             if (!fullPath.startsWith("/zookeeper") // skip zookeeper internal nodes
                 && !fullPath.equals("/ledgers") // node created by test setup
-                && !fullPath.equals("/ledgers/" + BookKeeperConstants.AVAILABLE_NODE) // node created by test setup
+                && !fullPath.equals("/ledgers/" + BookKeeperConstants.AVAILABLE_NODE)
+                && !fullPath.equals("/ledgers/" + BookKeeperConstants.INSTANCEID) // node created by test setup
                 ) {
                 assertEquals(1, acls.size());
                 assertEquals(31, acls.get(0).getPerms());

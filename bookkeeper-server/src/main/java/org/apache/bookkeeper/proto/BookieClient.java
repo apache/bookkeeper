@@ -74,7 +74,7 @@ public interface BookieClient {
      * to a bookie at {@code address} for a ledger with {@code ledgerId}.
      * It is necessary to specify the ledgerId as there may be multiple
      * channels for a single bookie if pooling is in use.
-     * If the bookie is not {@link #isWritable(BookieSocketAddress,long) writable},
+     * If the bookie is not {@link #isWritable(BookieId,long) writable},
      * then the {@link #PENDINGREQ_NOTWRITABLE_MASK} will be logically or'd with
      * the returned value.
      *
@@ -135,9 +135,9 @@ public interface BookieClient {
      * @param options a bit mask of flags from BookieProtocol.FLAG_*
      *                {@link org.apache.bookkeeper.proto.BookieProtocol}
      * @param allowFastFail fail the add immediately if the channel is non-writable
-     *                      {@link #isWritable(BookieSocketAddress,long)}
+     *                      {@link #isWritable(BookieId,long)}
      * @param writeFlags a set of write flags
-     *                   {@link org.apache.bookkeeper.client.api.WriteFlags}
+     *                   {@link org.apache.bookkeeper.client.api.WriteFlag}
      */
     void addEntry(BookieId address, long ledgerId, byte[] masterKey,
                   long entryId, ByteBufList toSend, WriteCallback cb, Object ctx,
@@ -145,7 +145,7 @@ public interface BookieClient {
 
     /**
      * Read entry with a null masterkey, disallowing failfast.
-     * @see #readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)
+     * @see #readEntry(BookieId,long,long,ReadEntryCallback,Object,int,byte[],boolean)
      */
     default void readEntry(BookieId address, long ledgerId, long entryId,
                            ReadEntryCallback cb, Object ctx, int flags) {
@@ -154,7 +154,7 @@ public interface BookieClient {
 
     /**
      * Read entry, disallowing failfast.
-     * @see #readEntry(BookieSocketAddress,long,long,ReadEntryCallback,Object,int,byte[],boolean)
+     * @see #readEntry(BookieId,long,long,ReadEntryCallback,Object,int,byte[],boolean)
      */
     default void readEntry(BookieId address, long ledgerId, long entryId,
                            ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey) {
@@ -174,7 +174,7 @@ public interface BookieClient {
      * @param masterKey the master key of the ledger being read from. This is only required
      *                  if the FLAG_DO_FENCING is specified.
      * @param allowFastFail fail the read immediately if the channel is non-writable
-     *                      {@link #isWritable(BookieSocketAddress,long)}
+     *                      {@link #isWritable(BookieId,long)}
      */
     void readEntry(BookieId address, long ledgerId, long entryId,
                    ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,

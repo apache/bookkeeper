@@ -25,10 +25,13 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PAR
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,7 +69,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +141,7 @@ public class ReplicationWorker implements Runnable {
      *            - configurations
      */
     public ReplicationWorker(final ServerConfiguration conf)
-            throws CompatibilityException, KeeperException,
+            throws CompatibilityException, UnavailableException,
             InterruptedException, IOException {
         this(conf, NullStatsLogger.INSTANCE);
     }
@@ -156,8 +158,7 @@ public class ReplicationWorker implements Runnable {
      */
     public ReplicationWorker(final ServerConfiguration conf,
                              StatsLogger statsLogger)
-            throws CompatibilityException, KeeperException,
-
+            throws CompatibilityException, UnavailableException,
             InterruptedException, IOException {
         this(conf, Auditor.createBookKeeperClient(conf), true, statsLogger);
     }
@@ -166,8 +167,7 @@ public class ReplicationWorker implements Runnable {
                       BookKeeper bkc,
                       boolean ownBkc,
                       StatsLogger statsLogger)
-            throws CompatibilityException, KeeperException,
-            InterruptedException, IOException {
+            throws CompatibilityException, InterruptedException, UnavailableException {
         this.conf = conf;
         this.bkc = bkc;
         this.ownBkc = ownBkc;
@@ -227,9 +227,12 @@ public class ReplicationWorker implements Runnable {
         workerRunning = true;
         while (workerRunning) {
             try {
-                rereplicate();
+                if (!rereplicate()) {
+                    LOG.warn("failed while replicating fragments");
+                    waitBackOffTime(rwRereplicateBackoffMs);
+                }
             } catch (InterruptedException e) {
-                LOG.info("InterruptedException "
+                LOG.error("InterruptedException "
                         + "while replicating fragments", e);
                 shutdown();
                 Thread.currentThread().interrupt();
@@ -237,10 +240,20 @@ public class ReplicationWorker implements Runnable {
             } catch (BKException e) {
                 LOG.error("BKException while replicating fragments", e);
                 waitBackOffTime(rwRereplicateBackoffMs);
+            } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                LOG.error("NonRecoverableReplicationException "
+                        + "while replicating fragments", nre);
+                shutdown();
+                return;
             } catch (UnavailableException e) {
                 LOG.error("UnavailableException "
                         + "while replicating fragments", e);
                 waitBackOffTime(rwRereplicateBackoffMs);
+                if (Thread.currentThread().isInterrupted()) {
+                    LOG.error("Interrupted  while replicating fragments");
+                    shutdown();
+                    return;
+                }
             }
         }
         LOG.info("ReplicationWorker exited loop!");
@@ -258,7 +271,7 @@ public class ReplicationWorker implements Runnable {
      * Replicates the under replicated fragments from failed bookie ledger to
      * targetBookie.
      */
-    private void rereplicate() throws InterruptedException, BKException,
+    private boolean rereplicate() throws InterruptedException, BKException,
             UnavailableException {
         long ledgerIdToReplicate = underreplicationManager
                 .getLedgerToRereplicate();
@@ -275,6 +288,7 @@ public class ReplicationWorker implements Runnable {
                 rereplicateOpStats.registerFailedEvent(latencyMillis, TimeUnit.MILLISECONDS);
             }
         }
+        return success;
     }
 
     private void logBKExceptionAndReleaseLedger(BKException e, long ledgerIdToReplicate)
@@ -345,6 +359,7 @@ public class ReplicationWorker implements Runnable {
         return (returnRCValue.get() == BKException.Code.OK);
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
         if (LOG.isDebugEnabled()) {
@@ -362,6 +377,7 @@ public class ReplicationWorker implements Runnable {
             }
 
             boolean foundOpenFragments = false;
+            long numFragsReplicated = 0;
             for (LedgerFragment ledgerFragment : fragments) {
                 if (!ledgerFragment.isClosed()) {
                     foundOpenFragments = true;
@@ -374,6 +390,7 @@ public class ReplicationWorker implements Runnable {
                 }
                 try {
                     admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
+                    numFragsReplicated++;
                 } catch (BKException.BKBookieHandleNotAvailableException e) {
                     LOG.warn("BKBookieHandleNotAvailableException while replicating the fragment", e);
                 } catch (BKException.BKLedgerRecoveryException e) {
@@ -382,6 +399,11 @@ public class ReplicationWorker implements Runnable {
                     LOG.warn("BKNotEnoughBookiesException while replicating the fragment", e);
                 }
             }
+
+            if (numFragsReplicated > 0) {
+                numLedgersReplicated.inc();
+            }
+
             if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
                 deferLedgerLockRelease = true;
                 deferLedgerLockRelease(ledgerIdToReplicate);
@@ -642,7 +664,8 @@ public class ReplicationWorker implements Runnable {
     /**
      * Gives the running status of ReplicationWorker.
      */
-    boolean isRunning() {
+    @VisibleForTesting
+    public boolean isRunning() {
         return workerRunning && workerThread.isAlive();
     }
 

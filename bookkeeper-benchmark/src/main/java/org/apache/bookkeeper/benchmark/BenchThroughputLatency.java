@@ -404,7 +404,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         OutputStream fos = new BufferedOutputStream(new FileOutputStream(latencyFile));
 
         for (Long l: latency) {
-            fos.write((Long.toString(l) + "\t" + (l / 1000000) + "ms\n").getBytes(UTF_8));
+            fos.write((l + "\t" + (l / 1000000) + "ms\n").getBytes(UTF_8));
         }
         fos.flush();
         fos.close();

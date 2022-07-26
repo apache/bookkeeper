@@ -33,6 +33,7 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,7 +57,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
-import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollector;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -616,6 +616,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
+        public boolean entryExists(long ledgerId, long entryId) throws IOException {
+            return false;
+        }
+
+        @Override
         public boolean setFenced(long ledgerId) throws IOException {
             return false;
         }
@@ -667,11 +672,6 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public EntryLogger getEntryLogger() {
-            return null;
-        }
-
-        @Override
         public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
         }
 
@@ -700,6 +700,37 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         @Override
         public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
             return null;
+        }
+
+        @Override
+        public void setLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public boolean hasLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public void clearLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+            return EnumSet.noneOf(StorageState.class);
+        }
+
+        @Override
+        public void setStorageStateFlag(StorageState flag) throws IOException {
+        }
+
+        @Override
+        public void clearStorageStateFlag(StorageState flag) throws IOException {
         }
     }
 

@@ -489,7 +489,7 @@ import org.slf4j.LoggerFactory;
                 } else {
                     System.out.println(new String(metadata, UTF_8));
                 }
-                System.out.println("");
+                System.out.println();
             }
             System.out.println("--------------------------------");
         }
@@ -539,7 +539,7 @@ import org.slf4j.LoggerFactory;
                 System.out.println(stream);
             }
 
-            System.out.println("");
+            System.out.println();
         }
 
         protected void watchAndReportChanges(Namespace namespace) throws Exception {
@@ -1535,7 +1535,7 @@ import org.slf4j.LoggerFactory;
                 System.out.println("Record (txn = " + record.getTransactionId() + ", bytes = "
                         + record.getPayload().length + ")");
             }
-            System.out.println("");
+            System.out.println();
 
             if (skipPayload) {
                 return;
@@ -2112,7 +2112,7 @@ import org.slf4j.LoggerFactory;
                         System.out.println(new String(record.getPayload(), UTF_8));
                     }
                 }
-                System.out.println("");
+                System.out.println();
                 record = reader.nextRecord();
             }
         }
@@ -2453,7 +2453,7 @@ import org.slf4j.LoggerFactory;
 
         @Override
         protected int runSimpleCmd() throws Exception {
-            System.out.println(DLSN.deserialize(base64Dlsn).toString());
+            System.out.println(DLSN.deserialize(base64Dlsn));
             return 0;
         }
     }

@@ -29,6 +29,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -303,6 +304,11 @@ public class SyncThreadTest {
         }
 
         @Override
+        public boolean entryExists(long ledgerId, long entryId) throws IOException {
+            return false;
+        }
+
+        @Override
         public boolean setFenced(long ledgerId) throws IOException {
             return true;
         }
@@ -379,6 +385,38 @@ public class SyncThreadTest {
         public OfLong getListOfEntriesOfLedger(long ledgerId) {
             return null;
         }
+
+        @Override
+        public void setLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public boolean hasLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public void clearLimboState(long ledgerId) throws IOException {
+            throw new UnsupportedOperationException(
+                    "Limbo state only supported for DbLedgerStorage");
+        }
+
+        @Override
+        public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+            return EnumSet.noneOf(StorageState.class);
+        }
+
+        @Override
+        public void setStorageStateFlag(StorageState flag) throws IOException {
+        }
+
+        @Override
+        public void clearStorageStateFlag(StorageState flag) throws IOException {
+        }
+
     }
 
 }

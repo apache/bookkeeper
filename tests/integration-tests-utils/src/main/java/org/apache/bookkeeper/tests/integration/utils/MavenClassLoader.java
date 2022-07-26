@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.tests.integration.utils;
 
 import com.google.common.collect.Lists;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
 
 import java.io.Closeable;
@@ -37,8 +37,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,49 +99,38 @@ public class MavenClassLoader implements AutoCloseable {
 
     private static MavenClassLoader createClassLoader(File[] jars) {
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-        URLClassLoader cl = AccessController.doPrivileged(
-                new PrivilegedAction<URLClassLoader>() {
-                    @Override
-                    public URLClassLoader run() {
-                        /**
-                         * Child-first URLClassLoader.
-                         * This is needed because Gradle uses a different version of
-                         * Netty and it is placed in the System Class loader.
-                         */
-                        return new URLClassLoader(Arrays.stream(jars)
-                                .map((f) -> {
-                                    try {
-                                        return f.toURI().toURL();
-                                    } catch (Throwable t) {
-                                        throw new RuntimeException(t);
-                                    }
-                                })
-                                .toArray(URL[]::new),
-                                systemClassLoader) {
-
-                            @Override
-                            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                                Class<?> loadedClass = findLoadedClass(name);
-                                if (loadedClass == null) {
-                                    try {
-                                        loadedClass = findClass(name);
-                                    } catch (ClassNotFoundException ignored) {
-                                    }
-                                    if (loadedClass == null) {
-                                        try {
-                                            loadedClass = systemClassLoader.loadClass(name);
-                                        } catch (ClassNotFoundException e) {
-                                        }
-                                    }
-                                }
-                                if (resolve && loadedClass != null) {
-                                    resolveClass(loadedClass);
-                                }
-                                return loadedClass;
-                            }
-                        };
+        URLClassLoader cl = new URLClassLoader(Arrays.stream(jars)
+                .map((f) -> {
+                    try {
+                        return f.toURI().toURL();
+                    } catch (Throwable t) {
+                        throw new RuntimeException(t);
                     }
-                });
+                })
+                .toArray(URL[]::new),
+                systemClassLoader) {
+
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                Class<?> loadedClass = findLoadedClass(name);
+                if (loadedClass == null) {
+                    try {
+                        loadedClass = findClass(name);
+                    } catch (ClassNotFoundException ignored) {
+                    }
+                    if (loadedClass == null) {
+                        try {
+                            loadedClass = systemClassLoader.loadClass(name);
+                        } catch (ClassNotFoundException e) {
+                        }
+                    }
+                }
+                if (resolve && loadedClass != null) {
+                    resolveClass(loadedClass);
+                }
+                return loadedClass;
+            }
+        };
         return new MavenClassLoader(cl);
     }
 
@@ -270,6 +257,7 @@ public class MavenClassLoader implements AutoCloseable {
         }
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static void extractTarGz(File tarGz, File output) throws Exception {
         File tarFile = new File(output, tarGz.getName().replace(".gz", ""));
         tarFile.delete();
@@ -289,11 +277,12 @@ public class MavenClassLoader implements AutoCloseable {
         return tarFile;
     }
 
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     private static void unTar(final File inputFile, final File outputDir) throws Exception {
-        try (TarArchiveInputStream debInputStream = (TarArchiveInputStream)
-                new ArchiveStreamFactory().createArchiveInputStream("tar",
-                        new FileInputStream(inputFile))) {
-            TarArchiveEntry entry = null;
+        try (final FileInputStream fis = new FileInputStream(inputFile);
+                TarArchiveInputStream debInputStream = (TarArchiveInputStream)
+                new ArchiveStreamFactory().createArchiveInputStream("tar", fis)) {
+            TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) debInputStream.getNextEntry()) != null) {
                 final File outputFile = new File(outputDir, entry.getName());
                 if (entry.isDirectory()) {

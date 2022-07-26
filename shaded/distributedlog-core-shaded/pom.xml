@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
@@ -42,10 +42,6 @@
         <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-common</artifactId>
         </exclusion>
         <exclusion>
           <groupId>io.netty</groupId>
@@ -201,7 +197,7 @@
                 <!-- distributedlog -->
                 <relocation>
                   <pattern>org.apache.distributedlog</pattern>
-                  <shadedPattern>org.apache.distributedlog</shadedPattern>
+                  <shadedPattern>dlshade.org.apache.distributedlog</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

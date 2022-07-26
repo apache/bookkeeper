@@ -47,13 +47,13 @@ import org.slf4j.LoggerFactory;
 public class EntryLocationIndex implements Closeable {
 
     private final KeyValueStorage locationsDb;
-    private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final EntryLocationIndexStats stats;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
-        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.Huge, conf);
+        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
 
         this.stats = new EntryLocationIndexStats(
             stats,
@@ -93,9 +93,16 @@ public class EntryLocationIndex implements Closeable {
     public long getLastEntryInLedger(long ledgerId) throws IOException {
         if (deletedLedgers.contains(ledgerId)) {
             // Ledger already deleted
-            return -1;
+            if (log.isDebugEnabled()) {
+                log.debug("Ledger {} already deleted in db", ledgerId);
+            }
+            /**
+             * when Ledger already deleted,
+             * throw Bookie.NoEntryException same like  the method
+             * {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found.
+             * */
+            throw new Bookie.NoEntryException(ledgerId, -1);
         }
-
         return getLastEntryInLedgerInternal(ledgerId);
     }
 
@@ -194,7 +201,6 @@ public class EntryLocationIndex implements Closeable {
         long deletedEntriesInBatch = 0;
 
         Batch batch = locationsDb.newBatch();
-        final byte[] firstDeletedKey = new byte[keyToDelete.array.length];
 
         try {
             for (long ledgerId : ledgersToDelete) {
@@ -237,9 +243,6 @@ public class EntryLocationIndex implements Closeable {
                     }
                     batch.remove(keyToDelete.array);
                     ++deletedEntriesInBatch;
-                    if (deletedEntries++ == 0) {
-                        System.arraycopy(keyToDelete.array, 0, firstDeletedKey, 0, firstDeletedKey.length);
-                    }
                 }
 
                 if (deletedEntriesInBatch > DELETE_ENTRIES_BATCH_SIZE) {
@@ -252,9 +255,6 @@ public class EntryLocationIndex implements Closeable {
             try {
                 batch.flush();
                 batch.clear();
-                if (deletedEntries != 0) {
-                    locationsDb.compact(firstDeletedKey, keyToDelete.array);
-                }
             } finally {
                 firstKeyWrapper.recycle();
                 lastKeyWrapper.recycle();

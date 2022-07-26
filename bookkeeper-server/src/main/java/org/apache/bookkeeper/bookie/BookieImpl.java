@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -110,7 +111,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache =
+            ConcurrentLongHashMap.<byte[]>newBuilder().build();
 
     protected StateManager stateManager;
 
@@ -169,7 +171,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * first run and the filesystem structure is up to date.
      */
     private void checkEnvironment(RegistrationManager registrationManager)
-            throws BookieException, IOException {
+            throws BookieException, IOException, InterruptedException {
         List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
                 + indexDirsManager.getAllLedgerDirs().size());
         allLedgerDirs.addAll(ledgerDirsManager.getAllLedgerDirs());
@@ -363,7 +365,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         ledgerStorage.setCheckpointSource(new CheckpointSource() {
                 @Override
                 public Checkpoint newCheckpoint() {
-                    return Checkpoint.MAX;
+                    return Checkpoint.MIN;
                 }
 
                 @Override
@@ -488,6 +490,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     void readJournal() throws IOException, BookieException {
+        if (!conf.getJournalWriteData()) {
+            LOG.warn("Journal disabled for add entry requests. Running BookKeeper this way can "
+                    + "lead to data loss. It is recommended to use data integrity checking when "
+                    + "running without the journal to minimize data loss risk");
+        }
+
         long startTs = System.currentTimeMillis();
         JournalScanner scanner = new JournalScanner() {
             @Override
@@ -733,6 +741,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
@@ -740,6 +751,24 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskJustWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
+                // Transition to writable mode when a disk becomes writable again.
+                stateManager.setHighPriorityWritesAvailability(true);
+                stateManager.transitionToWritableMode();
+            }
+
+            @Override
+            public void anyDiskFull(boolean highPriorityWritesAllowed) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    stateManager.setHighPriorityWritesAvailability(highPriorityWritesAllowed);
+                    stateManager.transitionToReadOnlyMode();
+                }
+            }
+
+            @Override
+            public void allDisksWritable() {
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
@@ -991,7 +1020,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    public ByteBuf getExplicitLac(long ledgerId) throws IOException, Bookie.NoLedgerException {
+    public ByteBuf getExplicitLac(long ledgerId) throws IOException, Bookie.NoLedgerException, BookieException {
         ByteBuf lac;
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         synchronized (handle) {
@@ -1066,7 +1095,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     public ByteBuf readEntry(long ledgerId, long entryId)
-            throws IOException, NoLedgerException {
+            throws IOException, NoLedgerException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1076,7 +1105,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 LOG.trace("Reading {}@{}", entryId, ledgerId);
             }
             ByteBuf entry = handle.readEntry(entryId);
-            bookieStats.getReadBytes().add(entry.readableBytes());
+            entrySize = entry.readableBytes();
+            bookieStats.getReadBytes().add(entrySize);
             success = true;
             return entry;
         } finally {
@@ -1086,12 +1116,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
             } else {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                bookieStats.getReadEntryStats().registerFailedValue(entrySize);
+                bookieStats.getReadBytesStats().registerFailedValue(entrySize);
             }
         }
     }
 
-    public long readLastAddConfirmed(long ledgerId) throws IOException {
+    public long readLastAddConfirmed(long ledgerId) throws IOException, BookieException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         return handle.getLastAddConfirmed();
     }
@@ -1186,10 +1216,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // Clean up metadata directories if they are separate from the
         // ledger dirs
-        File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
-        if (!cleanDir(metadataDir)) {
-            LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
-            return false;
+        if (!Strings.isNullOrEmpty(conf.getGcEntryLogMetadataCachePath())) {
+            File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
+            if (!cleanDir(metadataDir)) {
+                LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
+                return false;
+            }
         }
         LOG.info("Bookie format completed successfully");
         return true;

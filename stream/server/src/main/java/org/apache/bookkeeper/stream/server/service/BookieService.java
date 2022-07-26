@@ -35,6 +35,8 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -75,12 +77,14 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         String hello = String.format(
             "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
-                + " Journals are in %4$s. Ledgers are stored in %5$s.",
+                + " Journals are in %4$s. Ledgers are stored in %5$s. Indexes are stored in %6$s.",
             serverConf.getBookieId() != null ? serverConf.getBookieId() : "<not-set>",
             serverConf.getBookiePort(),
             serverConf.getMetadataServiceUriUnchecked(),
             Arrays.asList(serverConf.getJournalDirNames()),
-            Arrays.asList(serverConf.getLedgerDirNames()));
+            Arrays.asList(serverConf.getLedgerDirNames()),
+            Arrays.asList(serverConf.getIndexDirNames() != null
+                    ? serverConf.getIndexDirNames() : serverConf.getLedgerDirNames()));
 
         ByteBufAllocator allocator = BookieResources.createAllocator(serverConf);
 
@@ -98,6 +102,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
                 serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
         LedgerStorage storage = BookieResources.createLedgerStorage(
                 serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+        UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
         cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
@@ -116,8 +121,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         }
 
         this.bs = new BookieServer(serverConf, bookie,
-                statsLogger, allocator);
-
+                statsLogger, allocator, uncleanShutdownDetection);
         log.info(hello);
     }
 

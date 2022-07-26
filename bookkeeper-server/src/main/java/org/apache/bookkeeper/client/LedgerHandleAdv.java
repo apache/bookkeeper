@@ -189,7 +189,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with {@link BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -263,9 +263,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             return;
         }
 
-        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
-                    0, clientCtx.getConf().waitForWriteSetMs)) {
-            op.allowFailFastOnUnwritableChannel();
+        if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+            try {
+                if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
+            }
         }
 
         try {

@@ -177,7 +177,7 @@ public class DiskChecker {
      * Calculate the total amount of free space available
      * in all of the ledger directories put together.
      *
-     * @return totalDiskSpace in bytes
+     * @return freeDiskSpace in bytes
      * @throws IOException
      */
     public long getTotalFreeSpace(List<File> dirs) throws IOException {
@@ -193,10 +193,10 @@ public class DiskChecker {
     }
 
     /**
-     * Calculate the total amount of free space available
+     * Calculate the total amount of disk space
      * in all of the ledger directories put together.
      *
-     * @return freeDiskSpace in bytes
+     * @return totalDiskSpace in bytes
      * @throws IOException
      */
     public long getTotalDiskSpace(List<File> dirs) throws IOException {
@@ -246,21 +246,21 @@ public class DiskChecker {
         float usage = checkDiskFull(dir);
         if (!mkdirsWithExistsCheck(dir)) {
             throw new DiskErrorException("can not create directory: "
-                    + dir.toString());
+                    + dir);
         }
 
         if (!dir.isDirectory()) {
-            throw new DiskErrorException("not a directory: " + dir.toString());
+            throw new DiskErrorException("not a directory: " + dir);
         }
 
         if (!dir.canRead()) {
             throw new DiskErrorException("directory is not readable: "
-                    + dir.toString());
+                    + dir);
         }
 
         if (!dir.canWrite()) {
             throw new DiskErrorException("directory is not writable: "
-                    + dir.toString());
+                    + dir);
         }
         return usage;
     }

@@ -75,6 +75,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Zookeeper Parameters
     protected static final String ZK_TIMEOUT = "zkTimeout";
     protected static final String ZK_SERVERS = "zkServers";
+    protected static final String ZK_RETRY_BACKOFF_MAX_RETRIES = "zkRetryBackoffMaxRetries";
 
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
@@ -92,6 +93,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
 
     protected static final String ENABLE_BUSY_WAIT = "enableBusyWait";
+    protected static final String ENABLE_HEALTH_CHECK = "enableHealthCheck";
 
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
@@ -186,6 +188,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // option to limit stats logging
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
+
+    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
 
     protected AbstractConfiguration() {
         super();
@@ -342,6 +346,27 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setZkTimeout(int zkTimeout) {
         setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        return getThis();
+    }
+
+    /**
+     * Get zookeeper client backoff max retry times.
+     *
+     * @return zk backoff max retry times.
+     */
+    public int getZkRetryBackoffMaxRetries() {
+        return getInt(ZK_RETRY_BACKOFF_MAX_RETRIES, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Set zookeeper client backoff max retry times.
+     *
+     * @param maxRetries
+     *          backoff max retry times
+     * @return server configuration.
+     */
+    public T setZkRetryBackoffMaxRetries(int maxRetries) {
+        setProperty(ZK_RETRY_BACKOFF_MAX_RETRIES, Integer.toString(maxRetries));
         return getThis();
     }
 
@@ -1183,6 +1208,28 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     }
 
     /**
+     * Get the bytes rate of re-replication.
+     * Default value is -1 which it means entries will replicated without any throttling activity.
+     *
+     * @return bytes rate of re-replication.
+     */
+    public int getReplicationRateByBytes() {
+        return getInt(REPLICATION_RATE_BY_BYTES, -1);
+    }
+
+    /**
+     * Set the bytes rate of re-replication.
+     *
+     * @param rate bytes rate of re-replication.
+     *
+     * @return ClientConfiguration
+     */
+    public T setReplicationRateByBytes(int rate) {
+        this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
+        return getThis();
+    }
+
+    /**
      * Trickery to allow inheritance with fluent style.
      */
     protected abstract T getThis();
@@ -1201,7 +1248,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         Map<String, Object> configMap = new HashMap<>();
         Iterator<String> iterator = this.getKeys();
         while (iterator.hasNext()) {
-            String key = iterator.next().toString();
+            String key = iterator.next();
             Object property = this.getProperty(key);
             if (property != null) {
                 configMap.put(key, property.toString());

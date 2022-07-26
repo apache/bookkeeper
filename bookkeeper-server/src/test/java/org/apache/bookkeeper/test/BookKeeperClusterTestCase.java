@@ -50,7 +50,10 @@ import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
@@ -70,6 +73,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -104,7 +108,7 @@ public abstract class BookKeeperClusterTestCase {
 
     // BookKeeper related variables
     protected final TmpDirs tmpDirs = new TmpDirs();
-    private final List<ServerTester> servers = new LinkedList<>();
+    protected final List<ServerTester> servers = new LinkedList<>();
 
     protected int numBookies;
     protected BookKeeperTestClient bkc;
@@ -423,6 +427,11 @@ public abstract class BookKeeperClusterTestCase {
     public ServerConfiguration killBookie(BookieId addr) throws Exception {
         Optional<ServerTester> tester = byAddress(addr);
         if (tester.isPresent()) {
+            if (tester.get().autoRecovery != null
+                    && tester.get().autoRecovery.getAuditor() != null
+                    && tester.get().autoRecovery.getAuditor().isRunning()) {
+                LOG.warn("Killing bookie {} who is the current Auditor", addr);
+            }
             servers.remove(tester.get());
             tester.get().shutdown();
             return tester.get().getConfiguration();
@@ -760,7 +769,20 @@ public abstract class BookKeeperClusterTestCase {
         while (System.nanoTime() < timeoutAt) {
             for (ServerTester t : servers) {
                 Auditor a = t.getAuditor();
-                if (a != null) {
+                ReplicationWorker replicationWorker = t.getReplicationWorker();
+
+                // found a candidate Auditor + ReplicationWorker
+                if (a != null && a.isRunning()
+                    && replicationWorker != null && replicationWorker.isRunning()) {
+                    int deathWatchInterval = t.getConfiguration().getDeathWatchInterval();
+                    Thread.sleep(deathWatchInterval + 1000);
+                }
+
+                // double check, because in the meantime AutoRecoveryDeathWatcher may have killed the
+                // AutoRecovery daemon
+                if (a != null && a.isRunning()
+                        && replicationWorker != null && replicationWorker.isRunning()) {
+                    LOG.info("Found Auditor Bookie {}", t.server.getBookieId());
                     return a;
                 }
             }
@@ -813,7 +835,7 @@ public abstract class BookKeeperClusterTestCase {
 
         private AutoRecoveryMain autoRecovery;
 
-        ServerTester(ServerConfiguration conf) throws Exception {
+        public ServerTester(ServerConfiguration conf) throws Exception {
             this.conf = conf;
             provider = new TestStatsProvider();
 
@@ -834,6 +856,9 @@ public abstract class BookKeeperClusterTestCase {
                     conf, diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
             LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                     conf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
+
+            UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
+
             storage = BookieResources.createLedgerStorage(
                     conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                     bookieStats, allocator);
@@ -847,13 +872,14 @@ public abstract class BookKeeperClusterTestCase {
                                         diskChecker, ledgerDirsManager, indexDirsManager,
                                         bookieStats, allocator, BookieServiceInfo.NO_INFO);
             }
-            server = new BookieServer(conf, bookie, rootStatsLogger, allocator);
+            server = new BookieServer(conf, bookie, rootStatsLogger, allocator,
+                    uncleanShutdownDetection);
             address = BookieImpl.getBookieAddress(conf);
 
             autoRecovery = null;
         }
 
-        ServerTester(ServerConfiguration conf, Bookie b) throws Exception {
+        public ServerTester(ServerConfiguration conf, Bookie b) throws Exception {
             this.conf = conf;
             provider = new TestStatsProvider();
 
@@ -864,26 +890,27 @@ public abstract class BookKeeperClusterTestCase {
             storage = null;
 
             bookie = b;
-            server = new BookieServer(conf, b, provider.getStatsLogger(""), allocator);
+            server = new BookieServer(conf, b, provider.getStatsLogger(""),
+                    allocator, new MockUncleanShutdownDetection());
             address = BookieImpl.getBookieAddress(conf);
 
             autoRecovery = null;
         }
 
-        void startAutoRecovery() throws Exception {
+        public void startAutoRecovery() throws Exception {
             LOG.debug("Starting Auditor Recovery for the bookie: {}", address);
             autoRecovery = new AutoRecoveryMain(conf);
             autoRecovery.start();
         }
 
-        void stopAutoRecovery() {
+        public void stopAutoRecovery() {
             if (autoRecovery != null) {
                 LOG.debug("Shutdown Auditor Recovery for the bookie: {}", address);
                 autoRecovery.shutdown();
             }
         }
 
-        Auditor getAuditor() {
+        public Auditor getAuditor() {
             if (autoRecovery != null) {
                 return autoRecovery.getAuditor();
             } else {
@@ -891,7 +918,15 @@ public abstract class BookKeeperClusterTestCase {
             }
         }
 
-        ServerConfiguration getConfiguration() {
+        public ReplicationWorker getReplicationWorker() {
+            if (autoRecovery != null) {
+                return autoRecovery.getReplicationWorker();
+            } else {
+                return null;
+            }
+        }
+
+        public ServerConfiguration getConfiguration() {
             return conf;
         }
 
@@ -899,15 +934,15 @@ public abstract class BookKeeperClusterTestCase {
             return server;
         }
 
-        TestStatsProvider getStatsProvider() {
+        public TestStatsProvider getStatsProvider() {
             return provider;
         }
 
-        BookieSocketAddress getAddress() {
+        public BookieSocketAddress getAddress() {
             return address;
         }
 
-        void shutdown() throws Exception {
+        public void shutdown() throws Exception {
             server.shutdown();
 
             if (ledgerManager != null) {

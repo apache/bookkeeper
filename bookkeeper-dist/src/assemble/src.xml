@@ -59,8 +59,7 @@
         <!-- dev -->
         <exclude>dev/**</exclude>
         <!-- site -->
-        <exclude>site/**</exclude>
-        <exclude>site2/**</exclude>
+        <exclude>site3/**</exclude>
       </excludes>
     </fileSet>
     <fileSet>

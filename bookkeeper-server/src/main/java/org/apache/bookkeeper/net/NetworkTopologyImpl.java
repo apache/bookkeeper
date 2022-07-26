@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.net;
 
+import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,9 +120,10 @@ public class NetworkTopologyImpl implements NetworkTopology {
          * @return true if this node is an ancestor of <i>n</i>
          */
         boolean isAncestor(Node n) {
-            return getPath(this).equals(NodeBase.PATH_SEPARATOR_STR)
+            return !Strings.isNullOrEmpty(n.getNetworkLocation())
+                && (getPath(this).equals(NodeBase.PATH_SEPARATOR_STR)
                     || (n.getNetworkLocation() + NodeBase.PATH_SEPARATOR_STR).startsWith(getPath(this)
-                            + NodeBase.PATH_SEPARATOR_STR);
+                            + NodeBase.PATH_SEPARATOR_STR));
         }
 
         /**
@@ -419,7 +421,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
             Node rack = getNodeForNetworkLocation(node);
             if (rack != null && !(rack instanceof InnerNode)) {
                 LOG.error("Unexpected data node {} at an illegal network location", node);
-                throw new IllegalArgumentException("Unexpected data node " + node.toString()
+                throw new IllegalArgumentException("Unexpected data node " + node
                         + " at an illegal network location");
             }
             if (clusterMap.add(node)) {
@@ -434,7 +436,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:\n" + this);
             }
         } finally {
             netlock.writeLock().unlock();
@@ -505,7 +507,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this.toString());
+                LOG.debug("NetworkTopology became:\n" + this);
             }
         } finally {
             netlock.writeLock().unlock();

@@ -19,34 +19,26 @@
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.function.Function;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test for {@link ListUnderReplicatedCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ListUnderReplicatedCommand.class, MetadataDrivers.class, UnderreplicatedLedger.class })
 public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     private UnderreplicatedLedger ledger;
@@ -61,16 +53,8 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
-        PowerMockito.mockStatic(MetadataDrivers.class);
         factory = mock(LedgerManagerFactory.class);
-        PowerMockito.doAnswer(invocationOnMock -> {
-            Function<LedgerManagerFactory, ?> function = invocationOnMock.getArgument(1);
-            function.apply(factory);
-            return true;
-        }).when(MetadataDrivers.class, "runFunctionWithLedgerManagerFactory", any(ServerConfiguration.class),
-                any(Function.class));
+        mockMetadataDriversWithLedgerManagerFactory(factory);
 
         underreplicationManager = mock(LedgerUnderreplicationManager.class);
         when(factory.newLedgerUnderreplicationManager()).thenReturn(underreplicationManager);
@@ -88,7 +72,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testWithoutArgs()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -98,7 +82,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("-mr", "");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -108,7 +92,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testExcludingMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
         testCommand("-emr", "");
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
@@ -118,7 +102,7 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testPrintMissingReplica()
-        throws InterruptedException, ReplicationException.CompatibilityException, KeeperException {
+        throws InterruptedException, ReplicationException {
 
         ArrayList<String> list = new ArrayList<>();
         list.add("replica");
@@ -143,6 +127,20 @@ public class ListUnderReplicatedCommandTest extends BookieCommandTestBase {
         verify(ledger, times(1)).getLedgerId();
         verify(ledger, times(1)).getCtime();
         verify(underreplicationManager, times(1)).getReplicationWorkerIdRereplicatingLedger(1L);
+    }
+
+    @Test
+    public void testOnlyDisplayLedgerCount() throws InterruptedException, KeeperException,
+        ReplicationException.CompatibilityException, ReplicationException.UnavailableException {
+        testCommand("-c");
+
+        verify(factory, times(1)).newLedgerUnderreplicationManager();
+        verify(underreplicationManager, times(1)).listLedgersToRereplicate(any());
+        verify(underreplicationManager, times(0))
+            .getReplicationWorkerIdRereplicatingLedger(anyLong());
+        verify(ledger, times(0)).getLedgerId();
+        verify(ledger, times(0)).getCtime();
+        verify(ledger, times(0)).getReplicaList();
     }
 
     @Test

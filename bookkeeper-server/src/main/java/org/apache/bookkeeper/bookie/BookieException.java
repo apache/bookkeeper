@@ -69,6 +69,8 @@ public abstract class BookieException extends Exception {
             return new MetadataStoreException();
         case Code.UnknownBookieIdException:
             return new UnknownBookieIdException();
+        case Code.DataUnknownException:
+            return new DataUnknownException();
         default:
             return new BookieIllegalOpException();
         }
@@ -92,6 +94,7 @@ public abstract class BookieException extends Exception {
         int OperationRejectedException = -108;
         int CookieExistsException = -109;
         int EntryLogMetadataMapException = -110;
+        int DataUnknownException = -111;
     }
 
     public int getCode() {
@@ -137,6 +140,9 @@ public abstract class BookieException extends Exception {
         case Code.OperationRejectedException:
             err = "Operation rejected";
             break;
+        case Code.DataUnknownException:
+            err = "Unable to respond, ledger is in unknown state";
+            break;
         default:
             err = "Invalid operation";
             break;
@@ -160,6 +166,10 @@ public abstract class BookieException extends Exception {
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
+        }
+
+        public BookieUnauthorizedAccessException(String reason) {
+            super(Code.UnauthorizedAccessException, reason);
         }
     }
 
@@ -337,4 +347,25 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * Signal when a ledger is in a limbo state and certain operations
+     * cannot be performed on it.
+     */
+    public static class DataUnknownException extends BookieException {
+        public DataUnknownException() {
+            super(Code.DataUnknownException);
+        }
+
+        public DataUnknownException(Throwable t) {
+            super(Code.DataUnknownException, t);
+        }
+
+        public DataUnknownException(String reason) {
+            super(Code.DataUnknownException, reason);
+        }
+
+        public DataUnknownException(String reason, Throwable t) {
+            super(Code.DataUnknownException, reason, t);
+        }
+    }
 }

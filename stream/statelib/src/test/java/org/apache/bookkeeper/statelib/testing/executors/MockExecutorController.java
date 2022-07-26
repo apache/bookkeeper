@@ -21,12 +21,14 @@ package org.apache.bookkeeper.statelib.testing.executors;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
+
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
@@ -126,17 +128,20 @@ public class MockExecutorController {
     }
 
     private void runTask(Runnable runnable) {
-        if (null == executor) {
-            runnable.run();
-        } else {
-            try {
+        try {
+            if (null == executor) {
+                runnable.run();
+            } else {
                 Assert.assertThat("calling this on the same thread will result in deadlock",
                         Thread.currentThread().getName(),
                         not(containsString(THREAD_NAME_PREFIX)));
                 executor.submit(runnable).get();
-            } catch (InterruptedException | ExecutionException e) {
-                log.warn("runTask failed", e);
             }
+        } catch (AssertionError  ae) {
+            throw ae;
+        } catch (Throwable t) {
+            log.error("Got unexpected exception while submitting a Runnable", t);
+            fail("Got unexpected exception while submitting a Runnable " + t.getMessage());
         }
     }
 

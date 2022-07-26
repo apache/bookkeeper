@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests.shaded</groupId>
     <artifactId>shaded-tests-parent</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>distributedlog-core-shaded-test</artifactId>
@@ -69,6 +69,11 @@
           <artifactId>libthrift</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <!-- class Crc32cIntChecksum needs netty buffer -->
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
     </dependency>
   </dependencies>
   <build>

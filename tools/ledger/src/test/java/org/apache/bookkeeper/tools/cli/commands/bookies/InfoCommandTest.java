@@ -17,8 +17,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,29 +25,18 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 /**
  * Unit test of {@link InfoCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({InfoCommand.class})
 public class InfoCommandTest extends BookieCommandTestBase {
 
     private BookieId bookieId;
     private BookieInfoReader.BookieInfo bInfo;
-    private BookKeeper bk;
     private Map<BookieId, BookieInfoReader.BookieInfo> map = new HashMap<>();
 
     public InfoCommandTest() {
@@ -60,25 +47,17 @@ public class InfoCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
-        PowerMockito.whenNew(ServerConfiguration.class)
-            .withNoArguments()
-            .thenReturn(conf);
+        mockServerConfigurationConstruction();
+        mockClientConfigurationConstruction();
 
-        PowerMockito.whenNew(ClientConfiguration.class)
-            .withParameterTypes(AbstractConfiguration.class)
-            .withArguments(eq(conf))
-            .thenReturn(mock(ClientConfiguration.class));
-
-        this.bk = mock(BookKeeper.class);
-        PowerMockito.whenNew(BookKeeper.class)
-            .withParameterTypes(ClientConfiguration.class)
-            .withArguments(any(ClientConfiguration.class))
-            .thenReturn(bk);
-        when(bk.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         this.bookieId = BookieId.parse("localhost:9999");
         this.bInfo = mock(BookieInfoReader.BookieInfo.class);
         map.put(bookieId, bInfo);
-        when(bk.getBookieInfo()).thenReturn(map);
+
+        mockConstruction(BookKeeper.class, (bk, context) -> {
+            when(bk.getBookieAddressResolver()).thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+            when(bk.getBookieInfo()).thenReturn(map);
+        });
     }
 
     @Test
@@ -86,12 +65,7 @@ public class InfoCommandTest extends BookieCommandTestBase {
         InfoCommand cmd = new InfoCommand();
         cmd.apply(bkFlags, new String[]{""});
 
-        PowerMockito.verifyNew(ClientConfiguration.class, times(1))
-            .withArguments(eq(conf));
-        PowerMockito.verifyNew(BookKeeper.class, times(1))
-            .withArguments(any(ClientConfiguration.class));
-
-        verify(bk, times(1)).getBookieInfo();
+        verify(getMockedConstruction(BookKeeper.class).constructed().get(0), times(1)).getBookieInfo();
         verify(bInfo, times(1 * 3)).getFreeDiskSpace();
         verify(bInfo, times(1 * 3)).getTotalDiskSpace();
     }

@@ -878,13 +878,15 @@ public class LedgerHandle implements WriteHandle {
             // Naturally one of the solutions would be to submit smaller batches and in this case
             // current implementation will prevent next batch from starting when bookie is
             // unresponsive thus helpful enough.
-            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
-            try {
-                if (!waitForWritable(ws, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
-                    op.allowFailFastOnUnwritableChannel();
+            if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+                DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
+                try {
+                    if (!waitForWritable(ws, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
+                        op.allowFailFastOnUnwritableChannel();
+                    }
+                } finally {
+                    ws.recycle();
                 }
-            } finally {
-                ws.recycle();
             }
 
             if (isHandleWritable()) {
@@ -926,7 +928,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry synchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      *
      * @param entryId
@@ -968,7 +970,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry synchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId to be added.
@@ -1006,7 +1008,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger. This can be used only with
      * {@link LedgerHandleAdv} returned through ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId to be added
@@ -1060,7 +1062,7 @@ public class LedgerHandle implements WriteHandle {
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
      * ledgers created with
-     * {@link BookKeeper#createLedgerAdv(int, int, int, org.apache.bookkeeper.client.BookKeeper.DigestType, byte[])}.
+     * {@link BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -1114,7 +1116,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with {@link BookKeeper#createLedgerAdv(int, int, int, BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -1224,7 +1226,9 @@ public class LedgerHandle implements WriteHandle {
         int nonWritableCount = 0;
         List<BookieId> currentEnsemble = getCurrentEnsemble();
         for (int i = 0; i < sz; i++) {
-            if (!clientCtx.getBookieClient().isWritable(currentEnsemble.get(i), ledgerId)) {
+            int writeBookieIndex = writeSet.get(i);
+            if (writeBookieIndex < currentEnsemble.size()
+                && !clientCtx.getBookieClient().isWritable(currentEnsemble.get(writeBookieIndex), ledgerId)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
@@ -1239,6 +1243,7 @@ public class LedgerHandle implements WriteHandle {
         return true;
     }
 
+    @VisibleForTesting
     protected boolean waitForWritable(DistributionSchedule.WriteSet writeSet,
                                     int allowedNonWritableCount, long durationMs) {
         if (durationMs < 0) {
@@ -1323,6 +1328,7 @@ public class LedgerHandle implements WriteHandle {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
                         op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
                                 LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                        op.recyclePendAddOpObject();
                     }
 
                     @Override
@@ -1334,17 +1340,20 @@ public class LedgerHandle implements WriteHandle {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
                                                                     BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                op.recyclePendAddOpObject();
             }
             return;
         }
 
-        DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
-        try {
-            if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
-                op.allowFailFastOnUnwritableChannel();
+        if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+            try {
+                if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
             }
-        } finally {
-            ws.recycle();
         }
 
         try {

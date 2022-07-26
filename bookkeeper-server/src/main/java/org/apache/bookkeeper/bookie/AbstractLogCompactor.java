@@ -39,7 +39,10 @@ public abstract class AbstractLogCompactor {
     private final AtomicBoolean shutting = new AtomicBoolean(false);
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-    interface LogRemovalListener {
+    /**
+     * LogRemovalListener.
+     */
+    public interface LogRemovalListener {
         void removeEntryLog(long logToRemove);
     }
 
@@ -93,7 +96,10 @@ public abstract class AbstractLogCompactor {
         return cancelled.get();
     }
 
-    static class Throttler {
+    /**
+     * class Throttler.
+     */
+    public static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
 
@@ -104,7 +110,7 @@ public abstract class AbstractLogCompactor {
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
-        void acquire(int permits) {
+        public void acquire(int permits) {
             rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
         }
 

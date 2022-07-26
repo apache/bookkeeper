@@ -23,12 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
@@ -47,7 +44,6 @@ class JournalChannel implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     static final long MB = 1024 * 1024L;
-    final FileChannelProvider fileChannelProvider;
     final BookieFileChannel channel;
     final int fd;
     final FileChannel fc;
@@ -59,7 +55,7 @@ class JournalChannel implements Closeable {
 
     static final int SECTOR_SIZE = 512;
     private static final int START_OF_FILE = -12345;
-    private static long cacheDropLagBytes = 8 * MB;
+    private static final long cacheDropLagBytes = 8 * MB;
 
     // No header
     static final int V1 = 1;
@@ -72,7 +68,7 @@ class JournalChannel implements Closeable {
     // 1) expanding header to 512
     // 2) Padding writes to align sector size
     static final int V5 = 5;
-    // Adding explicitlac entry
+    // Adding explicit lac entry
     public static final int V6 = 6;
 
     static final int HEADER_SIZE = SECTOR_SIZE; // align header to sector size
@@ -92,37 +88,42 @@ class JournalChannel implements Closeable {
 
     // Mostly used by tests
     JournalChannel(File journalDirectory, long logId) throws IOException {
-        this(journalDirectory, logId, 4 * MB, 65536, START_OF_FILE, new ServerConfiguration());
+        this(journalDirectory, logId, 4 * MB, 65536, START_OF_FILE, new ServerConfiguration(),
+            new DefaultFileChannelProvider());
     }
 
     // Open journal for scanning starting from the first record in journal.
     JournalChannel(File journalDirectory, long logId,
-                   long preAllocSize, int writeBufferSize, ServerConfiguration conf) throws IOException {
-        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE, conf);
+                   long preAllocSize, int writeBufferSize, ServerConfiguration conf,
+                   FileChannelProvider provider) throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE, conf, provider);
     }
 
     // Open journal for scanning starting from given position.
     JournalChannel(File journalDirectory, long logId,
-                   long preAllocSize, int writeBufferSize, long position, ServerConfiguration conf) throws IOException {
+                   long preAllocSize, int writeBufferSize, long position, ServerConfiguration conf,
+                   FileChannelProvider provider) throws IOException {
          this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE,
-                 position, false, V5, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf);
+                 position, false, V5, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER,
+             conf, provider);
     }
 
     // Open journal to write
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
-                   ServerConfiguration configuration) throws IOException {
+                   ServerConfiguration conf, FileChannelProvider provider) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize, fRemoveFromPageCache,
-                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, configuration);
+                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf, provider);
     }
 
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
-                   Journal.BufferedChannelBuilder bcBuilder, ServerConfiguration configuration) throws IOException {
+                   Journal.BufferedChannelBuilder bcBuilder, ServerConfiguration conf,
+                   FileChannelProvider provider) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, configuration);
+                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, conf, provider);
     }
 
     /**
@@ -151,16 +152,16 @@ class JournalChannel implements Closeable {
                            long preAllocSize, int writeBufferSize, int journalAlignSize,
                            long position, boolean fRemoveFromPageCache,
                            int formatVersionToWrite, Journal.BufferedChannelBuilder bcBuilder,
-                           ServerConfiguration configuration) throws IOException {
+                           ServerConfiguration conf,
+                           FileChannelProvider provider) throws IOException {
         this.journalAlignSize = journalAlignSize;
         this.zeros = ByteBuffer.allocate(journalAlignSize);
         this.preAllocSize = preAllocSize - preAllocSize % journalAlignSize;
         this.fRemoveFromPageCache = fRemoveFromPageCache;
-        this.configuration = configuration;
+        this.configuration = conf;
 
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
-        fileChannelProvider = FileChannelProvider.newProvider(configuration.getJournalChannelProvider());
-        channel = fileChannelProvider.open(fn, configuration);
+        channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
             throw new IOException("Invalid journal format to write : version = " + formatVersionToWrite);
@@ -276,9 +277,6 @@ class JournalChannel implements Closeable {
         if (bc != null) {
             bc.close();
         }
-        if (fileChannelProvider != null) {
-            fileChannelProvider.close();
-        }
     }
 
     public void forceWrite(boolean forceMetadata) throws IOException {
@@ -308,12 +306,4 @@ class JournalChannel implements Closeable {
         }
     }
 
-    @VisibleForTesting
-    public static FileChannel openFileChannel(RandomAccessFile randomAccessFile) {
-        if (randomAccessFile == null) {
-            throw new IllegalArgumentException("Input cannot be null");
-        }
-
-        return randomAccessFile.getChannel();
-    }
 }

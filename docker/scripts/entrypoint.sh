@@ -41,11 +41,11 @@ function run_command() {
         chmod -R +x ${BINDIR}
         chmod -R +x ${SCRIPTS_DIR}
         echo "This is root, will use user $BK_USER to run command '$@'"
-        sudo -s -E -u "$BK_USER" /bin/bash "$@"
+        exec sudo -s -E -u "$BK_USER" /bin/bash -c 'exec "$@"' -- "$@"
         exit
     else
         echo "Run command '$@'"
-        $@
+        exec "$@"
     fi
 }
 
