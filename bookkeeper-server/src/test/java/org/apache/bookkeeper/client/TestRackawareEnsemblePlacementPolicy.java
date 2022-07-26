@@ -581,6 +581,54 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testIsEnsembleAdheringToPlacementPolicy() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r3");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r3");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        List<BookieId> emptyEnsemble = new ArrayList<>();
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                repp.isEnsembleAdheringToPlacementPolicy(emptyEnsemble, 3, 3));
+
+        List<BookieId> ensemble = new ArrayList<>();
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
+                repp.isEnsembleAdheringToPlacementPolicy(ensemble, 3, 3));
+
+        ensemble = new ArrayList<>();
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
+                repp.isEnsembleAdheringToPlacementPolicy(ensemble, 3, 3));
+
+        ensemble = new ArrayList<>();
+        ensemble.add(addr4.toBookieId());
+        ensemble.add(addr5.toBookieId());
+        ensemble.add(addr6.toBookieId());
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                repp.isEnsembleAdheringToPlacementPolicy(ensemble, 3, 3));
+    }
+
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
