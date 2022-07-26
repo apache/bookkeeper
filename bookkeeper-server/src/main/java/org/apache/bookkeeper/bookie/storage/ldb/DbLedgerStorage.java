@@ -186,13 +186,15 @@ public class DbLedgerStorage implements LedgerStorage {
             File[] lDirs = new File[1];
             // Remove the `/current` suffix which will be appended again by LedgersDirManager
             lDirs[0] = ledgerDir.getParentFile();
-            LedgerDirsManager ldm = new LedgerDirsManager(conf, lDirs, ledgerDirsManager.getDiskChecker(), statsLogger);
+            LedgerDirsManager ldm = new LedgerDirsManager(conf, lDirs, ledgerDirsManager.getDiskChecker(),
+                    NullStatsLogger.INSTANCE);
 
             // Create a index dirs manager for the single directory
             File[] iDirs = new File[1];
             // Remove the `/current` suffix which will be appended again by LedgersDirManager
             iDirs[0] = indexDir.getParentFile();
-            LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(), statsLogger);
+            LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(),
+                    NullStatsLogger.INSTANCE);
 
             EntryLogger entrylogger;
             if (directIOEntryLogger) {
