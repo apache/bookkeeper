@@ -653,7 +653,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         LOG.info("Shutting down GarbageCollectorThread");
 
-        compactor.initiateShutdown();
+        throttler.cancelledAcquire();
+        compactor.throttler.cancelledAcquire();
         while (!compacting.compareAndSet(false, true)) {
             // Wait till the thread stops compacting
             Thread.sleep(100);

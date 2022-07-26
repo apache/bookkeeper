@@ -35,9 +35,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 public abstract class AbstractLogCompactor {
 
     protected final ServerConfiguration conf;
-    private final Throttler throttler;
-    private final AtomicBoolean shutting = new AtomicBoolean(false);
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    protected final Throttler throttler;
 
     /**
      * LogRemovalListener.
@@ -66,42 +64,14 @@ public abstract class AbstractLogCompactor {
      */
     public void cleanUpAndRecover() {}
 
-    // GC thread will check the status for the rate limiter
-    // If the compactor is being stopped by other threads,
-    // and the GC thread is still limited, the compact task will be stopped.
-    public void acquire(int permits) throws IOException {
-        long timeout = 100;
-        long start = System.currentTimeMillis();
-        while (!throttler.tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
-            if (shutting.get()) {
-                cancelled.set(true);
-                throw new IOException("Failed to get permits takes "
-                        + (System.currentTimeMillis() - start)
-                        + " ms may be compactor has been shutting down");
-            }
-            try {
-                TimeUnit.NANOSECONDS.sleep(timeout);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        }
-    }
-
-    public void initiateShutdown() {
-        shutting.compareAndSet(false, true);
-    }
-
-    @VisibleForTesting
-    public boolean isCancelled() {
-        return cancelled.get();
-    }
-
     /**
      * class Throttler.
      */
     public static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
+        private final AtomicBoolean cancelled = new AtomicBoolean(false);
+        private final AtomicBoolean throttlerInterrupted = new AtomicBoolean(false);
 
         Throttler(ServerConfiguration conf) {
             this.isThrottleByBytes  = conf.getIsThrottleByBytes();
@@ -110,12 +80,38 @@ public abstract class AbstractLogCompactor {
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
-        public void acquire(int permits) {
-            rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
-        }
-
         boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
             return rateLimiter.tryAcquire(this.isThrottleByBytes ? permits : 1, timeout, unit);
+        }
+
+        // GC thread will check the status for the rate limiter
+        // If the compactor is being stopped by other threads,
+        // and the GC thread is still limited, the compact task will be stopped.
+        public void acquire(int permits) throws IOException {
+            long timeout = 100;
+            long start = System.currentTimeMillis();
+            while (!tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
+                if (cancelled.get()) {
+                    throttlerInterrupted.set(true);
+                    throw new IOException("Failed to get permits takes "
+                            + (System.currentTimeMillis() - start)
+                            + " ms may be compactor has been shutting down");
+                }
+                try {
+                    TimeUnit.NANOSECONDS.sleep(timeout);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+        }
+
+        public void cancelledAcquire() {
+            cancelled.set(true);
+        }
+
+        @VisibleForTesting
+        public boolean isThrottlerInterrupted() {
+            return throttlerInterrupted.get();
         }
     }
 

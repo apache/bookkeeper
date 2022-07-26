@@ -1413,6 +1413,15 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
 
         getGCThread().triggerGC(true, false, false);
+        getGCThread().throttler.cancelledAcquire();
+        waitUntilTrue(() -> {
+            try {
+                return getGCThread().throttler.isThrottlerInterrupted();
+            } catch (Exception e) {
+                fail("Throttler should be interrupted");
+            }
+            return null;
+        }, () -> "Not attempting to complete", 1000, 200);
         waitUntilTrue(() -> {
             try {
                 return getGCThread().compacting.get();
@@ -1424,7 +1433,14 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         getGCThread().shutdown();
         // after garbage collection, compaction should be cancelled when acquire permits
-        assertTrue(getGCThread().compactor.isCancelled());
+        waitUntilTrue(() -> {
+            try {
+                return getGCThread().compactor.throttler.isThrottlerInterrupted();
+            } catch (Exception e) {
+                fail("Compactor throttler should be interrupted");
+            }
+            return null;
+        }, () -> "Not attempting to complete", 1000, 200);
 
     }
 
