@@ -47,8 +47,8 @@ class JournalChannel implements Closeable {
     final BookieFileChannel channel;
     final int fd;
     final FileChannel fc;
-    final BufferedChannel bc;
     final int formatVersion;
+    BufferedChannel bc;
     long nextPrealloc = 0;
 
     final byte[] magicWord = "BKLG".getBytes(UTF_8);
@@ -105,7 +105,7 @@ class JournalChannel implements Closeable {
                    FileChannelProvider provider) throws IOException {
          this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE,
                  position, false, V5, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER,
-             conf, provider);
+             conf, provider, null);
     }
 
     // Open journal to write
@@ -114,16 +114,16 @@ class JournalChannel implements Closeable {
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
                    ServerConfiguration conf, FileChannelProvider provider) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize, fRemoveFromPageCache,
-                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf, provider);
+                formatVersionToWrite, Journal.BufferedChannelBuilder.DEFAULT_BCBUILDER, conf, provider, null);
     }
 
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite,
                    Journal.BufferedChannelBuilder bcBuilder, ServerConfiguration conf,
-                   FileChannelProvider provider) throws IOException {
+                   FileChannelProvider provider, Long toReplaceLogId) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, conf, provider);
+                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder, conf, provider, toReplaceLogId);
     }
 
     /**
@@ -153,14 +153,23 @@ class JournalChannel implements Closeable {
                            long position, boolean fRemoveFromPageCache,
                            int formatVersionToWrite, Journal.BufferedChannelBuilder bcBuilder,
                            ServerConfiguration conf,
-                           FileChannelProvider provider) throws IOException {
+                           FileChannelProvider provider, Long toReplaceLogId) throws IOException {
         this.journalAlignSize = journalAlignSize;
         this.zeros = ByteBuffer.allocate(journalAlignSize);
         this.preAllocSize = preAllocSize - preAllocSize % journalAlignSize;
         this.fRemoveFromPageCache = fRemoveFromPageCache;
         this.configuration = conf;
 
+        boolean reuseFile = false;
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
+        if (toReplaceLogId != null && logId != toReplaceLogId && provider.supportReuseFile()) {
+            File toReplaceFile = new File(journalDirectory, Long.toHexString(toReplaceLogId) + ".txn");
+            if (toReplaceFile.exists()) {
+                renameJournalFile(toReplaceFile, fn);
+                provider.notifyRename(toReplaceFile, fn);
+                reuseFile = true;
+            }
+        }
         channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
@@ -168,7 +177,7 @@ class JournalChannel implements Closeable {
         }
 
         LOG.info("Opening journal {}", fn);
-        if (!channel.fileExists(fn)) { // new file, write version
+        if (!channel.fileExists(fn)) { // create new journal file to write, write version
             if (!fn.createNewFile()) {
                 LOG.error("Journal file {}, that shouldn't exist, already exists. "
                           + " is there another bookie process running?", fn);
@@ -177,21 +186,12 @@ class JournalChannel implements Closeable {
             }
             fc = channel.getFileChannel();
             formatVersion = formatVersionToWrite;
-
-            int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
-            ByteBuffer bb = ByteBuffer.allocate(headerSize);
-            ZeroBuffer.put(bb);
-            bb.clear();
-            bb.put(magicWord);
-            bb.putInt(formatVersion);
-            bb.clear();
-            fc.write(bb);
-
-            bc = bcBuilder.create(fc, writeBufferSize);
-            forceWrite(true);
-            nextPrealloc = this.preAllocSize;
-            fc.write(zeros, nextPrealloc - journalAlignSize);
-        } else {  // open an existing file
+            writeHeader(bcBuilder, writeBufferSize);
+        } else if (reuseFile) { // Open an existing journal to write, it needs fileChannelProvider support reuse file.
+            fc = channel.getFileChannel();
+            formatVersion = formatVersionToWrite;
+            writeHeader(bcBuilder, writeBufferSize);
+        } else {  // open an existing file to read.
             fc = channel.getFileChannel();
             bc = null; // readonly
 
@@ -245,6 +245,30 @@ class JournalChannel implements Closeable {
             this.fd = NativeIO.getSysFileDescriptor(channel.getFD());
         } else {
             this.fd = -1;
+        }
+    }
+
+    private void writeHeader(Journal.BufferedChannelBuilder bcBuilder,
+                             int writeBufferSize) throws IOException {
+        int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
+        ByteBuffer bb = ByteBuffer.allocate(headerSize);
+        ZeroBuffer.put(bb);
+        bb.clear();
+        bb.put(magicWord);
+        bb.putInt(formatVersion);
+        bb.clear();
+        fc.write(bb);
+
+        bc = bcBuilder.create(fc, writeBufferSize);
+        forceWrite(true);
+        nextPrealloc = this.preAllocSize;
+        fc.write(zeros, nextPrealloc - journalAlignSize);
+    }
+
+    public static void renameJournalFile(File source, File target) throws IOException {
+        if (source == null || target == null || !source.renameTo(target)) {
+            LOG.error("Failed to rename file {} to {}", source, target);
+            throw new IOException("Failed to rename file " + source + " to " + target);
         }
     }
 
