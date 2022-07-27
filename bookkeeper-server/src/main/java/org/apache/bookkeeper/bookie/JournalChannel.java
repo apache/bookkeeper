@@ -47,8 +47,8 @@ class JournalChannel implements Closeable {
     final BookieFileChannel channel;
     final int fd;
     final FileChannel fc;
-    final BufferedChannel bc;
     final int formatVersion;
+    BufferedChannel bc;
     long nextPrealloc = 0;
 
     final byte[] magicWord = "BKLG".getBytes(UTF_8);
@@ -177,8 +177,8 @@ class JournalChannel implements Closeable {
         }
 
         LOG.info("Opening journal {}", fn);
-        if (!channel.fileExists(fn) || reuseFile) { // new file, write version
-            if (!reuseFile && !fn.createNewFile()) {
+        if (!channel.fileExists(fn)) { // create new journal file to write, write version
+            if (!fn.createNewFile()) {
                 LOG.error("Journal file {}, that shouldn't exist, already exists. "
                           + " is there another bookie process running?", fn);
                 throw new IOException("File " + fn
@@ -186,21 +186,12 @@ class JournalChannel implements Closeable {
             }
             fc = channel.getFileChannel();
             formatVersion = formatVersionToWrite;
-
-            int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
-            ByteBuffer bb = ByteBuffer.allocate(headerSize);
-            ZeroBuffer.put(bb);
-            bb.clear();
-            bb.put(magicWord);
-            bb.putInt(formatVersion);
-            bb.clear();
-            fc.write(bb);
-
-            bc = bcBuilder.create(fc, writeBufferSize);
-            forceWrite(true);
-            nextPrealloc = this.preAllocSize;
-            fc.write(zeros, nextPrealloc - journalAlignSize);
-        } else {  // open an existing file
+            writeHeader(bcBuilder, writeBufferSize);
+        } else if (reuseFile) { // Open an existing journal to write, it needs fileChannelProvider support reuse file.
+            fc = channel.getFileChannel();
+            formatVersion = formatVersionToWrite;
+            writeHeader(bcBuilder, writeBufferSize);
+        } else {  // open an existing file to read.
             fc = channel.getFileChannel();
             bc = null; // readonly
 
@@ -255,6 +246,23 @@ class JournalChannel implements Closeable {
         } else {
             this.fd = -1;
         }
+    }
+
+    private void writeHeader(Journal.BufferedChannelBuilder bcBuilder,
+                             int writeBufferSize) throws IOException {
+        int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
+        ByteBuffer bb = ByteBuffer.allocate(headerSize);
+        ZeroBuffer.put(bb);
+        bb.clear();
+        bb.put(magicWord);
+        bb.putInt(formatVersion);
+        bb.clear();
+        fc.write(bb);
+
+        bc = bcBuilder.create(fc, writeBufferSize);
+        forceWrite(true);
+        nextPrealloc = this.preAllocSize;
+        fc.write(zeros, nextPrealloc - journalAlignSize);
     }
 
     public static void renameJournalFile(File source, File target) throws IOException {
