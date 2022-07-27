@@ -56,7 +56,7 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
                     executor,
                     NullStatsLogger.INSTANCE,
                     Optional.empty());
-                run(driver.getRegistrationClient(), cmdFlags, clientConf.getEnableBookieAddressResolver());
+                run(driver.getRegistrationClient(), cmdFlags, clientConf.getBookieAddressResolverEnabled());
                 return true;
             }
         } catch (Exception e) {
@@ -71,6 +71,6 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
     }
 
     protected abstract void run(RegistrationClient regClient, DiscoveryFlagsT cmdFlags,
-            boolean enableBookieAddressResolver) throws Exception;
+            boolean bookieAddressResolverEnabled) throws Exception;
 
 }

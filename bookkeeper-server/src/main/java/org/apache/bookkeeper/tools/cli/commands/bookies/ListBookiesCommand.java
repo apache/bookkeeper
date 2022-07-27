@@ -76,7 +76,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
     }
 
     @Override
-    protected void run(RegistrationClient regClient, Flags flags, boolean enableBookieAddressResolver)
+    protected void run(RegistrationClient regClient, Flags flags, boolean bookieAddressResolverEnabled)
             throws Exception {
         if (!flags.readwrite && !flags.readonly && !flags.all) {
             // case: no args is provided. list all the bookies by default.
@@ -85,7 +85,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             flags.all = true;
         }
 
-        BookieAddressResolver bookieAddressResolver = enableBookieAddressResolver
+        BookieAddressResolver bookieAddressResolver = bookieAddressResolverEnabled
                 ? new DefaultBookieAddressResolver(regClient)
                 : new BookieAddressResolverDisabled();
 

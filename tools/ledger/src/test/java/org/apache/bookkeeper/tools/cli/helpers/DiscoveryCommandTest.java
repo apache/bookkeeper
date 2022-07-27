@@ -78,8 +78,8 @@ public class DiscoveryCommandTest {
     @DataPoint
     public static final boolean BOOKIE_ADDR_RESOLVER_DISABLED = false;
     @Theory
-    public void testRun(boolean enableBookieAddressResolver) throws Exception {
-        clientConf.setEnableBookieAddressResolver(enableBookieAddressResolver);
+    public void testRun(boolean bookieAddressResolverEnabled) throws Exception {
+        clientConf.setBookieAddressResolverEnabled(bookieAddressResolverEnabled);
 
         try (final MockedStatic<Executors> executorsMockedStatic = Mockito.mockStatic(Executors.class);
              final MockedStatic<MetadataDrivers> mdriversMockedStatic = Mockito.mockStatic(MetadataDrivers.class);) {
@@ -90,7 +90,7 @@ public class DiscoveryCommandTest {
 
             CliFlags cliFlags = new CliFlags();
             assertTrue(cmd.apply(clientConf, cliFlags));
-            verify(cmd, times(1)).run(eq(regClient), same(cliFlags), eq(enableBookieAddressResolver));
+            verify(cmd, times(1)).run(eq(regClient), same(cliFlags), eq(bookieAddressResolverEnabled));
             verify(clientDriver, times(1))
                 .initialize(
                         any(ClientConfiguration.class), eq(executor),

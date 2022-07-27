@@ -48,7 +48,7 @@ public abstract class ClientCommandTestBase extends CommandTestBase {
         mockConstruction(ClientConfiguration.class, withSettings().defaultAnswer(CALLS_REAL_METHODS),
                 (mock, context) -> {
                     doReturn("zk://127.0.0.1/path/to/ledgers").when(mock).getMetadataServiceUri();
-                    doReturn(true).when(mock).getEnableBookieAddressResolver();
+                    doReturn(true).when(mock).getBookieAddressResolverEnabled();
                 });
 
         mockStatic(BookKeeper.class);

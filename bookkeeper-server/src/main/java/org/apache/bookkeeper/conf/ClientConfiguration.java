@@ -162,7 +162,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
         "ensemblePlacementPolicyOrderSlowBookies";
-    protected static final String ENABLE_BOOKIE_ADDRESS_RESOLVER = "enableBookieAddressResolver";
+    protected static final String BOOKIE_ADDRESS_RESOLVER_ENABLED = "bookieAddressResolverEnabled";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -1294,8 +1294,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @return flag to enable/disable BookieAddressResolver.
      */
-    public boolean getEnableBookieAddressResolver() {
-        return getBoolean(ENABLE_BOOKIE_ADDRESS_RESOLVER, true);
+    public boolean getBookieAddressResolverEnabled() {
+        return getBoolean(BOOKIE_ADDRESS_RESOLVER_ENABLED, true);
     }
 
     /**
@@ -1311,8 +1311,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *          flag to enable/disable BookieAddressResolver.
      * @return client configuration.
      */
-    public ClientConfiguration setEnableBookieAddressResolver(boolean enabled) {
-        setProperty(ENABLE_BOOKIE_ADDRESS_RESOLVER, enabled);
+    public ClientConfiguration setBookieAddressResolverEnabled(boolean enabled) {
+        setProperty(BOOKIE_ADDRESS_RESOLVER_ENABLED, enabled);
         return this;
     }
 
