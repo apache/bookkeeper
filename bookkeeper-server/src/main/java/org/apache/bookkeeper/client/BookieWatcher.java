@@ -78,4 +78,9 @@ public interface BookieWatcher {
      * @param bookie
      */
     void quarantineBookie(BookieId bookie);
+
+    /**
+     * Release all quarantined bookies, let it can be chosen for new ensembles.
+     */
+    void releaseAllQuarantinedBookies();
 }

@@ -632,6 +632,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
         if (!isEnabled) {
             LOG.info("Health checks is currently disabled!");
+            bookieWatcher.releaseAllQuarantinedBookies();
             return;
         }
 
