@@ -1416,14 +1416,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         getGCThread().throttler.cancelledAcquire();
         waitUntilTrue(() -> {
             try {
-                return getGCThread().throttler.isThrottlerInterrupted();
-            } catch (Exception e) {
-                fail("Throttler should be interrupted");
-            }
-            return null;
-        }, () -> "Not attempting to complete", 1000, 200);
-        waitUntilTrue(() -> {
-            try {
                 return getGCThread().compacting.get();
             } catch (Exception e) {
                 fail("Get GC thread failed");
@@ -1432,15 +1424,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }, () -> "Not attempting to complete", 10000, 200);
 
         getGCThread().shutdown();
-        // after garbage collection, compaction should be cancelled when acquire permits
-        waitUntilTrue(() -> {
-            try {
-                return getGCThread().compactor.throttler.isThrottlerInterrupted();
-            } catch (Exception e) {
-                fail("Compactor throttler should be interrupted");
-            }
-            return null;
-        }, () -> "Not attempting to complete", 1000, 200);
+        // after garbage collection shutdown, compaction should be cancelled when acquire permits
+        // and GC running flag should be false.
+        assertFalse(getGCThread().running);
 
     }
 

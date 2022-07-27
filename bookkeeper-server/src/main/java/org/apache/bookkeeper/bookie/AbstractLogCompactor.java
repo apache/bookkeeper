@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.IOException;
@@ -71,7 +70,6 @@ public abstract class AbstractLogCompactor {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        private final AtomicBoolean throttlerInterrupted = new AtomicBoolean(false);
 
         Throttler(ServerConfiguration conf) {
             this.isThrottleByBytes  = conf.getIsThrottleByBytes();
@@ -92,7 +90,6 @@ public abstract class AbstractLogCompactor {
             long start = System.currentTimeMillis();
             while (!tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
                 if (cancelled.get()) {
-                    throttlerInterrupted.set(true);
                     throw new IOException("Failed to get permits takes "
                             + (System.currentTimeMillis() - start)
                             + " ms may be compactor has been shutting down");
@@ -107,11 +104,6 @@ public abstract class AbstractLogCompactor {
 
         public void cancelledAcquire() {
             cancelled.set(true);
-        }
-
-        @VisibleForTesting
-        public boolean isThrottlerInterrupted() {
-            return throttlerInterrupted.get();
         }
     }
 
