@@ -60,7 +60,7 @@ using Google Doc.
     - add `BP` label to this PR
     - attach the google doc link in the PR description if the BP is written in google doc
     - don't associate this PR with any release or milestone
-    - edit `site/community/bookkeeper_proposals.md`:
+    - edit `site/community/bookkeeper-proposals.md`:
         - bump the next bp number
         - add this BP to `Inprogress` section
 1. You can tag committers on this RP for reviewers, or start a `[DISCUSS]` thread on Apache mailing list. If you are sending an email, please make sure that the subject
