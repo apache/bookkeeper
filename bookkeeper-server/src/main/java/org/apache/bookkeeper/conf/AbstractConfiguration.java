@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
@@ -1085,7 +1086,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the configured pooling concurrency for the allocator.
      */
     public int getAllocatorPoolingConcurrency() {
-        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
+        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, PooledByteBufAllocator.defaultNumDirectArena());
     }
 
     /**
