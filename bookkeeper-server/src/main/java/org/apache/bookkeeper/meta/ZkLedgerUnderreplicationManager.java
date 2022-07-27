@@ -192,9 +192,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 try {
                     zkc.create(layoutZNode, builder.build().toString().getBytes(UTF_8),
                                zkAcls, CreateMode.PERSISTENT);
+                    break;
                 } catch (KeeperException.NodeExistsException nne) {
                     // someone else managed to create it
-                    continue;
                 }
             } else {
                 byte[] layoutData = zkc.getData(layoutZNode, false, null);
