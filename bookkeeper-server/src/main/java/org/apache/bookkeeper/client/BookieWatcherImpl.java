@@ -359,5 +359,8 @@ class BookieWatcherImpl implements BookieWatcher {
         }
     }
 
-
+    @Override
+    public void releaseAllQuarantinedBookies(){
+        quarantinedBookies.invalidateAll();
+    }
 }
