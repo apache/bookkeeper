@@ -32,6 +32,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         // Set up the configuration properties needed.
         baseConf.setMaxJournalSizeMB(1);
-        baseConf.setMaxBackupJournals(1);
+        baseConf.setMaxBackupJournals(2);
         super.setUp();
     }
 
@@ -70,7 +71,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     /**
      * Common method to create ledgers and write entries to them.
      */
-    private LedgerHandle[] writeLedgerEntries(int numLedgers, int msgSize, int numMsgs) throws Exception {
+    protected LedgerHandle[] writeLedgerEntries(int numLedgers, int msgSize, int numMsgs) throws Exception {
         // Create the ledgers
         LedgerHandle[] lhs = new LedgerHandle[numLedgers];
         long[] ledgerIds = new long[numLedgers];
@@ -83,7 +84,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         return lhs;
     }
 
-    private void writeLedgerEntries(LedgerHandle[] lhs, int msgSize, int numMsgs) throws Exception {
+    protected void writeLedgerEntries(LedgerHandle[] lhs, int msgSize, int numMsgs) throws Exception {
         // Create a dummy message string to write as ledger entries
         StringBuilder msgSB = new StringBuilder();
         for (int i = 0; i < msgSize; i++) {
@@ -114,7 +115,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private void validLedgerEntries(long[] ledgerIds, int msgSize, int numMsgs) throws Exception {
+    protected void validLedgerEntries(long[] ledgerIds, int msgSize, int numMsgs) throws Exception {
         // Open the ledgers
         LedgerHandle[] lhs = new LedgerHandle[ledgerIds.length];
         for (int i = 0; i < lhs.length; i++) {
@@ -182,21 +183,21 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
             lhs[i].close();
         }
 
-        // Sleep for a while to ensure data are flushed
-        Thread.sleep(2000);
-
-        // verify that we only keep at most journal files
-        for (File journalDir : bookieJournalDirs()) {
-            File[] journals = journalDir.listFiles();
-            int numJournals = 0;
-            for (File f : journals) {
-                if (!f.getName().endsWith(".txn")) {
-                    continue;
+        Awaitility.await().untilAsserted(() -> {
+                // verify that we only keep at most journal files
+                for (File journalDir : bookieJournalDirs()) {
+                    File[] journals = journalDir.listFiles();
+                    int numJournals = 0;
+                    for (File f : journals) {
+                        if (!f.getName().endsWith(".txn")) {
+                            continue;
+                        }
+                        ++numJournals;
+                    }
+                    assertTrue(numJournals <= 2);
                 }
-                ++numJournals;
             }
-            assertTrue(numJournals <= 2);
-        }
+        );
 
         // restart bookies
         // ensure after restart we can read the entries since journals rolls

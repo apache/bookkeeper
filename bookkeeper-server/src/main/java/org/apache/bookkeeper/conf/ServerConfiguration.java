@@ -153,6 +153,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_MAX_MEMORY_SIZE_MB = "journalMaxMemorySizeMb";
     protected static final String JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC = "journalPageCacheFlushIntervalMSec";
     protected static final String JOURNAL_CHANNEL_PROVIDER = "journalChannelProvider";
+    protected static final String JOURNAL_REUSE_FILES = "journalReuseFiles";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -987,6 +988,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public String getJournalChannelProvider() {
         return this.getString(JOURNAL_CHANNEL_PROVIDER, "org.apache.bookkeeper.bookie.DefaultFileChannelProvider");
+    }
+
+    /**
+     * Get reuse journal files.
+     * @return
+     */
+    public boolean getJournalReuseFiles() {
+        return this.getBoolean(JOURNAL_REUSE_FILES, false);
+    }
+
+    /**
+     * Set reuse journal files.
+     * @param journalReuseFiles
+     * @return
+     */
+    public ServerConfiguration setJournalReuseFiles(boolean journalReuseFiles) {
+        setProperty(JOURNAL_REUSE_FILES, journalReuseFiles);
+        return this;
     }
 
     /**

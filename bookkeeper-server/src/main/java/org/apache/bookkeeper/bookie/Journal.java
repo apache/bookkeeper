@@ -667,6 +667,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final int journalAlignmentSize;
     // control PageCache flush interval when syncData disabled to reduce disk io util
     private final long journalPageCacheFlushIntervalMSec;
+    // Whether reuse journal files, it will use maxBackupJournal as the journal file pool.
+    private final boolean journalReuseFiles;
 
     // Should data be fsynced on disk before triggering the callback
     private final boolean syncData;
@@ -739,6 +741,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
+        this.journalReuseFiles = conf.getJournalReuseFiles();
         if (conf.getNumJournalCallbackThreads() > 0) {
             this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
                                                         new CbThreadFactory());
@@ -1039,12 +1042,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (null == logFile) {
 
                     logId = logId + 1;
+                    journalIds = listJournalIds(journalDirectory, null);
+                    Long replaceLogId = fileChannelProvider.supportReuseFile() && journalReuseFiles
+                        && journalIds.size() >= maxBackupJournals
+                        && journalIds.get(0) < lastLogMark.getCurMark().getLogFileId()
+                        ? journalIds.get(0) : null;
 
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
                                         journalAlignmentSize, removePagesFromCache,
                                         journalFormatVersionToWrite, getBufferedChannelBuilder(),
-                                        conf, fileChannelProvider);
+                                        conf, fileChannelProvider, replaceLogId);
 
                     journalStats.getJournalCreationStats().registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);

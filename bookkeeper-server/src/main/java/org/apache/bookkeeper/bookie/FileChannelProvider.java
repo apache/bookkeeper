@@ -60,4 +60,22 @@ public interface FileChannelProvider extends Closeable {
      * @throws IOException Possible IOException.
      */
     void close(BookieFileChannel bookieFileChannel) throws IOException;
+
+    /**
+     * Whether support reuse file. Default is false.
+     *
+     * @return
+     */
+    default boolean supportReuseFile() {
+        return false;
+    }
+
+    /**
+     * Notify the rename source file name to the target file name operation.
+     * @param source
+     * @param target
+     */
+    default void notifyRename(File source, File target) {
+
+    }
 }
