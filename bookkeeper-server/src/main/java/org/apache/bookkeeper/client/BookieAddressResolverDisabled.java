@@ -26,7 +26,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
  * Resolve legacy style BookieIDs to Network addresses.
  */
 @Slf4j
-public class BookieAddressResolverDisabled implements BookieAddressResolver {
+public final class BookieAddressResolverDisabled implements BookieAddressResolver {
 
     public BookieAddressResolverDisabled() {
     }
