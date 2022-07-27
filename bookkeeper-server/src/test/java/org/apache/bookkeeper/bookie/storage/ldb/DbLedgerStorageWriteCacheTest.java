@@ -29,6 +29,7 @@ import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -57,11 +58,13 @@ public class DbLedgerStorageWriteCacheTest {
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
             EntryLogger entryLogger, StatsLogger statsLogger, ScheduledExecutorService gcExecutor,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize,
+            WriteCacheManager writeCacheManager, long perDirectoryBlockWriteCacheSize)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                 entryLogger, statsLogger, allocator, gcExecutor, writeCacheSize,
-                readCacheSize, readAheadCacheBatchSize);
+                readCacheSize, readAheadCacheBatchSize,
+                writeCacheManager, perDirectoryBlockWriteCacheSize);
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
@@ -69,23 +72,30 @@ public class DbLedgerStorageWriteCacheTest {
                     LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
                     StatsLogger statsLogger,
                     ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
-                    long readCacheSize, int readAheadCacheBatchSize) throws IOException {
+                    long readCacheSize, int readAheadCacheBatchSize, WriteCacheManager writeCacheManager,
+                    long perDirectoryBlockWriteCacheSize) throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
-                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize);
+                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize,
+                      writeCacheManager, perDirectoryBlockWriteCacheSize);
+                writeCacheManager.disableFlushWriteCacheThread();
             }
 
           @Override
           public void flush() throws IOException {
               flushMutex.lock();
               try {
-                  // Swap the write caches and block indefinitely to simulate a slow disk
-                  WriteCache tmp = writeCacheBeingFlushed;
-                  writeCacheBeingFlushed = writeCache;
-                  writeCache = tmp;
-
-                  // since the cache is switched, we can allow flush to be triggered
-                  hasFlushBeenTriggered.set(false);
-
+                  WriteCache freeWriteCache;
+                  try {
+                      freeWriteCache = writeCacheManager.pollFreeWriteCache(this,
+                              TimeUnit.MILLISECONDS.toNanos(10));
+                  } catch (InterruptedException e) {
+                      return;
+                  }
+                  if (freeWriteCache == null) {
+                      return;
+                  }
+                  WriteCache writeCacheTmp = writeCache;
+                  writeCache = freeWriteCache;
                   // Block the flushing thread
                   try {
                       Thread.sleep(1000);
@@ -113,6 +123,9 @@ public class DbLedgerStorageWriteCacheTest {
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(MockedDbLedgerStorage.class.getName());
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
+        conf.setProperty(DbLedgerStorage.WRITE_CACHE_BLOCK_NUM, 10);
+        conf.setProperty(DbLedgerStorage.COMMON_WRITE_CACHE_MAX_SIZE_MB, 1);
+        conf.setProperty(DbLedgerStorage.COMMON_WRITE_CACHE_BLOCK_NUM, 10);
         conf.setProperty(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS, 1000);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         Bookie bookie = new TestBookieImpl(conf);
@@ -135,7 +148,7 @@ public class DbLedgerStorageWriteCacheTest {
         assertEquals("key", new String(storage.readMasterKey(4)));
 
         // Add enough entries to fill the 1st write cache
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             ByteBuf entry = Unpooled.buffer(100 * 1024 + 2 * 8);
             entry.writeLong(4); // ledger id
             entry.writeLong(i); // entry id
@@ -143,7 +156,7 @@ public class DbLedgerStorageWriteCacheTest {
             storage.addEntry(entry);
         }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             ByteBuf entry = Unpooled.buffer(100 * 1024 + 2 * 8);
             entry.writeLong(4); // ledger id
             entry.writeLong(5 + i); // entry id
