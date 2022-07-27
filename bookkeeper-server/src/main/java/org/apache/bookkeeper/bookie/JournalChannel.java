@@ -258,7 +258,7 @@ class JournalChannel implements Closeable {
     }
 
     public static void renameJournalFile(File source, File target) throws IOException {
-        if (!source.renameTo(target)) {
+        if (source == null || target == null || !source.renameTo(target)) {
             LOG.error("Failed to rename file {} to {}", source, target);
             throw new IOException("Failed to rename file " + source + " to " + target);
         }
