@@ -489,12 +489,12 @@ public class Cookie {
             this.indexDirs = indexDirs;
             return this;
         }
-    
+
         public Builder setIsNew(boolean isNew) {
             this.isNew = isNew;
             return this;
         }
-        
+
         public Cookie build() {
             return new Cookie(layoutVersion, bookieId, journalDirs, ledgerDirs, instanceId, indexDirs, isNew);
         }

@@ -106,7 +106,7 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
     private static List<File> currentDirectoryList(File[] dirs) {
         return Arrays.asList(BookieImpl.getCurrentDirectories(dirs));
     }
-    
+
     private List<File> getDirs(ServerConfiguration conf) throws Exception {
         List<File> dirs = new ArrayList<>();
         for (File f : conf.getJournalDirs()) {
@@ -128,7 +128,7 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
         }
         return dirs;
     }
-    
+
     private void validateConfig(ServerConfiguration conf) throws Exception {
         List<File> dirs = getDirs(conf);
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(conf, rm);
