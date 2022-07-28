@@ -106,8 +106,8 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
     private static List<File> currentDirectoryList(File[] dirs) {
         return Arrays.asList(BookieImpl.getCurrentDirectories(dirs));
     }
-
-    private void validateConfig(ServerConfiguration conf) throws Exception {
+    
+    private List<File> getDirs(ServerConfiguration conf) throws Exception {
         List<File> dirs = new ArrayList<>();
         for (File f : conf.getJournalDirs()) {
             File cur = BookieImpl.getCurrentDirectory(f);
@@ -126,9 +126,13 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
                 BookieImpl.checkDirectoryStructure(cur);
             }
         }
+        return dirs;
+    }
+    
+    private void validateConfig(ServerConfiguration conf) throws Exception {
+        List<File> dirs = getDirs(conf);
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(conf, rm);
         cookieValidation.checkCookies(dirs);
-
     }
 
     /**
@@ -969,5 +973,73 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
         Cookie cookie = zkCookie.getValue();
         cookie.writeToRegistrationManager(rm, conf, version1);
         Assert.assertTrue(cookie.toString().contains(customBookieId));
+    }
+
+    /**
+     * Tests compatible with the old version cookie already exists in RM.
+     */
+    @Test
+    public void testCompatibleWithExistRM() throws Exception {
+        final String customBookieId = "myCustomBookieId" + new Random().nextInt();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
+                .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
+                .setIndexDirName(new String[] { newDirectory() , newDirectory() })
+                .setBookiePort(bookiePort)
+                .setBookieId(customBookieId)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        //Old version cookie didn't contains 'isNew' and 'indexDirs'
+        Cookie.Builder builder = Cookie.generateCookie(conf);
+        builder.setIsNew(false);
+        builder.setIndexDirs(null);
+        String instanceId = rm.getClusterInstanceId();
+        if (instanceId != null) {
+            builder.setInstanceId(instanceId);
+        }
+        Cookie oldVersionCookie = builder.build();
+        List<File> dirs = getDirs(conf);
+        for (File dir : dirs) {
+            oldVersionCookie.writeToDirectory(dir);
+        }
+        oldVersionCookie.writeToRegistrationManager(rm, conf, Version.NEW);
+
+        validateConfig(conf);
+    }
+
+    /**
+     * Tests compatible with the old version cookie already exists in RM.
+     */
+    @Test
+    public void testCompatibleWithExistRMOnFailed() throws Exception {
+        final String customBookieId = "myCustomBookieId" + new Random().nextInt();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
+                .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
+                .setIndexDirName(new String[] { newDirectory() , newDirectory() })
+                .setBookiePort(bookiePort)
+                .setBookieId(customBookieId)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        //Build new version cookie without indexDirs
+        Cookie.Builder builder = Cookie.generateCookie(conf);
+        builder.setIsNew(true);
+        builder.setIndexDirs(null);
+        String instanceId = rm.getClusterInstanceId();
+        if (instanceId != null) {
+            builder.setInstanceId(instanceId);
+        }
+        Cookie newVersionCookie = builder.build();
+        List<File> dirs = getDirs(conf);
+        for (File dir : dirs) {
+            newVersionCookie.writeToDirectory(dir);
+        }
+        newVersionCookie.writeToRegistrationManager(rm, conf, Version.NEW);
+
+        try {
+            validateConfig(conf);
+            Assert.fail("Should validate failed.");
+        } catch (BookieException.InvalidCookieException e) {
+        }
     }
 }

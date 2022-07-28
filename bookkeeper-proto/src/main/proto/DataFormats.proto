@@ -83,6 +83,7 @@ message CookieFormat {
     required string ledgerDirs = 3;
     optional string instanceId = 4;
     optional string indexDirs = 5;
+    optional bool isNew = 6;
 }
 
 /**

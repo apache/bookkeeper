@@ -75,16 +75,18 @@ public class Cookie {
     private final String ledgerDirs;
     private final String indexDirs;
     private final String instanceId;
+    private final boolean isNew;
     private static final String SEPARATOR = "\t";
 
     private Cookie(int layoutVersion, String bookieId, String journalDirs, String ledgerDirs, String instanceId,
-                   String indexDirs) {
+                   String indexDirs, boolean isNew) {
         this.layoutVersion = layoutVersion;
         this.bookieId = bookieId;
         this.journalDirs = journalDirs;
         this.ledgerDirs = ledgerDirs;
         this.instanceId = instanceId;
         this.indexDirs = indexDirs;
+        this.isNew = isNew;
     }
 
     public static String encodeDirPaths(String[] dirs) {
@@ -137,14 +139,19 @@ public class Cookie {
     }
 
     private boolean verifyIndexDirs(Cookie c, boolean checkIfSuperSet) {
-        // Compatible with old cookie
+        // Compatible with old cookie, the old cookie in rm didn't set indexDirs.
+        if (!c.isNew) {
+            return true;
+        }
         if (null == indexDirs && null == c.indexDirs) {
             return true;
         }
-        if (null == indexDirs || null == c.indexDirs) {
+        if (null == indexDirs) {
             return false;
         }
-
+        if (null == c.indexDirs) {
+            return false;
+        }
         if (!checkIfSuperSet) {
             return indexDirs.equals(c.indexDirs);
         } else {
@@ -195,6 +202,7 @@ public class Cookie {
         if (null != indexDirs) {
             builder.setIndexDirs(indexDirs);
         }
+        builder.setIsNew(isNew);
 
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
@@ -243,6 +251,7 @@ public class Cookie {
             if (null != data.getIndexDirs() && !data.getIndexDirs().isEmpty()) {
                 cBuilder.setIndexDirs(data.getIndexDirs());
             }
+            cBuilder.setIsNew(data.getIsNew());
         }
         return cBuilder;
     }
@@ -436,6 +445,7 @@ public class Cookie {
         private String ledgerDirs = null;
         private String instanceId = null;
         private String indexDirs = null;
+        private boolean isNew = true;
 
         private Builder() {
         }
@@ -479,9 +489,14 @@ public class Cookie {
             this.indexDirs = indexDirs;
             return this;
         }
-
+    
+        public Builder setIsNew(boolean isNew) {
+            this.isNew = isNew;
+            return this;
+        }
+        
         public Cookie build() {
-            return new Cookie(layoutVersion, bookieId, journalDirs, ledgerDirs, instanceId, indexDirs);
+            return new Cookie(layoutVersion, bookieId, journalDirs, ledgerDirs, instanceId, indexDirs, isNew);
         }
     }
 
