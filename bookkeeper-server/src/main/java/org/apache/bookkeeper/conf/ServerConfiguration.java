@@ -3859,7 +3859,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public boolean isLocalConsistencyCheckOnStartup() {
         return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
     }
-    
+
     /**
      * The configured pooling concurrency for the allocator, if user config it, we should consider the unpooled
      * direct memory which readCache and writeCache occupy when use DbLedgerStorage.
@@ -3902,7 +3902,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         }
         return super.getAllocatorPoolingConcurrency();
     }
-    
+
     /**
      * Get the authorized roles.
      *
