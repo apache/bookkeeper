@@ -3896,7 +3896,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             int mb = 1024 * 1024;
             long availableDirectMemory = PlatformDependent.maxDirectMemory() - writeCacheMb * mb - readCacheMb * mb;
             int defaultMinNumArena = NettyRuntime.availableProcessors() * 2;
-            final int defaultChunkSize = PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
+            final int defaultChunkSize =
+                    PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
             int suitableNum = (int) (availableDirectMemory / defaultChunkSize / 2 / 3);
             return Math.min(defaultMinNumArena, suitableNum);
         }
