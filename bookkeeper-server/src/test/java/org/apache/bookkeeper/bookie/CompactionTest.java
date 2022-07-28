@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -1388,6 +1389,61 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.setCheckpointer(Checkpointer.NULL);
 
         storage.getEntry(1, 1); // entry should exist
+    }
+
+    @Test
+    public void testCancelledCompactionWhenShuttingDown() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        // change compaction in low throughput
+        // restart bookies
+        restartBookies(c -> {
+            c.setIsThrottleByBytes(true);
+            c.setCompactionRateByBytes(ENTRY_SIZE / 1000);
+            c.setMinorCompactionThreshold(0.2f);
+            c.setMajorCompactionThreshold(0.5f);
+            return c;
+        });
+
+        // remove ledger2 and ledger3
+        // so entry log 1 and 2 would have ledger1 entries left
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+        LOG.info("Finished deleting the ledgers contains most entries.");
+
+        getGCThread().triggerGC(true, false, false);
+        getGCThread().throttler.cancelledAcquire();
+        waitUntilTrue(() -> {
+            try {
+                return getGCThread().compacting.get();
+            } catch (Exception e) {
+                fail("Get GC thread failed");
+            }
+            return null;
+        }, () -> "Not attempting to complete", 10000, 200);
+
+        getGCThread().shutdown();
+        // after garbage collection shutdown, compaction should be cancelled when acquire permits
+        // and GC running flag should be false.
+        assertFalse(getGCThread().running);
+
+    }
+
+    private void waitUntilTrue(Supplier<Boolean> condition,
+                               Supplier<String> msg,
+                               long waitTime,
+                               long pause) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        while (true) {
+            if (condition.get()) {
+                return;
+            }
+            if (System.currentTimeMillis() > startTime + waitTime) {
+                fail(msg.get());
+            }
+            Thread.sleep(Math.min(waitTime, pause));
+        }
     }
 
     private LedgerManager getLedgerManager(final Set<Long> ledgers) {
