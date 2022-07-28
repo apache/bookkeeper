@@ -98,9 +98,9 @@ public class DbLedgerStorage implements LedgerStorage {
 
     private static final int MB = 1024 * 1024;
 
-    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB =
+    public static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB =
         (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
-    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB =
+    public static final long DEFAULT_READ_CACHE_MAX_SIZE_MB =
         (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";

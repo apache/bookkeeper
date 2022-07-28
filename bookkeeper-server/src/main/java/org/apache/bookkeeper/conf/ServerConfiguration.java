@@ -23,6 +23,8 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 // CHECKSTYLE.OFF: IllegalImport
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
 // CHECKSTYLE.ON: IllegalImport
 import java.io.File;
@@ -3857,7 +3859,50 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public boolean isLocalConsistencyCheckOnStartup() {
         return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
     }
-
+    
+    /**
+     * The configured pooling concurrency for the allocator, if user config it, we should consider the unpooled
+     * direct memory which readCache and writeCache occupy when use DbLedgerStorage.
+     */
+    public int getAllocatorPoolingConcurrency() {
+        Integer allocatorPoolingConcurrency = this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, null);
+        if (allocatorPoolingConcurrency != null) {
+            return allocatorPoolingConcurrency;
+        }
+        String ledgerStorageClass = getLedgerStorageClass();
+        if (DbLedgerStorage.class.getName().equals(ledgerStorageClass)) {
+            long writeCacheMb;
+            Object writeCacheConf = this.getProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB);
+            if (writeCacheConf instanceof Number) {
+                writeCacheMb =  ((Number) writeCacheConf).longValue();
+            } else if (writeCacheConf == null) {
+                writeCacheMb =  DbLedgerStorage.DEFAULT_WRITE_CACHE_MAX_SIZE_MB;
+            } else if (StringUtils.isEmpty(this.getString(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB))) {
+                writeCacheMb =  DbLedgerStorage.DEFAULT_WRITE_CACHE_MAX_SIZE_MB;
+            } else {
+                writeCacheMb =  this.getLong(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB);
+            }
+            long readCacheMb;
+            Object readCacheConf = this.getProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB);
+            if (readCacheConf instanceof Number) {
+                readCacheMb =  ((Number) readCacheConf).longValue();
+            } else if (readCacheConf == null) {
+                readCacheMb =  DbLedgerStorage.DEFAULT_READ_CACHE_MAX_SIZE_MB;
+            } else if (StringUtils.isEmpty(this.getString(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB))) {
+                readCacheMb =  DbLedgerStorage.DEFAULT_READ_CACHE_MAX_SIZE_MB;
+            } else {
+                readCacheMb =  this.getLong(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB);
+            }
+            int mb = 1024 * 1024;
+            long availableDirectMemory = PlatformDependent.maxDirectMemory() - writeCacheMb * mb - readCacheMb * mb;
+            int defaultMinNumArena = NettyRuntime.availableProcessors() * 2;
+            final int defaultChunkSize = PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
+            int suitableNum = (int) (availableDirectMemory / defaultChunkSize / 2 / 3);
+            return Math.min(defaultMinNumArena, suitableNum);
+        }
+        return super.getAllocatorPoolingConcurrency();
+    }
+    
     /**
      * Get the authorized roles.
      *
