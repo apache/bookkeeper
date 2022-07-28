@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
-import java.time.Duration;
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -134,7 +133,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // waitForReadOnlyBookie adds another listener thread to observe the node status of bookie,
         // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
         // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
-        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+        Awaitility.await().untilAsserted(() -> {
             assertTrue("Bookie should be running and converted to readonly mode",
                     bookie.isRunning() && bookie.isReadOnly());
         });
