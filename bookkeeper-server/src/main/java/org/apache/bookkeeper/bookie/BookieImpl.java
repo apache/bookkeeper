@@ -879,7 +879,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 for (Journal journal : journals) {
                     journal.shutdown();
                 }
-                this.join();
 
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
