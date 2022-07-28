@@ -154,7 +154,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // waitForWritableBookie adds another listener thread to observe the node status of bookie,
         // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
         // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
-        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+        Awaitility.await().untilAsserted(() -> {
             assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
                     && !bookie.isReadOnly());
         });
