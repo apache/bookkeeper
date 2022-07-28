@@ -23,6 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.util.concurrent.RateLimiter;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
@@ -66,6 +69,7 @@ public abstract class AbstractLogCompactor {
     public static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
+        private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
         Throttler(ServerConfiguration conf) {
             this.isThrottleByBytes  = conf.getIsThrottleByBytes();
@@ -74,8 +78,32 @@ public abstract class AbstractLogCompactor {
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
-        public void acquire(int permits) {
-            rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
+        boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
+            return rateLimiter.tryAcquire(this.isThrottleByBytes ? permits : 1, timeout, unit);
+        }
+
+        // GC thread will check the status for the rate limiter
+        // If the compactor is being stopped by other threads,
+        // and the GC thread is still limited, the compact task will be stopped.
+        public void acquire(int permits) throws IOException {
+            long timeout = 100;
+            long start = System.currentTimeMillis();
+            while (!tryAcquire(permits, timeout, TimeUnit.MILLISECONDS)) {
+                if (cancelled.get()) {
+                    throw new IOException("Failed to get permits takes "
+                            + (System.currentTimeMillis() - start)
+                            + " ms may be compactor has been shutting down");
+                }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(timeout);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+        }
+
+        public void cancelledAcquire() {
+            cancelled.set(true);
         }
     }
 
