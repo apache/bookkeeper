@@ -34,6 +34,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.conf.DbLedgerStorageConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -71,8 +72,8 @@ public class DbLedgerStorageIndexDirTest {
         conf.setGcWaitTime(gcWaitTime);
         /** the testcase cover specify indexDir for the class {@link SingleDirectoryDbLedgerStorage} */
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
-        conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
-        conf.setProperty(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS, 1000);
+        conf.setProperty(DbLedgerStorageConfiguration.WRITE_CACHE_MAX_SIZE_MB, 1);
+        conf.setProperty(DbLedgerStorageConfiguration.MAX_THROTTLE_TIME_MILLIS, 1000);
         conf.setLedgerDirNames(new String[]{tmpLedgerDir.toString()});
         conf.setIndexDirName(new String[]{tmpIndexDir.toString()});
         Bookie bookie = new TestBookieImpl(conf);

@@ -4015,4 +4015,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         dbLedgerStorageConfiguration.copy(this);
         return dbLedgerStorageConfiguration;
     }
+
+    /**
+     * The configured pooling concurrency for the allocator, if user config it, we should consider the unpooled
+     * direct memory which readCache and writeCache occupy when use DbLedgerStorage.
+     */
+    public int getAllocatorPoolingConcurrency() {
+        String ledgerStorageClass = getLedgerStorageClass();
+        if (DbLedgerStorage.class.getName().equals(ledgerStorageClass)) {
+            DbLedgerStorageConfiguration dbLedgerStorageConfiguration = toDbLedgerStorageConfiguration();
+
+            long writeCacheSize = dbLedgerStorageConfiguration.getWriteCacheMaxSize();
+            long readCacheSize = dbLedgerStorageConfiguration.getReadCacheMaxSize();
+            long availableDirectMemory = PlatformDependent.maxDirectMemory() - writeCacheSize - readCacheSize;
+
+            final int defaultChunkSize = PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
+            int defaultMinNumArena = NettyRuntime.availableProcessors() * 2;
+            return Math.min(defaultMinNumArena, (int) (availableDirectMemory / defaultChunkSize / 2 / 3));
+        }
+        return super.getAllocatorPoolingConcurrency();
+    }
+
 }

@@ -58,8 +58,8 @@ public class TestBKConfiguration {
         confReturn.setDiskUsageThreshold(0.999f);
         confReturn.setDiskUsageWarnThreshold(0.99f);
         confReturn.setAllocatorPoolingPolicy(PoolingPolicy.UnpooledHeap);
-        confReturn.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 4);
-        confReturn.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
+        confReturn.setProperty(DbLedgerStorageConfiguration.WRITE_CACHE_MAX_SIZE_MB, 4);
+        confReturn.setProperty(DbLedgerStorageConfiguration.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
         /**
          * if testcase has zk error,just try 0 time for fast running
          */
