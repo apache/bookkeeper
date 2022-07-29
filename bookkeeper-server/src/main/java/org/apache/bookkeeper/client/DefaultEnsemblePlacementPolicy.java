@@ -214,13 +214,6 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     }
 
     @Override
-    public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata) {
-        //Default ensemble placement policy always adhering.
-        return Collections.emptyMap();
-    }
-
-    @Override
     public void uninitalize() {
         // do nothing
     }

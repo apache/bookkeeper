@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -372,8 +374,10 @@ public interface EnsemblePlacementPolicy {
      * @param ackQuorumSize
      * @return Map: key means ensemble index, value means target replace bookieId.
      */
-    Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata);
+    default Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
+            int ackQuorumSize, Map<String, byte[]> customMetadata) {
+        return Collections.emptyMap();
+    }
 
     /**
      * Select one bookie to the "sticky" bookie where all reads for a particular

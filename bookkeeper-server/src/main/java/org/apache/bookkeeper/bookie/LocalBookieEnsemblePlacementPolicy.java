@@ -127,13 +127,6 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata) {
-        //local bookie needn't support it.
-        return Collections.emptyMap();
-    }
-
-    @Override
     public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
         return PlacementPolicyAdherence.MEETS_STRICT;
