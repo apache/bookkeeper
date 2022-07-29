@@ -54,6 +54,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
 
+    private static final int SECOND = 1000;
     // Ledger Storage Settings
 
     private static final ConfigKeyGroup GROUP_LEDGER_STORAGE = ConfigKeyGroup.builder("ledgerstorage")
@@ -3131,10 +3132,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             throw new ConfigurationException("For persisiting explicitLac, journalFormatVersionToWrite should be >= 6"
                     + "and FileInfoFormatVersionToWrite should be >= 1");
         }
-        if (getMinorCompactionInterval() < getGcWaitTime()) {
+        if (getMinorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("minorCompactionInterval should be >= gcWaitTime.");
         }
-        if (getMajorCompactionInterval() < getGcWaitTime()) {
+        if (getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
         }
     }
