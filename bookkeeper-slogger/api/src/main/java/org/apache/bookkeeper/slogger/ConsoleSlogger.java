@@ -24,7 +24,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
 /**
  * Simple slogger implementation which writes json to console.
  */

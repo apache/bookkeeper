@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import com.github.dockerjava.api.DockerClient;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.LedgerEntries;

@@ -17,10 +17,8 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.exporter.common.TextFormat;
-
 import java.io.IOException;
 import java.io.Writer;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

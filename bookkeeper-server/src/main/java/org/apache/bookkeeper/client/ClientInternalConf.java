@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;

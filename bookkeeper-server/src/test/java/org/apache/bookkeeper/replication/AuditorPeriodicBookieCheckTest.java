@@ -25,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;

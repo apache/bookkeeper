@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 import java.util.List;
-
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;

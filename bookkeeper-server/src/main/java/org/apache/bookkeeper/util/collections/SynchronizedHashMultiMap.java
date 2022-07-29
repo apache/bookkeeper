@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import org.apache.commons.lang3.tuple.Pair;
-
 /**
  * Simple multimap implementation that only stores key reference once.
  *

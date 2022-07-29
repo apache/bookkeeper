@@ -23,11 +23,9 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
-
 import org.junit.Test;
 
 /**

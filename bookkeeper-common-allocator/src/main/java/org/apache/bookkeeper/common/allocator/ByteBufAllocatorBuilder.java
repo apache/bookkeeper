@@ -20,9 +20,7 @@ package org.apache.bookkeeper.common.allocator;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.util.function.Consumer;
-
 import org.apache.bookkeeper.common.allocator.impl.ByteBufAllocatorBuilderImpl;
 
 /**

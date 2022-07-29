@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
-
 import org.junit.Assert;
 import org.junit.Test;
 

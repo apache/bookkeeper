@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.test;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;

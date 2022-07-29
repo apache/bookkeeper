@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;

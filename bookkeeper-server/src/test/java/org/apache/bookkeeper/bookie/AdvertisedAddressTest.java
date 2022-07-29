@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.UUID;

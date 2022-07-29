@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.api.BookKeeper;

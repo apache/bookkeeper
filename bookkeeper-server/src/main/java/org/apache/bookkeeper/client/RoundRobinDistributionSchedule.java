@@ -20,14 +20,11 @@ package org.apache.bookkeeper.client;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map;
-
 import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

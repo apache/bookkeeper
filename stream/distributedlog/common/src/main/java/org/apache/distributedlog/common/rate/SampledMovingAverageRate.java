@@ -22,7 +22,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.lang3.tuple.Pair;
-
 /**
  * Sampled {@link MovingAverageRate}.
  */

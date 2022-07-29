@@ -20,7 +20,6 @@ package org.apache.bookkeeper.tests.integration.utils;
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,7 +41,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
-
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;

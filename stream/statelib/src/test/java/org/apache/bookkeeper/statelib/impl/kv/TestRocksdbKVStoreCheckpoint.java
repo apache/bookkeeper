@@ -22,6 +22,7 @@ package org.apache.bookkeeper.statelib.impl.kv;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.CheckpointInfo;

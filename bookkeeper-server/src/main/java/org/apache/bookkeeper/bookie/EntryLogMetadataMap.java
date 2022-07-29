@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.Closeable;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 
 /**

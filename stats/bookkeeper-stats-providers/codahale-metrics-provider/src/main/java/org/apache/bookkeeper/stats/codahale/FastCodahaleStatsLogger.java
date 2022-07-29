@@ -17,14 +17,12 @@
 package org.apache.bookkeeper.stats.codahale;
 
 import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 

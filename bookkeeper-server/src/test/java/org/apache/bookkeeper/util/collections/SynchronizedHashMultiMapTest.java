@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.util.collections;
 
 import java.util.Optional;
-
 import org.junit.Assert;
 import org.junit.Test;
 

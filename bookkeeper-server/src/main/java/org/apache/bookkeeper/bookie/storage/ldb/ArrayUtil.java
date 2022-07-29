@@ -20,10 +20,6 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-// CHECKSTYLE.OFF: IllegalImport
-import io.netty.util.internal.PlatformDependent;
-// CHECKSTYLE.ON: IllegalImport
-
 import java.nio.ByteOrder;
 
 /**
@@ -31,29 +27,30 @@ import java.nio.ByteOrder;
  */
 class ArrayUtil {
 
-    private static final boolean UNALIGNED = PlatformDependent.isUnaligned();
-    private static final boolean HAS_UNSAFE = PlatformDependent.hasUnsafe();
+    private static final boolean UNALIGNED = io.netty.util.internal.PlatformDependent.isUnaligned();
+    private static final boolean HAS_UNSAFE = io.netty.util.internal.PlatformDependent.hasUnsafe();
     private static final boolean BIG_ENDIAN_NATIVE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     public static long getLong(byte[] array, int index) {
         if (HAS_UNSAFE && UNALIGNED) {
-            long v = PlatformDependent.getLong(array, index);
+            long v = io.netty.util.internal.PlatformDependent.getLong(array, index);
             return BIG_ENDIAN_NATIVE_ORDER ? v : Long.reverseBytes(v);
         }
 
-        return ((long) array[index] & 0xff) << 56 | //
-                ((long) array[index + 1] & 0xff) << 48 | //
-                ((long) array[index + 2] & 0xff) << 40 | //
-                ((long) array[index + 3] & 0xff) << 32 | //
-                ((long) array[index + 4] & 0xff) << 24 | //
-                ((long) array[index + 5] & 0xff) << 16 | //
-                ((long) array[index + 6] & 0xff) << 8 | //
-                (long) array[index + 7] & 0xff;
+        return ((long) array[index] & 0xff) << 56
+                | ((long) array[index + 1] & 0xff) << 48
+                | ((long) array[index + 2] & 0xff) << 40
+                | ((long) array[index + 3] & 0xff) << 32
+                | ((long) array[index + 4] & 0xff) << 24
+                | ((long) array[index + 5] & 0xff) << 16
+                | ((long) array[index + 6] & 0xff) << 8
+                | (long) array[index + 7] & 0xff;
     }
 
     public static void setLong(byte[] array, int index, long value) {
         if (HAS_UNSAFE && UNALIGNED) {
-            PlatformDependent.putLong(array, index, BIG_ENDIAN_NATIVE_ORDER ? value : Long.reverseBytes(value));
+            io.netty.util.internal.PlatformDependent
+                    .putLong(array, index, BIG_ENDIAN_NATIVE_ORDER ? value : Long.reverseBytes(value));
         } else {
             array[index] = (byte) (value >>> 56);
             array[index + 1] = (byte) (value >>> 48);
@@ -66,7 +63,7 @@ class ArrayUtil {
         }
     }
 
-    public static final boolean isArrayAllZeros(final byte[] array) {
-        return PlatformDependent.isZero(array, 0, array.length);
+    public static boolean isArrayAllZeros(final byte[] array) {
+        return io.netty.util.internal.PlatformDependent.isZero(array, 0, array.length);
     }
 }

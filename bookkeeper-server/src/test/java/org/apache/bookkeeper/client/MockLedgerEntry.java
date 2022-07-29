@@ -21,7 +21,6 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.InputStream;
-
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 
 /**

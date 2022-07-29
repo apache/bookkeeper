@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.metastore;
 
 import java.util.Set;
-
 import org.apache.bookkeeper.metastore.MetastoreScannableTable.Order;
 
 /**

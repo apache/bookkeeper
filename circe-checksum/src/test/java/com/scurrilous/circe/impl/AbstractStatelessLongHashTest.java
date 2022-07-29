@@ -23,7 +23,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.nio.ByteBuffer;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

@@ -17,10 +17,8 @@
 package org.apache.bookkeeper.stats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 /**
  * A {@code StatsLogger} that caches the stats objects created by other {@code StatsLogger}.
  */

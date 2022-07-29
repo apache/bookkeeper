@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.net;
 
 import com.google.common.annotations.Beta;
-
 import java.util.List;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 

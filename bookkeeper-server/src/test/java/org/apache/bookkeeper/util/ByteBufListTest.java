@@ -37,9 +37,7 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
-
 import java.net.SocketAddress;
-
 import org.junit.Test;
 
 /**

@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;

@@ -19,10 +19,8 @@
 package org.apache.bookkeeper.metadata.etcd;
 
 import com.google.common.collect.Maps;
-
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;

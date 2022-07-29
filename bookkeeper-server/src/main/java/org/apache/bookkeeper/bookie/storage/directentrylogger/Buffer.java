@@ -26,12 +26,10 @@ import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 
 /**

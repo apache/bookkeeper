@@ -24,11 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.etcd.jetcd.ByteSequence;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.commons.lang.RandomStringUtils;

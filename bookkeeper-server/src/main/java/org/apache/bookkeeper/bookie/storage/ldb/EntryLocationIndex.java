@@ -21,13 +21,11 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Iterables;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;

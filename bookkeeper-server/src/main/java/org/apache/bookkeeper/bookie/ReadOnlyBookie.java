@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.IOException;
 import java.util.function.Supplier;
 import org.apache.bookkeeper.conf.ServerConfiguration;

@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-
 import java.util.Map;
 import java.util.TreeMap;
 

@@ -19,7 +19,6 @@ package org.apache.bookkeeper.tls;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SslHandler;
-
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 
 /**

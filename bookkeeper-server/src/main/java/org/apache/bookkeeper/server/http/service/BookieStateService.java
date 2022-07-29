@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.JsonUtil;

@@ -19,7 +19,6 @@ package org.apache.bookkeeper.util;
 
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
-
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;

@@ -28,7 +28,6 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOException;
 import org.apache.bookkeeper.stats.OpStatsLogger;

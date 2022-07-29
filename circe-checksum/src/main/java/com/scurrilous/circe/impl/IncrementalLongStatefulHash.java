@@ -16,7 +16,6 @@
 package com.scurrilous.circe.impl;
 
 import java.nio.ByteBuffer;
-
 import com.scurrilous.circe.StatefulHash;
 import com.scurrilous.circe.StatefulLongHash;
 import com.scurrilous.circe.StatelessLongHash;

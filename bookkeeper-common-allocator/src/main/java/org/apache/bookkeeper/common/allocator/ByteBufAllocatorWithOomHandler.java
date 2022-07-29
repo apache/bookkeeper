@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.common.allocator;
 
 import io.netty.buffer.ByteBufAllocator;
-
 import java.util.function.Consumer;
 
 /**

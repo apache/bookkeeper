@@ -24,11 +24,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;

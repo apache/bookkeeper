@@ -19,12 +19,10 @@
 package org.apache.bookkeeper.client.impl;
 
 import java.util.Arrays;
-
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

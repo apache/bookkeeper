@@ -19,7 +19,6 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

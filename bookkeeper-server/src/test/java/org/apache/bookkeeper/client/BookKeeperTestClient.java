@@ -21,13 +21,10 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;

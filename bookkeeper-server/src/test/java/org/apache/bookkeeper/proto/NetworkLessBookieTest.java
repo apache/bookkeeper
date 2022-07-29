@@ -25,7 +25,6 @@ import static org.junit.Assert.fail;
 
 import io.netty.channel.Channel;
 import io.netty.channel.local.LocalChannel;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;

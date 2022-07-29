@@ -24,9 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-
 import java.io.InputStream;
-
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 

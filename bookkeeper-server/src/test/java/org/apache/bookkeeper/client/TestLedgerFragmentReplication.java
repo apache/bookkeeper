@@ -25,7 +25,6 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -36,7 +35,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;

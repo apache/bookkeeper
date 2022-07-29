@@ -30,7 +30,6 @@ import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

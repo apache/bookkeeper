@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
-
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;

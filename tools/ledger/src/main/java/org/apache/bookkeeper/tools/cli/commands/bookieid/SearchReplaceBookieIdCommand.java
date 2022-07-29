@@ -20,7 +20,6 @@ package org.apache.bookkeeper.tools.cli.commands.bookieid;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.RateLimiter;
-
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;

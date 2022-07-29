@@ -45,7 +45,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigT
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -23,6 +23,7 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;

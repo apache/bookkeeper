@@ -23,7 +23,6 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
-
 import org.junit.Test;
 
 /**

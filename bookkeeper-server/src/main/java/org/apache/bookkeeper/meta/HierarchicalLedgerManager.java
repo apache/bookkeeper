@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;

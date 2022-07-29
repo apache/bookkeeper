@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**

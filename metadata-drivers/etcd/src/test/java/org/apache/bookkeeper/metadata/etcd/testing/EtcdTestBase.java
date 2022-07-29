@@ -19,11 +19,9 @@
 package org.apache.bookkeeper.metadata.etcd.testing;
 
 import io.etcd.jetcd.Client;
-
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang.RandomStringUtils;

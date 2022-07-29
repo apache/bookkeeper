@@ -26,11 +26,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
-
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -41,7 +39,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.io.FileUtils;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

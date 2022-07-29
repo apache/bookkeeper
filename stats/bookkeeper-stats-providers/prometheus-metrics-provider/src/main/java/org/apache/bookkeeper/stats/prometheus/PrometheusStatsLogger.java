@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import com.google.common.base.Joiner;
-
 import io.prometheus.client.Collector;
 import java.util.Map;
 import java.util.TreeMap;

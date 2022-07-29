@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.BitSet;
 import java.util.Map;
-
 import org.apache.bookkeeper.net.BookieId;
 
 /**

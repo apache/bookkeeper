@@ -33,7 +33,6 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

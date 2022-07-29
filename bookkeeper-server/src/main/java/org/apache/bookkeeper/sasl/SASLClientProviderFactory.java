@@ -27,7 +27,6 @@ import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_AUDITOR_SECT
 import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_CLIENT_SECTION_NAME;
 
 import java.io.IOException;
-
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.AppConfigurationEntry;
@@ -35,7 +34,6 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
-
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.conf.AbstractConfiguration;

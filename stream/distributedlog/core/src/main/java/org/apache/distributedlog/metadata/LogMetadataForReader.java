@@ -19,7 +19,6 @@ package org.apache.distributedlog.metadata;
 
 import java.net.URI;
 import java.util.Optional;
-
 /**
  * Log Metadata for Reader.
  */

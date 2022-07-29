@@ -18,7 +18,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;

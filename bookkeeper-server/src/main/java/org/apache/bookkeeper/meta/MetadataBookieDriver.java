@@ -19,7 +19,6 @@
 package org.apache.bookkeeper.meta;
 
 import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;

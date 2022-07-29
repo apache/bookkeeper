@@ -18,13 +18,11 @@
 package org.apache.bookkeeper.metastore;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;

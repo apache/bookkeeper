@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;

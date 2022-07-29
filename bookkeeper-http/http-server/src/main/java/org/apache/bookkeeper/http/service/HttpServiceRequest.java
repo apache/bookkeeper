@@ -22,7 +22,6 @@ package org.apache.bookkeeper.http.service;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.bookkeeper.http.HttpServer;
 
 /**

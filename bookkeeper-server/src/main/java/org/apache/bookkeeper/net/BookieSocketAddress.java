@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.net.InetAddresses;
-
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;

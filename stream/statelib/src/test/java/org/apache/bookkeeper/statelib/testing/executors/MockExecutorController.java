@@ -28,7 +28,6 @@ import static org.mockito.Mockito.doAnswer;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
-
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;

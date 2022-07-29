@@ -28,12 +28,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.Events;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.commons.lang3.tuple.Pair;
-
 /**
  * EntryLogIdsImpl.
  */

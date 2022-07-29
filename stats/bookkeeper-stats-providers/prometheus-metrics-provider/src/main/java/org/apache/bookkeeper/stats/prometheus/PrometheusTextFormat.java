@@ -20,7 +20,6 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.Collector.MetricFamilySamples;
 import io.prometheus.client.Collector.MetricFamilySamples.Sample;
 import io.prometheus.client.CollectorRegistry;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Enumeration;

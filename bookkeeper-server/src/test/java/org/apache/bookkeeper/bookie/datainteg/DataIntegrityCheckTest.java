@@ -38,14 +38,11 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
-
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.exceptions.CompositeException;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LedgerStorage.StorageState;
@@ -75,7 +71,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.MockBookieClient;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

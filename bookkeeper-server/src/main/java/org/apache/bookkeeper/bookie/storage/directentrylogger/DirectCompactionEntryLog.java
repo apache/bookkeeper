@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
-
 import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
 import io.netty.buffer.ByteBuf;
@@ -31,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
-
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;

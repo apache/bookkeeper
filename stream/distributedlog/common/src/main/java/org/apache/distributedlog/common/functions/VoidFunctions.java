@@ -19,7 +19,6 @@ package org.apache.distributedlog.common.functions;
 
 import java.util.List;
 import java.util.function.Function;
-
 /**
  * Functions for transforming structures related to {@link Void}.
  */

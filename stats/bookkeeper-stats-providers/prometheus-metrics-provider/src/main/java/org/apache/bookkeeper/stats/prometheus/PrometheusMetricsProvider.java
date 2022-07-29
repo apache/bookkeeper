@@ -16,12 +16,10 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
+// CHECKSTYLE.OFF: IllegalImport
 import com.google.common.annotations.VisibleForTesting;
-
 import io.netty.util.concurrent.DefaultThreadFactory;
-//CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
-//CHECKSTYLE.ON: IllegalImport
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
@@ -53,6 +51,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+// CHECKSTYLE.ON: IllegalImport
 
 /**
  * A <i>Prometheus</i> based {@link StatsProvider} implementation.

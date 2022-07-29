@@ -18,7 +18,6 @@ package org.apache.bookkeeper.stats;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 /**
  * For mapping thread ids to thread pools and threads within those pools
  * or just for lone named threads. Thread scoped metrics add labels to

@@ -18,7 +18,6 @@ package org.apache.bookkeeper.stats.prometheus;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 

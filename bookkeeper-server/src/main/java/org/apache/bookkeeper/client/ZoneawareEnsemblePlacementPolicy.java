@@ -18,12 +18,10 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieId;

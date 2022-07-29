@@ -23,13 +23,11 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import java.util.EnumSet;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;

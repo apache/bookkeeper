@@ -19,7 +19,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;

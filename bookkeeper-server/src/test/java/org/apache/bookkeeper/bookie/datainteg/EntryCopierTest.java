@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Collections;
@@ -43,7 +42,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.MockLedgerStorage;
 import org.apache.bookkeeper.client.BKException;
@@ -55,14 +53,11 @@ import org.apache.bookkeeper.common.util.MockTicker;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.MockBookieClient;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.InOrder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

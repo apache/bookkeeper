@@ -19,7 +19,6 @@ package org.apache.bookkeeper.util;
  */
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
 
 /**

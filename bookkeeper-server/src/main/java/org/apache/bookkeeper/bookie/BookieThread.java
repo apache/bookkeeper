@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

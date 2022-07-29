@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie.storage;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 
 /**
