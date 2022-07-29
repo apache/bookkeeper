@@ -204,7 +204,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Invalid minor compaction threshold "
                                     + minorCompactionThreshold);
             }
-            if (minorCompactionInterval <= gcWaitTime) {
+            if (minorCompactionInterval < gcWaitTime) {
                 throw new IOException("Too short minor compaction interval : "
                                     + minorCompactionInterval);
             }
@@ -225,7 +225,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Invalid major compaction threshold "
                                     + majorCompactionThreshold);
             }
-            if (majorCompactionInterval <= gcWaitTime) {
+            if (majorCompactionInterval < gcWaitTime) {
                 throw new IOException("Too short major compaction interval : "
                                     + majorCompactionInterval);
             }
