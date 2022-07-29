@@ -20,13 +20,13 @@
  */
 package org.apache.bookkeeper.conf;
 
+import java.util.concurrent.TimeUnit;
+
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.concurrent.TimeUnit;
 
 public class DbLedgerStorageConfiguration extends ServerConfiguration {
 
@@ -50,24 +50,28 @@ public class DbLedgerStorageConfiguration extends ServerConfiguration {
 
     private static final String DIRECT_IO_ENTRYLOGGER = "dbStorage_directIOEntryLogger";
 
-    private static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB = "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMb";
+    private static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB =
+            "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMb";
 
     private static final long DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB =
             (long) (0.125 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
-    private static final String DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB = "dbStorage_directIOEntryLoggerTotalReadBufferSizeMb";
+    private static final String DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB =
+            "dbStorage_directIOEntryLoggerTotalReadBufferSizeMb";
 
     private static final long DEFAULT_DIRECT_IO_TOTAL_READBUFFER_SIZE_MB =
             (long) (0.125 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
-    private static final String DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB = "dbStorage_directIOEntryLoggerReadBufferSizeMb";
+    private static final String DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB =
+            "dbStorage_directIOEntryLoggerReadBufferSizeMb";
 
     private static final long DEFAULT_DIRECT_IO_READBUFFER_SIZE_MB = 8;
 
-    private static final String DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS = "dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds";
+    private static final String DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS =
+            "dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds";
 
     private static final int DEFAULT_DIRECT_IO_MAX_FD_CACHE_TIME_SECONDS = 300;
-    
+
     @VisibleForTesting
     public static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
 
@@ -88,7 +92,7 @@ public class DbLedgerStorageConfiguration extends ServerConfiguration {
     public boolean isDirectIOEntryLoggerEnabled() {
         return getBooleanVariableOrDefault(DIRECT_IO_ENTRYLOGGER, false);
     }
-    
+
     public long getDirectIOEntryLoggerTotalWriteBufferSize() {
         return getLongVariableOrDefault(DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB,
                 DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB) * MB;

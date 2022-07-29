@@ -17,19 +17,12 @@
  */
 package org.apache.bookkeeper.conf;
 
-import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
-
 import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
-
-import java.io.File;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -50,6 +43,12 @@ import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 /**
  * Configuration manages server-side settings.
@@ -337,7 +336,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
-    
+
     /**
      * Construct a default configuration object.
      */
@@ -4037,7 +4036,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             long readCacheSize = dbLedgerStorageConfiguration.getReadCacheMaxSize();
             long availableDirectMemory = PlatformDependent.maxDirectMemory() - writeCacheSize - readCacheSize;
 
-            final int defaultChunkSize = PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
+            final int defaultChunkSize =
+                    PooledByteBufAllocator.defaultPageSize() << PooledByteBufAllocator.defaultMaxOrder();
             int defaultMinNumArena = NettyRuntime.availableProcessors() * 2;
             return Math.min(defaultMinNumArena, (int) (availableDirectMemory / defaultChunkSize / 2 / 3));
         }
