@@ -25,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import org.junit.Test;
 
 /**

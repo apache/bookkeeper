@@ -22,17 +22,14 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+// CHECKSTYLE.OFF: IllegalImport
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
-//CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
-//CHECKSTYLE.ON: IllegalImport
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,10 +39,8 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -74,6 +69,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.StringUtils;
+// CHECKSTYLE.ON: IllegalImport
 
 
 /**

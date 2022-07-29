@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
-
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;

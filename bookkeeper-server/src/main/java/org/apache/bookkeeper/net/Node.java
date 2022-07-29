@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.net;
 
 import com.google.common.annotations.Beta;
-
 /** The interface defines a node in a network topology.
  * A node may be a leave representing a data node or an inner
  * node representing a datacenter or rack.

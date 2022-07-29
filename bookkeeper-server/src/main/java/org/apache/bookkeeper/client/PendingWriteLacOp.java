@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.BitSet;
 import java.util.List;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;

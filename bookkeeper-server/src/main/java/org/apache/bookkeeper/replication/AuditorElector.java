@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

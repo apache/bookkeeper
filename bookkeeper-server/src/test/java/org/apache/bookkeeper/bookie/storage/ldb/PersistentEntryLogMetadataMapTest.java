@@ -27,7 +27,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.List;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;

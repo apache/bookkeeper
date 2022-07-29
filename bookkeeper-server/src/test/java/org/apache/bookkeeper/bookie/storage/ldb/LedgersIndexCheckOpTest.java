@@ -27,7 +27,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;

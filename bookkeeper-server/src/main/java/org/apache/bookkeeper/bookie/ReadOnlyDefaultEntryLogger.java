@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**

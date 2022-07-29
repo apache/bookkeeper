@@ -25,7 +25,6 @@ import static io.etcd.jetcd.common.exception.EtcdExceptionFactory.toEtcdExceptio
 import com.google.common.base.Strings;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
-
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.EtcdConnectionManager;
@@ -39,7 +38,6 @@ import io.etcd.jetcd.common.exception.EtcdException;
 import io.etcd.jetcd.common.exception.EtcdExceptionFactory;
 import io.etcd.jetcd.options.WatchOption;
 import io.etcd.jetcd.watch.WatchResponseWithError;
-
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;

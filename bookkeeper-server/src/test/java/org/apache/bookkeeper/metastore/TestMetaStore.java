@@ -31,14 +31,12 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.apache.bookkeeper.metastore.InMemoryMetastoreTable.MetadataVersion;
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable.Order;

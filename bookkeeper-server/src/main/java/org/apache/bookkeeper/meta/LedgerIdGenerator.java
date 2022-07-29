@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.Closeable;
-
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
 /**

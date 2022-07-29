@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.verifier;
 
 import static com.google.common.base.Preconditions.checkState;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Arrays;

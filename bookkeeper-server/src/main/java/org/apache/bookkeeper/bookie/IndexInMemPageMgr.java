@@ -26,10 +26,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_MI
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_READ_PAGE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_INDEX_PAGES;
 
+// CHECKSTYLE.OFF: IllegalImport
 import com.google.common.base.Stopwatch;
-//CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
-//CHECKSTYLE.ON: IllegalImport
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +51,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+// CHECKSTYLE.ON: IllegalImport
 
 class IndexInMemPageMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);

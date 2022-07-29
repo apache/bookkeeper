@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
-
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.assertEntryEquals;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.logIdFromLocation;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
@@ -36,19 +35,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 
 import com.google.common.util.concurrent.MoreExecutors;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
-
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.MockLedgerStorage;

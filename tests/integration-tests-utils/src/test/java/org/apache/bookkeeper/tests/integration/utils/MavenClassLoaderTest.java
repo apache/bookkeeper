@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.tests.integration.utils;
 
 import com.google.common.collect.Lists;
-
 import org.junit.Assert;
 import org.junit.Test;
 

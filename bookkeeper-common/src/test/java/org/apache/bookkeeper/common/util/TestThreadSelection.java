@@ -22,10 +22,8 @@
 package org.apache.bookkeeper.common.util;
 
 import com.google.common.primitives.Longs;
-
 import java.security.SecureRandom;
 import java.util.Random;
-
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;

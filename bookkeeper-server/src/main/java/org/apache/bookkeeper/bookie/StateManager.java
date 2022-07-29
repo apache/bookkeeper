@@ -19,7 +19,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.util.concurrent.Future;
-
 /**
  * State management of Bookie, including register, turn bookie to w/r mode.
  */
