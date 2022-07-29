@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.Closeable;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 
 /**
@@ -57,6 +56,14 @@ public interface EntryLogMetadataMap extends Closeable {
      * @throws EntryLogMetadataMapException
      */
     void forEach(BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException;
+
+    /**
+     * Performs the given action for the key.
+     *
+     * @param action
+     * @throws EntryLogMetadataMapException
+     */
+    void forKey(long entryLogId, BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException;
 
     /**
      * Removes entryLogMetadata record from the map.

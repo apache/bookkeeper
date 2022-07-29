@@ -20,7 +20,6 @@ package org.apache.bookkeeper.net;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.commons.configuration.Configuration;

@@ -23,19 +23,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
-
-import org.hamcrest.collection.IsIn;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,7 +164,7 @@ public class WriteSetsTest {
         }
 
         for (int i = 0; i < distWriteSet.size(); i++) {
-            assertThat(distWriteSet.get(i), new IsIn<>(writeSet));
+            assertTrue(writeSet.contains(distWriteSet.get(i)));
         }
     }
 }

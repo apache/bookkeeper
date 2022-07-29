@@ -22,10 +22,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
-
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;

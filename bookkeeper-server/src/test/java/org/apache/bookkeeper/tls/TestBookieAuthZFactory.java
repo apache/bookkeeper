@@ -20,7 +20,6 @@ package org.apache.bookkeeper.tls;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;

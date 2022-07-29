@@ -24,7 +24,6 @@ import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.TextFormat.ParseException;
-
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,7 +40,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -192,9 +190,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 try {
                     zkc.create(layoutZNode, builder.build().toString().getBytes(UTF_8),
                                zkAcls, CreateMode.PERSISTENT);
+                    break;
                 } catch (KeeperException.NodeExistsException nne) {
                     // someone else managed to create it
-                    continue;
                 }
             } else {
                 byte[] layoutData = zkc.getData(layoutZNode, false, null);

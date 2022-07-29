@@ -140,11 +140,11 @@
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.13.2.20220328</jackson.version>
     <jcommander.version>1.78</jcommander.version>
-    <jetty.version>9.4.46.v20220331</jetty.version>
+    <jetty.version>9.4.48.v20220622</jetty.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
-    <jna.version>3.2.7</jna.version>
+    <jna.version>5.12.1</jna.version>
     <junit.version>4.12</junit.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
     <junit5.version>5.8.2</junit5.version>
@@ -189,7 +189,7 @@
     <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.0.2</maven-dependency-plugin.version>
@@ -204,13 +204,13 @@
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
-    <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
+    <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.6.0.0</spotbugs-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
     <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
-    <awaitility.version>4.2.0</awaitility.version>
+    <awaitility.version>4.0.3</awaitility.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -684,6 +684,12 @@
         <version>${jmock.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>${awaitility.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
@@ -1046,10 +1052,10 @@
 
             <!-- logs -->
             <exclude>**/*.log</exclude>
-              
+
             <!-- json files -->
             <exclude>**/*.json</exclude>
-              
+
             <!-- data -->
             <exclude>data/**</exclude>
 

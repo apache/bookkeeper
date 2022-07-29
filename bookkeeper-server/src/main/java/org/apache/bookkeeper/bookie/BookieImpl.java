@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -77,7 +78,6 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -741,6 +741,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
@@ -748,6 +751,24 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
             @Override
             public void diskJustWritable(File disk) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    return;
+                }
+                // Transition to writable mode when a disk becomes writable again.
+                stateManager.setHighPriorityWritesAvailability(true);
+                stateManager.transitionToWritableMode();
+            }
+
+            @Override
+            public void anyDiskFull(boolean highPriorityWritesAllowed) {
+                if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
+                    stateManager.setHighPriorityWritesAvailability(highPriorityWritesAllowed);
+                    stateManager.transitionToReadOnlyMode();
+                }
+            }
+
+            @Override
+            public void allDisksWritable() {
                 // Transition to writable mode when a disk becomes writable again.
                 stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();

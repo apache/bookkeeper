@@ -24,11 +24,9 @@ package org.apache.bookkeeper.test;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
-
 import org.junit.Before;
 import org.junit.Test;
 

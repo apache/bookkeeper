@@ -23,9 +23,7 @@ import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,16 +34,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
-import org.apache.bookkeeper.common.collections.GrowableArrayBlockingQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -305,7 +301,7 @@ public class OrderedExecutor implements ExecutorService {
             queue = new BlockingMpscQueue<>(maxTasksInQueue > 0 ? maxTasksInQueue : DEFAULT_MAX_ARRAY_QUEUE_SIZE);
         } else {
             // By default, use regular JDK LinkedBlockingQueue
-            queue = new GrowableArrayBlockingQueue<>();
+            queue = new LinkedBlockingQueue<>();
         }
         return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, queue, factory);
     }

@@ -50,6 +50,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
@@ -328,6 +329,8 @@ class BookieNettyServer {
                     BookieSideConnectionPeerContextHandler contextHandler =
                         new BookieSideConnectionPeerContextHandler();
                     ChannelPipeline pipeline = ch.pipeline();
+
+                    pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
 
                     // For ByteBufList, skip the usual LengthFieldPrepender and have the encoder itself to add it
                     pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);

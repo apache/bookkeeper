@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -59,7 +58,7 @@ public interface ZooKeeperCluster {
 
     void killCluster() throws Exception;
 
-    void sleepCluster(int time, final TimeUnit timeUnit, final CountDownLatch l)
+    void sleepCluster(int time, TimeUnit timeUnit, CountDownLatch l)
             throws InterruptedException, IOException;
 
     default void expireSession(ZooKeeper zk) throws Exception {

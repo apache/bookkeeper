@@ -18,9 +18,7 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
-
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -152,6 +150,8 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
 
     @Override
     public void safeRun() {
+        requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!isVersionCompatible()) {
             sendResponse(BookieProtocol.EBADVERSION,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),

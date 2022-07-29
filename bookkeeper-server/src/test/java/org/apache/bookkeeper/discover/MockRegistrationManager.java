@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.discover;
 
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.LongVersion;

@@ -23,7 +23,6 @@ package org.apache.bookkeeper.meta;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -33,7 +32,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;

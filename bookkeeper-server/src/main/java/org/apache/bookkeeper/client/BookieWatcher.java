@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -78,4 +77,9 @@ public interface BookieWatcher {
      * @param bookie
      */
     void quarantineBookie(BookieId bookie);
+
+    /**
+     * Release all quarantined bookies, let it can be chosen for new ensembles.
+     */
+    void releaseAllQuarantinedBookies();
 }

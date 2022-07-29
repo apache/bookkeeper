@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
-
 import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
 import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
 
@@ -571,7 +570,12 @@ public class LedgerHandle implements WriteHandle {
 
                 // error out all pending adds during closing, the callbacks shouldn't be
                 // running under any bk locks.
-                errorOutPendingAdds(rc, pendingAdds);
+                try {
+                    errorOutPendingAdds(rc, pendingAdds);
+                } catch (Throwable e) {
+                    closePromise.completeExceptionally(e);
+                    return;
+                }
 
                 if (prevHandleState != HandleState.CLOSED) {
                     if (LOG.isDebugEnabled()) {
@@ -878,13 +882,15 @@ public class LedgerHandle implements WriteHandle {
             // Naturally one of the solutions would be to submit smaller batches and in this case
             // current implementation will prevent next batch from starting when bookie is
             // unresponsive thus helpful enough.
-            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
-            try {
-                if (!waitForWritable(ws, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
-                    op.allowFailFastOnUnwritableChannel();
+            if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+                DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
+                try {
+                    if (!waitForWritable(ws, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
+                        op.allowFailFastOnUnwritableChannel();
+                    }
+                } finally {
+                    ws.recycle();
                 }
-            } finally {
-                ws.recycle();
             }
 
             if (isHandleWritable()) {
@@ -1343,13 +1349,15 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
-        try {
-            if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
-                op.allowFailFastOnUnwritableChannel();
+        if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+            try {
+                if (!waitForWritable(ws, 0, clientCtx.getConf().waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
             }
-        } finally {
-            ws.recycle();
         }
 
         try {

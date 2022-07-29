@@ -18,7 +18,6 @@ package org.apache.bookkeeper.stats.prometheus;
 
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
-
 import org.apache.bookkeeper.stats.Counter;
 
 /**

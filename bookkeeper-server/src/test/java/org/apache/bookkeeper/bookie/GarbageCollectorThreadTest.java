@@ -41,7 +41,6 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -51,7 +50,6 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

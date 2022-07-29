@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.LongLongFunction;
 import org.junit.Test;
 
@@ -159,6 +157,39 @@ public class ConcurrentLongLongHashMapTest {
         assertTrue(map.put(6, 6) == -1);
         assertTrue(map.remove(6, 6));
         assertTrue(map.capacity() == 8);
+    }
+
+    @Test
+    public void testExpandShrinkAndClear() {
+        ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        final long initCapacity = map.capacity();
+        assertTrue(map.capacity() == 4);
+        assertTrue(map.put(1, 1) == -1);
+        assertTrue(map.put(2, 2) == -1);
+        assertTrue(map.put(3, 3) == -1);
+
+        // expand hashmap
+        assertTrue(map.capacity() == 8);
+
+        assertTrue(map.remove(1, 1));
+        // not shrink
+        assertTrue(map.capacity() == 8);
+        assertTrue(map.remove(2, 2));
+        // shrink hashmap
+        assertTrue(map.capacity() == 4);
+
+        assertTrue(map.remove(3, 3));
+        // Will not shrink the hashmap again because shrink capacity is less than initCapacity
+        // current capacity is equal than the initial capacity
+        assertTrue(map.capacity() == initCapacity);
+        map.clear();
+        // after clear, because current capacity is equal than the initial capacity, so not shrinkToInitCapacity
+        assertTrue(map.capacity() == initCapacity);
     }
 
     @Test

@@ -52,7 +52,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -78,7 +77,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -1233,8 +1231,9 @@ public class Auditor implements AutoCloseable {
                         if (exception == null) {
                             underReplicatedSize.add(metadata.getValue().getLength());
                         }
-                    }), null);
-        underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+                    }), null).whenComplete((res, e) -> {
+            underReplicatedLedgerTotalSize.registerSuccessfulValue(underReplicatedSize.longValue());
+        });
 
         return FutureUtils.processList(
             Lists.newArrayList(ledgers),

@@ -302,12 +302,13 @@ public class Main {
         }
         String hello = String.format(
             "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
-                + " Journals are in %4$s. Ledgers are stored in %5$s.",
+                + " Journals are in %4$s. Ledgers are stored in %5$s. Indexes are stored in %6$s.",
             conf.getBookieId() != null ? conf.getBookieId() : "<not-set>",
             conf.getBookiePort(),
             conf.getMetadataServiceUriUnchecked(),
             Arrays.asList(conf.getJournalDirNames()),
-            Arrays.asList(conf.getLedgerDirNames()));
+            Arrays.asList(conf.getLedgerDirNames()),
+            Arrays.asList(conf.getIndexDirNames() != null ? conf.getIndexDirNames() : conf.getLedgerDirNames()));
         log.info(hello);
 
         return conf;

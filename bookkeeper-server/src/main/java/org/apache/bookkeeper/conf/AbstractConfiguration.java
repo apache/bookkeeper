@@ -19,16 +19,14 @@ package org.apache.bookkeeper.conf;
 
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.net.ssl.SSLEngine;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
@@ -1085,7 +1083,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the configured pooling concurrency for the allocator.
      */
     public int getAllocatorPoolingConcurrency() {
-        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
+        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, PooledByteBufAllocator.defaultNumDirectArena());
     }
 
     /**

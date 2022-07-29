@@ -21,18 +21,15 @@ package org.apache.bookkeeper.metadata.etcd.helpers;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.primitives.UnsignedBytes;
-
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.KV;
 import io.etcd.jetcd.KeyValue;
 import io.etcd.jetcd.options.GetOption;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 

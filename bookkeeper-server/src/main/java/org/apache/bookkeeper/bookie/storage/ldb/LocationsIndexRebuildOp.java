@@ -21,9 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -33,7 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;

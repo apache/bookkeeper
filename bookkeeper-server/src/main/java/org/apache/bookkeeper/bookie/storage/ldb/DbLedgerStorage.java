@@ -22,17 +22,14 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+// CHECKSTYLE.OFF: IllegalImport
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
-//CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
-//CHECKSTYLE.ON: IllegalImport
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,10 +39,8 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -74,6 +69,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.StringUtils;
+// CHECKSTYLE.ON: IllegalImport
 
 
 /**
@@ -186,13 +182,15 @@ public class DbLedgerStorage implements LedgerStorage {
             File[] lDirs = new File[1];
             // Remove the `/current` suffix which will be appended again by LedgersDirManager
             lDirs[0] = ledgerDir.getParentFile();
-            LedgerDirsManager ldm = new LedgerDirsManager(conf, lDirs, ledgerDirsManager.getDiskChecker(), statsLogger);
+            LedgerDirsManager ldm = new LedgerDirsManager(conf, lDirs, ledgerDirsManager.getDiskChecker(),
+                    NullStatsLogger.INSTANCE);
 
             // Create a index dirs manager for the single directory
             File[] iDirs = new File[1];
             // Remove the `/current` suffix which will be appended again by LedgersDirManager
             iDirs[0] = indexDir.getParentFile();
-            LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(), statsLogger);
+            LedgerDirsManager idm = new LedgerDirsManager(conf, iDirs, indexDirsManager.getDiskChecker(),
+                    NullStatsLogger.INSTANCE);
 
             EntryLogger entrylogger;
             if (directIOEntryLogger) {
@@ -467,17 +465,27 @@ public class DbLedgerStorage implements LedgerStorage {
         checkNotNull(serverConf, "ServerConfiguration can't be null");
         checkNotNull(processor, "LedgerLoggger info processor can't null");
 
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs(),
-                new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
+        DiskChecker diskChecker = new DiskChecker(serverConf.getDiskUsageThreshold(),
+                serverConf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf,
+                serverConf.getLedgerDirs(), diskChecker);
+        LedgerDirsManager indexDirsManager = ledgerDirsManager;
+        File[] idxDirs = serverConf.getIndexDirs();
+        if (null != idxDirs) {
+            indexDirsManager = new LedgerDirsManager(serverConf, idxDirs, diskChecker);
+        }
         List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
-
+        List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
+        if (ledgerDirs.size() != indexDirs.size()) {
+            throw new IOException("ledger and index dirs size not matched");
+        }
         int dirIndex = MathUtils.signSafeMod(ledgerId, ledgerDirs.size());
-        String ledgerBasePath = ledgerDirs.get(dirIndex).toString();
+        String indexBasePath = indexDirs.get(dirIndex).toString();
 
         EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
                 (basePath, subPath, dbConfigType, conf1) ->
                         new KeyValueStorageRocksDB(basePath, subPath, DbConfigType.Default, conf1, true),
-                ledgerBasePath, NullStatsLogger.INSTANCE);
+                indexBasePath, NullStatsLogger.INSTANCE);
         try {
             long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
             for (long currentEntry = 0; currentEntry <= lastEntryId; currentEntry++) {

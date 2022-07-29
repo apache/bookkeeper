@@ -23,7 +23,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.LedgerMetadataUtils;
 import org.apache.bookkeeper.client.api.DigestType;
@@ -48,7 +46,6 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

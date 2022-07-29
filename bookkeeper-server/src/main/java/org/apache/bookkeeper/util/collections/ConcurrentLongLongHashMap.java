@@ -25,7 +25,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -657,7 +656,11 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        // Shrinking must at least ensure initCapacity,
+                        // so as to avoid frequent shrinking and expansion near initCapacity,
+                        // frequent shrinking and expansion,
+                        // additionally opened arrays will consume more memory and affect GC
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -695,7 +698,7 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -734,7 +737,7 @@ public class ConcurrentLongLongHashMap {
             } finally {
                 if (autoShrink && size < resizeThresholdBelow) {
                     try {
-                        int newCapacity = alignToPowerOfTwo((int) (capacity / shrinkFactor));
+                        int newCapacity = Math.max(alignToPowerOfTwo((int) (capacity / shrinkFactor)), initCapacity);
                         int newResizeThresholdUp = (int) (newCapacity * mapFillFactor);
                         if (newCapacity < capacity && newResizeThresholdUp > size) {
                             // shrink the hashmap
@@ -775,11 +778,12 @@ public class ConcurrentLongLongHashMap {
             long stamp = writeLock();
 
             try {
-                Arrays.fill(table, EmptyKey);
-                this.size = 0;
-                this.usedBuckets = 0;
-                if (autoShrink) {
-                    rehash(initCapacity);
+                if (autoShrink && capacity > initCapacity) {
+                    shrinkToInitCapacity();
+                } else {
+                    Arrays.fill(table, EmptyKey);
+                    this.size = 0;
+                    this.usedBuckets = 0;
                 }
             } finally {
                 unlockWrite(stamp);
@@ -846,6 +850,20 @@ public class ConcurrentLongLongHashMap {
             // Capacity needs to be updated after the values, so that we won't see
             // a capacity value bigger than the actual array size
             capacity = newCapacity;
+            resizeThresholdUp = (int) (capacity * mapFillFactor);
+            resizeThresholdBelow = (int) (capacity * mapIdleFactor);
+        }
+
+        private void shrinkToInitCapacity() {
+            long[] newTable = new long[2 * initCapacity];
+            Arrays.fill(newTable, EmptyKey);
+
+            table = newTable;
+            size = 0;
+            usedBuckets = 0;
+            // Capacity needs to be updated after the values, so that we won't see
+            // a capacity value bigger than the actual array size
+            capacity = initCapacity;
             resizeThresholdUp = (int) (capacity * mapFillFactor);
             resizeThresholdBelow = (int) (capacity * mapIdleFactor);
         }

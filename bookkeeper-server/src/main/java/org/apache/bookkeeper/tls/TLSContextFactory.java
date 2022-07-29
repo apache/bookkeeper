@@ -18,9 +18,7 @@
 package org.apache.bookkeeper.tls;
 
 import com.google.common.base.Strings;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
@@ -28,7 +26,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,11 +41,9 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;

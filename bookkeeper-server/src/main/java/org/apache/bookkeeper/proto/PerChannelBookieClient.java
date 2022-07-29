@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -54,6 +55,7 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -582,7 +584,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-
+                pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
                 pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);
                 pipeline.addLast("lengthbasedframedecoder",
                         new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));

@@ -22,21 +22,21 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
 import lombok.Getter;
-
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
@@ -222,7 +222,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Invalid minor compaction threshold "
                                     + minorCompactionThreshold);
             }
-            if (minorCompactionInterval <= gcWaitTime) {
+            if (minorCompactionInterval < gcWaitTime) {
                 throw new IOException("Too short minor compaction interval : "
                                     + minorCompactionInterval);
             }
@@ -243,7 +243,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Invalid major compaction threshold "
                                     + majorCompactionThreshold);
             }
-            if (majorCompactionInterval <= gcWaitTime) {
+            if (majorCompactionInterval < gcWaitTime) {
                 throw new IOException("Too short major compaction interval : "
                                     + majorCompactionInterval);
             }
@@ -543,6 +543,11 @@ public class GarbageCollectorThread extends SafeRunnable {
         int[] entryLogUsageBuckets = new int[numBuckets];
         int[] compactedBuckets = new int[numBuckets];
 
+        ArrayList<LinkedList<Long>> compactableBuckets = new ArrayList<>(numBuckets);
+        for (int i = 0; i < numBuckets; i++) {
+            compactableBuckets.add(new LinkedList<>());
+        }
+
         long start = System.currentTimeMillis();
         MutableLong end = new MutableLong(start);
         MutableLong timeDiff = new MutableLong(0);
@@ -557,25 +562,62 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
             if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
                     || !running) {
-                // We allow the usage limit calculation to continue so that we get a accurate
+                // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Compacting entry log {} with usage {} below threshold {}",
-                        meta.getEntryLogId(), meta.getUsage(), threshold);
-            }
 
-            long priorRemainingSize = meta.getRemainingSize();
-            compactEntryLog(meta);
-            gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
-            compactedBuckets[bucketIndex]++;
+            compactableBuckets.get(bucketIndex).add(meta.getEntryLogId());
         });
+
+        LOG.info(
+                "Compaction: entry log usage buckets before compaction [10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
+                entryLogUsageBuckets);
+
+        final int maxBucket = calculateUsageIndex(numBuckets, threshold);
+        stopCompaction:
+        for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
+            LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
+            while (!entryLogIds.isEmpty()) {
+                if (timeDiff.getValue() < maxTimeMillis) {
+                    end.setValue(System.currentTimeMillis());
+                    timeDiff.setValue(end.getValue() - start);
+                }
+
+                if ((maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis) || !running) {
+                    // We allow the usage limit calculation to continue so that we get an accurate
+                    // report of where the usage was prior to running compaction.
+                    break stopCompaction;
+                }
+
+                final int bucketIndex = currBucket;
+                final long logId = entryLogIds.remove();
+
+                entryLogMetaMap.forKey(logId, (entryLogId, meta) -> {
+                    if (meta == null) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Metadata for entry log {} already deleted", logId);
+                        }
+                        return;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Compacting entry log {} with usage {} below threshold {}",
+                                meta.getEntryLogId(), meta.getUsage(), threshold);
+                    }
+
+                    long priorRemainingSize = meta.getRemainingSize();
+                    compactEntryLog(meta);
+                    gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
+                    compactedBuckets[bucketIndex]++;
+                });
+            }
+        }
+
         if (LOG.isDebugEnabled()) {
             if (!running) {
                 LOG.debug("Compaction exited due to gc not running");
             }
-            if (timeDiff.getValue() > maxTimeMillis) {
+            if (maxTimeMillis > 0 && timeDiff.getValue() > maxTimeMillis) {
                 LOG.debug("Compaction ran for {}ms but was limited by {}ms", timeDiff, maxTimeMillis);
             }
         }
@@ -609,6 +651,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         LOG.info("Shutting down GarbageCollectorThread");
 
+        throttler.cancelledAcquire();
+        compactor.throttler.cancelledAcquire();
         while (!compacting.compareAndSet(false, true)) {
             // Wait till the thread stops compacting
             Thread.sleep(100);

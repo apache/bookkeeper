@@ -29,7 +29,11 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
-class DefaultFileChannel implements BookieFileChannel {
+/**
+ * Default FileChannel for bookie to read and write.
+ *
+ */
+public class DefaultFileChannel implements BookieFileChannel {
     private final File file;
     private RandomAccessFile randomAccessFile;
     private final ServerConfiguration configuration;
