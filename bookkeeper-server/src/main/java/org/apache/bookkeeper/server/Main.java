@@ -60,6 +60,7 @@ import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCookieValidation;
 import org.apache.bookkeeper.bookie.datainteg.DataIntegrityService;
 import org.apache.bookkeeper.bookie.datainteg.EntryCopier;
 import org.apache.bookkeeper.bookie.datainteg.EntryCopierImpl;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
@@ -70,6 +71,7 @@ import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.common.component.RxSchedulerLifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.DbLedgerStorageConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -311,7 +313,17 @@ public class Main {
             Arrays.asList(conf.getIndexDirNames() != null ? conf.getIndexDirNames() : conf.getLedgerDirNames()));
         log.info(hello);
 
-        return conf;
+        return toDbLedgerStorageIfNecessary(conf);
+    }
+
+    private static ServerConfiguration toDbLedgerStorageIfNecessary(ServerConfiguration serverConfiguration) {
+        String ledgerStorageClass = serverConfiguration.getLedgerStorageClass();
+        if (DbLedgerStorage.class.getName().equals(ledgerStorageClass)) {
+            DbLedgerStorageConfiguration dbLedgerStorageConfiguration = new DbLedgerStorageConfiguration();
+            dbLedgerStorageConfiguration.copy(serverConfiguration);
+            return dbLedgerStorageConfiguration;
+        }
+        return serverConfiguration;
     }
 
     /**

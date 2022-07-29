@@ -71,6 +71,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.conf.DbLedgerStorageConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -139,8 +140,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final DbLedgerStorageStats dbLedgerStorageStats;
 
-    private static final long DEFAULT_MAX_THROTTLE_TIME_MILLIS = TimeUnit.SECONDS.toMillis(10);
-
     private final long maxReadAheadBytesSize;
 
     private final Counter flushExecutorTime;
@@ -178,8 +177,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Do not attempt to perform read-ahead more than half the total size of the cache
         maxReadAheadBytesSize = readCacheMaxSize / 2;
 
-        long maxThrottleTimeMillis = conf.getLong(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS,
-                DEFAULT_MAX_THROTTLE_TIME_MILLIS);
+        long maxThrottleTimeMillis = ((DbLedgerStorageConfiguration) conf).getMaxThrottleTimeMillis();
         maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 
         readCache = new ReadCache(allocator, readCacheMaxSize);
