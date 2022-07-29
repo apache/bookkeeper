@@ -25,7 +25,6 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
-
 import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
