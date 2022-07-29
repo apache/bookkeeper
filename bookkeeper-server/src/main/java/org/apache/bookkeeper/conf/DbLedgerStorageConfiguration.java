@@ -1,5 +1,6 @@
 package org.apache.bookkeeper.conf;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
@@ -11,13 +12,13 @@ public class DbLedgerStorageConfiguration extends ServerConfiguration {
 
     private static final int MB = 1024 * 1024;
 
-    private static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
+    public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
     
     private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB =
             (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
-    
-    private static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
-    
+
+    public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
+
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB =
             (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 

@@ -117,10 +117,10 @@ public class DbLedgerStorage implements LedgerStorage {
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator)
             throws IOException {
-
-        long writeCacheMaxSize = ((DbLedgerStorageConfiguration) conf).getWriteCacheMaxSize();
-        long readCacheMaxSize = ((DbLedgerStorageConfiguration) conf).getReadCacheMaxSize();
-        boolean directIOEntryLogger = ((DbLedgerStorageConfiguration) conf).isDirectIOEntryLoggerEnabled();
+        DbLedgerStorageConfiguration dbLedgerStorageConf = conf.toDbLedgerStorageConfiguration();
+        long writeCacheMaxSize = dbLedgerStorageConf.getWriteCacheMaxSize();
+        long readCacheMaxSize = dbLedgerStorageConf.getReadCacheMaxSize();
+        boolean directIOEntryLogger = dbLedgerStorageConf.isDirectIOEntryLoggerEnabled();
 
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
@@ -140,7 +140,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
-        int readAheadCacheBatchSize = ((DbLedgerStorageConfiguration) conf).getReadAheadCacheBatchSize();
+        int readAheadCacheBatchSize = dbLedgerStorageConf.getReadAheadCacheBatchSize();
 
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
@@ -165,17 +165,13 @@ public class DbLedgerStorage implements LedgerStorage {
             EntryLogger entrylogger;
             if (directIOEntryLogger) {
                 long perDirectoryTotalWriteBufferSize =
-                        ((DbLedgerStorageConfiguration) conf).getDirectIOEntryLoggerTotalWriteBufferSize()
-                                / numberOfDirs;
+                        dbLedgerStorageConf.getDirectIOEntryLoggerTotalWriteBufferSize() / numberOfDirs;
                 long perDirectoryTotalReadBufferSize =
-                        ((DbLedgerStorageConfiguration) conf).getDirectIOEntryLoggerTotalReadBufferSize()
-                                / numberOfDirs;
+                        dbLedgerStorageConf.getDirectIOEntryLoggerTotalReadBufferSize() / numberOfDirs;
 
-                int readBufferSize = (int) ((DbLedgerStorageConfiguration) conf)
-                        .getDirectIOEntryLoggerReadBufferSize();
+                int readBufferSize = (int) dbLedgerStorageConf.getDirectIOEntryLoggerReadBufferSize();
 
-                int maxFdCacheTimeSeconds = (int) ((DbLedgerStorageConfiguration) conf)
-                        .getDirectIOEntryLoggerMaxFDCacheTimeSeconds();
+                int maxFdCacheTimeSeconds = (int) dbLedgerStorageConf.getDirectIOEntryLoggerMaxFDCacheTimeSeconds();
 
                 Slf4jSlogger slog = new Slf4jSlogger(DbLedgerStorage.class);
                 entryLoggerWriteExecutor = Executors.newSingleThreadExecutor(

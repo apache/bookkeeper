@@ -26,6 +26,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.DbLedgerStorageConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
@@ -45,10 +46,10 @@ public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
         baseConf.setGcWaitTime(60000);
 
         // Leave it empty to pickup default
-        baseConf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, "");
+        baseConf.setProperty(DbLedgerStorageConfiguration.WRITE_CACHE_MAX_SIZE_MB, "");
 
         // Configure explicitly with a int object
-        baseConf.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 16);
+        baseConf.setProperty(DbLedgerStorageConfiguration.READ_AHEAD_CACHE_MAX_SIZE_MB, 16);
     }
 
     @Test

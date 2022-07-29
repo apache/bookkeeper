@@ -336,7 +336,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
-
+    
     /**
      * Construct a default configuration object.
      */
@@ -4008,5 +4008,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
         return this;
+    }
+
+    public DbLedgerStorageConfiguration toDbLedgerStorageConfiguration() {
+        DbLedgerStorageConfiguration dbLedgerStorageConfiguration = new DbLedgerStorageConfiguration();
+        dbLedgerStorageConfiguration.copy(this);
+        return dbLedgerStorageConfiguration;
     }
 }

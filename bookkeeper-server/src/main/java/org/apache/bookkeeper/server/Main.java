@@ -313,17 +313,7 @@ public class Main {
             Arrays.asList(conf.getIndexDirNames() != null ? conf.getIndexDirNames() : conf.getLedgerDirNames()));
         log.info(hello);
 
-        return toDbLedgerStorageIfNecessary(conf);
-    }
-
-    private static ServerConfiguration toDbLedgerStorageIfNecessary(ServerConfiguration serverConfiguration) {
-        String ledgerStorageClass = serverConfiguration.getLedgerStorageClass();
-        if (DbLedgerStorage.class.getName().equals(ledgerStorageClass)) {
-            DbLedgerStorageConfiguration dbLedgerStorageConfiguration = new DbLedgerStorageConfiguration();
-            dbLedgerStorageConfiguration.copy(serverConfiguration);
-            return dbLedgerStorageConfiguration;
-        }
-        return serverConfiguration;
+        return conf;
     }
 
     /**
