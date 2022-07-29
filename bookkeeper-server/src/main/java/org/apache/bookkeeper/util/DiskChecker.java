@@ -19,7 +19,6 @@
 package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileStore;
@@ -27,7 +26,6 @@ import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

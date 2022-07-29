@@ -19,10 +19,7 @@ package org.apache.bookkeeper.client;
 
 import java.util.List;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
-import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.net.BookieId;

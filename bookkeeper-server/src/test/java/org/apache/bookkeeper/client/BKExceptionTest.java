@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-
 import org.junit.Assert;
 import org.junit.Test;
 

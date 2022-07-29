@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import java.util.function.Function;
-
 /**
  * Class the enumerates all the possible error conditions.
  *

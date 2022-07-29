@@ -19,12 +19,10 @@ package org.apache.bookkeeper.stats.codahale;
 import static org.junit.Assert.assertEquals;
 
 import com.codahale.metrics.Snapshot;
-
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.junit.Test;
 
 /**

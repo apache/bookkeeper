@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.PortManager;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -101,6 +103,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     public void testBookieShouldTurnWritableFromReadOnly() throws Exception {
         killBookie(0);
         baseConf.setReadOnlyModeEnabled(true);
+        baseConf.setDiskCheckInterval(Integer.MAX_VALUE);
         startNewBookie();
         LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC,
                 "".getBytes());
@@ -128,12 +131,14 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
-        bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(1)))
-            .get(30, TimeUnit.SECONDS);
-
+        // waitForReadOnlyBookie adds another listener thread to observe the node status of bookie,
+        // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
+        // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
+        Awaitility.await().untilAsserted(() -> {
+            assertTrue("Bookie should be running and converted to readonly mode",
+                    bookie.isRunning() && bookie.isReadOnly());
+        });
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
-        assertTrue("Bookie should be running and converted to readonly mode",
-                bookie.isRunning() && bookie.isReadOnly());
 
         // should fail to create ledger
         try {
@@ -146,12 +151,14 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
 
-        bkc.waitForWritableBookie(BookieImpl.getBookieId(confByIndex(1)))
-            .get(30, TimeUnit.SECONDS);
-
+        // waitForWritableBookie adds another listener thread to observe the node status of bookie,
+        // which may be out of sync with the triggering of node changes in EnsemblePlacementPolicy.
+        // This sequence leads to flaky test. So change from watching zk to Awaitility.await().
+        Awaitility.await().untilAsserted(() -> {
+            assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
+                    && !bookie.isReadOnly());
+        });
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
-        assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
-                && !bookie.isReadOnly());
 
         LedgerHandle newLedger = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         for (int i = 0; i < 10; i++) {

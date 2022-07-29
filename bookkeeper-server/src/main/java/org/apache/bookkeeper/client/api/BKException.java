@@ -17,7 +17,6 @@ package org.apache.bookkeeper.client.api;
 
 import java.lang.reflect.Field;
 import java.util.function.Function;
-
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;

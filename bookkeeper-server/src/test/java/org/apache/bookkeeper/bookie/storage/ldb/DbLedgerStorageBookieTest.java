@@ -29,7 +29,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.DbLedgerStorageConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.meta;
 
 import java.util.List;
-
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.data.ACL;

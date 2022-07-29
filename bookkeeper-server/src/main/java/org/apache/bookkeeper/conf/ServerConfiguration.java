@@ -22,11 +22,11 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-// CHECKSTYLE.OFF: IllegalImport
+
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
-// CHECKSTYLE.ON: IllegalImport
+
 import java.io.File;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
 
+    private static final int SECOND = 1000;
     // Ledger Storage Settings
 
     private static final ConfigKeyGroup GROUP_LEDGER_STORAGE = ConfigKeyGroup.builder("ledgerstorage")
@@ -947,7 +948,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getJournalMaxMemorySizeMb() {
         // Default is taking 5% of max direct memory (and convert to MB).
-        long defaultValue = (long) (PlatformDependent.estimateMaxDirectMemory() * 0.05 / 1024 / 1024);
+        long estimateMaxDirectMemory = io.netty.util.internal.PlatformDependent.estimateMaxDirectMemory();
+        long defaultValue = (long) (estimateMaxDirectMemory * 0.05 / 1024 / 1024);
         return this.getLong(JOURNAL_MAX_MEMORY_SIZE_MB, defaultValue);
     }
 
@@ -3132,6 +3134,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         if ((getJournalFormatVersionToWrite() >= 6) ^ (getFileInfoFormatVersionToWrite() >= 1)) {
             throw new ConfigurationException("For persisiting explicitLac, journalFormatVersionToWrite should be >= 6"
                     + "and FileInfoFormatVersionToWrite should be >= 1");
+        }
+        if (getMinorCompactionInterval() * SECOND < getGcWaitTime()) {
+            throw new ConfigurationException("minorCompactionInterval should be >= gcWaitTime.");
+        }
+        if (getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
+            throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
         }
     }
 

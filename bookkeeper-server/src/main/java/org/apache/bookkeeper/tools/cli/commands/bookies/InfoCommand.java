@@ -23,7 +23,6 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;

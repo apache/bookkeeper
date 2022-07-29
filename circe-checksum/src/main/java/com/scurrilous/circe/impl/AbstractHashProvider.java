@@ -18,7 +18,6 @@ package com.scurrilous.circe.impl;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-
 import com.scurrilous.circe.Hash;
 import com.scurrilous.circe.HashParameters;
 import com.scurrilous.circe.HashProvider;

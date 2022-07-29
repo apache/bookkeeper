@@ -28,6 +28,7 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.initV2LedgerDirectory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;

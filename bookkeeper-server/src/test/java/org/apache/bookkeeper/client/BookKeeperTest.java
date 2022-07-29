@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import io.netty.util.IllegalReferenceCountException;
 import java.io.IOException;
 import java.net.UnknownHostException;

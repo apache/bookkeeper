@@ -22,9 +22,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -38,7 +36,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**

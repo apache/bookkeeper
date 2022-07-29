@@ -28,12 +28,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.ReadHandle;
-
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;

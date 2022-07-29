@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNotEquals;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,9 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementResult;

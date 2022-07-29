@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.codahale.FastCodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider;

@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
-
 import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
 import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
 
@@ -571,7 +570,12 @@ public class LedgerHandle implements WriteHandle {
 
                 // error out all pending adds during closing, the callbacks shouldn't be
                 // running under any bk locks.
-                errorOutPendingAdds(rc, pendingAdds);
+                try {
+                    errorOutPendingAdds(rc, pendingAdds);
+                } catch (Throwable e) {
+                    closePromise.completeExceptionally(e);
+                    return;
+                }
 
                 if (prevHandleState != HandleState.CLOSED) {
                     if (LOG.isDebugEnabled()) {

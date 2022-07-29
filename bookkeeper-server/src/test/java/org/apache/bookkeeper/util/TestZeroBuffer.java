@@ -22,7 +22,6 @@ package org.apache.bookkeeper.util;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-
 import org.junit.Assert;
 import org.junit.Test;
 

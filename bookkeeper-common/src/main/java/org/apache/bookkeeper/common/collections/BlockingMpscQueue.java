@@ -21,7 +21,6 @@ package org.apache.bookkeeper.common.collections;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.jctools.queues.MpscArrayQueue;
 
 /**

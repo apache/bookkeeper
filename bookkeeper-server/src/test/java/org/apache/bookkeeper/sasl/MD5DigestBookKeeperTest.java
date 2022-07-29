@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.Configuration;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
