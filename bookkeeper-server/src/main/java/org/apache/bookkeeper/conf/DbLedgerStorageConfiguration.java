@@ -20,14 +20,14 @@
  */
 package org.apache.bookkeeper.conf;
 
-import com.google.common.annotations.VisibleForTesting;
 // CHECKSTYLE.OFF: IllegalImport
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.NettyRuntime;
 import io.netty.util.internal.PlatformDependent;
-// CHECKSTYLE.ON: IllegalImport
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
+// CHECKSTYLE.ON: IllegalImport
 
 public class DbLedgerStorageConfiguration extends ServerConfiguration {
 
