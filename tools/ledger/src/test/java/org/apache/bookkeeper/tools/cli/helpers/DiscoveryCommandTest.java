@@ -33,24 +33,26 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.experimental.theories.DataPoint;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 /**
  * Unit test of {@link DiscoveryCommand}.
  */
+@RunWith(Theories.class)
 public class DiscoveryCommandTest {
 
     private DiscoveryCommand<CliFlags> cmd;
-    private ServerConfiguration serverConf;
     private ClientConfiguration clientConf;
     private RegistrationClient regClient;
     private MetadataClientDriver clientDriver;
@@ -62,8 +64,8 @@ public class DiscoveryCommandTest {
 
         this.cmd = mock(DiscoveryCommand.class, CALLS_REAL_METHODS);
 
-        this.serverConf = new ServerConfiguration();
-        this.serverConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
+        this.clientConf = new ClientConfiguration();
+        this.clientConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
         this.executor = mock(ScheduledExecutorService.class);
         this.regClient = mock(RegistrationClient.class);
         this.clientDriver = mock(MetadataClientDriver.class);
@@ -71,8 +73,14 @@ public class DiscoveryCommandTest {
             .thenReturn(regClient);
     }
 
-    @Test
-    public void testRun() throws Exception {
+    @DataPoint
+    public static final boolean BOOKIE_ADDR_RESOLVER_ENABLED = true;
+    @DataPoint
+    public static final boolean BOOKIE_ADDR_RESOLVER_DISABLED = false;
+    @Theory
+    public void testRun(boolean bookieAddressResolverEnabled) throws Exception {
+        clientConf.setBookieAddressResolverEnabled(bookieAddressResolverEnabled);
+
         try (final MockedStatic<Executors> executorsMockedStatic = Mockito.mockStatic(Executors.class);
              final MockedStatic<MetadataDrivers> mdriversMockedStatic = Mockito.mockStatic(MetadataDrivers.class);) {
             executorsMockedStatic
@@ -81,8 +89,8 @@ public class DiscoveryCommandTest {
                     .thenReturn(clientDriver);
 
             CliFlags cliFlags = new CliFlags();
-            assertTrue(cmd.apply(serverConf, cliFlags));
-            verify(cmd, times(1)).run(eq(regClient), same(cliFlags));
+            assertTrue(cmd.apply(clientConf, cliFlags));
+            verify(cmd, times(1)).run(eq(regClient), same(cliFlags), eq(bookieAddressResolverEnabled));
             verify(clientDriver, times(1))
                 .initialize(
                         any(ClientConfiguration.class), eq(executor),

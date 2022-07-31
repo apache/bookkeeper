@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Set;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.bookkeeper.client.BookieAddressResolverDisabled;
 import org.apache.bookkeeper.client.DefaultBookieAddressResolver;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieId;
@@ -75,13 +76,18 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
     }
 
     @Override
-    protected void run(RegistrationClient regClient, Flags flags) throws Exception {
+    protected void run(RegistrationClient regClient, Flags flags, boolean bookieAddressResolverEnabled)
+            throws Exception {
         if (!flags.readwrite && !flags.readonly && !flags.all) {
             // case: no args is provided. list all the bookies by default.
             flags.readwrite = true;
             flags.readonly = true;
             flags.all = true;
         }
+
+        BookieAddressResolver bookieAddressResolver = bookieAddressResolverEnabled
+                ? new DefaultBookieAddressResolver(regClient)
+                : new BookieAddressResolverDisabled();
 
         boolean hasBookies = false;
         if (flags.readwrite) {
@@ -90,7 +96,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 LOG.info("ReadWrite Bookies :");
-                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
+                printBookies(bookies, bookieAddressResolver);
                 hasBookies = true;
             }
         }
@@ -100,7 +106,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 LOG.info("Readonly Bookies :");
-                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
+                printBookies(bookies, bookieAddressResolver);
                 hasBookies = true;
             }
         }
@@ -110,7 +116,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             ).getValue();
             if (!bookies.isEmpty()) {
                 LOG.info("All Bookies :");
-                printBookies(bookies, new DefaultBookieAddressResolver(regClient));
+                printBookies(bookies, bookieAddressResolver);
                 hasBookies = true;
             }
         }
