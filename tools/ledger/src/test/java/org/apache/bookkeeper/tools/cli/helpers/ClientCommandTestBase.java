@@ -46,9 +46,10 @@ public abstract class ClientCommandTestBase extends CommandTestBase {
     public void setup() throws Exception {
         mockBk = mock(BookKeeper.class);
         mockConstruction(ClientConfiguration.class, withSettings().defaultAnswer(CALLS_REAL_METHODS),
-                        (mock, context) ->
-                        doReturn("zk://127.0.0.1/path/to/ledgers").when(mock).getMetadataServiceUri()
-                );
+                (mock, context) -> {
+                    doReturn("zk://127.0.0.1/path/to/ledgers").when(mock).getMetadataServiceUri();
+                    doReturn(true).when(mock).getBookieAddressResolverEnabled();
+                });
 
         mockStatic(BookKeeper.class);
         this.mockBkBuilder = mock(BookKeeperBuilder.class, CALLS_REAL_METHODS);
