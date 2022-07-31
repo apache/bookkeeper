@@ -971,4 +971,34 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
         cookie.writeToRegistrationManager(rm, conf, version1);
         Assert.assertTrue(cookie.toString().contains(customBookieId));
     }
+
+    /**
+     * Compatibility test
+     * 1. First create bookie without indexDirName
+     * 2. Configure indexDirName to start bookie
+     */
+    @Test
+    public void testNewBookieStartingWithOldCookie() throws Exception {
+        String journalDir = newDirectory();
+        String[] ledgerDirs = {newDirectory(), newDirectory()};
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+                .setLedgerDirNames(ledgerDirs)
+                .setBookiePort(bookiePort)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        validateConfig(conf);
+
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+                .setLedgerDirNames(ledgerDirs)
+                .setIndexDirName(ledgerDirs)
+                .setBookiePort(bookiePort)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        try {
+            validateConfig(conf);
+        } catch (InvalidCookieException ice) {
+            // error behaviour
+            fail("Validate failed, error info: " + ice.getMessage());
+        }
+    }
 }

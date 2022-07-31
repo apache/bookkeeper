@@ -50,6 +50,7 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,18 +138,14 @@ public class Cookie {
     }
 
     private boolean verifyIndexDirs(Cookie c, boolean checkIfSuperSet) {
-        // Compatible with old cookie
-        if (null == indexDirs && null == c.indexDirs) {
-            return true;
-        }
-        if (null == indexDirs || null == c.indexDirs) {
-            return false;
-        }
+        // compatible logic:  existed node's cookie has no indexDirs, the indexDirs's default value is ledgerDirs.
+        String indexDirsInConfig = StringUtils.isNotBlank(indexDirs) ? indexDirs : ledgerDirs;
+        String indexDirsInCookie = StringUtils.isNotBlank(c.indexDirs) ? c.indexDirs : c.ledgerDirs;
 
         if (!checkIfSuperSet) {
-            return indexDirs.equals(c.indexDirs);
+            return indexDirsInConfig.equals(indexDirsInCookie);
         } else {
-            return isSuperSet(decodeDirPathFromCookie(indexDirs), decodeDirPathFromCookie(c.indexDirs));
+            return isSuperSet(decodeDirPathFromCookie(indexDirsInConfig), decodeDirPathFromCookie(indexDirsInCookie));
         }
     }
 
