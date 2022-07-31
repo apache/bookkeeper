@@ -51,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
@@ -425,11 +426,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
         }
 
+        JournalAliveListener journalAliveListener =
+                () -> BookieImpl.this.triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
         // instantiate the journals
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
             journals.add(new Journal(i, journalDirectories.get(i),
-                    conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator));
+                    conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator, journalAliveListener));
         }
 
         this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
@@ -849,12 +852,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     public int shutdown() {
         return shutdown(ExitCode.OK);
     }
-
     // internal shutdown method to let shutdown bookie gracefully
     // when encountering exception
-    synchronized int shutdown(int exitCode) {
+    ReentrantLock lock = new ReentrantLock(true);
+    int shutdown(int exitCode) {
+        lock.lock();
         try {
-            if (isRunning()) { // avoid shutdown twice
+            if (isRunning()) {
                 // the exitCode only set when first shutdown usually due to exception found
                 LOG.info("Shutting down Bookie-{} with exitCode {}",
                          conf.getBookiePort(), exitCode);
@@ -875,7 +879,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 for (Journal journal : journals) {
                     journal.shutdown();
                 }
-                this.join();
 
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
@@ -892,6 +895,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             LOG.error("Got Exception while trying to shutdown Bookie", e);
             throw e;
         } finally {
+            lock.unlock();
             // setting running to false here, so watch thread
             // in bookie server know it only after bookie shut down
             stateManager.close();
