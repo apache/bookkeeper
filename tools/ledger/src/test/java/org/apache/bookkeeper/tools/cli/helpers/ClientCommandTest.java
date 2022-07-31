@@ -56,6 +56,7 @@ public class ClientCommandTest extends MockCommandSupport {
         this.serverConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
         mockConstruction(ClientConfiguration.class, (conf, context) -> {
             doReturn("zk://127.0.0.1/path/to/ledgers").when(conf).getMetadataServiceUri();
+            doReturn(true).when(conf).getBookieAddressResolverEnabled();
         });
         this.bkBuilder = mock(BookKeeperBuilder.class, CALLS_REAL_METHODS);
         mockStatic(BookKeeper.class).when(() ->

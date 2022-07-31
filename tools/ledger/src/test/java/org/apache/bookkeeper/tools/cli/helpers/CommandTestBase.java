@@ -125,6 +125,7 @@ public class CommandTestBase extends MockCommandSupport {
     protected void mockClientConfigurationConstruction(Consumer<ClientConfiguration> consumer) {
         mockConstruction(ClientConfiguration.class, (clientConfiguration, context) -> {
             doReturn("zk://127.0.0.1/path/to/ledgers").when(clientConfiguration).getMetadataServiceUri();
+            doReturn(true).when(clientConfiguration).getBookieAddressResolverEnabled();
             if (consumer != null) {
                 consumer.accept(clientConfiguration);
             }
