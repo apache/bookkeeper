@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
