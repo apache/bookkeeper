@@ -154,6 +154,7 @@ public class WriteSetsTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static void assertContentsMatch(ImmutableList<Integer> writeSet,
                                             DistributionSchedule.WriteSet distWriteSet)
             throws Exception {
