@@ -844,7 +844,7 @@ public class BookieJournalTest {
             assertEquals(journalIds.size(), 1);
 
             try {
-                journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
+                journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner, false);
                 fail("Should not have been able to scan the journal");
             } catch (Exception e) {
                 // Expected
