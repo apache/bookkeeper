@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -194,6 +194,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseAllQuarantinedBookies()">releaseAllQuarantinedBookies</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Release all quarantined bookies, let it can be chosen for new ensembles.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieId</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,int,java.util.Set)">replaceBookie</a></span>&#8203;(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -342,7 +349,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <a id="quarantineBookie(org.apache.bookkeeper.net.BookieId)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>quarantineBookie</h4>
 <pre class="methodSignature">void&nbsp;quarantineBookie&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</pre>
@@ -351,6 +358,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>bookie</code> - </dd>
 </dl>
+</li>
+</ul>
+<a id="releaseAllQuarantinedBookies()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>releaseAllQuarantinedBookies</h4>
+<pre class="methodSignature">void&nbsp;releaseAllQuarantinedBookies()</pre>
+<div class="block">Release all quarantined bookies, let it can be chosen for new ensembles.</div>
 </li>
 </ul>
 </li>

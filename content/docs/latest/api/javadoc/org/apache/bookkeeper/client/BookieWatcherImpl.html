@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -264,6 +264,13 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseAllQuarantinedBookies()">releaseAllQuarantinedBookies</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Release all quarantined bookies, let it can be chosen for new ensembles.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieId</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,int,java.util.Set)">replaceBookie</a></span>&#8203;(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -497,7 +504,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <a id="quarantineBookie(org.apache.bookkeeper.net.BookieId)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>quarantineBookie</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;quarantineBookie&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</pre>
@@ -507,6 +514,21 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <dd><code><a href="BookieWatcher.html#quarantineBookie(org.apache.bookkeeper.net.BookieId)">quarantineBookie</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>bookie</code> - </dd>
+</dl>
+</li>
+</ul>
+<a id="releaseAllQuarantinedBookies()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>releaseAllQuarantinedBookies</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;releaseAllQuarantinedBookies()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="BookieWatcher.html#releaseAllQuarantinedBookies()">BookieWatcher</a></code></span></div>
+<div class="block">Release all quarantined bookies, let it can be chosen for new ensembles.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="BookieWatcher.html#releaseAllQuarantinedBookies()">releaseAllQuarantinedBookies</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
 </dl>
 </li>
 </ul>

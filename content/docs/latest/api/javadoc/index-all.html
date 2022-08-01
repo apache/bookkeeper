@@ -878,6 +878,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCounter.html#block(int)">block(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCounter.html" title="class in org.apache.bookkeeper.client">SyncCounter</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#BOOKIE_ADDRESS_RESOLVER_ENABLED">BOOKIE_ADDRESS_RESOLVER_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#BOOKIE_AUTH_PROVIDER_FACTORY_CLASS">BOOKIE_AUTH_PROVIDER_FACTORY_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#BOOKIE_ERROR_THRESHOLD_PER_INTERVAL">BOOKIE_ERROR_THRESHOLD_PER_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
@@ -901,6 +903,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#BOOKIE_QUARANTINE_TIME_SECONDS">BOOKIE_QUARANTINE_TIME_SECONDS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#bookieAddressResolver">bookieAddressResolver</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/BookieAddressResolverDisabled.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BookieAddressResolverDisabled</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Resolve legacy style BookieIDs to Network addresses.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieAddressResolverDisabled.html#%3Cinit%3E()">BookieAddressResolverDisabled()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieAddressResolverDisabled.html" title="class in org.apache.bookkeeper.client">BookieAddressResolverDisabled</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#bookieClient">bookieClient</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -2433,6 +2441,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getBookieAddressResolver()">getBookieAddressResolver()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getBookieAddressResolverEnabled()">getBookieAddressResolverEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Whether to enable BookieAddressResolver.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getBookieAuthProviderFactoryClass()">getBookieAuthProviderFactoryClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get the bookie authentication provider factory class name.</div>
@@ -3158,6 +3170,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getJournalRemovePagesFromCache()">getJournalRemovePagesFromCache()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Should we remove pages from page cache after force write.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getJournalReuseFiles()">getJournalReuseFiles()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get reuse journal files.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getJournalSyncData()">getJournalSyncData()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -4857,6 +4873,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_REMOVE_FROM_PAGE_CACHE">JOURNAL_REMOVE_FROM_PAGE_CACHE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_REUSE_FILES">JOURNAL_REUSE_FILES</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_SYNC_DATA">JOURNAL_SYNC_DATA</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_WRITE_BUFFER_SIZE">JOURNAL_WRITE_BUFFER_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -6473,6 +6491,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#registry">registry</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieWatcher.html#releaseAllQuarantinedBookies()">releaseAllQuarantinedBookies()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></dt>
+<dd>
+<div class="block">Release all quarantined bookies, let it can be chosen for new ensembles.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieWatcherImpl.html#releaseAllQuarantinedBookies()">releaseAllQuarantinedBookies()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieWatcherImpl.html" title="class in org.apache.bookkeeper.client">BookieWatcherImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerChecker.html#releasePermit()">releasePermit()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerChecker.html" title="class in org.apache.bookkeeper.client">LedgerChecker</a></dt>
 <dd>
 <div class="block">Release a given permit.</div>
@@ -6649,6 +6673,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DefaultResolver.html#resolve(java.util.List)">resolve(List&lt;String&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DefaultResolver.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#resolve(java.util.List)">resolve(List&lt;String&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieAddressResolverDisabled.html#resolve(org.apache.bookkeeper.net.BookieId)">resolve(BookieId)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieAddressResolverDisabled.html" title="class in org.apache.bookkeeper.client">BookieAddressResolverDisabled</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultBookieAddressResolver.html#resolve(org.apache.bookkeeper.net.BookieId)">resolve(BookieId)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultBookieAddressResolver.html" title="class in org.apache.bookkeeper.client">DefaultBookieAddressResolver</a></dt>
 <dd>&nbsp;</dd>
@@ -6963,6 +6989,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#setBookieAddressResolver(org.apache.bookkeeper.proto.BookieAddressResolver)">setBookieAddressResolver(BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setBookieAddressResolverEnabled(boolean)">setBookieAddressResolverEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Enable/Disable BookieAddressResolver.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setBookieAuthProviderFactoryClass(java.lang.String)">setBookieAuthProviderFactoryClass(String)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set the bookie authentication provider factory class name.</div>
@@ -7407,6 +7437,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setJournalRemovePagesFromCache(boolean)">setJournalRemovePagesFromCache(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Sets that whether should we remove pages from page cache after force write.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setJournalReuseFiles(boolean)">setJournalReuseFiles(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set reuse journal files.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setJournalSyncData(boolean)">setJournalSyncData(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
