@@ -350,7 +350,7 @@ public class LedgerCacheTest {
                 // this is fine, means the ledger was written to the index cache, but not
                 // the entry log
             } catch (IOException ioe) {
-                if (ioe.getCause() instanceof EntryLogger.EntryLookupException) {
+                if (ioe.getCause() instanceof DefaultEntryLogger.EntryLookupException) {
                     // this is fine, means the ledger was not fully written to
                     // the entry log
                 } else {
