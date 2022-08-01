@@ -848,13 +848,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Scan the journal.
      *
-     * @param journalId Journal Log Id
-     * @param journalPos Offset to start scanning
-     * @param scanner Scanner to handle entries
+     * @param journalId         Journal Log Id
+     * @param journalPos        Offset to start scanning
+     * @param scanner           Scanner to handle entries
+     * @param skipInvalidRecord when invalid record,should we skip it or not
      * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner, boolean skipInvalidRecord)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -897,7 +898,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             continue;
                         }
                         isPaddingRecord = true;
-                    } else {
+                    } else if (skipInvalidRecord){
+                        LOG.warn("Invalid record found with negative length: {},because of " +
+                                "skipInvalidRecord is true,we skip the next data", len);
+                        break;
+                    }
+                    else {
                         LOG.error("Invalid record found with negative length: {}", len);
                         throw new IOException("Invalid record found with negative length " + len);
                     }
