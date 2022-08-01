@@ -365,10 +365,10 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
-     * Replace some bookie to adhering placement policy. If the all kinds of replacement
+     * Replace some bookie to adhere placement policy. If the all kinds of replacement
      * didn't adhere placement policy, return empty map.
      *
-     * @param ensemble
+     * @param ensemble which would be take place.
      * @param writeQuorumSize
      * @param ackQuorumSize
      * @return Map: key means ensemble index, value means target replace bookieId.
