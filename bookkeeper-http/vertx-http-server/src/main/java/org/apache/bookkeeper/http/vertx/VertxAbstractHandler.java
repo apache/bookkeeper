@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.http.vertx;
 
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
@@ -47,7 +48,7 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
         HttpServiceRequest request = new HttpServiceRequest()
             .setMethod(convertMethod(httpRequest))
             .setParams(convertParams(httpRequest))
-            .setBody(context.getBodyAsString());
+            .setBody(context.body().asString());
         HttpServiceResponse response = null;
         try {
             response = httpEndpointService.handle(request);
@@ -77,15 +78,14 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
      * can be recognized by HttpServer.
      */
     HttpServer.Method convertMethod(HttpServerRequest request) {
-        switch (request.method()) {
-            case POST:
-                return HttpServer.Method.POST;
-            case DELETE:
-                return HttpServer.Method.DELETE;
-            case PUT:
-                return HttpServer.Method.PUT;
-            default:
-                return HttpServer.Method.GET;
+        HttpMethod method = request.method();
+        if (HttpMethod.POST.equals(method)) {
+            return HttpServer.Method.POST;
+        } else if (HttpMethod.DELETE.equals(method)) {
+            return HttpServer.Method.DELETE;
+        } else if (HttpMethod.PUT.equals(method)) {
+            return HttpServer.Method.PUT;
         }
+        return HttpServer.Method.GET;
     }
 }
