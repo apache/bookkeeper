@@ -19,7 +19,9 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.util.concurrent.RateLimiter;
+import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,13 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -54,7 +57,7 @@ public class LedgerChecker {
     public final BookieWatcher bookieWatcher;
 
     private final Semaphore semaphore;
-    private final RateLimiter rateLimiter;
+    private final ExecutorService executor;
 
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
@@ -82,14 +85,15 @@ public class LedgerChecker {
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
             releasePermit();
-            if (rc == BKException.Code.OK) {
-                if (numEntries.decrementAndGet() == 0
-                        && !completed.getAndSet(true)) {
+            executor.execute(safeRun(() -> {
+                if (rc == BKException.Code.OK) {
+                    if (numEntries.decrementAndGet() == 0 && !completed.getAndSet(true)) {
+                        cb.operationComplete(rc, fragment);
+                    }
+                } else if (!completed.getAndSet(true)) {
                     cb.operationComplete(rc, fragment);
                 }
-            } else if (!completed.getAndSet(true)) {
-                cb.operationComplete(rc, fragment);
-            }
+            }));
         }
     }
 
@@ -147,31 +151,23 @@ public class LedgerChecker {
     }
 
     public LedgerChecker(BookieClient client, BookieWatcher watcher) {
-        this(client, watcher, null);
+        this(client, watcher, -1);
     }
 
-    public LedgerChecker(BookKeeper bkc, ServerConfiguration conf) {
-        this(bkc.getBookieClient(), bkc.getBookieWatcher(), conf);
+    public LedgerChecker(BookKeeper bkc, int inFlightReadEntryNum) {
+        this(bkc.getBookieClient(), bkc.getBookieWatcher(), inFlightReadEntryNum);
     }
 
-    public LedgerChecker(BookieClient client, BookieWatcher watcher, ServerConfiguration conf) {
+    public LedgerChecker(BookieClient client, BookieWatcher watcher, int inFlightReadEntryNum) {
         bookieClient = client;
         bookieWatcher = watcher;
-        if (conf != null) {
-            if (conf.getReadEntryRateInLedgerChecker() > 0) {
-                semaphore = null;
-                rateLimiter = RateLimiter.create(conf.getReadEntryRateInLedgerChecker());
-            } else if (conf.getInFlightReadEntryNumInLedgerChecker() > 0) {
-                semaphore = new Semaphore(conf.getInFlightReadEntryNumInLedgerChecker());
-                rateLimiter = null;
-            } else {
-                semaphore = null;
-                rateLimiter = null;
-            }
+        if (inFlightReadEntryNum > 0) {
+            semaphore = new Semaphore(inFlightReadEntryNum);
         } else {
             semaphore = null;
-            rateLimiter = null;
         }
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("BookieLedgerChecker").setDaemon(true).build());
     }
 
     /**
@@ -179,9 +175,7 @@ public class LedgerChecker {
      * blocking until all are available.
      */
     public void acquirePermit() throws InterruptedException {
-        if (rateLimiter != null) {
-            rateLimiter.acquire(1);
-        } else if (semaphore != null) {
+        if (null != semaphore) {
             semaphore.acquire(1);
         }
     }
@@ -190,7 +184,7 @@ public class LedgerChecker {
      * Release a given permit.
      */
     public void releasePermit() {
-        if (rateLimiter == null && semaphore != null) {
+        if (null != semaphore) {
             semaphore.release();
         }
     }
@@ -334,14 +328,16 @@ public class LedgerChecker {
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
             releasePermit();
-            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
-                    && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
-                entryMayExist.set(true);
-            }
+            executor.execute(safeRun(() -> {
+                if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
+                        && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
+                    entryMayExist.set(true);
+                }
 
-            if (numReads.decrementAndGet() == 0) {
-                cb.operationComplete(rc, entryMayExist.get());
-            }
+                if (numReads.decrementAndGet() == 0) {
+                    cb.operationComplete(rc, entryMayExist.get());
+                }
+            }));
         }
     }
 

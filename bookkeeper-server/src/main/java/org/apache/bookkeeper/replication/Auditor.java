@@ -1316,7 +1316,7 @@ public class Auditor implements AutoCloseable {
         final BookKeeper localClient = getBookKeeper(conf);
         final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
         try {
-            final LedgerChecker checker = new LedgerChecker(localClient, conf);
+            final LedgerChecker checker = new LedgerChecker(localClient, conf.getInFlightReadEntryNumInLedgerChecker());
 
             final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 

@@ -218,7 +218,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
         "auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec";
     protected static final String IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER = "inFlightReadEntryNumInLedgerChecker";
-    protected static final String READ_ENTRY_RATE_IN_LEDGER_CHECKER = "readEntryRateInLedgerChecker";
 
 
     // Worker Thread parameters.
@@ -3923,19 +3922,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return read entry number of in flight.
      */
-    public int getInFlightReadEntryNumInLedgerChecker() {
+    public int getInFlightReadEntryNumInLedgerChecker(){
         return getInt(IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER, -1);
-    }
-
-    /**
-     * Get the number of read entry operations that can be performed per second by ledger checker.
-     * Default value is -1, which it is unlimited. If this is set to a value greater than 0,
-     * "inFlightReadEntryNumInLedgerChecker" setting is ignored.
-     *
-     * @return read entry execution rate per second.
-     */
-    public int getReadEntryRateInLedgerChecker() {
-        return getInt(READ_ENTRY_RATE_IN_LEDGER_CHECKER, -1);
     }
 
     /**
