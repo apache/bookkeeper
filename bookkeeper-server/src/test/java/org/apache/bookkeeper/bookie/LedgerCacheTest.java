@@ -350,8 +350,13 @@ public class LedgerCacheTest {
                 // this is fine, means the ledger was written to the index cache, but not
                 // the entry log
             } catch (IOException ioe) {
-                LOG.info("Shouldn't have received IOException", ioe);
-                fail("Shouldn't throw IOException, should say that entry is not found");
+                if (ioe.getCause() instanceof DefaultEntryLogger.EntryLookupException) {
+                    // this is fine, means the ledger was not fully written to
+                    // the entry log
+                } else {
+                    LOG.info("Shouldn't have received IOException for entry {}", i, ioe);
+                    fail("Shouldn't throw IOException, should say that entry is not found");
+                }
             }
         }
     }
