@@ -1,5 +1,69 @@
 # Release notes
 
+## 4.15.1
+
+Release 4.15.1 fixes some memories leak and do some improvements
+on stability and metrics.
+
+Apache BookKeeper users are encouraged to upgrade to 4.14.1.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+* Fix autoRecover memory leak. https://github.com/apache/bookkeeper/pull/3361
+* Fix: NPE in RackawareEnsemblePlacementPolicyImpl logged by AutoRecovery https://github.com/apache/bookkeeper/pull/3350
+* Fix underReplicatedLedgerTotalSize calculate problem. https://github.com/apache/bookkeeper/pull/3337
+* Fix JVM exited when running localbookie with jdk17 (#3295) https://github.com/apache/bookkeeper/pull/3334
+* Fix the V2 AddRequest object leak issue https://github.com/apache/bookkeeper/pull/3323
+* Fix the PendingAddOp is not recycled when LedgerHandler closed https://github.com/apache/bookkeeper/pull/3321
+* Bookie can't start after rebooting due the cookie mistmatch https://github.com/apache/bookkeeper/pull/3308
+* Close journal channel in testJunkEndedJournal https://github.com/apache/bookkeeper/pull/3307
+* Fix jvm_memory_direct_bytes_used metrics when using jdk11+ https://github.com/apache/bookkeeper/pull/3252
+* Autorecovery does not process underreplicated empty ledgers https://github.com/apache/bookkeeper/pull/3239
+* Fix wrong ledger id parse radix for index relocation file in IndexPersistenceMgr https://github.com/apache/bookkeeper/pull/2944
+* Fix the infinite waiting for shutdown due to throttler limit https://github.com/apache/bookkeeper/pull/2942
+* Make sure the LedgerHandle close callback can be completed when encounter exception https://github.com/apache/bookkeeper/pull/2913
+
+#### Improvements
+
+* If ensembleList is empty, return PlacementPolicyAdherence.FAIL. https://github.com/apache/bookkeeper/pull/3369
+* reduce unnecessary checkpoints https://github.com/apache/bookkeeper/pull/3341
+* Pre break loop when self create layoutZNode succeed. https://github.com/apache/bookkeeper/pull/3335
+* Avoid init WriteSet when waitForWriteSetMs < 0. https://github.com/apache/bookkeeper/pull/3325
+* Tuing PendingReadOp.java seq https://github.com/apache/bookkeeper/pull/3330
+* Apply the backpressure changes on the V2 requests https://github.com/apache/bookkeeper/pull/3324
+* Deduplicate error log for SSLException https://github.com/apache/bookkeeper/pull/3320
+* Switch to rely on SslEngine for Hostname Verification https://github.com/apache/bookkeeper/pull/3310
+* Try to use Java9 CRC32C when JNI based CRC is not available https://github.com/apache/bookkeeper/pull/3309
+* Enhance future sync wait. https://github.com/apache/bookkeeper/pull/3336
+* validate diskUsageThreshold and diskUsageLwmThreshold https://github.com/apache/bookkeeper/pull/3285
+* Replace unsafe NoEntryException with IOException https://github.com/apache/bookkeeper/pull/2909
+* let bookie quit if journal thread exit https://github.com/apache/bookkeeper/pull/2887
+* Ledger replicate supports throttle https://github.com/apache/bookkeeper/pull/2778
+* minorCompactionInterval should be greater than gcWaitTime https://github.com/apache/bookkeeper/pull/2116
+* add metric cbThreadPoolQueueSize https://github.com/apache/bookkeeper/pull/3424
+* Optimize concurrent collection's shrink logic https://github.com/apache/bookkeeper/pull/3417
+* Make BookieFileChannel interface public https://github.com/apache/bookkeeper/pull/3396
+* Prioritize compaction of entry logs with the lowest amount of remaining usable data https://github.com/apache/bookkeeper/pull/3390
+* Switch back ordered executor to LinkedBlockingQueue https://github.com/apache/bookkeeper/pull/3384
+* Consolidate Netty channel flushes to mitigate syscall overhead https://github.com/apache/bookkeeper/pull/3383
+* Shut down ReplicationWorker and Auditor on non-recoverable ZK error https://github.com/apache/bookkeeper/pull/3374
+* add journalCbQueueLatency https://github.com/apache/bookkeeper/pull/3364
+* add writeThreadQueuedLatency https://github.com/apache/bookkeeper/pull/3363
+* BP-41 Add flag to enable/disable BookieAddressResolver https://github.com/apache/bookkeeper/pull/3356
+* release the bookie from QuarantinedBookies when health check is disabled https://github.com/apache/bookkeeper/pull/3349
+
+#### Dependency updates
+
+* Upgrade log4j2 to 2.18.0 https://github.com/apache/bookkeeper/pull/3434
+* upgrade groovy from 2.5.17 to 3.0.11 to fix CVE-2019-11358(7.5) https://github.com/apache/bookkeeper/pull/3346
+
+### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.15.1+is%3Aclosed+is%3Amerged
+
 ## 4.15.0
 
 Release 4.15 includes many upgrades to third party libraries marked with CVEs,
