@@ -1394,7 +1394,6 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         zepp = new ZoneawareEnsemblePlacementPolicy();
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
-        confLocal.setEnforceStrictZoneawarePlacement(true);
         confLocal.setMinNumZonesPerWriteQuorum(2);
         confLocal.setDesiredNumZonesPerWriteQuorum(3);
         zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
@@ -1468,7 +1467,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         //shouldn't replace already meets_strict ensemble
         targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(adheringStrictEnsemble, 3, 2,
                 Collections.emptyMap());
-        assertEquals(targetBookie.size(), 0);
+        assertEquals(0, targetBookie.size());
 
         //test three knows bookie
         List<BookieId> adheringSoftEnsemble = new ArrayList<>();
@@ -1482,7 +1481,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         //shouldn't replace already meets_soft ensemble
         targetBookie = zepp.replaceNotAdheringPlacementPolicyBookie(adheringSoftEnsemble, 3, 2,
                 Collections.emptyMap());
-        assertEquals(targetBookie.size(), 0);
+        assertEquals(0, targetBookie.size());
     }
 
     @Test
@@ -1513,7 +1512,6 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         zepp = new ZoneawareEnsemblePlacementPolicy();
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
-        confLocal.setEnforceStrictZoneawarePlacement(true);
         confLocal.setMinNumZonesPerWriteQuorum(2);
         confLocal.setDesiredNumZonesPerWriteQuorum(3);
         zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,

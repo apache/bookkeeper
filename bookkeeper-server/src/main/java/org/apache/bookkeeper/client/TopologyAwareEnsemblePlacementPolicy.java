@@ -858,9 +858,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     BookieNode replaceNode = clone.get(placementResult.getResult());
                     String replaceNodeNetwork = replaceNode.getNetworkLocation();
                     knownRacks.remove(replaceNodeNetwork);
-                    List<BookieNode> nodes = toPlaceGroup.computeIfAbsent(replaceNodeNetwork,
-                            k -> new ArrayList<>());
-                    nodes.add(replaceNode);
                     targetBookieAddresses.put(index, replaceNode.getAddr());
                     List<BookieNode> bookieNodes = knownRackToBookies.get(replaceNodeNetwork);
                     if (!CollectionUtils.isEmpty(bookieNodes)) {
@@ -872,9 +869,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     break;
                 }
 
-                List<BookieId> ensembles = toPlaceGroup.values().stream().flatMap(Collection::stream).map(
-                        BookieNode::getAddr).collect(Collectors.toList());
-                ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(ensembles,
+                List<BookieId> toCheckEnsemble = new ArrayList<>(ensemble);
+                targetBookieAddresses.forEach(toCheckEnsemble::set);
+
+                ensembleAdheringToPlacementPolicy = isEnsembleAdheringToPlacementPolicy(toCheckEnsemble,
                         writeQuorumSize, ackQuorumSize);
                 if (PlacementPolicyAdherence.FAIL != ensembleAdheringToPlacementPolicy) {
                     placeSucceed = true;
