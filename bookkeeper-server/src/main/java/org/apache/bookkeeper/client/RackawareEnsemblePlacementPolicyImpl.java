@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.NUM_WRITABLE_BO
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_REQUESTS_REORDERED;
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UNKNOWN_REGION;
 
+import com.beust.jcommander.internal.Lists;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -1091,27 +1092,40 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             int ackQuorumSize,
             Set<BookieId> excludeBookies,
             List<BookieId> currentEnsemble) {
-        PlacementPolicyAdherence currentPlacementAdherence = isEnsembleAdheringToPlacementPolicy(
-                currentEnsemble, writeQuorumSize, ackQuorumSize);
-        if (PlacementPolicyAdherence.FAIL != currentPlacementAdherence) {
-            return PlacementResult.of(new ArrayList<>(currentEnsemble), currentPlacementAdherence);
-        }
-        PlacementResult<List<BookieId>> placementResult = PlacementResult.of(new ArrayList<>(currentEnsemble),
-                currentPlacementAdherence);
-        int minDiffer = Integer.MAX_VALUE;
-        for (int i = 0; i < currentEnsemble.size(); i++) {
-            PlacementResult<List<BookieId>> result = doReplaceToAdherePlacementPolicy(ensembleSize,
-                    writeQuorumSize, ackQuorumSize, excludeBookies, currentEnsemble, i);
-            if (PlacementPolicyAdherence.FAIL == result.getAdheringToPolicy()) {
-                continue;
+        rwLock.readLock().lock();
+        try {
+            PlacementPolicyAdherence currentPlacementAdherence = isEnsembleAdheringToPlacementPolicy(
+                    currentEnsemble, writeQuorumSize, ackQuorumSize);
+            if (PlacementPolicyAdherence.FAIL != currentPlacementAdherence) {
+                return PlacementResult.of(new ArrayList<>(currentEnsemble), currentPlacementAdherence);
             }
-            int differ = differBetweenBookies(currentEnsemble, result.getResult());
-            if (differ < minDiffer) {
-                minDiffer = differ;
-                placementResult = result;
+            for (BookieId bookieId : currentEnsemble) {
+                if (!knownBookies.containsKey(bookieId)) {
+                    excludeBookies.add(bookieId);
+                }
             }
+            PlacementResult<List<BookieId>> placementResult = PlacementResult.of(new ArrayList<>(currentEnsemble),
+                    currentPlacementAdherence);
+            int minDiffer = Integer.MAX_VALUE;
+            for (int i = 0; i < currentEnsemble.size(); i++) {
+                PlacementResult<List<BookieId>> result = doReplaceToAdherePlacementPolicy(ensembleSize,
+                        writeQuorumSize, ackQuorumSize, excludeBookies, currentEnsemble, i);
+                if (PlacementPolicyAdherence.FAIL == result.getAdheringToPolicy()) {
+                    continue;
+                }
+                int differ = differBetweenBookies(currentEnsemble, result.getResult());
+                if (differ < minDiffer) {
+                    minDiffer = differ;
+                    placementResult = result;
+                    if (minDiffer == 1) {
+                        break;
+                    }
+                }
+            }
+            return placementResult;
+        } finally {
+            rwLock.readLock().unlock();
         }
-        return placementResult;
     }
     
     private int differBetweenBookies(List<BookieId> bookiesA, List<BookieId> bookiesB) {
@@ -1123,7 +1137,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
         int differ = 0;
         for (int i = 0; i < bookiesA.size(); i++) {
-            if (bookiesA.get(i).equals(bookiesB.get(i))) {
+            if (!bookiesA.get(i).equals(bookiesB.get(i))) {
                 differ++;
             }
         }
@@ -1137,81 +1151,88 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Set<BookieId> excludeBookies,
             List<BookieId> currentEnsemble,
             int startIndex) {
-        rwLock.readLock().lock();
-        try {
-            final List<BookieNode> provisionalEnsembleNodes = currentEnsemble.stream()
-                    .map(this::convertBookieToNode).collect(Collectors.toList());
-            final Set<Node> excludeNodes = convertBookiesToNodes(
-                    addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies));
-            int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
-            final RRTopologyAwareCoverageEnsemble ensemble =
-                    new RRTopologyAwareCoverageEnsemble(
-                            ensembleSize,
-                            writeQuorumSize,
-                            ackQuorumSize,
-                            RACKNAME_DISTANCE_FROM_LEAVES,
-                            null,
-                            null,
-                            minNumRacksPerWriteQuorumForThisEnsemble);
-            int numRacks = topology.getNumOfRacks();
-            // only one rack or less than minNumRacksPerWriteQuorumForThisEnsemble, stop calculation to skip relocation
-            if (numRacks < 2 || numRacks < minNumRacksPerWriteQuorumForThisEnsemble) {
-                LOG.warn("Skip ensemble relocation because the cluster has only {} rack.", numRacks);
-                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
-            }
-            BookieNode prevNode = null;
-            final BookieNode firstNode = provisionalEnsembleNodes.get(startIndex);
-            // use same bookie at first to reduce ledger replication
-            if (!excludeNodes.contains(firstNode) && ensemble.apply(firstNode, ensemble)
-                    && ensemble.addNode(firstNode)) {
-                excludeNodes.add(firstNode);
-                prevNode = firstNode;
-            }
-            for (int i = prevNode == null ? 0 : 1; i < ensembleSize; i++) {
-                int index = i % ensembleSize;
-                final String curRack;
-                if (null == prevNode) {
-                    if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
-                        curRack = NodeBase.ROOT;
-                    } else {
-                        curRack = localNode.getNetworkLocation();
-                    }
-                } else {
-                    curRack = "~" + prevNode.getNetworkLocation();
-                }
-                try {
-                    prevNode = replaceToAdherePlacementPolicyInternal(
-                            curRack, excludeNodes, ensemble, ensemble,
-                            provisionalEnsembleNodes, index, ensembleSize, minNumRacksPerWriteQuorumForThisEnsemble);
-                    // got a good candidate
-                    if (ensemble.addNode(prevNode)) {
-                        // add the candidate to exclude set
-                        excludeNodes.add(prevNode);
-                    } else {
-                        throw new BKNotEnoughBookiesException();
-                    }
-                    // replace to newer node
-                    provisionalEnsembleNodes.set(index, prevNode);
-                } catch (BKNotEnoughBookiesException e) {
-                    LOG.warn("Skip ensemble relocation because the cluster has not enough bookies.");
-                    return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
-                }
-            }
-            List<BookieId> bookieList = ensemble.toList();
-            if (ensembleSize != bookieList.size()) {
-                LOG.warn("Not enough {} bookies are available to form an ensemble : {}.",
-                        ensembleSize, bookieList);
-                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
-            }
-            PlacementPolicyAdherence placementPolicyAdherence = isEnsembleAdheringToPlacementPolicy(bookieList,
-                    writeQuorumSize, ackQuorumSize);
-            if (PlacementPolicyAdherence.FAIL == placementPolicyAdherence) {
-                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
-            }
-            return PlacementResult.of(bookieList, placementPolicyAdherence);
-        } finally {
-            rwLock.readLock().unlock();
+        final List<BookieNode> provisionalEnsembleNodes = currentEnsemble.stream()
+                .map(this::convertBookieToNode).collect(Collectors.toList());
+        final Set<Node> excludeNodes = convertBookiesToNodes(
+                addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies));
+        int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
+        final RRTopologyAwareCoverageEnsemble ensemble =
+                new RRTopologyAwareCoverageEnsemble(
+                        ensembleSize,
+                        writeQuorumSize,
+                        ackQuorumSize,
+                        RACKNAME_DISTANCE_FROM_LEAVES,
+                        null,
+                        null,
+                        minNumRacksPerWriteQuorumForThisEnsemble);
+        int numRacks = topology.getNumOfRacks();
+        // only one rack or less than minNumRacksPerWriteQuorumForThisEnsemble, stop calculation to skip relocation
+        if (numRacks < 2 || numRacks < minNumRacksPerWriteQuorumForThisEnsemble) {
+            LOG.warn("Skip ensemble relocation because the cluster has only {} rack.", numRacks);
+            return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
         }
+        BookieNode prevNode = null;
+        final BookieNode firstNode = provisionalEnsembleNodes.get(startIndex);
+        // use same bookie at first to reduce ledger replication
+        if (!excludeNodes.contains(firstNode) && ensemble.apply(firstNode, ensemble)
+                && ensemble.addNode(firstNode)) {
+            excludeNodes.add(firstNode);
+            prevNode = firstNode;
+        }
+        for (int i = prevNode == null ? 0 : 1; i < ensembleSize; i++) {
+            int index = (startIndex + i) % ensembleSize;
+            final String curRack;
+            if (null == prevNode) {
+                if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
+                    curRack = NodeBase.ROOT;
+                } else {
+                    curRack = localNode.getNetworkLocation();
+                }
+            } else {
+                curRack = "~" + prevNode.getNetworkLocation();
+            }
+            try {
+                prevNode = replaceToAdherePlacementPolicyInternal(
+                        curRack, excludeNodes, ensemble, ensemble,
+                        provisionalEnsembleNodes, index, ensembleSize, minNumRacksPerWriteQuorumForThisEnsemble);
+                // got a good candidate
+                if (ensemble.addNode(prevNode)) {
+                    // add the candidate to exclude set
+                    excludeNodes.add(prevNode);
+                } else {
+                    throw new BKNotEnoughBookiesException();
+                }
+                // replace to newer node
+                provisionalEnsembleNodes.set(index, prevNode);
+            } catch (BKNotEnoughBookiesException e) {
+                LOG.warn("Skip ensemble relocation because the cluster has not enough bookies.");
+                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+            }
+        }
+        List<BookieId> bookieList = ensemble.toList();
+        if (ensembleSize != bookieList.size()) {
+            LOG.warn("Not enough {} bookies are available to form an ensemble : {}.",
+                    ensembleSize, bookieList);
+            return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+        }
+        PlacementPolicyAdherence placementPolicyAdherence = isEnsembleAdheringToPlacementPolicy(bookieList,
+                writeQuorumSize, ackQuorumSize);
+        if (PlacementPolicyAdherence.FAIL == placementPolicyAdherence) {
+            return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+        }
+    
+        return PlacementResult.of(revertBookieListByIndex(bookieList, startIndex), placementPolicyAdherence);
+    }
+    
+    private List<BookieId> revertBookieListByIndex(List<BookieId> bookies, int startIndex) {
+        BookieId[] bookieIds = new BookieId[bookies.size()];
+        for (int i = 0; i < bookies.size(); i++) {
+            if (startIndex == bookies.size()) {
+                startIndex = 0;
+            }
+            bookieIds[startIndex++] = bookies.get(i);
+        }
+        return Lists.newArrayList(bookieIds);
     }
     
     private BookieNode replaceToAdherePlacementPolicyInternal(
