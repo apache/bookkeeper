@@ -521,7 +521,7 @@ public interface EnsemblePlacementPolicy {
             return result;
         }
 
-        public PlacementPolicyAdherence isAdheringToPolicy() {
+        public PlacementPolicyAdherence getAdheringToPolicy() {
             return policyAdherence;
         }
     }

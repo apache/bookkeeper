@@ -245,7 +245,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
         final PlacementResult<List<BookieId>> placementResult =
                 super.replaceToAdherePlacementPolicy(ensembleSize, writeQuorumSize, ackQuorumSize,
                         excludeBookies, currentEnsemble);
-        if (placementResult.isAdheringToPolicy() != PlacementPolicyAdherence.FAIL) {
+        if (placementResult.getAdheringToPolicy() != PlacementPolicyAdherence.FAIL) {
             return placementResult;
         } else {
             if (slave == null) {
