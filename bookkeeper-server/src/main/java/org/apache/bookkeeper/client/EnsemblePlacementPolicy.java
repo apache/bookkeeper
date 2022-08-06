@@ -365,20 +365,6 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
-     * Replace some bookie to adhere placement policy. If the all kinds of replacement
-     * didn't adhere placement policy, return empty map.
-     *
-     * @param ensemble which would be take place.
-     * @param writeQuorumSize
-     * @param ackQuorumSize
-     * @return Map: key means ensemble index, value means target replace bookieId.
-     */
-    default Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensemble, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata) {
-        return Collections.emptyMap();
-    }
-
-    /**
      * Select one bookie to the "sticky" bookie where all reads for a particular
      * ledger will be directed to.
      *

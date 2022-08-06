@@ -1104,8 +1104,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     excludeBookies.add(bookieId);
                 }
             }
-            PlacementResult<List<BookieId>> placementResult = PlacementResult.of(new ArrayList<>(currentEnsemble),
-                    currentPlacementAdherence);
+            PlacementResult<List<BookieId>> placementResult = PlacementResult.of(Collections.emptyList(),
+                    PlacementPolicyAdherence.FAIL);
             int minDiffer = Integer.MAX_VALUE;
             for (int i = 0; i < currentEnsemble.size(); i++) {
                 PlacementResult<List<BookieId>> result = doReplaceToAdherePlacementPolicy(ensembleSize,

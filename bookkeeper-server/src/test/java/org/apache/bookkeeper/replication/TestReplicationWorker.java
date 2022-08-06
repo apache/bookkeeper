@@ -1155,11 +1155,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnZone() throws Exception {
-        testRepairedNotAdheringPlacementPolicyLedgerFragments(ZoneawareEnsemblePlacementPolicy.class);
-    }
-
-    @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
         testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class);
     }

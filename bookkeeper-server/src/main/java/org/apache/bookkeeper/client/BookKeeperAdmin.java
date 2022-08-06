@@ -33,8 +33,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1139,8 +1141,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     ledgerFragment.getBookiesIndexes(), excludedBookies);
         } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
             targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
-                    lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize(),
-                    lh.getLedgerMetadata().getCustomMetadata());
+                    lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());
             ledgerFragment.getBookiesIndexes().addAll(targetBookieAddresses.keySet());
         }
         if (MapUtils.isEmpty(targetBookieAddresses)) {
@@ -1789,10 +1790,23 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensembleBookiesList,
-            int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata) {
-        return bkc.getPlacementPolicy()
-                .replaceNotAdheringPlacementPolicyBookie(ensembleBookiesList, writeQuorumSize, ackQuorumSize,
-                        customMetadata);
+            int writeQuorumSize, int ackQuorumSize) {
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> placementResult = bkc.getPlacementPolicy()
+                .replaceToAdherePlacementPolicy(ensembleBookiesList.size(), writeQuorumSize, ackQuorumSize,
+                        new HashSet<>(), ensembleBookiesList);
+        if (PlacementPolicyAdherence.FAIL != placementResult.getAdheringToPolicy()) {
+            Map<Integer, BookieId> targetMap = new HashMap<>();
+            List<BookieId> newEnsembles = placementResult.getResult();
+            for (int i = 0; i < ensembleBookiesList.size(); i++) {
+                BookieId originBookie = ensembleBookiesList.get(i);
+                BookieId newBookie = newEnsembles.get(i);
+                if (!originBookie.equals(newBookie)) {
+                    targetMap.put(i, newBookie);
+                }
+            }
+            return targetMap;
+        }
+        return Collections.emptyMap();
     }
 
     /**
