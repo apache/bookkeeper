@@ -2492,7 +2492,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         testAreAckedBookiesAdheringToPlacementPolicyHelper(4, 6, 3, 2, 6, 3, 3);
         testAreAckedBookiesAdheringToPlacementPolicyHelper(5, 7, 5, 3, 7, 5, 2);
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void testReplaceToAdherePlacementPolicy() throws Exception {
@@ -2505,11 +2505,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         final BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
         final BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.8", 3181);
         final BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
-        
+
         final String rackName1 = NetworkTopology.DEFAULT_REGION + "/r1";
         final String rackName2 = NetworkTopology.DEFAULT_REGION + "/r2";
         final String rackName3 = NetworkTopology.DEFAULT_REGION + "/r3";
-        
+
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), rackName1);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), rackName1);
@@ -2520,7 +2520,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr7.getSocketAddress().getAddress().getHostAddress(), rackName3);
         StaticDNSResolver.addNodeToRack(addr8.getSocketAddress().getAddress().getHostAddress(), rackName3);
         StaticDNSResolver.addNodeToRack(addr9.getSocketAddress().getAddress().getHostAddress(), rackName3);
-        
+
         // Update cluster
         final Set<BookieId> addrs = new HashSet<>();
         addrs.add(addr1.toBookieId());
@@ -2532,16 +2532,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr7.toBookieId());
         addrs.add(addr8.toBookieId());
         addrs.add(addr9.toBookieId());
-        
+
         final ClientConfiguration newConf = new ClientConfiguration(conf);
         newConf.setDiskWeightBasedPlacementEnabled(false);
         newConf.setMinNumRacksPerWriteQuorum(2);
         newConf.setEnforceMinNumRacksPerWriteQuorum(true);
-        
+
         repp.initialize(newConf, Optional.empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
-        
+
         repp.onClusterChanged(addrs, new HashSet<>());
         final Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<>();
         bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
@@ -2553,14 +2553,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr7.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr8.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr9.toBookieId(), new BookieInfo(100L, 100L));
-        
+
         repp.updateBookieInfo(bookieInfoMap);
-        
+
         final Set<BookieId> excludeList = new HashSet<>();
         final int ensembleSize = 7;
         final int writeQuorumSize = 2;
         final int ackQuorumSize = 2;
-        
+
         final BookieRackMatcher rack1 = new BookieRackMatcher(rackName1);
         final BookieRackMatcher rack2 = new BookieRackMatcher(rackName2);
         final BookieRackMatcher rack3 = new BookieRackMatcher(rackName3);
@@ -2582,7 +2582,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, result.getAdheringToPolicy());
             assertThat(result.getResult(), pair.getRight());
         };
-        
+
         for (int i = 0; i < 1000; i++) {
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr4.toBookieId(), addr7.toBookieId(),
                             addr2.toBookieId(), addr5.toBookieId(), addr8.toBookieId(), addr9.toBookieId()),
@@ -2590,27 +2590,27 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     contains(is(addr1.toBookieId()), is(addr4.toBookieId()), is(addr7.toBookieId()),
                             is(addr2.toBookieId()), is(addr5.toBookieId()), is(addr8.toBookieId()),
                             is(addr6.toBookieId()))));
-            
+
             test.accept(Pair.of(Arrays.asList(addr6.toBookieId(), addr4.toBookieId(), addr7.toBookieId(),
                             addr2.toBookieId(), addr5.toBookieId(), addr8.toBookieId(), addr3.toBookieId()),
                     // first, condition[0], same, same, same, same, same
                     contains(is(addr6.toBookieId()), is(addr1.toBookieId()), is(addr7.toBookieId()),
                             is(addr2.toBookieId()), is(addr5.toBookieId()), is(addr8.toBookieId()),
                             is(addr3.toBookieId()))));
-            
+
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr2.toBookieId(), addr3.toBookieId(),
                             addr4.toBookieId(), addr5.toBookieId(), addr6.toBookieId(), addr7.toBookieId()),
                     // first, candidate[0], same, same, candidate[0], same, same
                     contains(is(addr1.toBookieId()), is(rack3), is(addr3.toBookieId()),
                             is(addr4.toBookieId()), is(rack13), is(addr6.toBookieId()), is(addr7.toBookieId()))));
-            
+
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr2.toBookieId(), addr4.toBookieId(),
                             addr5.toBookieId(), addr7.toBookieId(), addr8.toBookieId(), addr9.toBookieId()),
                     contains(is(addr1.toBookieId()), is(rack23), is(rack123), is(rack123),
                             is(rack123), is(rack123), is(rack23))));
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void testReplaceToAdherePlacementPolicyWithOutOfOrder() throws Exception {
@@ -2620,10 +2620,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         final BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         final BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
         final BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
-        
+
         final String rackName1 = NetworkTopology.DEFAULT_REGION + "/r1";
         final String rackName2 = NetworkTopology.DEFAULT_REGION + "/r2";
-        
+
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), rackName1);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), rackName1);
@@ -2631,7 +2631,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), rackName2);
-        
+
         // Update cluster
         final Set<BookieId> addrs = new HashSet<>();
         addrs.add(addr1.toBookieId());
@@ -2640,16 +2640,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         addrs.add(addr5.toBookieId());
         addrs.add(addr6.toBookieId());
-        
+
         final ClientConfiguration newConf = new ClientConfiguration(conf);
         newConf.setDiskWeightBasedPlacementEnabled(false);
         newConf.setMinNumRacksPerWriteQuorum(2);
         newConf.setEnforceMinNumRacksPerWriteQuorum(true);
-        
+
         repp.initialize(newConf, Optional.empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
-        
+
         repp.onClusterChanged(addrs, new HashSet<>());
         final Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<>();
         bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
@@ -2658,14 +2658,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr5.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr6.toBookieId(), new BookieInfo(100L, 100L));
-        
+
         repp.updateBookieInfo(bookieInfoMap);
-        
+
         final Set<BookieId> excludeList = new HashSet<>();
         final int ensembleSize = 6;
         final int writeQuorumSize = 2;
         final int ackQuorumSize = 2;
-        
+
         final Consumer<Pair<List<BookieId>, Matcher<Iterable<? extends BookieId>>>> test = (pair) -> {
             // RackawareEnsemblePlacementPolicyImpl#isEnsembleAdheringToPlacementPolicy
             // is not scope of this test case. So, use the method in assertion for convenience.
@@ -2679,7 +2679,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             }
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, result.getAdheringToPolicy());
         };
-        
+
         for (int i = 0; i < 1000; i++) {
             //All bookies already in the ensemble, the bookie order not adhere the placement policy.
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr2.toBookieId(), addr3.toBookieId(),
@@ -2693,7 +2693,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     null));
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void testReplaceToAdherePlacementPolicyWithNoMoreRackBookie() throws Exception {
@@ -2703,10 +2703,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         final BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         final BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
         final BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
-        
+
         final String rackName1 = NetworkTopology.DEFAULT_REGION + "/r1";
         final String rackName2 = NetworkTopology.DEFAULT_REGION + "/r2";
-        
+
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), rackName1);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), rackName1);
@@ -2714,7 +2714,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), rackName2);
-        
+
         // Update cluster
         final Set<BookieId> addrs = new HashSet<>();
         addrs.add(addr1.toBookieId());
@@ -2723,16 +2723,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         addrs.add(addr5.toBookieId());
         addrs.add(addr6.toBookieId());
-        
+
         final ClientConfiguration newConf = new ClientConfiguration(conf);
         newConf.setDiskWeightBasedPlacementEnabled(false);
         newConf.setMinNumRacksPerWriteQuorum(2);
         newConf.setEnforceMinNumRacksPerWriteQuorum(true);
-        
+
         repp.initialize(newConf, Optional.empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
-        
+
         repp.onClusterChanged(addrs, new HashSet<>());
         final Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<>();
         bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
@@ -2741,14 +2741,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr5.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr6.toBookieId(), new BookieInfo(100L, 100L));
-        
+
         repp.updateBookieInfo(bookieInfoMap);
-        
+
         final Set<BookieId> excludeList = new HashSet<>();
         final int ensembleSize = 3;
         final int writeQuorumSize = 2;
         final int ackQuorumSize = 2;
-    
+
         final Consumer<Pair<List<BookieId>, Matcher<Iterable<? extends BookieId>>>> test = (pair) -> {
             // RackawareEnsemblePlacementPolicyImpl#isEnsembleAdheringToPlacementPolicy
             // is not scope of this test case. So, use the method in assertion for convenience.
@@ -2763,13 +2763,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             assertEquals(PlacementPolicyAdherence.FAIL, result.getAdheringToPolicy());
             assertEquals(0, result.getResult().size());
         };
-        
+
         for (int i = 0; i < 1000; i++) {
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr2.toBookieId(), addr4.toBookieId()),
                     null));
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void testReplaceToAdherePlacementPolicyWithUnknowBookie() throws Exception {
@@ -2779,10 +2779,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         final BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         final BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
         final BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
-        
+
         final String rackName1 = NetworkTopology.DEFAULT_REGION + "/r1";
         final String rackName2 = NetworkTopology.DEFAULT_REGION + "/r2";
-        
+
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), rackName1);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), rackName1);
@@ -2790,7 +2790,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), rackName2);
         StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), rackName2);
-        
+
         // Update cluster
         final Set<BookieId> addrs = new HashSet<>();
         addrs.add(addr1.toBookieId());
@@ -2799,16 +2799,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         addrs.add(addr5.toBookieId());
         addrs.add(addr6.toBookieId());
-        
+
         final ClientConfiguration newConf = new ClientConfiguration(conf);
         newConf.setDiskWeightBasedPlacementEnabled(false);
         newConf.setMinNumRacksPerWriteQuorum(2);
         newConf.setEnforceMinNumRacksPerWriteQuorum(true);
-        
+
         repp.initialize(newConf, Optional.empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
-        
+
         repp.onClusterChanged(addrs, new HashSet<>());
         final Map<BookieId, BookieInfo> bookieInfoMap = new HashMap<>();
         bookieInfoMap.put(addr1.toBookieId(), new BookieInfo(100L, 100L));
@@ -2817,16 +2817,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr4.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr5.toBookieId(), new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr6.toBookieId(), new BookieInfo(100L, 100L));
-        
+
         repp.updateBookieInfo(bookieInfoMap);
-        
+
         final Set<BookieId> excludeList = new HashSet<>();
         final int ensembleSize = 6;
         final int writeQuorumSize = 2;
         final int ackQuorumSize = 2;
-        
+
         final BookieRackMatcher rack1 = new BookieRackMatcher(rackName1);
-        
+
         final Consumer<Pair<List<BookieId>, Matcher<Iterable<? extends BookieId>>>> test = (pair) -> {
             // RackawareEnsemblePlacementPolicyImpl#isEnsembleAdheringToPlacementPolicy
             // is not scope of this test case. So, use the method in assertion for convenience.
@@ -2841,17 +2841,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, result.getAdheringToPolicy());
             assertThat(result.getResult(), pair.getRight());
         };
-        
+
         for (int i = 0; i < 1000; i++) {
             test.accept(Pair.of(Arrays.asList(BookieId.parse("127.0.0.10:3181"), BookieId.parse("127.0.0.11:3181"),
                             addr3.toBookieId(),
                             addr4.toBookieId(), addr5.toBookieId(), addr6.toBookieId()),
-                    // first, same, same, same, same, same, condition[0]
                     contains(is(rack1), is(addr5.toBookieId()), is(addr3.toBookieId()),
                             is(addr4.toBookieId()), is(rack1), is(addr6.toBookieId()))));
         }
     }
-    
+
     private static class BookieRackMatcher extends TypeSafeMatcher<BookieId> {
         final List<String> expectedRacks;
         

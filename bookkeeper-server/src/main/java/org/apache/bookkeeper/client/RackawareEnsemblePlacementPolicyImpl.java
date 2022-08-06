@@ -31,7 +31,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import io.netty.util.HashedWheelTimer;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -1127,7 +1126,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             rwLock.readLock().unlock();
         }
     }
-    
+
     private int differBetweenBookies(List<BookieId> bookiesA, List<BookieId> bookiesB) {
         if (CollectionUtils.isEmpty(bookiesA) || CollectionUtils.isEmpty(bookiesB)) {
             return Integer.MAX_VALUE;
@@ -1143,7 +1142,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
         return differ;
     }
-    
+
     private PlacementResult<List<BookieId>> doReplaceToAdherePlacementPolicy(
             int ensembleSize,
             int writeQuorumSize,
@@ -1220,10 +1219,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (PlacementPolicyAdherence.FAIL == placementPolicyAdherence) {
             return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
         }
-    
         return PlacementResult.of(revertBookieListByIndex(bookieList, startIndex), placementPolicyAdherence);
     }
-    
+
     private List<BookieId> revertBookieListByIndex(List<BookieId> bookies, int startIndex) {
         BookieId[] bookieIds = new BookieId[bookies.size()];
         for (int i = 0; i < bookies.size(); i++) {
@@ -1234,7 +1232,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
         return Lists.newArrayList(bookieIds);
     }
-    
+
     private BookieNode replaceToAdherePlacementPolicyInternal(
             String netPath, Set<Node> excludeBookies, Predicate<BookieNode> predicate,
             Ensemble<BookieNode> ensemble, List<BookieNode> provisionalEnsembleNodes, int ensembleIndex,
@@ -1266,7 +1264,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         conditionList.add(Pair.of(netPath, provisionalEnsembleNodes));
         // avoid to use same rack between previous index by netPath
         conditionList.add(Pair.of(netPath, Collections.emptyList()));
-        
+
         for (Pair<String, List<BookieNode>> condition : conditionList) {
             WeightedRandomSelection<BookieNode> wRSelection = null;
             
