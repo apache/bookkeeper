@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -761,6 +762,22 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         } finally {
             rwLock.writeLock().unlock();
         }
+    }
+
+    public static int differBetweenBookies(List<BookieId> bookiesA, List<BookieId> bookiesB) {
+        if (CollectionUtils.isEmpty(bookiesA) || CollectionUtils.isEmpty(bookiesB)) {
+            return Integer.MAX_VALUE;
+        }
+        if (bookiesA.size() != bookiesB.size()) {
+            return Integer.MAX_VALUE;
+        }
+        int differ = 0;
+        for (int i = 0; i < bookiesA.size(); i++) {
+            if (!bookiesA.get(i).equals(bookiesB.get(i))) {
+                differ++;
+            }
+        }
+        return differ;
     }
 
     @Override

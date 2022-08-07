@@ -1791,20 +1791,25 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public Map<Integer, BookieId> replaceNotAdheringPlacementPolicyBookie(List<BookieId> ensembleBookiesList,
             int writeQuorumSize, int ackQuorumSize) {
-        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> placementResult = bkc.getPlacementPolicy()
-                .replaceToAdherePlacementPolicy(ensembleBookiesList.size(), writeQuorumSize, ackQuorumSize,
-                        new HashSet<>(), ensembleBookiesList);
-        if (PlacementPolicyAdherence.FAIL != placementResult.getAdheringToPolicy()) {
-            Map<Integer, BookieId> targetMap = new HashMap<>();
-            List<BookieId> newEnsembles = placementResult.getResult();
-            for (int i = 0; i < ensembleBookiesList.size(); i++) {
-                BookieId originBookie = ensembleBookiesList.get(i);
-                BookieId newBookie = newEnsembles.get(i);
-                if (!originBookie.equals(newBookie)) {
-                    targetMap.put(i, newBookie);
+        try {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> placementResult = bkc.getPlacementPolicy()
+                    .replaceToAdherePlacementPolicy(ensembleBookiesList.size(), writeQuorumSize, ackQuorumSize,
+                            new HashSet<>(), ensembleBookiesList);
+            if (PlacementPolicyAdherence.FAIL != placementResult.getAdheringToPolicy()) {
+                Map<Integer, BookieId> targetMap = new HashMap<>();
+                List<BookieId> newEnsembles = placementResult.getResult();
+                for (int i = 0; i < ensembleBookiesList.size(); i++) {
+                    BookieId originBookie = ensembleBookiesList.get(i);
+                    BookieId newBookie = newEnsembles.get(i);
+                    if (!originBookie.equals(newBookie)) {
+                        targetMap.put(i, newBookie);
+                    }
                 }
+                return targetMap;
             }
-            return targetMap;
+        } catch (UnsupportedOperationException e) {
+            LOG.warn("The placement policy: {} didn't support replaceToAdherePlacementPolicy, "
+                    + "ignore replace not adhere bookie.", bkc.getPlacementPolicy().getClass().getName());
         }
         return Collections.emptyMap();
     }

@@ -1127,22 +1127,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
     }
 
-    private int differBetweenBookies(List<BookieId> bookiesA, List<BookieId> bookiesB) {
-        if (CollectionUtils.isEmpty(bookiesA) || CollectionUtils.isEmpty(bookiesB)) {
-            return Integer.MAX_VALUE;
-        }
-        if (bookiesA.size() != bookiesB.size()) {
-            return Integer.MAX_VALUE;
-        }
-        int differ = 0;
-        for (int i = 0; i < bookiesA.size(); i++) {
-            if (!bookiesA.get(i).equals(bookiesB.get(i))) {
-                differ++;
-            }
-        }
-        return differ;
-    }
-
     private PlacementResult<List<BookieId>> doReplaceToAdherePlacementPolicy(
             int ensembleSize,
             int writeQuorumSize,
