@@ -1267,7 +1267,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
         for (Pair<String, List<BookieNode>> condition : conditionList) {
             WeightedRandomSelection<BookieNode> wRSelection = null;
-            
+
             final List<Node> leaves = new ArrayList<>(topology.getLeaves(condition.getLeft()));
             if (!isWeighted) {
                 Collections.shuffle(leaves);

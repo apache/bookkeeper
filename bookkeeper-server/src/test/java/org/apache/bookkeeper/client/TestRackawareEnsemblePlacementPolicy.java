@@ -1472,7 +1472,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // this is expected
         }
     }
-    
+
     @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
@@ -2853,16 +2853,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     private static class BookieRackMatcher extends TypeSafeMatcher<BookieId> {
         final List<String> expectedRacks;
-        
+
         public BookieRackMatcher(String... expectedRacks) {
             this.expectedRacks = Arrays.asList(expectedRacks);
         }
-        
+
         @Override
         protected boolean matchesSafely(BookieId bookieId) {
             return expectedRacks.contains(StaticDNSResolver.getRack(bookieId.toString().split(":")[0]));
         }
-        
+
         @Override
         public void describeTo(Description description) {
             description.appendText("expected racks " + expectedRacks);
