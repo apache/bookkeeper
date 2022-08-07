@@ -231,7 +231,7 @@ The technical details of this release are summarized below.
       - [optional in maven](https://github.com/inferred/FreeBuilder#maven)
       - [compileOnly in gradle](https://github.com/inferred/FreeBuilder#gradle)
 
-- [https://github.com/apache/bookkeeper/pull/2693] Upgrade vertx to 3.9.8, addresses CVE-2018-12541
+- [https://github.com/apache/bookkeeper/pull/2693] Upgrade vertx to 4.3.2, addresses CVE-2018-12541
 
   The current vertx version is 3.5.3 which has a vulnerability, CVE-2018-12541 .
 
