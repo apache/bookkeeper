@@ -369,7 +369,7 @@ public class ReplicationWorker implements Runnable {
     }
 
     private Set<LedgerFragment> getNeedRepairedPlacementNotAdheringFragments(LedgerHandle lh) {
-        if (!conf.getRepairedPlacementPolicyNotAdheringBookieEnable()) {
+        if (!conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
             return Collections.emptySet();
         }
         long ledgerId = lh.getId();

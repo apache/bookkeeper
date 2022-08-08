@@ -506,6 +506,14 @@ public interface EnsemblePlacementPolicy {
             return result;
         }
 
+        /**
+         * Use {@link #getAdheringToPolicy}
+         */
+        @Deprecated
+        public PlacementPolicyAdherence isAdheringToPolicy() {
+            return policyAdherence;
+        }
+
         public PlacementPolicyAdherence getAdheringToPolicy() {
             return policyAdherence;
         }

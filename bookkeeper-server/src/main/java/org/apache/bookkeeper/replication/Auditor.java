@@ -1471,7 +1471,7 @@ public class Auditor implements AutoCloseable {
                             if (foundSegmentNotAdheringToPlacementPolicy) {
                                 numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
                                 //If user enable repaired, mark this ledger to under replication manager.
-                                if (conf.getRepairedPlacementPolicyNotAdheringBookieEnable()) {
+                                if (conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
                                     ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
                                             Collections.emptyList()).whenComplete((res, e) -> {
                                         if (e != null) {

@@ -2622,6 +2622,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Now the feature only support RackawareEnsemblePlacementPolicy.
+     *
      * In Auditor, it combines with {@link #getAuditorPeriodicPlacementPolicyCheckInterval}, to control is marked
      * ledger id to under replication managed when found a ledger ensemble not adhere to placement policy.
      * In ReplicationWorker, to control is to repair the ledger which the ensemble does not adhere to the placement
@@ -2632,7 +2634,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * server. You should set a suitable rereplicationEntryBatchSize to avoid bookie server pressure.
      *
      */
-    public boolean getRepairedPlacementPolicyNotAdheringBookieEnable() {
+    public boolean isRepairedPlacementPolicyNotAdheringBookieEnable() {
         return getBoolean(REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED, false);
     }
 
