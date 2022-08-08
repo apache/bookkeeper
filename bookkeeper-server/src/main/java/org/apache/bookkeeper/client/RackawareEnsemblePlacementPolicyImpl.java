@@ -1103,6 +1103,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     excludeBookies.add(bookieId);
                 }
             }
+            int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
+            int numRacks = topology.getNumOfRacks();
+            // only one rack or less than minNumRacksPerWriteQuorumForThisEnsemble, stop calculation to skip relocation
+            if (numRacks < 2 || numRacks < minNumRacksPerWriteQuorumForThisEnsemble) {
+                LOG.warn("Skip ensemble relocation because the cluster has only {} rack.", numRacks);
+                return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+            }
             PlacementResult<List<BookieId>> placementResult = PlacementResult.of(Collections.emptyList(),
                     PlacementPolicyAdherence.FAIL);
             int minDiffer = Integer.MAX_VALUE;
@@ -1148,12 +1155,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         null,
                         null,
                         minNumRacksPerWriteQuorumForThisEnsemble);
-        int numRacks = topology.getNumOfRacks();
-        // only one rack or less than minNumRacksPerWriteQuorumForThisEnsemble, stop calculation to skip relocation
-        if (numRacks < 2 || numRacks < minNumRacksPerWriteQuorumForThisEnsemble) {
-            LOG.warn("Skip ensemble relocation because the cluster has only {} rack.", numRacks);
-            return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
-        }
         BookieNode prevNode = null;
         final BookieNode firstNode = provisionalEnsembleNodes.get(startIndex);
         // use same bookie at first to reduce ledger replication
