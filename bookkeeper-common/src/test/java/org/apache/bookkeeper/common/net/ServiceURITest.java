@@ -95,6 +95,14 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testMissingServiceNameIPV6() {
+        String serviceUri = "//[fec0:0:0:ffff::1]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                null, new String[0], null, new String[] { "[fec0:0:0:ffff::1]:2181" }, "/path/to/namespace");
+    }
+
+    @Test
     public void testEmptyPath() {
         String serviceUri = "bk://localhost:2181";
         assertServiceUri(
@@ -103,11 +111,27 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testEmptyPathIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181";
+        assertServiceUri(
+                serviceUri,
+                "bk", new String[0], null, new String[] { "[fec0:0:0:ffff::1]:2181" }, "");
+    }
+
+    @Test
     public void testRootPath() {
         String serviceUri = "bk://localhost:2181/";
         assertServiceUri(
             serviceUri,
             "bk", new String[0], null, new String[] { "localhost:2181" }, "/");
+    }
+
+    @Test
+    public void testRootPathIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181/";
+        assertServiceUri(
+                serviceUri,
+                "bk", new String[0], null, new String[] { "[fec0:0:0:ffff::1]:2181" }, "/");
     }
 
     @Test
@@ -123,6 +147,18 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testUserInfoIPV6() {
+        String serviceUri = "bk://bookkeeper@[fec0:0:0:ffff::1]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                "bookkeeper",
+                new String[] { "[fec0:0:0:ffff::1]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testMultipleHostsSemiColon() {
         String serviceUri = "bk://host1:2181;host2:2181;host3:2181/path/to/namespace";
         assertServiceUri(
@@ -132,6 +168,18 @@ public class ServiceURITest {
             null,
             new String[] { "host1:2181", "host2:2181", "host3:2181" },
             "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultipleHostsSemiColonIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:2181", "[fec0:0:0:ffff::3]:2181" },
+                "/path/to/namespace");
     }
 
     @Test
@@ -147,6 +195,18 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testMultipleHostsCommaIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181,[fec0:0:0:ffff::2]:2181,[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:2181", "[fec0:0:0:ffff::3]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testMultipleHostsWithoutPorts() {
         String serviceUri = "bk://host1,host2,host3/path/to/namespace";
         assertServiceUri(
@@ -156,6 +216,18 @@ public class ServiceURITest {
             null,
             new String[] { "host1:4181", "host2:4181", "host3:4181" },
             "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultipleHostsWithoutPortsIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1],[fec0:0:0:ffff::2],[fec0:0:0:ffff::3]/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:4181", "[fec0:0:0:ffff::2]:4181", "[fec0:0:0:ffff::3]:4181" },
+                "/path/to/namespace");
     }
 
     @Test
@@ -171,6 +243,18 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testMultipleHostsMixedPortsIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:3181,[fec0:0:0:ffff::2],[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:3181", "[fec0:0:0:ffff::2]:4181", "[fec0:0:0:ffff::3]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testMultipleHostsMixed() {
         String serviceUri = "bk://host1:2181,host2,host3:2181/path/to/namespace";
         assertServiceUri(
@@ -180,6 +264,18 @@ public class ServiceURITest {
             null,
             new String[] { "host1:2181", "host2:4181", "host3:2181" },
             "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultipleHostsMixedIPV6() {
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181,[fec0:0:0:ffff::2],[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:4181", "[fec0:0:0:ffff::3]:2181" },
+                "/path/to/namespace");
     }
 
     @Test
@@ -195,6 +291,18 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testUserInfoWithMultipleHostsIPV6() {
+        String serviceUri = "bk://bookkeeper@[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk",
+                new String[0],
+                "bookkeeper",
+                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:2181", "[fec0:0:0:ffff::3]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testServiceInfoPlus() {
         String serviceUri = "bk+ssl://host:2181/path/to/namespace";
         assertServiceUri(
@@ -207,26 +315,14 @@ public class ServiceURITest {
     }
 
     @Test
-    public void testIPv6Address() {
-        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181/path/to/namespace";
+    public void testServiceInfoPlusIPV6() {
+        String serviceUri = "bk+ssl://[fec0:0:0:ffff::1]:2181/path/to/namespace";
         assertServiceUri(
                 serviceUri,
                 "bk",
-                new String[0],
+                new String[] { "ssl" },
                 null,
                 new String[] { "[fec0:0:0:ffff::1]:2181" },
-                "/path/to/namespace");
-    }
-
-    @Test
-    public void testMultipleIPv6Address() {
-        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181/path/to/namespace";
-        assertServiceUri(
-                serviceUri,
-                "bk",
-                new String[0],
-                null,
-                new String[] { "[fec0:0:0:ffff::1]:2181", "[fec0:0:0:ffff::2]:2181"},
                 "/path/to/namespace");
     }
 
@@ -243,6 +339,18 @@ public class ServiceURITest {
     }
 
     @Test
+    public void testServiceInfoMinusIPV6() {
+        String serviceUri = "bk-ssl://[fec0:0:0:ffff::1]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "bk-ssl",
+                new String[0],
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181" },
+                "/path/to/namespace");
+    }
+
+    @Test
     public void testServiceInfoDlogMinus() {
         String serviceUri = "distributedlog-bk://host:2181/path/to/namespace";
         assertServiceUri(
@@ -252,6 +360,18 @@ public class ServiceURITest {
             null,
             new String[] { "host:2181" },
             "/path/to/namespace");
+    }
+
+    @Test
+    public void testServiceInfoDlogMinusIPV6() {
+        String serviceUri = "distributedlog-bk://[fec0:0:0:ffff::1]:2181/path/to/namespace";
+        assertServiceUri(
+                serviceUri,
+                "distributedlog",
+                new String[] { "bk" },
+                null,
+                new String[] { "[fec0:0:0:ffff::1]:2181" },
+                "/path/to/namespace");
     }
 
 }
