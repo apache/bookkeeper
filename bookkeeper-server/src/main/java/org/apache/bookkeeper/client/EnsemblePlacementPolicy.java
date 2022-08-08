@@ -507,7 +507,7 @@ public interface EnsemblePlacementPolicy {
         }
 
         /**
-         * Use {@link #getAdheringToPolicy}
+         * Use {@link #getAdheringToPolicy}.
          */
         @Deprecated
         public PlacementPolicyAdherence isAdheringToPolicy() {
