@@ -88,13 +88,12 @@ public class EntryLocationIndex implements Closeable {
         } finally {
             key.recycle();
             value.recycle();
-            long eventLatencyMillis = MathUtils.elapsedNanos(startTimeNanos);
             if (operationSuccess) {
                 stats.getLookupEntryLocationStats()
-                        .registerSuccessfulEvent(eventLatencyMillis, TimeUnit.NANOSECONDS);
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
                 stats.getLookupEntryLocationStats()
-                        .registerFailedEvent(eventLatencyMillis, TimeUnit.NANOSECONDS);
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
     }
