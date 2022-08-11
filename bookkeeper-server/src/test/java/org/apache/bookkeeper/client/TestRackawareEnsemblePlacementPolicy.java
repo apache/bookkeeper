@@ -2609,6 +2609,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     contains(is(addr1.toBookieId()), is(rack23), is(rack123), is(rack123),
                             is(rack123), is(rack123), is(rack23))));
         }
+        StaticDNSResolver.reset();
     }
 
     @SuppressWarnings("unchecked")
@@ -2692,6 +2693,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     // the final result is 1,6,3,4,2,5. If we pick 5 for the second, the final result is 1,5,3,4,2,6
                     null));
         }
+        StaticDNSResolver.reset();
     }
 
     @SuppressWarnings("unchecked")
@@ -2768,6 +2770,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             test.accept(Pair.of(Arrays.asList(addr1.toBookieId(), addr2.toBookieId(), addr4.toBookieId()),
                     null));
         }
+        StaticDNSResolver.reset();
     }
 
     @SuppressWarnings("unchecked")
@@ -2849,6 +2852,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     contains(is(rack1), is(addr5.toBookieId()), is(addr3.toBookieId()),
                             is(addr4.toBookieId()), is(rack1), is(addr6.toBookieId()))));
         }
+        StaticDNSResolver.reset();
     }
 
     private static class BookieRackMatcher extends TypeSafeMatcher<BookieId> {
