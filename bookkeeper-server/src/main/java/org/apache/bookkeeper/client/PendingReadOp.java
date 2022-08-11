@@ -293,7 +293,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         void read() {
             for (int i = 0; i < writeSet.size(); i++) {
                 BookieId to = ensemble.get(writeSet.get(i));
-                if (!clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
+                if (clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
                     continue;
                 }
                 try {
@@ -409,7 +409,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
             try {
                 BookieId to = ensemble.get(bookieIndex);
-                if (!clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
+                if (clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
                     return null;
                 }
                 sendReadTo(bookieIndex, to, this);
