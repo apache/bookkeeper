@@ -1001,9 +1001,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 });
             }
         }
-        
         entryLocationIndex.flush(batch);
-
         return numberOfEntries.longValue();
     }
 

@@ -21,9 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Iterables;
-
 import java.io.IOException;
-
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.conf.ServerConfiguration;
