@@ -31,6 +31,6 @@ public class BookieBackpressureForV2Test extends BookieBackpressureTest {
         super.setUp();
         baseClientConf.setUseV2WireProtocol(true);
         // the backpressure will bloc the read response, disable it to let it use backpressure mechanism
-        confByIndex(0).setReadWorkerThreadsThrottlingEnabled(false);
+        bsConfs.get(0).setReadWorkerThreadsThrottlingEnabled(false);
     }
 }
