@@ -146,6 +146,10 @@ public class TestStatsProvider implements StatsProvider {
         public synchronized long getSuccessCount() {
             return successCount;
         }
+
+        public synchronized long getFailureCount() {
+            return failureCount;
+        }
     }
 
     /**

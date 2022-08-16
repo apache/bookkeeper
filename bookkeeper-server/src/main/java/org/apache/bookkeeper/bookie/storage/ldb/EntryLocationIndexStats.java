@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 
@@ -40,12 +41,19 @@ import org.apache.bookkeeper.stats.annotations.StatsDoc;
 class EntryLocationIndexStats {
 
     private static final String ENTRIES_COUNT = "entries-count";
+    private static final String LOOKUP_ENTRY_LOCATION = "lookup-entry-location";
 
     @StatsDoc(
         name = ENTRIES_COUNT,
         help = "Current number of entries"
     )
     private final Gauge<Long> entriesCountGauge;
+
+    @StatsDoc(
+            name = LOOKUP_ENTRY_LOCATION,
+            help = "operation stats of looking up entry location"
+    )
+    private final OpStatsLogger lookupEntryLocationStats;
 
     EntryLocationIndexStats(StatsLogger statsLogger,
                             Supplier<Long> entriesCountSupplier) {
@@ -61,6 +69,7 @@ class EntryLocationIndexStats {
             }
         };
         statsLogger.registerGauge(ENTRIES_COUNT, entriesCountGauge);
+        lookupEntryLocationStats = statsLogger.getOpStatsLogger(LOOKUP_ENTRY_LOCATION);
     }
 
 }

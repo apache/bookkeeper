@@ -21,11 +21,13 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Test;
 
 /**
@@ -138,5 +140,32 @@ public class EntryLocationIndexTest {
         idx.delete(40313);
         idx.removeOffsetFromDeletedLedgers();
         assertEquals(0, idx.getLocation(40312, 10));
+    }
+
+    @Test
+    public void testEntryIndexLookupLatencyStats() throws IOException {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                tmpDir.getAbsolutePath(), statsProvider.getStatsLogger("scope"));
+
+        // Add some dummy indexes
+        idx.addLocation(40313, 11, 5);
+
+        // successful lookup
+        assertEquals(5, idx.getLocation(40313, 11));
+        TestStatsProvider.TestOpStatsLogger lookupEntryLocationOpStats =
+                statsProvider.getOpStatsLogger("scope.lookup-entry-location");
+        assertEquals(1, lookupEntryLocationOpStats.getSuccessCount());
+        assertTrue(lookupEntryLocationOpStats.getSuccessAverage() > 0);
+
+        // failed lookup
+        assertEquals(0, idx.getLocation(12345, 1));
+        assertEquals(1, lookupEntryLocationOpStats.getFailureCount());
+        assertEquals(1, lookupEntryLocationOpStats.getSuccessCount());
     }
 }
