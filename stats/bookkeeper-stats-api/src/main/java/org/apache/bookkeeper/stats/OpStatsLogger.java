@@ -25,18 +25,18 @@ public interface OpStatsLogger {
 
     /**
      * Increment the failed op counter with the given eventLatency.
-     * @param eventLatencyMillis The event latency
+     * @param eventLatency The event latency
      * @param unit
      */
-    void registerFailedEvent(long eventLatencyMillis, TimeUnit unit);
+    void registerFailedEvent(long eventLatency, TimeUnit unit);
 
     /**
      * An operation succeeded with the given eventLatency. Update
      * stats to reflect the same
-     * @param eventLatencyMillis The event latency
+     * @param eventLatency The event latency
      * @param unit
      */
-    void registerSuccessfulEvent(long eventLatencyMillis, TimeUnit unit);
+    void registerSuccessfulEvent(long eventLatency, TimeUnit unit);
 
     /**
      * An operation with the given value succeeded.

@@ -32,6 +32,7 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,8 @@ public class EntryLocationIndex implements Closeable {
         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
         LongWrapper value = LongWrapper.get();
 
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean operationSuccess = false;
         try {
             if (locationsDb.get(key.array, value.array) < 0) {
                 if (log.isDebugEnabled()) {
@@ -80,11 +83,18 @@ public class EntryLocationIndex implements Closeable {
                 }
                 return 0;
             }
-
+            operationSuccess = true;
             return value.getValue();
         } finally {
             key.recycle();
             value.recycle();
+            if (operationSuccess) {
+                stats.getLookupEntryLocationStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            } else {
+                stats.getLookupEntryLocationStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            }
         }
     }
 
