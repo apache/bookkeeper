@@ -150,7 +150,7 @@ public class EntryLocationIndexSyncTest {
         tmpDir.deleteOnExit();
 
         TestStatsProvider statsProvider = new TestStatsProvider();
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), statsProvider.getStatsLogger("scope"));
 
         // Add some dummy indexes
