@@ -1500,7 +1500,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void initTLSHandshake() {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-        InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
+        SocketAddress socketAddress = channel.remoteAddress();
+        InetSocketAddress address;
+        if (socketAddress instanceof LocalAddress) {
+            // if it is a local address, it looks like this: local:hostname:port
+            String[] addr = socketAddress.toString().split(":");
+            String hostname = addr[1];
+            int port = Integer.parseInt(addr[2]);
+            address = new InetSocketAddress(hostname, port);
+        } else if (socketAddress instanceof InetSocketAddress) {
+            address = (InetSocketAddress) socketAddress;
+        } else {
+            throw new RuntimeException("Unexpected socket address type");
+        }
         SslHandler handler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
         channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
