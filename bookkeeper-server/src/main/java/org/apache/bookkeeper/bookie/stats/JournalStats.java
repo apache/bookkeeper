@@ -21,6 +21,7 @@ package org.apache.bookkeeper.bookie.stats;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CB_THREAD_POOL_QUEUE_SIZE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_CB_QUEUED_LATENCY;
@@ -155,7 +156,7 @@ public class JournalStats {
     private final Counter journalCbQueueSize;
 
     @StatsDoc(
-            name = JOURNAL_CB_QUEUE_SIZE,
+            name = CB_THREAD_POOL_QUEUE_SIZE,
             help = "The queue size of cbThreadPool"
     )
     private final Counter cbThreadPoolQueueSize;
@@ -216,7 +217,7 @@ public class JournalStats {
         journalQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_QUEUE_SIZE);
         forceWriteQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_FORCE_WRITE_QUEUE_SIZE);
         journalCbQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_CB_QUEUE_SIZE);
-        cbThreadPoolQueueSize = statsLogger.getCounter(BookKeeperServerStats.CB_THREAD_POOL_QUEUE_SIZE);
+        cbThreadPoolQueueSize = statsLogger.getCounter(CB_THREAD_POOL_QUEUE_SIZE);
         journalCbQueuedLatency = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_CB_QUEUED_LATENCY);
         flushMaxWaitCounter = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_WAIT);
         flushMaxOutstandingBytesCounter =
