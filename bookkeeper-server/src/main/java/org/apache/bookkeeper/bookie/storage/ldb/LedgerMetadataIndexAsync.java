@@ -88,7 +88,7 @@ public class LedgerMetadataIndexAsync extends LedgerMetadataIndex {
     }
 
     @Override
-    boolean setStorageStateFlags(int expected, int newFlags) throws IOException {
+    synchronized boolean setStorageStateFlags(int expected, int newFlags) throws IOException {
         LongWrapper keyWrapper = LongWrapper.get();
         LongWrapper currentWrapper = LongWrapper.get();
         LongWrapper newFlagsWrapper = LongWrapper.get();
@@ -96,16 +96,14 @@ public class LedgerMetadataIndexAsync extends LedgerMetadataIndex {
         try {
             keyWrapper.set(STORAGE_FLAGS);
             newFlagsWrapper.set(newFlags);
-            synchronized (ledgersDb) {
-                int current = 0;
-                if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
-                    current = (int) currentWrapper.getValue();
-                }
-                if (current == expected) {
-                    ledgersDb.put(keyWrapper.array, newFlagsWrapper.array);
-                    ledgersDb.sync();
-                    return true;
-                }
+            int current = 0;
+            if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
+                current = (int) currentWrapper.getValue();
+            }
+            if (current == expected) {
+                ledgersDb.put(keyWrapper.array, newFlagsWrapper.array);
+                ledgersDb.sync();
+                return true;
             }
         } finally {
             keyWrapper.recycle();

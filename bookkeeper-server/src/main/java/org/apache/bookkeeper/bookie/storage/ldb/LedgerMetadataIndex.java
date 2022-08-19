@@ -310,19 +310,17 @@ public abstract class LedgerMetadataIndex implements Closeable {
         return locks[Math.abs((int) ledgerId) % locks.length];
     }
 
-    int getStorageStateFlags() throws IOException {
+    synchronized int getStorageStateFlags() throws IOException {
         LongWrapper keyWrapper = LongWrapper.get();
         LongWrapper currentWrapper = LongWrapper.get();
 
         try {
             keyWrapper.set(STORAGE_FLAGS);
-            synchronized (ledgersDb) {
-                int current = 0;
-                if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
-                    current = (int) currentWrapper.getValue();
-                }
-                return current;
+            int current = 0;
+            if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
+                current = (int) currentWrapper.getValue();
             }
+            return current;
         } finally {
             keyWrapper.recycle();
             currentWrapper.recycle();

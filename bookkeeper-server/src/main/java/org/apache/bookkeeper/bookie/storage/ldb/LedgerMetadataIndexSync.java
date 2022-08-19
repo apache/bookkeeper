@@ -104,7 +104,7 @@ public class LedgerMetadataIndexSync extends LedgerMetadataIndex {
     }
 
     @Override
-    boolean setStorageStateFlags(int expected, int newFlags) throws IOException {
+    synchronized boolean setStorageStateFlags(int expected, int newFlags) throws IOException {
         LongWrapper keyWrapper = LongWrapper.get();
         LongWrapper currentWrapper = LongWrapper.get();
         LongWrapper newFlagsWrapper = LongWrapper.get();
@@ -113,15 +113,13 @@ public class LedgerMetadataIndexSync extends LedgerMetadataIndex {
         try {
             keyWrapper.set(STORAGE_FLAGS);
             newFlagsWrapper.set(newFlags);
-            synchronized (ledgersDb) {
-                int current = 0;
-                if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
-                    current = (int) currentWrapper.getValue();
-                }
-                if (current == expected) {
-                    batch.put(keyWrapper.array, newFlagsWrapper.array);
-                    return true;
-                }
+            int current = 0;
+            if (ledgersDb.get(keyWrapper.array, currentWrapper.array) >= 0) {
+                current = (int) currentWrapper.getValue();
+            }
+            if (current == expected) {
+                batch.put(keyWrapper.array, newFlagsWrapper.array);
+                return true;
             }
         } finally {
             try {
