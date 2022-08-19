@@ -21,6 +21,7 @@ package org.apache.bookkeeper.bookie.stats;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CB_THREAD_POOL_QUEUE_SIZE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_CB_QUEUED_LATENCY;
@@ -155,7 +156,7 @@ public class JournalStats {
     private final Counter journalCbQueueSize;
 
     @StatsDoc(
-            name = JOURNAL_CB_QUEUE_SIZE,
+            name = CB_THREAD_POOL_QUEUE_SIZE,
             help = "The queue size of cbThreadPool"
     )
     private final Counter cbThreadPoolQueueSize;
