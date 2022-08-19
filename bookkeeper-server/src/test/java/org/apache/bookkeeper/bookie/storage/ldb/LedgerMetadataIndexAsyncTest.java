@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.ByteString;
 import java.io.File;
 import org.apache.bookkeeper.bookie.Bookie;
