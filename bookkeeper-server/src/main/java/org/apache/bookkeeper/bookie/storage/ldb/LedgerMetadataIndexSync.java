@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import java.io.IOException;
 import java.util.Map.Entry;
-
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
