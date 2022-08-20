@@ -34,7 +34,7 @@ env:
 
 jobs:
   check:
-
+    name: OWASP Dependency Check
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

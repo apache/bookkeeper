@@ -34,7 +34,7 @@ env:
 
 jobs:
   test:
-
+    name: Remaining Tests
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:

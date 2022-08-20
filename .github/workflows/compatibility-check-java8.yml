@@ -34,7 +34,7 @@ env:
 
 jobs:
   check:
-
+    name: Compatibility Check Java8
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

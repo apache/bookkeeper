@@ -44,7 +44,7 @@ following command will print out the names of each file and the associated with 
 the context will be named by the `id`.
 
 ```shell
-for f in .github/workflows/*.yaml; \
+for f in .github/workflows/*.yaml .github/workflows/*.yml; \
 do FILE=$f yq eval -o j '.jobs | to_entries | {"file": env(FILE),"id":.[].key, "name":.[].value.name}' $f; \
 done
 ```

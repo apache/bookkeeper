@@ -24,6 +24,7 @@ on:
 
 jobs:
   bot:
+    name: Bot tests
     runs-on: ubuntu-latest
 
     steps:
