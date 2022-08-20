@@ -33,7 +33,7 @@ env:
 
 jobs:
   check:
-
+    name: Compatibility Check Java17
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
