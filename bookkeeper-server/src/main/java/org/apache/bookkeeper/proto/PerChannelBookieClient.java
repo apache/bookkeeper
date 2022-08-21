@@ -673,7 +673,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                               new WriteLacCompletion(completionKey, cb,
-                                                     ctx, lac));
+                                                     ctx, ledgerId));
 
         // Build the request
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
