@@ -48,7 +48,7 @@ public class EventLoopUtil {
     }
 
     public static EventLoopGroup getServerAcceptorGroup(ServerConfiguration conf, ThreadFactory threadFactory) {
-        return getEventLoopGroup(threadFactory, conf.getServerNumAcceptorThreads(), conf.isBusyWaitEnabled());
+        return getEventLoopGroup(threadFactory, conf.getServerNumAcceptorThreads(), false);
     }
 
     private static EventLoopGroup getEventLoopGroup(ThreadFactory threadFactory,

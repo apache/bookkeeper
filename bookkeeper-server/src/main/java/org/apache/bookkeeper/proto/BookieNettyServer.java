@@ -440,6 +440,14 @@ class BookieNettyServer {
 
         allChannels.close().awaitUninterruptibly();
 
+        if (acceptorGroup != null) {
+            try {
+                acceptorGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS).await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
         if (eventLoopGroup != null) {
             try {
                 eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS).await();
