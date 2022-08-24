@@ -22,3 +22,4 @@ org.apache.bookkeeper.tools.cli.commands.BookiesCommandGroup
 org.apache.bookkeeper.tools.cli.commands.CookieCommandGroup
 org.apache.bookkeeper.tools.cli.commands.LedgerCommandGroup
 org.apache.bookkeeper.tools.cli.commands.AutoRecoveryCommandGroup
+org.apache.bookkeeper.tools.cli.commands.HealthCheckCommandGroup

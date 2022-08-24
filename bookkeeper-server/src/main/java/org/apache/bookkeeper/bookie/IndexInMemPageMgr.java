@@ -26,7 +26,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_MI
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_READ_PAGE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_INDEX_PAGES;
 
+// CHECKSTYLE.OFF: IllegalImport
 import com.google.common.base.Stopwatch;
+import io.netty.util.internal.PlatformDependent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,9 +49,9 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.DirectMemoryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+// CHECKSTYLE.ON: IllegalImport
 
 class IndexInMemPageMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
@@ -350,7 +352,7 @@ class IndexInMemPageMgr {
         this.indexPersistenceManager = indexPersistenceManager;
         this.pageMapAndList = new InMemPageCollection(statsLogger);
 
-        long maxDirectMemory = DirectMemoryUtils.maxDirectMemory();
+        long maxDirectMemory = PlatformDependent.estimateMaxDirectMemory();
 
         if (conf.getPageLimit() <= 0) {
             // By default, allocate a third of the direct memory to the page cache

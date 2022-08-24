@@ -23,6 +23,7 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;

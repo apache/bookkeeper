@@ -20,17 +20,13 @@
  */
 package org.apache.bookkeeper.common.util.affinity.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import lombok.experimental.UtilityClass;
 
 /**
@@ -47,10 +43,10 @@ public class NativeUtils {
      * @throws Exception
      */
     @SuppressFBWarnings(
-            value = "OBL_UNSATISFIED_OBLIGATION",
+            value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
             justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     public static void loadLibraryFromJar(String path) throws Exception {
-        checkArgument(path.startsWith("/"), "absolute path must start with /");
+        com.google.common.base.Preconditions.checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;

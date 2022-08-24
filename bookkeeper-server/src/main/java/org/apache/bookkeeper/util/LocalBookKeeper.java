@@ -35,12 +35,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -76,15 +77,6 @@ public class LocalBookKeeper implements AutoCloseable {
     }
 
     int numberOfBookies;
-
-//    public LocalBookKeeper() {
-//        this(3);
-//    }
-//
-//    public LocalBookKeeper(int numberOfBookies) {
-//        this(numberOfBookies, new ServerConfiguration(), defaultLocalBookiesConfigDir, true,
-//                "test", );
-//    }
 
     public LocalBookKeeper(
             int numberOfBookies,
@@ -364,6 +356,7 @@ public class LocalBookKeeper implements AutoCloseable {
     }
 
     public static void main(String[] args) {
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
         try {
             if (args.length < 1) {
                 usage();
@@ -406,6 +399,7 @@ public class LocalBookKeeper implements AutoCloseable {
                     numBookies, true, false, "test", zkDataDir,
                     localBookiesConfigDirName)) {
                 try {
+                    lb.start();
                     while (true) {
                         Thread.sleep(1000);
                     }
@@ -524,6 +518,7 @@ public class LocalBookKeeper implements AutoCloseable {
             LedgerStorage storage = BookieResources.createLedgerStorage(
                     conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                     NullStatsLogger.INSTANCE, allocator);
+            UncleanShutdownDetection shutdownManager = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
             final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
             final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
@@ -531,9 +526,10 @@ public class LocalBookKeeper implements AutoCloseable {
 
             componentInfoPublisher.startupFinished();
             bookie = new BookieImpl(conf, registrationManager, storage, diskChecker,
-                    ledgerDirsManager, indexDirsManager,
-                    NullStatsLogger.INSTANCE, allocator, bookieServiceInfoProvider);
-            server = new BookieServer(conf, bookie, NullStatsLogger.INSTANCE, allocator);
+                                    ledgerDirsManager, indexDirsManager,
+                                    NullStatsLogger.INSTANCE, allocator, bookieServiceInfoProvider);
+            server = new BookieServer(conf, bookie, NullStatsLogger.INSTANCE, allocator,
+                                      shutdownManager);
         }
 
         void start() throws Exception {

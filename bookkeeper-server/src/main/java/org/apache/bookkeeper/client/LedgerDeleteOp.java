@@ -24,7 +24,6 @@ package org.apache.bookkeeper.client;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;

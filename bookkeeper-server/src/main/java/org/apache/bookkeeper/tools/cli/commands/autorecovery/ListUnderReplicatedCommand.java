@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -38,7 +39,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +96,10 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
 
         @Parameter(names =  {"-l", "--ledgeridformatter"}, description = "Set ledger id formatter")
         private String ledgerIdFormatter = DEFAULT;
+
+        @Parameter(names = {"-c", "--onlydisplayledgercount"},
+            description = "Only display underreplicated ledger count")
+        private boolean onlyDisplayLedgerCount;
     }
 
     @Override
@@ -117,6 +121,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
         final String excludingBookieId = flags.excludingMissingReplica;
         final boolean printMissingReplica = flags.printMissingReplica;
         final boolean printReplicationWorkerId = flags.printReplicationWorkerId;
+        final boolean onlyDisplayLedgerCount = flags.onlyDisplayLedgerCount;
 
         final Predicate<List<String>> predicate;
         if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
@@ -130,11 +135,12 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             predicate = null;
         }
 
+        AtomicInteger underReplicatedLedgerCount = new AtomicInteger(0);
         runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
             LedgerUnderreplicationManager underreplicationManager;
             try {
                 underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-            } catch (KeeperException | ReplicationException.CompatibilityException e) {
+            } catch (ReplicationException e) {
                 throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -143,15 +149,20 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
             Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
             while (iter.hasNext()) {
                 UnderreplicatedLedger underreplicatedLedger = iter.next();
+                underReplicatedLedgerCount.incrementAndGet();
+                if (onlyDisplayLedgerCount) {
+                    continue;
+                }
+
                 long urLedgerId = underreplicatedLedger.getLedgerId();
-                LOG.info(ledgerIdFormatter.formatLedgerId(urLedgerId));
+                LOG.info("{}", ledgerIdFormatter.formatLedgerId(urLedgerId));
                 long ctime = underreplicatedLedger.getCtime();
                 if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
-                    LOG.info("\tCtime : " + ctime);
+                    LOG.info("\tCtime : {}", ctime);
                 }
                 if (printMissingReplica) {
                     underreplicatedLedger.getReplicaList().forEach((missingReplica) -> {
-                        LOG.info("\tMissingReplica : " + missingReplica);
+                        LOG.info("\tMissingReplica : {}", missingReplica);
                     });
                 }
                 if (printReplicationWorkerId) {
@@ -159,7 +170,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
                         String replicationWorkerId = underreplicationManager
                                                          .getReplicationWorkerIdRereplicatingLedger(urLedgerId);
                         if (replicationWorkerId != null) {
-                            LOG.info("\tReplicationWorkerId : " + replicationWorkerId);
+                            LOG.info("\tReplicationWorkerId : {}", replicationWorkerId);
                         }
                     } catch (ReplicationException.UnavailableException e) {
                         LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,
@@ -167,6 +178,8 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
                     }
                 }
             }
+
+            LOG.info("Under replicated ledger count: {}", underReplicatedLedgerCount.get());
             return null;
         });
         return true;

@@ -25,7 +25,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
-
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
 
@@ -179,6 +178,11 @@ public interface BookieProtocol {
      * Too many concurrent requests.
      */
     int ETOOMANYREQUESTS = 106;
+
+    /**
+     * Ledger in unknown state.
+     */
+    int EUNKNOWNLEDGERSTATE = 107;
 
     short FLAG_NONE = 0x0;
     short FLAG_DO_FENCING = 0x0001;

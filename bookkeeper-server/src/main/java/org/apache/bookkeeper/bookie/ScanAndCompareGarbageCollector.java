@@ -36,7 +36,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -243,6 +242,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                     continue;
                 }
             } catch (Throwable t) {
+                if (!(t.getCause() instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
+                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
+                            ledgerId, t.getClass().getName(), t.getMessage());
+                }
                 latch.countDown();
                 continue;
             }
@@ -268,6 +271,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                         overReplicatedLedgers.add(ledgerId);
                                         garbageCleaner.clean(ledgerId);
                                     }
+                                } else if (!(exception
+                                        instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
+                                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
+                                            ledgerId, exception.getClass().getName(), exception.getMessage());
                                 }
                             } finally {
                                 semaphore.release();

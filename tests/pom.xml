@@ -21,14 +21,14 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests</name>
 
   <properties>
-    <groovy.version>2.5.8</groovy.version>
+    <groovy.version>3.0.11</groovy.version>
   </properties>
 
   <modules>

@@ -17,7 +17,6 @@ package org.apache.bookkeeper.client.api;
 
 import java.lang.reflect.Field;
 import java.util.function.Function;
-
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -171,6 +170,8 @@ public class BKException extends Exception {
             return "Failed to establish a secure connection";
         case Code.MetadataSerializationException:
             return "Failed to serialize metadata";
+        case Code.DataUnknownException:
+            return "Ledger in limbo";
         default:
             return "Unexpected condition";
         }
@@ -284,6 +285,11 @@ public class BKException extends Exception {
          * @since 4.9
          */
         int MetadataSerializationException = -107;
+
+        /**
+         * Operations failed due to ledger data in an unknown state.
+         */
+        int DataUnknownException = -108;
 
         /**
          * Generic exception code used to propagate in replication pipeline.

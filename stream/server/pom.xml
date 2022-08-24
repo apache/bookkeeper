@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-parent</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-server</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Server</name>
@@ -57,6 +57,12 @@
        <groupId>io.dropwizard.metrics</groupId>
        <artifactId>metrics-core</artifactId>
        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

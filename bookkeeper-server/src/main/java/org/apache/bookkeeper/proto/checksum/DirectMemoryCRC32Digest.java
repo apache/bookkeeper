@@ -18,11 +18,9 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.zip.CRC32;
-
 import org.apache.bookkeeper.proto.checksum.CRC32DigestManager.CRC32Digest;
 
 /**
@@ -83,7 +81,7 @@ class DirectMemoryCRC32Digest implements CRC32Digest {
             updateBytesMethod = CRC32.class.getDeclaredMethod("updateBytes", int.class, byte[].class, int.class,
                     int.class);
             updateBytesMethod.setAccessible(true);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             updateByteBufferMethod = null;
             updateBytesMethod = null;
         }

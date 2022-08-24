@@ -28,7 +28,7 @@ import java.nio.channels.FileChannel;
  * A FileChannel for the JournalChannel read and write, we can use this interface to extend the FileChannel
  * which we use in the JournalChannel.
  */
-interface BookieFileChannel {
+public interface BookieFileChannel {
 
     /**
      * An interface for get the FileChannel from the provider.

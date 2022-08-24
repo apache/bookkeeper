@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_WRI
 import static org.apache.bookkeeper.replication.ReplicationStats.READ_DATA_LATENCY;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.WRITE_DATA_LATENCY;
+
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.Unpooled;
 import java.util.Enumeration;
@@ -106,7 +107,7 @@ public class LedgerFragmentReplicator {
 
     protected Throttler replicationThrottle = null;
 
-    private int averageEntrySize;
+    private AtomicInteger averageEntrySize;
 
     private static final int INITIAL_AVERAGE_ENTRY_SIZE = 1024;
     private static final double AVERAGE_ENTRY_SIZE_RATIO = 0.8;
@@ -123,7 +124,7 @@ public class LedgerFragmentReplicator {
         if (conf.getReplicationRateByBytes() > 0) {
             this.replicationThrottle = new Throttler(conf.getReplicationRateByBytes());
         }
-        averageEntrySize = INITIAL_AVERAGE_ENTRY_SIZE;
+        averageEntrySize = new AtomicInteger(INITIAL_AVERAGE_ENTRY_SIZE);
     }
 
     public LedgerFragmentReplicator(BookKeeper bkc, ClientConfiguration conf) {
@@ -338,7 +339,7 @@ public class LedgerFragmentReplicator {
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         if (replicationThrottle != null) {
-            replicationThrottle.acquire(averageEntrySize);
+            replicationThrottle.acquire(averageEntrySize.get());
         }
 
         final WriteCallback multiWriteCallback = new WriteCallback() {
@@ -402,9 +403,7 @@ public class LedgerFragmentReplicator {
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length));
                 if (replicationThrottle != null) {
-                    int toSendSize = toSend.readableBytes();
-                    averageEntrySize = (int) (averageEntrySize * AVERAGE_ENTRY_SIZE_RATIO
-                            + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize);
+                    updateAverageEntrySize(toSend.readableBytes());
                 }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
@@ -418,6 +417,11 @@ public class LedgerFragmentReplicator {
                 toSend.release();
             }
         }, null);
+    }
+
+    private void updateAverageEntrySize(int toSendSize) {
+        averageEntrySize.updateAndGet(value -> (int) (value * AVERAGE_ENTRY_SIZE_RATIO
+                + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize));
     }
 
     /**

@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.proto;
 
 import java.beans.ConstructorProperties;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

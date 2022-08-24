@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import com.google.common.collect.Lists;
 import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
@@ -49,6 +50,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException.BKLedgerClosedException;
@@ -1504,7 +1506,7 @@ public class BookieWriteLedgerTest extends
         }
 
         @Override
-        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException {
+        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException, BookieException {
             localBuf = super.readEntry(ledgerId, entryId);
 
             int capacity = 0;

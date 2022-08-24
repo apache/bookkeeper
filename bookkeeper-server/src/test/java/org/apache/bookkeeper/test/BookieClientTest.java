@@ -29,7 +29,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -37,7 +36,7 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -93,7 +92,8 @@ public class BookieClientTest {
 
         bs = new BookieServer(
                 conf, new TestBookieImpl(conf),
-                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
         executor = OrderedExecutor.newBuilder()

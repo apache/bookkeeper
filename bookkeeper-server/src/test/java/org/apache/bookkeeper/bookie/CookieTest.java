@@ -28,6 +28,7 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.initV2LedgerDirectory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -52,8 +54,8 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -754,5 +756,27 @@ public class CookieTest extends BookKeeperClusterTestCase {
         Versioned<Cookie> zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Cookie cookie = zkCookie.getValue();
         cookie.deleteFromRegistrationManager(rm, conf, zkCookie.getVersion());
+    }
+
+    /**
+     * Tests that custom Bookie Id is properly set in the Cookie (via {@link LegacyCookieValidation}).
+     */
+    @Test
+    public void testBookieIdSetting() throws Exception {
+        final String customBookieId = "myCustomBookieId" + new Random().nextInt();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
+                .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
+                .setBookiePort(bookiePort)
+                .setBookieId(customBookieId)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        validateConfig(conf);
+        Versioned<Cookie> zkCookie = Cookie.readFromRegistrationManager(rm, conf);
+        Version version1 = zkCookie.getVersion();
+        assertTrue("Invalid type expected ZkVersion type",
+                version1 instanceof LongVersion);
+        Cookie cookie = zkCookie.getValue();
+        cookie.writeToRegistrationManager(rm, conf, version1);
+        Assert.assertTrue(cookie.toString().contains(customBookieId));
     }
 }

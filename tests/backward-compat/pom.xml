@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>integration-tests-base-groovy</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>../integration-tests-base-groovy</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -38,4 +38,15 @@
     <module>yahoo-custom-version</module>
     <module>bc-non-fips</module>
   </modules>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

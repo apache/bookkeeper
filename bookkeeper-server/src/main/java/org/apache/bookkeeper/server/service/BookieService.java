@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher.EndpointInfo;
@@ -32,7 +33,6 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,13 +50,15 @@ public class BookieService extends ServerLifecycleComponent {
     public BookieService(BookieConfiguration conf,
                          Bookie bookie,
                          StatsLogger statsLogger,
-                         ByteBufAllocatorWithOomHandler allocator)
+                         ByteBufAllocatorWithOomHandler allocator,
+                         UncleanShutdownDetection uncleanShutdownDetection)
             throws Exception {
         super(NAME, conf, statsLogger);
         this.server = new BookieServer(conf.getServerConf(),
                                        bookie,
                                        statsLogger,
-                                       allocator);
+                                       allocator,
+                                       uncleanShutdownDetection);
         this.allocator = allocator;
     }
 
@@ -83,7 +85,7 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
-        } catch (InterruptedException exc) {
+        } catch (InterruptedException | IOException exc) {
             throw new RuntimeException("Failed to start bookie server", exc);
         }
     }

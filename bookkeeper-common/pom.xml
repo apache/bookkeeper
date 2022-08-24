@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-common</artifactId>
   <name>Apache BookKeeper :: Common</name>
@@ -69,33 +69,21 @@
       <artifactId>error_prone_annotations</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- import for rxjava3 in maven -->
+    <dependency>
+      <groupId>io.reactivex.rxjava3</groupId>
+      <artifactId>rxjava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
-      <version>${log4j.version}</version>
-      <scope>test</scope> <!-- There are tests that rely on this binding in their test logic -->
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${log4j.version}</version>
-      <scope>test</scope> <!-- There are tests that rely on this binding in their test logic -->
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j.version}</version>
-      <scope>test</scope> <!-- There are tests that rely on this binding in their test logic -->
     </dependency>
   </dependencies>
   <build>
@@ -123,6 +111,31 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <sourcepath>${src.dir}</sourcepath>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <doclint>none</doclint>
+          <subpackages>org.apache.bookkeeper.common.annotation</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper Client</title>
+              <packages>org.apache.bookkeeper.common.annotation*</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

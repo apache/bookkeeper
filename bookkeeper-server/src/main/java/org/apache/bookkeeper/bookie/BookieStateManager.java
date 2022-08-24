@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
@@ -118,10 +119,11 @@ public class BookieStateManager implements StateManager {
         this.rm = rm;
         if (this.rm != null) {
             rm.addRegistrationListener(() -> {
-                    forceToUnregistered();
-                    // schedule a re-register operation
-                    registerBookie(false);
-                });
+                log.info("Trying to re-register the bookie");
+                forceToUnregistered();
+                // schedule a re-register operation
+                registerBookie(false);
+            });
         }
 
         this.statusDirs = statusDirs;
@@ -228,6 +230,7 @@ public class BookieStateManager implements StateManager {
             @Override
             public Void call() throws IOException {
                 try {
+                    log.info("Re-registering the bookie");
                     doRegisterBookie();
                 } catch (IOException ioe) {
                     if (throwException) {

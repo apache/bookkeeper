@@ -20,7 +20,6 @@ package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;

@@ -20,13 +20,14 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.ReadOnlyEntryLogger;
+import org.apache.bookkeeper.bookie.ReadOnlyDefaultEntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.commands.bookie.ReadLogMetadataCommand.ReadLogMetadataFlags;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
@@ -139,10 +140,11 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
         });
     }
 
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     private synchronized void initEntryLogger(ServerConfiguration conf) throws IOException {
         // provide read only entry logger
         if (null == entryLogger) {
-            entryLogger = new ReadOnlyEntryLogger(conf);
+            entryLogger = new ReadOnlyDefaultEntryLogger(conf);
         }
     }
 }

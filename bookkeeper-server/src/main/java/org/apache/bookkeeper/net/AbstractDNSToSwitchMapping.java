@@ -20,7 +20,6 @@ package org.apache.bookkeeper.net;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.commons.configuration.Configuration;
@@ -115,7 +114,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     public String dumpTopology() {
         Map<String, String> rack = getSwitchMap();
         StringBuilder builder = new StringBuilder();
-        builder.append("Mapping: ").append(toString()).append("\n");
+        builder.append("Mapping: ").append(this).append("\n");
         if (rack != null) {
             builder.append("Map:\n");
             Set<String> switches = new HashSet<String>();

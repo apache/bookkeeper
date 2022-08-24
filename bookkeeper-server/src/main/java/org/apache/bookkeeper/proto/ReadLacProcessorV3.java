@@ -21,15 +21,13 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -74,10 +72,13 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.warn("No ledger found while performing readLac from ledger: {}", ledgerId, e);
-        } catch (IOException e) {
+            logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
+        } catch (BookieException.DataUnknownException e) {
+            status = StatusCode.EUNKNOWNLEDGERSTATE;
+            logger.error("Ledger {} in unknown state and cannot serve reacLac requests", ledgerId, e);
+        } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
-            logger.error("IOException while performing readLac from ledger: {}", ledgerId);
+            logger.error("IOException while performing readLac from ledger: {}", ledgerId, e);
         } finally {
             ReferenceCountUtil.release(lac);
         }
@@ -89,11 +90,11 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.warn("No ledger found while trying to read last entry: {}", ledgerId, e);
-        } catch (Bookie.NoEntryException e) {
-            status = StatusCode.ENOENTRY;
-            logger.warn("No Entry found while trying to read last entry: {}", ledgerId, e);
-        } catch (IOException e) {
+            logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
+        } catch (BookieException.DataUnknownException e) {
+            status = StatusCode.EUNKNOWNLEDGERSTATE;
+            logger.error("Ledger in an unknown state while trying to read last entry: {}", ledgerId, e);
+        } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
             logger.error("IOException while trying to read last entry: {}", ledgerId, e);
         } finally {

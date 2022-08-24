@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -36,15 +37,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,70 +71,87 @@ public class LedgersIndexRebuildOp {
         this.verbose = verbose;
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean initiate()  {
         LOG.info("Starting ledger index rebuilding");
-
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
-        String basePath = BookieImpl.getCurrentDirectory(conf.getLedgerDirs()[0]).toString();
-        String tempLedgersSubPath = LedgersSubPath + ".TEMP-" + timestamp;
-        Path tempPath = FileSystems.getDefault().getPath(basePath, tempLedgersSubPath);
-        Path currentPath = FileSystems.getDefault().getPath(basePath, LedgersSubPath);
-
-        LOG.info("Starting scan phase (scans journal and entry log files)");
-
-        try {
-            Set<Long> ledgers = new HashSet<>();
-            scanJournals(ledgers);
-            scanEntryLogFiles(ledgers);
-
-            LOG.info("Scan complete, found {} ledgers. "
-                    + "Starting to build a new ledgers index", ledgers.size());
-
-            try (KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
-                    basePath, tempLedgersSubPath, DbConfigType.Small, conf)) {
-                LOG.info("Created ledgers index at temp location {}", tempPath);
-
-                for (Long ledgerId : ledgers) {
-                    DbLedgerStorageDataFormats.LedgerData ledgerData =
-                            DbLedgerStorageDataFormats.LedgerData.newBuilder()
-                                    .setExists(true)
-                                    .setFenced(true)
-                                    .setMasterKey(ByteString.EMPTY).build();
-
-                    byte[] ledgerArray = new byte[16];
-                    ArrayUtil.setLong(ledgerArray, 0, ledgerId);
-                    newIndex.put(ledgerArray, ledgerData.toByteArray());
-                }
-
-                newIndex.sync();
-            }
-        } catch (Throwable t) {
-            LOG.error("Error during rebuild, the original index remains unchanged", t);
-            delete(tempPath);
+        File[] indexDirs = conf.getIndexDirs();
+        if (indexDirs == null) {
+            indexDirs = conf.getLedgerDirs();
+        }
+        if (indexDirs.length != conf.getLedgerDirs().length) {
+            LOG.error("ledger and index dirs size not matched");
             return false;
         }
 
-        // replace the existing index
-        try {
-            Path prevPath = FileSystems.getDefault().getPath(basePath, LedgersSubPath + ".PREV-" + timestamp);
-            LOG.info("Moving original index from original location: {} up to back-up location: {}",
-                    currentPath, prevPath);
-            Files.move(currentPath, prevPath);
-            LOG.info("Moving rebuilt index from: {} to: {}", tempPath, currentPath);
-            Files.move(tempPath, currentPath);
-            LOG.info("Original index has been replaced with the new index. "
-                    + "The original index has been moved to {}", prevPath);
-        } catch (IOException e) {
-            LOG.error("Could not replace original index with rebuilt index. "
-                    + "To return to the original state, ensure the original index is in its original location", e);
-            return false;
+        for (int i = 0; i < indexDirs.length; i++) {
+            File indexDir = indexDirs[i];
+            File ledgerDir = conf.getLedgerDirs()[i];
+
+            String timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
+            String indexBasePath = BookieImpl.getCurrentDirectory(indexDir).toString();
+            String tempLedgersSubPath = LedgersSubPath + ".TEMP-" + timestamp;
+            Path indexTempPath = FileSystems.getDefault().getPath(indexBasePath, tempLedgersSubPath);
+            Path indexCurrentPath = FileSystems.getDefault().getPath(indexBasePath, LedgersSubPath);
+
+            LOG.info("Starting scan phase (scans journal and entry log files)");
+
+            try {
+                Set<Long> ledgers = new HashSet<>();
+                scanJournals(ledgers);
+                File[] lDirs = new File[1];
+                lDirs[0] = ledgerDir;
+                scanEntryLogFiles(ledgers, lDirs);
+
+                LOG.info("Scan complete, found {} ledgers. "
+                        + "Starting to build a new ledgers index", ledgers.size());
+
+                try (KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
+                        indexBasePath, tempLedgersSubPath, DbConfigType.Default, conf)) {
+                    LOG.info("Created ledgers index at temp location {}", indexTempPath);
+
+                    for (Long ledgerId : ledgers) {
+                        DbLedgerStorageDataFormats.LedgerData ledgerData =
+                                DbLedgerStorageDataFormats.LedgerData.newBuilder()
+                                        .setExists(true)
+                                        .setFenced(true)
+                                        .setMasterKey(ByteString.EMPTY).build();
+
+                        byte[] ledgerArray = new byte[16];
+                        ArrayUtil.setLong(ledgerArray, 0, ledgerId);
+                        newIndex.put(ledgerArray, ledgerData.toByteArray());
+                    }
+
+                    newIndex.sync();
+                }
+            } catch (Throwable t) {
+                LOG.error("Error during rebuild, the original index remains unchanged", t);
+                delete(indexTempPath);
+                return false;
+            }
+
+            // replace the existing index
+            try {
+                Path prevPath = FileSystems.getDefault().getPath(indexBasePath,
+                        LedgersSubPath + ".PREV-" + timestamp);
+                LOG.info("Moving original index from original location: {} up to back-up location: {}",
+                        indexCurrentPath, prevPath);
+                Files.move(indexCurrentPath, prevPath);
+                LOG.info("Moving rebuilt index from: {} to: {}", indexTempPath, indexCurrentPath);
+                Files.move(indexTempPath, indexCurrentPath);
+                LOG.info("Original index has been replaced with the new index. "
+                        + "The original index has been moved to {}", prevPath);
+            } catch (IOException e) {
+                LOG.error("Could not replace original index with rebuilt index. "
+                        + "To return to the original state, ensure the original index is in its original location", e);
+                return false;
+            }
         }
 
         return true;
     }
 
-    private void scanEntryLogFiles(Set<Long> ledgers) throws IOException {
-        EntryLogger entryLogger = new EntryLogger(conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
+    private void scanEntryLogFiles(Set<Long> ledgers, File[] lDirs) throws IOException {
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, new LedgerDirsManager(conf, lDirs,
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
         Set<Long> entryLogs = entryLogger.getEntryLogsSet();
 

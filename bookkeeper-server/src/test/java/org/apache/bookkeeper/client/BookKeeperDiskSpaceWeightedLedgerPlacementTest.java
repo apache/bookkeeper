@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -70,7 +69,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
             }
             fail(String.format(
                     "Server %s still has weight %s rather than %s",
-                    bookie.toString(), freeDiskSpace.toString(), target.toString()));
+                    bookie.toString(), freeDiskSpace, target.toString()));
         }
     }
 

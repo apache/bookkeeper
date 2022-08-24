@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -118,7 +119,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
         } else {
             // at least one bookie failed, as we are waiting for all the bookies
             // we can fail immediately
-            LOG.info("ForceLedger did not succeed: Ledger {} on {}", ledgerId, addr);
+            LOG.error("ForceLedger did not succeed: Ledger {} on {}", ledgerId, addr);
             errored = true;
 
             // notify the failure

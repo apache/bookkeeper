@@ -18,8 +18,6 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -55,7 +53,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     // EntryListener Hook
     @VisibleForTesting
     ReadEntryListener entryListener = null;
-    private Set<BookieId> skipStatusRemoveBookies;
+    private 
+      
+      
+      
+      <BookieId> skipStatusRemoveBookies;
 
     class RecoveryReadOp extends ListenerBasedPendingReadOp {
 

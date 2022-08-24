@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import javax.security.auth.login.Configuration;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -118,7 +117,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
 
             if (!fullPath.startsWith("/zookeeper") // skip zookeeper internal nodes
                 && !fullPath.equals("/ledgers") // node created by test setup
-                && !fullPath.equals("/ledgers/" + BookKeeperConstants.AVAILABLE_NODE) // node created by test setup
+                && !fullPath.equals("/ledgers/" + BookKeeperConstants.AVAILABLE_NODE)
+                && !fullPath.equals("/ledgers/" + BookKeeperConstants.INSTANCEID) // node created by test setup
                 ) {
                 assertEquals(1, acls.size());
                 assertEquals(31, acls.get(0).getPerms());

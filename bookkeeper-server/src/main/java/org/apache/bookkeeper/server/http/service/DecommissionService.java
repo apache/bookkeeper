@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
-
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -87,7 +86,7 @@ public class DecommissionService implements HttpEndpointService {
                     });
 
                     response.setCode(HttpServer.StatusCode.OK);
-                    response.setBody("Success send decommission Bookie command " + bookieSrc.toString());
+                    response.setBody("Success send decommission Bookie command " + bookieSrc);
                     return response;
                 } catch (Exception e) {
                     LOG.error("Exception occurred while decommissioning bookie: ", e);

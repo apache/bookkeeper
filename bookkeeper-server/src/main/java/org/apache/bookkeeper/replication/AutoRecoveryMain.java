@@ -22,6 +22,7 @@ package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -183,6 +184,11 @@ public class AutoRecoveryMain {
     @VisibleForTesting
     public Auditor getAuditor() {
         return auditorElector.getAuditor();
+    }
+
+    @VisibleForTesting
+    public ReplicationWorker getReplicationWorker() {
+        return replicationWorker;
     }
 
     /** Is auto-recovery service running? */

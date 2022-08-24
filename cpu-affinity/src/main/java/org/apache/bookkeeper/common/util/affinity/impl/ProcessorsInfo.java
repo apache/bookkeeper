@@ -20,8 +20,6 @@
  */
 package org.apache.bookkeeper.common.util.affinity.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -80,8 +77,8 @@ class ProcessorsInfo {
                 }
             }
 
-            checkArgument(cpuId >= 0);
-            checkArgument(coreId >= 0);
+            com.google.common.base.Preconditions.checkArgument(cpuId >= 0);
+            com.google.common.base.Preconditions.checkArgument(coreId >= 0);
             pi.cpus.put(cpuId, coreId);
         }
 

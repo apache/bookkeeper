@@ -37,7 +37,6 @@ import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.cluster.ServerAssignmentData;
 import org.apache.commons.lang3.tuple.Pair;
-
 /**
  * The default implementation of storage container controller.
  *

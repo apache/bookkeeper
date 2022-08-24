@@ -155,7 +155,7 @@ public class TestServerConfiguration {
     }
 
     @Test
-    public void testCompactionSettings() {
+    public void testCompactionSettings() throws ConfigurationException {
         ServerConfiguration conf = new ServerConfiguration();
         long major, minor;
 
@@ -198,6 +198,26 @@ public class TestServerConfiguration {
         minor = conf.getMinorCompactionInterval();
         Assert.assertEquals(900, minor);
         Assert.assertEquals(21700, major);
+
+        conf.setMinorCompactionInterval(500);
+        try {
+            conf.validate();
+            fail();
+        } catch (ConfigurationException ignore) {
+        }
+
+        conf.setMinorCompactionInterval(600);
+        conf.validate();
+
+        conf.setMajorCompactionInterval(550);
+        try {
+            conf.validate();
+            fail();
+        } catch (ConfigurationException ignore) {
+        }
+
+        conf.setMajorCompactionInterval(600);
+        conf.validate();
 
         // Default Values
         double majorThreshold, minorThreshold;

@@ -19,11 +19,9 @@
 package org.apache.bookkeeper.metadata.etcd.testing;
 
 import io.etcd.jetcd.Client;
-
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang.RandomStringUtils;
@@ -31,12 +29,17 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 /**
  * A test base that setup etcd cluster for testing.
  */
 @Slf4j
 public abstract class EtcdTestBase {
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     protected static EtcdContainer etcdContainer;
 

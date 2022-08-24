@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import com.google.common.net.InetAddresses;
 import java.io.File;
 import java.util.ArrayList;
@@ -487,6 +488,23 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                         availabilityOfEntriesOfLedger.isEntryAvailable(numOfEntries));
             }
         }
+        bkc.close();
+    }
+
+    @Test
+    public void testGetEntriesFromEmptyLedger() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(numOfBookies, numOfBookies, digestType, "testPasswd".getBytes(UTF_8));
+        lh.close();
+        long ledgerId = lh.getId();
+
+        try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString())) {
+            Iterator<LedgerEntry> iter = bkAdmin.readEntries(ledgerId, 0, 0).iterator();
+            assertFalse(iter.hasNext());
+        }
+
         bkc.close();
     }
 

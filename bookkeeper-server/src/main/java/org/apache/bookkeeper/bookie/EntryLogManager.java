@@ -25,8 +25,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
-import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 
 interface EntryLogManager {
 

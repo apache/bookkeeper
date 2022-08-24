@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-tools-parent</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-tools-ledger</artifactId>
   <name>Apache BookKeeper :: Tools :: Ledger</name>
@@ -34,11 +34,6 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <version>${project.parent.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -58,9 +53,21 @@
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <type>test-jar</type>
       <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

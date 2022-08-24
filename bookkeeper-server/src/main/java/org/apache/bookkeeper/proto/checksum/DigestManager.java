@@ -22,10 +22,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
-
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;

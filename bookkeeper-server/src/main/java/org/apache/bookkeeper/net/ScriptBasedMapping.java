@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-
 import org.apache.bookkeeper.util.Shell.ShellCommandExecutor;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -210,8 +209,8 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
 
                 if (m.size() != names.size()) {
                     // invalid number of entries returned by the script
-                    LOG.error("Script " + scriptName + " returned " + Integer.toString(m.size()) + " values when "
-                            + Integer.toString(names.size()) + " were expected.");
+                    LOG.error("Script " + scriptName + " returned " + m.size() + " values when "
+                            + names.size() + " were expected.");
                     return null;
                 }
             } else {
@@ -239,8 +238,8 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
             StringBuilder allOutput = new StringBuilder();
             int numProcessed = 0;
             if (maxArgs < MIN_ALLOWABLE_ARGS) {
-                LOG.warn("Invalid value " + Integer.toString(maxArgs) + " for " + SCRIPT_ARG_COUNT_KEY
-                        + "; must be >= " + Integer.toString(MIN_ALLOWABLE_ARGS));
+                LOG.warn("Invalid value " + maxArgs + " for " + SCRIPT_ARG_COUNT_KEY
+                        + "; must be >= " + MIN_ALLOWABLE_ARGS);
                 return null;
             }
 

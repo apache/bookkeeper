@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import java.util.function.Function;
-
 /**
  * Class the enumerates all the possible error conditions.
  *
@@ -468,9 +467,18 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     }
 
     /**
+     * Bookkeeper ledger in limbo and data may or may not exist.
+     */
+    public static class BKDataUnknownException extends BKException {
+        public BKDataUnknownException() {
+            super(BKException.Code.DataUnknownException);
+        }
+    }
+
+    /**
      * Extract an exception code from an BKException, or use a default if it's another type.
      * The throwable is null, assume that no exception took place and return
-     * {@link BKException.Code.OK}.
+     * {@link BKException.Code#OK}.
      */
     public static int getExceptionCode(Throwable t, int defaultCode) {
         if (t == null) {

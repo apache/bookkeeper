@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -129,6 +127,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             BookieNode node = createBookieNode(addr);
             topology.add(node);
             knownBookies.put(addr, node);
+            historyBookies.put(addr, node);
             String region = getLocalRegion(node);
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()

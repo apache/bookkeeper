@@ -30,7 +30,6 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
@@ -352,8 +350,13 @@ public class LedgerCacheTest {
                 // this is fine, means the ledger was written to the index cache, but not
                 // the entry log
             } catch (IOException ioe) {
-                LOG.info("Shouldn't have received IOException", ioe);
-                fail("Shouldn't throw IOException, should say that entry is not found");
+                if (ioe.getCause() instanceof DefaultEntryLogger.EntryLookupException) {
+                    // this is fine, means the ledger was not fully written to
+                    // the entry log
+                } else {
+                    LOG.info("Shouldn't have received IOException for entry {}", i, ioe);
+                    fail("Shouldn't throw IOException, should say that entry is not found");
+                }
             }
         }
     }

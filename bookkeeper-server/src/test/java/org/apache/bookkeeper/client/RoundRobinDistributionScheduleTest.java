@@ -27,11 +27,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Sets;
-
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

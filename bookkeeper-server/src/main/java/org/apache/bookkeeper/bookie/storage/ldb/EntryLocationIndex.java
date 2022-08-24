@@ -21,19 +21,18 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Iterables;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +46,13 @@ import org.slf4j.LoggerFactory;
 public class EntryLocationIndex implements Closeable {
 
     private final KeyValueStorage locationsDb;
-    private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final EntryLocationIndexStats stats;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
-        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.Huge, conf);
+        locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
 
         this.stats = new EntryLocationIndexStats(
             stats,
@@ -75,6 +74,8 @@ public class EntryLocationIndex implements Closeable {
         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
         LongWrapper value = LongWrapper.get();
 
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean operationSuccess = false;
         try {
             if (locationsDb.get(key.array, value.array) < 0) {
                 if (log.isDebugEnabled()) {
@@ -82,20 +83,34 @@ public class EntryLocationIndex implements Closeable {
                 }
                 return 0;
             }
-
+            operationSuccess = true;
             return value.getValue();
         } finally {
             key.recycle();
             value.recycle();
+            if (operationSuccess) {
+                stats.getLookupEntryLocationStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            } else {
+                stats.getLookupEntryLocationStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            }
         }
     }
 
     public long getLastEntryInLedger(long ledgerId) throws IOException {
         if (deletedLedgers.contains(ledgerId)) {
             // Ledger already deleted
-            return -1;
+            if (log.isDebugEnabled()) {
+                log.debug("Ledger {} already deleted in db", ledgerId);
+            }
+            /**
+             * when Ledger already deleted,
+             * throw Bookie.NoEntryException same like  the method
+             * {@link EntryLocationIndex.getLastEntryInLedgerInternal} solving ledgerId is not found.
+             * */
+            throw new Bookie.NoEntryException(ledgerId, -1);
         }
-
         return getLastEntryInLedgerInternal(ledgerId);
     }
 
@@ -194,7 +209,6 @@ public class EntryLocationIndex implements Closeable {
         long deletedEntriesInBatch = 0;
 
         Batch batch = locationsDb.newBatch();
-        final byte[] firstDeletedKey = new byte[keyToDelete.array.length];
 
         try {
             for (long ledgerId : ledgersToDelete) {
@@ -237,9 +251,7 @@ public class EntryLocationIndex implements Closeable {
                     }
                     batch.remove(keyToDelete.array);
                     ++deletedEntriesInBatch;
-                    if (deletedEntries++ == 0) {
-                        System.arraycopy(keyToDelete.array, 0, firstDeletedKey, 0, firstDeletedKey.length);
-                    }
+                    ++deletedEntries;
                 }
 
                 if (deletedEntriesInBatch > DELETE_ENTRIES_BATCH_SIZE) {
@@ -252,9 +264,6 @@ public class EntryLocationIndex implements Closeable {
             try {
                 batch.flush();
                 batch.clear();
-                if (deletedEntries != 0) {
-                    locationsDb.compact(firstDeletedKey, keyToDelete.array);
-                }
             } finally {
                 firstKeyWrapper.recycle();
                 lastKeyWrapper.recycle();

@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNotEquals;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,9 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementResult;
@@ -1262,6 +1259,10 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         zepp.initialize(confLocal, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
                 NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        List<BookieId> emptyEnsmeble = new ArrayList<>();
+        assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
+                zepp.isEnsembleAdheringToPlacementPolicy(emptyEnsmeble, 3, 2));
 
         List<BookieId> ensemble = new ArrayList<BookieId>();
         ensemble.add(addr1.toBookieId());

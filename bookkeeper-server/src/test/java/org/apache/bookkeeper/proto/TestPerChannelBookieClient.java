@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ExtensionRegistry;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -33,15 +32,14 @@ import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -247,7 +245,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         Bookie delayBookie = new TestBookieImpl(conf) {
             @Override
             public ByteBuf readEntry(long ledgerId, long entryId)
-                    throws IOException, NoLedgerException {
+                    throws IOException, NoLedgerException, BookieException {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {

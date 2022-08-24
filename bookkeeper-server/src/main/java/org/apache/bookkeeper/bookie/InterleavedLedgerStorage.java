@@ -31,17 +31,16 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGES_SCANNED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -50,14 +49,13 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import lombok.Cleanup;
 import lombok.Getter;
-
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -86,9 +84,8 @@ import org.slf4j.LoggerFactory;
 )
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
-    public static final long INVALID_ENTRYID = -1;
 
-    EntryLogger entryLogger;
+    DefaultEntryLogger entryLogger;
     @Getter
     LedgerCache ledgerCache;
     protected CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
@@ -107,8 +104,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     // this indicates that a write has happened since the last flush
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
-    private int pageSize;
-
     // Expose Stats
     @StatsDoc(
         name = STORAGE_GET_OFFSET,
@@ -126,9 +121,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
 
-    @VisibleForTesting
     public InterleavedLedgerStorage() {
-        activeLedgers = new SnapshotMap<Long, Boolean>();
+        activeLedgers = new SnapshotMap<>();
     }
 
     @Override
@@ -161,7 +155,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
+                new DefaultEntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
                         allocator),
                 statsLogger);
     }
@@ -179,7 +173,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.checkpointer = checkpointer;
     }
 
-    @VisibleForTesting
     public void initializeWithEntryLogger(ServerConfiguration conf,
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,
@@ -188,12 +181,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
-        this.entryLogger = entryLogger;
+        this.entryLogger = (DefaultEntryLogger) entryLogger;
         this.entryLogger.addListener(this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
-        pageSize = conf.getPageSize();
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
+                                              this, entryLogger, statsLogger.scope("gc"));
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
@@ -266,6 +259,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
+    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+        gcThread.enableForceGC(forceMajor, forceMinor);
+    }
+
+    @Override
     public boolean isInForceGC() {
         return gcThread.isInForceGC();
     }
@@ -283,7 +281,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         LOG.info("Shutting down GC thread");
         gcThread.shutdown();
         LOG.info("Shutting down entry logger");
-        entryLogger.shutdown();
+        entryLogger.close();
         try {
             ledgerCache.close();
         } catch (IOException e) {
@@ -325,6 +323,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public boolean ledgerExists(long ledgerId) throws IOException {
         return ledgerCache.ledgerExists(ledgerId);
+    }
+
+    @Override
+    public boolean entryExists(long ledgerId, long entryId) throws IOException {
+        //Implementation should be as simple as what's below, but this needs testing
+        //return ledgerCache.getEntryOffset(ledgerId, entryId) > 0;
+        throw new UnsupportedOperationException("entry exists not supported");
     }
 
     @Override
@@ -503,8 +508,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         ledgerCache.flushLedger(true);
     }
 
-    @Override
-    public EntryLogger getEntryLogger() {
+    public DefaultEntryLogger getEntryLogger() {
         return entryLogger;
     }
 
@@ -567,6 +571,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         long checkStart = MathUtils.nowInNano();
         LOG.info("Starting localConsistencyCheck");
@@ -593,7 +598,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                             try {
                                 entryLogger.checkEntry(ledger, entry, offset);
                                 checkedEntries.increment();
-                            } catch (EntryLogger.EntryLookupException e) {
+                            } catch (DefaultEntryLogger.EntryLookupException e) {
                                 if (version != lep.getVersion()) {
                                     pageRetries.increment();
                                     if (lep.isDeleted()) {
@@ -656,5 +661,40 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
         return ledgerCache.getEntriesIterator(ledgerId);
+    }
+
+    @Override
+    public void setLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public boolean hasLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public void clearLimboState(long ledgerId) throws IOException {
+        throw new UnsupportedOperationException(
+                "Limbo state only supported for DbLedgerStorage");
+    }
+
+    @Override
+    public EnumSet<StorageState> getStorageStateFlags() throws IOException {
+        return EnumSet.noneOf(StorageState.class);
+    }
+
+    @Override
+    public void setStorageStateFlag(StorageState flags) throws IOException {
+        throw new UnsupportedOperationException(
+                "Storage state only flags supported for DbLedgerStorage");
+    }
+
+    @Override
+    public void clearStorageStateFlag(StorageState flags) throws IOException {
+        throw new UnsupportedOperationException(
+                "Storage state flags only supported for DbLedgerStorage");
     }
 }

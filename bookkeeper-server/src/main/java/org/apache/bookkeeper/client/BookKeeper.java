@@ -25,13 +25,11 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -41,11 +39,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -496,8 +494,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownTimer = false;
         }
 
-        BookieAddressResolver bookieAddressResolver =
-                new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient());
+        BookieAddressResolver bookieAddressResolver = conf.getBookieAddressResolverEnabled()
+                ? new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient())
+                : new BookieAddressResolverDisabled();
         if (dnsResolver != null) {
             dnsResolver.setBookieAddressResolver(bookieAddressResolver);
         }
@@ -616,6 +615,25 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     void checkForFaultyBookies() {
         List<BookieId> faultyBookies = bookieClient.getFaultyBookies();
+        if (faultyBookies.isEmpty()) {
+            return;
+        }
+
+        boolean isEnabled = false;
+        try {
+            isEnabled = metadataDriver.isHealthCheckEnabled().get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Cannot verify if healthcheck is enabled", e);
+        } catch (ExecutionException e) {
+            LOG.error("Cannot verify if healthcheck is enabled", e.getCause());
+        }
+        if (!isEnabled) {
+            LOG.info("Health checks is currently disabled!");
+            bookieWatcher.releaseAllQuarantinedBookies();
+            return;
+        }
+
         for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
@@ -1646,7 +1664,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
         };
 
-    ClientContext getClientCtx() {
+    public ClientContext getClientCtx() {
         return clientCtx;
     }
 }

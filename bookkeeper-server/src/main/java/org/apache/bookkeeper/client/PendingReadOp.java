@@ -23,9 +23,9 @@ package org.apache.bookkeeper.client;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -59,7 +59,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     private ScheduledFuture<?> speculativeTask = null;
-    protected final List<LedgerEntryRequest> seq;
+    protected final LinkedList<LedgerEntryRequest> seq;
     private final CompletableFuture<LedgerEntries> future;
     private final Set<BookieId> heardFromHosts;
     private final BitSet heardFromHostsBitSet;
@@ -116,6 +116,11 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public void close() {
+            // this request has succeeded before, can't recycle writeSet again
+            if (complete.compareAndSet(false, true)) {
+                rc = BKException.Code.UnexpectedConditionException;
+                writeSet.recycle();
+            }
             entryImpl.close();
         }
 
@@ -175,7 +180,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             if (complete.compareAndSet(false, true)) {
                 this.rc = rc;
                 submitCallback(rc);
-                writeSet.recycle();
                 return true;
             } else {
                 return false;
@@ -472,7 +476,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                   long startEntryId,
                   long endEntryId,
                   boolean isRecoveryRead) {
-        this.seq = new ArrayList<>((int) ((endEntryId + 1) - startEntryId));
+        this.seq = new LinkedList<>();
         this.future = new CompletableFuture<>();
         this.lh = lh;
         this.clientCtx = clientCtx;
@@ -582,6 +586,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    private static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
+        return new ReadContext(bookieIndex, to, entry);
+    }
+
     void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
         if (lh.throttler != null) {
             lh.throttler.acquire();
@@ -611,6 +619,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
         buffer.retain();
+        // if entry has completed don't handle twice
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads

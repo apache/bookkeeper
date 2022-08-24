@@ -37,7 +37,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -103,6 +102,56 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
     @BeforeClass
     public static void setupCluster() throws Exception {
         setupCluster(numBookies);
+    }
+
+    /**
+     * Test that DLM can reliably read data.
+     * Write multiple segments, read back multiple times.
+     * Make sure all entries from all segments are read back.
+     */
+    @Test(timeout = 120000)
+    public void testReadMultipleSegments() throws Exception {
+        String name = "distrlog-testReadMultipleSegments";
+
+        final int numSegments = 10;
+        final int numEntriesPerSegment = 2;
+        final int numReadIterations = 10;
+
+        BKDistributedLogManager dlm = createNewDLM(conf, name);
+        long txid = 1;
+        for (long i = 0; i < numSegments; i++) {
+            BKSyncLogWriter out = dlm.startLogSegmentNonPartitioned();
+            for (long j = 1; j <= numEntriesPerSegment; j++) {
+                LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
+                out.write(op);
+            }
+            out.closeAndComplete();
+            out = dlm.startLogSegmentNonPartitioned();
+            out.closeAndComplete();
+        }
+        assertEquals(txid - 1, dlm.getLastTxId());
+        dlm.close();
+
+        for (int runId = 0; runId < numReadIterations; runId++) {
+            dlm = createNewDLM(conf, name);
+            assertEquals(txid - 1, dlm.getLastTxId());
+
+            long numLogRecs = 0;
+            LogReader reader = dlm.getInputStream(1);
+            LogRecord record = reader.readNext(false);
+            while (null != record) {
+                numLogRecs++;
+                DLMTestUtil.verifyLogRecord(record);
+                assertEquals("(skipped txs in the middle) Failed at iteration " + runId,
+                        numLogRecs, record.getTransactionId());
+                record = reader.readNext(false);
+            }
+            reader.close();
+            dlm.close();
+
+            assertEquals("(missed txs at the end) Failed at iteration " + runId,
+                    txid - 1, numLogRecs);
+        }
     }
 
     private void testNonPartitionedWritesInternal(String name, DistributedLogConfiguration conf) throws Exception {
@@ -305,6 +354,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         AsyncLogWriter writer1 = Utils.ioResult(manager.openAsyncLogWriter());
         Utils.ioResult(writer1.write(DLMTestUtil.getLogRecordInstance(1L)));
         Assert.assertEquals(1L, writer1.getLastTxId());
+        // some flaky ZK errors, Issue 3063
+        Thread.sleep(1000);
         AsyncLogWriter writer2 = Utils.ioResult(manager.openAsyncLogWriter());
         Utils.ioResult(writer2.write(DLMTestUtil.getLogRecordInstance(2L)));
         Assert.assertEquals(2L, writer2.getLastTxId());

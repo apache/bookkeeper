@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -52,7 +51,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -81,7 +79,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -730,7 +727,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             super(bookieIdentifier, conf, statsLogger);
         }
 
-        void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
+        void checkAllLedgers() throws BKException, IOException, InterruptedException {
             super.checkAllLedgers();
             latchRef.get().countDown();
         }

@@ -34,11 +34,10 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import lombok.Cleanup;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -67,6 +66,7 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -103,13 +103,16 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     TestReplicationWorker(String ledgerManagerFactory) {
-        super(3);
+        super(3, 300);
         LOG.info("Running test case using ledger manager : "
                 + ledgerManagerFactory);
         // set ledger manager name
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseConf.setRereplicationEntryBatchSize(3);
+        baseConf.setZkTimeout(7000);
+        baseConf.setZkRetryBackoffMaxMs(500);
+        baseConf.setZkRetryBackoffStartMs(10);
     }
 
     @Override
@@ -594,9 +597,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             int rw1UnableToReadEntriesForReplication = rw1.unableToReadEntriesForReplication.get(lh.getId()).size();
             int rw2UnableToReadEntriesForReplication = rw2.unableToReadEntriesForReplication.get(lh.getId()).size();
             assertTrue(
-                    "unableToReadEntriesForReplication in RW1: " + rw1UnableToReadEntriesForReplication + " in RW2: "
+                    "unableToReadEntriesForReplication in RW1: " + rw1UnableToReadEntriesForReplication
+                            + " in RW2: "
                             + rw2UnableToReadEntriesForReplication,
-                    (rw1UnableToReadEntriesForReplication == 0) || (rw2UnableToReadEntriesForReplication == 0));
+                    (rw1UnableToReadEntriesForReplication == 0)
+                            || (rw2UnableToReadEntriesForReplication == 0));
         } finally {
             rw1.shutdown();
             rw2.shutdown();
@@ -609,7 +614,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         public InjectedReplicationWorker(ServerConfiguration conf, StatsLogger statsLogger,
                 CopyOnWriteArrayList<Long> delayReplicationPeriods)
-                throws CompatibilityException, KeeperException, InterruptedException, IOException {
+                throws CompatibilityException, ReplicationException.UnavailableException,
+                InterruptedException, IOException {
             super(conf, statsLogger);
             this.delayReplicationPeriods = delayReplicationPeriods;
         }
@@ -829,18 +835,63 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             assertTrue("Replication worker should be running", rw.isRunning());
 
             stopZKCluster();
-            // Wait for disconnection to be picked up
-            for (int i = 0; i < 10; i++) {
-                if (!zk.getState().isConnected()) {
-                    break;
-                }
-                Thread.sleep(1000);
-            }
-            assertFalse(zk.getState().isConnected());
+            // ZK is down for shorter period than reconnect timeout
+            Thread.sleep(1000);
             startZKCluster();
 
-            assertTrue("Replication worker should still be running", rw.isRunning());
+            assertTrue("Replication worker should not shutdown", rw.isRunning());
         }
+    }
+
+    /**
+     * Test that the replication worker shuts down on non-recoverable ZK connection loss.
+     */
+    @Test
+    public void testRWZKConnectionLostOnNonRecoverableZkError() throws Exception {
+        for (int j = 0; j < 3; j++) {
+            LedgerHandle lh = bkc.createLedger(1, 1, 1,
+                    BookKeeper.DigestType.CRC32, TESTPASSWD,
+                    null);
+            final long createdLedgerId = lh.getId();
+            for (int i = 0; i < 10; i++) {
+                lh.addEntry(data);
+            }
+            lh.close();
+        }
+
+        killBookie(2);
+        killBookie(1);
+        startNewBookie();
+        startNewBookie();
+
+        servers.get(0).getConfiguration().setRwRereplicateBackoffMs(100);
+        servers.get(0).startAutoRecovery();
+
+        Auditor auditor = getAuditor(10, TimeUnit.SECONDS);
+        ReplicationWorker rw = servers.get(0).getReplicationWorker();
+
+        ZkLedgerUnderreplicationManager ledgerUnderreplicationManager =
+                (ZkLedgerUnderreplicationManager) FieldUtils.readField(auditor,
+                        "ledgerUnderreplicationManager", true);
+
+        ZooKeeper zkc = (ZooKeeper) FieldUtils.readField(ledgerUnderreplicationManager, "zkc", true);
+        auditor.submitAuditTask().get();
+
+        assertTrue(zkc.getState().isConnected());
+        zkc.close();
+        assertFalse(zkc.getState().isConnected());
+
+        auditor.submitAuditTask();
+        rw.run();
+
+        for (int i = 0; i < 10; i++) {
+            if (!rw.isRunning() && !auditor.isRunning()) {
+                break;
+            }
+            Thread.sleep(1000);
+        }
+        assertFalse("Replication worker should NOT be running", rw.isRunning());
+        assertFalse("Auditor should NOT be running", auditor.isRunning());
     }
 
     private void killAllBookies(LedgerHandle lh, BookieId excludeBK)
@@ -975,7 +1026,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
          */
         BookKeeper bkWithMockZK = new BookKeeper(baseClientConf, zkFaultInjectionWrapper);
         long ledgerId = 567L;
-        LedgerHandle lh = bkWithMockZK.createLedgerAdv(ledgerId, 2, 2, 2, BookKeeper.DigestType.CRC32, TESTPASSWD,
+        LedgerHandle lh = bkWithMockZK.createLedgerAdv(ledgerId, 2, 2, 2,
+                BookKeeper.DigestType.CRC32, TESTPASSWD,
                 null);
         for (int i = 0; i < 10; i++) {
             lh.addEntry(i, data);

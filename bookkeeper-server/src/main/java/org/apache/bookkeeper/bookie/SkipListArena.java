@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**

@@ -5,9 +5,10 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 ------------------------------------------------------------------------------------
-- lib/io.dropwizard.metrics-metrics-core-3.2.5.jar
-- lib/io.dropwizard.metrics-metrics-graphite-3.2.5.jar
-- lib/io.dropwizard.metrics-metrics-jvm-3.2.5.jar
+- lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar
+- lib/io.dropwizard.metrics-metrics-graphite-4.1.12.1.jar
+- lib/io.dropwizard.metrics-metrics-jmx-4.1.12.1.jar
+- lib/io.dropwizard.metrics-metrics-jvm-4.1.12.1.jar
 
 Metrics
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
@@ -22,23 +23,28 @@ LongAdder), which was released with the following comments:
     http://creativecommons.org/publicdomain/zero/1.0/
 
 ------------------------------------------------------------------------------------
-- lib/io.netty-netty-buffer-4.1.72.Final.jar
-- lib/io.netty-netty-codec-4.1.72.Final.jar
-- lib/io.netty-netty-codec-dns-4.1.72.Final.jar
-- lib/io.netty-netty-codec-http-4.1.72.Final.jar
-- lib/io.netty-netty-codec-http2-4.1.72.Final.jar
-- lib/io.netty-netty-codec-socks-4.1.72.Final.jar
-- lib/io.netty-netty-common-4.1.72.Final.jar
-- lib/io.netty-netty-handler-4.1.72.Final.jar
-- lib/io.netty-netty-handler-proxy-4.1.72.Final.jar
-- lib/io.netty-netty-resolver-4.1.72.Final.jar
-- lib/io.netty-netty-resolver-dns-4.1.72.Final.jar
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.46.Final.jar
-- lib/io.netty-netty-tcnative-classes-2.0.46.Final.jar
-- lib/io.netty-netty-transport-4.1.72.Final.jar
-- lib/io.netty-netty-transport-classes-epoll-4.1.72.Final.jar
-- lib/io.netty-netty-transport-native-epoll-4.1.72.Final-linux-x86_64.jar
-- lib/io.netty-netty-transport-native-unix-common-4.1.72.Final.jar
+- lib/io.netty-netty-buffer-4.1.77.Final.jar
+- lib/io.netty-netty-codec-4.1.77.Final.jar
+- lib/io.netty-netty-codec-dns-4.1.77.Final.jar
+- lib/io.netty-netty-codec-http-4.1.77.Final.jar
+- lib/io.netty-netty-codec-http2-4.1.77.Final.jar
+- lib/io.netty-netty-codec-socks-4.1.77.Final.jar
+- lib/io.netty-netty-common-4.1.77.Final.jar
+- lib/io.netty-netty-handler-4.1.77.Final.jar
+- lib/io.netty-netty-handler-proxy-4.1.77.Final.jar
+- lib/io.netty-netty-resolver-4.1.77.Final.jar
+- lib/io.netty-netty-resolver-dns-4.1.77.Final.jar
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final.jar
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final-linux-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final-osx-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final-osx-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.52.Final-windows-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-classes-2.0.52.Final.jar
+- lib/io.netty-netty-transport-4.1.77.Final.jar
+- lib/io.netty-netty-transport-classes-epoll-4.1.77.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.77.Final-linux-x86_64.jar
+- lib/io.netty-netty-transport-native-unix-common-4.1.77.Final.jar
 
 
                             The Netty Project
@@ -63,10 +69,14 @@ License for the specific language governing permissions and limitations
 under the License.
 
 ------------------------------------------------------------------------------------
-- lib/io.prometheus-simpleclient-0.8.1.jar
-- lib/io.prometheus-simpleclient_common-0.8.1.jar
-- lib/io.prometheus-simpleclient_hotspot-0.8.1.jar
-- lib/io.prometheus-simpleclient_servlet-0.8.1.jar
+- lib/io.prometheus-simpleclient-0.15.0.jar
+- lib/io.prometheus-simpleclient_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_hotspot-0.15.0.jar
+- lib/io.prometheus-simpleclient_servlet-0.15.0.jar
+- lib/io.prometheus-simpleclient_servlet_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_common-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_otel-0.15.0.jar
+- lib/io.prometheus-simpleclient_tracer_otel_agent-0.15.0.jar
 
 Prometheus instrumentation library for JVM applications
 Copyright 2012-2015 The Prometheus Authors
@@ -80,13 +90,13 @@ SoundCloud Ltd. (http://soundcloud.com/).
 This product includes software developed as part of the
 Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
 ------------------------------------------------------------------------------------
-- lib/org.eclipse.jetty-jetty-http-9.4.43.v20210629.jar
-- lib/org.eclipse.jetty-jetty-io-9.4.43.v20210629.jar
-- lib/org.eclipse.jetty-jetty-security-9.4.43.v20210629jar
-- lib/org.eclipse.jetty-jetty-server-9.4.43.v20210629.jar
-- lib/org.eclipse.jetty-jetty-servlet-9.4.43.v20210629.jar
-- lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar
-- lib/org.eclipse.jetty-jetty-util-ajax-9.4.43.v20210629.jar
+- lib/org.eclipse.jetty-jetty-http-9.4.48.v20220622.jar
+- lib/org.eclipse.jetty-jetty-io-9.4.48.v20220622.jar
+- lib/org.eclipse.jetty-jetty-security-9.4.48.v20220622jar
+- lib/org.eclipse.jetty-jetty-server-9.4.48.v20220622.jar
+- lib/org.eclipse.jetty-jetty-servlet-9.4.48.v20220622.jar
+- lib/org.eclipse.jetty-jetty-util-9.4.48.v20220622.jar
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.48.v20220622.jar
 
 ==============================================================
  Jetty Web Container
@@ -108,7 +118,7 @@ Jetty is dual licensed under both
 
 Jetty may be distributed under either license.
 
-lib/org.eclipse.jetty-jetty-util-9.4.43.v20210629.jar bundles UnixCrypt
+lib/org.eclipse.jetty-jetty-util-9.4.48.v20220622.jar bundles UnixCrypt
 
 The UnixCrypt.java code implements the one way cryptography used by
 Unix systems for simple password protection.  Copyright 1996 Aki Yoshida,
@@ -122,15 +132,15 @@ granted provided that the copyright notice appears in all copies.
 Copyright 2010 Cedric Beust cedric@beust.com
 
 ------------------------------------------------------------------------------------
-- lib/io.grpc-grpc-all-1.42.1.jar
-- lib/io.grpc-grpc-auth-1.42.1.jar
-- lib/io.grpc-grpc-context-1.42.1.jar
-- lib/io.grpc-grpc-core-1.42.1.jar
-- lib/io.grpc-grpc-netty-1.42.1.jar
-- lib/io.grpc-grpc-protobuf-1.42.1.jar
-- lib/io.grpc-grpc-protobuf-lite-1.42.1.jar
-- lib/io.grpc-grpc-stub-1.42.1.jar
-- lib/io.grpc-grpc-testing-1.42.1.jar
+- lib/io.grpc-grpc-all-1.47.0.jar
+- lib/io.grpc-grpc-auth-1.47.0.jar
+- lib/io.grpc-grpc-context-1.47.0.jar
+- lib/io.grpc-grpc-core-1.47.0.jar
+- lib/io.grpc-grpc-netty-1.47.0.jar
+- lib/io.grpc-grpc-protobuf-1.47.0.jar
+- lib/io.grpc-grpc-protobuf-lite-1.47.0.jar
+- lib/io.grpc-grpc-stub-1.47.0.jar
+- lib/io.grpc-grpc-testing-1.47.0.jar
 
 Copyright 2014, gRPC Authors All rights reserved.
 

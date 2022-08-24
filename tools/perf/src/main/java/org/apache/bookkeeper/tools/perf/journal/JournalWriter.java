@@ -17,6 +17,7 @@ package org.apache.bookkeeper.tools.perf.journal;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
+
 import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -89,7 +90,7 @@ public class JournalWriter implements Runnable {
                 "-r", "--rate"
             },
             description = "Write rate bytes/s across journals")
-        public int writeRate = 0;
+        public long writeRate = 0;
 
         @Parameter(
             names = {

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -31,7 +32,6 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command to enable or disable auto recovery in the cluster.
  */
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags> {
 
     static final Logger LOG = LoggerFactory.getLogger(ToggleCommand.class);
@@ -88,7 +89,7 @@ public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags
                 try (LedgerUnderreplicationManager underreplicationManager = mFactory
                          .newLedgerUnderreplicationManager()) {
                     if (flags.status) {
-                        LOG.info("Autorecovery is " + (underreplicationManager.isLedgerReplicationEnabled()
+                        LOG.info("Autorecovery is {}", (underreplicationManager.isLedgerReplicationEnabled()
                                                                      ? "enabled." : "disabled."));
                         return null;
                     }
@@ -111,7 +112,7 @@ public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new UncheckedExecutionException(e);
-            } catch (KeeperException | ReplicationException e) {
+            } catch (ReplicationException e) {
                 throw new UncheckedExecutionException(e);
             }
             return null;

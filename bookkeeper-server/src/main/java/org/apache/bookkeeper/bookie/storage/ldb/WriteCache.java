@@ -25,12 +25,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-
 import java.io.Closeable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -60,11 +58,15 @@ public class WriteCache implements Closeable {
         void accept(long ledgerId, long entryId, ByteBuf entry);
     }
 
-    private final ConcurrentLongLongPairHashMap index =
-            new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongPairHashMap index = ConcurrentLongLongPairHashMap.newBuilder()
+            .expectedItems(4096)
+            .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+            .build();
 
-    private final ConcurrentLongLongHashMap lastEntryMap =
-            new ConcurrentLongLongHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongHashMap lastEntryMap = ConcurrentLongLongHashMap.newBuilder()
+            .expectedItems(4096)
+            .concurrencyLevel(2 * Runtime.getRuntime().availableProcessors())
+            .build();
 
     private final ByteBuf[] cacheSegments;
     private final int segmentsCount;
@@ -78,7 +80,7 @@ public class WriteCache implements Closeable {
     private final AtomicLong cacheOffset = new AtomicLong(0);
     private final LongAdder cacheCount = new LongAdder();
 
-    private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
+    private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final ByteBufAllocator allocator;
 
@@ -194,6 +196,10 @@ public class WriteCache implements Closeable {
         int segmentIdx = (int) (offset >>> segmentOffsetBits);
         entry.writeBytes(cacheSegments[segmentIdx], localOffset, size);
         return entry;
+    }
+
+    public boolean hasEntry(long ledgerId, long entryId) {
+        return index.get(ledgerId, entryId) != null;
     }
 
     public ByteBuf getLastEntry(long ledgerId) {

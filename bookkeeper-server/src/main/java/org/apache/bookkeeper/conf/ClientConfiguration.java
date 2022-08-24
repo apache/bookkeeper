@@ -21,10 +21,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import io.netty.buffer.ByteBuf;
-
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -162,6 +160,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
         "ensemblePlacementPolicyOrderSlowBookies";
+    protected static final String BOOKIE_ADDRESS_RESOLVER_ENABLED = "bookieAddressResolverEnabled";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -199,30 +198,6 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Logs
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
-
-    protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
-
-    /**
-     * Get the bytes rate of re-replication.
-     * Default value is -1 which it means entries will replicated without any throttling activity.
-     *
-     * @return bytes rate of re-replication.
-     */
-    public int getReplicationRateByBytes() {
-        return getInt(REPLICATION_RATE_BY_BYTES, -1);
-    }
-
-    /**
-     * Set the bytes rate of re-replication.
-     *
-     * @param rate bytes rate of re-replication.
-     *
-     * @return ClientConfiguration
-     */
-    public ClientConfiguration setReplicationRateByBytes(int rate) {
-        this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
-        return this;
-    }
 
     /**
      * Construct a default client-side configuration.
@@ -1177,10 +1152,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Enable/disable reordering read sequence on reading entries.
      *
      * <p>If this flag is enabled, the client will use
-     * {@link EnsemblePlacementPolicy#reorderReadSequence(java.util.ArrayList,
+     * {@link EnsemblePlacementPolicy#reorderReadSequence(java.util.List,
      * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt reads from replicas and use
-     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(java.util.ArrayList,
+     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(java.util.List,
      * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt long poll reads from replicas.
      *
@@ -1309,6 +1284,33 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setEnsemblePlacementPolicySlowBookies(boolean enabled) {
         setProperty(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, enabled);
+        return this;
+    }
+
+    /**
+     * Whether to enable BookieAddressResolver.
+     *
+     * @return flag to enable/disable BookieAddressResolver.
+     */
+    public boolean getBookieAddressResolverEnabled() {
+        return getBoolean(BOOKIE_ADDRESS_RESOLVER_ENABLED, true);
+    }
+
+    /**
+     * Enable/Disable BookieAddressResolver.
+     *
+     * <p>
+     * If this flag is true, read bookie information from the metadata service (e.g. ZooKeeper) to resolve the address
+     * from each bookie ID. If all bookie IDs in the cluster are "address:port" or "hostname:port", you can set this
+     * flag to false to reduce requests to the metadata service.
+     * </p>
+     *
+     * @param enabled
+     *          flag to enable/disable BookieAddressResolver.
+     * @return client configuration.
+     */
+    public ClientConfiguration setBookieAddressResolverEnabled(boolean enabled) {
+        setProperty(BOOKIE_ADDRESS_RESOLVER_ENABLED, enabled);
         return this;
     }
 

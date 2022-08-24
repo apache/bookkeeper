@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -72,7 +71,7 @@ class LedgerOpenOp {
      *
      * @param bk
      * @param ledgerId
-     * @param digestType. Ignored if conf.getEnableDigestTypeAutodetection() is true
+     * @param digestType Ignored if conf.getEnableDigestTypeAutodetection() is true
      * @param passwd
      * @param cb
      * @param ctx

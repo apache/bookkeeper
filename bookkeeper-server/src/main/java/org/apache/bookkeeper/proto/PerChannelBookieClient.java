@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -54,12 +55,14 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.security.cert.Certificate;
@@ -181,7 +184,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final int startTLSTimeout;
 
     private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
-        new ConcurrentOpenHashMap<CompletionKey, CompletionValue>();
+            ConcurrentOpenHashMap.<CompletionKey, CompletionValue>newBuilder().build();
 
     // Map that hold duplicated read requests. The idea is to only use this map (synchronized) when there is a duplicate
     // read request for the same ledgerId/entryId
@@ -581,7 +584,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-
+                pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
                 pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);
                 pipeline.addLast("lengthbasedframedecoder",
                         new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
@@ -680,7 +683,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                               new WriteLacCompletion(completionKey, cb,
-                                                     ctx, lac));
+                                                     ctx, ledgerId));
 
         // Build the request
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -1134,6 +1137,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
+
+            // If the request is a V2 add request, we retained the data's reference when creating the AddRequest
+            // object. To avoid the object leak, we need to release the reference if we met any errors
+            // before sending it.
+            if (request instanceof BookieProtocol.AddRequest) {
+                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) request;
+                ar.recycle();
+            }
             return;
         }
 
@@ -1288,6 +1299,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (c != null) {
                 closeChannel(c);
             }
+            return;
         }
 
         if (cause instanceof IOException) {
@@ -1488,7 +1500,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void initTLSHandshake() {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-        SslHandler handler = parentObj.shFactory.newTLSHandler();
+        SocketAddress socketAddress = channel.remoteAddress();
+        InetSocketAddress address;
+        if (socketAddress instanceof LocalAddress) {
+            // if it is a local address, it looks like this: local:hostname:port
+            String[] addr = socketAddress.toString().split(":");
+            String hostname = addr[1];
+            int port = Integer.parseInt(addr[2]);
+            address = new InetSocketAddress(hostname, port);
+        } else if (socketAddress instanceof InetSocketAddress) {
+            address = (InetSocketAddress) socketAddress;
+        } else {
+            throw new RuntimeException("Unexpected socket address type");
+        }
+        SslHandler handler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
         channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
@@ -1512,14 +1537,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             state = ConnectionState.CONNECTED;
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
                                     .get(AuthHandler.ClientSideHandler.class);
-                        if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
-                            // add HostnameVerification or private classes not
-                            // for validation
-                            rc = BKException.Code.UnauthorizedAccessException;
-                        } else {
-                                authHandler.authProvider.onProtocolUpgrade();
-                                activeTlsChannelCounter.inc();
-                            }
+                            authHandler.authProvider.onProtocolUpgrade();
+                            activeTlsChannelCounter.inc();
                         } else if (future.isSuccess()
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
                             LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
@@ -2288,6 +2307,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return BKException.Code.WriteOnReadOnlyBookieException;
             case ETOOMANYREQUESTS:
                 return BKException.Code.TooManyRequestsException;
+            case EUNKNOWNLEDGERSTATE:
+                return BKException.Code.DataUnknownException;
             default:
                 return BKException.Code.UNINITIALIZED;
         }
@@ -2470,12 +2491,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     state = ConnectionState.CONNECTED;
                     AuthHandler.ClientSideHandler authHandler = future.channel().pipeline()
                             .get(AuthHandler.ClientSideHandler.class);
-                    if (conf.getHostnameVerificationEnabled() && !authHandler.verifyTlsHostName(channel)) {
-                        rc = BKException.Code.UnauthorizedAccessException;
-                    } else {
-                        authHandler.authProvider.onProtocolUpgrade();
-                        activeTlsChannelCounter.inc();
-                    }
+                    authHandler.authProvider.onProtocolUpgrade();
+                    activeTlsChannelCounter.inc();
                 } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                     || state == ConnectionState.DISCONNECTED)) {
                     LOG.warn("Closed before connection completed, clean up: {}, current state {}",

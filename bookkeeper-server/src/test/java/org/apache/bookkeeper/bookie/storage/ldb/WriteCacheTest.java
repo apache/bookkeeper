@@ -30,7 +30,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -39,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.Test;
 
 /**
@@ -286,4 +284,24 @@ public class WriteCacheTest {
         cache.close();
     }
 
+    @Test
+    public void testHasEntry() {
+        // Create cache with max size 4 KB and each segment is 128 bytes
+        WriteCache cache = new WriteCache(allocator, 4 * 1024, 128);
+
+        long ledgerId = 0xdede;
+        for (int i = 0; i < 48; i++) {
+            boolean inserted = cache.put(ledgerId, i, Unpooled.wrappedBuffer(("test-" + i).getBytes()));
+            assertTrue(inserted);
+        }
+
+        assertEquals(48, cache.count());
+
+        assertFalse(cache.hasEntry(0xfede, 1));
+        assertFalse(cache.hasEntry(ledgerId, -1));
+        for (int i = 0; i < 48; i++) {
+            assertTrue(cache.hasEntry(ledgerId, i));
+        }
+        assertFalse(cache.hasEntry(ledgerId, 48));
+    }
 }

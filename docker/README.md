@@ -10,7 +10,7 @@ Apache Bookkeeper is a software project of the Apache Software Foundation, provi
 
 Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (Bookkeeper servers). The client only need to connect to a Zookeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
 ## standalone BookKeeper cluster
-Just like running a BookKeeper cluster in one machine(http://bookkeeper.apache.org/docs/latest/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
+Just like running a BookKeeper cluster in one machine(https://bookkeeper.apache.org/docs/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
 ```
 docker run -it \
      --env JAVA_HOME=/usr/lib/jvm/java-11 \
@@ -19,7 +19,7 @@ docker run -it \
      -c "/opt/bookkeeper/bin/bookkeeper localbookie 3"
 ```
 Note: you can first start the container, and then execute "bin/bookkeeper localbookie 3" in the container.  
-After that, you can execute BookKeeper shell command(http://bookkeeper.apache.org/docs/latest/reference/cli/) to test the cluster, you need first log into the container, use command below:
+After that, you can execute BookKeeper shell command(https://bookkeeper.apache.org/docs/reference/cli/) to test the cluster, you need first log into the container, use command below:
 ```
 docker exec -it <container id or name> bash
 ```
@@ -186,7 +186,7 @@ Because
 
 This variable allows you to specify the port on which Bookkeeper should listen for incoming connections.
 
-This will override `bookiePort` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `bookiePort` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "3181".
 
@@ -194,7 +194,7 @@ Default value is "3181".
 
 This variable allows you to specify a list of machines of the Zookeeper ensemble. Each entry has the form of `host:port`. Entries are separated with a comma.
 
-This will override `zkServers` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `zkServers` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "127.0.0.1:2181"
 
@@ -202,7 +202,7 @@ Default value is "127.0.0.1:2181"
 
 This variable allows you to specify the root directory Bookkeeper will use on Zookeeper to store ledgers metadata.
 
-This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "/bookkeeper/ledgers"
 
@@ -223,7 +223,7 @@ Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/jo
 ### Configure files under /opt/bookkeeper/conf
 These files is originally un-tared from the bookkeeper building binary, such as [bookkeeper-server-4.4.0-bin.tar.tgz](https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkeeper-4.4.0-src.tar.gz), and it comes from [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in Bookkeeper repo.
 
-Usually we could config files bk_server.conf, bkenv.sh, log4j.properties, and log4j.shell.properties. Please read and understand them before you do the configuration.
+Usually we could config files bk_server.conf, bkenv.sh, log4j2.xml, and log4j2.shell.xml. Please read and understand them before you do the configuration.
 
 
 ### Caveats

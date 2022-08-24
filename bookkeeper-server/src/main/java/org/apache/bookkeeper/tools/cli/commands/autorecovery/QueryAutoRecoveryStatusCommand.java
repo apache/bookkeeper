@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
@@ -34,7 +35,6 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +99,7 @@ public class QueryAutoRecoveryStatusCommand
             List<LedgerRecoverInfo> ledgerList = new LinkedList<>();
             try {
                 underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-            } catch (KeeperException | ReplicationException.CompatibilityException e) {
+            } catch (ReplicationException e) {
                 throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

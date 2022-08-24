@@ -24,11 +24,9 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -91,7 +89,7 @@ public class DigestTypeBenchmark {
         public BufferType bufferType;
         @Param
         public Digest digest;
-        @Param({"1024", "4086", "8192", "16384", "65536"})
+        @Param({"64", "1024", "4086", "8192", "16384", "65536"})
         public int entrySize;
 
         private DigestManager crc32;
@@ -168,7 +166,7 @@ public class DigestTypeBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 12, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 2, time = 10, timeUnit = TimeUnit.SECONDS)
     @Threads(2)
     @Fork(value = 1, warmups = 1)
     public void digestManager(MyState state) {

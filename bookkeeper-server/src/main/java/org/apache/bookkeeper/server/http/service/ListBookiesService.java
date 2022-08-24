@@ -21,11 +21,9 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -87,7 +85,7 @@ public class ListBookiesService implements HttpEndpointService {
                     hostname = resolved.getHostName();
                 }
                 output.putIfAbsent(b.toString(), hostname);
-                LOG.debug("bookie: " + b.toString() + " hostname:" + hostname);
+                LOG.debug("bookie: " + b + " hostname:" + hostname);
             }
             String jsonResponse = JsonUtil.toJson(output);
 

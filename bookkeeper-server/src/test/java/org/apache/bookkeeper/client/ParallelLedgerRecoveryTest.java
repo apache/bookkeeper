@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
@@ -538,7 +539,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException {
+        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException, BookieException {
             LOG.info("ReadEntry {} - {}", ledgerId, entryId);
             if (delayReadResponse.get() && delayReadOnEntry.get() == entryId) {
                 CountDownLatch latch = delayReadLatch;

@@ -20,11 +20,9 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -35,7 +33,6 @@ import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.configuration.ConfigurationException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

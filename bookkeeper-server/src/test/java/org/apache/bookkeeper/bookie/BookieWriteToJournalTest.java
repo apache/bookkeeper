@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -42,6 +43,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,6 +51,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -57,6 +60,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BookieImpl.class})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
 @Slf4j
 public class BookieWriteToJournalTest {
 
@@ -203,6 +207,33 @@ public class BookieWriteToJournalTest {
         result(latchForceLedger2);
 
         b.shutdown();
+    }
+
+    @Test
+    public void testSmallJournalQueueWithHighFlushFrequency() throws IOException, InterruptedException {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalQueueSize(1);
+        conf.setJournalFlushWhenQueueEmpty(true);
+        conf.setJournalBufferedWritesThreshold(1);
+
+        conf.setJournalDirName(tempDir.newFolder().getPath());
+        conf.setLedgerDirNames(new String[]{tempDir.newFolder().getPath()});
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker);
+        Journal journal = new Journal(0, conf.getJournalDirs()[0], conf, ledgerDirsManager);
+        journal.start();
+
+        final int entries = 1000;
+        CountDownLatch entriesLatch = new CountDownLatch(entries);
+        for (int j = 1; j <= entries; j++) {
+            ByteBuf entry = buildEntry(1, j, -1);
+            journal.logAddEntry(entry, false, (int rc, long ledgerId, long entryId, BookieId addr, Object ctx) -> {
+                entriesLatch.countDown();
+            }, null);
+        }
+        entriesLatch.await();
+
+        journal.shutdown();
     }
 
     private static ByteBuf buildEntry(long ledgerId, long entryId, long lastAddConfirmed) {

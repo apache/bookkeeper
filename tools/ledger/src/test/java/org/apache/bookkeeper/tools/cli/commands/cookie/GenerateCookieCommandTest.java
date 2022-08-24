@@ -34,23 +34,16 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-
 import org.apache.bookkeeper.bookie.Cookie;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.helpers.CookieCommandTestBase;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test {@link GetCookieCommand}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ MetadataDrivers.class })
 public class GenerateCookieCommandTest extends CookieCommandTestBase {
 
     @Rule

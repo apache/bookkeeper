@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -37,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -50,6 +48,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -60,6 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JournalChannel.class, FileChannelProvider.class})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -537,6 +537,7 @@ public class BookieJournalTest {
         JournalChannel jc = writeV2Journal(BookieImpl.getCurrentDirectory(journalDir), 0);
         jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
         jc.getBufferedChannel().flushAndForceWrite(false);
+        jc.close();
 
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());
 

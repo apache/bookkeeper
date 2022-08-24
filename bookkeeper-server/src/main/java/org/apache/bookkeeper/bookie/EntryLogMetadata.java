@@ -23,15 +23,12 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
 import java.util.function.LongPredicate;
-
-import org.apache.bookkeeper.bookie.EntryLogMetadata.EntryLogMetadataRecyclable;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
+
 /**
  * Records the total size, remaining size and the set of ledgers that comprise a
  * entry log.
@@ -44,7 +41,10 @@ public class EntryLogMetadata {
     private static final short DEFAULT_SERIALIZATION_VERSION = 0;
 
     protected EntryLogMetadata() {
-        ledgersMap = new ConcurrentLongLongHashMap(256, 1);
+        ledgersMap = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems(256)
+                .concurrencyLevel(1)
+                .build();
     }
 
     public EntryLogMetadata(long logId) {

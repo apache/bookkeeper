@@ -25,15 +25,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import lombok.Cleanup;
-
 import lombok.SneakyThrows;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +40,10 @@ import org.slf4j.LoggerFactory;
 public class BookKeeperClusterUtils {
     public static final String CURRENT_VERSION = System.getProperty("currentVersion");
     public static final List<String> OLD_CLIENT_VERSIONS =
-            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3");
+            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3");
+            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
+
 
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME =
             Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3", "4.3-yahoo");

@@ -24,10 +24,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.netty.util.Recycler;
-
 import java.util.Iterator;
 import java.util.List;
-
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.collect.Lists;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,14 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,23 +133,28 @@ public class LegacyCookieValidation implements CookieValidation {
         // we are checking all possibilities here, so we don't need to fail if we can only get
         // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
-            // ip address
-            addresses.add(BookieImpl.getBookieAddress(
-                    new ServerConfiguration(conf)
-                            .setUseHostNameAsBookieID(false)
-                            .setAdvertisedAddress(null)
-                            .setAllowLoopback(true)
-            ).toBookieId());
-            // host name
-            addresses.add(BookieImpl.getBookieAddress(
-                    new ServerConfiguration(conf)
-                            .setUseHostNameAsBookieID(true)
-                            .setAdvertisedAddress(null)
-                            .setAllowLoopback(true)
-            ).toBookieId());
-            // advertised address
-            if (null != conf.getAdvertisedAddress()) {
+            if (null != conf.getBookieId()) {
+                // If BookieID is configured, it takes precedence over default network information used as id.
                 addresses.add(BookieImpl.getBookieId(conf));
+            } else {
+                // ip address
+                addresses.add(BookieImpl.getBookieAddress(
+                        new ServerConfiguration(conf)
+                                .setUseHostNameAsBookieID(false)
+                                .setAdvertisedAddress(null)
+                                .setAllowLoopback(true)
+                ).toBookieId());
+                // host name
+                addresses.add(BookieImpl.getBookieAddress(
+                        new ServerConfiguration(conf)
+                                .setUseHostNameAsBookieID(true)
+                                .setAdvertisedAddress(null)
+                                .setAllowLoopback(true)
+                ).toBookieId());
+                // advertised address
+                if (null != conf.getAdvertisedAddress()) {
+                    addresses.add(BookieImpl.getBookieAddress(conf).toBookieId());
+                }
             }
         } catch (UnknownHostException e) {
             throw new BookieException.UnknownBookieIdException(e);
@@ -235,9 +237,13 @@ public class LegacyCookieValidation implements CookieValidation {
 
     private static Set<File> getKnownDirs(List<Cookie> cookies) {
         return cookies.stream()
-                .flatMap((c) -> Arrays.stream(c.getLedgerDirPathsFromCookie()))
-                .map((s) -> new File(s))
-                .collect(Collectors.toSet());
+                .flatMap((c) -> {
+                    List<String> dirs = new ArrayList<>(Arrays.asList(c.getLedgerDirPathsFromCookie()));
+                    if (null != c.getIndexDirPathsFromCookie()) {
+                        dirs.addAll(Arrays.asList(c.getIndexDirPathsFromCookie()));
+                    }
+                    return Arrays.stream(dirs.toArray(new String[]{}));
+                }).map((s) -> new File(s)).collect(Collectors.toSet());
     }
 
     private static void verifyDirsForStorageExpansion(

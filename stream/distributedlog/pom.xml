@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.15.0-SNAPSHOT</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
@@ -37,6 +37,9 @@
     <module>core</module>
     <module>io</module>
   </modules>
+  <properties>
+    <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
+  </properties>
   <build>
     <plugins>
       <plugin>
@@ -44,8 +47,9 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
+          <sourcepath>${src.dir}</sourcepath>
+          <notimestamp>true</notimestamp>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-notimestamp</additionalparam>
           <doclint>none</doclint>
           <groups>
             <group>
@@ -73,7 +77,7 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetection.level=PARANOID</argLine>
+          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetection.level=PARANOID ${test.additional.args}</argLine>
           <forkMode>always</forkMode>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
@@ -87,5 +91,16 @@
       </plugin>
     </plugins>
   </build>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>${spotbugs-annotations.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+  </dependencies>
 </project>
 

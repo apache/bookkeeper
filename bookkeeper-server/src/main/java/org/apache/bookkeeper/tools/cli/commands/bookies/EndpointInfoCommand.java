@@ -87,25 +87,25 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
             BookieId bookieId = BookieId.parse(bookieIdStr);
             Collection<BookieId> allBookies = admin.getAllBookies();
             if (!allBookies.contains(bookieId)) {
-                LOG.info("Bookie " + bookieId + " does not exist, only " + allBookies);
+                LOG.info("Bookie {} does not exist, only {}", bookieId, allBookies);
                 return false;
             }
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
 
-            LOG.info("BookiedId: " + bookieId);
+            LOG.info("BookiedId: {}", bookieId);
             if (!bookieServiceInfo.getProperties().isEmpty()) {
                 LOG.info("Properties");
                 bookieServiceInfo.getProperties().forEach((k, v) -> {
-                    LOG.info(k + ":" + v);
+                    LOG.info("{} : {}", k, v);
                 });
             }
             if (!bookieServiceInfo.getEndpoints().isEmpty()) {
                 bookieServiceInfo.getEndpoints().forEach(e -> {
-                    LOG.info("Endpoint: " + e.getId());
-                    LOG.info("Protocol: " + e.getProtocol());
-                    LOG.info("Address: " + e.getHost() + ":" + e.getPort());
-                    LOG.info("Auth: " + e.getAuth());
-                    LOG.info("Extensions: " + e.getExtensions());
+                    LOG.info("Endpoint: {}", e.getId());
+                    LOG.info("Protocol: {}", e.getProtocol());
+                    LOG.info("Address: {} : {}", e.getHost(), e.getPort());
+                    LOG.info("Auth: {}", e.getAuth());
+                    LOG.info("Extensions: {}", e.getExtensions());
                 });
             } else {
                 LOG.info("Bookie did not publish any endpoint info. Maybe it is down");

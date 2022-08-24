@@ -21,10 +21,8 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.net.BookieId;
@@ -53,6 +51,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                                              BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
         wep.init(request, channel, requestProcessor);
+        requestProcessor.onAddRequestStart(channel);
         return wep;
     }
 
@@ -62,7 +61,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             && !(request.isHighPriority() && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
             LOG.warn("BookieServer is running in readonly mode,"
                     + " so rejecting the request from the client!");
-            sendResponse(BookieProtocol.EREADONLY,
+            sendWriteReqResponse(BookieProtocol.EREADONLY,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.release();
@@ -108,7 +107,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         if (rc != BookieProtocol.EOK) {
             requestProcessor.getRequestStats().getAddEntryStats()
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
-            sendResponse(rc,
+            sendWriteReqResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.recycle();
@@ -125,7 +124,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             requestProcessor.getRequestStats().getAddEntryStats()
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
-        sendResponse(rc,
+        sendWriteReqResponse(rc,
                      ResponseBuilder.buildAddResponse(request),
                      requestProcessor.getRequestStats().getAddRequestStats());
         request.recycle();

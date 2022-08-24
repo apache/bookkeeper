@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -104,7 +102,7 @@ public class InterleavedLedgerStorageTest {
         }
     };
 
-    static class TestableEntryLogger extends EntryLogger {
+    static class TestableDefaultEntryLogger extends DefaultEntryLogger {
         public interface CheckEntryListener {
             void accept(long ledgerId,
                         long entryId,
@@ -113,7 +111,7 @@ public class InterleavedLedgerStorageTest {
         }
         volatile CheckEntryListener testPoint;
 
-        public TestableEntryLogger(
+        public TestableDefaultEntryLogger(
                 ServerConfiguration conf,
                 LedgerDirsManager ledgerDirsManager,
                 EntryLogListener listener,
@@ -138,7 +136,7 @@ public class InterleavedLedgerStorageTest {
     TestStatsProvider statsProvider = new TestStatsProvider();
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     LedgerDirsManager ledgerDirsManager;
-    TestableEntryLogger entryLogger;
+    TestableDefaultEntryLogger entryLogger;
     InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
     final long numWrites = 2000;
     final long moreNumOfWrites = 3000;
@@ -157,7 +155,7 @@ public class InterleavedLedgerStorageTest {
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
-        entryLogger = new TestableEntryLogger(
+        entryLogger = new TestableDefaultEntryLogger(
                 conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
         interleavedStorage.initializeWithEntryLogger(
                 conf, null, ledgerDirsManager, ledgerDirsManager,
@@ -444,7 +442,7 @@ public class InterleavedLedgerStorageTest {
 
 
         // Remove a logger
-        EntryLogger entryLogger = new EntryLogger(conf);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf);
         entryLogger.removeEntryLog(someEntryLogger.get());
 
         // Should fail consistency checker

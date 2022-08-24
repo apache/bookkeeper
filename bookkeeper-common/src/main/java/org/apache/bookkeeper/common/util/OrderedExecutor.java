@@ -23,9 +23,7 @@ import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,9 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
@@ -570,7 +566,7 @@ public class OrderedExecutor implements ExecutorService {
             return threadIds[0];
         }
 
-        return threadIds[MathUtils.signSafeMod(orderingKey, threadIds.length)];
+        return threadIds[chooseThreadIdx(orderingKey, threads.length)];
     }
 
     public ExecutorService chooseThread() {
@@ -591,7 +587,7 @@ public class OrderedExecutor implements ExecutorService {
         if (null == orderingKey) {
             return threads[rand.nextInt(threads.length)];
         } else {
-            return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+            return threads[chooseThreadIdx(orderingKey.hashCode(), threads.length)];
         }
     }
 
@@ -606,7 +602,11 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
+        return threads[chooseThreadIdx(orderingKey, threads.length)];
+    }
+
+    protected static int chooseThreadIdx(long orderingKey, int numThreads) {
+        return MathUtils.signSafeMod(orderingKey >>> 1, numThreads);
     }
 
     protected Runnable timedRunnable(Runnable r) {
