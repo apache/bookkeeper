@@ -511,9 +511,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             boolean shouldForceWrite = true;
             int numReqInLastForceWrite = 0;
             long busyStartTime = System.nanoTime();
+            boolean forceWriteMarkerSent = false;
             while (running) {
                 ForceWriteRequest req = null;
-                boolean forceWriteMarkerSent = false;
                 try {
                     forceWriteThreadTime.add(MathUtils.elapsedNanos(busyStartTime));
                     req = forceWriteRequests.take();
