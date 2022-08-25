@@ -177,6 +177,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
     protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
     protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
+
+    protected static final String SERVER_NUM_ACCEPTOR_THREADS = "serverNumAcceptorThreads";
     protected static final String SERVER_NUM_IO_THREADS = "serverNumIOThreads";
 
     // Zookeeper Parameters
@@ -1492,6 +1494,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getServerNumIOThreads() {
         return getInt(SERVER_NUM_IO_THREADS, 2 * Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Get the number of Acceptor threads.
+     *
+     * @return the number of Acceptor threads
+     */
+    public int getServerNumAcceptorThreads() {
+        return getInt(SERVER_NUM_ACCEPTOR_THREADS, 1);
     }
 
     /**
