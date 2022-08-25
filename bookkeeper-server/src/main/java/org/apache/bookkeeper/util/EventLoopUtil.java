@@ -44,6 +44,10 @@ public class EventLoopUtil {
         return getEventLoopGroup(threadFactory, conf.getServerNumIOThreads(), conf.isBusyWaitEnabled());
     }
 
+    public static EventLoopGroup getServerAcceptorGroup(ServerConfiguration conf, ThreadFactory threadFactory) {
+        return getEventLoopGroup(threadFactory, conf.getServerNumAcceptorThreads(), false);
+    }
+
     private static EventLoopGroup getEventLoopGroup(ThreadFactory threadFactory,
             int numThreads, boolean enableBusyWait) {
         if (!SystemUtils.IS_OS_LINUX) {
