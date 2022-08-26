@@ -364,6 +364,52 @@ public class LedgerChecker {
         }
     }
 
+    public Set<LedgerFragment> getFragmentsOnMigrationBookies(final LedgerHandle lh, Set<BookieId> migrationBookieIds) {
+        // build a set of all fragment migration
+        final Set<LedgerFragment> fragments = new HashSet<>();
+
+        Long curEntryId = null;
+        List<BookieId> curEnsemble = null;
+        for (Map.Entry<Long, ? extends List<BookieId>> e : lh
+                .getLedgerMetadata().getAllEnsembles().entrySet()) {
+            if (curEntryId != null) {
+                Set<Integer> bookieIndexes = new HashSet<Integer>();
+                for (int i = 0; i < curEnsemble.size(); i++) {
+                    if (migrationBookieIds.contains(curEnsemble.get(i))) {
+                        bookieIndexes.add(i);
+                    }
+                }
+
+                if (!bookieIndexes.isEmpty()) {
+                    fragments.add(new LedgerFragment(lh, curEntryId,
+                            e.getKey() - 1, bookieIndexes));
+                }
+            }
+            curEntryId = e.getKey();
+            curEnsemble = e.getValue();
+        }
+
+        if (curEntryId != null) {
+            long lastEntry = lh.getLastAddConfirmed();
+            if (!lh.isClosed() && lastEntry < curEntryId) {
+                lastEntry = curEntryId;
+            }
+
+            Set<Integer> bookieIndexes = new HashSet<Integer>();
+            for (int i = 0; i < curEnsemble.size(); i++) {
+                if (migrationBookieIds.contains(curEnsemble.get(i))) {
+                    bookieIndexes.add(i);
+                }
+            }
+            if (!bookieIndexes.isEmpty()) {
+                LedgerFragment lastLedgerFragment = new LedgerFragment(lh, curEntryId, lastEntry, bookieIndexes);
+                fragments.add(lastLedgerFragment);
+            }
+        }
+
+        return fragments;
+    }
+
     /**
      * Check that all the fragments in the passed in ledger, and report those
      * which are missing.

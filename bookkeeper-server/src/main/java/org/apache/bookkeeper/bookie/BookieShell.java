@@ -82,6 +82,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ReplicasMigrationCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.LedgerMetaDataCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -150,6 +151,7 @@ public class BookieShell implements Tool {
     static final String CMD_BOOKIEINFO = "bookieinfo";
     static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
+    static final String CMD_REPLICASMIGRATION = "replicasMigration";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
@@ -1952,6 +1954,77 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Migrate the specified ledger data on some bookie to other bookies.
+     * */
+    class ReplicasMigrationCmd extends MyCommand {
+
+        ReplicasMigrationCmd() {
+            super(CMD_REPLICASMIGRATION);
+            Option bookiesOpt = new Option("b", "bookieIds", true,
+                    "Bookies corresponding to the migrated replica");
+            Option ledgersOpt = new Option("l", "ledgerIds", true,
+                    "The ledgerIds corresponding to the migrated replica");
+            Option readOnlyOpt = new Option("r", "readOnly", true,
+                    "Whether to set the bookie nodes of the migrated data to readOnly, the default is true");
+            bookiesOpt.setRequired(true);
+            bookiesOpt.setValueSeparator(',');
+            ledgersOpt.setValueSeparator(',');
+            opts.addOption(bookiesOpt);
+            opts.addOption(ledgersOpt);
+            opts.addOption(readOnlyOpt);
+        }
+
+        @Override
+        String getDescription() {
+            return "Migrate the specified ledger data on some bookie to other bookies.";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_REPLICASMIGRATION + " [-bookieIds <bookieaddres1,bookieaddres2,...> "
+                    + "-ledgerIds <ledgerId1,ledgerId2,...> -readOnly <true/false>]";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            ReplicasMigrationCommand cmd = new ReplicasMigrationCommand();
+            ReplicasMigrationCommand.ReplicasMigrationFlags flags =
+                    new ReplicasMigrationCommand.ReplicasMigrationFlags();
+            for (Option option : cmdLine.getOptions()) {
+                switch (option.getOpt()) {
+                    case "bookieIds":
+                        List<String> bookieIdsOfMigratedReplica = new ArrayList<>();
+                        for (Object obj : option.getValuesList().toArray()) {
+                            bookieIdsOfMigratedReplica.add(obj.toString());
+                        }
+                        flags.bookieIdsOfMigratedReplica(bookieIdsOfMigratedReplica);
+                        break;
+                    case "ledgerIds":
+                        List<Long> ledgerIdsOfMigratedReplica = new ArrayList<>();
+                        for (Object obj : option.getValuesList()) {
+                            ledgerIdsOfMigratedReplica.add(Long.parseLong(obj.toString()));
+                        }
+                        flags.ledgerIdsOfMigratedReplica(ledgerIdsOfMigratedReplica);
+                        break;
+                    case "readOnly":
+                        Boolean readOnly = Boolean.valueOf(option.getValue());
+                        flags.readOnly(readOnly);
+                        break;
+                    default:
+                        //do nothing
+                }
+            }
+            boolean result = cmd.apply(bkConf, flags);
+            return (result) ? 0 : -1;
+        }
+    }
+
+    /**
      * Command to retrieve remote bookie endpoint information.
      */
     class EndpointInfoCmd extends MyCommand {
@@ -2271,6 +2344,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
+        commands.put(CMD_REPLICASMIGRATION, new ReplicasMigrationCmd());
         commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());

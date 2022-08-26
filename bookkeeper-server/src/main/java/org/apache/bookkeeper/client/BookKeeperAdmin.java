@@ -1562,6 +1562,18 @@ public class BookKeeperAdmin implements AutoCloseable {
         urlManager.setLostBookieRecoveryDelay(previousLostBookieRecoveryDelayValue);
     }
 
+    public Map<BookieId, Set<Long>> listLedgers(Set<BookieId> bookieIds) throws BKAuditException {
+        Map<BookieId, Set<Long>> bookieLedgerMaps = new HashMap<>();
+        BookieLedgerIndexer bookieLedgerIndexer = new BookieLedgerIndexer(bkc.ledgerManager);
+        Map<String, Set<Long>> bookieToLedgersMap = bookieLedgerIndexer.getBookieToLedgerIndex();
+        for (BookieId bookieId : bookieIds) {
+            Set<Long> ledgersStoredInThisBookie = bookieToLedgersMap.getOrDefault(bookieId.toString(),
+                    new HashSet<>());
+            bookieLedgerMaps.put(bookieId, ledgersStoredInThisBookie);
+        }
+        return bookieLedgerMaps;
+    }
+
     /**
      * Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
      * sure the ledgers stored in the given decommissioning bookie are properly

@@ -73,6 +73,7 @@ public class AutoRecoveryMain {
     final BookKeeper bkc;
     final AuditorElector auditorElector;
     final ReplicationWorker replicationWorker;
+    final ReplicasMigrationWorker replicasMigrationWorker;
     final AutoRecoveryDeathWatcher deathWatcher;
     int exitCode;
     private volatile boolean shuttingDown = false;
@@ -113,6 +114,10 @@ public class AutoRecoveryMain {
             bkc,
             false,
             statsLogger.scope(REPLICATION_WORKER_SCOPE));
+        replicasMigrationWorker = new ReplicasMigrationWorker(
+                conf,
+                bkc,
+                statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
@@ -122,6 +127,7 @@ public class AutoRecoveryMain {
     public void start() {
         auditorElector.start();
         replicationWorker.start();
+        replicasMigrationWorker.start();
         if (null != uncaughtExceptionHandler) {
             deathWatcher.setUncaughtExceptionHandler(uncaughtExceptionHandler);
         }

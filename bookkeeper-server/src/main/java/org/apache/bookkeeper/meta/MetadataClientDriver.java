@@ -18,6 +18,9 @@
  */
 package org.apache.bookkeeper.meta;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,6 +31,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.zookeeper.KeeperException;
 
 /**
  * Driver to manage all the metadata managers required by a bookkeeper client.
@@ -105,6 +109,50 @@ public interface MetadataClientDriver extends AutoCloseable {
      *            listener listening on metadata client session states.
      */
     void setSessionStateListener(SessionStateListener sessionStateListener);
+
+    /**
+     * Get the list of ledgers corresponding to the replica to be migrated.
+     * */
+    default List<String> listLedgersOfMigrationReplicas(String migrationReplicasPath)
+            throws InterruptedException, KeeperException {
+        return new ArrayList<>();
+    }
+
+    /**
+     * After obtaining a replica migration task,
+     * lock the replica task to prevent it from being executed by other workers.
+     * */
+    default void lockMigrationReplicas(String lockPath, String advertisedAddress)
+            throws InterruptedException, KeeperException, UnsupportedOperationException{
+        throw  new UnsupportedOperationException("lockMigrationReplicas is not supported "
+                + "by this metadata driver");
+    }
+
+    /**
+     * Get the bookies corresponding to the replica to be migrated.
+     * */
+    default String getOwnerBookiesMigrationReplicas(String ledgerForMigrationReplicasPath)
+            throws InterruptedException, KeeperException, UnsupportedEncodingException {
+        throw  new UnsupportedOperationException("getOwnerBookiesMigrationReplicas is not supported "
+                + "by this metadata driver");
+    }
+
+    /**
+     * Delete the corresponding zookeeper path.
+     * */
+    default void deleteZkPath(String path)
+            throws InterruptedException, KeeperException, UnsupportedOperationException {
+        throw  new UnsupportedOperationException("deleteZkPath is not supported "
+                + "by this metadata driver");
+    }
+
+    /**
+     * Check if zookeeper path exists.
+     * */
+    default boolean exists(String path) throws InterruptedException, KeeperException {
+        throw  new UnsupportedOperationException("existPath is not supported "
+                + "by this metadata driver");
+    }
 
     /**
      * Return health check is enable or disable.

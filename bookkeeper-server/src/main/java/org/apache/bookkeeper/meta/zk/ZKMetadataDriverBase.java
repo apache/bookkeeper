@@ -23,12 +23,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.DISABLE_HEALTH_CHECK;
 import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
+import static org.apache.bookkeeper.util.BookKeeperConstants.MIGRATION_REPLICAS;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,6 +50,7 @@ import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -53,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Op;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -148,6 +157,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // disable health check path
     String disableHealthCheckPath;
 
+    // Migrated Replicas  path
+    String replicasMigrationPath;
+
     // ledgers root path
     protected String ledgersRootPath;
 
@@ -239,6 +251,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         }
 
         disableHealthCheckPath = ledgersRootPath + "/" + DISABLE_HEALTH_CHECK;
+        replicasMigrationPath = ledgersRootPath + "/" + MIGRATION_REPLICAS;
         // once created the zookeeper client, create the layout manager and registration client
         this.layoutManager = new ZkLayoutManager(
             zk,
@@ -287,6 +300,52 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         }, null);
 
         return createResult;
+    }
+
+    private String getLedgerForReplicasMigrationPath(long ledgerId) {
+        return String.format("%s/%s", replicasMigrationPath, ledgerId);
+    }
+
+    public void submitToMigrateReplicas(Map<Long, Set<BookieId>> toMigratedLedgerAndBookieMap)
+            throws InterruptedException, KeeperException {
+        List<Op> multiOps = Lists.newArrayListWithExpectedSize(toMigratedLedgerAndBookieMap.size());
+        for (Map.Entry<Long, Set<BookieId>> entry : toMigratedLedgerAndBookieMap.entrySet()) {
+            Long ledgerId = entry.getKey();
+            String bookies = StringUtils.join(entry.getValue(), ",");
+            multiOps.add(Op.create(getLedgerForReplicasMigrationPath(ledgerId),
+                    bookies.getBytes(StandardCharsets.UTF_8), acls, CreateMode.PERSISTENT));
+        }
+        zk.multi(multiOps);
+    }
+
+    public List<String> listLedgersOfMigrationReplicas(String migrationReplicasPath)
+            throws InterruptedException, KeeperException {
+        try {
+            return zk.getChildren(migrationReplicasPath, false);
+        } catch (KeeperException.NoNodeException e) {
+            zk.create(migrationReplicasPath, BookKeeperConstants.EMPTY_BYTE_ARRAY, acls, CreateMode.PERSISTENT);
+            return new ArrayList<>();
+        }
+    }
+
+    public void lockMigrationReplicas(String lockPath, String advertisedAddress)
+            throws InterruptedException, KeeperException, UnsupportedOperationException{
+        zk.create(lockPath, advertisedAddress.getBytes(StandardCharsets.UTF_8), acls, CreateMode.EPHEMERAL);
+    }
+
+    public String getOwnerBookiesMigrationReplicas(String ledgerForMigrationReplicasPath)
+            throws InterruptedException, KeeperException, UnsupportedEncodingException {
+        byte[] data = zk.getData(ledgerForMigrationReplicasPath, null, null);
+        return data == null ? "" : new String(data, StandardCharsets.UTF_8);
+    }
+
+    public void deleteZkPath(String path)
+            throws InterruptedException, KeeperException, UnsupportedOperationException{
+        zk.delete(path, -1);
+    }
+
+    public boolean exists(String path) throws InterruptedException, KeeperException {
+        return zk.exists(path, null) != null;
     }
 
     public CompletableFuture<Void> enableHealthCheck() {
