@@ -371,8 +371,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                     }
                 }
             } else {
-                LOG.warn("Failed to write entry ({}, {}): {}",
-                        ledgerId, entryId, BKException.getMessage(rc));
+                LOG.warn("Failed to write entry ({}, {}) to bookie ({}, {}): {}",
+                        ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
                 lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr));
             }
             return;
