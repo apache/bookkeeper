@@ -160,7 +160,7 @@ public class BookieShell implements Tool {
     static final String CMD_REBUILD_DB_LEDGERS_INDEX = "rebuild-db-ledgers-index";
     static final String CMD_CHECK_DB_LEDGERS_INDEX = "check-db-ledgers-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
-    static final String CMD_QUERY_AUTORECOVERY_STATUS = "queryrecoverystatus";
+    static final String CMD_QUERY_AUTORECOVERY_STATUS = "queryautorecoverystatus";
 
     // cookie commands
     static final String CMD_CREATE_COOKIE = "cookie_create";
