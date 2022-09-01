@@ -25,8 +25,6 @@ on:
     branches:
       - master
       - branch-*
-    paths-ignore:
-      - 'site3/**'
     workflow_dispatch:
 
 env:
@@ -44,7 +42,16 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
+      - name: Detect changed files
+        id: changes
+        uses: apache/pulsar-test-infra/paths-filter@master
+        with:
+          filters: |
+            site3:
+              - 'site3/**'
+
       - name: Cache local Maven repository
+        if: steps.changes.outputs.site3 != 'true'
         id: cache
         uses: actions/cache@v2
         with:
@@ -55,15 +62,19 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
+        if: steps.changes.outputs.site3 != 'true'
         uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
           java-version: 11
       - name: Validate pull request
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn clean -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         
       - name: Check license files
+        if: steps.changes.outputs.site3 != 'true'
         run: dev/check-all-licenses
 
       - name: Generate Javadoc
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
