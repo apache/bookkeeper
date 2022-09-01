@@ -25,8 +25,6 @@ on:
     branches:
       - master
       - branch-*
-    paths-ignore:
-      - 'site3/**'
     workflow_dispatch:
 
 env:
@@ -44,7 +42,16 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
+      - name: Detect changed files
+        id: changes
+        uses: apache/pulsar-test-infra/paths-filter@master
+        with:
+          filters: |
+            site3:
+              - 'site3/**'
+
       - name: Cache local Maven repository
+        if: steps.changes.outputs.site3 != 'true'
         id: cache
         uses: actions/cache@v2
         with:
@@ -55,15 +62,20 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 1.8
+        if: steps.changes.outputs.site3 != 'true'
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
       - name: Install Module
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu clean install -DskipTests
       - name: Test current server with old clients
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu -DintegrationTests -pl :backward-compat-current-server-old-clients test
       - name: Test progressive upgrade
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu -DintegrationTests -pl :upgrade test
       - name: Other tests
+        if: steps.changes.outputs.site3 != 'true'
         run: |
           mvn -B -nsu -DintegrationTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test

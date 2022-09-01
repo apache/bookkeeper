@@ -24,8 +24,6 @@ on:
   pull_request:
     branches:
       - master
-    paths-ignore:
-      - 'site3/**'
     workflow_dispatch:
 
 env:
@@ -43,7 +41,16 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
+      - name: Detect changed files
+        id: changes
+        uses: apache/pulsar-test-infra/paths-filter@master
+        with:
+          filters: |
+            site3:
+              - 'site3/**'
+
       - name: Cache local Maven repository
+        if: steps.changes.outputs.site3 != 'true'
         id: cache
         uses: actions/cache@v2
         with:
@@ -55,13 +62,16 @@ jobs:
 
 
       - name: Set up JDK 11
+        if: steps.changes.outputs.site3 != 'true'
         uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
           java-version: 11
       - name: Build with Maven
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
       - name: Run StreamStorage tests
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu -f stream/pom.xml verify -DstreamTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure

@@ -25,8 +25,6 @@ on:
     branches:
       - master
       - branch-*
-    paths-ignore:
-      - 'site3/**'
 
 jobs:
   test:
@@ -40,7 +38,16 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
+      - name: Detect changed files
+        id: changes
+        uses: apache/pulsar-test-infra/paths-filter@master
+        with:
+          filters: |
+            site3:
+              - 'site3/**'
+
       - name: Cache local Maven repository
+        if: steps.changes.outputs.site3 != 'true'
         id: cache
         uses: actions/cache@v2
         with:
@@ -51,10 +58,12 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
+        if: steps.changes.outputs.site3 != 'true'
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 11
 
       - name: mvn package
+        if: steps.changes.outputs.site3 != 'true'
         run: mvn -B -nsu clean package -DskipTests
