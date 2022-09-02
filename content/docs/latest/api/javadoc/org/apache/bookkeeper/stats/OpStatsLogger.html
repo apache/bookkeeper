@@ -158,7 +158,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerFailedEvent(long,java.util.concurrent.TimeUnit)">registerFailedEvent</a></span>&#8203;(long&nbsp;eventLatencyMillis,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerFailedEvent(long,java.util.concurrent.TimeUnit)">registerFailedEvent</a></span>&#8203;(long&nbsp;eventLatency,
                    java.util.concurrent.TimeUnit&nbsp;unit)</code></th>
 <td class="colLast">
 <div class="block">Increment the failed op counter with the given eventLatency.</div>
@@ -173,7 +173,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerSuccessfulEvent(long,java.util.concurrent.TimeUnit)">registerSuccessfulEvent</a></span>&#8203;(long&nbsp;eventLatencyMillis,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerSuccessfulEvent(long,java.util.concurrent.TimeUnit)">registerSuccessfulEvent</a></span>&#8203;(long&nbsp;eventLatency,
                        java.util.concurrent.TimeUnit&nbsp;unit)</code></th>
 <td class="colLast">
 <div class="block">An operation succeeded with the given eventLatency.</div>
@@ -214,12 +214,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>registerFailedEvent</h4>
-<pre class="methodSignature">void&nbsp;registerFailedEvent&#8203;(long&nbsp;eventLatencyMillis,
+<pre class="methodSignature">void&nbsp;registerFailedEvent&#8203;(long&nbsp;eventLatency,
                          java.util.concurrent.TimeUnit&nbsp;unit)</pre>
 <div class="block">Increment the failed op counter with the given eventLatency.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>eventLatencyMillis</code> - The event latency</dd>
+<dd><code>eventLatency</code> - The event latency</dd>
 <dd><code>unit</code> - </dd>
 </dl>
 </li>
@@ -230,13 +230,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>registerSuccessfulEvent</h4>
-<pre class="methodSignature">void&nbsp;registerSuccessfulEvent&#8203;(long&nbsp;eventLatencyMillis,
+<pre class="methodSignature">void&nbsp;registerSuccessfulEvent&#8203;(long&nbsp;eventLatency,
                              java.util.concurrent.TimeUnit&nbsp;unit)</pre>
 <div class="block">An operation succeeded with the given eventLatency. Update
  stats to reflect the same</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>eventLatencyMillis</code> - The event latency</dd>
+<dd><code>eventLatency</code> - The event latency</dd>
 <dd><code>unit</code> - </dd>
 </dl>
 </li>
