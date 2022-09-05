@@ -441,6 +441,31 @@ public interface EnsemblePlacementPolicy {
     }
 
     /**
+     * Returns placement result. If the currentEnsemble is not adhering placement policy, returns new ensemble that
+     * adheres placement policy. It should be implemented so as to minify the number of bookies replaced.
+     *
+     * @param ensembleSize
+     *            ensemble size
+     * @param writeQuorumSize
+ *                writeQuorumSize of the ensemble
+     * @param ackQuorumSize
+     *            ackQuorumSize of the ensemble
+     * @param excludeBookies
+     *            bookies that should not be considered as targets
+     * @param currentEnsemble
+     *            current ensemble
+     * @return a placement result
+     */
+    default PlacementResult<List<BookieId>> replaceToAdherePlacementPolicy(
+            int ensembleSize,
+            int writeQuorumSize,
+            int ackQuorumSize,
+            Set<BookieId> excludeBookies,
+            List<BookieId> currentEnsemble) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * enum for PlacementPolicyAdherence. Currently we are supporting tri-value
      * enum for PlacementPolicyAdherence. If placement policy is met strictly
      * then it is MEETS_STRICT, if it doesn't adhere to placement policy then it
@@ -481,7 +506,15 @@ public interface EnsemblePlacementPolicy {
             return result;
         }
 
+        /**
+         * Use {@link #getAdheringToPolicy}.
+         */
+        @Deprecated
         public PlacementPolicyAdherence isAdheringToPolicy() {
+            return policyAdherence;
+        }
+
+        public PlacementPolicyAdherence getAdheringToPolicy() {
             return policyAdherence;
         }
     }

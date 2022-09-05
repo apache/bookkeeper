@@ -295,6 +295,151 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndNotMarkToUnderreplication()
+            throws Exception {
+        int numOfBookies = 5;
+        int numOfLedgersNotAdheringToPlacementPolicy = 0;
+        List<BookieId> bookieAddresses = new ArrayList<>();
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
+                bookieAddresses.add(bookieAddress);
+                regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+            }
+        }
+
+        // only three racks
+        StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
+        StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack2");
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerManager lm = mFactory.newLedgerManager();
+        int ensembleSize = 5;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+        int minNumRacksPerWriteQuorumConfValue = 3;
+
+        /*
+         * this closed ledger doesn't adhere to placement policy because there are only
+         * 3 racks, and the ensembleSize is 5.
+         */
+        LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(1L, initMeta).get();
+        numOfLedgersNotAdheringToPlacementPolicy++;
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        setServerConfigPropertiesForRackPlacement(servConf);
+        MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
+        try {
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    0, ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
+        } finally {
+            Auditor auditor = auditorRef.getValue();
+            if (auditor != null) {
+                auditor.close();
+            }
+        }
+        LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+        long unnderReplicateLedgerId = underreplicationManager.pollLedgerToRereplicate();
+        assertEquals(unnderReplicateLedgerId, -1);
+    }
+
+    @Test
+    public void testPlacementPolicyCheckWithLedgersNotAdheringToPlacementPolicyAndMarkToUnderreplication()
+            throws Exception {
+        int numOfBookies = 5;
+        int numOfLedgersNotAdheringToPlacementPolicy = 0;
+        List<BookieId> bookieAddresses = new ArrayList<>();
+        try (RegistrationManager regManager = driver.createRegistrationManager()) {
+            for (int i = 0; i < numOfBookies; i++) {
+                BookieId bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181).toBookieId();
+                bookieAddresses.add(bookieAddress);
+                regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
+            }
+        }
+
+        // only three racks
+        StaticDNSResolver.addNodeToRack("98.98.98.0", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.1", "/rack2");
+        StaticDNSResolver.addNodeToRack("98.98.98.2", "/rack3");
+        StaticDNSResolver.addNodeToRack("98.98.98.3", "/rack1");
+        StaticDNSResolver.addNodeToRack("98.98.98.4", "/rack2");
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerManager lm = mFactory.newLedgerManager();
+        int ensembleSize = 5;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+        int minNumRacksPerWriteQuorumConfValue = 3;
+
+        /*
+         * this closed ledger doesn't adhere to placement policy because there are only
+         * 3 racks, and the ensembleSize is 5.
+         */
+        LedgerMetadata initMeta = LedgerMetadataBuilder.create()
+                .withId(1L)
+                .withEnsembleSize(ensembleSize)
+                .withWriteQuorumSize(writeQuorumSize)
+                .withAckQuorumSize(ackQuorumSize)
+                .newEnsembleEntry(0L, bookieAddresses)
+                .withClosedState()
+                .withLastEntryId(100)
+                .withLength(10000)
+                .withDigestType(DigestType.DUMMY)
+                .withPassword(new byte[0])
+                .build();
+        lm.createLedgerMetadata(1L, initMeta).get();
+        numOfLedgersNotAdheringToPlacementPolicy++;
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        servConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorumConfValue);
+        servConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
+        setServerConfigPropertiesForRackPlacement(servConf);
+        MutableObject<Auditor> auditorRef = new MutableObject<Auditor>();
+        try {
+            TestStatsLogger statsLogger = startAuditorAndWaitForPlacementPolicyCheck(servConf, auditorRef);
+            Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    numOfLedgersNotAdheringToPlacementPolicy, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+            Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
+                    .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
+            assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
+                    0, ledgersSoftlyAdheringToPlacementPolicyGuage.getSample());
+        } finally {
+            Auditor auditor = auditorRef.getValue();
+            if (auditor != null) {
+                auditor.close();
+            }
+        }
+        LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+        long unnderReplicateLedgerId = underreplicationManager.pollLedgerToRereplicate();
+        assertEquals(unnderReplicateLedgerId, 1L);
+    }
+
+    @Test
     public void testPlacementPolicyCheckForURLedgersElapsedRecoveryGracePeriod() throws Exception {
         testPlacementPolicyCheckWithURLedgers(true);
     }

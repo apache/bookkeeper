@@ -236,6 +236,28 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
+    public PlacementResult<List<BookieId>> replaceToAdherePlacementPolicy(
+            int ensembleSize,
+            int writeQuorumSize,
+            int ackQuorumSize,
+            Set<BookieId> excludeBookies,
+            List<BookieId> currentEnsemble) {
+        final PlacementResult<List<BookieId>> placementResult =
+                super.replaceToAdherePlacementPolicy(ensembleSize, writeQuorumSize, ackQuorumSize,
+                        excludeBookies, currentEnsemble);
+        if (placementResult.getAdheringToPolicy() != PlacementPolicyAdherence.FAIL) {
+            return placementResult;
+        } else {
+            if (slave == null) {
+                return placementResult;
+            } else {
+                return slave.replaceToAdherePlacementPolicy(ensembleSize, writeQuorumSize, ackQuorumSize,
+                        excludeBookies, currentEnsemble);
+            }
+        }
+    }
+
+    @Override
     public void handleBookiesThatLeft(Set<BookieId> leftBookies) {
         super.handleBookiesThatLeft(leftBookies);
         if (null != slave) {

@@ -241,7 +241,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 newEnsemblePlacementResult.getResult());
         assertTrue("New ensemble should contain all 6 rw bookies", newEnsembleSet.containsAll(rwAddrs));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
 
         /*
          * there are enough bookies so newEnsemble should succeed.
@@ -251,7 +251,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("New ensemble should contain 3 rw bookies",
                 (newEnsembleSet.size() == 3) && (rwAddrs.containsAll(newEnsembleSet)));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
     }
 
     @Test
@@ -309,7 +309,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
             assertTrue("Bookie from default faultDomain shouldn't be part of ensemble",
                     Collections.disjoint(newEnsembleSet, bookiesInDefaultFaultDomain));
             assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                    newEnsemblePlacementResult.isAdheringToPolicy());
+                    newEnsemblePlacementResult.getAdheringToPolicy());
         }
     }
 
@@ -373,7 +373,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("Bookie from default faultDomain shouldn't be part of ensemble",
                 Collections.disjoint(newEnsembleSet, bookiesInDefaultFaultDomain));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
 
         try {
             /*
@@ -404,7 +404,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         newEnsembleSet = new HashSet<BookieId>(newEnsemblePlacementResult.getResult());
         assertTrue("New ensemble should contain 4 different bookies", newEnsembleSet.size() == 4);
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
     }
 
     @Test
@@ -479,7 +479,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          */
         newEnsemblePlacementResult = zepp.newEnsemble(ensSize, writeQuorum, 2, null, new HashSet<>());
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
         List<BookieId> newEnsemble = newEnsemblePlacementResult.getResult();
         Set<BookieId> newEnsembleSet = new HashSet<BookieId>(newEnsemble);
         assertTrue("New ensemble should contain all 6 rw bookies in non-default fault domains",
@@ -563,7 +563,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("New ensemble should contain 6 rw bookies in non-default fault domains",
                 rwAddrs.containsAll(newEnsembleSet) && (newEnsembleSet.size() == 6));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
         Set<String> bookiesNetworkLocations = new HashSet<String>();
 
         for (BookieId bookieAddr : newEnsembleSet) {
@@ -654,7 +654,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
                 excludedBookies);
         List<BookieId> newEnsembleList = newEnsemblePlacementResult.getResult();
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
         Set<BookieId> newEnsembleSet = new HashSet<BookieId>(newEnsembleList);
         Set<String> bookiesNetworkLocationsSet = new HashSet<String>();
         List<ZoneAwareNodeLocation> bookiesNodeLocationList = new ArrayList<ZoneAwareNodeLocation>();
@@ -761,7 +761,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie = replacePlacementResult.getResult();
         assertEquals("replaced bookie", addr8.toBookieId(), replacedBookie);
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                replacePlacementResult.isAdheringToPolicy());
+                replacePlacementResult.getAdheringToPolicy());
 
         excludedBookies.add(addr8.toBookieId());
         /*
@@ -854,7 +854,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie = replaceResponse.getResult();
         assertEquals("replaced bookie", "/zone3/ud2", zepp.resolveNetworkLocation(replacedBookie));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_SOFT,
-                replaceResponse.isAdheringToPolicy());
+                replaceResponse.getAdheringToPolicy());
     }
 
     @Test
@@ -1074,7 +1074,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble = ensembleResponse.getResult();
             assertFalse(ensemble.contains(addr4.toBookieId()));
             assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                    ensembleResponse.isAdheringToPolicy());
+                    ensembleResponse.getAdheringToPolicy());
         }
 
         // we could still use addr4 for urgent allocation if it is just bookie
@@ -1084,7 +1084,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         List<BookieId> ensemble = ensembleResponse.getResult();
         assertTrue(ensemble.contains(addr4.toBookieId()));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.MEETS_STRICT,
-                ensembleResponse.isAdheringToPolicy());
+                ensembleResponse.getAdheringToPolicy());
     }
 
     @Test
@@ -1135,7 +1135,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         assertFalse("excludeBookie should not be included in the ensemble",
                 newEnsembleSet.contains(addr5.toBookieId()));
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
-                newEnsemblePlacementResult.isAdheringToPolicy());
+                newEnsemblePlacementResult.getAdheringToPolicy());
 
         rwAddrs.remove(addr4.toBookieId());
         roAddrs.add(addr4.toBookieId());
@@ -1209,7 +1209,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
          */
         assertEquals("ReplaceBookie candidate", addr7.toBookieId(), replaceBookie);
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
-                replaceResponse.isAdheringToPolicy());
+                replaceResponse.getAdheringToPolicy());
 
         rwAddrs.remove(addr7.toBookieId());
         excludeBookies.add(addr7.toBookieId());

@@ -204,6 +204,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected static final String AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL =
                                                                 "auditorPeriodicPlacementPolicyCheckInterval";
+    protected static final String REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED =
+                                                                "repairedPlacementPolicyNotAdheringBookieEnabled";
     protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
@@ -2620,10 +2622,31 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the regularity at which the auditor does placement policy check of
      * all ledgers, which are closed.
      *
-     * @return The interval in seconds. By default it is disabled.
+     * @return The interval in seconds. By default, it is disabled.
      */
     public long getAuditorPeriodicPlacementPolicyCheckInterval() {
         return getLong(AUDITOR_PERIODIC_PLACEMENT_POLICY_CHECK_INTERVAL, 0);
+    }
+
+    public void setRepairedPlacementPolicyNotAdheringBookieEnable(boolean enabled) {
+        setProperty(REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED, enabled);
+    }
+
+    /**
+     * Now the feature only support RackawareEnsemblePlacementPolicy.
+     *
+     * In Auditor, it combines with {@link #getAuditorPeriodicPlacementPolicyCheckInterval}, to control is marked
+     * ledger id to under replication managed when found a ledger ensemble not adhere to placement policy.
+     * In ReplicationWorker, to control is to repair the ledger which the ensemble does not adhere to the placement
+     * policy. By default, it is disabled.
+     *
+     * If you want to enable this feature, there maybe lots of ledger will be mark underreplicated.
+     * The replicationWorker will replicate lots of ledger, it will increase read request and write request in bookie
+     * server. You should set a suitable rereplicationEntryBatchSize to avoid bookie server pressure.
+     *
+     */
+    public boolean isRepairedPlacementPolicyNotAdheringBookieEnable() {
+        return getBoolean(REPAIRED_PLACEMENT_POLICY_NOT_ADHERING_BOOKIE_ENABLED, false);
     }
 
     /**

@@ -1470,6 +1470,22 @@ public class Auditor implements AutoCloseable {
                             }
                             if (foundSegmentNotAdheringToPlacementPolicy) {
                                 numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
+                                //If user enable repaired, mark this ledger to under replication manager.
+                                if (conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
+                                    ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
+                                            Collections.emptyList()).whenComplete((res, e) -> {
+                                        if (e != null) {
+                                            LOG.error("For ledger: {}, the placement policy not adhering bookie "
+                                                    + "storage, mark it to under replication manager failed.",
+                                                    ledgerId, e);
+                                            return;
+                                        }
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("For ledger: {}, the placement policy not adhering bookie"
+                                                    + " storage, mark it to under replication manager", ledgerId);
+                                        }
+                                    });
+                                }
                             } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
                                 numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.incrementAndGet();
                             }

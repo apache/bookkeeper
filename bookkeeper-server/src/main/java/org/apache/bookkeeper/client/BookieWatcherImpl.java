@@ -269,7 +269,7 @@ class BookieWatcherImpl implements BookieWatcher {
             newEnsembleResponse = placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
                     customMetadata, new HashSet<BookieId>(quarantinedBookiesSet));
             socketAddresses = newEnsembleResponse.getResult();
-            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
                 if (ensembleSize > 1) {
@@ -286,7 +286,7 @@ class BookieWatcherImpl implements BookieWatcher {
             newEnsembleResponse = placementPolicy.newEnsemble(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
             socketAddresses = newEnsembleResponse.getResult();
-            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.isAdheringToPolicy();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
                 log.warn("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
@@ -317,7 +317,7 @@ class BookieWatcherImpl implements BookieWatcher {
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     existingBookies, addr, excludedBookiesAndQuarantinedBookies);
             socketAddress = replaceBookieResponse.getResult();
-            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
                 log.warn(
@@ -333,7 +333,7 @@ class BookieWatcherImpl implements BookieWatcher {
             replaceBookieResponse = placementPolicy.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,
                     customMetadata, existingBookies, addr, excludeBookies);
             socketAddress = replaceBookieResponse.getResult();
-            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.isAdheringToPolicy();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
                 log.warn(
