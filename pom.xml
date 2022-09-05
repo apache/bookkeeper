@@ -338,13 +338,6 @@
         <version>${jna.version}</version>
       </dependency>
 
-      <!-- yaml dependencies -->
-      <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>${snakeyaml.version}</version>
-      </dependency>
-
       <!-- jackson dependencies -->
       <dependency>
         <groupId>com.fasterxml.jackson</groupId>
