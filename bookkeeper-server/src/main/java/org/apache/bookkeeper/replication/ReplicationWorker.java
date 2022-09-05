@@ -34,7 +34,9 @@ import com.google.common.cache.LoadingCache;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -42,6 +44,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -53,12 +56,15 @@ import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataSe
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -69,6 +75,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +107,7 @@ public class ReplicationWorker implements Runnable {
     private final long lockReleaseOfFailedLedgerGracePeriod;
     private final long baseBackoffForLockReleaseOfFailedLedger;
     private final BiConsumer<Long, Long> onReadEntryFailureCallback;
+    private final LedgerManager ledgerManager;
 
     // Expose Stats
     private final StatsLogger statsLogger;
@@ -173,6 +181,7 @@ public class ReplicationWorker implements Runnable {
         this.ownBkc = ownBkc;
 
         this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
+        this.ledgerManager = bkc.getLedgerManagerFactory().newLedgerManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf));
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
@@ -359,6 +368,65 @@ public class ReplicationWorker implements Runnable {
         return (returnRCValue.get() == BKException.Code.OK);
     }
 
+    private Set<LedgerFragment> getNeedRepairedPlacementNotAdheringFragments(LedgerHandle lh) {
+        if (!conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
+            return Collections.emptySet();
+        }
+        long ledgerId = lh.getId();
+        Set<LedgerFragment> placementNotAdheringFragments = new HashSet<>();
+        CompletableFuture<Versioned<LedgerMetadata>> future = ledgerManager.readLedgerMetadata(
+                ledgerId).whenComplete((metadataVer, exception) -> {
+            if (exception == null) {
+                LedgerMetadata metadata = metadataVer.getValue();
+                int writeQuorumSize = metadata.getWriteQuorumSize();
+                int ackQuorumSize = metadata.getAckQuorumSize();
+                if (!metadata.isClosed()) {
+                    return;
+                }
+                Long curEntryId = null;
+                EnsemblePlacementPolicy.PlacementPolicyAdherence previousSegmentAdheringToPlacementPolicy = null;
+
+                for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
+                    if (curEntryId != null) {
+                        if (EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL
+                                == previousSegmentAdheringToPlacementPolicy) {
+                            LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId,
+                                    entry.getKey() - 1, new HashSet<>());
+                            ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
+                            placementNotAdheringFragments.add(ledgerFragment);
+                        }
+                    }
+                    previousSegmentAdheringToPlacementPolicy =
+                            admin.isEnsembleAdheringToPlacementPolicy(entry.getValue(),
+                                    writeQuorumSize, ackQuorumSize);
+                    curEntryId = entry.getKey();
+                }
+                if (curEntryId != null) {
+                    if (EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL
+                            == previousSegmentAdheringToPlacementPolicy) {
+                        long lastEntry = lh.getLedgerMetadata().getLastEntryId();
+                        LedgerFragment ledgerFragment = new LedgerFragment(lh, curEntryId, lastEntry,
+                                new HashSet<>());
+                        ledgerFragment.setReplicateType(LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT);
+                        placementNotAdheringFragments.add(ledgerFragment);
+                    }
+                }
+            } else if (BKException.getExceptionCode(exception)
+                    == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
+            } else {
+                LOG.warn("Unable to read the ledger: {} information", ledgerId);
+            }
+        });
+        try {
+            FutureUtils.result(future);
+        } catch (Exception e) {
+            LOG.warn("Check ledger need repaired placement not adhering bookie failed", e);
+            return Collections.emptySet();
+        }
+        return placementNotAdheringFragments;
+    }
+
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
@@ -369,8 +437,8 @@ public class ReplicationWorker implements Runnable {
         boolean deferLedgerLockRelease = false;
 
         try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
-            Set<LedgerFragment> fragments =
-                getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
+            Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh,
+                    conf.getAuditorLedgerVerificationPercentage());
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
@@ -502,10 +570,40 @@ public class ReplicationWorker implements Runnable {
      */
     private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage)
             throws InterruptedException {
+        //The data loss fragments is first to repair. If a fragment is data_loss and not_adhering_placement
+        //at the same time, we only fix data_loss in this time. After fix data_loss, the fragment is still
+        //not_adhering_placement, Auditor will mark this ledger again.
+        Set<LedgerFragment> underreplicatedFragments = new HashSet<>();
+
+        Set<LedgerFragment> dataLossFragments = getDataLossFragments(lh, ledgerVerificationPercentage);
+        underreplicatedFragments.addAll(dataLossFragments);
+
+        Set<LedgerFragment> notAdheringFragments = getNeedRepairedPlacementNotAdheringFragments(lh);
+
+        for (LedgerFragment notAdheringFragment : notAdheringFragments) {
+            if (!checkFragmentRepeat(underreplicatedFragments, notAdheringFragment)) {
+                underreplicatedFragments.add(notAdheringFragment);
+            }
+        }
+        return underreplicatedFragments;
+    }
+
+    private Set<LedgerFragment> getDataLossFragments(LedgerHandle lh, Long ledgerVerificationPercentage)
+            throws InterruptedException {
         CheckerCallback checkerCb = new CheckerCallback();
         ledgerChecker.checkLedger(lh, checkerCb, ledgerVerificationPercentage);
-        Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
-        return fragments;
+        return checkerCb.waitAndGetResult();
+    }
+
+    private boolean checkFragmentRepeat(Set<LedgerFragment> fragments, LedgerFragment needChecked) {
+        for (LedgerFragment fragment : fragments) {
+            if (fragment.getLedgerId() == needChecked.getLedgerId()
+                    && fragment.getFirstEntryId() == needChecked.getFirstEntryId()
+                    && fragment.getLastKnownEntryId() == needChecked.getLastKnownEntryId()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {

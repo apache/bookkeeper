@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -763,6 +764,22 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
+    public static int differBetweenBookies(List<BookieId> bookiesA, List<BookieId> bookiesB) {
+        if (CollectionUtils.isEmpty(bookiesA) || CollectionUtils.isEmpty(bookiesB)) {
+            return Integer.MAX_VALUE;
+        }
+        if (bookiesA.size() != bookiesB.size()) {
+            return Integer.MAX_VALUE;
+        }
+        int differ = 0;
+        for (int i = 0; i < bookiesA.size(); i++) {
+            if (!bookiesA.get(i).equals(bookiesB.get(i))) {
+                differ++;
+            }
+        }
+        return differ;
+    }
+
     @Override
     public void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
         if (!isWeighted) {
@@ -812,15 +829,19 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
     }
 
-    protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
+    protected Set<Node> convertBookiesToNodes(Collection<BookieId> bookies) {
         Set<Node> nodes = new HashSet<Node>();
-        for (BookieId addr : excludeBookies) {
-            BookieNode bn = knownBookies.get(addr);
-            if (null == bn) {
-                bn = createBookieNode(addr);
-            }
-            nodes.add(bn);
+        for (BookieId addr : bookies) {
+            nodes.add(convertBookieToNode(addr));
         }
         return nodes;
+    }
+
+    protected BookieNode convertBookieToNode(BookieId addr) {
+        BookieNode bn = knownBookies.get(addr);
+        if (null == bn) {
+            bn = createBookieNode(addr);
+        }
+        return bn;
     }
 }

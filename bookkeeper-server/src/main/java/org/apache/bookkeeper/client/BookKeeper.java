@@ -568,7 +568,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieQuarantineRatio = 1.0;
     }
 
-    private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
+    protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
                                                                       DNSToSwitchMapping dnsResolver,
                                                                       HashedWheelTimer timer,
                                                                       FeatureProvider featureProvider,

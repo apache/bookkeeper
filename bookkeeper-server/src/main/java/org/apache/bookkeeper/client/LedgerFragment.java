@@ -39,8 +39,9 @@ public class LedgerFragment {
     private final long ledgerId;
     private final DistributionSchedule schedule;
     private final boolean isLedgerClosed;
+    private ReplicateType replicateType = ReplicateType.DATA_LOSS;
 
-    LedgerFragment(LedgerHandle lh,
+    public LedgerFragment(LedgerHandle lh,
                    long firstEntryId,
                    long lastKnownEntryId,
                    Set<Integer> bookieIndexes) {
@@ -56,7 +57,7 @@ public class LedgerFragment {
                 || !ensemble.equals(ensembles.get(ensembles.lastKey()));
     }
 
-    LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
+    public LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
         this.ledgerId = lf.ledgerId;
         this.firstEntryId = lf.firstEntryId;
         this.lastKnownEntryId = lf.lastKnownEntryId;
@@ -91,7 +92,7 @@ public class LedgerFragment {
         return isLedgerClosed;
     }
 
-    long getLedgerId() {
+    public long getLedgerId() {
         return ledgerId;
     }
 
@@ -217,11 +218,27 @@ public class LedgerFragment {
         return this.ensemble;
     }
 
+    public ReplicateType getReplicateType() {
+        return replicateType;
+    }
+
+    public void setReplicateType(ReplicateType replicateType) {
+        this.replicateType = replicateType;
+    }
+
     @Override
     public String toString() {
         return String.format("Fragment(LedgerID: %d, FirstEntryID: %d[%d], "
                 + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s)", ledgerId, firstEntryId,
                 getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
                 getAddresses(), isLedgerClosed);
+    }
+
+    /**
+     * ReplicateType.
+     */
+    public enum ReplicateType {
+        DATA_LOSS,
+        DATA_NOT_ADHERING_PLACEMENT
     }
 }
