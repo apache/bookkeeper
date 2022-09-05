@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -88,7 +88,7 @@ loadScripts(document, 'script');</script>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -143,6 +143,31 @@ extends java.lang.Object</pre>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<section role="region">
+<ul class="blockList">
+<li class="blockList"><a id="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="LedgerFragment.ReplicateType.html" title="enum in org.apache.bookkeeper.client">LedgerFragment.ReplicateType</a></span></code></th>
+<td class="colLast">
+<div class="block">ReplicateType.</div>
+</td>
+</tr>
+</table>
+</li>
+</ul>
+</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section role="region">
 <ul class="blockList">
@@ -251,11 +276,16 @@ extends java.lang.Object</pre>
 </td>
 </tr>
 <tr id="i10" class="altColor">
-<td class="colFirst"><code>(package private) long</code></td>
+<td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLedgerId()">getLedgerId</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
+<td class="colFirst"><code><a href="LedgerFragment.ReplicateType.html" title="enum in org.apache.bookkeeper.client">LedgerFragment.ReplicateType</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReplicateType()">getReplicateType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isClosed()">isClosed</a></span>()</code></th>
 <td class="colLast">
@@ -263,20 +293,25 @@ extends java.lang.Object</pre>
  by any of the clients in future, otherwise false.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isStoredEntryId(long,int)">isStoredEntryId</a></span>&#8203;(long&nbsp;entryId,
                int&nbsp;bookieIndex)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setReplicateType(org.apache.bookkeeper.client.LedgerFragment.ReplicateType)">setReplicateType</a></span>&#8203;(<a href="LedgerFragment.ReplicateType.html" title="enum in org.apache.bookkeeper.client">LedgerFragment.ReplicateType</a>&nbsp;replicateType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subset(java.util.Set)">subset</a></span>&#8203;(java.util.Set&lt;java.lang.Integer&gt;&nbsp;subset)</code></th>
 <td class="colLast">
 <div class="block">Return a ledger fragment contains subset of bookies.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -311,10 +346,10 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>LedgerFragment</h4>
-<pre>LedgerFragment&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-               long&nbsp;firstEntryId,
-               long&nbsp;lastKnownEntryId,
-               java.util.Set&lt;java.lang.Integer&gt;&nbsp;bookieIndexes)</pre>
+<pre>public&nbsp;LedgerFragment&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                      long&nbsp;firstEntryId,
+                      long&nbsp;lastKnownEntryId,
+                      java.util.Set&lt;java.lang.Integer&gt;&nbsp;bookieIndexes)</pre>
 </li>
 </ul>
 <a id="&lt;init&gt;(org.apache.bookkeeper.client.LedgerFragment,java.util.Set)">
@@ -323,8 +358,8 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>LedgerFragment</h4>
-<pre>LedgerFragment&#8203;(<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
-               java.util.Set&lt;java.lang.Integer&gt;&nbsp;subset)</pre>
+<pre>public&nbsp;LedgerFragment&#8203;(<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
+                      java.util.Set&lt;java.lang.Integer&gt;&nbsp;subset)</pre>
 </li>
 </ul>
 </li>
@@ -376,7 +411,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getLedgerId</h4>
-<pre class="methodSignature">long&nbsp;getLedgerId()</pre>
+<pre class="methodSignature">public&nbsp;long&nbsp;getLedgerId()</pre>
 </li>
 </ul>
 <a id="getFirstEntryId()">
@@ -510,6 +545,24 @@ extends java.lang.Object</pre>
 </dl>
 </li>
 </ul>
+<a id="getReplicateType()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getReplicateType</h4>
+<pre class="methodSignature">public&nbsp;<a href="LedgerFragment.ReplicateType.html" title="enum in org.apache.bookkeeper.client">LedgerFragment.ReplicateType</a>&nbsp;getReplicateType()</pre>
+</li>
+</ul>
+<a id="setReplicateType(org.apache.bookkeeper.client.LedgerFragment.ReplicateType)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setReplicateType</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setReplicateType&#8203;(<a href="LedgerFragment.ReplicateType.html" title="enum in org.apache.bookkeeper.client">LedgerFragment.ReplicateType</a>&nbsp;replicateType)</pre>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
@@ -575,7 +628,7 @@ extends java.lang.Object</pre>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>

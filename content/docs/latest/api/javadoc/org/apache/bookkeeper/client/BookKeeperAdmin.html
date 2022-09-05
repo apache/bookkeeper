@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":9,"i13":9,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":9,"i25":9,"i26":10,"i27":10,"i28":9,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10};
+var data = {"i0":9,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":9,"i13":9,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":9,"i25":9,"i26":10,"i27":10,"i28":9,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -529,6 +529,13 @@ implements java.lang.AutoCloseable</pre>
 </td>
 </tr>
 <tr id="i37" class="rowColor">
+<td class="colFirst"><code>java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceNotAdheringPlacementPolicyBookie(java.util.List,int,int)">replaceNotAdheringPlacementPolicyBookie</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleBookiesList,
+                                       int&nbsp;writeQuorumSize,
+                                       int&nbsp;ackQuorumSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replicateLedgerFragment(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,java.util.function.BiConsumer)">replicateLedgerFragment</a></span>&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        <a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
@@ -537,14 +544,14 @@ implements java.lang.AutoCloseable</pre>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLostBookieRecoveryDelay(int)">setLostBookieRecoveryDelay</a></span>&#8203;(int&nbsp;lostBookieRecoveryDelay)</code></th>
 <td class="colLast">
 <div class="block">Setter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#triggerAudit()">triggerAudit</a></span>()</code></th>
 <td class="colLast">
@@ -552,14 +559,14 @@ implements java.lang.AutoCloseable</pre>
  value.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#watchReadOnlyBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchReadOnlyBookiesChanged</a></span>&#8203;(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Notify when the available list of read only bookies changes.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#watchWritableBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchWritableBookiesChanged</a></span>&#8203;(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code></th>
 <td class="colLast">
@@ -1455,6 +1462,17 @@ implements java.lang.AutoCloseable</pre>
 <dd><tt>true</tt> if the ledger is adhering to
          EnsemblePlacementPolicy</dd>
 </dl>
+</li>
+</ul>
+<a id="replaceNotAdheringPlacementPolicyBookie(java.util.List,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>replaceNotAdheringPlacementPolicyBookie</h4>
+<pre class="methodSignature">public&nbsp;java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;replaceNotAdheringPlacementPolicyBookie&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleBookiesList,
+                                                                                                                         int&nbsp;writeQuorumSize,
+                                                                                                                         int&nbsp;ackQuorumSize)</pre>
 </li>
 </ul>
 <a id="asyncGetListOfEntriesOfLedger(org.apache.bookkeeper.net.BookieId,long)">

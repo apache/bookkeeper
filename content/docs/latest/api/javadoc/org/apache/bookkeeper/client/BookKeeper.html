@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":9,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":9,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":9,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":9,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -686,11 +686,21 @@ implements <a href="api/BookKeeper.html" title="interface in org.apache.bookkeep
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i38" class="altColor">
+<td class="colFirst"><code>protected <a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeEnsemblePlacementPolicy(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initializeEnsemblePlacementPolicy</a></span>&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                                 org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+                                 io.netty.util.HashedWheelTimer&nbsp;timer,
+                                 <a href="../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
+                                 <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isClosed()">isClosed</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isClosed(long)">isClosed</a></span>&#8203;(long&nbsp;lId)</code></th>
 <td class="colLast">
@@ -698,35 +708,35 @@ implements <a href="api/BookKeeper.html" title="interface in org.apache.bookkeep
  has been closed.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newCreateLedgerOp()">newCreateLedgerOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Start the creation of a new ledger.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="api/DeleteBuilder.html" title="interface in org.apache.bookkeeper.client.api">DeleteBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newDeleteLedgerOp()">newDeleteLedgerOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Delete an existing ledger.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="api/ListLedgersResultBuilder.html" title="interface in org.apache.bookkeeper.client.api">ListLedgersResultBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newListLedgersOp()">newListLedgersOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">List ledgers.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newOpenLedgerOp()">newOpenLedgerOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Open an existing ledger.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#openLedger(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)">openLedger</a></span>&#8203;(long&nbsp;lId,
           <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -735,7 +745,7 @@ implements <a href="api/BookKeeper.html" title="interface in org.apache.bookkeep
 <div class="block">Synchronous open ledger call.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#openLedgerNoRecovery(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)">openLedgerNoRecovery</a></span>&#8203;(long&nbsp;lId,
                     <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -744,7 +754,7 @@ implements <a href="api/BookKeeper.html" title="interface in org.apache.bookkeep
 <div class="block">Synchronous, unsafe open ledger call.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scheduleBookieHealthCheckIfEnabled(org.apache.bookkeeper.conf.ClientConfiguration)">scheduleBookieHealthCheckIfEnabled</a></span>&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -1119,6 +1129,25 @@ implements <a href="api/BookKeeper.html" title="interface in org.apache.bookkeep
 <li class="blockList">
 <h4>forConfig</h4>
 <pre class="methodSignature">public static&nbsp;<a href="BookKeeper.Builder.html" title="class in org.apache.bookkeeper.client">BookKeeper.Builder</a>&nbsp;forConfig&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</pre>
+</li>
+</ul>
+<a id="initializeEnsemblePlacementPolicy(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>initializeEnsemblePlacementPolicy</h4>
+<pre class="methodSignature">protected&nbsp;<a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;initializeEnsemblePlacementPolicy&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                                                                    org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+                                                                    io.netty.util.HashedWheelTimer&nbsp;timer,
+                                                                    <a href="../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
+                                                                    <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                                                                    org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)
+                                                             throws java.io.IOException</pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.io.IOException</code></dd>
+</dl>
 </li>
 </ul>
 <a id="getReturnRc(int)">
