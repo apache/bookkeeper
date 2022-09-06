@@ -23,9 +23,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import com.beust.jcommander.Parameter;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -92,7 +90,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
             .withPassword(new byte[0])
             .execute())) {
-            
+
             LOG.info("Ledger ID: {}", wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {

@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.client;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -34,8 +33,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.collect.ImmutableMap;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
@@ -56,7 +53,7 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
             "-e", "5",
             "-w", "3",
             "-a", "3",
-            "-n", "10", 
+            "-n", "10",
             "-c");
     }
 
@@ -100,12 +97,13 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         verify(createBuilder, times(1)).withWriteQuorumSize(eq(3));
         verify(createBuilder, times(1)).withAckQuorumSize(eq(3));
         verify(createBuilder, times(1)).withCustomMetadata(mapArgumentCaptor.capture());
-        assertTrue(Arrays.equals((byte[])mapArgumentCaptor.getValue().get("Bookie"), "simpletest".getBytes(StandardCharsets.UTF_8)));
+        assertTrue(Arrays.equals((byte[]) mapArgumentCaptor.getValue().get("Bookie"),
+                "simpletest".getBytes(StandardCharsets.UTF_8)));
         verify(createBuilder, times(1)).withDigestType(eq(DigestType.CRC32C));
         verify(createBuilder, times(1)).withPassword(eq(new byte[0]));
         verify(createBuilder, times(1)).execute();
 
-        verify(deleteBuilder, times(1)).withLedgerId(eq(0l));
+        verify(deleteBuilder, times(1)).withLedgerId(eq(0L));
         verify(deleteBuilder, times(1)).execute();
 
         // verify appends
