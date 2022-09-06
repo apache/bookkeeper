@@ -168,7 +168,7 @@
     <rocksdb.version>6.29.4.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
-    <snakeyaml.version>1.30</snakeyaml.version>
+    <snakeyaml.version>1.31</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.15.1</testcontainers.version>
