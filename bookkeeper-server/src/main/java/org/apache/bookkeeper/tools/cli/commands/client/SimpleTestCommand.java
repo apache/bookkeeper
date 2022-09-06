@@ -21,7 +21,11 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -59,6 +63,8 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
         private int ackQuorumSize = 2;
         @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
         private int numEntries = 100;
+        @Parameter(names = { "-c", "--clean-up" }, description = "Clean up ledger created after simple test")
+        private boolean cleanup = false;
 
     }
     public SimpleTestCommand() {
@@ -83,9 +89,10 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .withWriteQuorumSize(flags.writeQuorumSize)
             .withAckQuorumSize(flags.ackQuorumSize)
             .withDigestType(DigestType.CRC32C)
+            .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
             .withPassword(new byte[0])
             .execute())) {
-
+            
             LOG.info("Ledger ID: {}", wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
@@ -96,7 +103,10 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                     lastReport = System.nanoTime();
                 }
             }
-            LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
+            LOG.info("{} entries written to ledger {}, cleaning up the ledger", flags.numEntries, wh.getId());
+            if (flags.cleanup) {
+                result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
+            }
         }
     }
 }
