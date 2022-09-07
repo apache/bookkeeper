@@ -49,7 +49,7 @@ License for the specific language governing permissions and limitations
 under the License.
 
 ------------------------------------------------------------------------------------
-- lib/com.beust-jcommander-1.78.jar
+- lib/com.beust-jcommander-1.82.jar
 
 Copyright 2010 Cedric Beust cedric@beust.com
 
