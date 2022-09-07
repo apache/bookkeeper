@@ -101,8 +101,9 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                     lastReport = System.nanoTime();
                 }
             }
-            LOG.info("{} entries written to ledger {}, cleaning up the ledger", flags.numEntries, wh.getId());
+            LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
             if (flags.cleanup) {
+                LOG.info("Cleaning up the ledger {}", wh.getId());
                 result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
             }
         }
