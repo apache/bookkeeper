@@ -88,7 +88,7 @@
     </suppress>
     <suppress>
         <notes>CVE-2011-1797 FP, see https://github.com/jeremylong/DependencyCheck/issues/4154</notes>
-        <gav regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</gav>
+        <filePath regex="true">.*netty-tcnative-boringssl-static.*\.jar</filePath>
         <cve>CVE-2021-43045</cve>
     </suppress>
     <suppress base="true">
