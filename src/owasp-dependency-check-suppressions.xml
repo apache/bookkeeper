@@ -225,5 +225,12 @@
         <sha1>5071da9ee1953424bbc14d9ef31e9c92fd14810a</sha1>
         <cve>CVE-2011-1797</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.53.Final-osx-aarch_64.jar
+   ]]></notes>
+        <sha1>a31efd9a465e48bd6aa451623d739e918f6afc55</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
 </suppressions>
 
