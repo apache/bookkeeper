@@ -213,6 +213,13 @@
     <!-- netty FP -->
     <suppress>
         <notes><![CDATA[
+   file name: netty-tcnative-boringssl-static-2.0.53.Final-linux-x86_64.jar
+   ]]></notes>
+        <sha1>0549dde47c2bf06ee2a2b713f946cad8b0f929b8</sha1>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
    file name: netty-tcnative-boringssl-static-2.0.53.Final-osx-x86_64.jar
    ]]></notes>
         <sha1>5071da9ee1953424bbc14d9ef31e9c92fd14810a</sha1>
