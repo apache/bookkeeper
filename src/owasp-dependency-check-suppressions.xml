@@ -86,6 +86,11 @@
         <gav regex="true">org\.apache\.avro:.*</gav>
         <cve>CVE-2021-43045</cve>
     </suppress>
+    <suppress>
+        <notes>CVE-2011-1797 FP, see https://github.com/jeremylong/DependencyCheck/issues/4154</notes>
+        <gav regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</gav>
+        <cve>CVE-2021-43045</cve>
+    </suppress>
     <suppress base="true">
         <notes><![CDATA[
         False positive
@@ -209,35 +214,6 @@
    ]]></notes>
         <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
         <cve>CVE-2021-26291</cve>
-    </suppress>
-    <!-- netty FP -->
-    <suppress>
-        <notes><![CDATA[
-   file name: netty-tcnative-boringssl-static-2.0.53.Final-linux-x86_64.jar
-   ]]></notes>
-        <sha1>0549dde47c2bf06ee2a2b713f946cad8b0f929b8</sha1>
-        <cve>CVE-2011-1797</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: netty-tcnative-boringssl-static-2.0.53.Final-linux-aarch_64.jar
-   ]]></notes>
-        <sha1>f9d912942b408299cac1faec2190684e8ab5764d</sha1>
-        <cve>CVE-2011-1797</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: netty-tcnative-boringssl-static-2.0.53.Final-osx-x86_64.jar
-   ]]></notes>
-        <sha1>5071da9ee1953424bbc14d9ef31e9c92fd14810a</sha1>
-        <cve>CVE-2011-1797</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: netty-tcnative-boringssl-static-2.0.53.Final-osx-aarch_64.jar
-   ]]></notes>
-        <sha1>a31efd9a465e48bd6aa451623d739e918f6afc55</sha1>
-        <cve>CVE-2011-1797</cve>
     </suppress>
 </suppressions>
 
