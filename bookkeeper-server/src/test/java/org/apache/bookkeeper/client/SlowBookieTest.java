@@ -175,8 +175,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final boolean expectWriteError = false;
         final boolean expectFailedTest = false;
 
-        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 2000);
-        assertTrue(lh.readLastConfirmed() < 5);
+        try (LedgerHandle lh = doBackPressureTest(entry, conf, expectWriteError, expectFailedTest, 2000)) {
+            assertTrue(lh.readLastConfirmed() < 5);
+        }
     }
 
     @Test
@@ -194,8 +195,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final boolean expectWriteError = true;
         final boolean expectFailedTest = false;
 
-        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 1000);
-        assertTrue(lh.readLastConfirmed() < 5);
+        try (LedgerHandle lh = doBackPressureTest(entry, conf, expectWriteError, expectFailedTest, 1000)) {
+            assertTrue(lh.readLastConfirmed() < 5);
+        }
     }
 
     @Test
@@ -213,14 +215,14 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final boolean expectWriteError = false;
         final boolean expectFailedTest = false;
 
-        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 4000);
-
-        assertTrue(lh.readLastConfirmed() > 90);
+        try (LedgerHandle lh = doBackPressureTest(entry, conf, expectWriteError, expectFailedTest, 4000)) {
+            assertTrue(lh.readLastConfirmed() > 90);
+        }
     }
 
-    private LedgerHandle doBackpressureTest(byte[] entry, ClientConfiguration conf,
-                                    boolean expectWriteError, boolean expectFailedTest,
-                                    long sleepInMillis) throws Exception {
+    private LedgerHandle doBackPressureTest(byte[] entry, ClientConfiguration conf,
+                                            boolean expectWriteError, boolean expectFailedTest,
+                                            long sleepInMillis) throws Exception {
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] pwd = new byte[] {};
@@ -279,7 +281,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
         LedgerHandle lh2 = bkc.openLedger(lh.getId(), BookKeeper.DigestType.CRC32, pwd);
         LedgerChecker lc = new LedgerChecker(bkc);
-        final CountDownLatch checklatch = new CountDownLatch(1);
+        final CountDownLatch checkLatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, (rc, fragments) -> {
             LOG.debug("Checked ledgers returned {} {}", rc, fragments);
@@ -287,30 +289,29 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                 numFragments.set(fragments.size());
                 LOG.error("Checked ledgers returned {} {}", rc, fragments);
             }
-            checklatch.countDown();
+            checkLatch.countDown();
         });
-        checklatch.await();
+        checkLatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
 
         return lh2;
     }
 
     private void setTargetChannelState(BookKeeper bkc, BookieId address,
-                                       long key, boolean state) throws Exception {
+                                       long key, boolean writable) throws Exception {
         ((BookieClientImpl) bkc.getBookieClient()).lookupClient(address).obtain((rc, pcbc) -> {
-            pcbc.setWritable(state);
+            pcbc.setWritable(writable);
         }, key);
     }
 
     @Test
-    public void testWritesetWriteableCheck() throws Exception {
+    public void testWriteSetWriteableCheck() throws Exception {
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] pwd = new byte[]{};
-        final LedgerHandle lh = bkc.createLedger(4, 2, 2, BookKeeper.DigestType.CRC32, pwd);
-        try {
+        try (LedgerHandle lh = bkc.createLedger(4, 2, 2, BookKeeper.DigestType.CRC32, pwd)) {
             lh.addEntry(entry); // [b0, b1]
             long entryId = lh.addEntry(entry); // [b1, b2]
 
@@ -324,9 +325,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
 
             boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
-            assertFalse("We should check b2,b3 both are writeable", isWriteable);
-        } finally {
-            lh.close();
+            assertFalse("We should check b2,b3 both are not writeable", isWriteable);
         }
     }
 
