@@ -543,6 +543,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     .setReadResponse(readResponse);
                 BookkeeperProtocol.Response resp = response.build();
                 read.sendResponse(readResponse.getStatus(), resp, requestStats.getReadRequestStats());
+                onReadRequestFinish();
             }
         }
     }
@@ -680,6 +681,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     BookieProtocol.ETOOMANYREQUESTS,
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getReadRequestStats());
+                onReadRequestFinish();
             }
         }
     }
