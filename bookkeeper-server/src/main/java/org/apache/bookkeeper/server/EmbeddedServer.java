@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
 import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
+
 import com.google.common.base.Ticker;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
@@ -84,11 +85,12 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * An embedded server is a server that run bookie and serving rpc requests.
  *
- * <p>It is a rewritten server using {@link org.apache.bookkeeper.common.component.LifecycleComponent},
- * replacing the legacy server {@link org.apache.bookkeeper.proto.BookieServer}.
+ * <p>
+ * It is a rewritten server using {@link org.apache.bookkeeper.common.component.LifecycleComponent}, replacing the
+ * legacy server {@link org.apache.bookkeeper.proto.BookieServer}.
  */
 public class EmbeddedServer {
-    
+
     private final LifecycleComponentStack lifecycleComponentStack;
 
     private final StatsProvider statsProvider;
@@ -185,24 +187,24 @@ public class EmbeddedServer {
 
     @Slf4j
     public static class Builder {
-        
+
         private BookieConfiguration conf;
-        
+
         private StatsProvider statsProvider;
-        
+
         private MetadataBookieDriver metadataDriver;
-        
+
         private RegistrationManager registrationManager;
-        
+
         private LedgerManagerFactory ledgerManagerFactory;
-        
+
         private DiskChecker diskChecker;
         private LedgerDirsManager ledgerDirsManager;
         private LedgerDirsManager indexDirsManager;
-        
+
         private ByteBufAllocator allocator;
         private UncleanShutdownDetection uncleanShutdownDetection;
-        
+
         private Builder(BookieConfiguration conf) {
             checkNotNull(conf, "bookieConfiguration cannot be null");
 
@@ -271,7 +273,7 @@ public class EmbeddedServer {
          * @throws java.lang.Exception
          */
         public EmbeddedServer build() throws Exception {
-                
+
             final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
 
             final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
@@ -289,7 +291,7 @@ public class EmbeddedServer {
                 serverBuilder.addComponent(statsProviderService);
                 log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
             }
-            
+
             StatsLogger rootStatsLogger = statsProvider.getStatsLogger("");
 
             // 2. Build metadata driver
@@ -299,7 +301,7 @@ public class EmbeddedServer {
                     serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
                 }
             }
-            
+
             if (registrationManager == null) {
                 registrationManager = metadataDriver.createRegistrationManager();
                 serverBuilder.addComponent(
@@ -320,12 +322,12 @@ public class EmbeddedServer {
             if (diskChecker == null) {
                 diskChecker = BookieResources.createDiskChecker(conf.getServerConf());
             }
-            
+
             if (ledgerDirsManager == null) {
                 ledgerDirsManager = BookieResources.createLedgerDirsManager(
                         conf.getServerConf(), diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
             }
-            
+
             if (indexDirsManager == null) {
                 indexDirsManager = BookieResources.createIndexDirsManager(
                         conf.getServerConf(), diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
@@ -487,7 +489,7 @@ public class EmbeddedServer {
                     dataIntegrityService, httpService);
 
         }
-        
+
         /**
          * Create the {@link BookieServiceInfo} starting from the published endpoints.
          *
@@ -510,7 +512,7 @@ public class EmbeddedServer {
             return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
         }
     }
-    
+
     private static final class ByteBuffAllocatorWrapper implements ByteBufAllocatorWithOomHandler {
 
         private final ByteBufAllocator allocator;
@@ -624,5 +626,5 @@ public class EmbeddedServer {
             // NOP
         }
     }
-    
+
 }

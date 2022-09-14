@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
+
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
@@ -61,7 +62,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BookieService.class, BookieResources.class, EmbeddedServer.class})
 public class TestEmbeddedServer {
-    
+
     static class TestComponent extends ServerLifecycleComponent {
 
         public TestComponent(BookieConfiguration conf, StatsLogger statsLogger) {
