@@ -41,7 +41,7 @@ RUN set -x \
     && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && apt-get install -y --no-install-recommends gpg wget sudo \
+    && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
     && apt-get clean all \
     && mkdir -pv /opt \
     && cd /opt \
