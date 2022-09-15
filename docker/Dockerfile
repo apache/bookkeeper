@@ -38,11 +38,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN set -x \
     && adduser "${BK_USER}" \
     && apt-get update \
-    && apt-get install -y openjdk-17-jdk \
-    && apt-get install -y python3 pip \
+    && apt-get install -y --no-install-recommends openjdk-17-jdk \
+    && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && apt-get install -y gcc g++ \
-    && apt-get install -y wget sudo \
+    && apt-get install -y --no-install-recommends gpg wget sudo \
     && apt-get clean all \
     && mkdir -pv /opt \
     && cd /opt \
@@ -56,8 +55,7 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
-    && pip install zk-shell \
-    && ls /usr/lib/jvm
+    && pip install zk-shell
 
 WORKDIR /opt/bookkeeper
 
