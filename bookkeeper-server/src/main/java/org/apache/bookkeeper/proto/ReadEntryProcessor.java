@@ -65,6 +65,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Dropping read request for closed channel: {}", channel);
             }
+            requestProcessor.onReadRequestFinish();
             return;
         }
         int errorCode = BookieProtocol.EOK;

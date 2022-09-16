@@ -253,6 +253,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Dropping read request for closed channel: {}", channel);
             }
+            requestProcessor.onReadRequestFinish();
             return;
         }
 
