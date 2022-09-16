@@ -17,7 +17,11 @@
 # under the License.
 #
 
-FROM centos:7
+FROM ubuntu:22.10
+MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
+
+ARG TARGETARCH
+
 #ENV OPTS="$OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
@@ -25,19 +29,24 @@ ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/java-11
+ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
+ENV DEBIAN_FRONTEND=noninteractive
 
 
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-11-openjdk-devel wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
-    && wget -q https://bootstrap.pypa.io/pip/2.7/get-pip.py \
-    && python get-pip.py \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends openjdk-17-jdk \
+    && apt-get install -y --no-install-recommends python3 pip \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
+     && apt-get -y --purge autoremove \
+     && apt-get autoclean \
+     && apt-get clean \
+     && rm -rf /var/lib/apt/lists/*
     && pip install zk-shell \
-    && rm -rf get-pip.py \
     && mkdir -pv /opt \
-    && cd /opt \
-    && yum clean all
+    && cd /opt
 
 WORKDIR /opt/bookkeeper
 RUN mkdir /opt/bookkeeper/lib
