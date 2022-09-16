@@ -706,15 +706,16 @@ public class LedgerCacheTest {
         public void onSizeLimitReached(final CheckpointSource.Checkpoint cp) throws IOException {
             LOG.info("Reached size {}", cp);
             // use synchronous way
-            try {
-                LOG.info("Started flushing mem table.");
-                memTable.flush(FlushTestSortedLedgerStorage.this);
-            } catch (IOException e) {
-                getStateManager().doTransitionToReadOnlyMode();
-                LOG.error("Exception thrown while flushing skip list cache.", e);
-         }
-         }
-
+            for (InterleavedLedgerStorage s : this.interleavedLedgerStorageList) {
+                try {
+                    LOG.info("Started flushing mem table.");
+                    memTable.flush(FlushTestSortedLedgerStorage.this);
+                } catch (IOException e) {
+                    s.getStateManager().transitionToReadOnlyMode();
+                    LOG.error("Exception thrown while flushing skip list cache.", e);
+                }
+            }
+        }
     }
 
     @Test

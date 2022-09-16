@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -223,29 +224,31 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         });
 
         // simulate entry log is rotated (due to compaction)
-        DefaultEntryLogger elogger = storage.getEntryLogger();
-        EntryLogManagerForSingleEntryLog entryLogManager =
-            (EntryLogManagerForSingleEntryLog) elogger.getEntryLogManager();
-        entryLogManager.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
-        long currentLogId = entryLogManager.getCurrentLogId();
+        List<DefaultEntryLogger> eloggers = storage.getEntryLogger();
+        for (DefaultEntryLogger elogger : eloggers) {
+            EntryLogManagerForSingleEntryLog entryLogManager =
+                    (EntryLogManagerForSingleEntryLog) elogger.getEntryLogManager();
+            entryLogManager.createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
+            long currentLogId = entryLogManager.getCurrentLogId();
 
-        readyLatch.countDown();
-        assertNull(checkpoints.poll());
-        assertEquals(new TestCheckpoint(0), storage.memTable.kvmap.cp);
-        assertEquals(20, storage.memTable.kvmap.size());
+            readyLatch.countDown();
+            assertNull(checkpoints.poll());
+            assertEquals(new TestCheckpoint(0), storage.memTable.kvmap.cp);
+            assertEquals(20, storage.memTable.kvmap.size());
 
-        // trigger a memtable flush
-        Assert.assertNotNull("snapshot shouldn't have returned null", storage.memTable.snapshot());
-        storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
-        assertEquals(new TestCheckpoint(100), checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
+            // trigger a memtable flush
+            Assert.assertNotNull("snapshot shouldn't have returned null", storage.memTable.snapshot());
+            storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
+            assertEquals(new TestCheckpoint(100), checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
 
-        // all the entries are flushed out
-        assertEquals(new TestCheckpoint(100), storage.memTable.kvmap.cp);
-        assertEquals(0, storage.memTable.kvmap.size());
-        assertTrue(
-            "current log " + currentLogId + " contains entries added from memtable should be forced to disk"
-            + " but flushed logs are " + elogger.getFlushedLogIds(),
-            elogger.getFlushedLogIds().contains(currentLogId));
+            // all the entries are flushed out
+            assertEquals(new TestCheckpoint(100), storage.memTable.kvmap.cp);
+            assertEquals(0, storage.memTable.kvmap.size());
+            assertTrue(
+                    "current log " + currentLogId + " contains entries added from memtable should be forced to disk"
+                            + " but flushed logs are " + elogger.getFlushedLogIds(),
+                    elogger.getFlushedLogIds().contains(currentLogId));
+        }
     }
 
 }

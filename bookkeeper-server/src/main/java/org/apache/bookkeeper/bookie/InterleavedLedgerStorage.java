@@ -120,6 +120,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
+    private StateManager stateManager;
 
     public InterleavedLedgerStorage() {
         activeLedgers = new SnapshotMap<>();
@@ -161,7 +162,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public void setStateManager(StateManager stateManager) {}
+    public void setStateManager(StateManager stateManager) {
+        this.stateManager = stateManager;
+    }
+
+    public StateManager getStateManager() {
+        return stateManager;
+    }
 
     @Override
     public void setCheckpointSource(CheckpointSource checkpointSource) {

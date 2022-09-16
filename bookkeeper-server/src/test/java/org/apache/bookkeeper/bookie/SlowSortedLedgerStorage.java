@@ -27,10 +27,10 @@ package org.apache.bookkeeper.bookie;
 public class SlowSortedLedgerStorage extends SortedLedgerStorage {
 
     public SlowSortedLedgerStorage() {
-        this(new SlowInterleavedLedgerStorage());
+        this(SlowInterleavedLedgerStorage.class.getName());
     }
 
-    SlowSortedLedgerStorage(InterleavedLedgerStorage ils) {
-        super(ils);
+    SlowSortedLedgerStorage(String interleavedLedgerStorageClazz) {
+        super(interleavedLedgerStorageClazz);
     }
 }
