@@ -261,8 +261,8 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public List<InterleavedLedgerStorage> getUnderlyingLedgerStorage() {
-        return CompactableLedgerStorage.super.getUnderlyingLedgerStorage();
+    public List<InterleavedLedgerStorage> getUnderlyingInterleavedLedgerStorage() {
+        return CompactableLedgerStorage.super.getUnderlyingInterleavedLedgerStorage();
     }
 
     @Override

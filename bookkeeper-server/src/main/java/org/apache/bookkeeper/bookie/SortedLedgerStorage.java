@@ -439,7 +439,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public List<InterleavedLedgerStorage> getUnderlyingLedgerStorage() {
+    public List<InterleavedLedgerStorage> getUnderlyingInterleavedLedgerStorage() {
         return interleavedLedgerStorageList;
     }
 

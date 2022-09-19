@@ -217,9 +217,9 @@ public interface LedgerStorage {
 
     ByteBuf getExplicitLac(long ledgerId) throws IOException, BookieException;
 
-    // for testability
-    default <E> List<E> getUnderlyingLedgerStorage() {
-        return Lists.newArrayList((E)this);
+    // for InterleavedLedgerStorage's testability
+    default List<InterleavedLedgerStorage> getUnderlyingInterleavedLedgerStorage() {
+        return Lists.newArrayList((InterleavedLedgerStorage) this);
     }
 
     /**

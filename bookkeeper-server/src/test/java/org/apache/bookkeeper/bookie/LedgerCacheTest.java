@@ -88,7 +88,7 @@ public class LedgerCacheTest {
         bookie = new TestBookieImpl(conf);
 
         activeLedgers = new SnapshotMap<Long, Boolean>();
-        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingLedgerStorage();
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
         ledgerCache = ils.get(0).ledgerCache;
     }
 
@@ -116,7 +116,7 @@ public class LedgerCacheTest {
         if (ledgerCache != null) {
             ledgerCache.close();
         }
-        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingLedgerStorage();
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
         ledgerCache = ils.get(0).ledgerCache = new LedgerCacheImpl(conf, activeLedgers, bookie.getIndexDirsManager());
         flushThread = new Thread() {
                 public void run() {
@@ -275,7 +275,7 @@ public class LedgerCacheTest {
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
         BookieImpl bookie = new TestBookieImpl(conf);
-        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingLedgerStorage();
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
         InterleavedLedgerStorage ledgerStorage = ils.get(0);
         LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
         // Create ledger index file
