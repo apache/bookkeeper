@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -217,8 +218,8 @@ public interface LedgerStorage {
     ByteBuf getExplicitLac(long ledgerId) throws IOException, BookieException;
 
     // for testability
-    default LedgerStorage getUnderlyingLedgerStorage() {
-        return this;
+    default <E> List<E> getUnderlyingLedgerStorage() {
+        return Lists.newArrayList((E)this);
     }
 
     /**

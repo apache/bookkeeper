@@ -46,6 +46,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IteratorUtility;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,7 +166,13 @@ public class SortedLedgerStorage
         } catch (IOException e) {
             LOG.error("Exception thrown while flushing ledger cache.", e);
         }
-        interleavedLedgerStorageList.forEach(s -> s.start());
+        interleavedLedgerStorageList.forEach(s -> {
+            try {
+                s.start();
+            } catch (Throwable e) {
+                LOG.error("ledgerStorage({}) start has error.", getEntryLogDirPath(s.getEntryLogger()), e);
+            }
+        });
     }
 
     @Override
@@ -311,7 +318,14 @@ public class SortedLedgerStorage
 
     @Override
     public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
-        interleavedLedgerStorageList.forEach(s -> s.registerLedgerDeletionListener(listener));
+        interleavedLedgerStorageList.forEach(s -> {
+            try {
+                s.registerLedgerDeletionListener(listener);
+            } catch (Throwable e) {
+                LOG.error("ledgerStorage({}) registerLedgerDeletionListener has error.",
+                        getEntryLogDirPath(s.getEntryLogger()), e);
+            }
+        });
     }
 
     @Override
@@ -338,6 +352,16 @@ public class SortedLedgerStorage
         }
     }
 
+    private String getEntryLogDirPath(DefaultEntryLogger  entryLog) {
+        if (entryLog == null
+                || entryLog.getLedgerDirsManager() == null
+                || CollectionUtils.isEmpty(entryLog.getLedgerDirsManager().getAllLedgerDirs())) {
+            return null;
+        }
+        // entryLog and ledger's directory one-to-one
+        return entryLog.getLedgerDirsManager().getAllLedgerDirs().get(0).getName();
+    }
+
     // CacheCallback functions.
     @Override
     public void onSizeLimitReached(final Checkpoint cp) throws IOException {
@@ -357,7 +381,8 @@ public class SortedLedgerStorage
             public void run() {
                 for (InterleavedLedgerStorage s : interleavedLedgerStorageList) {
                     try {
-                        LOG.info("Started flushing mem table.");
+                        LOG.info("ledgerStorage({}) started flushing mem table.",
+                                getEntryLogDirPath(s.getEntryLogger()));
                         s.getEntryLogger().prepareEntryMemTableFlush();
                         memTable.flush(SortedLedgerStorage.this);
 
@@ -366,7 +391,8 @@ public class SortedLedgerStorage
                         }
                     } catch (Exception e) {
                         s.getStateManager().transitionToReadOnlyMode();
-                        LOG.error("Exception thrown while flushing skip list cache.", e);
+                        LOG.error("ledgerStorage ({}) exception thrown while flushing skip list cache.",
+                                getEntryLogDirPath(s.getEntryLogger()), e);
                     }
                 }
             }
@@ -381,7 +407,7 @@ public class SortedLedgerStorage
         // flushed to the entry log file.
     }
 
-    public List<DefaultEntryLogger> getEntryLogger() {
+    public List<DefaultEntryLogger> getDefaultEntryLoggers() {
         List<DefaultEntryLogger> listIt = new ArrayList<>(numberOfDirs);
         for (InterleavedLedgerStorage ls : interleavedLedgerStorageList) {
             listIt.add(ls.getEntryLogger());
@@ -413,18 +439,30 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public LedgerStorage getUnderlyingLedgerStorage() {
-        return interleavedLedgerStorageList.get(0);
+    public List<InterleavedLedgerStorage> getUnderlyingLedgerStorage() {
+        return interleavedLedgerStorageList;
     }
 
     @Override
     public void forceGC() {
-        interleavedLedgerStorageList.forEach(s -> s.forceGC());
+        interleavedLedgerStorageList.forEach(s -> {
+            try {
+                s.forceGC();
+            } catch (Throwable e) {
+                LOG.error("ledgerStorage({}) force gc has error.", getEntryLogDirPath(s.getEntryLogger()), e);
+            }
+        });
     }
 
     @Override
     public void forceGC(Boolean forceMajor, Boolean forceMinor) {
-        interleavedLedgerStorageList.forEach(s -> s.forceGC(forceMajor, forceMinor));
+        interleavedLedgerStorageList.forEach(s -> {
+            try {
+                s.forceGC(forceMajor, forceMinor);
+            } catch (Throwable e) {
+                LOG.error("ledgerStorage({}) force gc(2 params) has error.", getEntryLogDirPath(s.getEntryLogger()), e);
+            }
+        });
     }
 
     @Override

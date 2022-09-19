@@ -309,8 +309,8 @@ public class DefaultEntryLogTest {
         BookieImpl bookie = new TestBookieImpl(conf);
         DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf,
                 bookie.getLedgerDirsManager());
-        InterleavedLedgerStorage ledgerStorage =
-                ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage());
+        List<InterleavedLedgerStorage> ils = bookie.ledgerStorage.getUnderlyingLedgerStorage();
+        InterleavedLedgerStorage ledgerStorage = ils.get(0);
         ledgerStorage.entryLogger = entryLogger;
         // Create ledgers
         ledgerStorage.setMasterKey(1, "key".getBytes());
