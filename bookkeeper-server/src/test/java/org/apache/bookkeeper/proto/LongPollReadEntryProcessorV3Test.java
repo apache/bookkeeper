@@ -83,6 +83,7 @@ public class LongPollReadEntryProcessorV3Test {
             .build();
 
         Channel channel = mock(Channel.class);
+        when(channel.isOpen()).thenReturn(true);
         Bookie bookie = mock(Bookie.class);
 
         BookieRequestProcessor requestProcessor = mock(BookieRequestProcessor.class);
