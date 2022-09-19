@@ -61,6 +61,13 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received new read request: {}", request);
         }
+        if (!channel.isOpen()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Dropping read request for closed channel: {}", channel);
+            }
+            requestProcessor.onReadRequestFinish();
+            return;
+        }
         int errorCode = BookieProtocol.EOK;
         long startTimeNanos = MathUtils.nowInNano();
         ByteBuf data = null;

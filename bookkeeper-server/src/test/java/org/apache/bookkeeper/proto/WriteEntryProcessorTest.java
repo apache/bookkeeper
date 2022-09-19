@@ -66,6 +66,7 @@ public class WriteEntryProcessorTest {
             new byte[0],
             Unpooled.wrappedBuffer("test-entry-data".getBytes(UTF_8)));
         channel = mock(Channel.class);
+        when(channel.isOpen()).thenReturn(true);
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);

@@ -249,6 +249,13 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     public void safeRun() {
         requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        if (!channel.isOpen()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Dropping read request for closed channel: {}", channel);
+            }
+            requestProcessor.onReadRequestFinish();
+            return;
+        }
 
         if (!isVersionCompatible()) {
             ReadResponse readResponse = ReadResponse.newBuilder()
