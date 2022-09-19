@@ -31,6 +31,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -52,6 +54,8 @@ public class LocationsIndexRebuildOp {
     public LocationsIndexRebuildOp(ServerConfiguration conf) {
         this.conf = conf;
     }
+
+    private static final int BATCH_COMMIT_SIZE = 10_000;
 
     public void initiate() throws IOException {
         LOG.info("Starting locations index rebuilding");
@@ -90,6 +94,8 @@ public class LocationsIndexRebuildOp {
             int totalEntryLogs = entryLogs.size();
             int completedEntryLogs = 0;
             LOG.info("Scanning {} entry logs", totalEntryLogs);
+            AtomicReference<KeyValueStorage.Batch> batch = new AtomicReference<>(newIndex.newBatch());
+            AtomicInteger count = new AtomicInteger();
 
             for (long entryLogId : entryLogs) {
                 entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
@@ -108,7 +114,15 @@ public class LocationsIndexRebuildOp {
                         // Update the ledger index page
                         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
                         LongWrapper value = LongWrapper.get(location);
-                        newIndex.put(key.array, value.array);
+                        batch.get().put(key.array, value.array);
+
+                        if (count.incrementAndGet() > BATCH_COMMIT_SIZE) {
+                            batch.get().flush();
+                            batch.get().close();
+
+                            batch.set(newIndex.newBatch());
+                            count.set(0);
+                        }
                     }
 
                     @Override
@@ -121,6 +135,9 @@ public class LocationsIndexRebuildOp {
                 LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId),
                         completedEntryLogs, totalEntryLogs);
             }
+
+            batch.get().flush();
+            batch.get().close();
 
             newIndex.sync();
             newIndex.close();
