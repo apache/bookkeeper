@@ -77,6 +77,7 @@ public class WriteEntryProcessorV3Test {
                 .build())
             .build();
         channel = mock(Channel.class);
+        when(channel.isOpen()).thenReturn(true);
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
