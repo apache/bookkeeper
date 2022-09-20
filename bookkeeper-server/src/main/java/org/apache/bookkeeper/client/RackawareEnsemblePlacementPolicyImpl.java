@@ -270,8 +270,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
             } catch (RuntimeException re) {
                 if (!conf.getEnforceMinNumRacksPerWriteQuorum()) {
-                    LOG.warn("Failed to initialize DNS Resolver {}, used default subnet resolver ",
-                            dnsResolverName, re);
+                    LOG.warn("Failed to initialize DNS Resolver {}, used default subnet resolver because {}",
+                            dnsResolverName, re.getMessage());
                     dnsResolver = new DefaultResolver(this::getDefaultRack);
                     dnsResolver.setBookieAddressResolver(bookieAddressResolver);
                 } else {
