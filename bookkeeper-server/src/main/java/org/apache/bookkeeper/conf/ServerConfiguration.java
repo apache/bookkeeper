@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.RegistrationSessionExpiredPolicy;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.conf.ConfigDef;
@@ -284,6 +285,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Registration
     protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
+    protected static final String REGISTRATION_SESSION_EXPIRED_POLICY = "registrationSessionExpiredPolicy";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -3792,6 +3794,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
                 ZKRegistrationManager.class, RegistrationManager.class,
                 DEFAULT_LOADER);
+    }
+
+    /**
+     * Set Registration session expired connection reconnect policy.
+     *
+     * @param sessionExpiredPolicy
+     * @return server configuration.
+     */
+    public ServerConfiguration setRegistrationSessionExpiredPolicy(RegistrationSessionExpiredPolicy sessionExpiredPolicy) {
+        setProperty(REGISTRATION_SESSION_EXPIRED_POLICY, sessionExpiredPolicy.toString());
+        return this;
+    }
+
+    /**
+     * Get Registration session expired connection reconnect policy.
+     *
+     * @return session expired connection reconnect policy
+     */
+    public RegistrationSessionExpiredPolicy getRegistrationSessionExpiredPolicy() {
+        return RegistrationSessionExpiredPolicy.valueOf(
+                getString(REGISTRATION_SESSION_EXPIRED_POLICY, RegistrationSessionExpiredPolicy.reconnect.toString()));
     }
 
     @Override
