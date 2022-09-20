@@ -3802,7 +3802,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param sessionExpiredPolicy
      * @return server configuration.
      */
-    public ServerConfiguration setRegistrationSessionExpiredPolicy(RegistrationSessionExpiredPolicy sessionExpiredPolicy) {
+    public ServerConfiguration setRegistrationSessionExpiredPolicy(
+            RegistrationSessionExpiredPolicy sessionExpiredPolicy) {
         setProperty(REGISTRATION_SESSION_EXPIRED_POLICY, sessionExpiredPolicy.toString());
         return this;
     }
