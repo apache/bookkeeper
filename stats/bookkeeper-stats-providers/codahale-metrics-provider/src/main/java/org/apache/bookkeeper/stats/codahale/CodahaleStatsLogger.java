@@ -25,6 +25,8 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
  */
@@ -70,8 +72,14 @@ public class CodahaleStatsLogger implements StatsLogger {
             }
 
             @Override
-            public void add(long delta) {
+            public void addCount(long delta) {
                 c.inc(delta);
+            }
+
+            @Override
+            public void addLatency(long eventLatency, TimeUnit unit) {
+                long valueMillis = unit.toMicros(eventLatency) / 1000;
+                c.inc(valueMillis);
             }
         };
     }
