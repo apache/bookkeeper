@@ -19,9 +19,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,8 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,8 +52,7 @@ public class LedgerChecker {
     public final BookieClient bookieClient;
     public final BookieWatcher bookieWatcher;
 
-    private final Semaphore semaphore;
-    private final ExecutorService executor;
+    final Semaphore semaphore;
 
     static class InvalidFragmentException extends Exception {
         private static final long serialVersionUID = 1467201276417062353L;
@@ -85,15 +80,14 @@ public class LedgerChecker {
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                 ByteBuf buffer, Object ctx) {
             releasePermit();
-            executor.execute(safeRun(() -> {
-                if (rc == BKException.Code.OK) {
-                    if (numEntries.decrementAndGet() == 0 && !completed.getAndSet(true)) {
-                        cb.operationComplete(rc, fragment);
-                    }
-                } else if (!completed.getAndSet(true)) {
+            if (rc == BKException.Code.OK) {
+                if (numEntries.decrementAndGet() == 0
+                        && !completed.getAndSet(true)) {
                     cb.operationComplete(rc, fragment);
                 }
-            }));
+            } else if (!completed.getAndSet(true)) {
+                cb.operationComplete(rc, fragment);
+            }
         }
     }
 
@@ -166,8 +160,6 @@ public class LedgerChecker {
         } else {
             semaphore = null;
         }
-        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("BookieLedgerChecker").setDaemon(true).build());
     }
 
     /**
@@ -328,16 +320,14 @@ public class LedgerChecker {
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
             releasePermit();
-            executor.execute(safeRun(() -> {
-                if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
-                        && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
-                    entryMayExist.set(true);
-                }
+            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc
+                    && BKException.Code.NoSuchLedgerExistsOnMetadataServerException != rc) {
+                entryMayExist.set(true);
+            }
 
-                if (numReads.decrementAndGet() == 0) {
-                    cb.operationComplete(rc, entryMayExist.get());
-                }
-            }));
+            if (numReads.decrementAndGet() == 0) {
+                cb.operationComplete(rc, entryMayExist.get());
+            }
         }
     }
 
@@ -436,6 +426,11 @@ public class LedgerChecker {
             if (curEntryId == lastEntry) {
                 final long entryToRead = curEntryId;
 
+                final CompletableFuture<Void> future = new CompletableFuture<>();
+                future.whenCompleteAsync((re, ex) -> {
+                    checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
+                });
+
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   @Override
@@ -443,8 +438,7 @@ public class LedgerChecker {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
-                                                      checkFragments(fragments, cb,
-                                                          percentageOfLedgerFragmentToBeVerified);
+                                                      future.complete(null);
                                                   }
                                               });
 
