@@ -37,6 +37,6 @@ or
 Last step to verify is you could run this command to check if the bookie you decommissioned doesn’t show up in list bookies:
 
 ```bash
-./bookkeeper shell listbookies -rw -h
-./bookkeeper shell listbookies -ro -h
+$ bin/bookkeeper shell listbookies -rw -h
+$ bin/bookkeeper shell listbookies -ro -h
 ```
