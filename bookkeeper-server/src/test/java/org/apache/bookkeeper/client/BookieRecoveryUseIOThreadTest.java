@@ -26,6 +26,9 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * BookieRecoveryUseIOThreadTest to test when the worker thread setting as 0.
+ */
 public class BookieRecoveryUseIOThreadTest extends BookKeeperClusterTestCase {
 
     public BookieRecoveryUseIOThreadTest() {
