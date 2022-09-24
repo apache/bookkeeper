@@ -20,12 +20,11 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
