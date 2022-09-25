@@ -60,8 +60,8 @@ public class LongAdderCounter implements Counter {
     }
 
     /**
-     * When counter is used to count time, consistent with
-     * the {@link DataSketchesOpStatsLogger#registerSuccessfulEvent(long, TimeUnit)} 's logic
+     * When counter is used to count time,
+     * consistent with the {@link DataSketchesOpStatsLogger#registerSuccessfulEvent(long, TimeUnit)} 's logic
      * */
     @Override
     public void addLatency(long eventLatency, TimeUnit unit) {
