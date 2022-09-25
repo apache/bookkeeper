@@ -60,7 +60,7 @@ public class LongAdderCounter implements Counter {
     }
 
     /**
-     * When counter is used to count time,
+     * When counter is used to count time.
      * consistent with the {@link DataSketchesOpStatsLogger#registerSuccessfulEvent(long, TimeUnit)} 's logic
      * */
     @Override
