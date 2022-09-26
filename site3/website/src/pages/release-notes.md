@@ -5,7 +5,7 @@
 
 Release 4.15.2 contains various bug fixes and some dependencies CVE fixes.
 
-Apache BookKeeper users are encouraged to upgrade to 4.15.1.
+Apache BookKeeper users are encouraged to upgrade to 4.15.2.
 The technical details of this release are summarized below.
 
 ### Highlights
