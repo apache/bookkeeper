@@ -1262,7 +1262,7 @@ public class LedgerHandle implements WriteHandle {
             final int maxBackoff = 4;
             final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
 
-            while (!isWriteSetWritable(writeSet, allowedNonWritableCount)) {
+            while (!(success = isWriteSetWritable(writeSet, allowedNonWritableCount))) {
                 if (MathUtils.nowInNano() < deadline) {
                     long maxSleep = MathUtils.elapsedMSec(startTime);
                     if (maxSleep < 0) {
@@ -1286,9 +1286,10 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
             if (backoff > 1) {
-                LOG.info("Spent {} ms waiting for {} writable channels",
+                LOG.info("Spent {} ms waiting for {} writable channels, writable result {}",
                         MathUtils.elapsedMSec(startTime),
-                        writeSet.size() - allowedNonWritableCount);
+                        writeSet.size() - allowedNonWritableCount,
+                        success);
             }
         }
 
