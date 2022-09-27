@@ -18,6 +18,7 @@ package org.apache.bookkeeper.stats.prometheus;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 
@@ -65,8 +66,13 @@ public class ThreadScopedLongAdderCounter implements Counter {
     }
 
     @Override
-    public void add(long delta) {
-        getCounter().add(delta);
+    public void addCount(long delta) {
+        getCounter().addCount(delta);
+    }
+
+    @Override
+    public void addLatency(long eventLatency, TimeUnit unit) {
+        getCounter().addLatency(eventLatency, unit);
     }
 
     @Override

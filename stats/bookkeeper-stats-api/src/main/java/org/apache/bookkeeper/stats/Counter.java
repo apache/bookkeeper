@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Simple stats that require only increment and decrement
  * functions on a Long. Metrics like the number of topics, persist queue size
@@ -41,7 +43,15 @@ public interface Counter {
      * Add delta to the value associated with this stat.
      * @param delta
      */
-    void add(long delta);
+    void addCount(long delta);
+
+    /**
+     * An operation succeeded with the given eventLatency. Update
+     * stats to reflect the same
+     * @param eventLatency The event latency
+     * @param unit
+     */
+    void addLatency(long eventLatency, TimeUnit unit);
 
     /**
      * Get the value associated with this stat.

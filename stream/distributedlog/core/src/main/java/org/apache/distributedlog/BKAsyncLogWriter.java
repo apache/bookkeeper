@@ -367,7 +367,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                             FutureUtils.complete(rollingFuture, writer);
                         }
                         rollingFuture = null;
-                        pendingRequestDispatch.add(pendingRequests.size());
+                        pendingRequestDispatch.addCount(pendingRequests.size());
                         pendingRequests = null;
                     }
                 } catch (IOException ioe) {
@@ -395,7 +395,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
             rollingFuture = null;
         }
 
-        pendingRequestDispatch.add(pendingRequestsSnapshot.size());
+        pendingRequestDispatch.addCount(pendingRequestsSnapshot.size());
 
         // After erroring out the writer above, no more requests
         // will be enqueued to pendingRequests

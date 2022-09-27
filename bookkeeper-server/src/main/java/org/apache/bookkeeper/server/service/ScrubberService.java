@@ -105,7 +105,7 @@ public class ScrubberService extends ServerLifecycleComponent {
         try {
             List<LedgerStorage.DetectedInconsistency> errors = ledgerStorage.localConsistencyCheck(scrubRateLimiter);
             if (errors.size() > 0) {
-                errorCounter.add(errors.size());
+                errorCounter.addCount(errors.size());
                 LOG.error("Found inconsistency during localConsistencyCheck:");
                 for (LedgerStorage.DetectedInconsistency error : errors) {
                     LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());

@@ -931,7 +931,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
 
-        bookieStats.getWriteBytes().add(entry.readableBytes());
+        bookieStats.getWriteBytes().addCount(entry.readableBytes());
 
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
@@ -1110,7 +1110,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
             ByteBuf entry = handle.readEntry(entryId);
             entrySize = entry.readableBytes();
-            bookieStats.getReadBytes().add(entrySize);
+            bookieStats.getReadBytes().addCount(entrySize);
             success = true;
             return entry;
         } finally {

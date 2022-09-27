@@ -346,7 +346,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
-            callbackTime.add(MathUtils.elapsedNanos(startTime));
+            callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -515,7 +515,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             while (running) {
                 ForceWriteRequest req = null;
                 try {
-                    forceWriteThreadTime.add(MathUtils.elapsedNanos(busyStartTime));
+                    forceWriteThreadTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
                     req = forceWriteRequests.take();
                     busyStartTime = System.nanoTime();
                     // Force write the file and then notify the write completions
@@ -1081,7 +1081,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     if (numEntriesToFlush == 0) {
-                        journalTime.add(MathUtils.elapsedNanos(busyStartTime));
+                        journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
                         busyStartTime = dequeueStartTime;
@@ -1230,7 +1230,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     qe.entry.release();
                 } else if (qe.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
-                    journalStats.getJournalWriteBytes().add(entrySize);
+                    journalStats.getJournalWriteBytes().addCount(entrySize);
 
                     batchSize += (4 + entrySize);
 

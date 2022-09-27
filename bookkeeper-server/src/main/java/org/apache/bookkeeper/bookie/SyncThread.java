@@ -111,7 +111,7 @@ class SyncThread implements Checkpointer {
                 log.error("Exception in SyncThread", t);
                 dirsListener.fatalError();
             } finally {
-                syncExecutorTime.add(MathUtils.elapsedNanos(startTime));
+                syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
         });
     }
@@ -124,7 +124,7 @@ class SyncThread implements Checkpointer {
             } catch (Throwable t) {
                 log.error("Exception flushing ledgers ", t);
             } finally {
-                syncExecutorTime.add(MathUtils.elapsedNanos(startTime));
+                syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
         });
     }
