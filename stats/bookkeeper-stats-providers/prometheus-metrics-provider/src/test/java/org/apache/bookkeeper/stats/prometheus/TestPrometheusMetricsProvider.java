@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -98,7 +99,16 @@ public class TestPrometheusMetricsProvider {
         assertEquals(1L, counter.get().longValue());
         counter.dec();
         assertEquals(0L, counter.get().longValue());
-        counter.add(3);
+        counter.addCount(3);
+        assertEquals(3L, counter.get().longValue());
+    }
+
+    @Test
+    public void testCounter2() {
+        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
+        long value = counter.get();
+        assertEquals(0L, value);
+        counter.addLatency(3 * 1000 * 1000L, TimeUnit.NANOSECONDS);
         assertEquals(3L, counter.get().longValue());
     }
 
