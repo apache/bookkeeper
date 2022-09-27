@@ -65,7 +65,7 @@ public class LongAdderCounter implements Counter {
      * */
     @Override
     public void addLatency(long eventLatency, TimeUnit unit) {
-        long valueMillis = unit.toMicros(eventLatency) / 1000;
+        long valueMillis = unit.toMillis(eventLatency);
         counter.add(valueMillis);
     }
 

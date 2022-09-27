@@ -77,7 +77,7 @@ public class CodahaleStatsLogger implements StatsLogger {
 
             @Override
             public void addLatency(long eventLatency, TimeUnit unit) {
-                long valueMillis = unit.toMicros(eventLatency) / 1000;
+                long valueMillis = unit.toMillis(eventLatency);
                 c.inc(valueMillis);
             }
         };

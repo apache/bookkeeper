@@ -134,7 +134,7 @@ public class BroadCastStatsLogger {
 
                 @Override
                 public void addLatency(long eventLatency, TimeUnit unit) {
-                    long valueMillis = unit.toMicros(eventLatency) / 1000;
+                    long valueMillis = unit.toMillis(eventLatency);
                     firstCounter.addCount(valueMillis);
                     secondCounter.addCount(valueMillis);
                 }
