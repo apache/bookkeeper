@@ -390,4 +390,32 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
+
+    @Test
+    public void testWaitForWritable() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+
+        byte[] pwd = new byte[]{};
+        try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, pwd)) {
+            long entryId = lh.addEntry(this.entry);
+
+            RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(1, 1, 1);
+            DistributionSchedule.WriteSet writeSet = schedule.getWriteSet(entryId);
+
+            int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
+            List<BookieId> curEns = lh.getCurrentEnsemble();
+
+            // disable channel writable
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
+            boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
+            assertFalse("We should check b0 is not writeable", isWriteable);
+
+            // enable channel writable
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
+            isWriteable = lh.waitForWritable(writeSet, 0, 1000);
+            assertTrue("We should check b0 is writeable", isWriteable);
+        }
+    }
 }

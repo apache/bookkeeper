@@ -1255,14 +1255,14 @@ public class LedgerHandle implements WriteHandle {
         }
 
         final long startTime = MathUtils.nowInNano();
-        boolean success = isWriteSetWritable(writeSet, allowedNonWritableCount);
+        boolean writableResult = isWriteSetWritable(writeSet, allowedNonWritableCount);
 
-        if (!success && durationMs > 0) {
+        if (!writableResult && durationMs > 0) {
             int backoff = 1;
             final int maxBackoff = 4;
             final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
 
-            while (!(success = isWriteSetWritable(writeSet, allowedNonWritableCount))) {
+            while (!(writableResult = isWriteSetWritable(writeSet, allowedNonWritableCount))) {
                 if (MathUtils.nowInNano() < deadline) {
                     long maxSleep = MathUtils.elapsedMSec(startTime);
                     if (maxSleep < 0) {
@@ -1274,14 +1274,14 @@ public class LedgerHandle implements WriteHandle {
                         TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        success = isWriteSetWritable(writeSet, allowedNonWritableCount);
+                        writableResult = isWriteSetWritable(writeSet, allowedNonWritableCount);
                         break;
                     }
                     if (backoff <= maxBackoff) {
                         backoff++;
                     }
                 } else {
-                    success = false;
+                    writableResult = false;
                     break;
                 }
             }
@@ -1289,18 +1289,18 @@ public class LedgerHandle implements WriteHandle {
                 LOG.info("Spent {} ms waiting for {} writable channels, writable result {}",
                         MathUtils.elapsedMSec(startTime),
                         writeSet.size() - allowedNonWritableCount,
-                        success);
+                        writableResult);
             }
         }
 
-        if (success) {
+        if (writableResult) {
             clientChannelWriteWaitStats.registerSuccessfulEvent(
                     MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
             clientChannelWriteWaitStats.registerFailedEvent(
                     MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
-        return success;
+        return writableResult;
     }
 
     protected void doAsyncAddEntry(final PendingAddOp op) {
