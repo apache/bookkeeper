@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -426,6 +427,11 @@ public class LedgerChecker {
             if (curEntryId == lastEntry) {
                 final long entryToRead = curEntryId;
 
+                final CompletableFuture<Void> future = new CompletableFuture<>();
+                future.whenCompleteAsync((re, ex) -> {
+                    checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
+                });
+
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   @Override
@@ -433,8 +439,7 @@ public class LedgerChecker {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
-                                                      checkFragments(fragments, cb,
-                                                          percentageOfLedgerFragmentToBeVerified);
+                                                      future.complete(null);
                                                   }
                                               });
 
