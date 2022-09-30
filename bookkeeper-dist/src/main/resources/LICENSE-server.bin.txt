@@ -212,7 +212,7 @@ Apache Software License, Version 2.
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
 - lib/commons-cli-commons-cli-1.2.jar [5]
-- lib/commons-codec-commons-codec-1.6.jar [6]
+- lib/commons-codec-commons-codec-1.13.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
 - lib/commons-io-commons-io-2.7.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
