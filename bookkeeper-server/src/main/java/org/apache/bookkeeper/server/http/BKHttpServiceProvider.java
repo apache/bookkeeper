@@ -58,6 +58,8 @@ import org.apache.bookkeeper.server.http.service.LostBookieRecoveryDelayService;
 import org.apache.bookkeeper.server.http.service.MetricsService;
 import org.apache.bookkeeper.server.http.service.ReadLedgerEntryService;
 import org.apache.bookkeeper.server.http.service.RecoveryBookieService;
+import org.apache.bookkeeper.server.http.service.ResumeCompactionService;
+import org.apache.bookkeeper.server.http.service.SuspendCompactionService;
 import org.apache.bookkeeper.server.http.service.TriggerAuditService;
 import org.apache.bookkeeper.server.http.service.TriggerGCService;
 import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
@@ -223,6 +225,10 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new BookieIsReadyService(bookieServer.getBookie());
             case BOOKIE_INFO:
                 return new BookieInfoService(bookieServer.getBookie());
+            case SUSPEND_GC_COMPACTION:
+                return new SuspendCompactionService(bookieServer);
+            case RESUME_GC_COMPACTION:
+                return new ResumeCompactionService(bookieServer);
 
             // autorecovery
             case AUTORECOVERY_STATUS:
