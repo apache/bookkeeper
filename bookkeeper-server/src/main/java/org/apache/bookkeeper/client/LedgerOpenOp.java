@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -48,7 +47,6 @@ import org.slf4j.LoggerFactory;
  * Encapsulates the ledger open operation.
  *
  */
-@Slf4j
 class LedgerOpenOp {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
@@ -206,7 +204,7 @@ class LedgerOpenOp {
                     } else if (rc == BKException.Code.UnauthorizedAccessException) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
-                                log.error("Ledger {} close failed", ledgerId, ex);
+                                LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
                             openComplete(BKException.Code.UnauthorizedAccessException, null);
                         });
@@ -227,7 +225,7 @@ class LedgerOpenOp {
                     if (rc != BKException.Code.OK) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
-                                log.error("Ledger {} close failed", ledgerId, ex);
+                                LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
                             openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
                         });
