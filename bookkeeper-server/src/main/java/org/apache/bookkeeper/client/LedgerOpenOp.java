@@ -245,12 +245,17 @@ class LedgerOpenOp {
         } else {
             openOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
-        lh.executeOrdered(new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                cb.openComplete(rc, lh, ctx);
-            }
-        });
+
+        if (lh != null) { // lh is null in case of errors
+            lh.executeOrdered(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.openComplete(rc, lh, ctx);
+                }
+            });
+        } else {
+            cb.openComplete(rc, lh, ctx);
+        }
     }
 
     static final class OpenBuilderImpl extends OpenBuilderBase {

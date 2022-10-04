@@ -272,12 +272,16 @@ class LedgerCreateOp {
         } else {
             createOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
-        lh.executeOrdered(new SafeRunnable() {
-                              @Override
-                              public void safeRun() {
-                                  cb.createComplete(rc, lh, ctx);
-                              }
-        });
+        if (lh != null) { // lh is null in case of errors
+            lh.executeOrdered(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.createComplete(rc, lh, ctx);
+                }
+            });
+        } else {
+            cb.createComplete(rc, lh, ctx);
+        }
     }
 
     public static class CreateBuilderImpl implements CreateBuilder {
