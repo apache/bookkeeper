@@ -2089,7 +2089,7 @@ public class LedgerHandle implements WriteHandle {
      * @param runnable
      * @throws RejectedExecutionException
      */
-    void executeOrdered(SafeRunnable runnable) throws RejectedExecutionException {
+    void executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable runnable) throws RejectedExecutionException {
         clientCtx.getMainWorkerPool().executeOrdered(ledgerId, runnable);
     }
 
