@@ -280,7 +280,7 @@ class LedgerCreateOp {
                 }
             });
         } else {
-            cb.createComplete(rc, lh, ctx);
+            cb.createComplete(rc, null, ctx);
         }
     }
 

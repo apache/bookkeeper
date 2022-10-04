@@ -254,7 +254,7 @@ class LedgerOpenOp {
                 }
             });
         } else {
-            cb.openComplete(rc, lh, ctx);
+            cb.openComplete(rc, null, ctx);
         }
     }
 
