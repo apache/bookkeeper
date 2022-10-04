@@ -44,8 +44,11 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 
@@ -53,11 +56,15 @@ import org.junit.Test;
  * TestDirectReader.
  */
 public class TestDirectReader {
-    private static final Slogger slog = Slogger.CONSOLE;
 
     private final TmpDirs tmpDirs = new TmpDirs();
     private final ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
     private final OpStatsLogger opLogger = NullStatsLogger.INSTANCE.getOpStatsLogger("null");
+
+    @Before
+    public void before() {
+        Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
+    }
 
     @After
     public void cleanup() throws Exception {
