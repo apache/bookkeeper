@@ -731,7 +731,7 @@ public class BookieWriteLedgerTest extends
                         .withDigestType(org.apache.bookkeeper.client.api.DigestType.CRC32)
                         .withPassword(ledgerPassword).makeAdv().withLedgerId(ledgerId)
                         .execute()
-                        .thenApply(writer -> { // Add entries to ledger when created
+                        .thenCompose(writer -> { // Add entries to ledger when created
                                 LOG.info("Writing stream of {} entries to {}",
                                          numEntriesToWrite, ledgerId);
                                 List<ByteBuf> entries = rng.ints(numEntriesToWrite, 0, maxInt)
@@ -750,8 +750,8 @@ public class BookieWriteLedgerTest extends
                                              ledgerId, entryId, entry.slice().readInt());
                                     lastRequest = writer.writeAsync(entryId, entry);
                                 }
-                                lastRequest.join();
-                                return Pair.of(writer, entries);
+                                return lastRequest
+                                        .thenApply(___ -> Pair.of(writer, entries));
                             });
                 })
             .parallel().map(CompletableFuture::join) // wait for all creations and adds in parallel
