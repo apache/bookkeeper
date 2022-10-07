@@ -76,6 +76,21 @@ class PendingReadLacOp implements ReadLacCallback {
         }
     }
 
+    public void initiate(Set<BookieId> skipStatusRemoveBookies) {
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            if (skipStatusRemoveBookies != null && skipStatusRemoveBookies.size() != 0
+                    && skipStatusRemoveBookies.contains(currentEnsemble.get(i))) {
+                this.readLacComplete(BKException.Code.NoSuchLedgerExistsException,
+                        lh.ledgerId,
+                        null,
+                        null,
+                        i);
+                continue;
+            }
+            bookieClient.readLac(currentEnsemble.get(i), lh.ledgerId, this, i);
+        }
+    }
+
     @Override
     public void readLacComplete(int rc, long ledgerId, final ByteBuf lacBuffer, final ByteBuf lastEntryBuffer,
             Object ctx) {

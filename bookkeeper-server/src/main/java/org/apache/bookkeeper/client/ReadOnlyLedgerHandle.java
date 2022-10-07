@@ -245,6 +245,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         recover(finalCb, null, false);
     }
 
+    void recover(GenericCallback<Void> finalCb, Set<BookieId> skipStatusRemoveBookies) {
+        recover(finalCb, null, false, skipStatusRemoveBookies);
+    }
+
     /**
      * Recover the ledger.
      *
@@ -258,6 +262,16 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     void recover(GenericCallback<Void> finalCb,
                  final @VisibleForTesting ReadEntryListener listener,
                  final boolean forceRecovery) {
+        recover(finalCb,
+                listener,
+                forceRecovery,
+                null);
+    }
+
+    void recover(GenericCallback<Void> finalCb,
+                 final @VisibleForTesting ReadEntryListener listener,
+                 final boolean forceRecovery,
+                 final Set<BookieId> skipStatusRemoveBookies) {
         final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
             finalCb,
             BKException.Code.OK,
@@ -283,7 +297,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                     } else {
                         return new LedgerRecoveryOp(ReadOnlyLedgerHandle.this, clientCtx)
                             .setEntryListener(listener)
-                            .initiate();
+                            .initiate(skipStatusRemoveBookies);
                     }
             })
             .thenCompose((ignore) -> closeRecovered())

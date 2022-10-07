@@ -93,6 +93,25 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         }
     }
 
+    public void initiateWithFencing(Set<BookieId> skipStatusRemoveBookies) {
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            if (skipStatusRemoveBookies != null && skipStatusRemoveBookies.size() != 0
+                    && skipStatusRemoveBookies.contains(currentEnsemble.get(i))) {
+                this.readEntryComplete(BKException.Code.NoSuchLedgerExistsException,
+                        ledgerId,
+                        BookieProtocol.LAST_ADD_CONFIRMED,
+                        null,
+                        i);
+                continue;
+            }
+            bookieClient.readEntry(currentEnsemble.get(i),
+                    ledgerId,
+                    BookieProtocol.LAST_ADD_CONFIRMED,
+                    this, i, BookieProtocol.FLAG_DO_FENCING,
+                    ledgerKey);
+        }
+    }
+
     @Override
     public synchronized void readEntryComplete(final int rc, final long ledgerId, final long entryId,
             final ByteBuf buffer, final Object ctx) {
