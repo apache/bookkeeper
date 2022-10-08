@@ -1,6 +1,34 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.15.2
+
+Release 4.15.2 contains various bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.15.2.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Dependency updates
+
+* Bump snakeyaml from 1.31 to 1.32 to solve CVE-2022-38752. [PR #3491](https://github.com/apache/bookkeeper/pull/3491)
+* upgrade hadoop version to 3.2.4. [PR #3485](https://github.com/apache/bookkeeper/pull/3485)
+* [security] Upgrade Jetty to 9.4.48.v20220622 to get rid of CVE-2022-2047. [PR #3404](https://github.com/apache/bookkeeper/pull/3404)
+* Bump dependency check to 7.1.2 to avoid FP. [PR #3470](https://github.com/apache/bookkeeper/pull/3470)
+* Bump snakeyaml from 1.30 to 1.31 to solve CVE-2022-25857. [PR #3469](https://github.com/apache/bookkeeper/pull/3469)
+
+#### Bugs
+
+* AutoRecovery - Do not call shutdown() on the main ZookKeeper client thread. [PR #3487](https://github.com/apache/bookkeeper/pull/3487)
+* Check if channel closed before processing read request. [PR #3486](https://github.com/apache/bookkeeper/pull/3486)
+* Add missed call to onReadRequestFinish() when read request rejected. [PR #3482](https://github.com/apache/bookkeeper/pull/3482)
+* Fix the deadlock when only using io thread to handle request. [PR #3480](https://github.com/apache/bookkeeper/pull/3480)
+
+#### Metrics changes
+
+* Add latency stats for entry location index lookup so that possible RocksDB bottleneck can be detected. [PR #3444](https://github.com/apache/bookkeeper/pull/3444)
+
 ## 4.15.1
 
 Release 4.15.1 contains performance and stability improvements, new metrics, and various bug fixes.
