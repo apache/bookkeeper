@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -153,33 +153,41 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#add(long)">add</a></span>&#8203;(long&nbsp;delta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addCount(long)">addCount</a></span>&#8203;(long&nbsp;delta)</code></th>
 <td class="colLast">
 <div class="block">Add delta to the value associated with this stat.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addLatency(long,java.util.concurrent.TimeUnit)">addLatency</a></span>&#8203;(long&nbsp;eventLatency,
+          java.util.concurrent.TimeUnit&nbsp;unit)</code></th>
+<td class="colLast">
+<div class="block">An operation succeeded with the given eventLatency.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clear()">clear</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Clear this stat.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#dec()">dec</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Decrement the value associated with this stat.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>java.lang.Long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get()">get</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the value associated with this stat.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc()">inc</a></span>()</code></th>
 <td class="colLast">
@@ -233,17 +241,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Decrement the value associated with this stat.</div>
 </li>
 </ul>
-<a id="add(long)">
+<a id="addCount(long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>add</h4>
-<pre class="methodSignature">void&nbsp;add&#8203;(long&nbsp;delta)</pre>
+<h4>addCount</h4>
+<pre class="methodSignature">void&nbsp;addCount&#8203;(long&nbsp;delta)</pre>
 <div class="block">Add delta to the value associated with this stat.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>delta</code> - </dd>
+</dl>
+</li>
+</ul>
+<a id="addLatency(long,java.util.concurrent.TimeUnit)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addLatency</h4>
+<pre class="methodSignature">void&nbsp;addLatency&#8203;(long&nbsp;eventLatency,
+                java.util.concurrent.TimeUnit&nbsp;unit)</pre>
+<div class="block">An operation succeeded with the given eventLatency. Update
+ stats to reflect the same</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>eventLatency</code> - The event latency</dd>
+<dd><code>unit</code> - </dd>
 </dl>
 </li>
 </ul>

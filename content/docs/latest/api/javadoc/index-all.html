@@ -124,16 +124,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#ACTIVE_TLS_CHANNEL_COUNTER">ACTIVE_TLS_CHANNEL_COUNTER</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Counter.html#add(long)">add(long)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></dt>
-<dd>
-<div class="block">Add delta to the value associated with this stat.</div>
-</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#add(long)">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#add(long)">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html#add(long)">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">ThreadScopedLongAdderCounter</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#ADD_ENTRY_QUORUM_TIMEOUT_SEC">ADD_ENTRY_QUORUM_TIMEOUT_SEC</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#ADD_ENTRY_TIMEOUT_SEC">ADD_ENTRY_TIMEOUT_SEC</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
@@ -172,6 +162,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Callback declaration which additionally passes quorum write complete latency.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Counter.html#addCount(long)">addCount(long)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></dt>
+<dd>
+<div class="block">Add delta to the value associated with this stat.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#addCount(long)">addCount(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#addCount(long)">addCount(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html#addCount(long)">addCount(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">ThreadScopedLongAdderCounter</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#addDefaultFaultDomainBookies(java.util.Set)">addDefaultFaultDomainBookies(Set&lt;BookieId&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">ZoneawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#addDefaultRackBookiesIfMinNumRacksIsEnforced(java.util.Set)">addDefaultRackBookiesIfMinNumRacksIsEnforced(Set&lt;BookieId&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
@@ -220,6 +220,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Implementation of callback interface for synchronous read method.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Counter.html#addLatency(long,java.util.concurrent.TimeUnit)">addLatency(long, TimeUnit)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></dt>
+<dd>
+<div class="block">An operation succeeded with the given eventLatency.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#addLatency(long,java.util.concurrent.TimeUnit)">addLatency(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#addLatency(long,java.util.concurrent.TimeUnit)">addLatency(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
+<dd>
+<div class="block">When counter is used to count time.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html#addLatency(long,java.util.concurrent.TimeUnit)">addLatency(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/ThreadScopedLongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">ThreadScopedLongAdderCounter</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html#addMissingIndices(int)">addMissingIndices(int)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></dt>
 <dd>
 <div class="block">If we want a write set to cover all bookies in an ensemble
@@ -2071,6 +2083,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#execute()">execute()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp.OpenBuilderImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable)">executeOrdered(SafeRunnable)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>
+<div class="block">Execute the callback in the thread pinned to the ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#EXPLICIT_LAC_INTERVAL">EXPLICIT_LAC_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html#explicitLac">explicitLac</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html" title="class in org.apache.bookkeeper.client">ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl</a></dt>

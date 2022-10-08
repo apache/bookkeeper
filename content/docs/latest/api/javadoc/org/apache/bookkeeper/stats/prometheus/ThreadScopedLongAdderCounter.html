@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -185,33 +185,41 @@ implements <a href="../Counter.html" title="interface in org.apache.bookkeeper.s
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#add(long)">add</a></span>&#8203;(long&nbsp;delta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addCount(long)">addCount</a></span>&#8203;(long&nbsp;delta)</code></th>
 <td class="colLast">
 <div class="block">Add delta to the value associated with this stat.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addLatency(long,java.util.concurrent.TimeUnit)">addLatency</a></span>&#8203;(long&nbsp;eventLatency,
+          java.util.concurrent.TimeUnit&nbsp;unit)</code></th>
+<td class="colLast">
+<div class="block">An operation succeeded with the given eventLatency.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clear()">clear</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Clear this stat.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#dec()">dec</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Decrement the value associated with this stat.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>java.lang.Long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get()">get</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the value associated with this stat.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc()">inc</a></span>()</code></th>
 <td class="colLast">
@@ -308,18 +316,37 @@ implements <a href="../Counter.html" title="interface in org.apache.bookkeeper.s
 </dl>
 </li>
 </ul>
-<a id="add(long)">
+<a id="addCount(long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>add</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;add&#8203;(long&nbsp;delta)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../Counter.html#add(long)">Counter</a></code></span></div>
+<h4>addCount</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;addCount&#8203;(long&nbsp;delta)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../Counter.html#addCount(long)">Counter</a></code></span></div>
 <div class="block">Add delta to the value associated with this stat.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../Counter.html#add(long)">add</a></code>&nbsp;in interface&nbsp;<code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></dd>
+<dd><code><a href="../Counter.html#addCount(long)">addCount</a></code>&nbsp;in interface&nbsp;<code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="addLatency(long,java.util.concurrent.TimeUnit)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addLatency</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;addLatency&#8203;(long&nbsp;eventLatency,
+                       java.util.concurrent.TimeUnit&nbsp;unit)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../Counter.html#addLatency(long,java.util.concurrent.TimeUnit)">Counter</a></code></span></div>
+<div class="block">An operation succeeded with the given eventLatency. Update
+ stats to reflect the same</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../Counter.html#addLatency(long,java.util.concurrent.TimeUnit)">addLatency</a></code>&nbsp;in interface&nbsp;<code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>eventLatency</code> - The event latency</dd>
 </dl>
 </li>
 </ul>
