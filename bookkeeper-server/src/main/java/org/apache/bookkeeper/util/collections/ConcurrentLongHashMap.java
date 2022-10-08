@@ -531,7 +531,7 @@ public class ConcurrentLongHashMap<V> {
             try {
                 // Go through all the buckets for this section
                 int capacity = this.capacity;
-                for (int bucket = 0; bucket < capacity; bucket++) {
+                for (int bucket = 0; size > 0 && bucket < capacity; bucket++) {
                     long storedKey = keys[bucket];
                     V storedValue = values[bucket];
 

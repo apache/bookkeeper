@@ -526,7 +526,7 @@ public class ConcurrentOpenHashMap<K, V> {
             int removedCount = 0;
             try {
                 // Go through all the buckets for this section
-                for (int bucket = 0; bucket < table.length; bucket += 2) {
+                for (int bucket = 0; size > 0 && bucket < table.length; bucket += 2) {
                     K storedKey = (K) table[bucket];
                     V storedValue = (V) table[bucket + 1];
 
