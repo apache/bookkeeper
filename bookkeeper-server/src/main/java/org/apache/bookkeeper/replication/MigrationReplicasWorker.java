@@ -21,27 +21,17 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_MIGRATION;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 import org.apache.bookkeeper.bookie.BookieThread;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.client.LedgerChecker;
-import org.apache.bookkeeper.client.LedgerFragment;
-import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.*;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.MetadataClientDriver;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.meta.MigrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +40,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Migrate replica data to other bookie nodes.
  */
-public class ReplicasMigrationWorker implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplicasMigrationWorker.class);
+public class MigrationReplicasWorker implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(MigrationReplicasWorker.class);
     private final BookKeeperAdmin admin;
     private final BiConsumer<Long, Long> onReadEntryFailureCallback;
-    private final MetadataClientDriver metadataClientDriver;
-    private final String rootPath;
-    private final String replicasMigrationPath;
     private final String lock = "locked";
     private final LedgerChecker ledgerChecker;
     private final Thread workerThread;
@@ -64,38 +51,27 @@ public class ReplicasMigrationWorker implements Runnable {
     private volatile boolean workerRunning = false;
     private final String seperator = ",";
     private final String advertisedAddress;
+    private final MigrationManager migrationManager;
 
     @StatsDoc(
             name = NUM_ENTRIES_UNABLE_TO_READ_FOR_MIGRATION,
-            help = "the number of entries ReplicasMigrationWorker unable to read"
+            help = "the number of entries MigrationReplicasWorker unable to read"
     )
     private final Counter numEntriesUnableToReadForMigration;
 
-    public ReplicasMigrationWorker(final ServerConfiguration conf, BookKeeper bkc, StatsLogger statsLogger) {
+    public MigrationReplicasWorker(final ServerConfiguration conf, BookKeeper bkc, StatsLogger statsLogger)
+            throws ReplicationException.CompatibilityException, ReplicationException.UnavailableException,
+            InterruptedException {
+        this.migrationManager = bkc.getLedgerManagerFactory().newMigrationManagerManager();
         this.advertisedAddress = conf.getAdvertisedAddress();
-        this.rootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
-        this.replicasMigrationPath = getReplicasMigrationPath(rootPath);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.admin = new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf));
-        this.metadataClientDriver = bkc.getMetadataClientDriver();
         this.numEntriesUnableToReadForMigration = statsLogger
                 .getCounter(NUM_ENTRIES_UNABLE_TO_READ_FOR_MIGRATION);
         this.onReadEntryFailureCallback = (ledgerid, entryid) -> {
             numEntriesUnableToReadForMigration.inc();
         };
-        this.workerThread = new BookieThread(this, "ReplicasMigrationWorker");
-    }
-
-    public static String getReplicasMigrationPath(String rootPath) {
-        return String.format("%s/%s", rootPath, BookKeeperConstants.MIGRATION_REPLICAS);
-    }
-
-    public static String getLockForMigrationReplicasPath(String replicasMigrationPath, long ledgerId, String lock) {
-        return String.format("%s/%s/%s", replicasMigrationPath, ledgerId, lock);
-    }
-
-    public static String getLedgerForMigrationReplicasPath(String replicasMigrationPath, long ledgerId) {
-        return String.format("%s/%s", replicasMigrationPath, ledgerId);
+        this.workerThread = new BookieThread(this, "MigrationReplicasWorker");
     }
 
     static class Replicas {
@@ -113,41 +89,37 @@ public class ReplicasMigrationWorker implements Runnable {
         }
     }
 
-    private Replicas getReplicasToMigrate(List<String> ledgerIds) throws InterruptedException, KeeperException {
+    private Optional<Replicas> getReplicasToMigrate(List<String> ledgerIds) throws InterruptedException, KeeperException {
         Iterator<String> iterator = ledgerIds.iterator();
         while (iterator.hasNext()) {
             try {
-                String ledgerId = iterator.next();
-                String ledgerForMigrationReplicasPath = getLedgerForMigrationReplicasPath(replicasMigrationPath,
-                        Long.parseLong(ledgerId));
-                if (!metadataClientDriver.exists(ledgerForMigrationReplicasPath)) {
+                long ledgerId = Long.parseLong(iterator.next());
+                if (!migrationManager.exists(ledgerId)) {
                     // The ledger migration is completed
                     iterator.remove();
                     continue;
                 }
-                String bookieIdStr = metadataClientDriver.
-                        getOwnerBookiesMigrationReplicas(ledgerForMigrationReplicasPath);
-
-                String lockForMigrationReplicasPath = getLockForMigrationReplicasPath(replicasMigrationPath,
-                        Long.parseLong(ledgerId), lock);
-                metadataClientDriver.lockMigrationReplicas(lockForMigrationReplicasPath, advertisedAddress);
+                String bookieIdStr = migrationManager.
+                        getOwnerBookiesMigrationReplicas(ledgerId);
+                migrationManager.lockMigrationReplicas(ledgerId, advertisedAddress);
                 String[] migrationBookieIds = bookieIdStr.split(seperator);
                 Set<BookieId> bookieIds = new HashSet<>();
                 for (int i = 0; i < migrationBookieIds.length; i++) {
                     bookieIds.add(BookieId.parse(migrationBookieIds[i]));
                 }
-                return new Replicas(Long.parseLong(ledgerId), bookieIds);
+
+                return Optional.of(new Replicas(ledgerId, bookieIds));
             } catch (KeeperException.NodeExistsException nee) {
                 // do nothing, someone each could have locked the ledger
             } catch (UnsupportedEncodingException e) {
                 LOG.error("The encoding is not supported!", e);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private Set<LedgerFragment> getFragmentsOnMigrationBookies(LedgerHandle lh, Set<BookieId> migrationBookieIds) {
-        return ledgerChecker.getFragmentsOnMigrationBookies(lh, migrationBookieIds);
+        return ledgerChecker.getFragmentsOnMigratedBookies(lh, migrationBookieIds);
     }
 
     private static void waitBackOffTime(long backoffMs) {
@@ -155,18 +127,6 @@ public class ReplicasMigrationWorker implements Runnable {
             Thread.sleep(backoffMs);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    private void releaseLock(Replicas replicas) {
-        try {
-            metadataClientDriver.deleteZkPath(getLockForMigrationReplicasPath(replicasMigrationPath,
-                    replicas.ledgerId, lock));
-            LOG.info(String.format("Release lock for ledgerId %s success!", replicas.ledgerId));
-        } catch (KeeperException.NoNodeException e) {
-            // do nothing,already release lock
-        } catch (Exception e) {
-            LOG.error(String.format("Release lock for ledgerId %s failed!", replicas.ledgerId));
         }
     }
 
@@ -185,7 +145,7 @@ public class ReplicasMigrationWorker implements Runnable {
             // 1. build migrating ledgers
             try {
                 if (toMigrateLedgerIds.isEmpty()) {
-                    toMigrateLedgerIds = metadataClientDriver.listLedgersOfMigrationReplicas(replicasMigrationPath);
+                    toMigrateLedgerIds = migrationManager.listLedgersOfMigrationReplicas();
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -194,28 +154,30 @@ public class ReplicasMigrationWorker implements Runnable {
             }
 
             // 2. Get a replica ledger to replicate or wait back off
-            Replicas replicas = null;
+            Optional<Replicas> replicasOp = Optional.empty();
             try {
-                replicas = getReplicasToMigrate(toMigrateLedgerIds);
+                replicasOp = getReplicasToMigrate(toMigrateLedgerIds);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } catch (Throwable e) {
                 LOG.error("Get migrating replicas failed!", e);
             }
-            if (null == replicas) {
+            if (replicasOp.isEmpty()) {
                 waitBackOffTime(backoffMs);
                 continue;
             }
 
             // 3. Get the fragment containing the migration bookie
+            Replicas replicas = replicasOp.get();
             LOG.info(String.format("Start migrate replicas(%s)!", replicas));
+            boolean released = false;
             try (LedgerHandle lh = admin.openLedgerNoRecovery(replicas.ledgerId)) {
                 Set<LedgerFragment> fragments = getFragmentsOnMigrationBookies(lh, replicas.bookieIds);
                 if (fragments.size() < 1) {
                     //3.The replication has been completed, delete the ledgerId directory and release lock
-                    releaseLock(replicas);
-                    metadataClientDriver.deleteZkPath(getLedgerForMigrationReplicasPath(replicasMigrationPath,
-                            replicas.ledgerId));
+                    migrationManager.releaseLock(replicas.ledgerId);
+                    migrationManager.deleteMigrationLedgerPath(replicas.ledgerId);
+                    released = true;
                     LOG.info(String.format("Finish ledgerId %s migration!", replicas.ledgerId));
                 }
 
@@ -229,9 +191,23 @@ public class ReplicasMigrationWorker implements Runnable {
                 LOG.error(String.format("LedgerId %s migrate failed!", replicas.ledgerId), e);
             } finally {
                 // 5. release lock
-                releaseLock(replicas);
+                if (!released) {
+                    migrationManager.releaseLock(replicas.ledgerId);
+                }
             }
         }
-        LOG.info("ReplicasMigrationWorker exited loop!");
+        LOG.info("MigrationReplicasWorker exited loop!");
+    }
+
+    public void shutdown() {
+        LOG.info("Shutting down migration replicas worker");
+        synchronized (this) {
+            if (!workerRunning) {
+                return;
+            }
+            workerRunning = false;
+        }
+        migrationManager.close();
+        LOG.info("Shutdown finished!");
     }
 }

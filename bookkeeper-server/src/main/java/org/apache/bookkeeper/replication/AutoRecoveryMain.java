@@ -73,7 +73,7 @@ public class AutoRecoveryMain {
     final BookKeeper bkc;
     final AuditorElector auditorElector;
     final ReplicationWorker replicationWorker;
-    final ReplicasMigrationWorker replicasMigrationWorker;
+    final MigrationReplicasWorker migrationReplicasWorker;
     final AutoRecoveryDeathWatcher deathWatcher;
     int exitCode;
     private volatile boolean shuttingDown = false;
@@ -114,7 +114,7 @@ public class AutoRecoveryMain {
             bkc,
             false,
             statsLogger.scope(REPLICATION_WORKER_SCOPE));
-        replicasMigrationWorker = new ReplicasMigrationWorker(
+        migrationReplicasWorker = new MigrationReplicasWorker(
                 conf,
                 bkc,
                 statsLogger.scope(REPLICATION_WORKER_SCOPE));
@@ -127,7 +127,7 @@ public class AutoRecoveryMain {
     public void start() {
         auditorElector.start();
         replicationWorker.start();
-        replicasMigrationWorker.start();
+        migrationReplicasWorker.start();
         if (null != uncaughtExceptionHandler) {
             deathWatcher.setUncaughtExceptionHandler(uncaughtExceptionHandler);
         }
@@ -166,6 +166,7 @@ public class AutoRecoveryMain {
             LOG.warn("Interrupted shutting down auditor elector", e);
         }
         replicationWorker.shutdown();
+        migrationReplicasWorker.shutdown();
         try {
             bkc.close();
         } catch (BKException e) {

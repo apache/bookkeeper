@@ -82,7 +82,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookies.MetaFormatCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.NukeExistingClusterCommand.NukeExistingClusterFlags;
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
-import org.apache.bookkeeper.tools.cli.commands.bookies.ReplicasMigrationCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.MigrationReplicasCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.DeleteLedgerCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.LedgerMetaDataCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -151,7 +151,7 @@ public class BookieShell implements Tool {
     static final String CMD_BOOKIEINFO = "bookieinfo";
     static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
-    static final String CMD_REPLICASMIGRATION = "replicasMigration";
+    static final String CMD_MIGRATIONREPLICAS = "migrationReplicas";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
@@ -1956,10 +1956,10 @@ public class BookieShell implements Tool {
     /**
      * Migrate the specified ledger data on some bookie to other bookies.
      * */
-    class ReplicasMigrationCmd extends MyCommand {
+    class MigrationReplicasCmd extends MyCommand {
 
-        ReplicasMigrationCmd() {
-            super(CMD_REPLICASMIGRATION);
+        MigrationReplicasCmd() {
+            super(CMD_MIGRATIONREPLICAS);
             Option bookiesOpt = new Option("b", "bookieIds", true,
                     "Bookies corresponding to the migrated replica");
             Option ledgersOpt = new Option("l", "ledgerIds", true,
@@ -1981,7 +1981,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_REPLICASMIGRATION + " [-bookieIds <bookieaddres1,bookieaddres2,...> "
+            return CMD_MIGRATIONREPLICAS + " [-bookieIds <bookieaddres1,bookieaddres2,...> "
                     + "-ledgerIds <ledgerId1,ledgerId2,...> -readOnly <true/false>]";
         }
 
@@ -1992,9 +1992,9 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ReplicasMigrationCommand cmd = new ReplicasMigrationCommand();
-            ReplicasMigrationCommand.ReplicasMigrationFlags flags =
-                    new ReplicasMigrationCommand.ReplicasMigrationFlags();
+            MigrationReplicasCommand cmd = new MigrationReplicasCommand();
+            MigrationReplicasCommand.MigrationReplicasFlags flags =
+                    new MigrationReplicasCommand.MigrationReplicasFlags();
             for (Option option : cmdLine.getOptions()) {
                 switch (option.getOpt()) {
                     case "bookieIds":
@@ -2344,7 +2344,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
-        commands.put(CMD_REPLICASMIGRATION, new ReplicasMigrationCmd());
+        commands.put(CMD_MIGRATIONREPLICAS, new MigrationReplicasCmd());
         commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());

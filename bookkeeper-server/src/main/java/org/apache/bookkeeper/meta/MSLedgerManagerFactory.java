@@ -678,6 +678,13 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         return new ZkLedgerUnderreplicationManager(conf, zk);
     }
 
+    @Override
+    public MigrationManager newMigrationManagerManager()
+            throws ReplicationException.UnavailableException, InterruptedException,
+            ReplicationException.CompatibilityException {
+        return new ZkMigrationManager(conf, zk);
+    }
+
     /**
      * Process set one by one in asynchronize way. Process will be stopped
      * immediately when error occurred.

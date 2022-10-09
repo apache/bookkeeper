@@ -77,6 +77,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MigrationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -121,6 +122,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      * getter (getUnderreplicationManager) so that it can be lazy-initialized
      */
     private LedgerUnderreplicationManager underreplicationManager;
+
+    private MigrationManager migrationManager;
 
     private LedgerAuditorManager ledgerAuditorManager;
 
@@ -1489,6 +1492,14 @@ public class BookKeeperAdmin implements AutoCloseable {
             underreplicationManager = mFactory.newLedgerUnderreplicationManager();
         }
         return underreplicationManager;
+    }
+
+    public MigrationManager getMigrationManager()
+            throws CompatibilityException, UnavailableException, InterruptedException {
+        if (migrationManager == null) {
+            migrationManager = mFactory.newMigrationManagerManager();
+        }
+        return migrationManager;
     }
 
     private LedgerAuditorManager getLedgerAuditorManager()

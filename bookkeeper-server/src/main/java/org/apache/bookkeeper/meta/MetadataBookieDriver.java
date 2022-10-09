@@ -18,16 +18,12 @@
  */
 package org.apache.bookkeeper.meta;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * Driver to manage all the metadata managers required by a bookie server.
@@ -90,14 +86,6 @@ public interface MetadataBookieDriver extends AutoCloseable {
         CompletableFuture<Void> result = new CompletableFuture<>();
         result.completeExceptionally(new Exception("disableHealthCheck is not supported by this metadata driver"));
         return result;
-    }
-
-    /**
-     * Submit replicas to be migrated.
-     * */
-    default void submitToMigrateReplicas(Map<Long, Set<BookieId>> toMigratedLedgerAndBookieMap)
-            throws InterruptedException, KeeperException {
-        throw new UnsupportedOperationException("submitToMigrateReplicas is not supported by this metadata driver");
     }
 
     /**

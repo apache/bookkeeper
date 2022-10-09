@@ -95,4 +95,11 @@ public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerMana
             ReplicationException.CompatibilityException{
         return new ZkLedgerUnderreplicationManager(conf, zk);
     }
+
+    @Override
+    public MigrationManager newMigrationManagerManager()
+            throws ReplicationException.UnavailableException, InterruptedException,
+            ReplicationException.CompatibilityException {
+        return new ZkMigrationManager(conf, zk);
+    }
 }

@@ -36,7 +36,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.MigrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -49,17 +49,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Migrate the data of the specified replica to other bookie nodes.
  * */
-public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCommand.ReplicasMigrationFlags> {
-    static final Logger LOG = LoggerFactory.getLogger(ReplicasMigrationCommand.class);
-    private static final String NAME = "replicasMigration";
+public class MigrationReplicasCommand extends BookieCommand<MigrationReplicasCommand.MigrationReplicasFlags> {
+    static final Logger LOG = LoggerFactory.getLogger(MigrationReplicasCommand.class);
+    private static final String NAME = "migrationReplicas";
     private static final String DESC = "Migrate the data of the specified replica to other bookie nodes";
-    private static final String ALL = "ALL";
-    private final String seperator = ",";
-    public ReplicasMigrationCommand() {
-        this(new ReplicasMigrationFlags());
+    public MigrationReplicasCommand() {
+        this(new MigrationReplicasFlags());
     }
-    private ReplicasMigrationCommand(ReplicasMigrationFlags flags) {
-        super(CliSpec.<ReplicasMigrationFlags>newBuilder()
+    private MigrationReplicasCommand(MigrationReplicasFlags flags) {
+        super(CliSpec.<MigrationReplicasFlags>newBuilder()
                 .withName(NAME)
                 .withDescription(DESC)
                 .withFlags(flags)
@@ -67,11 +65,11 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
     }
 
     /**
-     * Flags for replicasMigration command.
+     * Flags for migrationReplicas command.
      */
     @Accessors(fluent = true)
     @Setter
-    public static class ReplicasMigrationFlags extends CliFlags {
+    public static class MigrationReplicasFlags extends CliFlags {
 
         @Parameter(names = { "-b", "--bookieIds" }, description = "Bookies corresponding to the migrated replica, "
                 + "eg: bookieId1,bookieId2,bookieId3")
@@ -88,7 +86,7 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
     }
 
     @Override
-    public boolean apply(ServerConfiguration conf, ReplicasMigrationFlags cmdFlags) {
+    public boolean apply(ServerConfiguration conf, MigrationReplicasFlags cmdFlags) {
         try (BookKeeperAdmin admin = new BookKeeperAdmin(new ClientConfiguration(conf))) {
             if (cmdFlags.readOnly) {
                 if (!conf.isHttpServerEnabled()) {
@@ -100,13 +98,12 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
                 }
 
                 Collection<BookieId> readOnlyBookies = admin.getReadOnlyBookies();
-
+                toSwitchBookieIdsSet.removeAll(readOnlyBookies);
                 Set<BookieId> switchedBookies = new HashSet<>();
                 if (!switchToReadonly(admin, toSwitchBookieIdsSet, switchedBookies, true)) {
                     LOG.warn("Some bookie nodes that fail to set readonly, "
                             + "and the successful bookies fall back to the previous state!");
                     Set<BookieId> fallbackSuccessfulBookies = new HashSet<>();
-                    switchedBookies.removeAll(readOnlyBookies);
                     if (!switchToReadonly(admin, switchedBookies, fallbackSuccessfulBookies, false)) {
                         switchedBookies.removeAll(fallbackSuccessfulBookies);
                         LOG.error(String.format("Fallback failed! Failed nodes:%s", switchedBookies));
@@ -115,7 +112,7 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
                 }
             }
 
-            return replicasMigration(admin, conf, cmdFlags);
+            return migrationReplicas(admin, conf, cmdFlags);
         } catch (Exception e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
         }
@@ -150,7 +147,7 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
         return true;
     }
 
-    private boolean replicasMigration(BookKeeperAdmin admin, ServerConfiguration conf, ReplicasMigrationFlags flags)
+    private boolean migrationReplicas(BookKeeperAdmin admin, ServerConfiguration conf, MigrationReplicasFlags flags)
             throws BKException, InterruptedException {
         try {
             // 1. Build bookieIdsSet adn ledgerIdsToMigrate
@@ -179,19 +176,11 @@ public class ReplicasMigrationCommand extends BookieCommand<ReplicasMigrationCom
             }
 
             // 3. Submit ledger replicas to be migrated
-            MetadataDrivers.runFunctionWithMetadataBookieDriver(conf, driver -> {
-                try {
-                    driver.submitToMigrateReplicas(toMigratedLedgerAndBookieMap);
-                } catch (Throwable e) {
-                    LOG.warn(String.format("The migration task of Replicas=%s submit failed!",
-                            toMigratedLedgerAndBookieMap), e);
-                }
-                return true;
-            });
-
+            MigrationManager migrationManager = admin.getMigrationManager();
+            migrationManager.submitToMigrateReplicas(toMigratedLedgerAndBookieMap);
             return true;
         } catch (Exception e) {
-            LOG.error("Received exception in ReplicasMigrationCommand ", e);
+            LOG.error("Received exception in MigrationReplicasCommand ", e);
             return false;
         } finally {
             admin.close();

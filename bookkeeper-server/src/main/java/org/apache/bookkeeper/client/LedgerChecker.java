@@ -364,7 +364,7 @@ public class LedgerChecker {
         }
     }
 
-    public Set<LedgerFragment> getFragmentsOnMigrationBookies(final LedgerHandle lh, Set<BookieId> migrationBookieIds) {
+    public Set<LedgerFragment> getFragmentsOnMigratedBookies(final LedgerHandle lh, Set<BookieId> migrationBookieIds) {
         // build a set of all fragment migration
         final Set<LedgerFragment> fragments = new HashSet<>();
 

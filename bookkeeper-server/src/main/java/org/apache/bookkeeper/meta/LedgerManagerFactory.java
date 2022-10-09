@@ -87,6 +87,12 @@ public interface LedgerManagerFactory extends AutoCloseable {
             throws ReplicationException.UnavailableException,
             InterruptedException, ReplicationException.CompatibilityException;
 
+    default MigrationManager newMigrationManagerManager()
+            throws ReplicationException.UnavailableException,
+            InterruptedException, ReplicationException.CompatibilityException {
+        throw new UnsupportedOperationException();
+    }
+
 
     /**
      * Return a ledger auditor manager, which is used to
