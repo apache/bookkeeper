@@ -205,9 +205,9 @@
 The following bundled 3rd party jars are distributed under the
 Apache Software License, Version 2.
 
-- lib/com.fasterxml.jackson.core-jackson-annotations-2.13.2.jar [1]
-- lib/com.fasterxml.jackson.core-jackson-core-2.13.2.jar [2]
-- lib/com.fasterxml.jackson.core-jackson-databind-2.13.2.2.jar [3]
+- lib/com.fasterxml.jackson.core-jackson-annotations-2.13.4.jar [1]
+- lib/com.fasterxml.jackson.core-jackson-core-2.13.4.jar [2]
+- lib/com.fasterxml.jackson.core-jackson-databind-2.13.4.jar [3]
 - lib/com.google.guava-guava-31.0.1-jre.jar [4]
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
