@@ -27,6 +27,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -76,7 +78,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
@@ -112,8 +113,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private final ConcurrentLongHashMap<byte[]> masterKeyCache =
-            ConcurrentLongHashMap.<byte[]>newBuilder().build();
+    private final Cache<Long, byte[]> masterKeyCache = CacheBuilder.newBuilder().
+            expireAfterAccess(60, TimeUnit.MINUTES).build();
 
     protected StateManager stateManager;
 
@@ -526,7 +527,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         }
                     } else if (entryId == METAENTRY_ID_FENCE_KEY) {
                         if (journalVersion >= JournalChannel.V4) {
-                            byte[] key = masterKeyCache.get(ledgerId);
+                            byte[] key = masterKeyCache.getIfPresent(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -544,7 +545,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             byte[] explicitLacBufArray = new byte[explicitLacBufLength];
                             recBuff.get(explicitLacBufArray);
                             explicitLacBuf.writeBytes(explicitLacBufArray);
-                            byte[] key = masterKeyCache.get(ledgerId);
+                            byte[] key = masterKeyCache.getIfPresent(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -567,7 +568,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         LOG.warn("Read unrecognizable entryId: {} for ledger: {} while replaying Journal. Skipping it",
                                 entryId, ledgerId);
                     } else {
-                        byte[] key = masterKeyCache.get(ledgerId);
+                        byte[] key = masterKeyCache.getIfPresent(ledgerId);
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
@@ -935,9 +936,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
-        if (masterKeyCache.get(ledgerId) == null) {
+        if (masterKeyCache.getIfPresent(ledgerId) == null) {
             // Force the load into masterKey cache
-            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
+            byte[] oldValue = masterKeyCache.asMap().putIfAbsent(ledgerId, masterKey);
             if (oldValue == null) {
                 // new handle, we should add the key to journal ensure we can rebuild
                 ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
