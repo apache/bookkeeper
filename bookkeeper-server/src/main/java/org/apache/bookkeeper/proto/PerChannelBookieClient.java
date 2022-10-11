@@ -108,7 +108,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.StartTLSCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteAndFlushCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
@@ -765,8 +764,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          WriteFlags
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
-                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags,
-                  Optional<WriteAndFlushCallback> wfc) {
+                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
@@ -775,7 +773,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 executor.executeOrdered(ledgerId, () -> {
                     cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, bookieId, ctx);
                 });
-                wfc.ifPresent(WriteAndFlushCallback::complete);
                 return;
             }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
@@ -835,11 +832,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // because we need to release toSend.
             errorOut(completionKey);
             toSend.release();
-            wfc.ifPresent(WriteAndFlushCallback::complete);
             return;
         } else {
             // addEntry times out on backpressure
-            writeAndFlush(c, completionKey, request, allowFastFail, wfc);
+            writeAndFlush(c, completionKey, request, allowFastFail);
         }
     }
 
@@ -1121,18 +1117,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private void writeAndFlush(final Channel channel,
-                               final CompletionKey key,
-                               final Object request,
-                               final boolean allowFastFail) {
-        writeAndFlush(channel, key, request, allowFastFail, Optional.empty());
-
-    }
-
-    private void writeAndFlush(final Channel channel,
-                               final CompletionKey key,
-                               final Object request,
-                               final boolean allowFastFail,
-                               final Optional<WriteAndFlushCallback> wfc) {
+                           final CompletionKey key,
+                           final Object request,
+                           final boolean allowFastFail) {
         if (channel == null) {
             LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
             errorOut(key);
@@ -1174,7 +1161,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 } else {
                     nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
-                wfc.ifPresent(WriteAndFlushCallback::complete);
             });
 
             channel.writeAndFlush(request, promise);

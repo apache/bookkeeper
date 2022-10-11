@@ -70,7 +70,6 @@ public class BookieClientMemoryCounterTest extends BookKeeperClusterTestCase {
             }
         });
         LedgerHandle lh = bkc.createLedger(1,1, BookKeeper.DigestType.CRC32, "".getBytes());
-        CountDownLatch complete = new CountDownLatch(1);
         byte[] msg = new byte[1024];
 
         CountDownLatch latch = new CountDownLatch(100);

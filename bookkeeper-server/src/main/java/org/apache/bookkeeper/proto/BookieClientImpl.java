@@ -36,7 +36,6 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -50,7 +49,6 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
-import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -64,7 +62,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteAndFlushCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
@@ -103,7 +100,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     private final BookieAddressResolver bookieAddressResolver;
 
     private final long bookieErrorThresholdPerInterval;
-    private Optional<MemoryLimitController> memoryLimitController;
 
     public BookieClientImpl(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
                             ByteBufAllocator allocator,
@@ -138,16 +134,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         } else {
             this.timeoutFuture = null;
         }
-
-        if (conf.getClientMemoryLimitEnabled()) {
-            memoryLimitController = Optional.of(new MemoryLimitController(conf.getClientMemoryLimitByBytes()));
-        } else {
-            memoryLimitController = Optional.empty();
-        }
-    }
-
-    public Optional<MemoryLimitController> getMemoryLimitController() {
-        return memoryLimitController;
     }
 
     private int getRc(int rc) {
@@ -336,33 +322,11 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         // Retain the buffer, since the connection could be obtained after
         // the PendingApp might have already failed
         toSend.retain();
-        Optional<WriteAndFlushCallback> callback = Optional.empty();
-        try {
-            callback = setMemoryLimit(entryId, toSend.readableBytes());
-        } catch (InterruptedException e) {
-            completeAdd(getRc(BKException.Code.IllegalOpException), ledgerId, entryId, addr, cb, ctx);
-            LOG.error("Failed to set memory limit when adding entry {}:{}", ledgerId, entryId, e);
-            return;
-        }
-        client.obtain(ChannelReadyForAddEntryCallback.create(
-                this, toSend, ledgerId, entryId, addr,
-                ctx, cb, options, masterKey, allowFastFail, writeFlags, callback),
-            ledgerId);
-    }
 
-    private Optional<WriteAndFlushCallback> setMemoryLimit(final long entryId, final long entrySize) throws InterruptedException {
-        if (getMemoryLimitController().isPresent()) {
-            MemoryLimitController mlc = getMemoryLimitController().get();
-            mlc.reserveMemory(entrySize);
-            LOG.debug("Acquire memory size {} for entry {}, current usage {} ", entrySize, entryId,
-                mlc.currentUsage());
-            WriteAndFlushCallbackImpl callback = new WriteAndFlushCallbackImpl();
-            callback.setBookieClient(this);
-            callback.setSize(entrySize);
-            callback.setEntryId(entryId);
-            return Optional.of(callback);
-        }
-        return Optional.empty();
+        client.obtain(ChannelReadyForAddEntryCallback.create(
+                              this, toSend, ledgerId, entryId, addr,
+                                  ctx, cb, options, masterKey, allowFastFail, writeFlags),
+                      ledgerId);
     }
 
     @Override
@@ -411,31 +375,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
-    private static class WriteAndFlushCallbackImpl implements WriteAndFlushCallback {
-
-        private BookieClientImpl bookieClient;
-        private long size;
-        private long entryId;
-
-        public void setBookieClient(BookieClientImpl bookieClient) {
-            this.bookieClient = bookieClient;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public void setEntryId(long entryId) {
-            this.entryId = entryId;
-        }
-
-        @Override
-        public void complete() {
-            bookieClient.getMemoryLimitController().get().releaseMemory(size);
-            LOG.debug("Release memory size {} for entry {}", size, entryId);
-        }
-    }
-
     private static class ChannelReadyForAddEntryCallback
         implements GenericCallback<PerChannelBookieClient> {
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
@@ -451,13 +390,12 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private byte[] masterKey;
         private boolean allowFastFail;
         private EnumSet<WriteFlag> writeFlags;
-        private Optional<WriteAndFlushCallback> writeAndFlushCallback;
 
         static ChannelReadyForAddEntryCallback create(
                 BookieClientImpl bookieClient, ByteBufList toSend, long ledgerId,
                 long entryId, BookieId addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
-                EnumSet<WriteFlag> writeFlags, Optional<WriteAndFlushCallback> writeAndFlushCallback) {
+                EnumSet<WriteFlag> writeFlags) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
             callback.bookieClient = bookieClient;
             callback.toSend = toSend;
@@ -470,7 +408,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             callback.masterKey = masterKey;
             callback.allowFastFail = allowFastFail;
             callback.writeFlags = writeFlags;
-            callback.writeAndFlushCallback = writeAndFlushCallback;
             return callback;
         }
 
@@ -481,7 +418,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
             } else {
                 pcbc.addEntry(ledgerId, masterKey, entryId,
-                    toSend, cb, ctx, options, allowFastFail, writeFlags, writeAndFlushCallback);
+                              toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
             toSend.release();
