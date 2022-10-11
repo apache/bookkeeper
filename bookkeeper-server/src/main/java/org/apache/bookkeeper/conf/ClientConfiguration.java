@@ -202,6 +202,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // client memory limit options
     protected static final String CLIENT_MEMORY_LIMIT_ENABLED = "clientMemoryLimitEnabled";
     protected static final String CLIENT_MEMORY_LIMIT_BY_BYTES = "clientMemoryLimitByBytes";
+    protected static final String WRITE_MEMORY_LOW_WATER_MARK = "writeMemoryLowWaterMark";
+    protected static final String WRITE_MEMORY_HIGH_WATER_MARK = "writeMemoryHighWaterMark";
 
     /**
      * Construct a default client-side configuration.
@@ -2078,6 +2080,24 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     public int getClientMemoryLimitByBytes() {
         return getInt(CLIENT_MEMORY_LIMIT_BY_BYTES, 64 * 1024 * 1024);
+    }
+
+    public ClientConfiguration setWriteMemoryLowWaterMark(int bytes) {
+        setProperty(WRITE_MEMORY_LOW_WATER_MARK, bytes);
+        return this;
+    }
+
+    public int getWriteMemoryLowWaterMark() {
+        return getInt(WRITE_MEMORY_LOW_WATER_MARK, 64 * 1024 * 1024);
+    }
+
+    public ClientConfiguration setWriteMemoryHighWaterMark(int bytes) {
+        setProperty(WRITE_MEMORY_HIGH_WATER_MARK, bytes);
+        return this;
+    }
+
+    public int getWriteMemoryHighWaterMark() {
+        return getInt(WRITE_MEMORY_HIGH_WATER_MARK, 256 * 1024 * 1024);
     }
 
     @Override

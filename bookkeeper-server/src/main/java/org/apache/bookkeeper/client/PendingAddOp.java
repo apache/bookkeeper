@@ -96,7 +96,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.currentLedgerLength = -1;
         op.payload = payload;
         op.entryLength = payload.readableBytes();
-
+        op.clientCtx.getWriteMemoryCounter().incrementPendingWriteBytes(op.entryLength);
         op.completed = false;
         op.ensemble = ensemble;
         op.ackSet = lh.getDistributionSchedule().getAckSet();
@@ -493,6 +493,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
         // only recycle a pending add op after it has been run.
         if (hasRun && toSend == null && pendingWriteRequests == 0) {
+            clientCtx.getWriteMemoryCounter().decrementPendingWriteBytes(entryLength);
             recyclePendAddOpObject();
         }
     }

@@ -142,6 +142,15 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
     long getLastAddPushed();
 
     /**
+     *
+     *
+     * @return
+     */
+    default boolean isWritable() {
+        throw new UnsupportedOperationException("This operation is not supported for the current handler");
+    }
+
+    /**
      * Asynchronous close the write handle, any adds in flight will return errors.
      *
      * <p>Closing a ledger will ensure that all clients agree on what the last

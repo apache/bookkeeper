@@ -27,6 +27,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.util.function.BooleanSupplier;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.WriteMemoryCounter;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.MockRegistrationClient;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -53,6 +54,7 @@ public class MockClientContext implements ClientContext {
     private BooleanSupplier isClientClosed;
     private MockRegistrationClient regClient;
     private ByteBufAllocator allocator;
+    private WriteMemoryCounter writeMemoryCounter;
 
     static MockClientContext create(MockBookies mockBookies) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
@@ -64,7 +66,7 @@ public class MockClientContext implements ClientContext {
                                                                     new DefaultBookieAddressResolver(regClient),
                                                                     NullStatsLogger.INSTANCE);
         bookieWatcherImpl.initialBlockingBookieRead();
-
+        WriteMemoryCounter memoryCounter = new WriteMemoryCounter();
         return new MockClientContext()
                 .setConf(ClientInternalConf.fromConfig(conf))
                 .setLedgerManager(new MockLedgerManager())
@@ -76,7 +78,8 @@ public class MockClientContext implements ClientContext {
                 .setMainWorkerPool(scheduler)
                 .setScheduler(scheduler)
                 .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
-                .setIsClientClosed(() -> false);
+                .setIsClientClosed(() -> false)
+                .setWriteMemoryCounter(memoryCounter);
     }
 
     static MockClientContext create() throws Exception {
@@ -95,7 +98,8 @@ public class MockClientContext implements ClientContext {
             .setScheduler(other.getScheduler())
             .setClientStats(other.getClientStats())
             .setByteBufAllocator(other.getByteBufAllocator())
-            .setIsClientClosed(other::isClientClosed);
+            .setIsClientClosed(other::isClientClosed)
+            .setWriteMemoryCounter(other.getWriteMemoryCounter());
     }
 
     public MockRegistrationClient getMockRegistrationClient() {
@@ -168,6 +172,11 @@ public class MockClientContext implements ClientContext {
         return this;
     }
 
+    public MockClientContext setWriteMemoryCounter(WriteMemoryCounter writeMemoryCounter) {
+        this.writeMemoryCounter = writeMemoryCounter;
+        return this;
+    }
+
     private static <T> T maybeSpy(T orig) {
         if (Mockito.mockingDetails(orig).isSpy()) {
             return orig;
@@ -224,5 +233,10 @@ public class MockClientContext implements ClientContext {
     @Override
     public ByteBufAllocator getByteBufAllocator() {
         return allocator;
+    }
+
+    @Override
+    public WriteMemoryCounter getWriteMemoryCounter() {
+        return writeMemoryCounter;
     }
 }

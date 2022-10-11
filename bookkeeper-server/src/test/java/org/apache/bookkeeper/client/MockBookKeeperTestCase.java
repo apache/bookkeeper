@@ -58,6 +58,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.WriteMemoryCounter;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -170,6 +171,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getMainWorkerPool()).thenReturn(executor);
         when(bk.getBookieClient()).thenReturn(bookieClient);
         when(bk.getScheduler()).thenReturn(scheduler);
+        when(bk.getWriteMemoryCounter()).thenCallRealMethod();
 
         setBookKeeperConfig(new ClientConfiguration());
         when(bk.getStatsLogger()).thenReturn(NullStatsLogger.INSTANCE);
@@ -224,7 +226,12 @@ public abstract class MockBookKeeperTestCase {
                 public ByteBufAllocator getByteBufAllocator() {
                     return UnpooledByteBufAllocator.DEFAULT;
                 }
-            };
+
+            @Override
+            public WriteMemoryCounter getWriteMemoryCounter() {
+                return bk.getWriteMemoryCounter();
+            }
+        };
         when(bk.getClientCtx()).thenReturn(clientCtx);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);

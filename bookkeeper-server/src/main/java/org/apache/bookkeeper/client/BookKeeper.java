@@ -67,6 +67,8 @@ import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
+import org.apache.bookkeeper.common.util.WriteMemoryCounter;
+import org.apache.bookkeeper.common.util.WriteWaterMark;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -150,6 +152,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // Close State
     boolean closed = false;
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
+
+    final WriteMemoryCounter writeMemoryCounter;
 
     /**
      * BookKeeper Client Builder to build client instances.
@@ -538,6 +542,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
 
         this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
+
+        this.writeMemoryCounter = new WriteMemoryCounter(
+            new WriteWaterMark(conf.getWriteMemoryLowWaterMark(), conf.getWriteMemoryHighWaterMark()));
+
         scheduleBookieHealthCheckIfEnabled(conf);
     }
 
@@ -566,6 +574,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieClient = null;
         allocator = UnpooledByteBufAllocator.DEFAULT;
         bookieQuarantineRatio = 1.0;
+        writeMemoryCounter = null;
     }
 
     protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -703,6 +712,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     public MetadataClientDriver getMetadataClientDriver() {
         return metadataDriver;
+    }
+
+    WriteMemoryCounter getWriteMemoryCounter() {
+        return writeMemoryCounter;
     }
 
     /**
@@ -1661,6 +1674,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             @Override
             public ByteBufAllocator getByteBufAllocator() {
                 return allocator;
+            }
+
+            @Override
+            public WriteMemoryCounter getWriteMemoryCounter() {
+                return writeMemoryCounter;
             }
         };
 
