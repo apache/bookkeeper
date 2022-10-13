@@ -18,8 +18,11 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPromise;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -104,13 +107,13 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
             }
 
             if (!channel.isWritable()) {
-                LOGGER.warn("cannot write response to non-writable channel {} for request {}", channel,
+                logger.warn("cannot write response to non-writable channel {} for request {}", channel,
                     StringUtils.requestToString(request));
                 requestProcessor.getRequestStats().getChannelWriteStats()
                     .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-                if (response instanceof BookieProtocol.ReadResponse) {
-                    ((BookieProtocol.ReadResponse) response).release();
+                if (response instanceof BookieProtocol.Response) {
+                    ((BookieProtocol.Response) response).release0();
                 }
                 return;
             } else {
@@ -119,12 +122,17 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
         }
 
         if (channel.isActive()) {
-            channel.writeAndFlush(response, channel.voidPromise());
+            ChannelPromise promise = channel.newPromise().addListener(future -> {
+                if (!future.isSuccess()) {
+                    logger.debug("Netty channel write exception. ", future.cause());
+                }
+            });
+            channel.writeAndFlush(response, promise);
         } else {
-            if (response instanceof BookieProtocol.ReadResponse) {
-                ((BookieProtocol.ReadResponse) response).release();
+            if (response instanceof BookieProtocol.Response) {
+                ((BookieProtocol.Response) response).release0();
             }
-            LOGGER.debug("Netty channel {} is inactive, "
+            logger.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
         }
         if (BookieProtocol.EOK == rc) {
@@ -145,12 +153,12 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
         try {
             ChannelFuture future = channel.writeAndFlush(response);
             if (!channel.eventLoop().inEventLoop()) {
-                future.await();
+                future.get();
             }
-        } catch (InterruptedException e) {
+        } catch (ExecutionException |InterruptedException e) {
+            logger.debug("Netty channel write exception. ", e);
             return;
         }
-
         if (BookieProtocol.EOK == rc) {
             statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         } else {
