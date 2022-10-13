@@ -135,7 +135,7 @@ public class WriteEntryProcessorTest {
         ChannelPromise mockPromise = mock(ChannelPromise.class);
         when(channel.newPromise()).thenReturn(mockPromise);
         when(mockPromise.addListener(any())).thenReturn(mockPromise);
-        
+
         AtomicReference<Object> writtenObject = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocationOnMock -> {
