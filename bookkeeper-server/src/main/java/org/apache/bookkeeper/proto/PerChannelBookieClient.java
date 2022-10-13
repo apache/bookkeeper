@@ -1360,7 +1360,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
                         + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
             }
-            response.release();
+            response.release0();
         } else {
             long orderingKey = completionValue.ledgerId;
             executor.executeOrdered(orderingKey,
@@ -1390,7 +1390,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void safeRun() {
             completionValue.handleV2Response(ledgerId, entryId, status, response);
-            response.release();
+            response.release0();
             response.recycle();
             recycle();
         }

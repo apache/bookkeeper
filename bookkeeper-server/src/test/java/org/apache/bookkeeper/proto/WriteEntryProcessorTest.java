@@ -120,7 +120,7 @@ public class WriteEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(BookieProtocol.EREADONLY, response.getErrorCode());
 
-        response.release();
+        response.release0();
         response.recycle();
     }
 
@@ -150,7 +150,7 @@ public class WriteEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(BookieProtocol.EREADONLY, response.getErrorCode());
 
-        response.release();
+        response.release0();
         response.recycle();
     }
 
@@ -186,7 +186,7 @@ public class WriteEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
 
-        response.release();
+        response.release0();
         response.recycle();
     }
 
@@ -219,7 +219,7 @@ public class WriteEntryProcessorTest {
         Response response = (Response) writtenObject.get();
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
 
-        response.release();
+        response.release0();
         response.recycle();
     }
 
