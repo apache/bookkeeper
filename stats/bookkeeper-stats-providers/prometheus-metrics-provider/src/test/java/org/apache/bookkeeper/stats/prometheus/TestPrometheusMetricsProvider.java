@@ -90,27 +90,27 @@ public class TestPrometheusMetricsProvider {
         }
     }
 
-//    @Test
-//    public void testCounter() {
-//        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
-//        long value = counter.get();
-//        assertEquals(0L, value);
-//        counter.inc();
-//        assertEquals(1L, counter.get().longValue());
-//        counter.dec();
-//        assertEquals(0L, counter.get().longValue());
-//        counter.addCount(3);
-//        assertEquals(3L, counter.get().longValue());
-//    }
+    @Test
+    public void testCounter() {
+        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
+        long value = counter.get();
+        assertEquals(0L, value);
+        counter.inc();
+        assertEquals(1L, counter.get().longValue());
+        counter.dec();
+        assertEquals(0L, counter.get().longValue());
+        counter.addCount(3);
+        assertEquals(3L, counter.get().longValue());
+    }
 
-//    @Test
-//    public void testCounter2() {
-//        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
-//        long value = counter.get();
-//        assertEquals(0L, value);
-//        counter.addLatency(3 * 1000 * 1000L, TimeUnit.NANOSECONDS);
-//        assertEquals(3L, counter.get().longValue());
-//    }
+    @Test
+    public void testCounter2() {
+        LongAdderCounter counter = new LongAdderCounter(Collections.emptyMap());
+        long value = counter.get();
+        assertEquals(0L, value);
+        counter.addLatency(3 * 1000 * 1000L, TimeUnit.NANOSECONDS);
+        assertEquals(3L, counter.get().longValue());
+    }
 
     @Test
     public void testTwoCounters() throws Exception {
