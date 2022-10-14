@@ -433,7 +433,8 @@ public interface BookieProtocol {
                                  opCode, ledgerId, entryId, errorCode);
         }
 
-        void release0() {
+        boolean release() {
+            return true;
         }
 
         void recycle() {
@@ -461,11 +462,6 @@ public interface BookieProtocol {
 
         ByteBuf getData() {
             return data;
-        }
-
-        @Override
-        public void release0() {
-            this.release();
         }
 
         @Override

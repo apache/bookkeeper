@@ -112,7 +112,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
                     .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
                 if (response instanceof BookieProtocol.Response) {
-                    ((BookieProtocol.Response) response).release0();
+                    ((BookieProtocol.Response) response).release();
                 }
                 return;
             } else {
@@ -129,7 +129,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
             channel.writeAndFlush(response, promise);
         } else {
             if (response instanceof BookieProtocol.Response) {
-                ((BookieProtocol.Response) response).release0();
+                ((BookieProtocol.Response) response).release();
             }
             logger.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
