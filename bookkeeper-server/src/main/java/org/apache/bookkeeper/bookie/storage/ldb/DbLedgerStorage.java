@@ -482,7 +482,7 @@ public class DbLedgerStorage implements LedgerStorage {
         int dirIndex = MathUtils.signSafeMod(ledgerId, ledgerDirs.size());
         String indexBasePath = indexDirs.get(dirIndex).toString();
 
-        EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
+        EntryLocationIndex entryLocationIndex = EntryLocationIndex.newInstance(serverConf,
                 (basePath, subPath, dbConfigType, conf1) ->
                         new KeyValueStorageRocksDB(basePath, subPath, DbConfigType.Default, conf1, true),
                 indexBasePath, NullStatsLogger.INSTANCE);

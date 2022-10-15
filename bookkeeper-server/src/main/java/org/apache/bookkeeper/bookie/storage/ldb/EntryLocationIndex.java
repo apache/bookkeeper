@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-import com.google.common.collect.Iterables;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map.Entry;
@@ -43,9 +43,9 @@ import org.slf4j.LoggerFactory;
  * <p>For each ledger multiple entries are stored in the same "record", represented
  * by the {@link LedgerIndexPage} class.
  */
-public class EntryLocationIndex implements Closeable {
+public abstract class EntryLocationIndex implements Closeable {
 
-    private final KeyValueStorage locationsDb;
+    protected final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
     private final EntryLocationIndexStats stats;
@@ -138,16 +138,9 @@ public class EntryLocationIndex implements Closeable {
         }
     }
 
-    public void addLocation(long ledgerId, long entryId, long location) throws IOException {
-        Batch batch = locationsDb.newBatch();
-        addLocation(batch, ledgerId, entryId, location);
-        batch.flush();
-        batch.close();
-    }
+    public abstract void addLocation(long ledgerId, long entryId, long location) throws IOException;
 
-    public Batch newBatch() {
-        return locationsDb.newBatch();
-    }
+    public abstract Batch newBatch();
 
     public void addLocation(Batch batch, long ledgerId, long entryId, long location) throws IOException {
         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
@@ -158,31 +151,20 @@ public class EntryLocationIndex implements Closeable {
         }
 
         try {
-            batch.put(key.array, value.array);
+            put(batch, key.array, value.array);
         } finally {
             key.recycle();
             value.recycle();
         }
     }
 
-    public void updateLocations(Iterable<EntryLocation> newLocations) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("Update locations -- {}", Iterables.size(newLocations));
-        }
+    public abstract void updateLocations(Iterable<EntryLocation> newLocations) throws IOException;
 
-        Batch batch = newBatch();
-        // Update all the ledger index pages with the new locations
-        for (EntryLocation e : newLocations) {
-            if (log.isDebugEnabled()) {
-                log.debug("Update location - ledger: {} -- entry: {}", e.ledger, e.entry);
-            }
+    public abstract void put(Batch batch, byte[] key, byte[] value) throws IOException;
 
-            addLocation(batch, e.ledger, e.entry, e.location);
-        }
+    public abstract void flush(Batch batch) throws IOException;
 
-        batch.flush();
-        batch.close();
-    }
+    public abstract void close(Batch batch) throws IOException;
 
     public void delete(long ledgerId) throws IOException {
         // We need to find all the LedgerIndexPage records belonging to one specific
@@ -190,7 +172,7 @@ public class EntryLocationIndex implements Closeable {
         deletedLedgers.add(ledgerId);
     }
 
-    private static final int DELETE_ENTRIES_BATCH_SIZE = 100000;
+    protected static final int DELETE_ENTRIES_BATCH_SIZE = 100000;
 
     public void removeOffsetFromDeletedLedgers() throws IOException {
         LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
@@ -208,7 +190,7 @@ public class EntryLocationIndex implements Closeable {
         long deletedEntries = 0;
         long deletedEntriesInBatch = 0;
 
-        Batch batch = locationsDb.newBatch();
+        Batch batch = newBatch();
 
         try {
             for (long ledgerId : ledgersToDelete) {
@@ -249,26 +231,24 @@ public class EntryLocationIndex implements Closeable {
                     if (log.isDebugEnabled()) {
                         log.debug("Deleting index for ({}, {})", keyToDelete.getFirst(), keyToDelete.getSecond());
                     }
-                    batch.remove(keyToDelete.array);
+                    delete(batch, keyToDelete);
                     ++deletedEntriesInBatch;
                     ++deletedEntries;
                 }
 
                 if (deletedEntriesInBatch > DELETE_ENTRIES_BATCH_SIZE) {
-                    batch.flush();
-                    batch.clear();
+                    flush(batch);
                     deletedEntriesInBatch = 0;
                 }
             }
         } finally {
             try {
-                batch.flush();
-                batch.clear();
+                flush(batch);
             } finally {
                 firstKeyWrapper.recycle();
                 lastKeyWrapper.recycle();
                 keyToDelete.recycle();
-                batch.close();
+                close(batch);
             }
         }
 
@@ -279,6 +259,16 @@ public class EntryLocationIndex implements Closeable {
         for (long ledgerId : ledgersToDelete) {
             deletedLedgers.remove(ledgerId);
         }
+    }
+
+    public abstract void delete(Batch batch, LongPairWrapper keyToDelete) throws IOException;
+
+    public static EntryLocationIndex newInstance(ServerConfiguration conf, KeyValueStorageFactory storageFactory,
+                                                 String basePath, StatsLogger stats) throws IOException {
+        if (!conf.getDbLedgerLocationIndexSyncEnable()) {
+            return new EntryLocationIndexAsync(conf, storageFactory, basePath, stats);
+        }
+        return new EntryLocationIndexSync(conf, storageFactory, basePath, stats);
     }
 
     private static final Logger log = LoggerFactory.getLogger(EntryLocationIndex.class);

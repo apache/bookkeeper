@@ -28,14 +28,20 @@ import java.io.IOException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Unit test for {@link EntryLocationIndex}.
  */
-public class EntryLocationIndexTest {
+public class EntryLocationIndexAsyncTest {
 
     private final ServerConfiguration serverConfiguration = new ServerConfiguration();
+
+    @Before
+    public void setUp() {
+        serverConfiguration.setDbLedgerLocationIndexSyncEnable(false);
+    }
 
     @Test
     public void deleteLedgerTest() throws Exception {
@@ -44,7 +50,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
@@ -87,7 +93,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
@@ -119,7 +125,7 @@ public class EntryLocationIndexTest {
         tmpDir.mkdir();
         tmpDir.deleteOnExit();
 
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                                                         tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
 
         // Add some dummy indexes
@@ -150,7 +156,7 @@ public class EntryLocationIndexTest {
         tmpDir.deleteOnExit();
 
         TestStatsProvider statsProvider = new TestStatsProvider();
-        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+        EntryLocationIndex idx = EntryLocationIndex.newInstance(serverConfiguration, KeyValueStorageRocksDB.factory,
                 tmpDir.getAbsolutePath(), statsProvider.getStatsLogger("scope"));
 
         // Add some dummy indexes
