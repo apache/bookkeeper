@@ -68,7 +68,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().contains("SendThread")) {
+                if (threads[i].getName().indexOf("SendThread") != -1) {
                     threadset.add(threads[i]);
                 }
             }
@@ -92,7 +92,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().contains("SendThread")
+                if (threads[i].getName().indexOf("SendThread") != -1
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
@@ -157,7 +157,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().contains("SendThread")) {
+                if (threads[i].getName().indexOf("SendThread") != -1) {
                     threadset.add(threads[i]);
                 }
             }
@@ -181,7 +181,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().contains("SendThread")
+                if (threads[i].getName().indexOf("SendThread") != -1
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
