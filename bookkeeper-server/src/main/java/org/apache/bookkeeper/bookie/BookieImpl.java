@@ -27,8 +27,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -78,6 +76,8 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
+import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
@@ -113,8 +113,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private final Cache<Long, byte[]> masterKeyCache = CacheBuilder.newBuilder().
-            expireAfterAccess(60, TimeUnit.MINUTES).build();
+    // key: masterKey, values: set of ledgerId
+    private static final ConcurrentOpenHashMap<byte[], ConcurrentLongHashSet> MASRER_KEY_CACHE =
+            ConcurrentOpenHashMap.<byte[], ConcurrentLongHashSet>newBuilder().build();
 
     protected StateManager stateManager;
 
@@ -516,7 +517,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             byte[] masterKey = new byte[masterKeyLen];
 
                             recBuff.get(masterKey);
-                            masterKeyCache.put(ledgerId, masterKey);
+                            addMasterKeyCache(masterKey, ledgerId);
 
                             // Force to re-insert the master key in ledger storage
                             handles.getHandle(ledgerId, masterKey);
@@ -527,7 +528,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         }
                     } else if (entryId == METAENTRY_ID_FENCE_KEY) {
                         if (journalVersion >= JournalChannel.V4) {
-                            byte[] key = masterKeyCache.getIfPresent(ledgerId);
+                            byte[] key = getKeyFromMasterKeyCache(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -545,7 +546,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             byte[] explicitLacBufArray = new byte[explicitLacBufLength];
                             recBuff.get(explicitLacBufArray);
                             explicitLacBuf.writeBytes(explicitLacBufArray);
-                            byte[] key = masterKeyCache.getIfPresent(ledgerId);
+                            byte[] key = getKeyFromMasterKeyCache(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -568,7 +569,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         LOG.warn("Read unrecognizable entryId: {} for ledger: {} while replaying Journal. Skipping it",
                                 entryId, ledgerId);
                     } else {
-                        byte[] key = masterKeyCache.getIfPresent(ledgerId);
+                        byte[] key = getKeyFromMasterKeyCache(ledgerId);
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
@@ -936,10 +937,10 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
-        if (masterKeyCache.getIfPresent(ledgerId) == null) {
+        if (!containsMasterKeyCache(masterKey, ledgerId)) {
             // Force the load into masterKey cache
-            byte[] oldValue = masterKeyCache.asMap().putIfAbsent(ledgerId, masterKey);
-            if (oldValue == null) {
+            boolean isExists = addMasterKeyCache(masterKey, ledgerId);
+            if (!isExists) {
                 // new handle, we should add the key to journal ensure we can rebuild
                 ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
                 bb.putLong(ledgerId);
@@ -1277,6 +1278,37 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
             } else {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            }
+        }
+    }
+
+    public static boolean addMasterKeyCache(byte[] masterKey, long ledgerId) {
+        ConcurrentLongHashSet ledgerSets = MASRER_KEY_CACHE.computeIfAbsent(masterKey,
+                f -> ConcurrentLongHashSet.newBuilder().build());
+        return ledgerSets.add(ledgerId);
+    }
+
+    public static boolean containsMasterKeyCache(byte[] masterKey, long ledgerId) {
+        return MASRER_KEY_CACHE.containsKey(masterKey) && MASRER_KEY_CACHE.get(masterKey).contains(ledgerId);
+    }
+
+    public static byte[] getKeyFromMasterKeyCache(long ledgerId) {
+        for (byte[] key : MASRER_KEY_CACHE.keys()) {
+            boolean ret = MASRER_KEY_CACHE.get(key).contains(ledgerId);
+            if (ret) {
+                //  1 ledgerId to 1 masterKey
+                return key;
+            }
+        }
+        return null;
+    }
+
+    public static void removeLedgerIdFromMasterKeyCache(long ledgerId) {
+        for (byte[] key : MASRER_KEY_CACHE.keys()) {
+            boolean ret = MASRER_KEY_CACHE.get(key).remove(ledgerId);
+            if (ret) {
+                //  1 ledgerId to 1 masterKey
+                break;
             }
         }
     }

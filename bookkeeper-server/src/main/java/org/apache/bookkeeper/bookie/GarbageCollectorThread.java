@@ -181,6 +181,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 }
                 gcStats.getDeletedLedgerCounter().inc();
                 ledgerStorage.deleteLedger(ledgerId);
+                BookieImpl.removeLedgerIdFromMasterKeyCache(ledgerId);
             } catch (IOException e) {
                 LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
             }
