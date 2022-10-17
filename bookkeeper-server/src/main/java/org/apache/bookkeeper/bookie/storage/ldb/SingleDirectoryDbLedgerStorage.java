@@ -212,7 +212,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             ThreadRegistry.register(dbStoragerExecutorName, 0);
             // ensure the metric gets registered on start-up as this thread only executes
             // when the write cache is full which may not happen or not for a long time
-            flushExecutorTime.add(0);
+            flushExecutorTime.addLatency(0, TimeUnit.NANOSECONDS);
         });
 
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -463,7 +463,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         } catch (IOException e) {
                             log.error("Error during flush", e);
                         } finally {
-                            flushExecutorTime.add(MathUtils.elapsedNanos(startTime));
+                            flushExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                         }
                     });
             }
@@ -570,14 +570,16 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 throw new NoEntryException(ledgerId, entryId);
             }
         } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().add(MathUtils.elapsedNanos(locationIndexStartNano));
+            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
+                    MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
         }
 
         long readEntryStartNano = MathUtils.nowInNano();
         try {
             entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
         } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().add(MathUtils.elapsedNanos(readEntryStartNano));
+            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
+                    MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
         }
 
         readCache.put(ledgerId, entryId, entry);
@@ -634,7 +636,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         } finally {
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
-            dbLedgerStorageStats.getReadAheadTime().add(MathUtils.elapsedNanos(readAheadStartNano));
+            dbLedgerStorageStats.getReadAheadTime().addLatency(
+                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         }
     }
 
@@ -689,11 +692,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
 
         long entryLocation = entryLocationIndex.getLocation(ledgerId, lastEntryId);
-        dbLedgerStorageStats.getReadFromLocationIndexTime().add(MathUtils.elapsedNanos(locationIndexStartNano));
+        dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
+                MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
 
         long readEntryStartNano = MathUtils.nowInNano();
         ByteBuf content = entryLogger.readEntry(ledgerId, lastEntryId, entryLocation);
-        dbLedgerStorageStats.getReadFromEntryLogTime().add(MathUtils.elapsedNanos(readEntryStartNano));
+        dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
+                MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
         return content;
     }
 
