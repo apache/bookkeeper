@@ -28,6 +28,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.function.LongPredicate;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Records the total size, remaining size and the set of ledgers that comprise a
@@ -105,7 +106,7 @@ public class EntryLogMetadata {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{ totalSize = ").append(totalSize).append(", remainingSize = ").append(remainingSize)
-                .append(", ledgersMap = ").append(ledgersMap).append(" }");
+                .append(", ledgersMap = ").append(StringUtils.join(ledgersMap)).append(" }");
         return sb.toString();
     }
 
