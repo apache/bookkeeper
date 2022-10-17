@@ -18,14 +18,17 @@
  */
 package org.apache.bookkeeper.common.util;
 
+/**
+ * {@link WriteWaterMark} is used to configure the max value and the min value of the memory usage.
+ */
 public class WriteWaterMark {
-    private static final int DEFAULT_LOW_WATER_MARK = 1;
-    private static final int DEFAULT_HIGH_WATER_MARK = 1;
+    private static final long DEFAULT_LOW_WATER_MARK = 1610612736L; // 1.5GB
+    private static final long DEFAULT_HIGH_WATER_MARK = 2147483648L; // 2GB
 
-    private final int low;
-    private final int high;
+    private final long low;
+    private final long high;
 
-    public WriteWaterMark(int low, int high) {
+    public WriteWaterMark(long low, long high) {
         this.low = low;
         this.high = high;
     }
@@ -35,11 +38,11 @@ public class WriteWaterMark {
         this.high = DEFAULT_HIGH_WATER_MARK;
     }
 
-    public int low() {
+    public long low() {
         return low;
     }
 
-    public int high() {
+    public long high() {
         return high;
     }
 }

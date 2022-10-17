@@ -18,6 +18,12 @@
  */
 package org.apache.bookkeeper.common.util;
 
+/**
+ * WritableListener used to listen the writable status changes.
+ *
+ * We use {@link WriteMemoryCounter} to listen on the memory usage when the client adds entries. The listener can
+ * take actions if they have been notified.
+ */
 public interface WritableListener {
 
     void onWriteStateChanged(boolean writable);

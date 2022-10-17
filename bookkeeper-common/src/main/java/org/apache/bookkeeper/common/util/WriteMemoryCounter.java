@@ -25,6 +25,16 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * {@link WriteMemoryCounter} counts the memory usage on Adds request.
+ * When there has an Add request created, the {@link WriteMemoryCounter} will record the request content size.
+ * When the request is finished, the {@link WriteMemoryCounter} will decrease the record count.
+ * The range of the counter should in the range of {@link WriteWaterMark}'s high watermark and low watermark.
+ *
+ * If the record size is over to the high watermark, the registered listeners will receive writable state change
+ * to false and take actions. The listeners will receive writable state change to true until the record size is
+ * down to the low watermark.
+ */
 @Slf4j
 public class WriteMemoryCounter {
     private final WriteWaterMark writeWaterMark;
