@@ -21,10 +21,18 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_MIGRATION;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import org.apache.bookkeeper.bookie.BookieThread;
-import org.apache.bookkeeper.client.*;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.LedgerChecker;
+import org.apache.bookkeeper.client.LedgerFragment;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MigrationManager;
@@ -89,7 +97,7 @@ public class MigrationReplicasWorker implements Runnable {
         }
     }
 
-    private Optional<Replicas> getReplicasToMigrate(List<String> ledgerIds) throws InterruptedException, KeeperException {
+    private Replicas getReplicasToMigrate(List<String> ledgerIds) throws InterruptedException, KeeperException {
         Iterator<String> iterator = ledgerIds.iterator();
         while (iterator.hasNext()) {
             try {
@@ -108,14 +116,14 @@ public class MigrationReplicasWorker implements Runnable {
                     bookieIds.add(BookieId.parse(migrationBookieIds[i]));
                 }
 
-                return Optional.of(new Replicas(ledgerId, bookieIds));
+                return new Replicas(ledgerId, bookieIds);
             } catch (KeeperException.NodeExistsException nee) {
                 // do nothing, someone each could have locked the ledger
             } catch (UnsupportedEncodingException e) {
                 LOG.error("The encoding is not supported!", e);
             }
         }
-        return Optional.empty();
+        return null;
     }
 
     private Set<LedgerFragment> getFragmentsOnMigrationBookies(LedgerHandle lh, Set<BookieId> migrationBookieIds) {
@@ -154,21 +162,20 @@ public class MigrationReplicasWorker implements Runnable {
             }
 
             // 2. Get a replica ledger to replicate or wait back off
-            Optional<Replicas> replicasOp = Optional.empty();
+            Replicas replicas = null;
             try {
-                replicasOp = getReplicasToMigrate(toMigrateLedgerIds);
+                replicas = getReplicasToMigrate(toMigrateLedgerIds);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } catch (Throwable e) {
                 LOG.error("Get migrating replicas failed!", e);
             }
-            if (replicasOp.isEmpty()) {
+            if (replicas == null) {
                 waitBackOffTime(backoffMs);
                 continue;
             }
 
             // 3. Get the fragment containing the migration bookie
-            Replicas replicas = replicasOp.get();
             LOG.info(String.format("Start migrate replicas(%s)!", replicas));
             boolean released = false;
             try (LedgerHandle lh = admin.openLedgerNoRecovery(replicas.ledgerId)) {
