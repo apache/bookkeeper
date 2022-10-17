@@ -54,13 +54,16 @@ public class FastSnapshot extends Snapshot {
             return 0;
         }
         long qcnt = 0;
+        long result = Long.MAX_VALUE;
         for (int i = 0; i < values.length; i++) {
             qcnt += values[i];
             if (((double) qcnt) / ((double) pcnt) > quantile) {
-                return timer.getBucketBound(i);
+                result = timer.getBucketBound(i);
+                break;
             }
         }
-        return timer.getBucketBound(values.length);
+        // return actual percentile value or reported max value if upper bound bucket value was returned
+        return (result != Long.MAX_VALUE ? result : getMax());
     }
 
     @Override
