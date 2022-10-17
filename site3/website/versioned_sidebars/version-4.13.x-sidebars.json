@@ -1,8 +1,8 @@
 {
-  "version-4.8.2/docsSidebar": [
+  "version-4.13.x/docsSidebar": [
     {
       "type": "doc",
-      "id": "version-4.8.2/overview/overview",
+      "id": "version-4.13.x/overview/overview",
       "label": "Overview"
     },
     {
@@ -11,17 +11,17 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/getting-started/installation",
+          "id": "version-4.13.x/getting-started/installation",
           "label": "Installation"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/getting-started/run-locally",
+          "id": "version-4.13.x/getting-started/run-locally",
           "label": "Run bookies locally"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/getting-started/concepts",
+          "id": "version-4.13.x/getting-started/concepts",
           "label": "Concepts and architecture"
         }
       ]
@@ -32,12 +32,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/deployment/manual",
+          "id": "version-4.13.x/deployment/manual",
           "label": "Manual deployment"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/deployment/kubernetes",
+          "id": "version-4.13.x/deployment/kubernetes",
           "label": "BookKeeper on Kubernetes"
         }
       ]
@@ -48,30 +48,34 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/admin/bookies",
+          "id": "version-4.13.x/admin/bookies",
           "label": "BookKeeper administration"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/admin/autorecovery",
+          "id": "version-4.13.x/admin/autorecovery",
           "label": "AutoRecovery"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/admin/metrics",
+          "id": "version-4.13.x/admin/metrics",
           "label": "Metrics collection"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/admin/upgrade",
+          "id": "version-4.13.x/admin/upgrade",
           "label": "Upgrade"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/admin/http",
+          "id": "version-4.13.x/admin/http",
           "label": "Admin REST API"
+        },
+        {
+          "type": "doc",
+          "id": "version-4.13.x/admin/decomission",
+          "label": "Decommissioning Bookies"
         }
-        
       ]
     },
     {
@@ -80,22 +84,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/api/overview",
+          "id": "version-4.13.x/api/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/api/ledger-api",
+          "id": "version-4.13.x/api/ledger-api",
           "label": "Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/api/ledger-adv-api",
+          "id": "version-4.13.x/api/ledger-adv-api",
           "label": "Advanced Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/api/distributedlog-api",
+          "id": "version-4.13.x/api/distributedlog-api",
           "label": "DistributedLog"
         }
       ]
@@ -106,22 +110,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/security/overview",
+          "id": "version-4.13.x/security/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/security/tls",
+          "id": "version-4.13.x/security/tls",
           "label": "TLS Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/security/sasl",
+          "id": "version-4.13.x/security/sasl",
           "label": "SASL Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/security/zookeeper",
+          "id": "version-4.13.x/security/zookeeper",
           "label": "ZooKeeper Authentication"
         }
       ]
@@ -132,7 +136,7 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/development/protocol",
+          "id": "version-4.13.x/development/protocol",
           "label": "BookKeeper protocol"
         }
       ]
@@ -143,12 +147,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.8.2/reference/config",
+          "id": "version-4.13.x/reference/config",
           "label": "Configuration"
         },
         {
           "type": "doc",
-          "id": "version-4.8.2/reference/cli",
+          "id": "version-4.13.x/reference/cli",
           "label": "Command-line tools"
         }
       ]
