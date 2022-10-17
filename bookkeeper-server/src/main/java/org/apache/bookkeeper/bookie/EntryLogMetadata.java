@@ -28,7 +28,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.function.LongPredicate;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Records the total size, remaining size and the set of ledgers that comprise a
