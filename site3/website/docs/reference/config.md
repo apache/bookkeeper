@@ -235,7 +235,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | ledgerManagerFactoryClass | @Deprecated in favor of using `metadataServiceUri`<br /><br />The ledger manager factory class, which defines how ledgers are stored, managed, and garbage collected. See the [Ledger Manager](../getting-started/concepts#ledger-manager) guide for more details.<br /> | hierarchical | 
 | allowShadedLedgerManagerFactoryClass | Sometimes the bookkeeper server classes are shaded. The ledger manager factory classes might be relocated to be under other packages.<br />This would fail the clients using shaded factory classes since the factory classes are stored in cookies and used for verification.<br />Users can enable this flag to allow using shaded ledger manager factory classes to connect to a bookkeeper cluster.<br /> | false | 
 | shadedLedgerManagerFactoryClassPrefix | The shaded ledger manager factory prefix. This is used when `allowShadedLedgerManagerFactoryClass` is set to true. | dlshade. | 
-
+| registrationSessionExpiredPolicy | There are two policies when registration session expired happens, "shutdown" and "reconnect".<br />If uses "shutdown" policy, shutdown the bookie when registration session expired happens.<br />If uses "reconnect" policy, try to reconnect to registration server and re-register metadata to registration.<br /> | reconnect | 
 
 ## ZooKeeper Metadata Service Settings
 
