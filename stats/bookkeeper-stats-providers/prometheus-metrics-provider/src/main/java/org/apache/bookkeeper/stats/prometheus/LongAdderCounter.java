@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.bookkeeper.stats.Counter;
 
@@ -54,8 +55,18 @@ public class LongAdderCounter implements Counter {
     }
 
     @Override
-    public void add(long delta) {
+    public void addCount(long delta) {
         counter.add(delta);
+    }
+
+    /**
+     * When counter is used to count time.
+     * consistent with the {@link DataSketchesOpStatsLogger#registerSuccessfulEvent(long, TimeUnit)} 's logic
+     * */
+    @Override
+    public void addLatency(long eventLatency, TimeUnit unit) {
+        long valueMillis = unit.toMillis(eventLatency);
+        counter.add(valueMillis);
     }
 
     @Override

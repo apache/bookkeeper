@@ -46,6 +46,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,7 +272,16 @@ class LedgerCreateOp {
         } else {
             createOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
-        cb.createComplete(rc, lh, ctx);
+        if (lh != null) { // lh is null in case of errors
+            lh.executeOrdered(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.createComplete(rc, lh, ctx);
+                }
+            });
+        } else {
+            cb.createComplete(rc, null, ctx);
+        }
     }
 
     public static class CreateBuilderImpl implements CreateBuilder {

@@ -681,7 +681,7 @@ public class ConcurrentLongLongHashMap {
             int removedCount = 0;
             try {
                 // Go through all the buckets for this section
-                for (int bucket = 0; bucket < table.length; bucket += 2) {
+                for (int bucket = 0; size > 0 && bucket < table.length; bucket += 2) {
                     long storedKey = table[bucket];
 
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
@@ -719,7 +719,7 @@ public class ConcurrentLongLongHashMap {
             int removedCount = 0;
             try {
                 // Go through all the buckets for this section
-                for (int bucket = 0; bucket < table.length; bucket += 2) {
+                for (int bucket = 0; size > 0 && bucket < table.length; bucket += 2) {
                     long storedKey = table[bucket];
                     long storedValue = table[bucket + 1];
 
