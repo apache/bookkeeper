@@ -409,13 +409,24 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
             // disable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
-            boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
-            assertFalse("We should check b0 is not writeable", isWriteable);
+
+            final CountDownLatch cdl = new CountDownLatch(1);
+            AtomicBoolean isWriteable = new AtomicBoolean(false);
+            final long timeout = 10000;
+
+            // waitForWritable async
+            new Thread(() -> {
+                isWriteable.set(lh.waitForWritable(writeSet, 0, timeout));
+                cdl.countDown();
+            }).start();
 
             // enable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
-            isWriteable = lh.waitForWritable(writeSet, 0, 1000);
-            assertTrue("We should check b0 is writeable", isWriteable);
+
+            cdl.await(timeout, TimeUnit.MILLISECONDS);
+
+            assertTrue("We should check b0 is writeable", isWriteable.get());
         }
     }
+
 }
