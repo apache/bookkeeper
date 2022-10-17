@@ -15,8 +15,6 @@ const variables = {
   dist_base_url: "https://www.apache.org/dist/bookkeeper",
   javadoc_base_url: deployUrl + "/docs/latest/api/javadoc",
   archive_releases_base_url: deployUrl + "/archives",
-  mailing_lists_url: deployUrl + "/community/mailing-lists",
-  slack_url: 'https://apachebookkeeper.slack.com/',
 }
 
 /** @type {import('@docusaurus/types').Config} */
