@@ -18,107 +18,89 @@
  */
 package org.apache.bookkeeper.client;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.Journal;
-import org.apache.bookkeeper.bookie.SlowBufferedChannel;
-import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.common.util.WritableListener;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.nio.channels.FileChannel;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @Slf4j
 public class BookieClientMemoryCounterTest extends BookKeeperClusterTestCase {
 
+    static final int MESSAGE_SIZE = 1024;
+    static final long LOW_WATER_MARK = 10 * 1024;
+    static final long HIGH_WATER_MARK = 20 * 1024;
+
     public BookieClientMemoryCounterTest() {
         super(1);
-        baseClientConf.setAddEntryTimeout(10000);
-        baseClientConf.setAddEntryQuorumTimeout(10000);
-        baseClientConf.setWriteMemoryHighWaterMark(8 * 1024);
-        baseClientConf.setWriteMemoryLowWaterMark(2 * 1024);
+        baseClientConf.setWriteMemoryHighWaterMark(HIGH_WATER_MARK);
+        baseClientConf.setWriteMemoryLowWaterMark(LOW_WATER_MARK);
     }
 
     @Test
     public void testPendingAddEntryMemory() throws Exception {
-        confByIndex(0).setMaxAddsInProgressLimit(30);
-        ServerConfiguration conf = killBookie(0);
-        BookieServer bks = startAndAddBookie(conf,
-            bookieWithMockedJournal(conf, 0, 1, 0))
-            .getServer();
-
-
+        // listen to the write state change events
         AtomicBoolean writeState = new AtomicBoolean(true);
         bkc.getWriteMemoryCounter().register(new WritableListener() {
             @Override
             public void onWriteStateChanged(boolean writable) {
-                log.info("Write state changed to {}", writeState);
+                long usage = bkc.getWriteMemoryCounter().getSize();
+                log.info("Write state changed to {}, current memory usage is {}", writeState, usage);
+                // when the writable change to ture, the usage should under the LowWaterMark.
+                // when the writable change to false, the usage should over than the HighWaterMark.
+                if (writable) {
+                    assertEquals(LOW_WATER_MARK - MESSAGE_SIZE, usage);
+                } else {
+                    assertEquals(HIGH_WATER_MARK + MESSAGE_SIZE, usage);
+                }
                 writeState.set(writable);
             }
         });
-        LedgerHandle lh = bkc.createLedger(1,1, BookKeeper.DigestType.CRC32, "".getBytes());
-        byte[] msg = new byte[1024];
 
-        CountDownLatch latch = new CountDownLatch(100);
-        for (int i = 0; i < 100; i++) {
-            while (!writeState.get()) {
-                log.info("wait for the memory released");
-                TimeUnit.SECONDS.sleep(1);
-            }
-            lh.asyncAddEntry(msg, new AsyncCallback.AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    log.info("Add complete with rc {}", rc);
-                    latch.countDown();
+        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32, "".getBytes());
+        byte[] msg = new byte[MESSAGE_SIZE];
+
+        int testMessagesNum = 1000;
+
+        // start a thread to send message
+        AtomicInteger addCount = new AtomicInteger(testMessagesNum);
+        new Thread(() -> {
+            for (int i = 0; i < testMessagesNum; i++) {
+                while (!writeState.get()) {
+                    log.info("wait for the memory released");
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(10);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
                 }
-            }, null);
+                lh.asyncAddEntry(msg, new AsyncCallback.AddCallback() {
+                    @Override
+                    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                        if (rc == BKException.Code.OK) {
+                            log.info("Add complete with rc {}", rc);
+                            addCount.getAndDecrement();
+                        }
+                    }
+                }, null);
+            }
+        }).start();
+
+        // while sending messages, we listen on the memory counter size. The size should never over than the
+        // (highWaterMark + 1 message) bytes.
+        while (addCount.get() != 0) {
+            long size = bkc.getWriteMemoryCounter().getSize();
+            assertTrue(size >= 0 && size < baseClientConf.getWriteMemoryHighWaterMark() + msg.length + 1);
+            TimeUnit.MILLISECONDS.sleep(10);
         }
-        latch.await();
+
         lh.close();
     }
-
-    private Bookie bookieWithMockedJournal(ServerConfiguration conf,
-                                           long getDelay, long addDelay, long flushDelay) throws Exception {
-        Bookie bookie = new TestBookieImpl(conf);
-        if (getDelay <= 0 && addDelay <= 0 && flushDelay <= 0) {
-            return bookie;
-        }
-
-        List<Journal> journals = getJournals(bookie);
-        for (int i = 0; i < journals.size(); i++) {
-            Journal mock = spy(journals.get(i));
-            when(mock.getBufferedChannelBuilder()).thenReturn((FileChannel fc, int capacity) ->  {
-                SlowBufferedChannel sbc = new SlowBufferedChannel(UnpooledByteBufAllocator.DEFAULT, fc, capacity);
-                sbc.setAddDelay(addDelay);
-                sbc.setGetDelay(getDelay);
-                sbc.setFlushDelay(flushDelay);
-                return sbc;
-            });
-
-            journals.set(i, mock);
-        }
-        return bookie;
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Journal> getJournals(Bookie bookie) throws NoSuchFieldException, IllegalAccessException {
-        Field f = BookieImpl.class.getDeclaredField("journals");
-        f.setAccessible(true);
-
-        return (List<Journal>) f.get(bookie);
-    }
-
 }

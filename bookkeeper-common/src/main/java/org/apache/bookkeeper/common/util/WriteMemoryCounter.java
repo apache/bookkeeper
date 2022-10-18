@@ -18,12 +18,11 @@
  */
 package org.apache.bookkeeper.common.util;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link WriteMemoryCounter} counts the memory usage on Adds request.
@@ -73,5 +72,9 @@ public class WriteMemoryCounter {
     public void setWritable(boolean state) {
         writeState.set(state);
         listeners.forEach(l -> l.onWriteStateChanged(state));
+    }
+
+    public long getSize() {
+        return sizeCounter.get();
     }
 }

@@ -2061,21 +2061,21 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
     }
 
-    public ClientConfiguration setWriteMemoryLowWaterMark(int bytes) {
+    public ClientConfiguration setWriteMemoryLowWaterMark(long bytes) {
         setProperty(WRITE_MEMORY_LOW_WATER_MARK, bytes);
         return this;
     }
 
-    public int getWriteMemoryLowWaterMark() {
+    public long getWriteMemoryLowWaterMark() {
         return getInt(WRITE_MEMORY_LOW_WATER_MARK, 64 * 1024 * 1024);
     }
 
-    public ClientConfiguration setWriteMemoryHighWaterMark(int bytes) {
+    public ClientConfiguration setWriteMemoryHighWaterMark(long bytes) {
         setProperty(WRITE_MEMORY_HIGH_WATER_MARK, bytes);
         return this;
     }
 
-    public int getWriteMemoryHighWaterMark() {
+    public long getWriteMemoryHighWaterMark() {
         return getInt(WRITE_MEMORY_HIGH_WATER_MARK, 256 * 1024 * 1024);
     }
 
