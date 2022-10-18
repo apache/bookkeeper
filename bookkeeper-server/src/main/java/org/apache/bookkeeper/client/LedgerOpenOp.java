@@ -36,6 +36,8 @@ import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
@@ -64,6 +66,7 @@ class LedgerOpenOp {
 
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
+    private OrderedScheduler scheduler;
 
     /**
      * Constructor.
@@ -86,6 +89,7 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("LedgerOpenOp").build();
     }
 
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
@@ -100,6 +104,7 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("LedgerOpenOp").build();
     }
 
     /**
@@ -118,7 +123,7 @@ class LedgerOpenOp {
                     } else {
                         openWithMetadata(metadata);
                     }
-                }, bk.getScheduler());
+                }, scheduler);
     }
 
     /**
