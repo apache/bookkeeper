@@ -71,7 +71,6 @@ public class MigrationReplicasCommandTest extends BookieCommandTestBase {
     @Test
     public void testSwitchToReadonly() {
         MigrationReplicasCommand cmd = new MigrationReplicasCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[]{"-b", bookieID}));
 
         try {
             cmd.apply(bkFlags, new String[]{"-b", bookieID, "-r", "true"});
