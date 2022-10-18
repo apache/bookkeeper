@@ -17,12 +17,12 @@
  */
 package org.apache.bookkeeper.meta;
 
-import org.apache.bookkeeper.net.BookieId;
-import org.apache.zookeeper.KeeperException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.zookeeper.KeeperException;
 
 public interface MigrationManager extends AutoCloseable {
 
