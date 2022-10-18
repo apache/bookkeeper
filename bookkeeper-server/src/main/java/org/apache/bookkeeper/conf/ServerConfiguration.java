@@ -43,6 +43,7 @@ import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.util.ThreadNumUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -1942,7 +1943,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle write requests.
      */
     public int getNumAddWorkerThreads() {
-        return getInt(NUM_ADD_WORKER_THREADS, 1);
+        return getInt(NUM_ADD_WORKER_THREADS, ThreadNumUtils.adaptThreadNum());
     }
 
     /**
@@ -1989,7 +1990,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public int getNumHighPriorityWorkerThreads() {
-        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, ThreadNumUtils.adaptThreadNum());
     }
 
     /**
@@ -2032,7 +2033,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the number of threads that should handle read requests.
      */
     public int getNumReadWorkerThreads() {
-        return getInt(NUM_READ_WORKER_THREADS, 8);
+        return getInt(NUM_READ_WORKER_THREADS, ThreadNumUtils.adaptThreadNum());
     }
 
     /**
@@ -2157,7 +2158,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle journal callbacks.
      */
     public int getNumJournalCallbackThreads() {
-        return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
+        return getInt(NUM_JOURNAL_CALLBACK_THREADS, ThreadNumUtils.adaptThreadNum());
     }
 
     /**
