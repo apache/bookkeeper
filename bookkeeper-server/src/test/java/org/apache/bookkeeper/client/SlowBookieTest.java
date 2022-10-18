@@ -410,7 +410,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             // disable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
 
-            final CountDownLatch cdl = new CountDownLatch(1);
+           
             AtomicBoolean isWriteable = new AtomicBoolean(false);
             final long timeout = 10000;
 
