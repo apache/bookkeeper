@@ -20,8 +20,10 @@
  */
 package org.apache.bookkeeper.util.collections;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -115,6 +117,41 @@ public class ConcurrentLongHashMapTest {
         assertTrue(map.capacity() == 8);
         map.clear();
         assertTrue(map.capacity() == 4);
+    }
+
+    private void addSpecifyIncrement(ConcurrentLongHashMap<byte[]> mkc, int start, int end) {
+        for (int i = start; i <= end; i++) {
+            assertNull(mkc.put(i, ("comment:" + i).getBytes(UTF_8)));
+            System.out.println("i=" + i + ",mkc.size=" + mkc.size() + ",mkc.capacity=" + mkc.capacity());
+        }
+    }
+
+    private void removeSpecifyIncrement(ConcurrentLongHashMap<byte[]> mkc, int start, int end) {
+        for (int i = end; i >= start; i--) {
+            assertNotNull(mkc.remove(i));
+            System.out.println("i=" + i + ",mkc.size=" + mkc.size() + ",mkc.capacity=" + mkc.capacity());
+        }
+    }
+
+    @Test
+    public void testAutoShrinkWithByte() {
+        final int defaultExpectedItems = 256;
+        final int defaultConcurrencyLevel = 16;
+        final float defaultExpandFactor = 2;
+        final float defaultShrinkFactor = 2;
+
+        ConcurrentLongHashMap<byte[]> mkc = ConcurrentLongHashMap.<byte[]>newBuilder().autoShrink(true).build();
+        assertTrue(mkc.capacity() == defaultExpectedItems * 2);
+
+        addSpecifyIncrement(mkc, 1, defaultExpectedItems * 2);
+        // expand hashmap
+        assertTrue(mkc.capacity() == defaultExpectedItems * 2
+                + defaultConcurrencyLevel * defaultExpandFactor * 15);
+
+        removeSpecifyIncrement(mkc, 220, defaultExpectedItems * 2);
+        // shrink hashmap
+        assertTrue(mkc.capacity() == defaultExpectedItems * 2
+                + defaultConcurrencyLevel * defaultExpandFactor * 15 - defaultConcurrencyLevel * defaultShrinkFactor);
     }
 
     @Test
