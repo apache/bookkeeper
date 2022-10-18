@@ -572,12 +572,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
-        if (clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
-            readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
-                    lh.ledgerId, entry.eId, null, new ReadContext(bookieIndex, to, entry));
-            return;
-        }
-
         if (lh.throttler != null) {
             lh.throttler.acquire();
         }
