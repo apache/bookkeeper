@@ -337,11 +337,9 @@ class BookieNettyServer {
 
                     pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
 
-                    // For ByteBufList, skip the usual LengthFieldPrepender and have the encoder itself to add it
-                    pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);
+                    pipeline.addLast("bytebufList", ByteBufList.ENCODER);
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                    pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
@@ -406,7 +404,6 @@ class BookieNettyServer {
                     ChannelPipeline pipeline = ch.pipeline();
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                    pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
