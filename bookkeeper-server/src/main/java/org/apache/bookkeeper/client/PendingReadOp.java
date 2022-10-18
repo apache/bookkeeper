@@ -213,7 +213,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                             lh.ledgerId, eId, host);
                 }
             } else {
-                if (LOG.isInfoEnabled()) {
+                if(!clientCtx.getBookieWatcher().isBookieUnavailable(host)) {
                     LOG.info("{} while reading L{} E{} from bookie: {}",
                             errMsg, lh.ledgerId, eId, host);
                 }
@@ -572,6 +572,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
+        if (clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
+            readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
+                    lh.ledgerId, entry.eId, null, new ReadContext(bookieIndex, to, entry));
+            return;
+        }
+
         if (lh.throttler != null) {
             lh.throttler.acquire();
         }
