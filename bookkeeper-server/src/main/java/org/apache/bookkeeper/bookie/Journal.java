@@ -829,27 +829,31 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
                 boolean isPaddingRecord = false;
                 if (len < 0) {
-                    if (len == PADDING_MASK && journalVersion >= JournalChannel.V5) {
-                        // skip padding bytes
-                        lenBuff.clear();
-                        fullRead(recLog, lenBuff);
-                        if (lenBuff.remaining() != 0) {
-                            break;
+                    try {
+                        if (len == PADDING_MASK && journalVersion >= JournalChannel.V5) {
+                            // skip padding bytes
+                            lenBuff.clear();
+                            fullRead(recLog, lenBuff);
+                            if (lenBuff.remaining() != 0) {
+                                break;
+                            }
+                            lenBuff.flip();
+                            len = lenBuff.getInt();
+                            if (len == 0) {
+                                continue;
+                            }
+                            isPaddingRecord = true;
+                        } else {
+                            LOG.error("Invalid record found with negative length: {}", len);
+                            throw new IOException("Invalid record found with negative length " + len);
                         }
-                        lenBuff.flip();
-                        len = lenBuff.getInt();
-                        if (len == 0) {
-                            continue;
+                    } catch (IOException e) {
+                        if (skipInvalidRecord) {
+                            LOG.warn("Invalid record found with negative length: {},because of " +
+                                    "skipInvalidRecord is true,we skip the next data", len);
+                        } else {
+                            throw e;
                         }
-                        isPaddingRecord = true;
-                    } else if (skipInvalidRecord){
-                        LOG.warn("Invalid record found with negative length: {},because of " +
-                                "skipInvalidRecord is true,we skip the next data", len);
-                        break;
-                    }
-                    else {
-                        LOG.error("Invalid record found with negative length: {}", len);
-                        throw new IOException("Invalid record found with negative length " + len);
                     }
                 }
                 recBuff.clear();
