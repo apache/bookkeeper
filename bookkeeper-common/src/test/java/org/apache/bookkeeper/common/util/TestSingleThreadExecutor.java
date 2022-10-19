@@ -188,17 +188,16 @@ public class TestSingleThreadExecutor {
         for (int i = 0; i < 3; i++) {
             ste.execute(() -> {
                 try {
-                    System.out.println("Hello");
                     Thread.sleep(2000);
                     count.incrementAndGet();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             });
-        }
 
-        // Ensure the first task is pending
-        Thread.sleep(1000);
+            // Ensure the 3 tasks are not picked up in one shot by the runner thread
+            Thread.sleep(500);
+        }
 
         List<Runnable> remainingTasks = ste.shutdownNow();
         assertEquals(2, remainingTasks.size());
