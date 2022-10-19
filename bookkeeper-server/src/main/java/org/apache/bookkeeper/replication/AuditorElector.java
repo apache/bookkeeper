@@ -231,16 +231,11 @@ public class AuditorElector {
      * Shutting down AuditorElector.
      */
     public void shutdown() throws InterruptedException {
-        try {
-            ledgerAuditorManager.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
         synchronized (this) {
             if (executor.isShutdown()) {
                 return;
             }
+            // close auditor manager
             submitShutdownTask();
             executor.shutdown();
         }
