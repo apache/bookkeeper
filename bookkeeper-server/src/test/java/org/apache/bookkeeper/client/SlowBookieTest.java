@@ -37,6 +37,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -409,7 +410,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
             // disable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
-
            
             AtomicBoolean isWriteable = new AtomicBoolean(false);
             final long timeout = 10000;
@@ -421,6 +421,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             TimeUnit.MILLISECONDS.sleep(5000);
             assertFalse(isWriteable.get());
 
+            // enable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
             Awaitility.await().untilAsserted(() -> assertTrue(isWriteable.get()));
         }
