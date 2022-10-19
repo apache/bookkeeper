@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Cleanup;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -60,9 +61,11 @@ public class TestSingleThreadExecutor {
 
         ste.submit(() -> {
         }).get();
+
         assertEquals(10, count.get());
         assertEquals(11, ste.getSubmittedTasksCount());
-        assertEquals(11, ste.getCompletedTasksCount());
+
+        Awaitility.await().untilAsserted(() -> assertEquals(11, ste.getCompletedTasksCount()));
         assertEquals(0, ste.getRejectedTasksCount());
         assertEquals(0, ste.getFailedTasksCount());
         assertEquals(0, ste.getQueuedTasksCount());
@@ -87,10 +90,11 @@ public class TestSingleThreadExecutor {
             });
         }
 
-        Thread.sleep(1000);
-        // Next task should go through, because the runner thread has already pulled out 1 item from the queue:
-        // the first tasks which is currently stuck
-        ste.execute(() -> {
+        Awaitility.await().ignoreExceptions().untilAsserted(() -> {
+            // Next task should go through, because the runner thread has already pulled out 1 item from the
+            // queue: the first tasks which is currently stuck
+            ste.execute(() -> {
+            });
         });
 
         // Now the queue is really full and should reject tasks
@@ -102,8 +106,8 @@ public class TestSingleThreadExecutor {
             // Expected
         }
 
-        assertEquals(11, ste.getSubmittedTasksCount());
-        assertEquals(1, ste.getRejectedTasksCount());
+        assertTrue(ste.getSubmittedTasksCount() >= 11);
+        assertTrue(ste.getRejectedTasksCount() >= 1);
         assertEquals(0, ste.getFailedTasksCount());
     }
 
@@ -237,7 +241,7 @@ public class TestSingleThreadExecutor {
         assertEquals(10, count.get());
 
         assertEquals(11, ste.getSubmittedTasksCount());
-        assertEquals(1, ste.getCompletedTasksCount());
+        Awaitility.await().untilAsserted(() -> assertEquals(1, ste.getCompletedTasksCount()));
         assertEquals(0, ste.getRejectedTasksCount());
         assertEquals(10, ste.getFailedTasksCount());
     }
@@ -263,6 +267,7 @@ public class TestSingleThreadExecutor {
 
         assertEquals(11, ste.getSubmittedTasksCount());
         assertEquals(1, ste.getCompletedTasksCount());
+        Awaitility.await().untilAsserted(() -> assertEquals(1, ste.getCompletedTasksCount()));
         assertEquals(0, ste.getRejectedTasksCount());
         assertEquals(10, ste.getFailedTasksCount());
     }
@@ -270,9 +275,6 @@ public class TestSingleThreadExecutor {
     @Test
     public void testShutdownEmpty() throws Exception {
         SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
-
-        Thread.sleep(100);
-
         ste.shutdown();
         assertTrue(ste.isShutdown());
 

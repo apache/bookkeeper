@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -58,23 +60,36 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private volatile State state;
 
+    private final CountDownLatch startLatch;
+
     public SingleThreadExecutor(ThreadFactory tf) {
         this(tf, 64 * 1024, false);
     }
 
+    @SneakyThrows
     public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution) {
         this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
+        this.startLatch = new CountDownLatch(1);
         this.runner.start();
+
+        // Ensure the runner is already fully working by the time the constructor is done
+        this.startLatch.await();
     }
 
     public void run() {
         try {
+            boolean isInitialized = false;
             List<Runnable> localTasks = new ArrayList<>();
 
             while (state == State.Running) {
+                if (!isInitialized) {
+                    startLatch.countDown();
+                    isInitialized = true;
+                }
+
                 int n = queue.drainTo(localTasks);
                 if (n > 0) {
                     for (int i = 0; i < n; i++) {
@@ -98,6 +113,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         } catch (InterruptedException ie) {
             // Exit loop when interrupted
             Thread.currentThread().interrupt();
+        } catch (Throwable t) {
+            log.error("Exception in executor: {}", t.getMessage(), t);
+            throw t;
         } finally {
             state = State.Terminated;
         }
@@ -188,7 +206,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                     tasksCount.increment();
                 } else {
                     tasksRejected.increment();
-                    throw new RejectedExecutionException("Executor queue is full");
+                    throw new ExecutorRejectedException("Executor queue is full");
                 }
             }
         } catch (InterruptedException e) {
@@ -258,5 +276,19 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getFailedTasksCount();
                     }
                 });
+    }
+
+    private static class ExecutorRejectedException extends RejectedExecutionException {
+
+        private ExecutorRejectedException(String msg) {
+            super(msg);
+        }
+        @Override
+        public Throwable fillInStackTrace() {
+            // Avoid the stack traces to be generated for this exception. This is done
+            // because when rejectExecution=true, there could be many such exceptions
+            // getting thrown, and filling the stack traces is very expensive
+            return this;
+        }
     }
 }
