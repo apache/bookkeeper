@@ -25,6 +25,8 @@ import static org.junit.Assert.fail;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -73,28 +75,30 @@ public class TestSingleThreadExecutor {
 
     @Test
     public void testRejectWhenQueueIsFull() throws Exception {
-        @Cleanup("shutdown")
+        @Cleanup("shutdownNow")
         SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, true);
 
         CyclicBarrier barrier = new CyclicBarrier(10 + 1);
-
-        AtomicInteger idGen = new AtomicInteger();
+        CountDownLatch startedLatch = new CountDownLatch(1);
 
         for (int i = 0; i < 10; i++) {
             ste.execute(() -> {
+                startedLatch.countDown();
+
                 try {
                     barrier.await();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    // ignore
                 }
             });
+
+            // Wait until the first task is already running in the thread
+            startedLatch.await();
         }
 
-        Awaitility.await().ignoreExceptions().untilAsserted(() -> {
-            // Next task should go through, because the runner thread has already pulled out 1 item from the
-            // queue: the first tasks which is currently stuck
-            ste.execute(() -> {
-            });
+        // Next task should go through, because the runner thread has already pulled out 1 item from the
+        // queue: the first tasks which is currently stuck
+        ste.execute(() -> {
         });
 
         // Now the queue is really full and should reject tasks
