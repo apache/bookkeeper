@@ -65,7 +65,6 @@ class LedgerOpenOp {
 
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
-    private OrderedScheduler scheduler;
 
     /**
      * Constructor.
@@ -88,7 +87,6 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
         this.openOpLogger = clientStats.getOpenOpLogger();
-        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("LedgerOpenOp").build();
     }
 
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
@@ -103,7 +101,6 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
         this.openOpLogger = clientStats.getOpenOpLogger();
-        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("LedgerOpenOp").build();
     }
 
     /**
@@ -116,13 +113,11 @@ class LedgerOpenOp {
          * Asynchronously read the ledger metadata node.
          */
         bk.getLedgerManager().readLedgerMetadata(ledgerId)
-            .whenCompleteAsync((metadata, exception) -> {
-                    if (exception != null) {
-                        openComplete(BKException.getExceptionCode(exception), null);
-                    } else {
-                        openWithMetadata(metadata);
-                    }
-                }, scheduler);
+                .thenAcceptAsync(this::openWithMetadata, bk.getScheduler().chooseThread(ledgerId))
+                .exceptionally(exception -> {
+                    openComplete(BKException.getExceptionCode(exception), null);
+                    return null;
+                });
     }
 
     /**
@@ -261,7 +256,6 @@ class LedgerOpenOp {
         } else {
             cb.openComplete(rc, null, ctx);
         }
-        scheduler.shutdown();
     }
 
     static final class OpenBuilderImpl extends OpenBuilderBase {
