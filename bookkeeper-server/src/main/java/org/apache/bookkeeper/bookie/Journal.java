@@ -1084,13 +1084,21 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     if (numEntriesToFlush == 0 && localQueueEntries.isEmpty()) {
+                        queue.drainTo(localQueueEntries);
+
                         journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
-                        qe = queue.take();
+                        if (!localQueueEntries.isEmpty()) {
+                            qe = localQueueEntries.removeFirst();
+                        } else {
+                            qe = queue.take();
+                        }
+
                         dequeueStartTime = MathUtils.nowInNano();
                         busyStartTime = dequeueStartTime;
                         journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+                                .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
+                                        TimeUnit.NANOSECONDS);
                     } else {
                         if (localQueueEntries.isEmpty()) {
                             queue.drainTo(localQueueEntries);
