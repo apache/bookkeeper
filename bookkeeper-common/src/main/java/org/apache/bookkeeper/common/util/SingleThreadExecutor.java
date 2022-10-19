@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -67,6 +68,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     }
 
     @SneakyThrows
+    @SuppressFBWarnings(value={"SC_START_IN_CTOR"})
     public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution) {
         this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
         this.runner = tf.newThread(this);
