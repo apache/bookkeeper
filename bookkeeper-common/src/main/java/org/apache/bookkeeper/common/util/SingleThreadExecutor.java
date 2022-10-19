@@ -68,7 +68,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     }
 
     @SneakyThrows
-    @SuppressFBWarnings(value={"SC_START_IN_CTOR"})
+    @SuppressFBWarnings(value = {"SC_START_IN_CTOR"})
     public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution) {
         this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
         this.runner = tf.newThread(this);
