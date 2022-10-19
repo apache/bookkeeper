@@ -261,6 +261,8 @@ public class TestSingleThreadExecutor {
         for (int i = 0; i < 10; i++) {
             ste.execute(() -> {
                 count.incrementAndGet();
+
+                // Trigger the NPE exception
                 System.out.println(npeTest.length());
             });
         }
@@ -270,7 +272,6 @@ public class TestSingleThreadExecutor {
         assertEquals(10, count.get());
 
         assertEquals(11, ste.getSubmittedTasksCount());
-        assertEquals(1, ste.getCompletedTasksCount());
         Awaitility.await().untilAsserted(() -> assertEquals(1, ste.getCompletedTasksCount()));
         assertEquals(0, ste.getRejectedTasksCount());
         assertEquals(10, ste.getFailedTasksCount());
