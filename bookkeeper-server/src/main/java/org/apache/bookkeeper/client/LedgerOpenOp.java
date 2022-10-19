@@ -261,6 +261,7 @@ class LedgerOpenOp {
         } else {
             cb.openComplete(rc, null, ctx);
         }
+        scheduler.shutdown();
     }
 
     static final class OpenBuilderImpl extends OpenBuilderBase {
