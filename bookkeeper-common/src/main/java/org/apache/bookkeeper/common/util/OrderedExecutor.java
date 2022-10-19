@@ -430,7 +430,10 @@ public class OrderedExecutor implements ExecutorService {
                 throw new RuntimeException("Couldn't start thread " + i, e);
             }
 
-            if (thread instanceof ThreadPoolExecutor) {
+            if (thread instanceof SingleThreadExecutor) {
+                SingleThreadExecutor ste = (SingleThreadExecutor) thread;
+                ste.registerMetrics(statsLogger);
+            } else if (thread instanceof ThreadPoolExecutor) {
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) thread;
                 // Register gauges
                 statsLogger.scopeLabel("thread", String.valueOf(idx))

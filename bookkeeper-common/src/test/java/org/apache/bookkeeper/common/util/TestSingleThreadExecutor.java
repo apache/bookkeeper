@@ -47,13 +47,24 @@ public class TestSingleThreadExecutor {
 
         AtomicInteger count = new AtomicInteger();
 
+        assertEquals(0, ste.getSubmittedTasksCount());
+        assertEquals(0, ste.getCompletedTasksCount());
+        assertEquals(0, ste.getQueuedTasksCount());
+
         for (int i = 0; i < 10; i++) {
             ste.execute(() -> count.incrementAndGet());
         }
 
+        assertEquals(10, ste.getSubmittedTasksCount());
+
         ste.submit(() -> {
         }).get();
         assertEquals(10, count.get());
+        assertEquals(11, ste.getSubmittedTasksCount());
+        assertEquals(11, ste.getCompletedTasksCount());
+        assertEquals(0, ste.getRejectedTasksCount());
+        assertEquals(0, ste.getFailedTasksCount());
+        assertEquals(0, ste.getQueuedTasksCount());
     }
 
     @Test
@@ -89,6 +100,10 @@ public class TestSingleThreadExecutor {
         } catch (RejectedExecutionException e) {
             // Expected
         }
+
+        assertEquals(11, ste.getSubmittedTasksCount());
+        assertEquals(1, ste.getRejectedTasksCount());
+        assertEquals(0, ste.getFailedTasksCount());
     }
 
     @Test
@@ -110,8 +125,13 @@ public class TestSingleThreadExecutor {
             });
         }
 
+        assertEquals(10, ste.getQueuedTasksCount());
+
         ste.submit(() -> {
         }).get();
+
+        assertEquals(11, ste.getSubmittedTasksCount());
+        assertEquals(0, ste.getRejectedTasksCount());
     }
 
     @Test
@@ -215,6 +235,11 @@ public class TestSingleThreadExecutor {
         ste.submit(() -> {
         }).get();
         assertEquals(10, count.get());
+
+        assertEquals(11, ste.getSubmittedTasksCount());
+        assertEquals(1, ste.getCompletedTasksCount());
+        assertEquals(0, ste.getRejectedTasksCount());
+        assertEquals(10, ste.getFailedTasksCount());
     }
 
     @Test
@@ -235,6 +260,11 @@ public class TestSingleThreadExecutor {
         ste.submit(() -> {
         }).get();
         assertEquals(10, count.get());
+
+        assertEquals(11, ste.getSubmittedTasksCount());
+        assertEquals(1, ste.getCompletedTasksCount());
+        assertEquals(0, ste.getRejectedTasksCount());
+        assertEquals(10, ste.getFailedTasksCount());
     }
 
     @Test
@@ -249,8 +279,5 @@ public class TestSingleThreadExecutor {
         ste.awaitTermination(10, TimeUnit.SECONDS);
         assertTrue(ste.isShutdown());
         assertTrue(ste.isTerminated());
-
     }
-
-
 }

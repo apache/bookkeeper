@@ -26,8 +26,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
  * Implements a single thread executor that drains the queue in batches to minimize contention between threads.
@@ -41,6 +46,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final Thread runner;
 
     private final boolean rejectExecution;
+
+    private final LongAdder tasksCount = new LongAdder();
+    private final LongAdder tasksCompleted = new LongAdder();
+    private final LongAdder tasksRejected = new LongAdder();
+    private final LongAdder tasksFailed = new LongAdder();
 
     enum State {
         Running,
@@ -98,11 +108,13 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private boolean safeRunTask(Runnable r) {
         try {
             r.run();
+            tasksCompleted.increment();
         } catch (Throwable t) {
             if (t instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
                 return false;
             } else {
+                tasksFailed.increment();
                 log.error("Error while running task: {}", t.getMessage(), t);
             }
         }
@@ -143,6 +155,26 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         return runner.isAlive();
     }
 
+    public long getQueuedTasksCount() {
+        return Math.max(0, getSubmittedTasksCount() - getCompletedTasksCount());
+    }
+
+    public long getSubmittedTasksCount() {
+        return tasksCount.sum();
+    }
+
+    public long getCompletedTasksCount() {
+        return tasksCompleted.sum();
+    }
+
+    public long getRejectedTasksCount() {
+        return tasksRejected.sum();
+    }
+
+    public long getFailedTasksCount() {
+        return tasksFailed.sum();
+    }
+
     @Override
     public void execute(Runnable r) {
         if (state != State.Running) {
@@ -152,11 +184,81 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         try {
             if (!rejectExecution) {
                 queue.put(r);
-            } else if (!queue.offer(r)) {
-                throw new RejectedExecutionException("Executor queue is full");
+                tasksCount.increment();
+            } else {
+                if (queue.offer(r)) {
+                    tasksCount.increment();
+                } else {
+                    tasksRejected.increment();
+                    throw new RejectedExecutionException("Executor queue is full");
+                }
             }
         } catch (InterruptedException e) {
             throw new RejectedExecutionException("Executor thread was interrupted", e);
         }
+    }
+
+    public void registerMetrics(StatsLogger statsLogger) {
+        // Register gauges
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_queue", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getQueuedTasksCount();
+                    }
+                });
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_completed", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getCompletedTasksCount();
+                    }
+                });
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_tasks_completed", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getCompletedTasksCount();
+                    }
+                });
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_tasks_rejected", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getRejectedTasksCount();
+                    }
+                });
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_tasks_failed", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getFailedTasksCount();
+                    }
+                });
     }
 }
