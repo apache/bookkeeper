@@ -27,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +57,7 @@ class PendingAddOp implements Runnable, WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
-    ByteBufList toSend;
+    ReferenceCounted toSend;
     AddCallbackWithLatency cb;
     Object ctx;
     long entryId;
@@ -257,9 +258,10 @@ class PendingAddOp implements Runnable, WriteCallback {
         checkNotNull(lh);
         checkNotNull(lh.macManager);
 
+        int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
         this.toSend = lh.macManager.computeDigestAndPackageForSending(
                 entryId, lh.lastAddConfirmed, currentLedgerLength,
-                payload);
+                payload, lh.ledgerKey, flags);
         // ownership of RefCounted ByteBuf was passed to computeDigestAndPackageForSending
         payload = null;
 

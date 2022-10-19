@@ -23,7 +23,9 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -148,7 +150,7 @@ public class MockBookieClient implements BookieClient {
 
     @Override
     public void addEntry(BookieId addr, long ledgerId, byte[] masterKey,
-                         long entryId, ByteBufList toSend, WriteCallback cb, Object ctx,
+                         long entryId, ReferenceCounted toSend, WriteCallback cb, Object ctx,
                          int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags) {
         toSend.retain();
         preWriteHook.runHook(addr, ledgerId, entryId)
@@ -262,11 +264,11 @@ public class MockBookieClient implements BookieClient {
     public void close() {
     }
 
-    private static ByteBuf copyData(ByteBufList list) {
-        ByteBuf buf = Unpooled.buffer(list.readableBytes());
-        for (int i = 0; i < list.size(); i++) {
-            buf.writeBytes(list.getBuffer(i).slice());
+    public static ByteBuf copyData(ReferenceCounted rc) {
+        if (rc instanceof ByteBuf) {
+            return Unpooled.copiedBuffer((ByteBuf) rc);
+        } else {
+            return ByteBufList.coalesce((ByteBufList) rc);
         }
-        return buf;
     }
 }

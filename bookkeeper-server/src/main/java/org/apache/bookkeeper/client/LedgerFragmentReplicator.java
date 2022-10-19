@@ -29,7 +29,9 @@ import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WOR
 import static org.apache.bookkeeper.replication.ReplicationStats.WRITE_DATA_LATENCY;
 
 import com.google.common.util.concurrent.RateLimiter;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -403,17 +405,24 @@ public class LedgerFragmentReplicator {
                 numEntriesRead.inc();
                 numBytesRead.registerSuccessfulValue(dataLength);
 
-                ByteBufList toSend = lh.getDigestManager()
+                ReferenceCounted toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
-                                Unpooled.wrappedBuffer(data, 0, data.length));
+                                Unpooled.wrappedBuffer(data, 0, data.length),
+                                lh.getLedgerKey(),
+                                0
+                                );
                 if (replicationThrottle != null) {
-                    updateAverageEntrySize(toSend.readableBytes());
+                    if (toSend instanceof ByteBuf) {
+                        updateAverageEntrySize(((ByteBuf) toSend).readableBytes());
+                    } else if (toSend instanceof ByteBufList) {
+                        updateAverageEntrySize(((ByteBufList) toSend).readableBytes());
+                    }
                 }
                 for (BookieId newBookie : newBookies) {
                     long startWriteEntryTime = MathUtils.nowInNano();
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
-                            lh.getLedgerKey(), entryId, ByteBufList.clone(toSend),
+                            lh.getLedgerKey(), entryId, toSend,
                             multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD,
                             false, WriteFlag.NONE);
                     writeDataLatency.registerSuccessfulEvent(

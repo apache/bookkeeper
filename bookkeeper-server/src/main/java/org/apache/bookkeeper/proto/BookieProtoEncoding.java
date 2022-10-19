@@ -428,7 +428,9 @@ public class BookieProtoEncoding {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Encode request {} to channel {}.", msg, ctx.channel());
             }
-            if (msg instanceof BookkeeperProtocol.Request) {
+            if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
+                ctx.write(msg, promise);
+            } else if (msg instanceof BookkeeperProtocol.Request) {
                 ctx.write(reqV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Request) {
                 ctx.write(reqPreV3.encode(msg, ctx.alloc()), promise);

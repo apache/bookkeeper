@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
@@ -425,9 +426,10 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         long entryId = 14;
         long lac = 8;
         byte[] data = "recovery-on-entry-gap-gap".getBytes(UTF_8);
-        ByteBufList toSend =
+        ReferenceCounted toSend =
                 lh.macManager.computeDigestAndPackageForSending(
-                        entryId, lac, lh.getLength() + 100, Unpooled.wrappedBuffer(data, 0, data.length));
+                        entryId, lac, lh.getLength() + 100, Unpooled.wrappedBuffer(data, 0, data.length),
+                        new byte[20], 0);
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
