@@ -207,7 +207,14 @@ class LedgerOpenOp {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
-                            openComplete(BKException.Code.UnauthorizedAccessException, null);
+                            openComplete(rc, null);
+                        });
+                    } else if (rc == BKException.Code.TimeoutException) {
+                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                            if (ex != null) {
+                                LOG.error("Ledger {} read timeout", ledgerId, ex);
+                            }
+                            openComplete(rc, null);
                         });
                     } else {
                         openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
@@ -223,7 +230,14 @@ class LedgerOpenOp {
                 @Override
                 public void readLastConfirmedComplete(int rc,
                         long lastConfirmed, Object ctx) {
-                    if (rc != BKException.Code.OK) {
+                    if (rc == BKException.Code.TimeoutException) {
+                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                            if (ex != null) {
+                                LOG.error("Ledger {} close failed", ledgerId, ex);
+                            }
+                            openComplete(bk.getReturnRc(rc), null);
+                        });
+                    } else if (rc != BKException.Code.OK) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
