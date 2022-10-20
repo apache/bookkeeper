@@ -33,7 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -118,17 +117,20 @@ public class OrderedScheduler extends OrderedExecutor implements ScheduledExecut
     }
 
     @Override
-    protected ScheduledThreadPoolExecutor createSingleThreadExecutor(ThreadFactory factory) {
-        return new ScheduledThreadPoolExecutor(1, factory);
+    protected ExecutorService createSingleThreadExecutor(ThreadFactory factory) {
+        return new BoundedScheduledExecutorService(new ScheduledThreadPoolExecutor(1, factory), this.maxTasksInQueue);
     }
 
     @Override
-    protected ListeningScheduledExecutorService getBoundedExecutor(ThreadPoolExecutor executor) {
+    protected ListeningScheduledExecutorService getBoundedExecutor(ExecutorService executor) {
         return new BoundedScheduledExecutorService((ScheduledThreadPoolExecutor) executor, this.maxTasksInQueue);
     }
 
     @Override
     protected ListeningScheduledExecutorService addExecutorDecorators(ExecutorService executor) {
+        if (!(executor instanceof ListeningScheduledExecutorService)) {
+            executor = new BoundedScheduledExecutorService((ScheduledThreadPoolExecutor) executor, 0);
+        }
         return new OrderedSchedulerDecoratedThread((ListeningScheduledExecutorService) executor);
     }
 
