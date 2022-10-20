@@ -217,7 +217,9 @@ class LedgerOpenOp {
                             openComplete(rc, null);
                         });
                     } else {
-                        openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
+                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                            openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
+                        });
                     }
                 }
                 @Override
