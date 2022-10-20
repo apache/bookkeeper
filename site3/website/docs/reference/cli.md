@@ -98,6 +98,19 @@ $ bin/bookkeeper help
 
 
 
+### queryautorecoverystatus {#bookkeeper-shell-queryautorecoverystatus}
+
+Query the autorecovery status
+
+##### Usage
+
+```shell
+$ bin/bookkeeper shell queryautorecoverystatus
+```
+
+| Flag           | Description |
+|----------------| ----------- |
+| -v,--verbose   | List recovering detailed ledger info | 
 
 ### autorecovery {#bookkeeper-shell-autorecovery}
 
