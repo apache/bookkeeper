@@ -198,6 +198,11 @@
        <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.tngtech.junit.dataprovider</groupId>
+      <artifactId>junit4-dataprovider</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>prometheus-metrics-provider</artifactId>
       <version>${project.parent.version}</version>

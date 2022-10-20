@@ -27,6 +27,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,10 +46,12 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Unit tests of builders.
  */
+@RunWith(DataProviderRunner.class)
 public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     private static final int ensembleSize = 3;
@@ -334,8 +339,17 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .execute());
     }
 
+    @DataProvider
+    public static Object[][] openLedgerArgs(){
+        return new Object[][]{
+                {true},
+                {false}
+        };
+    }
+
     @Test
-    public void testOpenLedgerNoRecovery() throws Exception {
+    @UseDataProvider("openLedgerArgs")
+    public void testOpenLedger(boolean withRecover) throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
@@ -351,32 +365,13 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(ledgerMetadata.getPassword())
             .withDigestType(DigestType.CRC32)
             .withLedgerId(ledgerId)
-            .withRecovery(false)
+            .withRecovery(withRecover)
             .execute());
     }
 
     @Test
-    public void testOpenLedgerRecovery() throws Exception {
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-            writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-        result(newOpenLedgerOp()
-            .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.CRC32)
-            .withLedgerId(ledgerId)
-            .withRecovery(true)
-            .execute());
-    }
-
-    @Test
-    public void testOpenLedgerNoRecoveryWithTimeoutEx() throws Exception {
+    @UseDataProvider("openLedgerArgs")
+    public void testOpenLedgerWithTimeoutEx(boolean withRecover) throws Exception {
         mockReadEntryTimeout();
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
                 writeQuorumSize, ackQuorumSize, password, customMetadata);
@@ -392,35 +387,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withPassword(ledgerMetadata.getPassword())
                 .withDigestType(DigestType.CRC32)
                 .withLedgerId(ledgerId)
-                .withRecovery(false)
-                .execute());
-            fail("Expect timeout error");
-        } catch (BKException.BKTimeoutException timeoutException) {
-            // Expect timeout error.
-        }
-        // Reset bk client.
-        resetBKClient();
-    }
-
-    @Test
-    public void testOpenLedgerRecoveryWithTimeoutEx() throws Exception {
-        mockReadEntryTimeout();
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-                writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-        try {
-            result(newOpenLedgerOp()
-                .withPassword(ledgerMetadata.getPassword())
-                .withDigestType(DigestType.CRC32)
-                .withLedgerId(ledgerId)
-                .withRecovery(true)
+                .withRecovery(withRecover)
                 .execute());
             fail("Expect timeout error");
         } catch (BKException.BKTimeoutException timeoutException) {
