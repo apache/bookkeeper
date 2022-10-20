@@ -352,7 +352,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     @Test
     @UseDataProvider("openLedgerArgs")
-    public void testOpenLedger(boolean withRecover) throws Exception {
+    public void testOpenLedger(boolean withRecovery) throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
@@ -368,13 +368,13 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(ledgerMetadata.getPassword())
             .withDigestType(DigestType.CRC32)
             .withLedgerId(ledgerId)
-            .withRecovery(withRecover)
+            .withRecovery(withRecovery)
             .execute());
     }
 
     @Test
     @UseDataProvider("openLedgerArgs")
-    public void testOpenLedgerWithTimeoutEx(boolean withRecover) throws Exception {
+    public void testOpenLedgerWithTimeoutEx(boolean withRecovery) throws Exception {
         mockReadEntryTimeout();
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
                 writeQuorumSize, ackQuorumSize, password, customMetadata);
@@ -390,7 +390,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withPassword(ledgerMetadata.getPassword())
                 .withDigestType(DigestType.CRC32)
                 .withLedgerId(ledgerId)
-                .withRecovery(withRecover)
+                .withRecovery(withRecovery)
                 .execute());
             fail("Expect timeout error");
         } catch (BKException.BKTimeoutException timeoutException) {
