@@ -258,7 +258,7 @@ public class BookieProtoEncoding {
 
                     BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse) r;
                     if (rr.hasData()) {
-                        int frameSize = RESPONSE_HEADERS_SIZE - + rr.getData().readableBytes();
+                        int frameSize = RESPONSE_HEADERS_SIZE + rr.getData().readableBytes();
                         buf.setInt(0, frameSize);
                         return ByteBufList.get(buf, rr.getData());
                     } else {
