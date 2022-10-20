@@ -37,6 +37,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -390,4 +391,40 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
+
+    @Test
+    public void testWaitForWritable() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper bkc = new BookKeeper(conf);
+
+        byte[] pwd = new byte[]{};
+        try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, pwd)) {
+            long entryId = lh.addEntry(this.entry);
+
+            RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(1, 1, 1);
+            DistributionSchedule.WriteSet writeSet = schedule.getWriteSet(entryId);
+
+            int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
+            List<BookieId> curEns = lh.getCurrentEnsemble();
+
+            // disable channel writable
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
+
+            AtomicBoolean isWriteable = new AtomicBoolean(false);
+            final long timeout = 10000;
+
+            // waitForWritable async
+           new Thread(() -> {
+                isWriteable.set(lh.waitForWritable(writeSet, 0, timeout));
+            }).start();
+            TimeUnit.MILLISECONDS.sleep(5000);
+            assertFalse(isWriteable.get());
+
+            // enable channel writable
+            setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
+            Awaitility.await().untilAsserted(() -> assertTrue(isWriteable.get()));
+        }
+    }
+
 }
