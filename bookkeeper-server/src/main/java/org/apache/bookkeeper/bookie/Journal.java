@@ -36,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1071,6 +1072,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long lastFlushTimeMs = System.currentTimeMillis();
 
             long busyStartTime = System.nanoTime();
+            ArrayDeque<QueueEntry> localQueueEntries = new ArrayDeque<>();
+
             QueueEntry qe = null;
             while (true) {
                 // new journal file to write
@@ -1103,22 +1106,45 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             .registerSuccessfulEvent(MathUtils.elapsedNanos(dequeueStartTime), TimeUnit.NANOSECONDS);
                     }
 
-                    if (numEntriesToFlush == 0) {
+                    if (numEntriesToFlush == 0 && localQueueEntries.isEmpty()) {
+                        queue.drainTo(localQueueEntries);
+
                         journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
-                        qe = queue.take();
+                        if (!localQueueEntries.isEmpty()) {
+                            qe = localQueueEntries.removeFirst();
+                        } else {
+                            qe = queue.take();
+                        }
+
                         dequeueStartTime = MathUtils.nowInNano();
                         busyStartTime = dequeueStartTime;
                         journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+                                .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
+                                        TimeUnit.NANOSECONDS);
                     } else {
-                        long pollWaitTimeNanos = maxGroupWaitInNanos
-                                - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
-                        if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
-                            pollWaitTimeNanos = 0;
+                        if (localQueueEntries.isEmpty()) {
+                            queue.drainTo(localQueueEntries);
                         }
-                        qe = queue.poll(pollWaitTimeNanos, TimeUnit.NANOSECONDS);
-                        dequeueStartTime = MathUtils.nowInNano();
+
+                        if (!localQueueEntries.isEmpty()) {
+                            journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
+                            qe = localQueueEntries.removeFirst();
+                            dequeueStartTime = MathUtils.nowInNano();
+                            busyStartTime = dequeueStartTime;
+                            journalStats.getJournalQueueSize().dec();
+                            journalStats.getJournalQueueStats()
+                                    .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
+                                            TimeUnit.NANOSECONDS);
+                        } else {
+                            long pollWaitTimeNanos = maxGroupWaitInNanos
+                                    - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
+                            if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
+                                pollWaitTimeNanos = 0;
+                            }
+                            qe = queue.poll(pollWaitTimeNanos, TimeUnit.NANOSECONDS);
+                            dequeueStartTime = MathUtils.nowInNano();
+                        }
 
                         if (qe != null) {
                             journalStats.getJournalQueueSize().dec();
