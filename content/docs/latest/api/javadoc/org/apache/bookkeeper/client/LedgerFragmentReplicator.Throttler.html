@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
+var data = {"i0":10,"i1":10,"i2":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -183,6 +183,16 @@ extends java.lang.Object</pre>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquire(int)">acquire</a></span>&#8203;(int&nbsp;permits)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>(package private) double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRate()">getRate</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resetRate(int)">resetRate</a></span>&#8203;(int&nbsp;throttleBytes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -226,6 +236,24 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="resetRate(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>resetRate</h4>
+<pre class="methodSignature">void&nbsp;resetRate&#8203;(int&nbsp;throttleBytes)</pre>
+</li>
+</ul>
+<a id="getRate()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getRate</h4>
+<pre class="methodSignature">double&nbsp;getRate()</pre>
+</li>
+</ul>
 <a id="acquire(int)">
 <!--   -->
 </a>
