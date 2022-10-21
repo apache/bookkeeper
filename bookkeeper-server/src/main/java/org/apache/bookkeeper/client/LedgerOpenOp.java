@@ -202,23 +202,17 @@ class LedgerOpenOp {
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
-                    } else if (rc == BKException.Code.UnauthorizedAccessException) {
-                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                    } else {
+                        closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
-                            openComplete(rc, null);
-                        });
-                    } else if (rc == BKException.Code.TimeoutException) {
-                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
-                            if (ex != null) {
-                                LOG.error("Ledger {} read timeout", ledgerId, ex);
+                            if (rc == BKException.Code.UnauthorizedAccessException
+                                    || rc == BKException.Code.TimeoutException) {
+                                openComplete(rc, null);
+                            } else {
+                                openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                             }
-                            openComplete(rc, null);
-                        });
-                    } else {
-                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
-                            openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                         });
                     }
                 }
