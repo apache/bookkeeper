@@ -210,7 +210,7 @@ try {
 }
 ```
 
-### Delete entries asynchronously
+### Delete ledgers asynchronously
 
 Ledgers can also be deleted asynchronously:
 
