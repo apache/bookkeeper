@@ -122,14 +122,12 @@ public class ConcurrentLongHashMapTest {
     private void addSpecifyIncrement(ConcurrentLongHashMap<byte[]> mkc, int start, int end) {
         for (int i = start; i <= end; i++) {
             assertNull(mkc.put(i, ("comment:" + i).getBytes(UTF_8)));
-            System.out.println("i=" + i + ",mkc.size=" + mkc.size() + ",mkc.capacity=" + mkc.capacity());
         }
     }
 
     private void removeSpecifyIncrement(ConcurrentLongHashMap<byte[]> mkc, int start, int end) {
         for (int i = end; i >= start; i--) {
             assertNotNull(mkc.remove(i));
-            System.out.println("i=" + i + ",mkc.size=" + mkc.size() + ",mkc.capacity=" + mkc.capacity());
         }
     }
 

@@ -112,7 +112,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     private int exitCode = ExitCode.OK;
 
-    private static final ConcurrentLongHashMap<byte[]> MASTER_KEY_CACHE =
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache =
             ConcurrentLongHashMap.<byte[]>newBuilder().autoShrink(true).build();
 
     protected StateManager stateManager;
@@ -375,6 +375,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 }
             });
         ledgerStorage.setCheckpointer(Checkpointer.NULL);
+        ledgerStorage.setStorageStorageNotificationListener(LedgerStorageNotificationListener.NULL);
         return ledgerStorage;
     }
 
@@ -477,10 +478,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource, statsLogger);
         }
 
+        LedgerStorageNotificationListener storageNotificationListener = new LedgerStorageNotificationListener() {
+            @Override
+            public void ledgerRemovedFromStorage(long ledgerId) {
+                masterKeyCache.remove(ledgerId);
+            }
+        };
+
         ledgerStorage.setStateManager(stateManager);
         ledgerStorage.setCheckpointSource(checkpointSource);
         ledgerStorage.setCheckpointer(syncThread);
-
+        ledgerStorage.setStorageStorageNotificationListener(storageNotificationListener);
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
@@ -515,7 +523,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             byte[] masterKey = new byte[masterKeyLen];
 
                             recBuff.get(masterKey);
-                            MASTER_KEY_CACHE.put(ledgerId, masterKey);
+                            masterKeyCache.put(ledgerId, masterKey);
 
                             // Force to re-insert the master key in ledger storage
                             handles.getHandle(ledgerId, masterKey);
@@ -526,7 +534,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         }
                     } else if (entryId == METAENTRY_ID_FENCE_KEY) {
                         if (journalVersion >= JournalChannel.V4) {
-                            byte[] key = MASTER_KEY_CACHE.get(ledgerId);
+                            byte[] key = masterKeyCache.get(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -544,7 +552,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             byte[] explicitLacBufArray = new byte[explicitLacBufLength];
                             recBuff.get(explicitLacBufArray);
                             explicitLacBuf.writeBytes(explicitLacBufArray);
-                            byte[] key = MASTER_KEY_CACHE.get(ledgerId);
+                            byte[] key = masterKeyCache.get(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
@@ -567,7 +575,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         LOG.warn("Read unrecognizable entryId: {} for ledger: {} while replaying Journal. Skipping it",
                                 entryId, ledgerId);
                     } else {
-                        byte[] key = MASTER_KEY_CACHE.get(ledgerId);
+                        byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
@@ -935,9 +943,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
-        if (MASTER_KEY_CACHE.get(ledgerId) == null) {
+        if (masterKeyCache.get(ledgerId) == null) {
             // Force the load into masterKey cache
-            byte[] oldValue = MASTER_KEY_CACHE.putIfAbsent(ledgerId, masterKey);
+            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
             if (oldValue == null) {
                 // new handle, we should add the key to journal ensure we can rebuild
                 ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
@@ -1278,9 +1286,5 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
             }
         }
-    }
-
-    public static byte[] removeLedgerIdFromMasterKeyCache(long ledgerId) {
-        return MASTER_KEY_CACHE.remove(ledgerId);
     }
 }
