@@ -719,10 +719,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             return;
         }
 
-
         // Only a single flush operation can happen at a time
         flushMutex.lock();
-        long startTime = MathUtils.nowInNano();
+        long startTime = -1;
+        try {
+            startTime = MathUtils.nowInNano();
+        } catch (Throwable e) {
+            // Fix spotbugs warning. Should never happen
+            flushMutex.unlock();
+            throw new IOException(e);
+        }
+
         try {
             if (writeCache.isEmpty()) {
                 return;
