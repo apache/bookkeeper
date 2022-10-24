@@ -226,6 +226,17 @@ The table below lists parameters that you can set to configure bookies. All conf
 | dbStorage_rocksDB_numFilesInLevel0 |  | 10 | 
 | dbStorage_rocksDB_maxSizeInLevel1MB |  | 256 | 
 
+> Note: 
+> The RocksDB configuration is deprecated in the bk_server.conf since 4.15.0. It will use independent configuration file.
+> There have three configuration file `default_rocksdb.conf`, `entry_location_rocksdb.conf` and `ledger_metadata_rocksdb.conf`.
+> `default_rocksdb.conf` is used for default,command until or test case.
+> `entry_location_rocksdb.conf` is used for location index, lots of writes and much bigger dataset.
+> `ledger_metadata_rocksdb.conf` is used for ledgers db, doesn't need particular configuration.
+> 
+> By default, we are still getting rocksDB properties from the `bk_server.conf`. If you want to use the independent
+> configuration file for the rocksDB, you can rename the configuration files without the suffix `.default`, then the rocksDB
+> used in the storage will load them.
+
 
 ## Metadata Service Settings
 
