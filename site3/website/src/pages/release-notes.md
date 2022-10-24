@@ -125,6 +125,12 @@ below.
   Code that implements the interfaces will need changes.
   See [PR 2901](https://github.com/apache/bookkeeper/pull/2901) for details.
 
+* RocksDB configuration moves to the independent configuration files.
+  We used to place the RocksDB configuration properties in the `bk_server.conf`. Now it moved to the independent files
+  `entry_location_rocksdb.conf` and `ledger_metadata_rocksdb.conf`. 
+  The existing configuration in the `bk_server.conf` for the RocksDB will invalidate.
+  See [PR 3056](https://github.com/apache/bookkeeper/pull/3056) for details.
+
 ### Highlights
 
 #### Configuration
