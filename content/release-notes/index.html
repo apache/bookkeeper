@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="Docusaurus v2.0.0-beta.17">
 <title data-rh="true">Apache BookKeeper</title><meta data-rh="true" property="og:title" content="Apache BookKeeper"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" name="description" content="4.15.2"><meta data-rh="true" property="og:description" content="4.15.2"><meta data-rh="true" property="og:url" content="https://bookkeeper.apache.org//release-notes"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><link data-rh="true" rel="icon" href="/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://bookkeeper.apache.org//release-notes"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org//release-notes" hreflang="en"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org//release-notes" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.4caf24b3.css">
-<link rel="preload" href="/assets/js/runtime~main.b2c88969.js" as="script">
+<link rel="preload" href="/assets/js/runtime~main.c49f3213.js" as="script">
 <link rel="preload" href="/assets/js/main.6b1ebb1b.js" as="script">
 </head>
 <body class="navigation-with-keyboard">
@@ -26,7 +26,11 @@ See <a href="https://github.com/apache/bookkeeper/pull/2805" target="_blank" rel
 <code>ByteBufAllocatorWithOomHandler</code> interface is added and used instead of
 the <code>ByteBufAllocator</code> in multiple places.
 Code that implements the interfaces will need changes.
-See <a href="https://github.com/apache/bookkeeper/pull/2901" target="_blank" rel="noopener noreferrer">PR 2901</a> for details.</p></li></ul><h3 class="anchor anchorWithStickyNavbar_mojV" id="highlights-2">Highlights<a class="hash-link" href="#highlights-2" title="Direct link to heading">​</a></h3><h4 class="anchor anchorWithStickyNavbar_mojV" id="configuration">Configuration<a class="hash-link" href="#configuration" title="Direct link to heading">​</a></h4><ul><li><a href="https://github.com/apache/bookkeeper/pull/2708" target="_blank" rel="noopener noreferrer">ledgerMetadataVersion</a>:
+See <a href="https://github.com/apache/bookkeeper/pull/2901" target="_blank" rel="noopener noreferrer">PR 2901</a> for details.</p></li><li><p>RocksDB configuration moves to the independent configuration files.
+We used to place the RocksDB configuration properties in the <code>bk_server.conf</code>. Now it moved to the independent files
+<code>entry_location_rocksdb.conf</code> and <code>ledger_metadata_rocksdb.conf</code>.
+The existing configuration in the <code>bk_server.conf</code> for the RocksDB will invalidate.
+See <a href="https://github.com/apache/bookkeeper/pull/3056" target="_blank" rel="noopener noreferrer">PR 3056</a> for details.</p></li></ul><h3 class="anchor anchorWithStickyNavbar_mojV" id="highlights-2">Highlights<a class="hash-link" href="#highlights-2" title="Direct link to heading">​</a></h3><h4 class="anchor anchorWithStickyNavbar_mojV" id="configuration">Configuration<a class="hash-link" href="#configuration" title="Direct link to heading">​</a></h4><ul><li><a href="https://github.com/apache/bookkeeper/pull/2708" target="_blank" rel="noopener noreferrer">ledgerMetadataVersion</a>:
 BookKeeper-Client config to write ledger metadata with configured version.</li><li><a href="https://github.com/apache/bookkeeper/pull/2761" target="_blank" rel="noopener noreferrer">clientTcpUserTimeoutMillis</a>:
 Added TCP_USER_TIMEOUT to Epoll channel config.</li><li><a href="https://github.com/apache/bookkeeper/pull/2802" target="_blank" rel="noopener noreferrer">auditorMaxNumberOfConcurrentOpenLedgerOperations and auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec</a>
 Add auditor get ledger throttle to avoid auto recovery zk session.</li><li><a href="https://github.com/apache/bookkeeper/pull/2824" target="_blank" rel="noopener noreferrer">dbStorage_rocksDB_format_version</a>
@@ -144,7 +148,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
         </div>
       </footer>
       </div></div></div></footer></div>
-<script src="/assets/js/runtime~main.b2c88969.js"></script>
+<script src="/assets/js/runtime~main.c49f3213.js"></script>
 <script src="/assets/js/main.6b1ebb1b.js"></script>
 </body>
 </html>
