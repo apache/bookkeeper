@@ -141,6 +141,12 @@ The table below lists parameters that you can set to configure bookies. All conf
 | flushInterval | When entryLogPerLedgerEnabled is enabled, checkpoint doesn't happens when a new active entrylog is created / previous one is rolled over. Instead SyncThread checkpoints periodically with 'flushInterval' delay (in milliseconds) in between executions. Checkpoint flushes both ledger entryLogs and ledger index pages to disk. Flushing entrylog and index files will introduce much random disk I/O. If separating journal dir and ledger dirs each on different devices, flushing would not affect performance. But if putting journal dir and ledger dirs on same device, performance degrade significantly on too frequent flushing. You can consider increment flush interval to get better performance, but you need to pay more time on bookie server restart after failure. This config is used only when entryLogPerLedgerEnabled is enabled. | 10000 | 
 | allowStorageExpansion | Allow the expansion of bookie storage capacity. Newly added ledger and index directories must be empty. | false | 
 
+> Note:
+> The RocksDB configuration is deprecated in the bk_server.conf since 4.15.0. It will use independent configuration file.
+> There have three configuration file `default_rocksdb.conf`, `entry_location_rocksdb.conf` and `ledger_metadata_rocksdb.conf`.
+> `default_rocksdb.conf` is used for default,command until or test case.
+> `entry_location_rocksdb.conf` is used for location index, lots of writes and much bigger dataset.
+> `ledger_metadata_rocksdb.conf` is used for ledgers db, doesn't need particular configuration.
 
 ## Entry log settings
 
