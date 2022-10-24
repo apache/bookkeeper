@@ -323,6 +323,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             // b2 or b3 is no more writeable
             int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
             List<BookieId> curEns = lh.getCurrentEnsemble();
+
+            // Trigger connection to the bookie service first
+            bkc.getBookieInfo().get(curEns.get(slowBookieIndex));
+            // then mock channel is not writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
 
             boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
