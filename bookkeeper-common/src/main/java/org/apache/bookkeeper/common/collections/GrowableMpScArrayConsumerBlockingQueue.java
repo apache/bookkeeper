@@ -168,6 +168,9 @@ public class GrowableMpScArrayConsumerBlockingQueue<T> extends AbstractQueue<T> 
             // Double check that size has not changed after we have registered ourselves for notification
             if (size() == 0) {
                 LockSupport.park();
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
             }
         }
 
