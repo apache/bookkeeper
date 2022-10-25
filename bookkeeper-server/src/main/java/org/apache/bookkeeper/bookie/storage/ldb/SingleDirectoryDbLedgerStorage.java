@@ -63,6 +63,7 @@ import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
+import org.apache.bookkeeper.bookie.LedgerStorageNotificationListener;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
@@ -237,6 +238,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
     @Override
     public void setCheckpointer(Checkpointer checkpointer) { }
+
+    @Override
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
+    }
 
     /**
      * Evict all the ledger info object that were not used recently.
@@ -719,10 +725,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             return;
         }
 
-        long startTime = MathUtils.nowInNano();
-
         // Only a single flush operation can happen at a time
         flushMutex.lock();
+        long startTime = -1;
+        try {
+            startTime = MathUtils.nowInNano();
+        } catch (Throwable e) {
+            // Fix spotbugs warning. Should never happen
+            flushMutex.unlock();
+            throw new IOException(e);
+        }
+
         try {
             if (writeCache.isEmpty()) {
                 return;
