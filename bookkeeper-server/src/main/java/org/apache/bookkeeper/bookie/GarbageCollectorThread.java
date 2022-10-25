@@ -124,6 +124,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     private static final AtomicLong threadNum = new AtomicLong(0);
     final AbstractLogCompactor.Throttler throttler;
+
+    private LedgerStorageNotificationListener storageNotificationListener = LedgerStorageNotificationListener.NULL;
     /**
      * Create a garbage collector thread.
      *
@@ -181,6 +183,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 }
                 gcStats.getDeletedLedgerCounter().inc();
                 ledgerStorage.deleteLedger(ledgerId);
+                storageNotificationListener.ledgerRemovedFromStorage(ledgerId);
             } catch (IOException e) {
                 LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
             }
@@ -770,5 +773,9 @@ public class GarbageCollectorThread extends SafeRunnable {
             .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
             .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
             .build();
+    }
+
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+        this.storageNotificationListener = storageNotificationListener;
     }
 }

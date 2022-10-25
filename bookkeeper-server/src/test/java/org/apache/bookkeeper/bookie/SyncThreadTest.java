@@ -286,6 +286,11 @@ public class SyncThreadTest {
         public void setCheckpointer(Checkpointer checkpointer) {}
 
         @Override
+        public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageListener) {
+
+        }
+
+        @Override
         public void deleteLedger(long ledgerId) throws IOException {
         }
 

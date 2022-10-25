@@ -173,6 +173,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.checkpointer = checkpointer;
     }
 
+    @Override
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
+    }
+
     public void initializeWithEntryLogger(ServerConfiguration conf,
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,

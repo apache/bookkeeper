@@ -76,6 +76,11 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public void setCheckpointer(Checkpointer checkpointer) {}
 
     @Override
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+
+    }
+
+    @Override
     public void start() {}
     @Override
     public void shutdown() throws InterruptedException {}
