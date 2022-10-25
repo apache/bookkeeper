@@ -26,9 +26,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.StampedLock;
 import org.apache.bookkeeper.util.MathUtils;
 
 
@@ -37,31 +37,26 @@ import org.apache.bookkeeper.util.MathUtils;
  *
  * <p>When the capacity is reached, data will be moved to a bigger array.
  *
+ * <p>This queue only allows 1 consumer thread to dequeue items and multiple producer threads.
  */
-public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
+public class GrowableMpScArrayConsumerBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
 
-    private final ReentrantLock headLock = new ReentrantLock();
+    private final StampedLock headLock = new StampedLock();
     private final PaddedInt headIndex = new PaddedInt();
     private final PaddedInt tailIndex = new PaddedInt();
-    private final ReentrantLock tailLock = new ReentrantLock();
-    private final Condition isNotEmpty = headLock.newCondition();
+    private final StampedLock tailLock = new StampedLock();
 
     private T[] data;
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<GrowableArrayBlockingQueue> SIZE_UPDATER =
-            AtomicIntegerFieldUpdater.newUpdater(GrowableArrayBlockingQueue.class, "size");
-    @SuppressWarnings("unused")
-    private volatile int size = 0;
+    private final AtomicInteger size = new AtomicInteger(0);
 
-    public GrowableArrayBlockingQueue() {
+    private volatile Thread waitingConsumer;
+
+    public GrowableMpScArrayConsumerBlockingQueue() {
         this(64);
     }
 
     @SuppressWarnings("unchecked")
-    public GrowableArrayBlockingQueue(int initialCapacity) {
-        headIndex.value = 0;
-        tailIndex.value = 0;
-
+    public GrowableMpScArrayConsumerBlockingQueue(int initialCapacity) {
         int capacity = MathUtils.findNextPositivePowerOfTwo(initialCapacity);
         data = (T[]) new Object[capacity];
     }
@@ -78,19 +73,22 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
     @Override
     public T poll() {
-        headLock.lock();
-        try {
-            if (SIZE_UPDATER.get(this) > 0) {
+        if (size.get() > 0) {
+            // Since this is a single-consumer queue, we don't expect multiple threads calling poll(), though we need
+            // to protect against array expansions
+            long stamp = headLock.readLock();
+
+            try {
                 T item = data[headIndex.value];
                 data[headIndex.value] = null;
                 headIndex.value = (headIndex.value + 1) & (data.length - 1);
-                SIZE_UPDATER.decrementAndGet(this);
+                size.decrementAndGet();
                 return item;
-            } else {
-                return null;
+            } finally {
+                headLock.unlockRead(stamp);
             }
-        } finally {
-            headLock.unlock();
+        } else {
+            return null;
         }
     }
 
@@ -106,15 +104,16 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
     @Override
     public T peek() {
-        headLock.lock();
-        try {
-            if (SIZE_UPDATER.get(this) > 0) {
+        if (size.get() > 0) {
+            long stamp = headLock.readLock();
+
+            try {
                 return data[headIndex.value];
-            } else {
-                return null;
+            } finally {
+                headLock.unlockRead(stamp);
             }
-        } finally {
-            headLock.unlock();
+        } else {
+            return null;
         }
     }
 
@@ -127,31 +126,24 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
     @Override
     public void put(T e) {
-        tailLock.lock();
-
-        boolean wasEmpty = false;
+        long stamp = tailLock.writeLock();
 
         try {
-            if (SIZE_UPDATER.get(this) == data.length) {
+            int oldSize = size.get();
+            if (oldSize == data.length) {
                 expandArray();
             }
 
             data[tailIndex.value] = e;
             tailIndex.value = (tailIndex.value + 1) & (data.length - 1);
-            if (SIZE_UPDATER.getAndIncrement(this) == 0) {
-                wasEmpty = true;
+
+            if (size.getAndIncrement() == 0 && waitingConsumer != null) {
+                Thread waitingConsumer = this.waitingConsumer;
+                this.waitingConsumer = null;
+                LockSupport.unpark(waitingConsumer);
             }
         } finally {
-            tailLock.unlock();
-        }
-
-        if (wasEmpty) {
-            headLock.lock();
-            try {
-                isNotEmpty.signal();
-            } finally {
-                headLock.unlock();
-            }
+            tailLock.unlockWrite(stamp);
         }
     }
 
@@ -170,51 +162,42 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
     @Override
     public T take() throws InterruptedException {
-        headLock.lockInterruptibly();
+        while (size() == 0) {
+            waitingConsumer = Thread.currentThread();
 
-        try {
-            while (SIZE_UPDATER.get(this) == 0) {
-                isNotEmpty.await();
+            // Double check that size has not changed after we have registered ourselves for notification
+            if (size() == 0) {
+                LockSupport.park();
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
             }
-
-            T item = data[headIndex.value];
-            data[headIndex.value] = null;
-            headIndex.value = (headIndex.value + 1) & (data.length - 1);
-            if (SIZE_UPDATER.decrementAndGet(this) > 0) {
-                // There are still entries to consume
-                isNotEmpty.signal();
-            }
-            return item;
-        } finally {
-            headLock.unlock();
         }
+
+        return poll();
     }
 
     @Override
     public T poll(long timeout, TimeUnit unit) throws InterruptedException {
-        headLock.lockInterruptibly();
+        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
 
-        try {
-            long timeoutNanos = unit.toNanos(timeout);
-            while (SIZE_UPDATER.get(this) == 0) {
-                if (timeoutNanos <= 0) {
-                    return null;
+        while (size.get() == 0) {
+            waitingConsumer = Thread.currentThread();
+
+            // Double check that size has not changed after we have registered ourselves for notification
+            if (size.get() == 0) {
+                LockSupport.parkUntil(deadline);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
                 }
 
-                timeoutNanos = isNotEmpty.awaitNanos(timeoutNanos);
+                if (System.currentTimeMillis() >= deadline) {
+                    return null;
+                }
             }
-
-            T item = data[headIndex.value];
-            data[headIndex.value] = null;
-            headIndex.value = (headIndex.value + 1) & (data.length - 1);
-            if (SIZE_UPDATER.decrementAndGet(this) > 0) {
-                // There are still entries to consume
-                isNotEmpty.signal();
-            }
-            return item;
-        } finally {
-            headLock.unlock();
         }
+
+        return poll();
     }
 
     @Override
@@ -229,57 +212,47 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
     @Override
     public int drainTo(Collection<? super T> c, int maxElements) {
-        headLock.lock();
+        long stamp = headLock.readLock();
 
         try {
-            int drainedItems = 0;
-            int size = SIZE_UPDATER.get(this);
+            int toDrain = Math.min(size.get(), maxElements);
 
-            while (size > 0 && drainedItems < maxElements) {
+            for (int i = 0; i < toDrain; i++) {
                 T item = data[headIndex.value];
                 data[headIndex.value] = null;
                 c.add(item);
 
                 headIndex.value = (headIndex.value + 1) & (data.length - 1);
-                --size;
-                ++drainedItems;
             }
 
-            if (SIZE_UPDATER.addAndGet(this, -drainedItems) > 0) {
-                // There are still entries to consume
-                isNotEmpty.signal();
-            }
-
-            return drainedItems;
+            this.size.addAndGet(-toDrain);
+            return toDrain;
         } finally {
-            headLock.unlock();
+            headLock.unlockRead(stamp);
         }
     }
 
     @Override
     public void clear() {
-        headLock.lock();
+        long stamp = headLock.readLock();
 
         try {
-            int size = SIZE_UPDATER.get(this);
+            int size = this.size.get();
 
             for (int i = 0; i < size; i++) {
                 data[headIndex.value] = null;
                 headIndex.value = (headIndex.value + 1) & (data.length - 1);
             }
 
-            if (SIZE_UPDATER.addAndGet(this, -size) > 0) {
-                // There are still entries to consume
-                isNotEmpty.signal();
-            }
+            this.size.addAndGet(-size);
         } finally {
-            headLock.unlock();
+            headLock.unlockRead(stamp);
         }
     }
 
     @Override
     public int size() {
-        return SIZE_UPDATER.get(this);
+        return size.get();
     }
 
     @Override
@@ -291,12 +264,12 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        tailLock.lock();
-        headLock.lock();
+        long tailStamp = tailLock.writeLock();
+        long headStamp = headLock.writeLock();
 
         try {
             int headIndex = this.headIndex.value;
-            int size = SIZE_UPDATER.get(this);
+            int size = this.size.get();
 
             sb.append('[');
 
@@ -313,8 +286,8 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
 
             sb.append(']');
         } finally {
-            headLock.unlock();
-            tailLock.unlock();
+            headLock.unlockWrite(headStamp);
+            tailLock.unlockWrite(tailStamp);
         }
         return sb.toString();
     }
@@ -322,31 +295,30 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
     @SuppressWarnings("unchecked")
     private void expandArray() {
         // We already hold the tailLock
-        headLock.lock();
+        long headLockStamp = headLock.writeLock();
 
         try {
-            int size = SIZE_UPDATER.get(this);
+            int size = this.size.get();
             int newCapacity = data.length * 2;
             T[] newData = (T[]) new Object[newCapacity];
 
-            int oldHeadIndex = headIndex.value;
-            int newTailIndex = 0;
 
-            for (int i = 0; i < size; i++) {
-                newData[newTailIndex++] = data[oldHeadIndex];
-                oldHeadIndex = (oldHeadIndex + 1) & (data.length - 1);
-            }
+            int oldHeadIndex = headIndex.value;
+            int lenHeadToEnd = Math.min(size, data.length - oldHeadIndex);
+
+            System.arraycopy(data, oldHeadIndex, newData, 0, lenHeadToEnd);
+            System.arraycopy(data, 0, newData, lenHeadToEnd, size - lenHeadToEnd);
 
             data = newData;
             headIndex.value = 0;
             tailIndex.value = size;
         } finally {
-            headLock.unlock();
+            headLock.unlockWrite(headLockStamp);
         }
     }
 
-    static final class PaddedInt {
-        private int value;
+    private static final class PaddedInt {
+        int value = 0;
 
         // Padding to avoid false sharing
         public volatile int pi1 = 1;

@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.collections.GrowableMpScArrayConsumerBlockingQueue;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 
@@ -64,13 +65,21 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final CountDownLatch startLatch;
 
     public SingleThreadExecutor(ThreadFactory tf) {
-        this(tf, 64 * 1024, false);
+        this(tf, 0, false);
     }
 
     @SneakyThrows
     @SuppressFBWarnings(value = {"SC_START_IN_CTOR"})
     public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution) {
-        this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
+        if (rejectExecution && maxQueueCapacity == 0) {
+            throw new IllegalArgumentException("Executor cannot reject new items if the queue is unbound");
+        }
+
+        if (maxQueueCapacity > 0) {
+            this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
+        } else {
+            this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
+        }
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
