@@ -187,6 +187,10 @@ public class GrowableMpScArrayConsumerBlockingQueue<T> extends AbstractQueue<T> 
             // Double check that size has not changed after we have registered ourselves for notification
             if (size.get() == 0) {
                 LockSupport.parkUntil(deadline);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+
                 if (System.currentTimeMillis() >= deadline) {
                     return null;
                 }
