@@ -401,6 +401,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         Auditor auditor1 = new Auditor(BookieImpl.getBookieId(configuration).toString(),
             configuration, NullStatsLogger.INSTANCE);
+        auditor1.start();
         Auditor auditor = Mockito.spy(auditor1);
 
         BookKeeper bookKeeper = Mockito.spy(auditor.getBookKeeper(configuration));

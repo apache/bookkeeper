@@ -72,6 +72,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
@@ -166,6 +167,7 @@ public class Auditor implements AutoCloseable {
     private final int zkOpTimeoutMs;
     private final Semaphore openLedgerNoRecoverySemaphore;
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
+    private AtomicBoolean isLedgerReplicationEnabled;
 
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -714,6 +716,10 @@ public class Auditor implements AutoCloseable {
             try {
                 this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
                         new UnderReplicatedLedgersChangedCb());
+                this.isLedgerReplicationEnabled =
+                        new AtomicBoolean(this.ledgerUnderreplicationManager.isLedgerReplicationEnabled());
+                this.ledgerUnderreplicationManager
+                        .notifyLedgerReplicationStatusChanged(new ReplicationEnabledChangedCb());
             } catch (UnavailableException ue) {
                 LOG.error("Exception while registering for under-replicated ledgers change notification, so exiting",
                         ue);
@@ -781,7 +787,7 @@ public class Auditor implements AutoCloseable {
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 boolean checkSuccess = false;
                 try {
-                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                    if (!isLedgerReplicationEnabled.get()) {
                         LOG.info("Ledger replication disabled, skipping checkAllLedgers");
                         return;
                     }
@@ -799,11 +805,6 @@ public class Auditor implements AutoCloseable {
                     LOG.error("Exception running periodic check", bke);
                 } catch (IOException ioe) {
                     LOG.error("I/O exception running periodic check", ioe);
-                } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
-                    submitShutdownTask();
-                } catch (ReplicationException.UnavailableException ue) {
-                    LOG.error("Underreplication manager unavailable running periodic check", ue);
                 } finally {
                     if (!checkSuccess) {
                         long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
@@ -856,7 +857,7 @@ public class Auditor implements AutoCloseable {
 
             executor.scheduleAtFixedRate(() -> {
                 try {
-                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                    if (!isLedgerReplicationEnabled.get()) {
                         LOG.info("Ledger replication disabled, skipping placementPolicyCheck");
                         return;
                     }
@@ -936,8 +937,6 @@ public class Auditor implements AutoCloseable {
                             numOfLedgersFoundInPlacementPolicyCheckValue,
                             numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
                             numOfURLedgersElapsedRecoveryGracePeriodValue, e);
-                } catch (ReplicationException.UnavailableException ue) {
-                    LOG.error("Underreplication manager unavailable running periodic check", ue);
                 }
             }, initialDelay, interval, TimeUnit.SECONDS);
         } else {
@@ -986,7 +985,7 @@ public class Auditor implements AutoCloseable {
 
         executor.scheduleAtFixedRate(() -> {
             try {
-                if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                if (!isLedgerReplicationEnabled.get()) {
                     LOG.info("Ledger replication disabled, skipping replicasCheck task.");
                     return;
                 }
@@ -1045,8 +1044,6 @@ public class Auditor implements AutoCloseable {
                     numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue
                             .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
                 }
-            } catch (ReplicationException.UnavailableException ue) {
-                LOG.error("Underreplication manager unavailable running periodic check", ue);
             }
         }, initialDelay, interval, TimeUnit.SECONDS);
     }
@@ -1058,6 +1055,13 @@ public class Auditor implements AutoCloseable {
                     .listLedgersToRereplicate(null);
             underReplicatedLedgersGuageValue.set(Iterators.size(underreplicatedLedgersInfo));
             numReplicatedLedgers.inc();
+        }
+    }
+
+    private class ReplicationEnabledChangedCb implements GenericCallback<Void> {
+        @Override
+        public void operationComplete(int rc, Void result) {
+            isLedgerReplicationEnabled.set(rc == 0);
         }
     }
 
@@ -1077,14 +1081,14 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    private void waitIfLedgerReplicationDisabled() throws UnavailableException,
-            InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
-        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+    private void waitIfLedgerReplicationDisabled() throws UnavailableException, InterruptedException {
+        while (!isLedgerReplicationEnabled.get()) {
             LOG.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
-            ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
-            cb.await();
+            Thread.sleep(1000);
+            if (isLedgerReplicationEnabled.get()) {
+                break;
+            }
         }
     }
 
@@ -1147,16 +1151,10 @@ public class Auditor implements AutoCloseable {
         Stopwatch stopwatch = Stopwatch.createStarted();
         // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
-        try {
-            if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                // has been disabled while we were generating the index
-                // discard this run, and schedule a new one
-                executor.submit(bookieCheck);
-                return;
-            }
-        } catch (UnavailableException ue) {
-            LOG.error("Underreplication unavailable, skipping audit."
-                    + "Will retry after a period");
+        if (!isLedgerReplicationEnabled.get()) {
+            // has been disabled while we were generating the index
+            // discard this run, and schedule a new one
+            executor.submit(bookieCheck);
             return;
         }
 
@@ -1308,18 +1306,8 @@ public class Auditor implements AutoCloseable {
             final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 
             Processor<Long> checkLedgersProcessor = (ledgerId, callback) -> {
-                try {
-                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.info("Ledger rereplication has been disabled, aborting periodic check");
-                        FutureUtils.complete(processFuture, null);
-                        return;
-                    }
-                } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
-                    submitShutdownTask();
-                    return;
-                } catch (UnavailableException ue) {
-                    LOG.error("Underreplication manager unavailable running periodic check", ue);
+                if (!isLedgerReplicationEnabled.get()) {
+                    LOG.info("Ledger rereplication has been disabled, aborting periodic check");
                     FutureUtils.complete(processFuture, null);
                     return;
                 }

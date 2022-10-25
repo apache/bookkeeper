@@ -150,6 +150,16 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
 
     /**
      * Receive notification asynchronously when the ledger replication process
+     * is changed.
+     *
+     * @param cb
+     *            - callback implementation to receive the notification
+     */
+    void notifyLedgerReplicationStatusChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Receive notification asynchronously when the ledger replication process
      * is enabled.
      *
      * @param cb

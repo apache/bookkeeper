@@ -738,6 +738,37 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     @Override
+    public void notifyLedgerReplicationStatusChanged(final GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("notifyLedgerReplicationStatusChanged()");
+        }
+        Watcher w = e -> {
+            if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
+                LOG.info("LedgerReplication is enabled externally through Zookeeper, "
+                        + "since DISABLE_NODE ZNode is deleted");
+                cb.operationComplete(0, null);
+            } else if (e.getType() == Watcher.Event.EventType.NodeCreated) {
+                LOG.info("LedgerReplication is disabled externally through Zookeeper, "
+                        + "since DISABLE_NODE ZNode is created");
+                cb.operationComplete(1, null);
+            }
+        };
+        try {
+            zkc.addWatch(basePath + '/'
+                    + BookKeeperConstants.DISABLE_NODE, w, AddWatchMode.PERSISTENT);
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of "
+                    + "ledger re-replication", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
     public void notifyLedgerReplicationEnabled(final GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException {
         if (LOG.isDebugEnabled()) {
