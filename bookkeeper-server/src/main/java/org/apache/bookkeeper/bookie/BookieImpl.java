@@ -1016,6 +1016,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
             throws IOException, InterruptedException, BookieException {
+        ByteBuf explicitLACEntry = null;
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
@@ -1023,12 +1024,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 entry.markReaderIndex();
                 handle.setExplicitLac(entry);
                 entry.resetReaderIndex();
-                ByteBuf explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
+                explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
                 getJournal(ledgerId).logAddEntry(explicitLACEntry, false /* ackBeforeSync */, writeCallback, ctx);
             }
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
+        } finally {
+            entry.release();
+            if (explicitLACEntry != null) {
+                explicitLACEntry.release();
+            }
         }
     }
 
