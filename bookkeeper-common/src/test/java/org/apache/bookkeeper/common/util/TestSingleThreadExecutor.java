@@ -291,7 +291,7 @@ public class TestSingleThreadExecutor {
 
     @Test
     public void testExecutorQueueIsNotFixedSize() throws Exception {
-        int N = 1_000_000;
+        int n = 1_000_000;
         @Cleanup("shutdown")
         SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
 
@@ -305,7 +305,7 @@ public class TestSingleThreadExecutor {
             }
         });
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             ste.execute(() -> {});
         }
 

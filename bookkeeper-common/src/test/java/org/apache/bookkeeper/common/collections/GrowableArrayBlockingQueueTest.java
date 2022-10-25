@@ -246,7 +246,7 @@ public class GrowableArrayBlockingQueueTest {
     }
 
     public static void main(String[] args) throws Exception {
-        int N = 10_000;
+        int n = 10_000;
         BlockingQueue<Integer> q1 = new GrowableMpScArrayConsumerBlockingQueue<>();
         BlockingQueue<Integer> q2 = new GrowableMpScArrayConsumerBlockingQueue<>();
 //        BlockingQueue<Integer> q1 = new ArrayBlockingQueue<>(N * 2);
@@ -257,7 +257,7 @@ public class GrowableArrayBlockingQueueTest {
         TestThread t1 = new TestThread(q1, q2);
         TestThread t2 = new TestThread(q2, q1);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             q1.add(i);
         }
 
