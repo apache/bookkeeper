@@ -42,7 +42,6 @@ import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLIC
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICAS_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE;
 import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
-import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
@@ -538,15 +537,12 @@ public class Auditor implements AutoCloseable {
                 LOG.info("executor is already shutdown");
                 return;
             }
-            executor.submit(safeRun(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (Auditor.this) {
-                        LOG.info("Shutting down Auditor's Executor");
-                        executor.shutdown();
-                    }
+            executor.execute(() -> {
+                synchronized (Auditor.this) {
+                    LOG.info("Shutting down Auditor's Executor");
+                    executor.shutdown();
                 }
-            }));
+            });
         }
     }
 
@@ -557,85 +553,78 @@ public class Auditor implements AutoCloseable {
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
-        return executor.submit(safeRun(new Runnable() {
-                @Override
-                @SuppressWarnings("unchecked")
-                public void run() {
-                    try {
-                        waitIfLedgerReplicationDisabled();
-                        int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
-                                .getLostBookieRecoveryDelay();
-                        List<String> availableBookies = getAvailableBookies();
+        return executor.submit(() -> {
+            try {
+                waitIfLedgerReplicationDisabled();
+                int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
+                        .getLostBookieRecoveryDelay();
+                List<String> availableBookies = getAvailableBookies();
 
-                        // casting to String, as knownBookies and availableBookies
-                        // contains only String values
-                        // find new bookies(if any) and update the known bookie list
-                        Collection<String> newBookies = CollectionUtils.subtract(
-                                availableBookies, knownBookies);
-                        knownBookies.addAll(newBookies);
-                        if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
-                            // the bookie, which went down earlier and had an audit scheduled for,
-                            // has come up. So let us stop tracking it and cancel the audit. Since
-                            // we allow delaying of audit when there is only one failed bookie,
-                            // bookiesToBeAudited should just have 1 element and hence containsAll
-                            // check should be ok
-                            if (auditTask != null && auditTask.cancel(false)) {
-                                auditTask = null;
-                                numDelayedBookieAuditsCancelled.inc();
-                            }
-                            bookiesToBeAudited.clear();
-                        }
-
-                        // find lost bookies(if any)
-                        bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
-                        if (bookiesToBeAudited.size() == 0) {
-                            return;
-                        }
-
-                        knownBookies.removeAll(bookiesToBeAudited);
-                        if (lostBookieRecoveryDelay == 0) {
-                            startAudit(false);
-                            bookiesToBeAudited.clear();
-                            return;
-                        }
-                        if (bookiesToBeAudited.size() > 1) {
-                            // if more than one bookie is down, start the audit immediately;
-                            LOG.info("Multiple bookie failure; not delaying bookie audit. "
-                                    + "Bookies lost now: {}; All lost bookies: {}",
-                                    CollectionUtils.subtract(knownBookies, availableBookies),
-                                    bookiesToBeAudited);
-                            if (auditTask != null && auditTask.cancel(false)) {
-                                auditTask = null;
-                                numDelayedBookieAuditsCancelled.inc();
-                            }
-                            startAudit(false);
-                            bookiesToBeAudited.clear();
-                            return;
-                        }
-                        if (auditTask == null) {
-                            // if there is no scheduled audit, schedule one
-                            auditTask = executor.schedule(safeRun(new Runnable() {
-                                @Override
-                                public void run() {
-                                    startAudit(false);
-                                    auditTask = null;
-                                    bookiesToBeAudited.clear();
-                                }
-                            }), lostBookieRecoveryDelay, TimeUnit.SECONDS);
-                            numBookieAuditsDelayed.inc();
-                            LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
-                                    bookiesToBeAudited);
-                        }
-                    } catch (BKException bke) {
-                        LOG.error("Exception getting bookie list", bke);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted while watching available bookies ", ie);
-                    } catch (UnavailableException ue) {
-                        LOG.error("Exception while watching available bookies", ue);
+                // casting to String, as knownBookies and availableBookies
+                // contains only String values
+                // find new bookies(if any) and update the known bookie list
+                Collection<String> newBookies = CollectionUtils.subtract(
+                        availableBookies, knownBookies);
+                knownBookies.addAll(newBookies);
+                if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
+                    // the bookie, which went down earlier and had an audit scheduled for,
+                    // has come up. So let us stop tracking it and cancel the audit. Since
+                    // we allow delaying of audit when there is only one failed bookie,
+                    // bookiesToBeAudited should just have 1 element and hence containsAll
+                    // check should be ok
+                    if (auditTask != null && auditTask.cancel(false)) {
+                        auditTask = null;
+                        numDelayedBookieAuditsCancelled.inc();
                     }
+                    bookiesToBeAudited.clear();
                 }
-            }));
+
+                // find lost bookies(if any)
+                bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
+                if (bookiesToBeAudited.size() == 0) {
+                    return;
+                }
+
+                knownBookies.removeAll(bookiesToBeAudited);
+                if (lostBookieRecoveryDelay == 0) {
+                    startAudit(false);
+                    bookiesToBeAudited.clear();
+                    return;
+                }
+                if (bookiesToBeAudited.size() > 1) {
+                    // if more than one bookie is down, start the audit immediately;
+                    LOG.info("Multiple bookie failure; not delaying bookie audit. "
+                                    + "Bookies lost now: {}; All lost bookies: {}",
+                            CollectionUtils.subtract(knownBookies, availableBookies),
+                            bookiesToBeAudited);
+                    if (auditTask != null && auditTask.cancel(false)) {
+                        auditTask = null;
+                        numDelayedBookieAuditsCancelled.inc();
+                    }
+                    startAudit(false);
+                    bookiesToBeAudited.clear();
+                    return;
+                }
+                if (auditTask == null) {
+                    // if there is no scheduled audit, schedule one
+                    auditTask = executor.schedule(() -> {
+                        startAudit(false);
+                        auditTask = null;
+                        bookiesToBeAudited.clear();
+                    }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
+                    numBookieAuditsDelayed.inc();
+                    LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
+                            bookiesToBeAudited);
+                }
+            } catch (BKException bke) {
+                LOG.error("Exception getting bookie list", bke);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Interrupted while watching available bookies ", ie);
+            } catch (UnavailableException ue) {
+                LOG.error("Exception while watching available bookies", ue);
+            }
+        });
     }
 
     synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
@@ -644,7 +633,7 @@ public class Auditor implements AutoCloseable {
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
-        return executor.submit(safeRun(new Runnable() {
+        return executor.submit(new Runnable() {
             int lostBookieRecoveryDelay = -1;
             @Override
             public void run() {
@@ -675,14 +664,11 @@ public class Auditor implements AutoCloseable {
                     } else if (auditTask != null) {
                         LOG.info("lostBookieRecoveryDelay has been set to {}, so rescheduling AuditTask accordingly",
                                 lostBookieRecoveryDelay);
-                        auditTask = executor.schedule(safeRun(new Runnable() {
-                            @Override
-                            public void run() {
-                                startAudit(false);
-                                auditTask = null;
-                                bookiesToBeAudited.clear();
-                            }
-                        }), lostBookieRecoveryDelay, TimeUnit.SECONDS);
+                        auditTask = executor.schedule(() -> {
+                            startAudit(false);
+                            auditTask = null;
+                            bookiesToBeAudited.clear();
+                        }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
                         numBookieAuditsDelayed.inc();
                     }
                 } catch (InterruptedException ie) {
@@ -699,7 +685,7 @@ public class Auditor implements AutoCloseable {
                     }
                 }
             }
-        }));
+        });
     }
 
     public void start() {
@@ -748,11 +734,11 @@ public class Auditor implements AutoCloseable {
         long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
         if (bookieCheckInterval == 0) {
             LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
-            executor.submit(safeRun(bookieCheck));
+            executor.execute(bookieCheck);
         } else {
             LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
                     bookieCheckInterval);
-            executor.scheduleAtFixedRate(safeRun(bookieCheck), 0, bookieCheckInterval, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
         }
     }
 
@@ -794,43 +780,40 @@ public class Auditor implements AutoCloseable {
                             + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                     checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-            executor.scheduleAtFixedRate(safeRun(new Runnable() {
-                @Override
-                public void run() {
-                    Stopwatch stopwatch = Stopwatch.createStarted();
-                    boolean checkSuccess = false;
-                    try {
-                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.info("Ledger replication disabled, skipping checkAllLedgers");
-                            return;
-                        }
+            executor.scheduleAtFixedRate(() -> {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                boolean checkSuccess = false;
+                try {
+                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                        LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                        return;
+                    }
 
-                        LOG.info("Starting checkAllLedgers");
-                        checkAllLedgers();
+                    LOG.info("Starting checkAllLedgers");
+                    checkAllLedgers();
+                    long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                    LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
+                    checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
+                    checkSuccess = true;
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    LOG.error("Interrupted while running periodic check", ie);
+                } catch (BKException bke) {
+                    LOG.error("Exception running periodic check", bke);
+                } catch (IOException ioe) {
+                    LOG.error("I/O exception running periodic check", ioe);
+                } catch (ReplicationException.NonRecoverableReplicationException nre) {
+                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                    submitShutdownTask();
+                } catch (ReplicationException.UnavailableException ue) {
+                    LOG.error("Underreplication manager unavailable running periodic check", ue);
+                } finally {
+                    if (!checkSuccess) {
                         long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                        LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
-                        checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
-                        checkSuccess = true;
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted while running periodic check", ie);
-                    } catch (BKException bke) {
-                        LOG.error("Exception running periodic check", bke);
-                    } catch (IOException ioe) {
-                        LOG.error("I/O exception running periodic check", ioe);
-                    } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                        LOG.error("Non Recoverable Exception while reading from ZK", nre);
-                        submitShutdownTask();
-                    } catch (ReplicationException.UnavailableException ue) {
-                        LOG.error("Underreplication manager unavailable running periodic check", ue);
-                    } finally {
-                        if (!checkSuccess) {
-                            long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                            checkAllLedgersTime.registerFailedEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
-                        }
+                        checkAllLedgersTime.registerFailedEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
                     }
                 }
-                }), initialDelay, interval, TimeUnit.SECONDS);
+            }, initialDelay, interval, TimeUnit.SECONDS);
         } else {
             LOG.info("Periodic checking disabled");
         }
@@ -874,95 +857,92 @@ public class Auditor implements AutoCloseable {
                             + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                     placementPolicyCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-            executor.scheduleAtFixedRate(safeRun(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.info("Ledger replication disabled, skipping placementPolicyCheck");
-                            return;
-                        }
+            executor.scheduleAtFixedRate(() -> {
+                try {
+                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                        LOG.info("Ledger replication disabled, skipping placementPolicyCheck");
+                        return;
+                    }
 
-                        Stopwatch stopwatch = Stopwatch.createStarted();
-                        LOG.info("Starting PlacementPolicyCheck");
-                        placementPolicyCheck();
-                        long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                        int numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue =
-                                numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
-                        int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
-                                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
-                        int numOfClosedLedgersAuditedInPlacementPolicyCheckValue =
-                                numOfClosedLedgersAuditedInPlacementPolicyCheck.get();
-                        int numOfURLedgersElapsedRecoveryGracePeriodValue =
-                                numOfURLedgersElapsedRecoveryGracePeriod.get();
-                        LOG.info(
-                                "Completed placementPolicyCheck in {} milliSeconds."
-                                        + " numOfClosedLedgersAuditedInPlacementPolicyCheck {}"
-                                        + " numOfLedgersNotAdheringToPlacementPolicy {}"
-                                        + " numOfLedgersSoftlyAdheringToPlacementPolicy {}"
-                                        + " numOfURLedgersElapsedRecoveryGracePeriod {}",
-                                placementPolicyCheckDuration, numOfClosedLedgersAuditedInPlacementPolicyCheckValue,
-                                numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue,
-                                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
-                                numOfURLedgersElapsedRecoveryGracePeriodValue);
+                    Stopwatch stopwatch = Stopwatch.createStarted();
+                    LOG.info("Starting PlacementPolicyCheck");
+                    placementPolicyCheck();
+                    long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                    int numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue =
+                            numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
+                    int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
+                            numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
+                    int numOfClosedLedgersAuditedInPlacementPolicyCheckValue =
+                            numOfClosedLedgersAuditedInPlacementPolicyCheck.get();
+                    int numOfURLedgersElapsedRecoveryGracePeriodValue =
+                            numOfURLedgersElapsedRecoveryGracePeriod.get();
+                    LOG.info(
+                            "Completed placementPolicyCheck in {} milliSeconds."
+                                    + " numOfClosedLedgersAuditedInPlacementPolicyCheck {}"
+                                    + " numOfLedgersNotAdheringToPlacementPolicy {}"
+                                    + " numOfLedgersSoftlyAdheringToPlacementPolicy {}"
+                                    + " numOfURLedgersElapsedRecoveryGracePeriod {}",
+                            placementPolicyCheckDuration, numOfClosedLedgersAuditedInPlacementPolicyCheckValue,
+                            numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue,
+                            numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
+                            numOfURLedgersElapsedRecoveryGracePeriodValue);
+                    ledgersNotAdheringToPlacementPolicyGuageValue
+                            .set(numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue);
+                    ledgersSoftlyAdheringToPlacementPolicyGuageValue
+                            .set(numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue);
+                    numOfURLedgersElapsedRecoveryGracePeriodGuageValue
+                            .set(numOfURLedgersElapsedRecoveryGracePeriodValue);
+                    placementPolicyCheckTime.registerSuccessfulEvent(placementPolicyCheckDuration,
+                            TimeUnit.MILLISECONDS);
+                } catch (BKAuditException e) {
+                    int numOfLedgersFoundInPlacementPolicyCheckValue =
+                            numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
+                    if (numOfLedgersFoundInPlacementPolicyCheckValue > 0) {
+                        /*
+                         * Though there is BKAuditException while doing
+                         * placementPolicyCheck, it found few ledgers not
+                         * adhering to placement policy. So reporting it.
+                         */
                         ledgersNotAdheringToPlacementPolicyGuageValue
-                                .set(numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue);
+                                .set(numOfLedgersFoundInPlacementPolicyCheckValue);
+                    }
+
+                    int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
+                            numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
+                    if (numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue > 0) {
+                        /*
+                         * Though there is BKAuditException while doing
+                         * placementPolicyCheck, it found few ledgers softly
+                         * adhering to placement policy. So reporting it.
+                         */
                         ledgersSoftlyAdheringToPlacementPolicyGuageValue
                                 .set(numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue);
+                    }
+
+                    int numOfURLedgersElapsedRecoveryGracePeriodValue =
+                            numOfURLedgersElapsedRecoveryGracePeriod.get();
+                    if (numOfURLedgersElapsedRecoveryGracePeriodValue > 0) {
+                        /*
+                         * Though there is BKAuditException while doing
+                         * placementPolicyCheck, it found few urledgers have
+                         * elapsed recovery graceperiod. So reporting it.
+                         */
                         numOfURLedgersElapsedRecoveryGracePeriodGuageValue
                                 .set(numOfURLedgersElapsedRecoveryGracePeriodValue);
-                        placementPolicyCheckTime.registerSuccessfulEvent(placementPolicyCheckDuration,
-                                TimeUnit.MILLISECONDS);
-                    } catch (BKAuditException e) {
-                        int numOfLedgersFoundInPlacementPolicyCheckValue =
-                                numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
-                        if (numOfLedgersFoundInPlacementPolicyCheckValue > 0) {
-                            /*
-                             * Though there is BKAuditException while doing
-                             * placementPolicyCheck, it found few ledgers not
-                             * adhering to placement policy. So reporting it.
-                             */
-                            ledgersNotAdheringToPlacementPolicyGuageValue
-                                    .set(numOfLedgersFoundInPlacementPolicyCheckValue);
-                        }
-
-                        int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
-                                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
-                        if (numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue > 0) {
-                            /*
-                             * Though there is BKAuditException while doing
-                             * placementPolicyCheck, it found few ledgers softly
-                             * adhering to placement policy. So reporting it.
-                             */
-                            ledgersSoftlyAdheringToPlacementPolicyGuageValue
-                                    .set(numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue);
-                        }
-
-                        int numOfURLedgersElapsedRecoveryGracePeriodValue =
-                                numOfURLedgersElapsedRecoveryGracePeriod.get();
-                        if (numOfURLedgersElapsedRecoveryGracePeriodValue > 0) {
-                            /*
-                             * Though there is BKAuditException while doing
-                             * placementPolicyCheck, it found few urledgers have
-                             * elapsed recovery graceperiod. So reporting it.
-                             */
-                            numOfURLedgersElapsedRecoveryGracePeriodGuageValue
-                                    .set(numOfURLedgersElapsedRecoveryGracePeriodValue);
-                        }
-
-                        LOG.error(
-                                "BKAuditException running periodic placementPolicy check."
-                                        + "numOfLedgersNotAdheringToPlacementPolicy {}, "
-                                        + "numOfLedgersSoftlyAdheringToPlacementPolicy {},"
-                                        + "numOfURLedgersElapsedRecoveryGracePeriod {}",
-                                numOfLedgersFoundInPlacementPolicyCheckValue,
-                                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
-                                numOfURLedgersElapsedRecoveryGracePeriodValue, e);
-                    } catch (ReplicationException.UnavailableException ue) {
-                        LOG.error("Underreplication manager unavailable running periodic check", ue);
                     }
+
+                    LOG.error(
+                            "BKAuditException running periodic placementPolicy check."
+                                    + "numOfLedgersNotAdheringToPlacementPolicy {}, "
+                                    + "numOfLedgersSoftlyAdheringToPlacementPolicy {},"
+                                    + "numOfURLedgersElapsedRecoveryGracePeriod {}",
+                            numOfLedgersFoundInPlacementPolicyCheckValue,
+                            numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
+                            numOfURLedgersElapsedRecoveryGracePeriodValue, e);
+                } catch (ReplicationException.UnavailableException ue) {
+                    LOG.error("Underreplication manager unavailable running periodic check", ue);
                 }
-            }), initialDelay, interval, TimeUnit.SECONDS);
+            }, initialDelay, interval, TimeUnit.SECONDS);
         } else {
             LOG.info("Periodic placementPolicy check disabled");
         }
@@ -1007,68 +987,65 @@ public class Auditor implements AutoCloseable {
                         + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                 replicasCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-        executor.scheduleAtFixedRate(safeRun(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Stopwatch stopwatch = Stopwatch.createStarted();
-                    LOG.info("Starting ReplicasCheck");
-                    replicasCheck();
-                    long replicasCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-                    int numLedgersFoundHavingNoReplicaOfAnEntryValue = numLedgersFoundHavingNoReplicaOfAnEntry.get();
-                    int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
-                            numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
-                    int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
-                            numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
-                    LOG.info(
-                            "Completed ReplicasCheck in {} milliSeconds numLedgersFoundHavingNoReplicaOfAnEntry {}"
-                                    + " numLedgersFoundHavingLessThanAQReplicasOfAnEntry {}"
-                                    + " numLedgersFoundHavingLessThanWQReplicasOfAnEntry {}.",
-                            replicasCheckDuration, numLedgersFoundHavingNoReplicaOfAnEntryValue,
-                            numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue,
-                            numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
+        executor.scheduleAtFixedRate(() -> {
+            try {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                LOG.info("Starting ReplicasCheck");
+                replicasCheck();
+                long replicasCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                int numLedgersFoundHavingNoReplicaOfAnEntryValue = numLedgersFoundHavingNoReplicaOfAnEntry.get();
+                int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
+                        numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
+                int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
+                        numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
+                LOG.info(
+                        "Completed ReplicasCheck in {} milliSeconds numLedgersFoundHavingNoReplicaOfAnEntry {}"
+                                + " numLedgersFoundHavingLessThanAQReplicasOfAnEntry {}"
+                                + " numLedgersFoundHavingLessThanWQReplicasOfAnEntry {}.",
+                        replicasCheckDuration, numLedgersFoundHavingNoReplicaOfAnEntryValue,
+                        numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue,
+                        numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
+                numLedgersHavingNoReplicaOfAnEntryGuageValue.set(numLedgersFoundHavingNoReplicaOfAnEntryValue);
+                numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue
+                        .set(numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue);
+                numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue
+                        .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
+                replicasCheckTime.registerSuccessfulEvent(replicasCheckDuration, TimeUnit.MILLISECONDS);
+            } catch (BKAuditException e) {
+                LOG.error("BKAuditException running periodic replicas check.", e);
+                int numLedgersFoundHavingNoReplicaOfAnEntryValue = numLedgersFoundHavingNoReplicaOfAnEntry.get();
+                if (numLedgersFoundHavingNoReplicaOfAnEntryValue > 0) {
+                    /*
+                     * Though there is BKAuditException while doing
+                     * replicasCheck, it found few ledgers having no replica
+                     * of an entry. So reporting it.
+                     */
                     numLedgersHavingNoReplicaOfAnEntryGuageValue.set(numLedgersFoundHavingNoReplicaOfAnEntryValue);
+                }
+                int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
+                        numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
+                if (numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue > 0) {
+                    /*
+                     * Though there is BKAuditException while doing
+                     * replicasCheck, it found few ledgers having an entry
+                     * less than AQ num of Replicas. So reporting it.
+                     */
                     numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue
                             .set(numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue);
+                }
+                int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
+                        numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
+                if (numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue > 0) {
+                    /*
+                     * Though there is BKAuditException while doing
+                     * replicasCheck, it found few ledgers having an entry
+                     * less than WQ num of Replicas. So reporting it.
+                     */
                     numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue
                             .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
-                    replicasCheckTime.registerSuccessfulEvent(replicasCheckDuration, TimeUnit.MILLISECONDS);
-                } catch (BKAuditException e) {
-                    LOG.error("BKAuditException running periodic replicas check.", e);
-                    int numLedgersFoundHavingNoReplicaOfAnEntryValue = numLedgersFoundHavingNoReplicaOfAnEntry.get();
-                    if (numLedgersFoundHavingNoReplicaOfAnEntryValue > 0) {
-                        /*
-                         * Though there is BKAuditException while doing
-                         * replicasCheck, it found few ledgers having no replica
-                         * of an entry. So reporting it.
-                         */
-                        numLedgersHavingNoReplicaOfAnEntryGuageValue.set(numLedgersFoundHavingNoReplicaOfAnEntryValue);
-                    }
-                    int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
-                            numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
-                    if (numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue > 0) {
-                        /*
-                         * Though there is BKAuditException while doing
-                         * replicasCheck, it found few ledgers having an entry
-                         * less than AQ num of Replicas. So reporting it.
-                         */
-                        numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue
-                                .set(numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue);
-                    }
-                    int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
-                            numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
-                    if (numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue > 0) {
-                        /*
-                         * Though there is BKAuditException while doing
-                         * replicasCheck, it found few ledgers having an entry
-                         * less than WQ num of Replicas. So reporting it.
-                         */
-                        numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue
-                                .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
-                    }
                 }
             }
-        }), initialDelay, interval, TimeUnit.SECONDS);
+        }, initialDelay, interval, TimeUnit.SECONDS);
     }
 
     private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
@@ -1171,7 +1148,7 @@ public class Auditor implements AutoCloseable {
             if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
                 // has been disabled while we were generating the index
                 // discard this run, and schedule a new one
-                executor.submit(safeRun(bookieCheck));
+                executor.execute(bookieCheck);
                 return;
             }
         } catch (UnavailableException ue) {

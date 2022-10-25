@@ -139,7 +139,6 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
@@ -1369,7 +1368,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private static class ReadV2ResponseCallback extends SafeRunnable {
+    private static class ReadV2ResponseCallback implements Runnable {
         CompletionValue completionValue;
         long ledgerId;
         long entryId;
@@ -1388,7 +1387,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             completionValue.handleV2Response(ledgerId, entryId, status, response);
             response.release();
             response.recycle();
@@ -1478,9 +1477,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         } else {
             long orderingKey = completionValue.ledgerId;
-            executor.executeOrdered(orderingKey, new SafeRunnable() {
+            executor.executeOrdered(orderingKey, new Runnable() {
                 @Override
-                public void safeRun() {
+                public void run() {
                     completionValue.restoreMdcContext();
                     completionValue.handleV3Response(response);
                 }
@@ -1673,23 +1672,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         protected void errorOutAndRunCallback(final Runnable callback) {
-            executor.executeOrdered(ledgerId,
-                    new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            String bAddress = "null";
-                            Channel c = channel;
-                            if (c != null && c.remoteAddress() != null) {
-                                bAddress = c.remoteAddress().toString();
-                            }
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
-                                          operationName, bAddress,
-                                          ledgerId, entryId);
-                            }
-                            callback.run();
-                        }
-                    });
+            executor.executeOrdered(ledgerId, () -> {
+                String bAddress = "null";
+                Channel c = channel;
+                if (c != null && c.remoteAddress() != null) {
+                    bAddress = c.remoteAddress().toString();
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
+                            operationName, bAddress,
+                            ledgerId, entryId);
+                }
+                callback.run();
+            });
         }
 
         public void handleV2Response(

@@ -49,13 +49,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.MDC;
 
 /**
- * This class provides 2 things over the java {@link ExecutorService}.
- *
- * <p>1. It takes {@link SafeRunnable objects} instead of plain Runnable objects.
- * This means that exceptions in scheduled tasks wont go unnoticed and will be
- * logged.
- *
- * <p>2. It supports submitting tasks with an ordering key, so that tasks submitted
+ * This class supports submitting tasks with an ordering key, so that tasks submitted
  * with the same key will always be executed in order, but tasks across
  * different keys can be unordered. This retains parallelism while retaining the
  * basic amount of ordering we want (e.g. , per ledger handle). Ordering is
@@ -526,7 +520,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param orderingKey
      * @param r
      */
-    public void executeOrdered(Object orderingKey, SafeRunnable r) {
+    public void executeOrdered(Object orderingKey, Runnable r) {
         chooseThread(orderingKey).execute(r);
     }
 
@@ -535,7 +529,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param orderingKey
      * @param r
      */
-    public void executeOrdered(long orderingKey, SafeRunnable r) {
+    public void executeOrdered(long orderingKey, Runnable r) {
         chooseThread(orderingKey).execute(r);
     }
 
@@ -544,7 +538,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param orderingKey
      * @param r
      */
-    public void executeOrdered(int orderingKey, SafeRunnable r) {
+    public void executeOrdered(int orderingKey, Runnable r) {
         chooseThread(orderingKey).execute(r);
     }
 

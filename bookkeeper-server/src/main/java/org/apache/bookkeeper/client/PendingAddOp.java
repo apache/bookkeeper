@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_HIGH_PRIORITY;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
-
 import com.google.common.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
@@ -38,9 +37,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +50,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-class PendingAddOp extends SafeRunnable implements WriteCallback {
+class PendingAddOp implements Runnable, WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
@@ -163,9 +160,9 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     void timeoutQuorumWait() {
         try {
-            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new SafeRunnable() {
+            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new Runnable() {
                 @Override
-                public void safeRun() {
+                public void run() {
                     if (completed) {
                         return;
                     } else if (addEntrySuccessBookies.size() >= lh.getLedgerMetadata().getAckQuorumSize()) {
@@ -244,7 +241,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
      * Initiate the add operation.
      */
     @Override
-    public void safeRun() {
+    public void run() {
         hasRun = true;
         if (callbackTriggered) {
             // this should only be true if the request was failed due

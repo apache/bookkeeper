@@ -97,7 +97,7 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         GetListOfEntriesOfLedgerResponse listOfEntriesOfLedgerResponse = getListOfEntriesOfLedgerResponse();
         Response.Builder response = Response.newBuilder().setHeader(getHeader())
                 .setStatus(listOfEntriesOfLedgerResponse.getStatus())
