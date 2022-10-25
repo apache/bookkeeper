@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -286,5 +287,33 @@ public class TestSingleThreadExecutor {
         ste.awaitTermination(10, TimeUnit.SECONDS);
         assertTrue(ste.isShutdown());
         assertTrue(ste.isTerminated());
+    }
+
+    @Test
+    public void testExecutorQueueIsNotFixedSize() throws Exception {
+        int n = 1_000_000;
+        @Cleanup("shutdown")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        // First task is blocking
+        ste.execute(() -> {
+            try {
+                latch.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        for (int i = 0; i < n; i++) {
+            ste.execute(() -> {});
+        }
+
+        // Submit last task and wait for completion
+        Future<?> future = ste.submit(() -> {});
+
+        latch.countDown();
+
+        future.get();
     }
 }
