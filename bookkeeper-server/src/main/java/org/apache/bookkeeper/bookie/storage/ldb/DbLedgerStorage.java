@@ -525,6 +525,36 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public void suspendMinorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::suspendMinorGC);
+    }
+
+    @Override
+    public void suspendMajorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::suspendMajorGC);
+    }
+
+    @Override
+    public void resumeMinorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::resumeMinorGC);
+    }
+
+    @Override
+    public void resumeMajorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::resumeMajorGC);
+    }
+
+    @Override
+    public boolean isMajorGcSuspended() {
+        return ledgerStorageList.stream().allMatch(SingleDirectoryDbLedgerStorage::isMajorGcSuspended);
+    }
+
+    @Override
+    public boolean isMinorGcSuspended() {
+        return ledgerStorageList.stream().allMatch(SingleDirectoryDbLedgerStorage::isMinorGcSuspended);
+    }
+
+    @Override
     public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
         return ledgerStorageList.stream()
             .map(single -> single.getGarbageCollectionStatus().get(0)).collect(Collectors.toList());

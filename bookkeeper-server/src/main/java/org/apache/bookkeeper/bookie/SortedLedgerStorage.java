@@ -377,6 +377,36 @@ public class SortedLedgerStorage
     }
 
     @Override
+    public void suspendMinorGC() {
+        interleavedLedgerStorage.suspendMinorGC();
+    }
+
+    @Override
+    public void suspendMajorGC() {
+        interleavedLedgerStorage.suspendMajorGC();
+    }
+
+    @Override
+    public void resumeMinorGC() {
+        interleavedLedgerStorage.resumeMinorGC();
+    }
+
+    @Override
+    public void resumeMajorGC() {
+        interleavedLedgerStorage.resumeMajorGC();
+    }
+
+    @Override
+    public boolean isMajorGcSuspended() {
+        return interleavedLedgerStorage.isMajorGcSuspended();
+    }
+
+    @Override
+    public boolean isMinorGcSuspended() {
+        return interleavedLedgerStorage.isMinorGcSuspended();
+    }
+
+    @Override
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return interleavedLedgerStorage.localConsistencyCheck(rateLimiter);
     }

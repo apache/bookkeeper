@@ -236,6 +236,30 @@ public interface LedgerStorage {
         return;
     }
 
+    default void suspendMinorGC() {
+        return;
+    }
+
+    default void suspendMajorGC() {
+        return;
+    }
+
+    default void resumeMinorGC() {
+        return;
+    }
+
+    default void resumeMajorGC() {
+        return;
+    }
+
+    default boolean isMajorGcSuspended() {
+        return false;
+    }
+
+    default boolean isMinorGcSuspended() {
+        return false;
+    }
+
     /**
      * Class for describing location of a generic inconsistency.  Implementations should
      * ensure that detail is populated with an exception which adequately describes the

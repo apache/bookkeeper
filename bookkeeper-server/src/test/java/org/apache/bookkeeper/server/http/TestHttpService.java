@@ -964,4 +964,75 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
         assertFalse(readOnlyState.isReadOnly());
     }
+
+    @Test
+    public void testSuspendCompaction() throws Exception {
+        HttpEndpointService suspendCompactionService = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.SUSPEND_GC_COMPACTION);
+
+        HttpEndpointService resumeCompactionService = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.RESUME_GC_COMPACTION);
+
+        //1,  PUT with null body, should return error
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+        HttpServiceResponse response1 = suspendCompactionService.handle(request1);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response1.getStatusCode());
+
+        //2,  PUT with null, should return error, because should contains "suspendMajor" or "suspendMinor"
+        String putBody2 = "{}";
+        HttpServiceRequest request2 = new HttpServiceRequest(putBody2, HttpServer.Method.PUT, null);
+        HttpServiceResponse response2 = suspendCompactionService.handle(request2);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response2.getStatusCode());
+
+
+        //3,  GET before suspend, should success
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response3 = suspendCompactionService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+
+        Map responseMap = JsonUtil.fromJson(
+                response3.getBody(),
+                Map.class
+        );
+        assertEquals(responseMap.get("isMajorGcSuspended"), "false");
+        assertEquals(responseMap.get("isMinorGcSuspended"), "false");
+
+
+        //2, PUT, with body, should success
+        String putBody4 = "{\"suspendMajor\": true, \"suspendMinor\": true}";
+        HttpServiceRequest request4 = new HttpServiceRequest(putBody4, HttpServer.Method.PUT, null);
+        HttpServiceResponse response4 = suspendCompactionService.handle(request4);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
+
+        //3,  GET after suspend, should success
+        HttpServiceRequest request5 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response5 = suspendCompactionService.handle(request5);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
+
+        Map responseMap5 = JsonUtil.fromJson(
+                response5.getBody(),
+                Map.class
+        );
+        assertEquals(responseMap5.get("isMajorGcSuspended"), "true");
+        assertEquals(responseMap5.get("isMinorGcSuspended"), "true");
+
+
+        //2, PUT, with body, should success
+        String putBody6 = "{\"resumeMajor\": true, \"resumeMinor\": true}";
+        HttpServiceRequest request6 = new HttpServiceRequest(putBody6, HttpServer.Method.PUT, null);
+        HttpServiceResponse response6 = resumeCompactionService.handle(request6);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response6.getStatusCode());
+
+        //3,  GET after suspend, should success
+        HttpServiceRequest request7 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response7 = suspendCompactionService.handle(request7);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response7.getStatusCode());
+
+        Map responseMap7 = JsonUtil.fromJson(
+                response7.getBody(),
+                Map.class
+        );
+        assertEquals(responseMap7.get("isMajorGcSuspended"), "false");
+        assertEquals(responseMap7.get("isMinorGcSuspended"), "false");
+    }
 }

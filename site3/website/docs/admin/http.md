@@ -339,6 +339,59 @@ Currently all the HTTP endpoints could be divided into these 5 components:
           "minorCompactionCounter" : 0
         } ]
        ```
+### Endpoint: /api/v1/bookie/gc/suspend_compaction
+1. Method: PUT
+    * Description:  suspend the next compaction stage for this bookie.
+    * Body:
+         ```json
+         {
+            "suspendMajor": "true",
+            "suspendMinor": "true"
+         }
+         ```
+    * Response:
+
+      | Code   | Description |
+              |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+
+2. Method: GET
+    * Description:  whether major or minor compaction  is suspending or not for this bookie. true for is running.
+    * Response:
+
+      | Code   | Description |
+              |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Body:
+       ```json
+       {
+          "isMajorGcSuspended" : "true",
+          "isMinorGcSuspended" : "true"
+      
+       }
+       ```
+
+### Endpoint: /api/v1/bookie/gc/resume_compaction
+1. Method: PUT
+    * Description:  resume the suspended compaction for this bookie.
+    * Body:
+         ```json
+         {
+            "resumeMajor": "true",
+            "resumeMinor": "true"
+         }
+         ```
+    * Response:
+
+      | Code   | Description |
+                    |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
 
 ### Endpoint: /api/v1/bookie/state
 1. Method: GET
