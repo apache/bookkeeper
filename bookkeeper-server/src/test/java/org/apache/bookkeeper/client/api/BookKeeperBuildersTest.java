@@ -25,14 +25,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.doAnswer;
 
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,16 +38,11 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * Unit tests of builders.
  */
-@RunWith(DataProviderRunner.class)
 public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     private static final int ensembleSize = 3;
@@ -342,64 +330,6 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @DataProvider
-    public static Object[][] openLedgerArgs(){
-        return new Object[][]{
-                {true},
-                {false}
-        };
-    }
-
-    @Test
-    @UseDataProvider("openLedgerArgs")
-    public void testOpenLedger(boolean withRecovery) throws Exception {
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-            writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                    registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                    registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-
-        result(newOpenLedgerOp()
-            .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.CRC32)
-            .withLedgerId(ledgerId)
-            .withRecovery(withRecovery)
-            .execute());
-    }
-
-    @Test
-    @UseDataProvider("openLedgerArgs")
-    public void testOpenLedgerWithTimeoutEx(boolean withRecovery) throws Exception {
-        mockReadEntryTimeout();
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-                writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-        try {
-            result(newOpenLedgerOp()
-                .withPassword(ledgerMetadata.getPassword())
-                .withDigestType(DigestType.CRC32)
-                .withLedgerId(ledgerId)
-                .withRecovery(withRecovery)
-                .execute());
-            fail("Expect timeout error");
-        } catch (BKException.BKTimeoutException timeoutException) {
-            // Expect timeout error.
-        }
-        // Reset bk client.
-        resetBKClient();
-    }
-
     @Test(expected = BKIncorrectParameterException.class)
     public void testDeleteLedgerNoLedgerId() throws Exception {
         result(newDeleteLedgerOp()
@@ -494,35 +424,4 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    private void mockReadEntryTimeout() {
-        // Mock read entry.
-        doAnswer(invocation -> {
-            long ledgerId = (long) invocation.getArguments()[1];
-            long entryId = (long) invocation.getArguments()[2];
-
-            BookkeeperInternalCallbacks.ReadEntryCallback callback =
-                    (BookkeeperInternalCallbacks.ReadEntryCallback) invocation.getArguments()[3];
-            Object ctx = invocation.getArguments()[4];
-            callback.readEntryComplete(BKException.Code.TimeoutException, ledgerId, entryId, null, ctx);
-            return null;
-        }).when(bookieClient).readEntry(any(BookieId.class),
-                anyLong(), anyLong(), any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
-                any(), anyInt(), any());
-        // Mock read lac.
-        doAnswer(invocation -> {
-            long ledgerId = (long) invocation.getArguments()[1];
-            BookkeeperInternalCallbacks.ReadLacCallback callback =
-                    (BookkeeperInternalCallbacks.ReadLacCallback) invocation.getArguments()[2];
-            Object ctx = invocation.getArguments()[3];
-            callback.readLacComplete(BKException.Code.TimeoutException, ledgerId, null, null, ctx);
-            return null;
-        }).when(bookieClient).readLac(any(BookieId.class),
-                anyLong(), any(BookkeeperInternalCallbacks.ReadLacCallback.class),
-                any());
-    }
-
-    private void resetBKClient() throws Exception {
-        tearDown();
-        setup();
-    }
 }

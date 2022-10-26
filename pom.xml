@@ -211,7 +211,6 @@
     <rxjava.version>3.0.1</rxjava.version>
     <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
     <awaitility.version>4.0.3</awaitility.version>
-    <junit4-dataprovider.version>2.9</junit4-dataprovider.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -673,11 +672,6 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.tngtech.junit.dataprovider</groupId>
-        <artifactId>junit4-dataprovider</artifactId>
-        <version>${junit4-dataprovider.version}</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
