@@ -976,6 +976,10 @@ public class Auditor implements AutoCloseable {
             @Override
             public void run() {
                 try {
+                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                        LOG.info("Ledger replication disabled, skipping replicasCheck task.");
+                        return;
+                    }
                     Stopwatch stopwatch = Stopwatch.createStarted();
                     LOG.info("Starting ReplicasCheck");
                     replicasCheck();
@@ -1031,6 +1035,8 @@ public class Auditor implements AutoCloseable {
                         numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue
                                 .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
                     }
+                } catch (ReplicationException.UnavailableException ue) {
+                    LOG.error("Underreplication manager unavailable running periodic check", ue);
                 }
             }
         }), initialDelay, interval, TimeUnit.SECONDS);
