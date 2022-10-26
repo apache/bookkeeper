@@ -171,7 +171,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * This means that the configuration has stayed the same as the
      * first run and the filesystem structure is up to date.
      */
-    private void checkEnvironment(RegistrationManager registrationManager)
+    private void checkEnvironment()
             throws BookieException, IOException, InterruptedException {
         List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
                 + indexDirsManager.getAllLedgerDirs().size());
@@ -403,7 +403,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         this.allocator = allocator;
         this.registrationManager = registrationManager;
         stateManager = initializeStateManager();
-        checkEnvironment(registrationManager);
+        checkEnvironment();
 
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
