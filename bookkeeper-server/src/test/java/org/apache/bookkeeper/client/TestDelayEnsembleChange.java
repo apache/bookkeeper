@@ -198,6 +198,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
                     LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + " should be > 0 for " + addr,
                     bkc.getTestStatsProvider().getCounter(
                             CLIENT_SCOPE + ".bookie_" + addr.toString().replace('-', '_')
+                                            .replace(":", "_")
+                                            .replace(".", "_")
                                     + "." + LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION)
                             .get() > 0);
         }
