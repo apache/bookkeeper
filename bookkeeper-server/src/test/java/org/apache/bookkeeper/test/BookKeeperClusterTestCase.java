@@ -37,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -643,12 +642,6 @@ public abstract class BookKeeperClusterTestCase {
     public int startNewBookie()
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
-
-        // use a random BookieId
-        if (useUUIDasBookieId) {
-            conf.setBookieId(UUID.randomUUID().toString());
-        }
-
         bsConfs.add(conf);
         LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
         BookieServer server = startBookie(conf);

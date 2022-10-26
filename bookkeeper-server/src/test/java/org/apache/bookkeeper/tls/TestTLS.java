@@ -895,7 +895,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
                     .append("bookie_")
                     .append(bookie.getBookieId().toString()
                     .replace('.', '_')
-                    .replace('-', '_'))
+                    .replace('-', '_')
+                    .replace(":", "_"))
                     .append(".");
 
             // check stats on TLS enabled client
@@ -996,7 +997,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
                 .append("bookie_")
                 .append(bookie.getBookieId().toString()
                         .replace('.', '_')
-                        .replace('-', '_'))
+                        .replace('-', '_')
+                        .replace(":", "_"))
                 .append(".");
 
         assertEquals("TLS handshake failure expected", 1,
