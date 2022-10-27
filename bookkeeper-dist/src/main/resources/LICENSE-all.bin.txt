@@ -207,7 +207,7 @@ Apache Software License, Version 2.
 
 - lib/com.fasterxml.jackson.core-jackson-annotations-2.13.4.jar [1]
 - lib/com.fasterxml.jackson.core-jackson-core-2.13.4.jar [2]
-- lib/com.fasterxml.jackson.core-jackson-databind-2.13.4.jar [3]
+- lib/com.fasterxml.jackson.core-jackson-databind-2.13.4.2.jar [3]
 - lib/com.google.guava-guava-31.0.1-jre.jar [4]
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
@@ -636,13 +636,13 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.19.2.jar
-Source available at https://github.com/google/protobuf/tree/v3.19.2
+  - lib/com.google.protobuf-protobuf-java-3.19.6.jar
+Source available at https://github.com/google/protobuf/tree/v3.19.6
 For details, see deps/protobuf-3.14.0/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.19.2.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.19.2
+  - lib/com.google.protobuf-protobuf-java-util-3.19.6.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.19.6
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
