@@ -421,7 +421,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             // waitForWritable async
             new Thread(() -> isWriteable.set(lh.waitForWritable(writeSet, 0, timeout))).start();
 
-            Awaitility.await().untilAsserted(() -> assertFalse(isWriteable.get()));
+            Awaitility.await().pollDelay(5, TimeUnit.SECONDS).untilAsserted(() -> assertFalse(isWriteable.get()));
 
             // enable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
