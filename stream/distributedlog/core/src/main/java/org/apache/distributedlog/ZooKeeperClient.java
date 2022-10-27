@@ -393,7 +393,7 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Closes the the underlying zookeeper instance.
+     * Closes the underlying zookeeper instance.
      * Subsequent attempts to {@link #get} will fail
      */
     public synchronized void close() {

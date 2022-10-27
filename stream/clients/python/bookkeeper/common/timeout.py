@@ -140,7 +140,7 @@ class ExponentialTimeout(object):
 
     This is useful if a function is called multiple times. Each time the
     function is called this decorator will calculate a new timeout parameter
-    based on the the number of times the function has been called.
+    based on the number of times the function has been called.
 
     For example
 

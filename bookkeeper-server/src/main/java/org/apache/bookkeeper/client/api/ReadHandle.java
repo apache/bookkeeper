@@ -103,7 +103,7 @@ public interface ReadHandle extends Handle {
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
-     * call obtains the the last add confirmed each bookie has received for this ledger
+     * call obtains the last add confirmed each bookie has received for this ledger
      * and returns the maximum. If the ledger has been closed, the value returned by this
      * call may not correspond to the id of the last entry of the ledger, since it reads
      * the hint of bookies. Consequently, in the case the ledger has been closed, it may

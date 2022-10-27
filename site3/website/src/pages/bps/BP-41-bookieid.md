@@ -51,7 +51,7 @@ The serialized representation of a BookieSocketAddress, both for LedgerMetadata 
 
 It is simply a pure refactor of Java interfaces.
 
-We have to introduce an internal API, **BookieAddressResolver**, that maps a *BookieId* to a *BookieSocketAddress*: the the client connectes to a Bookie it looks up the **current network address** using BookieAddressResolver.
+We have to introduce an internal API, **BookieAddressResolver**, that maps a *BookieId* to a *BookieSocketAddress*: the client connectes to a Bookie it looks up the **current network address** using BookieAddressResolver.
 
 ```
 interface BookieAddressResolver {
