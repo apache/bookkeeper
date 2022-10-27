@@ -89,8 +89,10 @@ public abstract class HttpRouter<Handler> {
                 handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE_READONLY));
         this.endpointHandlers.put(BOOKIE_IS_READY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_IS_READY));
         this.endpointHandlers.put(BOOKIE_INFO, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_INFO));
-        this.endpointHandlers.put(SUSPEND_GC_COMPACTION, handlerFactory.newHandler(HttpServer.ApiType.SUSPEND_GC_COMPACTION));
-        this.endpointHandlers.put(RESUME_GC_COMPACTION, handlerFactory.newHandler(HttpServer.ApiType.RESUME_GC_COMPACTION));
+        this.endpointHandlers.put(SUSPEND_GC_COMPACTION,
+            handlerFactory.newHandler(HttpServer.ApiType.SUSPEND_GC_COMPACTION));
+        this.endpointHandlers.put(RESUME_GC_COMPACTION,
+            handlerFactory.newHandler(HttpServer.ApiType.RESUME_GC_COMPACTION));
 
         // autorecovery
         this.endpointHandlers.put(AUTORECOVERY_STATUS, handlerFactory
