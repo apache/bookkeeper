@@ -1046,7 +1046,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <h4>lastAddConfirmed</h4>
 <pre>volatile&nbsp;long lastAddConfirmed</pre>
 <div class="block">Last entryId which has been confirmed to be written durably to the bookies.
- This value is used by readers, the the LAC protocol</div>
+ This value is used by readers, the LAC protocol</div>
 </li>
 </ul>
 <a id="pendingAddsSequenceHead">
@@ -2281,7 +2281,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <pre class="methodSignature">public&nbsp;void&nbsp;asyncReadLastConfirmed&#8203;(<a href="AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                                    java.lang.Object&nbsp;ctx)</pre>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies. This
- call obtains the the last add confirmed each bookie has received for this ledger
+ call obtains the last add confirmed each bookie has received for this ledger
  and returns the maximum. If the ledger has been closed, the value returned by this
  call may not correspond to the id of the last entry of the ledger, since it reads
  the hint of bookies. Consequently, in the case the ledger has been closed, it may
@@ -2344,7 +2344,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <h4>readLastAddConfirmedAsync</h4>
 <pre class="methodSignature">public&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;&nbsp;readLastAddConfirmedAsync()</pre>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies. This
- call obtains the the last add confirmed each bookie has received for this ledger
+ call obtains the last add confirmed each bookie has received for this ledger
  and returns the maximum. If the ledger has been closed, the value returned by this
  call may not correspond to the id of the last entry of the ledger, since it reads
  the hint of bookies. Consequently, in the case the ledger has been closed, it may
@@ -2424,7 +2424,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
                        throws java.lang.InterruptedException,
                               <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies. This call
- obtains the the last add confirmed each bookie has received for this ledger
+ obtains the last add confirmed each bookie has received for this ledger
  and returns the maximum. If the ledger has been closed, the value returned by this
  call may not correspond to the id of the last entry of the ledger, since it reads
  the hint of bookies. Consequently, in the case the ledger has been closed, it may
