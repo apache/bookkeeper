@@ -113,7 +113,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
       * Last entryId which has been confirmed to be written durably to the bookies.
-      * This value is used by readers, the the LAC protocol
+      * This value is used by readers, the LAC protocol
       */
     volatile long lastAddConfirmed;
 
@@ -1383,7 +1383,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
-     * call obtains the the last add confirmed each bookie has received for this ledger
+     * call obtains the last add confirmed each bookie has received for this ledger
      * and returns the maximum. If the ledger has been closed, the value returned by this
      * call may not correspond to the id of the last entry of the ledger, since it reads
      * the hint of bookies. Consequently, in the case the ledger has been closed, it may
@@ -1632,7 +1632,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Obtains synchronously the last confirmed write from a quorum of bookies. This call
-     * obtains the the last add confirmed each bookie has received for this ledger
+     * obtains the last add confirmed each bookie has received for this ledger
      * and returns the maximum. If the ledger has been closed, the value returned by this
      * call may not correspond to the id of the last entry of the ledger, since it reads
      * the hint of bookies. Consequently, in the case the ledger has been closed, it may
