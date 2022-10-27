@@ -100,11 +100,11 @@ public class MigrationReplicasCommand extends BookieCommand<MigrationReplicasCom
                 Collection<BookieId> readOnlyBookies = admin.getReadOnlyBookies();
                 toSwitchBookieIdsSet.removeAll(readOnlyBookies);
                 Set<BookieId> switchedBookies = new HashSet<>();
-                if (!switchToReadonly(admin, toSwitchBookieIdsSet, switchedBookies, true)) {
+                if (!switchBookieStatus(admin, toSwitchBookieIdsSet, switchedBookies, true)) {
                     LOG.warn("Some bookie nodes that fail to set readonly, "
                             + "and the successful bookies fall back to the previous state!");
                     Set<BookieId> fallbackSuccessfulBookies = new HashSet<>();
-                    if (!switchToReadonly(admin, switchedBookies, fallbackSuccessfulBookies, false)) {
+                    if (!switchBookieStatus(admin, switchedBookies, fallbackSuccessfulBookies, false)) {
                         switchedBookies.removeAll(fallbackSuccessfulBookies);
                         LOG.error(String.format("Fallback failed! Failed nodes:%s", switchedBookies));
                     }
@@ -118,10 +118,10 @@ public class MigrationReplicasCommand extends BookieCommand<MigrationReplicasCom
         }
     }
 
-    private boolean switchToReadonly(BookKeeperAdmin admin,
-                                     Set<BookieId> toSwitchBookieIdsSet,
-                                     Set<BookieId> switchedBookieIds,
-                                     boolean toReadOnly) throws BKException {
+    private boolean switchBookieStatus(BookKeeperAdmin admin,
+                                       Set<BookieId> toSwitchBookieIdsSet,
+                                       Set<BookieId> switchedBookieIds,
+                                       boolean toReadOnly) throws BKException {
         for (BookieId bookieId : toSwitchBookieIdsSet) {
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
             for (BookieServiceInfo.Endpoint endpoint : bookieServiceInfo.getEndpoints()) {
