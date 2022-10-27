@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +32,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.zookeeper.ZooKeeper;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 
 /**
@@ -115,8 +117,12 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         BookieId currentAuditor = main1.auditorElector.getCurrentAuditor();
         assertNotNull(currentAuditor);
         Auditor auditor1 = main1.auditorElector.getAuditor();
-        assertTrue("Current Auditor should be AR1", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(0))));
-        assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
+        assertEquals("Current Auditor should be AR1", currentAuditor, BookieImpl.getBookieId(confByIndex(0)));
+        Awaitility.await().untilAsserted(() -> {
+            assertNotNull(auditor1);
+            assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
+        });
+
 
         /*
          * start main2 and main3
@@ -130,12 +136,14 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * make sure AR1 is still the current Auditor and AR2's and AR3's
          * auditors are not running.
          */
-        assertTrue("Current Auditor should still be AR1",
-                currentAuditor.equals(BookieImpl.getBookieId(confByIndex(0))));
-        Auditor auditor2 = main2.auditorElector.getAuditor();
-        Auditor auditor3 = main3.auditorElector.getAuditor();
-        assertTrue("AR2's Auditor should not be running", (auditor2 == null || !auditor2.isRunning()));
-        assertTrue("AR3's Auditor should not be running", (auditor3 == null || !auditor3.isRunning()));
+        assertEquals("Current Auditor should still be AR1", currentAuditor, BookieImpl.getBookieId(confByIndex(0)));
+        Awaitility.await().untilAsserted(() -> {
+            assertTrue("AR2's Auditor should not be running", (main2.auditorElector.getAuditor() == null
+                    || !main2.auditorElector.getAuditor().isRunning()));
+            assertTrue("AR3's Auditor should not be running", (main3.auditorElector.getAuditor() == null
+                    || !main3.auditorElector.getAuditor().isRunning()));
+        });
+
 
         /*
          * expire zk2 and zk1 sessions.
@@ -160,26 +168,31 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
          * the AR3 should be current auditor.
          */
         currentAuditor = main3.auditorElector.getCurrentAuditor();
-        assertTrue("Current Auditor should be AR3", currentAuditor.equals(BookieImpl.getBookieId(confByIndex(2))));
-        auditor3 = main3.auditorElector.getAuditor();
-        assertTrue("Auditor of AR3 should be running", auditor3.isRunning());
+        assertEquals("Current Auditor should be AR3", currentAuditor, BookieImpl.getBookieId(confByIndex(2)));
+        Awaitility.await().untilAsserted(() -> {
+            assertNotNull(main3.auditorElector.getAuditor());
+            assertTrue("Auditor of AR3 should be running", main3.auditorElector.getAuditor().isRunning());
+        });
 
-        /*
-         * since AR3 is current auditor, AR1's auditor should not be running
-         * anymore.
-         */
-        assertFalse("AR1's auditor should not be running", auditor1.isRunning());
+        Awaitility.await().untilAsserted(() -> {
+            /*
+             * since AR3 is current auditor, AR1's auditor should not be running
+             * anymore.
+             */
+            assertFalse("AR1's auditor should not be running", auditor1.isRunning());
 
-        /*
-         * components of AR2 and AR3 should not be running since zk1 and zk2
-         * sessions are expired.
-         */
-        assertFalse("Elector1 should have shutdown", main1.auditorElector.isRunning());
-        assertFalse("RW1 should have shutdown", main1.replicationWorker.isRunning());
-        assertFalse("AR1 should have shutdown", main1.isAutoRecoveryRunning());
-        assertFalse("Elector2 should have shutdown", main2.auditorElector.isRunning());
-        assertFalse("RW2 should have shutdown", main2.replicationWorker.isRunning());
-        assertFalse("AR2 should have shutdown", main2.isAutoRecoveryRunning());
+            /*
+             * components of AR2 and AR3 should not be running since zk1 and zk2
+             * sessions are expired.
+             */
+            assertFalse("Elector1 should have shutdown", main1.auditorElector.isRunning());
+            assertFalse("RW1 should have shutdown", main1.replicationWorker.isRunning());
+            assertFalse("AR1 should have shutdown", main1.isAutoRecoveryRunning());
+            assertFalse("Elector2 should have shutdown", main2.auditorElector.isRunning());
+            assertFalse("RW2 should have shutdown", main2.replicationWorker.isRunning());
+            assertFalse("AR2 should have shutdown", main2.isAutoRecoveryRunning());
+        });
+
     }
 
     /*
