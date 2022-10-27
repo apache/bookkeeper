@@ -91,8 +91,8 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                 };
             lh.asyncAddEntry(entry, cb, null);
 
-            Thread.sleep(3000); // sleep 3 seconds to allow time to complete
-            assertEquals("Successfully added entry!", 0xdeadbeef, i.get());
+            Awaitility.await().untilAsserted(() ->
+                assertEquals("Successfully added entry!", 0xdeadbeef, i.get()));
             b0latch.countDown();
             b1latch.countDown();
             addEntrylatch.await(4000, TimeUnit.MILLISECONDS);
@@ -419,11 +419,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             final long timeout = 10000;
 
             // waitForWritable async
-           new Thread(() -> {
-                isWriteable.set(lh.waitForWritable(writeSet, 0, timeout));
-            }).start();
-            TimeUnit.MILLISECONDS.sleep(5000);
-            assertFalse(isWriteable.get());
+            new Thread(() -> isWriteable.set(lh.waitForWritable(writeSet, 0, timeout))).start();
+
+            Awaitility.await().pollDelay(5, TimeUnit.SECONDS).untilAsserted(() -> assertFalse(isWriteable.get()));
 
             // enable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);
