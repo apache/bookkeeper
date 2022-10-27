@@ -202,15 +202,18 @@ class LedgerOpenOp {
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
-                    } else if (rc == BKException.Code.UnauthorizedAccessException) {
-                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                    } else {
+                        closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
-                            openComplete(BKException.Code.UnauthorizedAccessException, null);
+                            if (rc == BKException.Code.UnauthorizedAccessException
+                                    || rc == BKException.Code.TimeoutException) {
+                                openComplete(rc, null);
+                            } else {
+                                openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
+                            }
                         });
-                    } else {
-                        openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                     }
                 }
                 @Override
@@ -223,7 +226,14 @@ class LedgerOpenOp {
                 @Override
                 public void readLastConfirmedComplete(int rc,
                         long lastConfirmed, Object ctx) {
-                    if (rc != BKException.Code.OK) {
+                    if (rc == BKException.Code.TimeoutException) {
+                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                            if (ex != null) {
+                                LOG.error("Ledger {} close failed", ledgerId, ex);
+                            }
+                            openComplete(bk.getReturnRc(rc), null);
+                        });
+                    } else if (rc != BKException.Code.OK) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
