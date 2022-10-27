@@ -289,7 +289,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      */
     public static class BKNoSuchLedgerExistsOnMetadataServerException extends BKException {
         public BKNoSuchLedgerExistsOnMetadataServerException() {
-            super(Code.NoSuchLedgerExistsOnMetadataServerException);
+            super(BKException.Code.NoSuchLedgerExistsOnMetadataServerException);
         }
     }
 

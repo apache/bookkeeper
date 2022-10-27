@@ -37,7 +37,6 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.junit.Test;
 
 /**
@@ -327,47 +326,6 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         result(newOpenLedgerOp()
             .withPassword(password)
             .withLedgerId(ledgerId)
-            .execute());
-    }
-
-    @Test
-    public void testOpenLedgerNoRecovery() throws Exception {
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-            writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                    registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                    registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-
-        result(newOpenLedgerOp()
-            .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.CRC32)
-            .withLedgerId(ledgerId)
-            .withRecovery(false)
-            .execute());
-    }
-
-    @Test
-    public void testOpenLedgerRecovery() throws Exception {
-        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
-            writeQuorumSize, ackQuorumSize, password, customMetadata);
-        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
-
-        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
-            bookieAddressList.forEach(bookieAddress -> {
-                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-            });
-        });
-        result(newOpenLedgerOp()
-            .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.CRC32)
-            .withLedgerId(ledgerId)
-            .withRecovery(true)
             .execute());
     }
 
