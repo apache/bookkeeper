@@ -1965,7 +1965,7 @@ public class BookieShell implements Tool {
             Option ledgersOpt = new Option("l", "ledgerIds", true,
                     "The ledgerIds corresponding to the migrated replica");
             Option readOnlyOpt = new Option("r", "readOnly", true,
-                    "Whether to set the bookie nodes of the migrated data to readOnly, the default is true");
+                    "Whether to set the bookie nodes of the migrated data to readOnly, the default is false");
             bookiesOpt.setRequired(true);
             bookiesOpt.setValueSeparator(',');
             ledgersOpt.setValueSeparator(',');
