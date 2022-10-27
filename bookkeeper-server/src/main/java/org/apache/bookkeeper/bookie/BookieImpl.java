@@ -1005,7 +1005,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    private ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
+    @VisibleForTesting
+    public ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
         ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + explicitLac.capacity());
         bb.writeLong(ledgerId);
         bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
