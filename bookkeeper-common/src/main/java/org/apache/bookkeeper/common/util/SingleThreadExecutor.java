@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.common.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -33,8 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-
-import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.collections.GrowableMpScArrayConsumerBlockingQueue;
@@ -101,7 +99,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         this.rejectExecution = rejectExecution;
         this.startLatch = new CountDownLatch(1);
         this.runner.start();
-        this.executor.scheduleAtFixedRate(this::monitorTimeoutTasks, 0,MONITOR_INTERVAL, TimeUnit.SECONDS);
+        this.executor.scheduleAtFixedRate(this::monitorTimeoutTasks, 0, MONITOR_INTERVAL, TimeUnit.SECONDS);
 
         // Ensure the runner is already fully working by the time the constructor is done
         this.startLatch.await();
@@ -172,12 +170,14 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         if (queue.isEmpty()) {
             runner.interrupt();
         }
+        executor.shutdown();
     }
 
     @Override
     public List<Runnable> shutdownNow() {
         this.state = State.Shutdown;
         this.runner.interrupt();
+        executor.shutdown();
         List<Runnable> remainingTasks = new ArrayList<>();
         queue.drainTo(remainingTasks);
         return remainingTasks;
