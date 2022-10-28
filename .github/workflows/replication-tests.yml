@@ -70,7 +70,13 @@ jobs:
           java-version: 11
       - name: Run replication tests
         if: steps.changes.outputs.site3 != 'true'
-        run: mvn -B -nsu -am -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.replication.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -Pcode-coverage -B -nsu -am -pl bookkeeper-server clean install test -Dtest="org.apache.bookkeeper.replication.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
+      - name: Upload coverage to Codecov
+        if: steps.changes.outputs.site3 != 'true'
+        uses: codecov/codecov-action@v3
+        with:
+          flags: replication
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
         if: failure()

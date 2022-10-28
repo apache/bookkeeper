@@ -74,7 +74,13 @@ jobs:
 
       - name: Run bookie tests
         if: steps.changes.outputs.site3 != 'true'
-        run: mvn -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -Pcode-coverage -B -nsu -pl bookkeeper-server test -Dtest="org.apache.bookkeeper.bookie.**" -DfailIfNoTests=false -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
+      - name: Upload coverage to Codecov
+        if: steps.changes.outputs.site3 != 'true'
+        uses: codecov/codecov-action@v3
+        with:
+          flags: bookie
 
       - name: Run shell tests
         if: steps.changes.outputs.site3 != 'true'

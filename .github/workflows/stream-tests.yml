@@ -72,7 +72,13 @@ jobs:
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
       - name: Run StreamStorage tests
         if: steps.changes.outputs.site3 != 'true'
-        run: mvn -B -nsu -f stream/pom.xml verify -DstreamTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -Pcode-coverage -B -nsu -f stream/pom.xml verify -DstreamTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+
+      - name: Upload coverage to Codecov
+        if: steps.changes.outputs.site3 != 'true'
+        uses: codecov/codecov-action@v3
+        with:
+          flags: stream
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
         if: failure()
