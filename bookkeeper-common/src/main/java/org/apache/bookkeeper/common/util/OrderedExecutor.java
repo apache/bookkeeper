@@ -187,11 +187,20 @@ public class OrderedExecutor implements ExecutorService {
     protected class TimedRunnable implements Runnable {
         final Runnable runnable;
         final long initNanos;
+        private volatile boolean recorded;
 
         TimedRunnable(Runnable runnable) {
             this.runnable = runnable;
             this.initNanos = MathUtils.nowInNano();
          }
+
+        public boolean isRecorded() {
+            return recorded;
+        }
+
+        public void setRecorded(boolean recorded) {
+            this.recorded = recorded;
+        }
 
         @Override
         public void run() {
@@ -216,10 +225,19 @@ public class OrderedExecutor implements ExecutorService {
     protected class TimedCallable<T> implements Callable<T> {
         final Callable<T> callable;
         final long initNanos;
+        private volatile boolean recorded;
 
         TimedCallable(Callable<T> callable) {
             this.callable = callable;
             this.initNanos = MathUtils.nowInNano();
+        }
+
+        public boolean isRecorded() {
+            return recorded;
+        }
+
+        public void setRecorded(boolean recorded) {
+            this.recorded = recorded;
         }
 
         @Override
@@ -287,9 +305,9 @@ public class OrderedExecutor implements ExecutorService {
 
     protected ExecutorService createSingleThreadExecutor(ThreadFactory factory) {
         if (maxTasksInQueue > 0) {
-            return new SingleThreadExecutor(factory, maxTasksInQueue, true);
+            return new SingleThreadExecutor(factory, maxTasksInQueue, true, warnTimeMicroSec);
         } else {
-            return new SingleThreadExecutor(factory);
+            return new SingleThreadExecutor(factory, warnTimeMicroSec);
         }
     }
 

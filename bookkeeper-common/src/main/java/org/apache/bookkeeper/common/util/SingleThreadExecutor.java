@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.common.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -26,13 +27,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.collections.GrowableMpScArrayConsumerBlockingQueue;
+import org.apache.bookkeeper.common.util.OrderedExecutor.TimedCallable;
+import org.apache.bookkeeper.common.util.OrderedExecutor.TimedRunnable;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 
@@ -44,6 +51,9 @@ import org.apache.bookkeeper.stats.StatsLogger;
  */
 @Slf4j
 public class SingleThreadExecutor extends AbstractExecutorService implements ExecutorService, Runnable {
+    private static final String EXECUTOR_NAME = "SingleThreadExecutorMonitor";
+    private static final int MONITOR_INTERVAL = 5;
+
     private final BlockingQueue<Runnable> queue;
     private final Thread runner;
 
@@ -53,6 +63,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final LongAdder tasksCompleted = new LongAdder();
     private final LongAdder tasksRejected = new LongAdder();
     private final LongAdder tasksFailed = new LongAdder();
+    private final LongAdder tasksTimeout = new LongAdder();
+    private final long warnTimeMicroSec;
+    private final ScheduledExecutorService executor;
 
     enum State {
         Running,
@@ -64,13 +77,14 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private final CountDownLatch startLatch;
 
-    public SingleThreadExecutor(ThreadFactory tf) {
-        this(tf, 0, false);
+    public SingleThreadExecutor(ThreadFactory tf, long warnTimeMicroSec) {
+        this(tf, 0, false, warnTimeMicroSec);
     }
 
     @SneakyThrows
     @SuppressFBWarnings(value = {"SC_START_IN_CTOR"})
-    public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution) {
+    public SingleThreadExecutor(ThreadFactory tf, int maxQueueCapacity, boolean rejectExecution,
+                                long warnTimeMicroSec) {
         if (rejectExecution && maxQueueCapacity == 0) {
             throw new IllegalArgumentException("Executor cannot reject new items if the queue is unbound");
         }
@@ -80,11 +94,14 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         } else {
             this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
         }
+        this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory(EXECUTOR_NAME));
+        this.warnTimeMicroSec = warnTimeMicroSec;
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
         this.startLatch = new CountDownLatch(1);
         this.runner.start();
+        this.executor.scheduleAtFixedRate(this::monitorTimeoutTasks, 0,MONITOR_INTERVAL, TimeUnit.SECONDS);
 
         // Ensure the runner is already fully working by the time the constructor is done
         this.startLatch.await();
@@ -202,6 +219,10 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         return tasksFailed.sum();
     }
 
+    public long getTimeoutTasksCount() {
+        return tasksTimeout.sum();
+    }
+
     @Override
     public void execute(Runnable r) {
         if (state != State.Running) {
@@ -222,6 +243,26 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
             }
         } catch (InterruptedException e) {
             throw new RejectedExecutionException("Executor thread was interrupted", e);
+        }
+    }
+
+    private void monitorTimeoutTasks() {
+        for (Runnable task : queue) {
+            if (task instanceof TimedCallable) {
+                TimedCallable timedTask = (TimedCallable) task;
+                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
+                if (executionTime > warnTimeMicroSec && !timedTask.isRecorded()) {
+                    tasksTimeout.increment();
+                    timedTask.setRecorded(true);
+                }
+            } else if (task instanceof TimedRunnable) {
+                TimedRunnable timedTask = (TimedRunnable) task;
+                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
+                if (executionTime > warnTimeMicroSec && !timedTask.isRecorded()) {
+                    tasksTimeout.increment();
+                    timedTask.setRecorded(true);
+                }
+            }
         }
     }
 
@@ -285,6 +326,18 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                     @Override
                     public Number getSample() {
                         return getFailedTasksCount();
+                    }
+                });
+        statsLogger.scopeLabel("thread", runner.getName())
+                .registerGauge("thread_executor_tasks_timeout", new Gauge<Number>() {
+                    @Override
+                    public Number getDefaultValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Number getSample() {
+                        return getTimeoutTasksCount();
                     }
                 });
     }
