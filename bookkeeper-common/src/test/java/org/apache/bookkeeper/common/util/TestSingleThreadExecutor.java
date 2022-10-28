@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import static org.apache.bookkeeper.common.util.OrderedExecutor.WARN_TIME_MICRO_SEC_DEFAULT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +49,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testSimple() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         AtomicInteger count = new AtomicInteger();
 
@@ -77,7 +78,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testRejectWhenQueueIsFull() throws Exception {
         @Cleanup("shutdownNow")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, true);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, true, WARN_TIME_MICRO_SEC_DEFAULT);
 
         CyclicBarrier barrier = new CyclicBarrier(10 + 1);
         CountDownLatch startedLatch = new CountDownLatch(1);
@@ -119,7 +120,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testBlockWhenQueueIsFull() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, false);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, false, WARN_TIME_MICRO_SEC_DEFAULT);
 
         CyclicBarrier barrier = new CyclicBarrier(10 + 1);
 
@@ -147,7 +148,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testShutdown() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         assertFalse(ste.isShutdown());
         assertFalse(ste.isTerminated());
@@ -187,7 +188,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testShutdownNow() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         assertFalse(ste.isShutdown());
         assertFalse(ste.isTerminated());
@@ -230,7 +231,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testTasksWithException() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         AtomicInteger count = new AtomicInteger();
 
@@ -254,7 +255,7 @@ public class TestSingleThreadExecutor {
     @Test
     public void testTasksWithNPE() throws Exception {
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         AtomicInteger count = new AtomicInteger();
         String npeTest = null;
@@ -280,7 +281,7 @@ public class TestSingleThreadExecutor {
 
     @Test
     public void testShutdownEmpty() throws Exception {
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
         ste.shutdown();
         assertTrue(ste.isShutdown());
 
@@ -293,7 +294,7 @@ public class TestSingleThreadExecutor {
     public void testExecutorQueueIsNotFixedSize() throws Exception {
         int n = 1_000_000;
         @Cleanup("shutdown")
-        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, WARN_TIME_MICRO_SEC_DEFAULT);
 
         CountDownLatch latch = new CountDownLatch(1);
         // First task is blocking
