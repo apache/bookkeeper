@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
+import static org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger.logFilename;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
@@ -30,14 +34,9 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.junit.After;
 import org.junit.Test;
-
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger.logFilename;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 public class TestMetadata {
     private static final Slogger slog = Slogger.CONSOLE;
