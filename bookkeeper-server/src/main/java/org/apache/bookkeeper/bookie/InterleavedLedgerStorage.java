@@ -273,6 +273,30 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         return gcThread.isInForceGC();
     }
 
+    public void suspendMinorGC() {
+        gcThread.suspendMinorGC();
+    }
+
+    public void suspendMajorGC() {
+        gcThread.suspendMajorGC();
+    }
+
+    public void resumeMinorGC() {
+        gcThread.resumeMinorGC();
+    }
+
+    public void resumeMajorGC() {
+        gcThread.resumeMajorGC();
+    }
+
+    public boolean isMajorGcSuspended() {
+        return gcThread.isMajorGcSuspend();
+    }
+
+    public boolean isMinorGcSuspended() {
+        return gcThread.isMinorGcSuspend();
+    }
+
     @Override
     public void start() {
         gcThread.start();

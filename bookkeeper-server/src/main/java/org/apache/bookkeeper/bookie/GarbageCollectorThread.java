@@ -332,6 +332,14 @@ public class GarbageCollectorThread implements Runnable {
         return forceGarbageCollection.get();
     }
 
+    public boolean isMajorGcSuspend() {
+        return suspendMajorCompaction.get();
+    }
+
+    public boolean isMinorGcSuspend() {
+        return suspendMinorCompaction.get();
+    }
+
     public void suspendMajorGC() {
         if (suspendMajorCompaction.compareAndSet(false, true)) {
             LOG.info("Suspend Major Compaction triggered by thread: {}", Thread.currentThread().getName());

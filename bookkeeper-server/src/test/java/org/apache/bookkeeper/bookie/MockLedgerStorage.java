@@ -280,6 +280,30 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
         CompactableLedgerStorage.super.forceGC(forceMajor, forceMinor);
     }
 
+    public void suspendMinorGC() {
+        CompactableLedgerStorage.super.suspendMinorGC();
+    }
+
+    public void suspendMajorGC() {
+        CompactableLedgerStorage.super.suspendMajorGC();
+    }
+
+    public void resumeMinorGC() {
+        CompactableLedgerStorage.super.resumeMinorGC();
+    }
+
+    public void resumeMajorGC() {
+        CompactableLedgerStorage.super.suspendMajorGC();
+    }
+
+    public boolean isMajorGcSuspended() {
+        return CompactableLedgerStorage.super.isMajorGcSuspended();
+    }
+
+    public boolean isMinorGcSuspended() {
+        return CompactableLedgerStorage.super.isMinorGcSuspended();
+    }
+
     @Override
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return CompactableLedgerStorage.super.localConsistencyCheck(rateLimiter);

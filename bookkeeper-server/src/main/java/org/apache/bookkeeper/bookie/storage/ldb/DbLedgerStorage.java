@@ -120,7 +120,7 @@ public class DbLedgerStorage implements LedgerStorage {
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
-    // Keep 1 single Bookie GC thread so the the compactions from multiple individual directories are serialized
+    // Keep 1 single Bookie GC thread so the compactions from multiple individual directories are serialized
     private ScheduledExecutorService gcExecutor;
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
@@ -522,6 +522,36 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public boolean isInForceGC() {
         return ledgerStorageList.stream().anyMatch(SingleDirectoryDbLedgerStorage::isInForceGC);
+    }
+
+    @Override
+    public void suspendMinorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::suspendMinorGC);
+    }
+
+    @Override
+    public void suspendMajorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::suspendMajorGC);
+    }
+
+    @Override
+    public void resumeMinorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::resumeMinorGC);
+    }
+
+    @Override
+    public void resumeMajorGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::resumeMajorGC);
+    }
+
+    @Override
+    public boolean isMajorGcSuspended() {
+        return ledgerStorageList.stream().allMatch(SingleDirectoryDbLedgerStorage::isMajorGcSuspended);
+    }
+
+    @Override
+    public boolean isMinorGcSuspended() {
+        return ledgerStorageList.stream().allMatch(SingleDirectoryDbLedgerStorage::isMinorGcSuspended);
     }
 
     @Override

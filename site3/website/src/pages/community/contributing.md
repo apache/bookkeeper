@@ -108,10 +108,8 @@ IntelliJ supports checkstyle within the IDE using the Checkstyle-IDEA plugin.
     1. Select "Use a local Checkstyle file", and point it to
       "buildtools/src/main/resources/bookkeeper/checkstyle.xml" within
       your repository.
-    1. Check the box for "Store relative to project location", and click
-      "Next".
-    1. Configure the "checkstyle.suppressions.file" property value to
-      "suppressions.xml", and click "Next", then "Finish".
+    1. Check the box for "Store relative to project location".
+    1. Click Next -> Next -> Finish.
 1. Select "BookKeeper" as the only active configuration file, and click "Apply" and
    "OK".
 1. Checkstyle will now give warnings in the editor for any Checkstyle
