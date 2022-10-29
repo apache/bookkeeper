@@ -30,6 +30,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
 
 class LogMetadata {
+
     /**
      * Ledgers map is composed of multiple parts that can be split into separated entries. Each of them is composed of:
      *
@@ -108,8 +109,6 @@ class LogMetadata {
         } finally {
             serializedMap.release();
         }
-        writer.flush();
-
         ByteBuf buf = allocator.buffer(Buffer.ALIGNMENT);
         try {
             Header.writeHeader(buf, ledgerMapOffset, numberOfLedgers);
@@ -117,6 +116,7 @@ class LogMetadata {
         } finally {
             buf.release();
         }
+        writer.flush();
     }
 
     static EntryLogMetadata read(LogReader reader) throws IOException {
