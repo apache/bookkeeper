@@ -1608,9 +1608,11 @@ public class Auditor implements AutoCloseable {
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies;
 
-        ReadLedgerMetadataCallbackForReplicasCheck(long ledgerInRange, MultiCallback mcbForThisLedgerRange,
-                                                   ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
-                                                   ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies) {
+        ReadLedgerMetadataCallbackForReplicasCheck(
+                long ledgerInRange,
+                MultiCallback mcbForThisLedgerRange,
+                ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
+                ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies) {
             this.ledgerInRange = ledgerInRange;
             this.mcbForThisLedgerRange = mcbForThisLedgerRange;
             this.ledgersWithMissingEntries = ledgersWithMissingEntries;
@@ -1767,12 +1769,16 @@ public class Auditor implements AutoCloseable {
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies;
         private final MultiCallback mcbForThisLedger;
 
-        private GetListOfEntriesOfLedgerCallbackForReplicasCheck(long ledgerInRange, int ensembleSize,
-                                                                 int writeQuorumSize, int ackQuorumSize, BookieId bookieInEnsemble,
-                                                                 List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList,
-                                                                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
-                                                                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies,
-                                                                 MultiCallback mcbForThisLedger) {
+        private GetListOfEntriesOfLedgerCallbackForReplicasCheck(
+                long ledgerInRange,
+                int ensembleSize,
+                int writeQuorumSize,
+                int ackQuorumSize,
+                BookieId bookieInEnsemble,
+                List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList,
+                ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
+                ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies,
+                MultiCallback mcbForThisLedger) {
             this.ledgerInRange = ledgerInRange;
             this.ensembleSize = ensembleSize;
             this.writeQuorumSize = writeQuorumSize;
