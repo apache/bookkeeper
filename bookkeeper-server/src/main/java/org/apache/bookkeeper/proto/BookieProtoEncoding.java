@@ -275,7 +275,7 @@ public class BookieProtoEncoding {
                 } else if (msg instanceof BookieProtocol.AuthResponse) {
                     BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
                     ByteBuf payload = Unpooled.wrappedBuffer(am.toByteArray());
-                    int frameSize = RESPONSE_HEADERS_SIZE + payload.readableBytes();
+                    int frameSize = 4 + payload.readableBytes();
                     buf.setInt(0, frameSize);
                     return ByteBufList.get(buf, payload);
                 } else {
