@@ -26,6 +26,9 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Tests for Bookie recovery use IO threads.
+ */
 public class BookieRecoveryUseIOThreadTest extends BookKeeperClusterTestCase {
 
     public BookieRecoveryUseIOThreadTest() {
