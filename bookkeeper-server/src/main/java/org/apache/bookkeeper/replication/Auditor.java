@@ -634,6 +634,7 @@ public class Auditor implements AutoCloseable {
             return f;
         }
         return executor.submit(() -> {
+            int lostBookieRecoveryDelay = -1;
             try {
                 waitIfLedgerReplicationDisabled();
                 lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
