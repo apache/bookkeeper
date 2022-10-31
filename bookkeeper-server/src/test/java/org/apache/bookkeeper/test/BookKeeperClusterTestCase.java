@@ -285,11 +285,11 @@ public abstract class BookKeeperClusterTestCase {
         File f = tmpDirs.createNew("bookie", "test");
 
         int port;
-        if (baseConf.isEnableLocalTransport() || !baseConf.getAllowEphemeralPorts()) {
-            port = PortManager.nextFreePort();
-        } else {
-            port = 0;
-        }
+//        if (baseConf.isEnableLocalTransport() || !baseConf.getAllowEphemeralPorts()) {
+//            port = PortManager.nextFreePort();
+//        } else {
+            port = 3181;
+//        }
         return newServerConfiguration(port, f, new File[] { f });
     }
 

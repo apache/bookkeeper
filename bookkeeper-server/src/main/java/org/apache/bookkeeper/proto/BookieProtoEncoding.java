@@ -383,14 +383,14 @@ public class BookieProtoEncoding {
         buf.writeInt(size);
 
         try {
-            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.readerIndex(), size)));
+            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.writerIndex(), size)));
         } catch (IOException e) {
             // This is in-memory serialization, should not fail
             throw new RuntimeException(e);
         }
 
         // Advance writer idx
-        buf.writerIndex(buf.capacity());
+        buf.writerIndex(frameSize);
         return buf;
     }
 
