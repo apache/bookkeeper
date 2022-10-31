@@ -84,9 +84,9 @@ class Header {
             || header.getByte(3) != 'O') {
             throw new IOException(exMsg("Bad fingerprint (should be BKLO)")
                                   .kv("byte0", header.getByte(0))
-                                  .kv("byte1", header.getByte(0))
-                                  .kv("byte2", header.getByte(0))
-                                  .kv("byte3", header.getByte(0))
+                                  .kv("byte1", header.getByte(1))
+                                  .kv("byte2", header.getByte(2))
+                                  .kv("byte3", header.getByte(3))
                                   .toString());
         }
     }

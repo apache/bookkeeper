@@ -129,6 +129,8 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                             // ledger recovery
                             metadataForRecovery = lh.getLedgerMetadata();
                             doRecoveryRead();
+                        } else if (rc == BKException.Code.TimeoutException) {
+                            submitCallback(rc);
                         } else if (rc == BKException.Code.UnauthorizedAccessException) {
                             submitCallback(rc);
                         } else {
