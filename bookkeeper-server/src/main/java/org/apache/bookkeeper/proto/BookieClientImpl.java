@@ -280,20 +280,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                              final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
-        try {
-            executor.executeOrdered(ledgerId, new Runnable() {
-                @Override
-                public void run() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                }
-                @Override
-                public String toString() {
-                    return String.format("CompleteWrite(ledgerId=%d, entryId=%d, addr=%s)", ledgerId, entryId, addr);
-                }
-            });
-        } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
-        }
+        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
     }
 
     @Override
