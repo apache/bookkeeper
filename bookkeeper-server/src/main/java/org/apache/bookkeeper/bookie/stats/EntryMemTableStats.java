@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.bookie.stats;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_FLUSH_BYTES;
@@ -60,7 +61,7 @@ public class EntryMemTableStats {
     @StatsDoc(
         name = SKIP_LIST_GET_ENTRY,
         help = "operation stats of getting entries from memtable",
-        parent = BOOKIE_ADD_ENTRY
+        parent = BOOKIE_READ_ENTRY
     )
     private final OpStatsLogger getEntryStats;
     @StatsDoc(
