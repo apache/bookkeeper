@@ -42,6 +42,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+/**
+ * Tests for BookKeeper open ledger operations.
+ */
 @RunWith(Parameterized.class)
 public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
 
