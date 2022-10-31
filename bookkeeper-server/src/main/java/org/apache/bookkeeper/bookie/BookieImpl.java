@@ -32,6 +32,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -1032,9 +1033,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
         } finally {
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
             if (explicitLACEntry != null) {
-                explicitLACEntry.release();
+                ReferenceCountUtil.safeRelease(explicitLACEntry);
             }
         }
     }
