@@ -49,9 +49,10 @@ public interface LedgerManager extends Closeable {
      *            Metadata provided when creating the new ledger
      * @return Future which, when completed returns the metadata of the newly created ledger.
      *         Completed with an exception:<ul>
-     *            <li>{@link BKException.BKLedgerExistException} if given ledger id exist</li>
-     *            <li>{@link BKException.BKZKException}/{@link BKException.BKMetaStoreException} for other issues</li>
-     *            </ul>
+     *        <li>{@link org.apache.bookkeeper.client.BKException.BKLedgerExistException} if given ledger id exist</li>
+     *        <li>{@link org.apache.bookkeeper.client.BKException.ZKException}
+     *        /{@link org.apache.bookkeeper.client.BKException.BKMetadataSerializationException} for other issues</li>
+     *        </ul>
      */
     CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long ledgerId, LedgerMetadata metadata);
 
@@ -64,10 +65,12 @@ public interface LedgerManager extends Closeable {
      *          Ledger metadata version
      * @return Future which, when completed, denotes that the ledger metadata has been removed.
      *         Completed with an exception:<ul>
-     *          <li>{@link BKException.BKMetadataVersionException} if version doesn't match</li>
-     *          <li>{@link BKException.BKNoSuchLedgerExistsOnMetadataServerException} if ledger not exist</li>
-     *          <li>{@link BKException.ZKException} for other issues</li>
-     *          </ul>
+     *      <li>{@link org.apache.bookkeeper.client.BKException.BKMetadataVersionException}
+     *      if version doesn't match</li>
+     *      <li>{@link org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException}
+     *      if ledger not exist</li>
+     *      <li>{@link org.apache.bookkeeper.client.BKException.ZKException} for other issues</li>
+     *      </ul>
      */
     CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version);
 
@@ -78,8 +81,9 @@ public interface LedgerManager extends Closeable {
      *          Ledger Id
      * @return Future which, when completed, contains the requested versioned metadata.
      *         Completed with an exception::<ul>
-     *          <li>{@link BKException.BKNoSuchLedgerExistsOnMetadataServerException} if ledger not exist</li>
-     *          <li>{@link BKException.ZKException} for other issues</li>
+     *          <li>{@link org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException}
+     *          if ledger not exist</li>
+     *          <li>{@link org.apache.bookkeeper.client.BKException.ZKException} for other issues</li>
      *          </ul>
      */
     CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId);
@@ -95,8 +99,9 @@ public interface LedgerManager extends Closeable {
      *          The version of the metadata we expect to be overwriting.
      * @return Future which, when completed, contains the newly written metadata.
      *         Comleted with an exceptione:<ul>
-     *          <li>{@link BKException.BKMetadataVersionException} if version in metadata doesn't match</li>
-     *          <li>{@link BKException.ZKException} for other issue</li>
+     *          <li>{@link org.apache.bookkeeper.client.BKException.BKMetadataVersionException}
+     *          if version in metadata doesn't match</li>
+     *          <li>{@link org.apache.bookkeeper.client.BKException.ZKException} for other issue</li>
      *          </ul>
      */
     CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
