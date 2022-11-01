@@ -106,12 +106,17 @@ public class BookieProtoEncoding {
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
             if (r instanceof BookieProtocol.AddRequest) {
                 BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) r;
-                int totalHeaderSize = 4 // for the header
-                    + BookieProtocol.MASTER_KEY_LENGTH; // for the master key
-                ByteBuf buf = allocator.buffer(totalHeaderSize);
+                ByteBufList data = ar.getData();
+
+                int totalHeaderSize = 4 // for the request header
+                        + BookieProtocol.MASTER_KEY_LENGTH; // for the master key
+
+                int totalPayloadSize = totalHeaderSize + data.readableBytes();
+                ByteBuf buf = allocator.buffer(totalHeaderSize + 4 /* frame size */);
+                buf.writeInt(totalPayloadSize); // Frame header
                 buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
                 buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
-                ByteBufList data = ar.getData();
+
                 ar.recycle();
                 data.prepend(buf);
                 return data;
@@ -123,7 +128,8 @@ public class BookieProtoEncoding {
                     totalHeaderSize += BookieProtocol.MASTER_KEY_LENGTH;
                 }
 
-                ByteBuf buf = allocator.buffer(totalHeaderSize);
+                ByteBuf buf = allocator.buffer(totalHeaderSize + 4 /* frame size */);
+                buf.writeInt(totalHeaderSize);
                 buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
                 buf.writeLong(r.getLedgerId());
                 buf.writeLong(r.getEntryId());
@@ -136,7 +142,8 @@ public class BookieProtoEncoding {
                 BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
                 int totalHeaderSize = 4; // for request type
                 int totalSize = totalHeaderSize + am.getSerializedSize();
-                ByteBuf buf = allocator.buffer(totalSize);
+                ByteBuf buf = allocator.buffer(totalSize + 4 /* frame size */);
+                buf.writeInt(totalSize);
                 buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
                 ByteBufOutputStream bufStream = new ByteBufOutputStream(buf);
                 am.writeTo(bufStream);
@@ -230,6 +237,8 @@ public class BookieProtoEncoding {
             this.extensionRegistry = extensionRegistry;
         }
 
+        private static final int RESPONSE_HEADERS_SIZE = 24;
+
         @Override
         public Object encode(Object msg, ByteBufAllocator allocator)
                 throws Exception {
@@ -237,7 +246,8 @@ public class BookieProtoEncoding {
                 return msg;
             }
             BookieProtocol.Response r = (BookieProtocol.Response) msg;
-            ByteBuf buf = allocator.buffer(24);
+            ByteBuf buf = allocator.buffer(RESPONSE_HEADERS_SIZE + 4 /* frame size */);
+            buf.writerIndex(4); // Leave the placeholder for the frame size
             buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
 
             try {
@@ -248,19 +258,26 @@ public class BookieProtoEncoding {
 
                     BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse) r;
                     if (rr.hasData()) {
+                        int frameSize = RESPONSE_HEADERS_SIZE + rr.getData().readableBytes();
+                        buf.setInt(0, frameSize);
                         return ByteBufList.get(buf, rr.getData());
                     } else {
+                        buf.setInt(0, RESPONSE_HEADERS_SIZE); // Frame size
                         return buf;
                     }
                 } else if (msg instanceof BookieProtocol.AddResponse) {
                     buf.writeInt(r.getErrorCode());
                     buf.writeLong(r.getLedgerId());
                     buf.writeLong(r.getEntryId());
+                    buf.setInt(0, RESPONSE_HEADERS_SIZE); // Frame size
 
                     return buf;
                 } else if (msg instanceof BookieProtocol.AuthResponse) {
                     BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
-                    return ByteBufList.get(buf, Unpooled.wrappedBuffer(am.toByteArray()));
+                    ByteBuf payload = Unpooled.wrappedBuffer(am.toByteArray());
+                    int frameSize = 4 + payload.readableBytes();
+                    buf.setInt(0, frameSize);
+                    return ByteBufList.get(buf, payload);
                 } else {
                     LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
                     return msg;
@@ -353,6 +370,8 @@ public class BookieProtoEncoding {
 
     private static ByteBuf serializeProtobuf(MessageLite msg, ByteBufAllocator allocator) {
         int size = msg.getSerializedSize();
+        int frameSize = size + 4;
+
         // Protobuf serialization is the last step of the netty pipeline. We used to allocate
         // a heap buffer while serializing and pass it down to netty library.
         // In AbstractChannel#filterOutboundMessage(), netty copies that data to a direct buffer if
@@ -360,17 +379,18 @@ public class BookieProtoEncoding {
         // Allocating a direct buffer reducing unncessary CPU cycles for buffer copies in BK client
         // and also helps alleviate pressure off the GC, since there is less memory churn.
         // Bookies aren't usually CPU bound. This change improves READ_ENTRY code paths by a small factor as well.
-        ByteBuf buf = allocator.directBuffer(size, size);
+        ByteBuf buf = allocator.directBuffer(frameSize, frameSize);
+        buf.writeInt(size);
 
         try {
-            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.readerIndex(), size)));
+            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.writerIndex(), size)));
         } catch (IOException e) {
             // This is in-memory serialization, should not fail
             throw new RuntimeException(e);
         }
 
         // Advance writer idx
-        buf.writerIndex(buf.capacity());
+        buf.writerIndex(frameSize);
         return buf;
     }
 
