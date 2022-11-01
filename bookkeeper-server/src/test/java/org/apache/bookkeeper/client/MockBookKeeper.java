@@ -280,7 +280,9 @@ public class MockBookKeeper extends BookKeeper {
 
     void checkProgrammedFail() throws BKException {
         int steps = stepsToFail.getAndDecrement();
-        log.debug("Steps to fail: {}", steps);
+        if (log.isDebugEnabled()) {
+            log.debug("Steps to fail: {}", steps);
+        }
         if (steps <= 0) {
             if (failReturnCode != BKException.Code.OK) {
                 int rc = failReturnCode;
@@ -293,7 +295,9 @@ public class MockBookKeeper extends BookKeeper {
 
     boolean getProgrammedFailStatus() {
         int steps = stepsToFail.getAndDecrement();
-        log.debug("Steps to fail: {}", steps);
+        if (log.isDebugEnabled()) {
+            log.debug("Steps to fail: {}", steps);
+        }
         return steps == 0;
     }
 

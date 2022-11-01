@@ -89,7 +89,9 @@ public class DLMetadata {
         sb.append(metadataFormatVersion).append(LINE_SPLITTER);
         sb.append(dlType).append(LINE_SPLITTER);
         sb.append(dlConfig.serialize());
-        LOG.debug("Serialized dl metadata {}.", sb);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized dl metadata {}.", sb);
+        }
         return sb.toString().getBytes(UTF_8);
     }
 
@@ -190,7 +192,9 @@ public class DLMetadata {
      */
     public static DLMetadata deserialize(URI uri, byte[] data) throws IOException {
         String metadata = new String(data, UTF_8);
-        LOG.debug("Parsing dl metadata {}.", metadata);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Parsing dl metadata {}.", metadata);
+        }
         BufferedReader br = new BufferedReader(new StringReader(metadata));
         String versionLine = br.readLine();
         if (null == versionLine) {

@@ -148,7 +148,9 @@ public class ListLedgerService implements HttpEndpointService {
             manager.close();
 
             String jsonResponse = JsonUtil.toJson(output);
-            LOG.debug("output body:" + jsonResponse);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("output body:" + jsonResponse);
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

@@ -133,7 +133,9 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
-                    LOG.debug("Entries counter = " + sync.counter);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Entries counter = " + sync.counter);
+                    }
                     sync.wait();
                 }
             }
@@ -154,7 +156,9 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
             }
             lh = ctx.getLh();
 
-            LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            }
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             // read entries
@@ -166,7 +170,9 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
                 }
             }
 
-            LOG.debug("*** READ COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** READ COMPLETE ***");
+            }
 
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
@@ -176,11 +182,12 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
                 Integer origEntry = origbb.getInt();
                 byte[] entry = ls.nextElement().getEntry();
                 ByteBuffer result = ByteBuffer.wrap(entry);
-                LOG.debug("Length of result: " + result.capacity());
-                LOG.debug("Original entry: " + origEntry);
-
                 Integer retrEntry = result.getInt();
-                LOG.debug("Retrieved entry: " + retrEntry);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                    LOG.debug("Original entry: " + origEntry);
+                    LOG.debug("Retrieved entry: " + retrEntry);
+                }
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
                 assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i));
                 i++;

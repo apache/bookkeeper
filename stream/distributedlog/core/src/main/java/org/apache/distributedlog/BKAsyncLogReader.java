@@ -217,7 +217,9 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
         this.scheduler = scheduler;
         this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
                 this, true);
-        LOG.debug("Starting async reader at {}", startDLSN);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting async reader at {}", startDLSN);
+        }
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
         this.readNextDelayStopwatch = Stopwatch.createStarted();
@@ -581,7 +583,9 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
             Stopwatch runTime = Stopwatch.createStarted();
             int iterations = 0;
             long scheduleCountLocal = scheduleCountUpdater.get(this);
-            LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
+            }
             while (true) {
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("{}: Executing Iteration: {}", readHandler.getFullyQualifiedName(), iterations++);

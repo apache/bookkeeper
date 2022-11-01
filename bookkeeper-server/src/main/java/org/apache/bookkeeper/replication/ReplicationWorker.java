@@ -413,7 +413,9 @@ public class ReplicationWorker implements Runnable {
                 }
             } else if (BKException.getExceptionCode(exception)
                     == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
+                }
             } else {
                 LOG.warn("Unable to read the ledger: {} information", ledgerId);
             }

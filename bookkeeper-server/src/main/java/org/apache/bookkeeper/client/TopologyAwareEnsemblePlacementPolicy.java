@@ -658,8 +658,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
             // dead bookies.
             deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
-            LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
-                    leftBookies, joinedBookies, deadBookies);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
+                        leftBookies, joinedBookies, deadBookies);
+            }
             handleBookiesThatLeft(leftBookies);
             handleBookiesThatJoined(joinedBookies);
             if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {

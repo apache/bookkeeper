@@ -101,7 +101,9 @@ public class ExpandStorageService implements HttpEndpointService {
             }
 
             String jsonResponse = "Success expand storage";
-            LOG.debug("output body:" + jsonResponse);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("output body:" + jsonResponse);
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

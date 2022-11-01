@@ -181,10 +181,12 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
             ByteBuffer origbb = ByteBuffer.wrap(entries.get(index++));
             Integer origEntry = origbb.getInt();
             ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-            LOG.debug("Length of result: " + result.capacity());
-            LOG.debug("Original entry: " + origEntry);
             Integer retrEntry = result.getInt();
-            LOG.debug("Retrieved entry: " + retrEntry);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Length of result: " + result.capacity());
+                LOG.debug("Original entry: " + origEntry);
+                LOG.debug("Retrieved entry: " + retrEntry);
+            }
             assertTrue("Checking entry " + index + " for equality", origEntry
                     .equals(retrEntry));
         }

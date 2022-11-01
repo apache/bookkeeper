@@ -1213,7 +1213,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // Trace the lifetime of entries through persistence
                             if (LOG.isDebugEnabled()) {
                                 for (QueueEntry e : toFlush) {
-                                    if (e != null) {
+                                    if (e != null && LOG.isDebugEnabled()) {
                                         LOG.debug("Written and queuing for flush Ledger: {}  Entry: {}",
                                                   e.ledgerId, e.entryId);
                                     }

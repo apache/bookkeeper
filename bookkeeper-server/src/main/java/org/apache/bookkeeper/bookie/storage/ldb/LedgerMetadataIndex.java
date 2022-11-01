@@ -183,10 +183,8 @@ public class LedgerMetadataIndex implements Closeable {
                     log.debug("Re-inserted fenced ledger {}", ledgerId);
                 }
                 ledgersCount.incrementAndGet();
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Set fenced ledger {}", ledgerId);
-                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("Set fenced ledger {}", ledgerId);
             }
 
             pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
@@ -214,10 +212,8 @@ public class LedgerMetadataIndex implements Closeable {
                     log.debug("Re-inserted limbo ledger {}", ledgerId);
                 }
                 ledgersCount.incrementAndGet();
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Set limbo ledger {}", ledgerId);
-                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("Set limbo ledger {}", ledgerId);
             }
 
             pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
@@ -245,10 +241,8 @@ public class LedgerMetadataIndex implements Closeable {
                     log.debug("Re-inserted limbo ledger {}", ledgerId);
                 }
                 ledgersCount.incrementAndGet();
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Set limbo ledger {}", ledgerId);
-                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("Set limbo ledger {}", ledgerId);
             }
 
             pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
@@ -399,10 +393,8 @@ public class LedgerMetadataIndex implements Closeable {
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted
                 return;
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Set explicitLac on ledger {}", ledgerId);
-                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("Set explicitLac on ledger {}", ledgerId);
             }
             pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
         } else {

@@ -65,13 +65,17 @@ class MockReadHandle implements ReadHandle {
                     return;
                 }
 
-                log.debug("readEntries: first={} last={} total={}", firstEntry, lastEntry, entries.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("readEntries: first={} last={} total={}", firstEntry, lastEntry, entries.size());
+                }
                 List<LedgerEntry> seq = new ArrayList<>();
                 long entryId = firstEntry;
                 while (entryId <= lastEntry && entryId < entries.size()) {
                     seq.add(entries.get((int) entryId++).duplicate());
                 }
-                log.debug("Entries read: {}", seq);
+                if (log.isDebugEnabled()) {
+                    log.debug("Entries read: {}", seq);
+                }
                 promise.complete(LedgerEntriesImpl.create(seq));
             });
         return promise;

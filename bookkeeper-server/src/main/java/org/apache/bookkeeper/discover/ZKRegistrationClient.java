@@ -241,7 +241,9 @@ public class ZKRegistrationClient implements RegistrationClient {
         // because it can happen than this method is called inside the main
         // zookeeper client event loop thread
         Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
-        log.debug("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
+        if (log.isDebugEnabled()) {
+            log.debug("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
+        }
         if (resultFromCache != null) {
             return CompletableFuture.completedFuture(resultFromCache);
         } else {
@@ -480,7 +482,9 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         @Override
         public void process(WatchedEvent we) {
-            log.debug("zk event {} for {} state {}", we.getType(), we.getPath(), we.getState());
+            if (log.isDebugEnabled()) {
+                log.debug("zk event {} for {} state {}", we.getType(), we.getPath(), we.getState());
+            }
             if (we.getState() == KeeperState.Expired) {
                 log.info("zk session expired, invalidating cache");
                 bookieServiceInfoCache.clear();
@@ -500,7 +504,9 @@ public class ZKRegistrationClient implements RegistrationClient {
                     readBookieServiceInfoAsync(bookieId);
                     break;
                 default:
-                    log.debug("ignore cache event {} for {}", we.getType(), bookieId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("ignore cache event {} for {}", we.getType(), bookieId);
+                    }
                     break;
             }
         }

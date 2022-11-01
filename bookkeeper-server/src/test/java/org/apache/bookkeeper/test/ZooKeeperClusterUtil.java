@@ -108,7 +108,9 @@ public class ZooKeeperClusterUtil implements ZooKeeperCluster {
         quorumUtil.startAll();
         connectString = quorumUtil.getConnString();
         // create a zookeeper client
-        LOG.debug("Instantiate ZK Client");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Instantiate ZK Client");
+        }
         zkc = ZooKeeperClient.newBuilder().connectString(getZooKeeperConnectString()).sessionTimeoutMs(10000).build();
 
         // create default bk ensemble

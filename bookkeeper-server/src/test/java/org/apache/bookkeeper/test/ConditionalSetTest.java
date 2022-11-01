@@ -73,9 +73,13 @@ public class ConditionalSetTest extends BookKeeperClusterTestCase {
         LedgerHandle lhWrite = bkc.createLedger(digestType, new byte[] { 'a',
                 'b' });
         long ledgerId = lhWrite.getId();
-        LOG.debug("Ledger ID: " + lhWrite.getId());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Ledger ID: {}", ledgerId);
+        }
         for (int i = 0; i < 10; i++) {
-            LOG.debug("Adding entry: " + i);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Adding entry: " + i);
+            }
             lhWrite.addEntry(entry);
         }
 
@@ -83,10 +87,14 @@ public class ConditionalSetTest extends BookKeeperClusterTestCase {
          * Open a ledger for reading, which triggers recovery, since the ledger
          * is still open.
          */
-        LOG.debug("Instantiating new bookkeeper client.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Instantiating new bookkeeper client.");
+        }
         LedgerHandle lhRead = bkcReader.openLedger(lhWrite.getId(), digestType,
                                         new byte[] { 'a', 'b' });
-        LOG.debug("Opened the ledger already");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Opened the ledger already");
+        }
 
         /*
          * Writer tries to close the ledger, and it should succeed as recovery closed

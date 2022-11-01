@@ -334,8 +334,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
      */
     private void onCacheEntryRemoval(RemovalNotification<Long, EntryLogAndLockTuple> removedLedgerEntryLogMapEntry) {
         Long ledgerId = removedLedgerEntryLogMapEntry.getKey();
-        log.debug("LedgerId {} is being evicted from the cache map because of {}", ledgerId,
-                removedLedgerEntryLogMapEntry.getCause());
+        if (log.isDebugEnabled()) {
+            log.debug("LedgerId {} is being evicted from the cache map because of {}", ledgerId,
+                    removedLedgerEntryLogMapEntry.getCause());
+        }
         EntryLogAndLockTuple entryLogAndLockTuple = removedLedgerEntryLogMapEntry.getValue();
         if (entryLogAndLockTuple == null) {
             log.error("entryLogAndLockTuple is not supposed to be null in entry removal listener for ledger : {}",

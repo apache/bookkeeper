@@ -72,8 +72,10 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         this.conf = conf;
         this.dynConf = dynConf;
         this.bkDistributedLogManager = bkdlm;
-        LOG.debug("Initial retention period for {} : {}", bkdlm.getStreamName(),
-                TimeUnit.MILLISECONDS.convert(dynConf.getRetentionPeriodHours(), TimeUnit.HOURS));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Initial retention period for {} : {}", bkdlm.getStreamName(),
+                    TimeUnit.MILLISECONDS.convert(dynConf.getRetentionPeriodHours(), TimeUnit.HOURS));
+        }
     }
 
     @VisibleForTesting

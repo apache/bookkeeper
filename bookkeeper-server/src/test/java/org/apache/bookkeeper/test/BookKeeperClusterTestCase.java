@@ -898,14 +898,18 @@ public abstract class BookKeeperClusterTestCase {
         }
 
         public void startAutoRecovery() throws Exception {
-            LOG.debug("Starting Auditor Recovery for the bookie: {}", address);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Starting Auditor Recovery for the bookie: {}", address);
+            }
             autoRecovery = new AutoRecoveryMain(conf);
             autoRecovery.start();
         }
 
         public void stopAutoRecovery() {
             if (autoRecovery != null) {
-                LOG.debug("Shutdown Auditor Recovery for the bookie: {}", address);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Shutdown Auditor Recovery for the bookie: {}", address);
+                }
                 autoRecovery.shutdown();
             }
         }
@@ -959,7 +963,9 @@ public abstract class BookKeeperClusterTestCase {
             }
 
             if (autoRecovery != null) {
-                LOG.debug("Shutdown auto recovery for bookieserver: {}", address);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Shutdown auto recovery for bookieserver: {}", address);
+                }
                 autoRecovery.shutdown();
             }
         }

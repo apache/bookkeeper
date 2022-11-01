@@ -128,7 +128,9 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                     response.setCode(HttpServer.StatusCode.OK);
                     String jsonResponse = JsonUtil
                             .toJson(printMissingReplica ? outputLedgersWithMissingReplica : outputLedgers);
-                    LOG.debug("output body: " + jsonResponse);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("output body: " + jsonResponse);
+                    }
                     response.setBody(jsonResponse);
                     return response;
                 }

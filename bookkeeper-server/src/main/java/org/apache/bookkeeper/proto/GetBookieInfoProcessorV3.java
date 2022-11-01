@@ -71,7 +71,9 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 totalDiskSpace = requestProcessor.getBookie().getTotalDiskSpace();
                 getBookieInfoResponse.setTotalDiskCapacity(totalDiskSpace);
             }
-            LOG.debug("FreeDiskSpace info is " + freeDiskSpace + " totalDiskSpace is: " + totalDiskSpace);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("FreeDiskSpace info is " + freeDiskSpace + " totalDiskSpace is: " + totalDiskSpace);
+            }
         } catch (IOException e) {
             status = StatusCode.EIO;
             LOG.error("IOException while getting  freespace/totalspace", e);

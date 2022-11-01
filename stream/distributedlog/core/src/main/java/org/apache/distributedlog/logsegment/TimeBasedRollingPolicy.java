@@ -39,7 +39,7 @@ public class TimeBasedRollingPolicy implements RollingPolicy {
     public boolean shouldRollover(Sizable sizable, long lastRolloverTimeMs) {
         long elapsedMs = Utils.elapsedMSec(lastRolloverTimeMs);
         boolean shouldSwitch = elapsedMs > rollingIntervalMs;
-        if (shouldSwitch) {
+        if (shouldSwitch && LOG.isDebugEnabled()) {
             LOG.debug("Last Finalize Time: {} elapsed time (MSec): {}", lastRolloverTimeMs,
                       elapsedMs);
         }

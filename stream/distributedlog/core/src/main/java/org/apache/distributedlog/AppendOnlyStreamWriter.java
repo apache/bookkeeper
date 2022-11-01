@@ -39,7 +39,9 @@ public class AppendOnlyStreamWriter implements Closeable {
     long requestPos = 0;
 
     public AppendOnlyStreamWriter(BKAsyncLogWriter logWriter, long pos) {
-        LOG.debug("initialize at position {}", pos);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("initialize at position {}", pos);
+        }
         this.logWriter = logWriter;
         this.syncPos[0] = pos;
         this.requestPos = pos;

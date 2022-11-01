@@ -54,7 +54,9 @@ public class Java9IntHash implements IntHash {
 
             hasJava9CRC32C = true;
         } catch (Exception e) {
-            log.debug("Unable to use reflected methods: ", e);
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to use reflected methods: ", e);
+            }
             updateBytes = null;
             updateDirectByteBuffer = null;
         }

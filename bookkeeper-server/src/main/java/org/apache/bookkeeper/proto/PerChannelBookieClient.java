@@ -1545,8 +1545,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             channel = null;
                         } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
-                            LOG.debug("Already connected with another channel({}), so close the new channel({})",
-                                    channel, channel);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Already connected with another channel({}), "
+                                                + "so close the new channel({})",
+                                        channel, channel);
+                            }
                             closeChannel(channel);
                             return; // pendingOps should have been completed when other channel connected
                         } else {

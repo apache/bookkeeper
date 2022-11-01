@@ -237,7 +237,9 @@ public class PerStreamLogSegmentCache {
             LogSegmentMetadata metadata = logSegments.remove(name);
             if (null != metadata) {
                 lid2LogSegments.remove(metadata.getLogSegmentId(), metadata);
-                LOG.debug("Removed log segment ({} : {}) from cache.", name, metadata);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Removed log segment ({} : {}) from cache.", name, metadata);
+                }
             }
             return metadata;
         }

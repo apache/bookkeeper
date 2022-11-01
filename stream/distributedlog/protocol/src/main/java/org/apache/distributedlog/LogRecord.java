@@ -638,7 +638,9 @@ public class LogRecord {
                         recordStream.advance(1);
                     }
                 } catch (EOFException eof) {
-                    LOG.debug("Skip encountered end of file Exception", eof);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Skip encountered end of file Exception", eof);
+                    }
                     break;
                 }
             }

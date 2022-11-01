@@ -89,13 +89,17 @@ class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
     public long commit() throws IOException {
         checkClosedOrInError("commit");
 
-        LOG.debug("FlushAndSync Started");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("FlushAndSync Started");
+        }
         long highestTransactionId = 0;
         BKLogSegmentWriter writer = getCachedLogWriter();
         if (null != writer) {
             highestTransactionId = Math.max(highestTransactionId, Utils.ioResult(writer.commit()));
-            LOG.debug("FlushAndSync Completed");
-        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("FlushAndSync Completed");
+            }
+        } else if (LOG.isDebugEnabled()) {
             LOG.debug("FlushAndSync Completed - Nothing to Flush");
         }
         return highestTransactionId;

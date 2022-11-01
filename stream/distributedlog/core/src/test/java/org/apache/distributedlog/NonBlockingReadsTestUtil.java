@@ -134,11 +134,15 @@ class NonBlockingReadsTestUtil {
                 Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 TimeUnit.MILLISECONDS.sleep(300);
                 writer.abort();
-                LOG.debug("Recovering Segments");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Recovering Segments");
+                }
                 BKLogWriteHandler blplm = ((BKDistributedLogManager) (dlm)).createWriteHandler(true);
                 Utils.ioResult(blplm.recoverIncompleteLogSegments());
                 Utils.ioResult(blplm.asyncClose());
-                LOG.debug("Recovered Segments");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Recovered Segments");
+                }
             } else {
                 Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 writer.closeAndComplete();

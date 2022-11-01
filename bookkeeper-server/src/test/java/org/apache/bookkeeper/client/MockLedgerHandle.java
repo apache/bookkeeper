@@ -107,19 +107,26 @@ public class MockLedgerHandle extends LedgerHandle {
                     cb.readComplete(bk.failReturnCode, MockLedgerHandle.this, null, ctx);
                     return;
                 } else if (bk.isStopped()) {
-                    log.debug("Bookkeeper is closed!");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Bookkeeper is closed!");
+                    }
                     cb.readComplete(-1, MockLedgerHandle.this, null, ctx);
                     return;
                 }
 
-                log.debug("readEntries: first={} last={} total={}", firstEntry, lastEntry, entries.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("readEntries: first={} last={} total={}",
+                            firstEntry, lastEntry, entries.size());
+                }
                 final Queue<LedgerEntry> seq = new ArrayDeque<LedgerEntry>();
                 long entryId = firstEntry;
                 while (entryId <= lastEntry && entryId < entries.size()) {
                     seq.add(new LedgerEntry(entries.get((int) entryId++).duplicate()));
                 }
 
-                log.debug("Entries read: {}", seq);
+                if (log.isDebugEnabled()) {
+                    log.debug("Entries read: {}", seq);
+                }
 
                 try {
                     Thread.sleep(1);
