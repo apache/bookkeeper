@@ -127,9 +127,13 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implement
         try {
             closeAsync().get();
         } catch (InterruptedException e) {
-            log.debug("Interrupted on closing stream admin client", e);
+            if (log.isDebugEnabled()) {
+                log.debug("Interrupted on closing stream admin client", e);
+            }
         } catch (ExecutionException e) {
-            log.debug("Failed to cloe stream admin client", e);
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to cloe stream admin client", e);
+            }
         }
     }
 }

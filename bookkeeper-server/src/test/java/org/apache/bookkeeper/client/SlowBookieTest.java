@@ -150,7 +150,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
                 public void operationComplete(int rc, Set<LedgerFragment> badFragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
+                    }
                     if (rc == BKException.Code.OK) {
                         numFragments.set(badFragments.size());
                     }
@@ -285,7 +287,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch checkLatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, (rc, fragments) -> {
-            LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            }
             if (rc == BKException.Code.OK) {
                 numFragments.set(fragments.size());
                 LOG.error("Checked ledgers returned {} {}", rc, fragments);
@@ -385,7 +389,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
                 public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                    }
                     if (rc == BKException.Code.OK) {
                         numFragments.set(fragments.size());
                     }

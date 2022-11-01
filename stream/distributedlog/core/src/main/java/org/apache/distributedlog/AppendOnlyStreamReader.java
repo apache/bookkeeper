@@ -46,8 +46,10 @@ public class AppendOnlyStreamReader extends InputStream {
         LogRecordWithInputStream(LogRecordWithDLSN logRecord) {
             checkNotNull(logRecord);
 
-            LOG.debug("Got record dlsn = {}, txid = {}, len = {}",
-                logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got record dlsn = {}, txid = {}, len = {}",
+                        logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length);
+            }
 
             this.logRecord = logRecord;
             this.payloadStream = logRecord.getPayLoadInputStream();
@@ -100,7 +102,9 @@ public class AppendOnlyStreamReader extends InputStream {
             if (null != record) {
                 return new LogRecordWithInputStream(record);
             } else {
-                LOG.debug("No record");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No record");
+                }
                 return null;
             }
         }
@@ -134,8 +138,10 @@ public class AppendOnlyStreamReader extends InputStream {
                     return read;
                 }
             } else {
-                LOG.debug("Offset saved = {}, persisted = {}",
-                    currentPosition, currentLogRecord.getLogRecord().getTransactionId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Offset saved = {}, persisted = {}",
+                            currentPosition, currentLogRecord.getLogRecord().getTransactionId());
+                }
                 currentPosition += thisread;
                 read += thisread;
             }

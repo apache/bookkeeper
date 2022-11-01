@@ -75,7 +75,9 @@ class TestCompatRecoveryNoPassword {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
-            LOG.debug("Got {} for ledger {} entry {} from {}", rc, ledgerId, entryId, ctx)
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got {} for ledger {} entry {} from {}", rc, ledgerId, entryId, ctx)
+            }
             if (rc == BKException.Code.OK) {
                 numSuccess.incrementAndGet()
             }

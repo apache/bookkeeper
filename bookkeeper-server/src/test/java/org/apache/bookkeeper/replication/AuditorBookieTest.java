@@ -185,7 +185,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         startBookie(serverConfiguration);
         // starting corresponding auditor elector
 
-        LOG.debug("Performing Auditor Election:" + addr);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Performing Auditor Election:" + addr);
+        }
         startAuditorElector(addr);
 
         // waiting for new auditor to come
@@ -202,7 +204,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
                                                            baseConf);
         auditorElectors.put(addr, auditorElector);
         auditorElector.start();
-        LOG.debug("Starting Auditor Elector");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting Auditor Elector");
+        }
     }
 
     private void startAuditorElectors() throws Exception {
@@ -214,7 +218,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     private void stopAuditorElectors() throws Exception {
         for (AuditorElector auditorElector : auditorElectors.values()) {
             auditorElector.shutdown();
-            LOG.debug("Stopping Auditor Elector!");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Stopping Auditor Elector!");
+            }
         }
     }
 
@@ -222,7 +228,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         List<BookieServer> auditors = getAuditorBookie();
         assertEquals("Multiple Bookies acting as Auditor!", 1, auditors
                 .size());
-        LOG.debug("Bookie running as Auditor:" + auditors.get(0));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Bookie running as Auditor:" + auditors.get(0));
+        }
         return auditors.get(0);
     }
 
@@ -242,7 +250,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     private ServerConfiguration shutdownBookie(BookieServer bkServer) throws Exception {
         int index = indexOfServer(bkServer);
         String addr = addressByIndex(index).toString();
-        LOG.debug("Shutting down bookie:" + addr);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Shutting down bookie:" + addr);
+        }
 
         // shutdown bookie which is an auditor
         ServerConfiguration conf = killBookie(index);

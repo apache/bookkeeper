@@ -1324,8 +1324,10 @@ class ZKSessionLock implements SessionLock {
 
         @Override
         public void process(WatchedEvent event) {
-            LOG.debug("Received event {} from lock {} at {} : watcher epoch {}, lock epoch {}.",
-                event, lockPath, System.currentTimeMillis(), epoch, getEpoch());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received event {} from lock {} at {} : watcher epoch {}, lock epoch {}.",
+                        event, lockPath, System.currentTimeMillis(), epoch, getEpoch());
+            }
             if (event.getType() == Watcher.Event.EventType.None) {
                 switch (event.getState()) {
                     case SyncConnected:

@@ -76,11 +76,15 @@ public class MetadataAsyncIteratorTest {
     private static CompletableFuture<Void> removeFromMap(
             ConcurrentHashMap<Long, LedgerMetadata> map,
             long ledgerId, LedgerMetadata metadata) {
-        log.debug("removing ledger {}", ledgerId);
+        if (log.isDebugEnabled()) {
+            log.debug("removing ledger {}", ledgerId);
+        }
         if (map.remove(ledgerId, metadata)) {
             return CompletableFuture.completedFuture(null);
         } else {
-            log.debug("ledger {} already removed", ledgerId);
+            if (log.isDebugEnabled()) {
+                log.debug("ledger {} already removed", ledgerId);
+            }
             return FutureUtils.exception(new Exception("ledger already removed"));
         }
     }

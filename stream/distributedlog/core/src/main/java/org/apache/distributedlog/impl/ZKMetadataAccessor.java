@@ -154,7 +154,9 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
         checkClosedOrInError("createOrUpdateMetadata");
 
         String zkPath = getZKPath();
-        LOG.debug("Setting application specific metadata on {}", zkPath);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting application specific metadata on {}", zkPath);
+        }
         try {
             Stat currentStat = writerZKC.get().exists(zkPath, false);
             if (currentStat == null) {
@@ -196,7 +198,9 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
     public byte[] getMetadata() throws IOException {
         checkClosedOrInError("createOrUpdateMetadata");
         String zkPath = getZKPath();
-        LOG.debug("Getting application specific metadata from {}", zkPath);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Getting application specific metadata from {}", zkPath);
+        }
         try {
             Stat currentStat = readerZKC.get().exists(zkPath, false);
             if (currentStat == null) {
