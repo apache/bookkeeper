@@ -60,7 +60,9 @@ public class PropertiesWriter {
         FileOutputStream outputStream = new FileOutputStream(configFile);
         properties.store(outputStream, null);
         configFile.setLastModified(configFile.lastModified() + 1000);
-        LOG.debug("save modified={}", configFile.lastModified());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("save modified={}", configFile.lastModified());
+        }
     }
 
     public File getFile() {

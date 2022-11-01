@@ -82,16 +82,20 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 }
                 for (Journal journal : journals) {
                     LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-                    LOG.debug("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
-                      + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
-                      + lastLogMark.getLogFileOffset());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
+                                + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
+                                + lastLogMark.getLogFileOffset());
+                    }
                     output.put("LastLogMark: Journal Id - " + lastLogMark.getLogFileId()
                         + "(" + Long.toHexString(lastLogMark.getLogFileId()) + ".txn)",
                         "Pos - " + lastLogMark.getLogFileOffset());
                 }
 
                 String jsonResponse = JsonUtil.toJson(output);
-                LOG.debug("output body:" + jsonResponse);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("output body:" + jsonResponse);
+                }
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;

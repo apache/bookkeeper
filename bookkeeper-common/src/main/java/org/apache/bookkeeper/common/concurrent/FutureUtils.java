@@ -234,7 +234,9 @@ public final class FutureUtils {
         @Override
         public void run() {
             if (done) {
-                log.debug("ListFutureProcessor is interrupted.");
+                if (log.isDebugEnabled()) {
+                    log.debug("ListFutureProcessor is interrupted.");
+                }
                 return;
             }
             if (!itemsIter.hasNext()) {
@@ -297,7 +299,7 @@ public final class FutureUtils {
         }, timeout, unit);
         // when the promise is satisfied, cancel the timeout task
         promise.whenComplete((value, throwable) -> {
-                if (!task.cancel(true)) {
+                if (!task.cancel(true) && log.isDebugEnabled()) {
                     log.debug("Failed to cancel the timeout task");
                 }
             }

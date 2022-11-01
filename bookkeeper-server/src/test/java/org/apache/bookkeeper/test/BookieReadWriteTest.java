@@ -206,7 +206,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
-                    LOG.debug("Entries counter = " + sync.counter);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Entries counter = " + sync.counter);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
