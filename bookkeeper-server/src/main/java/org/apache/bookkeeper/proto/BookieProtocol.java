@@ -466,7 +466,8 @@ public interface BookieProtocol {
 
         @Override
         public ReferenceCounted retain() {
-            return data.retain();
+            data.retain();
+            return this;
         }
 
         @Override
@@ -476,12 +477,14 @@ public interface BookieProtocol {
 
         @Override
         public ReferenceCounted touch() {
-            return data.touch();
+            data.touch();
+            return this;
         }
 
         @Override
         public ReferenceCounted touch(Object hint) {
-            return data.touch(hint);
+            data.touch(hint);
+            return this;
         }
 
         @Override
