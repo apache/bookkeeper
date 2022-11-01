@@ -42,8 +42,6 @@ import java.util.ArrayList;
  * will need to be encoded on the channel. There are 2 utility encoders:
  * <ul>
  * <li>{@link #ENCODER}: regular encode that will write all the buffers in the {@link ByteBufList} on the channel</li>
- * <li>{@link #ENCODER_WITH_SIZE}: similar to the previous one, but also prepend a 4 bytes size header, once, carrying
- * the size of the readable bytes across all the buffers contained in the {@link ByteBufList}</li>
  * </ul>
  *
  * <p>Example:
@@ -305,13 +303,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     /**
      * Encoder for the {@link ByteBufList} that doesn't prepend any size header.
      */
-    public static final Encoder ENCODER = new Encoder(false);
-
-    /**
-     * Encoder for the {@link ByteBufList} that will prepend a 4 byte header with the size of the whole
-     * {@link ByteBufList} readable bytes.
-     */
-    public static final Encoder ENCODER_WITH_SIZE = new Encoder(true);
+    public static final Encoder ENCODER = new Encoder();
 
     /**
      * {@link ByteBufList} encoder.
@@ -319,26 +311,12 @@ public class ByteBufList extends AbstractReferenceCounted {
     @Sharable
     public static class Encoder extends ChannelOutboundHandlerAdapter {
 
-        private final boolean prependSize;
-
-        public Encoder(boolean prependSize) {
-            this.prependSize = prependSize;
-        }
-
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             if (msg instanceof ByteBufList) {
                 ByteBufList b = (ByteBufList) msg;
 
                 try {
-                    if (prependSize) {
-                        // Prepend the frame size before writing the buffer list, so that we only have 1 single size
-                        // header
-                        ByteBuf sizeBuffer = ctx.alloc().directBuffer(4, 4);
-                        sizeBuffer.writeInt(b.readableBytes());
-                        ctx.write(sizeBuffer, ctx.voidPromise());
-                    }
-
                     // Write each buffer individually on the socket. The retain() here is needed to preserve the fact
                     // that ByteBuf are automatically released after a write. If the ByteBufPair ref count is increased
                     // and it gets written multiple times, the individual buffers refcount should be reflected as well.
