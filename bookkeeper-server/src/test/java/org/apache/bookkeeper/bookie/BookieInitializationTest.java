@@ -1327,7 +1327,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
     private ZooKeeperClient createNewZKClient() throws Exception {
         // create a zookeeper client
-        LOG.debug("Instantiate ZK Client");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Instantiate ZK Client");
+        }
         return ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .build();

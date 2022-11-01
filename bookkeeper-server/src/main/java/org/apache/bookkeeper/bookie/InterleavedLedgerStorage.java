@@ -631,9 +631,15 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                 if (version != lep.getVersion()) {
                                     pageRetries.increment();
                                     if (lep.isDeleted()) {
-                                        LOG.debug("localConsistencyCheck: ledger {} deleted", ledger);
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("localConsistencyCheck: ledger {} deleted",
+                                                    ledger);
+                                        }
                                     } else {
-                                        LOG.debug("localConsistencyCheck: concurrent modification, retrying");
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("localConsistencyCheck: "
+                                                    + "concurrent modification, retrying");
+                                        }
                                         retry.setValue(true);
                                         retryCounter.inc();
                                     }
@@ -661,7 +667,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 if (activeLedgers.containsKey(ledger)) {
                     LOG.error("Cannot find ledger {}, should exist, exception is ", ledger, e);
                     errors.add(new DetectedInconsistency(ledger, -1, e));
-                } else {
+                } else if (LOG.isDebugEnabled()){
                     LOG.debug("ledger {} deleted since snapshot taken", ledger);
                 }
             } catch (Exception e) {

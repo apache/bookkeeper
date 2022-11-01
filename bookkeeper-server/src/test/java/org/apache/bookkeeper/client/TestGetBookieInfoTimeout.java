@@ -146,7 +146,9 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
 
         }, obj);
         obj.latch.await();
-        LOG.debug("Return code: " + obj.rc);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Return code: " + obj.rc);
+        }
         assertTrue("GetBookieInfo failed with unexpected error code: " + obj.rc, obj.rc == Code.TimeoutException);
     }
 
