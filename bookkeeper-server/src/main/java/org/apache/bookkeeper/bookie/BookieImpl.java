@@ -32,6 +32,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -1005,7 +1006,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    private ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
+    @VisibleForTesting
+    public ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
         ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + explicitLac.capacity());
         bb.writeLong(ledgerId);
         bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
@@ -1016,6 +1018,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
             throws IOException, InterruptedException, BookieException {
+        ByteBuf explicitLACEntry = null;
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
@@ -1023,12 +1026,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 entry.markReaderIndex();
                 handle.setExplicitLac(entry);
                 entry.resetReaderIndex();
-                ByteBuf explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
+                explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
                 getJournal(ledgerId).logAddEntry(explicitLACEntry, false /* ackBeforeSync */, writeCallback, ctx);
             }
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
+        } finally {
+            ReferenceCountUtil.safeRelease(entry);
+            if (explicitLACEntry != null) {
+                ReferenceCountUtil.safeRelease(explicitLACEntry);
+            }
         }
     }
 
