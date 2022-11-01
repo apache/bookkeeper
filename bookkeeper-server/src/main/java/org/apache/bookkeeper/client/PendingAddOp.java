@@ -363,12 +363,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                             ledgerId, entryId, failedBookies);
                     // we can't meet ack quorum requirement, trigger ensemble change.
                     lh.handleBookieFailure(failedBookies);
-                } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
-                                  + " but it didn't break ack quorum, delaying ensemble change : {}",
-                                ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
-                    }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
+                                    + " but it didn't break ack quorum, delaying ensemble change : {}",
+                            ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
                 }
             } else {
                 LOG.warn("Failed to write entry ({}, {}) to bookie ({}, {}): {}",

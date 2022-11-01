@@ -214,7 +214,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
 
@@ -222,7 +224,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             // open ledger
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
-            LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            }
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             // read entries
@@ -235,7 +239,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
-            LOG.debug("*** READ COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** READ COMPLETE ***");
+            }
 
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
@@ -246,11 +252,12 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 Integer origEntry = origbb.getInt();
                 byte[] entry = ls.nextElement().getEntry();
                 ByteBuffer result = ByteBuffer.wrap(entry);
-                LOG.debug("Length of result: " + result.capacity());
-                LOG.debug("Original entry: " + origEntry);
-
                 Integer retrEntry = result.getInt();
-                LOG.debug("Retrieved entry: " + retrEntry);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                    LOG.debug("Original entry: " + origEntry);
+                    LOG.debug("Retrieved entry: " + retrEntry);
+                }
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
                 assertTrue("Checking entry " + i + " for size", entry.length == entriesSize.get(i));
                 i++;
@@ -298,7 +305,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntries) {
-                    LOG.debug("Entries counter = " + sync.counter);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Entries counter = " + sync.counter);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
@@ -336,8 +345,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 // expected
             }
 
-
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
 
@@ -345,7 +355,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             // open ledger
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
-            LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            }
             assertTrue("Verifying number of entries written",
                        lh.getLastAddConfirmed() == (numEntries - 1));
 
@@ -359,7 +371,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
-            LOG.debug("*** READ COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** READ COMPLETE ***");
+            }
 
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
@@ -430,7 +444,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         SyncObj sync = new SyncObj();
         LOG.info("TEST READ WRITE STRINGS MIXED SINGLE CLIENT");
         String charset = "utf-8";
-        LOG.debug("Default charset: " + Charset.defaultCharset());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Default charset: " + Charset.defaultCharset());
+        }
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
@@ -447,13 +463,17 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
-                    LOG.debug("Entries counter = " + sync.counter);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Entries counter = " + sync.counter);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
-            LOG.debug("*** ASYNC WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** ASYNC WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
 
@@ -461,13 +481,17 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             // open ledger
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
-            LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            }
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             // read entries
             Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
 
-            LOG.debug("*** SYNC READ COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** SYNC READ COMPLETE ***");
+            }
 
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
@@ -476,14 +500,18 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 byte[] origEntryBytes = entries.get(i++);
                 byte[] retrEntryBytes = ls.nextElement().getEntry();
 
-                LOG.debug("Original byte entry size: " + origEntryBytes.length);
-                LOG.debug("Saved byte entry size: " + retrEntryBytes.length);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Original byte entry size: " + origEntryBytes.length);
+                    LOG.debug("Saved byte entry size: " + retrEntryBytes.length);
+                }
 
                 String origEntry = new String(origEntryBytes, charset);
                 String retrEntry = new String(retrEntryBytes, charset);
 
-                LOG.debug("Original entry: " + origEntry);
-                LOG.debug("Retrieved entry: " + retrEntry);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Original entry: " + origEntry);
+                    LOG.debug("Retrieved entry: " + retrEntry);
+                }
 
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
             }
@@ -518,7 +546,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             }
             lh.close();
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
-            LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            }
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
@@ -527,11 +557,12 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 ByteBuffer origbb = ByteBuffer.wrap(entries.get(i++));
                 Integer origEntry = origbb.getInt();
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-                LOG.debug("Length of result: " + result.capacity());
-                LOG.debug("Original entry: " + origEntry);
-
                 Integer retrEntry = result.getInt();
-                LOG.debug("Retrieved entry: " + retrEntry);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                    LOG.debug("Original entry: " + origEntry);
+                    LOG.debug("Retrieved entry: " + retrEntry);
+                }
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
             }
             lh.close();
@@ -580,14 +611,18 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             lh.close();
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
-            LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
+            }
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == numEntriesToWrite);
 
             Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
             int i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-                LOG.debug("Length of result: " + result.capacity());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                }
 
                 assertTrue("Checking if entry " + i + " has zero bytes", result.capacity() == 0);
             }
@@ -642,7 +677,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             lh2 = bkc.openLedger(ledgerId2, digestType, ledgerPassword);
 
-            LOG.debug("Number of entries written: " + lh.getLastAddConfirmed() + ", " + lh2.getLastAddConfirmed());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of entries written: " + lh.getLastAddConfirmed() + ", " + lh2.getLastAddConfirmed());
+            }
             assertTrue("Verifying number of entries written lh (" + lh.getLastAddConfirmed() + ")", lh
                        .getLastAddConfirmed() == (numEntriesToWrite - 1));
             assertTrue("Verifying number of entries written lh2 (" + lh2.getLastAddConfirmed() + ")", lh2
@@ -652,7 +689,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             int i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-                LOG.debug("Length of result: " + result.capacity());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                }
 
                 assertTrue("Checking if entry " + i + " has zero bytes", result.capacity() == 0);
             }
@@ -661,7 +700,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-                LOG.debug("Length of result: " + result.capacity());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Length of result: " + result.capacity());
+                }
 
                 assertTrue("Checking if entry " + i + " has zero bytes", result.capacity() == 0);
             }
@@ -698,7 +739,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
-                    LOG.debug("Entries counter = " + sync.counter);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Entries counter = " + sync.counter);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
@@ -706,7 +749,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             long length = numEntriesToWrite * 4;
             assertTrue("Ledger length before closing: " + lh.getLength(), lh.getLength() == length);
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
 
@@ -804,7 +849,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             assertEquals("Last confirmed add: ", lac, (numEntriesToWrite * 2) - 1);
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
             /*
@@ -822,7 +869,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // Wait for for last confirmed
             synchronized (sync) {
                 while (sync.lastConfirmed == -1) {
-                    LOG.debug("Counter = " + sync.lastConfirmed);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Counter = " + sync.lastConfirmed);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
@@ -830,7 +879,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             assertEquals("Last confirmed add", sync.lastConfirmed, (numEntriesToWrite - 2));
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
         } catch (BKException e) {
@@ -885,7 +936,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
             // close read only ledger should not change metadata
@@ -913,7 +966,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             /*
              * We haven't written anything, so it should be empty.
              */
-            LOG.debug("Checking that it is empty");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Checking that it is empty");
+            }
             long readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue("Last confirmed has the wrong value",
                        readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
@@ -921,7 +976,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             /*
              * Writing one entry.
              */
-            LOG.debug("Going to write one entry");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Going to write one entry");
+            }
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
             entry.position(0);
@@ -934,7 +991,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
              * The hint should still indicate that there is no confirmed
              * add.
              */
-            LOG.debug("Checking that it is still empty even after writing one entry");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Checking that it is still empty even after writing one entry");
+            }
             readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue(readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
 
@@ -1108,7 +1167,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
             /*
@@ -1126,7 +1187,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // Wait for for last confirmed
             synchronized (sync) {
                 while (sync.lastConfirmed == LedgerHandle.INVALID_ENTRY_ID) {
-                    LOG.debug("Counter = " + sync.lastConfirmed);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Counter = " + sync.lastConfirmed);
+                    }
                     sync.wait();
                 }
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
@@ -1134,7 +1197,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
 
-            LOG.debug("*** WRITE COMPLETE ***");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("*** WRITE COMPLETE ***");
+            }
             // close ledger
             lh.close();
         } catch (BKException e) {

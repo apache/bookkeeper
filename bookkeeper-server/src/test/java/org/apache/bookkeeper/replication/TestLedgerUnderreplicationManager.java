@@ -562,7 +562,9 @@ public class TestLedgerUnderreplicationManager {
         try {
             replicaMgr.markLedgerUnderreplicated(ledgerA, missingReplica);
         } catch (UnavailableException e) {
-            LOG.debug("Unexpected exception while marking urLedger", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Unexpected exception while marking urLedger", e);
+            }
             fail("Unexpected exception while marking urLedger" + e.getMessage());
         }
 
@@ -595,13 +597,17 @@ public class TestLedgerUnderreplicationManager {
         try {
             replicaMgr.markLedgerUnderreplicated(ledgerA, missingReplica);
         } catch (UnavailableException e) {
-            LOG.debug("Unexpected exception while marking urLedger", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Unexpected exception while marking urLedger", e);
+            }
             fail("Unexpected exception while marking urLedger" + e.getMessage());
         }
 
         // disabling replication
         replicaMgr.disableLedgerReplication();
-        LOG.debug("Disabled Ledeger Replication");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Disabled Ledeger Replication");
+        }
 
         String znodeA = getUrLedgerZnode(ledgerA);
         final CountDownLatch znodeLatch = new CountDownLatch(2);
@@ -612,8 +618,10 @@ public class TestLedgerUnderreplicationManager {
             public void process(WatchedEvent event) {
                 if (event.getType() == EventType.NodeCreated) {
                     znodeLatch.countDown();
-                    LOG.debug("Recieved node creation event for the zNodePath:"
-                            + event.getPath());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Recieved node creation event for the zNodePath:"
+                                + event.getPath());
+                    }
                 }
 
             }});
@@ -628,7 +636,9 @@ public class TestLedgerUnderreplicationManager {
                     isLedgerReplicationDisabled = false;
                     znodeLatch.countDown();
                 } catch (UnavailableException e) {
-                    LOG.debug("Unexpected exception while marking urLedger", e);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Unexpected exception while marking urLedger", e);
+                    }
                     isLedgerReplicationDisabled = false;
                 }
             }
@@ -644,7 +654,9 @@ public class TestLedgerUnderreplicationManager {
 
             replicaMgr.enableLedgerReplication();
             znodeLatch.await(5, TimeUnit.SECONDS);
-            LOG.debug("Enabled Ledeger Replication");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Enabled Ledeger Replication");
+            }
             assertTrue("Ledger replication is not disabled!",
                     !isLedgerReplicationDisabled);
             assertEquals("Failed to disable ledger replication!", 0, znodeLatch

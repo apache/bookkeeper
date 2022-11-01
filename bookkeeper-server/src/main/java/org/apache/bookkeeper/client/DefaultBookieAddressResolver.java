@@ -50,10 +50,8 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
             if (!bookieId.toString().equals(res.toString())) {
                 // only print if the information is useful
                 log.info("Resolved {} as {}", bookieId, res);
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Resolved {} as {}", bookieId, res);
-                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("Resolved {} as {}", bookieId, res);
             }
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {

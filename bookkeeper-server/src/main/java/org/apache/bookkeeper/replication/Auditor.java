@@ -1512,7 +1512,10 @@ public class Auditor implements AutoCloseable {
                         iterCallback.processResult(BKException.Code.OK, null, null);
                     } else if (BKException.getExceptionCode(exception)
                             == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                        LOG.debug("Ignoring replication of already deleted ledger {}", ledgerId);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ignoring replication of already deleted ledger {}",
+                                    ledgerId);
+                        }
                         iterCallback.processResult(BKException.Code.OK, null, null);
                     } else {
                         LOG.warn("Unable to read the ledger: {} information", ledgerId);
@@ -1649,7 +1652,10 @@ public class Auditor implements AutoCloseable {
             if (exception != null) {
                 if (BKException
                         .getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                    LOG.debug("Ignoring replicas check of already deleted ledger {}", ledgerInRange);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Ignoring replicas check of already deleted ledger {}",
+                                ledgerInRange);
+                    }
                     mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                     return;
                 } else {
@@ -1661,16 +1667,21 @@ public class Auditor implements AutoCloseable {
 
             LedgerMetadata metadata = metadataVer.getValue();
             if (!metadata.isClosed()) {
-                LOG.debug("Ledger: {} is not yet closed, so skipping the replicas check analysis for now",
-                        ledgerInRange);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger: {} is not yet closed, "
+                                    + "so skipping the replicas check analysis for now",
+                            ledgerInRange);
+                }
                 mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                 return;
             }
 
             final long lastEntryId = metadata.getLastEntryId();
             if (lastEntryId == -1) {
-                LOG.debug("Ledger: {} is closed but it doesn't has any entries, so skipping the replicas check",
-                        ledgerInRange);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger: {} is closed but it doesn't has any entries, "
+                                    + "so skipping the replicas check", ledgerInRange);
+                }
                 mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                 return;
             }
@@ -1818,8 +1829,10 @@ public class Auditor implements AutoCloseable {
             if (listOfEntriesException != null) {
                 if (BKException
                         .getExceptionCode(listOfEntriesException) == BKException.Code.NoSuchLedgerExistsException) {
-                    LOG.debug("Got NoSuchLedgerExistsException for ledger: {} from bookie: {}", ledgerInRange,
-                            bookieInEnsemble);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Got NoSuchLedgerExistsException for ledger: {} from bookie: {}",
+                                ledgerInRange, bookieInEnsemble);
+                    }
                     /*
                      * in the case of NoSuchLedgerExistsException, it should be
                      * considered as empty AvailabilityOfEntriesOfLedger.
@@ -1954,7 +1967,10 @@ public class Auditor implements AutoCloseable {
                     }
                 }
             };
-            LOG.debug("Number of ledgers in the current LedgerRange : {}", numOfLedgersInRange);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Number of ledgers in the current LedgerRange : {}",
+                        numOfLedgersInRange);
+            }
             for (Long ledgerInRange : ledgersInRange) {
                 try {
                     if (!maxConcurrentSemaphore.tryAcquire(REPLICAS_CHECK_TIMEOUT_IN_SECS, TimeUnit.SECONDS)) {
@@ -2109,8 +2125,10 @@ public class Auditor implements AutoCloseable {
              * this ledger is marked underreplicated, so ignore it for
              * replicasCheck.
              */
-            LOG.debug("Ledger: {} is marked underrreplicated, ignore this ledger for replicasCheck",
-                    ledgerInRange);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ledger: {} is marked underrreplicated, ignore this ledger for replicasCheck",
+                        ledgerInRange);
+            }
             mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
             return true;
         } catch (ReplicationException.NonRecoverableReplicationException nre) {

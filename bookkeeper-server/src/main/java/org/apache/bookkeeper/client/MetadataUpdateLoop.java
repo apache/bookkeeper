@@ -145,7 +145,8 @@ class MetadataUpdateLoop {
                                     promise.complete(writtenMetadata);
                                 } else {
                                     if (LOG.isDebugEnabled()) {
-                                        LOG.debug("{} local value changed while we were writing, try again", logContext);
+                                        LOG.debug("{} local value changed while we were writing, try again",
+                                                logContext);
                                     }
                                     writeLoop(currentLocalValue.get(), promise);
                                 }

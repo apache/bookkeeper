@@ -1099,13 +1099,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                             bookiesToExclude);
             BookieId newBookie = replaceBookieResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
-            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(
-                            "replaceBookie for bookie: {} in ensemble: {} "
-                                    + "is not adhering to placement policy and chose {}",
-                            oldBookie, ensemble, newBookie);
-                }
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
+                LOG.debug(
+                        "replaceBookie for bookie: {} in ensemble: {} "
+                                + "is not adhering to placement policy and chose {}",
+                        oldBookie, ensemble, newBookie);
             }
             targetBookieAddresses.put(bookieIndex, newBookie);
             bookiesToExclude.add(newBookie);
@@ -1642,7 +1640,9 @@ public class BookKeeperAdmin implements AutoCloseable {
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
             Thread.sleep(sleepTimeForThisCheck);
-            LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
+            }
             ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
         }
     }
@@ -1659,7 +1659,9 @@ public class BookKeeperAdmin implements AutoCloseable {
             if (e.getCause() != null
                     && e.getCause().getClass()
                     .equals(BKException.BKNoSuchLedgerExistsOnMetadataServerException.class)) {
-                LOG.debug("Ledger: {} has been deleted", ledgerId);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger: {} has been deleted", ledgerId);
+                }
                 return false;
             } else {
                 LOG.error("Got exception while trying to read LedgerMetadata of " + ledgerId, e);
