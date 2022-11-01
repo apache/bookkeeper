@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 
@@ -79,7 +80,7 @@ class DbLedgerStorageStats {
     @StatsDoc(
         name = READ_ENTRY,
         help = "operation stats of reading entries from db ledger storage",
-        parent = BOOKIE_ADD_ENTRY
+        parent = BOOKIE_READ_ENTRY
     )
     private final OpStatsLogger readEntryStats;
     @StatsDoc(
