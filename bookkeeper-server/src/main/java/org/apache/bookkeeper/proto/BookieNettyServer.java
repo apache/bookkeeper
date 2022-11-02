@@ -51,6 +51,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -315,7 +317,9 @@ class BookieNettyServer {
             bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            if (eventLoopGroup instanceof EpollEventLoopGroup) {
+            if (eventLoopGroup instanceof IOUringEventLoopGroup){
+                bootstrap.channel(IOUringServerSocketChannel.class);
+            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
                 bootstrap.channel(EpollServerSocketChannel.class);
             } else {
                 bootstrap.channel(NioServerSocketChannel.class);
@@ -383,6 +387,8 @@ class BookieNettyServer {
 
             if (jvmEventLoopGroup instanceof DefaultEventLoopGroup) {
                 jvmBootstrap.channel(LocalServerChannel.class);
+            } else if (jvmEventLoopGroup instanceof IOUringEventLoopGroup) {
+                jvmBootstrap.channel(IOUringServerSocketChannel.class);
             } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
                 jvmBootstrap.channel(EpollServerSocketChannel.class);
             } else {
