@@ -934,13 +934,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     @VisibleForTesting
     public ByteBuf createMasterKeyEntry(long ledgerId, byte[] masterKey) {
         // new handle, we should add the key to journal ensure we can rebuild
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-        bb.putLong(ledgerId);
-        bb.putLong(METAENTRY_ID_LEDGER_KEY);
-        bb.putInt(masterKey.length);
-        bb.put(masterKey);
-        bb.flip();
-        return Unpooled.wrappedBuffer(bb);
+        ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + masterKey.length);
+        bb.writeLong(ledgerId);
+        bb.writeLong(METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
+        return bb;
     }
 
     /**
