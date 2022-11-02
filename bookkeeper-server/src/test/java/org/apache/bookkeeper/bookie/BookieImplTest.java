@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -31,16 +32,20 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.PortManager;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +54,9 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
     private static final Logger log = LoggerFactory.getLogger(BookieImplTest.class);
 
     private static final int bookiePort = PortManager.nextFreePort();
+
+    private static final int ADD = 0;
+    private static final int RECOVERY_ADD = 1;
 
     public BookieImplTest() {
         super(0);
@@ -97,5 +105,80 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
 
         b.shutdown();
 
+    }
+
+    @Test
+    public void testAddEntry() throws Exception {
+        mockAddEntryReleased(ADD);
+    }
+
+    @Test
+    public void testRecoveryAddEntry() throws Exception {
+        mockAddEntryReleased(RECOVERY_ADD);
+    }
+
+    public void mockAddEntryReleased(int flag) throws Exception {
+        final String metadataServiceUri = zkUtil.getMetadataServiceUri();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(metadataServiceUri);
+
+        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                conf, NullStatsLogger.INSTANCE);
+        RegistrationManager rm = metadataDriver.createRegistrationManager();
+        TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf)
+                .withMetadataDriver(metadataDriver).withRegistrationManager(rm).build();
+        BookieImpl b = new TestBookieImpl(resources);
+        b.start();
+
+        final BookieImpl spyBookie = spy(b);
+
+        final long ledgerId = 10;
+
+        final byte[] masterKey = ByteString.copyFrom("masterKey".getBytes()).toByteArray();
+
+        final ByteBuf masterKeyEntry = b.createMasterKeyEntry(ledgerId, masterKey);
+
+        doReturn(masterKeyEntry)
+                .when(spyBookie)
+                .createMasterKeyEntry(eq(ledgerId), eq(masterKey));
+
+        final ByteBuf entry = generateEntry(ledgerId, 0);
+
+        AtomicBoolean complete = new AtomicBoolean(false);
+        final BookkeeperInternalCallbacks.WriteCallback writeCallback =
+                new BookkeeperInternalCallbacks.WriteCallback() {
+                    @Override
+                    public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
+                        complete.set(true);
+                    }
+                };
+
+        switch (flag) {
+            case ADD:
+                spyBookie.addEntry(entry, false, writeCallback, null, masterKey);
+                break;
+            case RECOVERY_ADD:
+                spyBookie.recoveryAddEntry(entry, writeCallback, null, masterKey);
+                break;
+            default:
+                throw new IllegalArgumentException("Only support ADD and RECOVERY_ADD flag.");
+        }
+
+        Awaitility.await().untilAsserted(() -> assertTrue(complete.get()));
+
+        assertEquals(0, entry.refCnt());
+        assertEquals(0, masterKeyEntry.refCnt());
+
+        b.shutdown();
+
+    }
+
+    private ByteBuf generateEntry(long ledger, long entry) {
+        byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
+        ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        bb.writeBytes(data);
+        return bb;
     }
 }
