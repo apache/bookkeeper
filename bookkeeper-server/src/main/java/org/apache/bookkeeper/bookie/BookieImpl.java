@@ -931,6 +931,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
+    @VisibleForTesting
+    public ByteBuf createMasterKeyEntry(long ledgerId, byte[] masterKey) {
+        // new handle, we should add the key to journal ensure we can rebuild
+        ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + masterKey.length);
+        bb.writeLong(ledgerId);
+        bb.writeLong(METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
+        return bb;
+    }
+
     /**
      * Add an entry to a ledger as specified by handle.
      */
@@ -948,15 +959,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             // Force the load into masterKey cache
             byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
             if (oldValue == null) {
-                // new handle, we should add the key to journal ensure we can rebuild
-                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-                bb.putLong(ledgerId);
-                bb.putLong(METAENTRY_ID_LEDGER_KEY);
-                bb.putInt(masterKey.length);
-                bb.put(masterKey);
-                bb.flip();
-
-                getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                ByteBuf masterKeyEntry = createMasterKeyEntry(ledgerId, masterKey);
+                try {
+                    getJournal(ledgerId).logAddEntry(
+                            masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                } finally {
+                    ReferenceCountUtil.safeRelease(masterKeyEntry);
+                }
             }
         }
 
@@ -1002,7 +1011,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
         }
     }
 
@@ -1096,7 +1105,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
         }
     }
 

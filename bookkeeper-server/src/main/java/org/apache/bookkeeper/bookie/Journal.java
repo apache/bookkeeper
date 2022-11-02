@@ -960,11 +960,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    public void logAddEntry(ByteBuffer entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
-            throws InterruptedException {
-        logAddEntry(Unpooled.wrappedBuffer(entry), ackBeforeSync, cb, ctx);
-    }
-
     /**
      * record an add entry operation in journal.
      */
