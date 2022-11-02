@@ -962,7 +962,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             if (oldValue == null) {
                 ByteBuf masterKeyEntry = createMasterKeyEntry(ledgerId, masterKey);
                 try {
-                    getJournal(ledgerId).logAddEntry(masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                    getJournal(ledgerId).logAddEntry(
+                            masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
                 } finally {
                     ReferenceCountUtil.safeRelease(masterKeyEntry);
                 }
