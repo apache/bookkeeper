@@ -40,7 +40,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-class PendingAddOp extends SafeRunnable implements WriteCallback {
+class PendingAddOp implements Runnable, WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
@@ -163,9 +162,9 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     void timeoutQuorumWait() {
         try {
-            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new SafeRunnable() {
+            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new Runnable() {
                 @Override
-                public void safeRun() {
+                public void run() {
                     if (completed) {
                         return;
                     } else if (addEntrySuccessBookies.size() >= lh.getLedgerMetadata().getAckQuorumSize()) {
@@ -244,7 +243,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
      * Initiate the add operation.
      */
     @Override
-    public void safeRun() {
+    public void run() {
         hasRun = true;
         if (callbackTriggered) {
             // this should only be true if the request was failed due

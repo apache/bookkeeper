@@ -39,7 +39,6 @@ import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -258,12 +257,7 @@ class LedgerOpenOp {
         }
 
         if (lh != null) { // lh is null in case of errors
-            lh.executeOrdered(new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    cb.openComplete(rc, lh, ctx);
-                }
-            });
+            lh.executeOrdered(() -> cb.openComplete(rc, lh, ctx));
         } else {
             cb.openComplete(rc, null, ctx);
         }

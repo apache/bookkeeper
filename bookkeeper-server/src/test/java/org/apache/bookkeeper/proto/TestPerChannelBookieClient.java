@@ -52,7 +52,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.junit.Assume;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -277,12 +276,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
             @Override
             public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                 if (rc != BKException.Code.OK) {
-                    executor.executeOrdered(1, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.readEntryComplete(rc, 1, 1, null, null);
-                        }
-                    });
+                    executor.executeOrdered(1, () -> cb.readEntryComplete(rc, 1, 1, null, null));
                     return;
                 }
 
