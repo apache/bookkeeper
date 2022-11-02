@@ -90,7 +90,7 @@ public class MockLedgerHandle extends LedgerHandle {
     }
 
     @Override
-    void executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable runnable) throws RejectedExecutionException {
+    void executeOrdered(Runnable runnable) throws RejectedExecutionException {
         bk.executor.execute(runnable);
     }
 

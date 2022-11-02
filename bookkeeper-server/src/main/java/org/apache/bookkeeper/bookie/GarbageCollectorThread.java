@@ -46,7 +46,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
@@ -56,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * This is the garbage collector thread that runs in the background to
  * remove any entry log files that no longer contains any active ledger.
  */
-public class GarbageCollectorThread extends SafeRunnable {
+public class GarbageCollectorThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
 
@@ -390,7 +389,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         boolean force = forceGarbageCollection.get();
         boolean suspendMajor = suspendMajorCompaction.get();
         boolean suspendMinor = suspendMinorCompaction.get();

@@ -137,7 +137,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         WriteLacResponse writeLacResponse = getWriteLacResponse();
         if (null != writeLacResponse) {
             Response.Builder response = Response.newBuilder()

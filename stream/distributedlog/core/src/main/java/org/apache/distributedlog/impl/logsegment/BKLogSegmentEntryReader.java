@@ -41,7 +41,6 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -60,11 +59,11 @@ import org.slf4j.LoggerFactory;
 /**
  * BookKeeper ledger based log segment entry reader.
  */
-public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryReader, AsyncCallback.OpenCallback {
+public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader, AsyncCallback.OpenCallback {
 
     private static final Logger logger = LoggerFactory.getLogger(BKLogSegmentEntryReader.class);
 
-    private class CacheEntry implements SafeRunnable, AsyncCallback.ReadCallback,
+    private class CacheEntry implements Runnable, AsyncCallback.ReadCallback,
             AsyncCallback.ReadLastConfirmedAndEntryCallback {
 
         protected final long entryId;
@@ -240,7 +239,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             issueRead(this);
         }
     }
@@ -700,7 +699,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
      * The core function to propagate fetched entries to read requests.
      */
     @Override
-    public void safeRun() {
+    public void run() {
         long scheduleCountLocal = scheduleCountUpdater.get(this);
         while (true) {
             PendingReadRequest nextRequest = null;

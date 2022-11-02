@@ -246,7 +246,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!channel.isOpen()) {

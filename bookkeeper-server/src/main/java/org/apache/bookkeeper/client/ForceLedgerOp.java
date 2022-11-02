@@ -25,14 +25,13 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This represents a request to sync the ledger on every bookie.
  */
-class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
+class ForceLedgerOp implements Runnable, ForceLedgerCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(ForceLedgerOp.class);
     final CompletableFuture<Void> cb;
@@ -62,7 +61,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         initiate();
     }
 

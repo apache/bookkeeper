@@ -38,7 +38,6 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -55,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * application as soon as it arrives rather than waiting for the whole thing.
  *
  */
-class PendingReadOp implements ReadEntryCallback, SafeRunnable {
+class PendingReadOp implements ReadEntryCallback, Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     private ScheduledFuture<?> speculativeTask = null;
@@ -540,7 +539,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         initiate();
     }
 

@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -74,7 +73,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
     private static final List<String> EMPTY_LIST = ImmutableList.of();
 
-    private static class ReadLogSegmentsTask implements SafeRunnable, FutureEventListener<Versioned<List<String>>> {
+    private static class ReadLogSegmentsTask implements Runnable, FutureEventListener<Versioned<List<String>>> {
 
         private final String logSegmentsPath;
         private final ZKLogSegmentMetadataStore store;
@@ -113,7 +112,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             if (null != store.listeners.get(logSegmentsPath)) {
                 store.zkGetLogSegmentNames(logSegmentsPath, store).whenComplete(this);
             } else {
@@ -194,7 +193,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         this.skipMinVersionCheck = conf.getDLLedgerMetadataSkipMinVersionCheck();
     }
 
-    protected void scheduleTask(Object key, SafeRunnable r, long delayMs) {
+    protected void scheduleTask(Object key, Runnable r, long delayMs) {
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -206,7 +205,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         }
     }
 
-    protected void submitTask(Object key, SafeRunnable r) {
+    protected void submitTask(Object key, Runnable r) {
         closeLock.readLock().lock();
         try {
             if (closed) {

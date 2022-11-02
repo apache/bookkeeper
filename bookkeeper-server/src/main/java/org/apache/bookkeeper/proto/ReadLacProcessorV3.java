@@ -118,7 +118,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         ReadLacResponse readLacResponse = getReadLacResponse();
         sendResponse(readLacResponse);
     }

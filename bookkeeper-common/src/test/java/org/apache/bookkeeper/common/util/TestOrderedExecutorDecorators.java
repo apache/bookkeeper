@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.common.util;
 
-import static org.apache.bookkeeper.common.util.SafeRunnable.safeRun;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalAnswers.answerVoid;
@@ -129,9 +128,7 @@ public class TestOrderedExecutorDecorators {
 
         try {
             ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
-            scheduler.scheduleOrdered(10, safeRun(() -> {
-                        log.info("foobar");
-                    }), 0, TimeUnit.DAYS).get();
+            scheduler.scheduleOrdered(10, () -> log.info("foobar"), 0, TimeUnit.DAYS).get();
             assertThat(capturedEvents,
                        hasItem(mdcFormat("testMDCInvokeOrdered", "foobar")));
         } finally {
@@ -146,9 +143,7 @@ public class TestOrderedExecutorDecorators {
 
         try {
             ThreadContext.put(MDC_KEY, "testMDCInvokeOrdered");
-            scheduler.chooseThread(10).schedule(safeRun(() -> {
-                        log.info("foobar");
-                    }), 0, TimeUnit.DAYS).get();
+            scheduler.chooseThread(10).schedule(() -> log.info("foobar"), 0, TimeUnit.DAYS).get();
             assertThat(capturedEvents,
                        hasItem(mdcFormat("testMDCInvokeOrdered", "foobar")));
         } finally {

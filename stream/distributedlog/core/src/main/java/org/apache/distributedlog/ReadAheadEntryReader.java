@@ -397,7 +397,7 @@ class ReadAheadEntryReader implements
         return isInitialized;
     }
 
-    private void orderedSubmit(SafeRunnable runnable) {
+    private void orderedSubmit(Runnable runnable) {
         synchronized (this) {
             if (null != closePromise) {
                 return;

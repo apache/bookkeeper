@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.junit.Test;
 
@@ -175,7 +174,7 @@ public class TestFutureUtils {
         assertFalse(withinFuture.isCancelled());
         assertFalse(withinFuture.isCompletedExceptionally());
         verify(scheduler, times(0))
-            .scheduleOrdered(eq(1234L), isA(SafeRunnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
+            .scheduleOrdered(eq(1234L), isA(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -194,14 +193,14 @@ public class TestFutureUtils {
         assertFalse(withinFuture.isCancelled());
         assertFalse(withinFuture.isCompletedExceptionally());
         verify(scheduler, times(0))
-            .scheduleOrdered(eq(1234L), isA(SafeRunnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
+            .scheduleOrdered(eq(1234L), isA(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void testWithinCompleteBeforeTimeout() throws Exception {
         OrderedScheduler scheduler = mock(OrderedScheduler.class);
         ScheduledFuture<?> scheduledFuture = mock(ScheduledFuture.class);
-        when(scheduler.scheduleOrdered(any(Object.class), any(SafeRunnable.class), anyLong(), any(TimeUnit.class)))
+        when(scheduler.scheduleOrdered(any(Object.class), any(Runnable.class), anyLong(), any(TimeUnit.class)))
             .thenAnswer(invocationOnMock -> scheduledFuture);
         CompletableFuture<Long> newFuture = FutureUtils.createFuture();
         CompletableFuture<Long> withinFuture = FutureUtils.within(

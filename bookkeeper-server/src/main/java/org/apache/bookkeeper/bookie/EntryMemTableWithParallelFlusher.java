@@ -31,7 +31,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.SafeRunnable;
 
 /**
  * EntryMemTableWithParallelFlusher.
@@ -84,36 +83,33 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                         ConcurrentNavigableMap<EntryKey, EntryKeyValue> thisLedgerEntries = keyValues
                                 .subMap(thisLedgerFirstEntry, thisLedgerCeilingKeyMarker);
                         pendingNumOfLedgerFlushes.register();
-                        flushExecutor.executeOrdered(thisLedgerId, new SafeRunnable() {
-                            @Override
-                            public void safeRun() {
-                                try {
-                                    long ledger;
-                                    boolean ledgerDeleted = false;
-                                    for (EntryKey key : thisLedgerEntries.keySet()) {
-                                        EntryKeyValue kv = (EntryKeyValue) key;
-                                        flushedSize.addAndGet(kv.getLength());
-                                        ledger = kv.getLedgerId();
-                                        if (!ledgerDeleted) {
-                                            try {
-                                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer());
-                                            } catch (NoLedgerException exception) {
-                                                ledgerDeleted = true;
-                                            }
+                        flushExecutor.executeOrdered(thisLedgerId, () -> {
+                            try {
+                                long ledger;
+                                boolean ledgerDeleted = false;
+                                for (EntryKey key : thisLedgerEntries.keySet()) {
+                                    EntryKeyValue kv = (EntryKeyValue) key;
+                                    flushedSize.addAndGet(kv.getLength());
+                                    ledger = kv.getLedgerId();
+                                    if (!ledgerDeleted) {
+                                        try {
+                                            flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer());
+                                        } catch (NoLedgerException exception) {
+                                            ledgerDeleted = true;
                                         }
                                     }
-                                    pendingNumOfLedgerFlushes.arriveAndDeregister();
-                                } catch (Exception exc) {
-                                    log.error("Got Exception while trying to flush process entryies: ", exc);
-                                    exceptionWhileFlushingParallelly.set(exc);
-                                    /*
-                                     * if we get any unexpected exception while
-                                     * trying to flush process entries of a
-                                     * ledger, then terminate the
-                                     * pendingNumOfLedgerFlushes phaser.
-                                     */
-                                    pendingNumOfLedgerFlushes.forceTermination();
                                 }
+                                pendingNumOfLedgerFlushes.arriveAndDeregister();
+                            } catch (Exception exc) {
+                                log.error("Got Exception while trying to flush process entryies: ", exc);
+                                exceptionWhileFlushingParallelly.set(exc);
+                                /*
+                                 * if we get any unexpected exception while
+                                 * trying to flush process entries of a
+                                 * ledger, then terminate the
+                                 * pendingNumOfLedgerFlushes phaser.
+                                 */
+                                pendingNumOfLedgerFlushes.forceTermination();
                             }
                         });
                         thisLedgerFirstMapEntry = keyValues.ceilingEntry(thisLedgerCeilingKeyMarker);

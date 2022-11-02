@@ -43,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -68,7 +67,7 @@ public class ZKRegistrationClient implements RegistrationClient {
     static final int ZK_CONNECT_BACKOFF_MS = 200;
 
     class WatchTask
-        implements SafeRunnable,
+        implements Runnable,
                    Watcher,
                    BiConsumer<Versioned<Set<BookieId>>, Throwable>,
                    AutoCloseable {
@@ -119,7 +118,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             if (isClosed()) {
                 return;
             }

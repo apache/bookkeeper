@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A base class for bookeeper packet processors.
  */
-abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
+abstract class PacketProcessorBase<T extends Request> implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
     T request;
     Channel channel;
@@ -166,7 +165,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
                 .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!isVersionCompatible()) {

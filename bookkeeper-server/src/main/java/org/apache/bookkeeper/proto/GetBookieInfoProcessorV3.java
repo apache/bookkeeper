@@ -86,7 +86,7 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         GetBookieInfoResponse getBookieInfoResponse = getGetBookieInfoResponse();
         sendResponse(getBookieInfoResponse);
     }

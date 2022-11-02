@@ -88,7 +88,6 @@ import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.EventLoopUtil;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
@@ -602,13 +601,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     void scheduleBookieHealthCheckIfEnabled(ClientConfiguration conf) {
         if (conf.isBookieHealthCheckEnabled()) {
-            scheduler.scheduleAtFixedRate(new SafeRunnable() {
-
-                @Override
-                public void safeRun() {
-                    checkForFaultyBookies();
-                }
-                    }, conf.getBookieHealthCheckIntervalSeconds(), conf.getBookieHealthCheckIntervalSeconds(),
+            scheduler.scheduleAtFixedRate(
+                    () -> checkForFaultyBookies(),
+                    conf.getBookieHealthCheckIntervalSeconds(),
+                    conf.getBookieHealthCheckIntervalSeconds(),
                     TimeUnit.SECONDS);
         }
     }

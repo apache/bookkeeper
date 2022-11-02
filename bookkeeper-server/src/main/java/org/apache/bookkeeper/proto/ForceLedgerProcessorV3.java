@@ -116,7 +116,7 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         ForceLedgerResponse forceLedgerResponse = getForceLedgerResponse();
         if (null != forceLedgerResponse) {
             Response.Builder response = Response.newBuilder()
