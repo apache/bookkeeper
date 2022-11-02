@@ -73,7 +73,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
     }
 
     protected void sendReadReqResponse(int rc, Object response, OpStatsLogger statsLogger, boolean throttle) {
-        if (throttle) {
+        if (throttle && requestProcessor.getWaitTimeoutOnBackpressureMillis() <= 0) {
             sendResponseAndWait(rc, response, statsLogger);
         } else {
             sendResponse(rc, response, statsLogger);
