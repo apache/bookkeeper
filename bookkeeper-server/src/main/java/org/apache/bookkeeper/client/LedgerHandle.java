@@ -81,7 +81,6 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
@@ -283,14 +282,8 @@ public class LedgerHandle implements WriteHandle {
         }
 
         if (clientCtx.getConf().addEntryQuorumTimeoutNanos > 0) {
-            SafeRunnable monitor = new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    monitorPendingAddOps();
-                }
-            };
             this.timeoutFuture = clientCtx.getScheduler().scheduleAtFixedRate(
-                    monitor,
+                    () -> monitorPendingAddOps(),
                     clientCtx.getConf().timeoutMonitorIntervalSec,
                     clientCtx.getConf().timeoutMonitorIntervalSec,
                     TimeUnit.SECONDS);
@@ -538,15 +531,13 @@ public class LedgerHandle implements WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        executeOrdered(new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                final HandleState prevHandleState;
-                final List<PendingAddOp> pendingAdds;
-                final long lastEntry;
-                final long finalLength;
+        executeOrdered(() -> {
+                    final HandleState prevHandleState;
+                    final List<PendingAddOp> pendingAdds;
+                    final long lastEntry;
+                    final long finalLength;
 
-                closePromise.whenComplete((ignore, ex) -> {
+                    closePromise.whenComplete((ignore, ex) -> {
                         if (ex != null) {
                             cb.closeComplete(
                                     BKException.getExceptionCode(ex, BKException.Code.UnexpectedConditionException),
@@ -556,73 +547,76 @@ public class LedgerHandle implements WriteHandle {
                         }
                     });
 
-                synchronized (LedgerHandle.this) {
-                    prevHandleState = handleState;
+                    synchronized (LedgerHandle.this) {
+                        prevHandleState = handleState;
 
-                    // drain pending adds first
-                    pendingAdds = drainPendingAddsAndAdjustLength();
+                        // drain pending adds first
+                        pendingAdds = drainPendingAddsAndAdjustLength();
 
-                    // taking the length must occur after draining, as draining changes the length
-                    lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
-                    finalLength = LedgerHandle.this.length;
-                    handleState = HandleState.CLOSED;
-                }
-
-                // error out all pending adds during closing, the callbacks shouldn't be
-                // running under any bk locks.
-                try {
-                    errorOutPendingAdds(rc, pendingAdds);
-                } catch (Throwable e) {
-                    closePromise.completeExceptionally(e);
-                    return;
-                }
-
-                if (prevHandleState != HandleState.CLOSED) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Closing ledger: {} at entryId {} with {} bytes", getId(), lastEntry, finalLength);
+                        // taking the length must occur after draining, as draining changes the length
+                        lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
+                        finalLength = LedgerHandle.this.length;
+                        handleState = HandleState.CLOSED;
                     }
 
-                    tearDownWriteHandleState();
-                    new MetadataUpdateLoop(
-                            clientCtx.getLedgerManager(), getId(),
-                            LedgerHandle.this::getVersionedLedgerMetadata,
-                            (metadata) -> {
-                                if (metadata.isClosed()) {
-                                    /* If the ledger has been closed with the same lastEntry
-                                     * and length that we planned to close with, we have nothing to do,
-                                     * so just return success */
-                                    if (lastEntry == metadata.getLastEntryId()
-                                        && finalLength == metadata.getLength()) {
-                                        return false;
+                    // error out all pending adds during closing, the callbacks shouldn't be
+                    // running under any bk locks.
+                    try {
+                        errorOutPendingAdds(rc, pendingAdds);
+                    } catch (Throwable e) {
+                        closePromise.completeExceptionally(e);
+                        return;
+                    }
+
+                    if (prevHandleState != HandleState.CLOSED) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Closing ledger: {} at entryId {} with {} bytes", getId(), lastEntry,
+                                    finalLength);
+                        }
+
+                        tearDownWriteHandleState();
+                        new MetadataUpdateLoop(
+                                clientCtx.getLedgerManager(), getId(),
+                                LedgerHandle.this::getVersionedLedgerMetadata,
+                                (metadata) -> {
+                                    if (metadata.isClosed()) {
+                                        /* If the ledger has been closed with the same lastEntry
+                                         * and length that we planned to close with, we have nothing to do,
+                                         * so just return success */
+                                        if (lastEntry == metadata.getLastEntryId()
+                                                && finalLength == metadata.getLength()) {
+                                            return false;
+                                        } else {
+                                            LOG.error("Metadata conflict when closing ledger {}."
+                                                            + " Another client may have recovered the ledger while "
+                                                            + "there"
+                                                            + " were writes outstanding. (local lastEntry:{} "
+                                                            + "length:{}) "
+                                                            + " (metadata lastEntry:{} length:{})",
+                                                    getId(), lastEntry, finalLength,
+                                                    metadata.getLastEntryId(), metadata.getLength());
+                                            throw new BKException.BKMetadataVersionException();
+                                        }
                                     } else {
-                                        LOG.error("Metadata conflict when closing ledger {}."
-                                                  + " Another client may have recovered the ledger while there"
-                                                  + " were writes outstanding. (local lastEntry:{} length:{}) "
-                                                  + " (metadata lastEntry:{} length:{})",
-                                                  getId(), lastEntry, finalLength,
-                                                  metadata.getLastEntryId(), metadata.getLength());
-                                        throw new BKException.BKMetadataVersionException();
+                                        return true;
                                     }
-                                } else {
-                                    return true;
-                                }
-                            },
-                            (metadata) -> {
-                                return LedgerMetadataBuilder.from(metadata)
-                                    .withClosedState().withLastEntryId(lastEntry)
-                                    .withLength(finalLength).build();
-                            },
-                            LedgerHandle.this::setLedgerMetadata)
-                        .run().whenComplete((metadata, ex) -> {
-                                if (ex != null) {
-                                    closePromise.completeExceptionally(ex);
-                                } else {
-                                    FutureUtils.complete(closePromise, null);
-                                }
-                        });
+                                },
+                                (metadata) -> {
+                                    return LedgerMetadataBuilder.from(metadata)
+                                            .withClosedState().withLastEntryId(lastEntry)
+                                            .withLength(finalLength).build();
+                                },
+                                LedgerHandle.this::setLedgerMetadata)
+                                .run().whenComplete((metadata, ex) -> {
+                                    if (ex != null) {
+                                        closePromise.completeExceptionally(ex);
+                                    } else {
+                                        FutureUtils.complete(closePromise, null);
+                                    }
+                                });
+                    }
                 }
-            }
-        });
+        );
     }
 
     /**
@@ -1158,9 +1152,9 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                executeOrdered(new SafeRunnable() {
+                executeOrdered(new Runnable() {
                     @Override
-                    public void safeRun() {
+                    public void run() {
                         LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
                         result.completeExceptionally(new BKException.BKLedgerClosedException());
                     }
@@ -1178,9 +1172,9 @@ public class LedgerHandle implements WriteHandle {
 
         // early exit: no write has been issued yet
         if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
-            executeOrdered(new SafeRunnable() {
+            executeOrdered(new Runnable() {
                     @Override
-                    public void safeRun() {
+                    public void run() {
                         FutureUtils.complete(result, null);
                     }
 
@@ -1327,9 +1321,9 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                executeOrdered(new SafeRunnable() {
+                executeOrdered(new Runnable() {
                     @Override
-                    public void safeRun() {
+                    public void run() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
                         op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
                                 LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
@@ -2090,7 +2084,7 @@ public class LedgerHandle implements WriteHandle {
      * @param runnable
      * @throws RejectedExecutionException
      */
-    void executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable runnable) throws RejectedExecutionException {
+    void executeOrdered(Runnable runnable) throws RejectedExecutionException {
         clientCtx.getMainWorkerPool().executeOrdered(ledgerId, runnable);
     }
 

@@ -42,7 +42,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
@@ -60,7 +59,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     private Object metadataLock = new Object();
     private final NavigableMap<Long, List<BookieId>> newEnsemblesFromRecovery = new TreeMap<>();
 
-    class MetadataUpdater extends SafeRunnable {
+    class MetadataUpdater implements Runnable {
 
         final Versioned<LedgerMetadata> newMetadata;
 
@@ -69,7 +68,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             while (true) {
                 Versioned<LedgerMetadata> currentMetadata = getVersionedLedgerMetadata();
                 Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
