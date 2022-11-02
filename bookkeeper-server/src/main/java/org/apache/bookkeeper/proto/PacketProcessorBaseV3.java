@@ -55,7 +55,7 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
         final long writeNanos = MathUtils.nowInNano();
 
         final long timeOut = requestProcessor.getWaitTimeoutOnBackpressureMillis();
-        if (timeOut >= 0 && !channel.isWritable()) {
+        if (timeOut > 0 && !channel.isWritable()) {
             if (!requestProcessor.isBlacklisted(channel)) {
                 synchronized (channel) {
                     if (!channel.isWritable() && !requestProcessor.isBlacklisted(channel)) {
