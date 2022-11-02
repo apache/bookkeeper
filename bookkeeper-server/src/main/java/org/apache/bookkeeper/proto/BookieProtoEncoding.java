@@ -28,7 +28,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -261,8 +260,8 @@ public class BookieProtoEncoding {
                     int responseSize = RESPONSE_HEADERS_SIZE + payloadSize;
                     boolean isSmallEntry = payloadSize < SMALL_ENTRY_SIZE_THRESHOLD;
 
-                    int bufferSize = 4 /* frame size */ + RESPONSE_HEADERS_SIZE +
-                            (isSmallEntry ? payloadSize : 0);
+                    int bufferSize = 4 /* frame size */ + RESPONSE_HEADERS_SIZE
+                            + (isSmallEntry ? payloadSize : 0);
                     ByteBuf buf = allocator.buffer(bufferSize);
                     buf.writeInt(responseSize);
                     buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
