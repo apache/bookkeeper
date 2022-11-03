@@ -36,6 +36,9 @@ import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Options;
 
+/**
+ * KeyValueStorageRocksDBTest tests the configuration compatibility between the existing way and new way.
+ */
 public class KeyValueStorageRocksDBTest {
 
     @Test
