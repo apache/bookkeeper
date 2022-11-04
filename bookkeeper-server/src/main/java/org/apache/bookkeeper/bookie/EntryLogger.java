@@ -988,7 +988,7 @@ public class EntryLogger {
      * @param scanner Entry Log Scanner
      * @throws IOException
      */
-    public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
+    public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws Exception {
         // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
         ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
         BufferedReadChannel bc;
@@ -1054,7 +1054,7 @@ public class EntryLogger {
         }
     }
 
-    public EntryLogMetadata getEntryLogMetadata(long entryLogId) throws IOException {
+    public EntryLogMetadata getEntryLogMetadata(long entryLogId) throws Exception {
         // First try to extract the EntryLogMetada from the index, if there's no index then fallback to scanning the
         // entry log
         try {
@@ -1150,7 +1150,7 @@ public class EntryLogger {
         return meta;
     }
 
-    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId) throws IOException {
+    private EntryLogMetadata extractEntryLogMetadataByScanning(long entryLogId) throws Exception {
         final EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         // Read through the entry log file and extract the entry log meta

@@ -624,7 +624,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId
                          + " recovery will take care of the problem", e);
