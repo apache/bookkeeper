@@ -1012,6 +1012,12 @@ public class EntryLogger {
             while (true) {
                 // Check if we've finished reading the entry log file.
                 if (pos >= bc.size()) {
+                    LOG.warn("read position illegal, ledgersMap maybe error. position {} entrylog size {} entrylog {}",
+                            pos, bc.size(), entryLogId);
+                    break;
+                }
+                if (pos < 0) {
+                    LOG.warn("read position illegal, position is negative. position {} entrylog {}", pos, entryLogId);
                     break;
                 }
                 if (readFromLogChannel(entryLogId, bc, headerBuffer, pos) != headerBuffer.capacity()) {
