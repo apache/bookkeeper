@@ -45,7 +45,8 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-notimestamp</additionalparam>
+          <sourcepath>${src.dir}</sourcepath>
+          <notimestamp>true</notimestamp>
           <doclint>none</doclint>
           <groups>
             <group>

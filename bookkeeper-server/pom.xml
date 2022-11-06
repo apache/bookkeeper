@@ -242,6 +242,7 @@
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <sourcepath>${src.dir}</sourcepath>
           <doclint>none</doclint>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
           <groups>
