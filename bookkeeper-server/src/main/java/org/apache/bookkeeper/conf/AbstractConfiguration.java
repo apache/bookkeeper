@@ -19,6 +19,7 @@ package org.apache.bookkeeper.conf;
 
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,7 +28,6 @@ import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
 
-import io.netty.buffer.PooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
