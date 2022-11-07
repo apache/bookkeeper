@@ -250,7 +250,6 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-3.6.2.jar [21]
 - lib/org.apache.zookeeper-zookeeper-jute-3.6.2.jar [21]
 - lib/org.apache.zookeeper-zookeeper-3.6.2-tests.jar [21]
-- lib/org.eclipse.jetty-jetty-http-9.4.43.v20210629.jar [22]
 - lib/org.eclipse.jetty-jetty-http-9.4.48.v20220622.jar [22]
 - lib/org.eclipse.jetty-jetty-io-9.4.48.v20220622.jar [22]
 - lib/org.eclipse.jetty-jetty-security-9.4.48.v20220622.jar [22]
