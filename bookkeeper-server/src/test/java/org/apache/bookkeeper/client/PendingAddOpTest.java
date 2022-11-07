@@ -51,7 +51,8 @@ import org.junit.Test;
 
 /**
  * Unit test of {@link PendingAddOp}.
- */ public class PendingAddOpTest {
+ */
+public class PendingAddOpTest {
 
     private LedgerHandle lh;
     private ClientContext mockClientContext;
