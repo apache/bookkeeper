@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
