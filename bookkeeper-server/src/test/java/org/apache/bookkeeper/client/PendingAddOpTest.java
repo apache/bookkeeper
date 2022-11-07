@@ -22,24 +22,36 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.discover.MockRegistrationClient;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.MockBookies;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Unit test of {@link PendingAddOp}.
- */
-public class PendingAddOpTest {
+ */ public class PendingAddOpTest {
 
     private LedgerHandle lh;
     private ClientContext mockClientContext;
@@ -60,6 +72,10 @@ public class PendingAddOpTest {
         lh = mock(LedgerHandle.class);
         when(lh.getDistributionSchedule())
             .thenReturn(new RoundRobinDistributionSchedule(3, 3, 2));
+        when(lh.getWriteFlags())
+                .thenReturn(EnumSet.of(WriteFlag.DEFERRED_SYNC));
+        Map<Integer, BookieId> failedBookies = new HashMap<>();
+        failedBookies.put(1, BookieId.parse("0.0.0.0:3181"));
         byte[] data = "test-pending-add-op".getBytes(UTF_8);
         payload = Unpooled.wrappedBuffer(data);
         payload.writerIndex(data.length);
@@ -85,6 +101,64 @@ public class PendingAddOpTest {
         op.run();
         // after the op is run, the object is recycled.
         assertNull(op.lh);
+    }
+
+    @Test
+    public void testLedgerHandleWithDeferredSyncDuringRecoveryAdd() throws Exception {
+        final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
+        final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
+        final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
+        MockClientContext clientCtx = MockClientContext.create();
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 0,
+                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L, Lists.newArrayList(b1, b2,
+                        b3)));
+        LedgerHandle lh = new LedgerHandle(clientCtx, 0, md, BookKeeper.DigestType.CRC32C,
+                ClientUtil.PASSWD, EnumSet.of(WriteFlag.DEFERRED_SYNC));
+        lh.notifyWriteFailed(0, b1);
+        AtomicInteger rcHolder = new AtomicInteger(-0xdead);
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, EnumSet.of(WriteFlag.DEFERRED_SYNC),
+                (rc, handle, entryId, qwcLatency, ctx) -> {
+                    rcHolder.set(rc);
+                }, null).enableRecoveryAdd();
+        assertSame(lh, op.lh);
+        lh.pendingAddOps.add(op);
+        op.run();
+        assertTrue(op.maybeRecycled());
+    }
+
+    @Test
+    public void testReadOnlyLedgerHandleWithNotEnoughBookiesExceptionDuringRecoveryAdd() throws Exception {
+        final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
+        final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
+        final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
+        MockBookies mockBookies = new MockBookies();
+        ClientConfiguration conf = new ClientConfiguration();
+        MockRegistrationClient regClient = new MockRegistrationClient();
+        EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
+        BookieWatcher bookieWatcher = new MockBookieWatcher(conf, placementPolicy,
+                regClient,
+                new DefaultBookieAddressResolver(regClient),
+                NullStatsLogger.INSTANCE);
+        ClientContext clientCtx = MockClientContext.create(mockBookies, conf, regClient, placementPolicy, bookieWatcher);
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 0,
+                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L, Lists.newArrayList(b1, b2,
+                        b3)));
+        ReadOnlyLedgerHandle lh = new ReadOnlyLedgerHandle(clientCtx, 0, md, BookKeeper.DigestType.CRC32C,
+                ClientUtil.PASSWD, true);
+        lh.notifyWriteFailed(0, b1);
+        AtomicInteger rcHolder = new AtomicInteger(-0xdead);
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {
+                    rcHolder.set(rc);
+                }, null).enableRecoveryAdd();
+        assertSame(lh, op.lh);
+        lh.pendingAddOps.add(op);
+        op.run();
+        assertTrue(op.maybeRecycled());
     }
 
 }

@@ -54,21 +54,14 @@ public class MockClientContext implements ClientContext {
     private MockRegistrationClient regClient;
     private ByteBufAllocator allocator;
 
-    static MockClientContext create(MockBookies mockBookies) throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
+    static MockClientContext create(MockBookies mockBookies, ClientConfiguration conf,
+                                    MockRegistrationClient regClient, EnsemblePlacementPolicy placementPolicy,
+                                    BookieWatcher bookieWatcher) throws Exception {
         OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-executor").numThreads(1).build();
-        MockRegistrationClient regClient = new MockRegistrationClient();
-        EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
-        BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
-                                                                    regClient,
-                                                                    new DefaultBookieAddressResolver(regClient),
-                                                                    NullStatsLogger.INSTANCE);
-        bookieWatcherImpl.initialBlockingBookieRead();
-
         return new MockClientContext()
                 .setConf(ClientInternalConf.fromConfig(conf))
                 .setLedgerManager(new MockLedgerManager())
-                .setBookieWatcher(bookieWatcherImpl)
+                .setBookieWatcher(bookieWatcher)
                 .setPlacementPolicy(placementPolicy)
                 .setRegistrationClient(regClient)
                 .setBookieClient(new MockBookieClient(scheduler, mockBookies))
@@ -77,6 +70,18 @@ public class MockClientContext implements ClientContext {
                 .setScheduler(scheduler)
                 .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
                 .setIsClientClosed(() -> false);
+    }
+
+    static MockClientContext create(MockBookies mockBookies) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        MockRegistrationClient regClient = new MockRegistrationClient();
+        EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
+        BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
+                regClient,
+                new DefaultBookieAddressResolver(regClient),
+                NullStatsLogger.INSTANCE);
+        bookieWatcherImpl.initialBlockingBookieRead();
+        return create(mockBookies, conf, regClient, placementPolicy, bookieWatcherImpl);
     }
 
     static MockClientContext create() throws Exception {
