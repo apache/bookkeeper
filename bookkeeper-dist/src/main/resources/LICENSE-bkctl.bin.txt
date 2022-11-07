@@ -299,13 +299,8 @@ Apache Software License, Version 2.
 [17] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [18] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
-<<<<<<< HEAD
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.6.2
-[23] Source available at https://github.com/cbeust/jcommander/tree/1.78
-=======
-[20] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
 [23] Source available at https://github.com/cbeust/jcommander/tree/1.82
->>>>>>> eadac6297 (Bump jcommander from 1.78 to 1.82 (#3476))
 [25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
 [27] Source available at https://github.com/googleapis/googleapis
 [28] Source available at https://github.com/google/gson/tree/gson-parent-2.8.6
@@ -562,15 +557,6 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-<<<<<<< HEAD
-  - lib/com.google.protobuf-protobuf-java-3.14.0.jar
-Source available at https://github.com/google/protobuf/tree/v3.14.0
-For details, see deps/protobuf-3.14.0/LICENSE.
-
-Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.17.2.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.17.2
-=======
   - lib/com.google.protobuf-protobuf-java-3.19.6.jar
 Source available at https://github.com/google/protobuf/tree/v3.19.6
 For details, see deps/protobuf-3.14.0/LICENSE.
@@ -578,7 +564,6 @@ For details, see deps/protobuf-3.14.0/LICENSE.
 Bundled as
   - lib/com.google.protobuf-protobuf-java-util-3.19.6.jar
 Source available at https://github.com/protocolbuffers/protobuf/tree/v3.19.6
->>>>>>> ace4f8a4a (Upgrade dependencies for CVE-2022-3171 and CVE-2022-42003 (#3579))
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
