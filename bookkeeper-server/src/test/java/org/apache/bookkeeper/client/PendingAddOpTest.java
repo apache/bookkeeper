@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -111,8 +110,8 @@ public class PendingAddOpTest {
         final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 0,
-                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L, Lists.newArrayList(b1, b2,
-                        b3)));
+                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L,
+                        Lists.newArrayList(b1, b2, b3)));
         LedgerHandle lh = new LedgerHandle(clientCtx, 0, md, BookKeeper.DigestType.CRC32C,
                 ClientUtil.PASSWD, EnumSet.of(WriteFlag.DEFERRED_SYNC));
         lh.notifyWriteFailed(0, b1);
@@ -142,10 +141,11 @@ public class PendingAddOpTest {
                 regClient,
                 new DefaultBookieAddressResolver(regClient),
                 NullStatsLogger.INSTANCE);
-        ClientContext clientCtx = MockClientContext.create(mockBookies, conf, regClient, placementPolicy, bookieWatcher);
+        ClientContext clientCtx = MockClientContext.create(mockBookies, conf, regClient, placementPolicy,
+                bookieWatcher);
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 0,
-                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L, Lists.newArrayList(b1, b2,
-                        b3)));
+                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L,
+                        Lists.newArrayList(b1, b2, b3)));
         ReadOnlyLedgerHandle lh = new ReadOnlyLedgerHandle(clientCtx, 0, md, BookKeeper.DigestType.CRC32C,
                 ClientUtil.PASSWD, true);
         lh.notifyWriteFailed(0, b1);
