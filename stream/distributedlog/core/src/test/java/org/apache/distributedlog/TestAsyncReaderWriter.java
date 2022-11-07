@@ -217,13 +217,17 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                     @Override
                     public void onSuccess(DLSN value) {
                         if (value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
-                            LOG.debug("LogSegmentSequenceNumber: {}, Expected {}",
-                                    value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("LogSegmentSequenceNumber: {}, Expected {}",
+                                        value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
+                            }
                             errorsFound.set(true);
                         }
 
                         if (value.getEntryId() != currentEntryId) {
-                            LOG.debug("EntryId: {}, Expected {}", value.getEntryId(), currentEntryId);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("EntryId: {}, Expected {}", value.getEntryId(), currentEntryId);
+                            }
                             errorsFound.set(true);
                         }
 
@@ -232,7 +236,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         }
 
                         syncLatch.countDown();
-                        LOG.debug("SyncLatch: {}", syncLatch.getCount());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("SyncLatch: {}", syncLatch.getCount());
+                        }
                     }
                     @Override
                     public void onFailure(Throwable cause) {
@@ -355,7 +361,10 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                     assertTrue(value.getDlsn().compareTo(startPosition) >= 0);
                     DLMTestUtil.verifyLargeLogRecord(value);
                 } catch (Exception exc) {
-                    LOG.debug("Exception Encountered when verifying log record {} : ", value.getDlsn(), exc);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Exception Encountered when verifying log record {} : ",
+                                value.getDlsn(), exc);
+                    }
                     errorsFound.set(true);
                     completionLatch.countDown();
                     return;
@@ -1099,7 +1108,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 @Override
                 public void onSuccess(DLSN value) {
                     syncLatch.countDown();
-                    LOG.debug("SyncLatch: {} ; DLSN: {} ", syncLatch.getCount(), value);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("SyncLatch: {} ; DLSN: {} ", syncLatch.getCount(), value);
+                    }
                 }
                 @Override
                 public void onFailure(Throwable cause) {
@@ -1181,7 +1192,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
             fail("should have thrown");
         } catch (LockingException ex) {
-            LOG.debug("caught exception ", ex);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("caught exception ", ex);
+            }
         }
 
         writer.close();

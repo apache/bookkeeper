@@ -34,7 +34,6 @@ import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -68,7 +67,7 @@ import org.slf4j.LoggerFactory;
  * <li> `async_reader`/idle_reader_error: counter. the number idle reader errors.
  * </ul>
  */
-class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotification {
+class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReader.class);
 
     private static final Function<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
@@ -105,7 +104,7 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
 
     private final boolean returnEndOfStreamRecord;
 
-    private final SafeRunnable BACKGROUND_READ_SCHEDULER = () -> {
+    private final Runnable BACKGROUND_READ_SCHEDULER = () -> {
         synchronized (scheduleLock) {
             backgroundScheduleTask = null;
         }
@@ -217,7 +216,9 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
         this.scheduler = scheduler;
         this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
                 this, true);
-        LOG.debug("Starting async reader at {}", startDLSN);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting async reader at {}", startDLSN);
+        }
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
         this.readNextDelayStopwatch = Stopwatch.createStarted();
@@ -258,40 +259,37 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
             // Except when idle reader threshold is less than a second (tests?)
             period = Math.min(period, idleErrorThresholdMillis / 5);
 
-            return scheduler.scheduleAtFixedRateOrdered(streamName, new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    PendingReadRequest nextRequest = pendingRequests.peek();
+            return scheduler.scheduleAtFixedRateOrdered(streamName, () -> {
+                PendingReadRequest nextRequest = pendingRequests.peek();
 
-                    idleReaderCheckCount.inc();
-                    if (null == nextRequest) {
+                idleReaderCheckCount.inc();
+                if (null == nextRequest) {
+                    return;
+                }
+
+                idleReaderCheckIdleReadRequestCount.inc();
+                if (nextRequest.elapsedSinceEnqueue(TimeUnit.MILLISECONDS) < idleErrorThresholdMillis) {
+                    return;
+                }
+
+                ReadAheadEntryReader readAheadReader = getReadAheadReader();
+
+                // read request has been idle
+                //   - cache has records but read request are idle,
+                //     that means notification was missed between readahead and reader.
+                //   - cache is empty and readahead is idle (no records added for a long time)
+                idleReaderCheckIdleReadAheadCount.inc();
+                try {
+                    if (null == readAheadReader || (!hasMoreRecords()
+                            && readAheadReader.isReaderIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS))) {
+                        markReaderAsIdle();
                         return;
+                    } else if (lastProcessTime.elapsed(TimeUnit.MILLISECONDS) > idleErrorThresholdMillis) {
+                        markReaderAsIdle();
                     }
-
-                    idleReaderCheckIdleReadRequestCount.inc();
-                    if (nextRequest.elapsedSinceEnqueue(TimeUnit.MILLISECONDS) < idleErrorThresholdMillis) {
-                        return;
-                    }
-
-                    ReadAheadEntryReader readAheadReader = getReadAheadReader();
-
-                    // read request has been idle
-                    //   - cache has records but read request are idle,
-                    //     that means notification was missed between readahead and reader.
-                    //   - cache is empty and readahead is idle (no records added for a long time)
-                    idleReaderCheckIdleReadAheadCount.inc();
-                    try {
-                        if (null == readAheadReader || (!hasMoreRecords()
-                                && readAheadReader.isReaderIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS))) {
-                            markReaderAsIdle();
-                            return;
-                        } else if (lastProcessTime.elapsed(TimeUnit.MILLISECONDS) > idleErrorThresholdMillis) {
-                            markReaderAsIdle();
-                        }
-                    } catch (IOException e) {
-                        setLastException(e);
-                        return;
-                    }
+                } catch (IOException e) {
+                    setLastException(e);
+                    return;
                 }
             }, period, period, TimeUnit.MILLISECONDS);
         }
@@ -571,7 +569,7 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         synchronized (scheduleLock) {
             if (scheduleDelayStopwatch.isRunning()) {
                 scheduleLatency.registerSuccessfulEvent(
@@ -581,7 +579,9 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
             Stopwatch runTime = Stopwatch.createStarted();
             int iterations = 0;
             long scheduleCountLocal = scheduleCountUpdater.get(this);
-            LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
+            }
             while (true) {
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("{}: Executing Iteration: {}", readHandler.getFullyQualifiedName(), iterations++);

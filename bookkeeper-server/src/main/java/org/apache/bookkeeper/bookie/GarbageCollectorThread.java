@@ -46,7 +46,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
@@ -56,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * This is the garbage collector thread that runs in the background to
  * remove any entry log files that no longer contains any active ledger.
  */
-public class GarbageCollectorThread extends SafeRunnable {
+public class GarbageCollectorThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
 
@@ -124,6 +123,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     private static final AtomicLong threadNum = new AtomicLong(0);
     final AbstractLogCompactor.Throttler throttler;
+
+    private LedgerStorageNotificationListener storageNotificationListener = LedgerStorageNotificationListener.NULL;
     /**
      * Create a garbage collector thread.
      *
@@ -181,6 +182,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 }
                 gcStats.getDeletedLedgerCounter().inc();
                 ledgerStorage.deleteLedger(ledgerId);
+                storageNotificationListener.ledgerRemovedFromStorage(ledgerId);
             } catch (IOException e) {
                 LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
             }
@@ -330,6 +332,14 @@ public class GarbageCollectorThread extends SafeRunnable {
         return forceGarbageCollection.get();
     }
 
+    public boolean isMajorGcSuspend() {
+        return suspendMajorCompaction.get();
+    }
+
+    public boolean isMinorGcSuspend() {
+        return suspendMinorCompaction.get();
+    }
+
     public void suspendMajorGC() {
         if (suspendMajorCompaction.compareAndSet(false, true)) {
             LOG.info("Suspend Major Compaction triggered by thread: {}", Thread.currentThread().getName());
@@ -379,7 +389,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     @Override
-    public void safeRun() {
+    public void run() {
         boolean force = forceGarbageCollection.get();
         boolean suspendMajor = suspendMajorCompaction.get();
         boolean suspendMinor = suspendMinorCompaction.get();
@@ -770,5 +780,9 @@ public class GarbageCollectorThread extends SafeRunnable {
             .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
             .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
             .build();
+    }
+
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+        this.storageNotificationListener = storageNotificationListener;
     }
 }

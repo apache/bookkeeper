@@ -475,7 +475,9 @@ public class LedgerChecker {
         FullLedgerCallback allFragmentsCb = new FullLedgerCallback(fragments
                 .size(), cb);
         for (LedgerFragment r : fragments) {
-            LOG.debug("Checking fragment {}", r);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Checking fragment {}", r);
+            }
             try {
                 verifyLedgerFragment(r, allFragmentsCb, percentageOfLedgerFragmentToBeVerified);
             } catch (InvalidFragmentException ife) {

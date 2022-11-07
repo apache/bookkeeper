@@ -99,7 +99,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                                         ackQuorumSize,
                                         BookKeeper.DigestType.CRC32,
                                         passwd);
-                LOG.debug("Ledger Handle: " + lh[i].getId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger Handle: " + lh[i].getId());
+                }
             }
         } catch (BKException e) {
             e.printStackTrace();

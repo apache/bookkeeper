@@ -38,7 +38,6 @@ import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,12 +105,7 @@ public class MockBookKeeper extends BookKeeper {
                     log.info("Creating ledger {}", id);
                     MockLedgerHandle lh = new MockLedgerHandle(MockBookKeeper.this, id, digestType, passwd);
                     ledgers.put(id, lh);
-                    lh.executeOrdered(new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.createComplete(0, lh, ctx);
-                        }
-                    });
+                    lh.executeOrdered(() -> cb.createComplete(0, lh, ctx));
                 } catch (Throwable t) {
                     log.error("Error", t);
                 }
@@ -168,12 +162,7 @@ public class MockBookKeeper extends BookKeeper {
         } else if (!Arrays.equals(lh.passwd, passwd)) {
             cb.openComplete(BKException.Code.UnauthorizedAccessException, null, ctx);
         } else {
-            lh.executeOrdered(new SafeRunnable() {
-                                  @Override
-                                  public void safeRun() {
-                                      cb.openComplete(0, lh, ctx);
-                                  }
-                              });
+            lh.executeOrdered(() -> cb.openComplete(0, lh, ctx));
         }
     }
 
@@ -280,7 +269,9 @@ public class MockBookKeeper extends BookKeeper {
 
     void checkProgrammedFail() throws BKException {
         int steps = stepsToFail.getAndDecrement();
-        log.debug("Steps to fail: {}", steps);
+        if (log.isDebugEnabled()) {
+            log.debug("Steps to fail: {}", steps);
+        }
         if (steps <= 0) {
             if (failReturnCode != BKException.Code.OK) {
                 int rc = failReturnCode;
@@ -293,7 +284,9 @@ public class MockBookKeeper extends BookKeeper {
 
     boolean getProgrammedFailStatus() {
         int steps = stepsToFail.getAndDecrement();
-        log.debug("Steps to fail: {}", steps);
+        if (log.isDebugEnabled()) {
+            log.debug("Steps to fail: {}", steps);
+        }
         return steps == 0;
     }
 

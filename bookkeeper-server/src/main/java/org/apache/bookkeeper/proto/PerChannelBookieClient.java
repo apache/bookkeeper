@@ -53,10 +53,12 @@ import io.netty.channel.unix.Errors.NativeIoException;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.channel.uring.IOUringChannelOption;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.Future;
@@ -139,7 +141,6 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
@@ -543,7 +544,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // Set up the ClientBootStrap so we can create a new Channel connection to the bookie.
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup);
-        if (eventLoopGroup instanceof EpollEventLoopGroup) {
+        if (eventLoopGroup instanceof IOUringEventLoopGroup) {
+            bootstrap.channel(IOUringSocketChannel.class);
+            try {
+                bootstrap.option(IOUringChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
+            } catch (NoSuchElementException e) {
+                // Property not set, so keeping default value.
+            }
+        } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
             bootstrap.channel(EpollSocketChannel.class);
             try {
                 // For Epoll channels, configure the TCP user timeout.
@@ -585,10 +593,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
                 pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
-                pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);
+                pipeline.addLast("bytebufList", ByteBufList.ENCODER);
                 pipeline.addLast("lengthbasedframedecoder",
                         new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
                 pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
                 pipeline.addLast(
                     "bookieProtoDecoder",
@@ -1274,7 +1281,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         exceptionCounter.inc();
         if (cause instanceof CorruptedFrameException || cause instanceof TooLongFrameException) {
-            LOG.error("Corrupted frame received from bookie: {}", ctx.channel().remoteAddress());
+            LOG.error("Corrupted frame received from bookie: {}", ctx.channel());
             ctx.close();
             return;
         }
@@ -1369,7 +1376,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private static class ReadV2ResponseCallback extends SafeRunnable {
+    private static class ReadV2ResponseCallback implements Runnable {
         CompletionValue completionValue;
         long ledgerId;
         long entryId;
@@ -1388,7 +1395,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         @Override
-        public void safeRun() {
+        public void run() {
             completionValue.handleV2Response(ledgerId, entryId, status, response);
             response.release();
             response.recycle();
@@ -1478,9 +1485,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         } else {
             long orderingKey = completionValue.ledgerId;
-            executor.executeOrdered(orderingKey, new SafeRunnable() {
+            executor.executeOrdered(orderingKey, new Runnable() {
                 @Override
-                public void safeRun() {
+                public void run() {
                     completionValue.restoreMdcContext();
                     completionValue.handleV3Response(response);
                 }
@@ -1547,8 +1554,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             channel = null;
                         } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
-                            LOG.debug("Already connected with another channel({}), so close the new channel({})",
-                                    channel, channel);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Already connected with another channel({}), "
+                                                + "so close the new channel({})",
+                                        channel, channel);
+                            }
                             closeChannel(channel);
                             return; // pendingOps should have been completed when other channel connected
                         } else {
@@ -1673,23 +1683,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         protected void errorOutAndRunCallback(final Runnable callback) {
-            executor.executeOrdered(ledgerId,
-                    new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            String bAddress = "null";
-                            Channel c = channel;
-                            if (c != null && c.remoteAddress() != null) {
-                                bAddress = c.remoteAddress().toString();
-                            }
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
-                                          operationName, bAddress,
-                                          ledgerId, entryId);
-                            }
-                            callback.run();
-                        }
-                    });
+            executor.executeOrdered(ledgerId, () -> {
+                String bAddress = "null";
+                Channel c = channel;
+                if (c != null && c.remoteAddress() != null) {
+                    bAddress = c.remoteAddress().toString();
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
+                            operationName, bAddress,
+                            ledgerId, entryId);
+                }
+                callback.run();
+            });
         }
 
         public void handleV2Response(

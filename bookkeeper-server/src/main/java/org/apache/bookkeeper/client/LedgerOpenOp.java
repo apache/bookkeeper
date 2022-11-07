@@ -39,7 +39,6 @@ import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,12 +111,10 @@ class LedgerOpenOp {
          * Asynchronously read the ledger metadata node.
          */
         bk.getLedgerManager().readLedgerMetadata(ledgerId)
-            .whenComplete((metadata, exception) -> {
-                    if (exception != null) {
-                        openComplete(BKException.getExceptionCode(exception), null);
-                    } else {
-                        openWithMetadata(metadata);
-                    }
+                .thenAcceptAsync(this::openWithMetadata, bk.getScheduler().chooseThread(ledgerId))
+                .exceptionally(exception -> {
+                    openComplete(BKException.getExceptionCode(exception), null);
+                    return null;
                 });
     }
 
@@ -202,15 +199,18 @@ class LedgerOpenOp {
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
-                    } else if (rc == BKException.Code.UnauthorizedAccessException) {
-                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                    } else {
+                        closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
                             }
-                            openComplete(BKException.Code.UnauthorizedAccessException, null);
+                            if (rc == BKException.Code.UnauthorizedAccessException
+                                    || rc == BKException.Code.TimeoutException) {
+                                openComplete(rc, null);
+                            } else {
+                                openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
+                            }
                         });
-                    } else {
-                        openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                     }
                 }
                 @Override
@@ -223,7 +223,14 @@ class LedgerOpenOp {
                 @Override
                 public void readLastConfirmedComplete(int rc,
                         long lastConfirmed, Object ctx) {
-                    if (rc != BKException.Code.OK) {
+                    if (rc == BKException.Code.TimeoutException) {
+                        closeLedgerHandleAsync().whenComplete((r, ex) -> {
+                            if (ex != null) {
+                                LOG.error("Ledger {} close failed", ledgerId, ex);
+                            }
+                            openComplete(bk.getReturnRc(rc), null);
+                        });
+                    } else if (rc != BKException.Code.OK) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
                                 LOG.error("Ledger {} close failed", ledgerId, ex);
@@ -248,12 +255,7 @@ class LedgerOpenOp {
         }
 
         if (lh != null) { // lh is null in case of errors
-            lh.executeOrdered(new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    cb.openComplete(rc, lh, ctx);
-                }
-            });
+            lh.executeOrdered(() -> cb.openComplete(rc, lh, ctx));
         } else {
             cb.openComplete(rc, null, ctx);
         }

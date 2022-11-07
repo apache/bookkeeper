@@ -32,6 +32,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -113,7 +114,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     private int exitCode = ExitCode.OK;
 
     private final ConcurrentLongHashMap<byte[]> masterKeyCache =
-            ConcurrentLongHashMap.<byte[]>newBuilder().build();
+            ConcurrentLongHashMap.<byte[]>newBuilder().autoShrink(true).build();
 
     protected StateManager stateManager;
 
@@ -171,7 +172,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * This means that the configuration has stayed the same as the
      * first run and the filesystem structure is up to date.
      */
-    private void checkEnvironment(RegistrationManager registrationManager)
+    private void checkEnvironment()
             throws BookieException, IOException, InterruptedException {
         List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
                 + indexDirsManager.getAllLedgerDirs().size());
@@ -375,6 +376,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 }
             });
         ledgerStorage.setCheckpointer(Checkpointer.NULL);
+        ledgerStorage.setStorageStorageNotificationListener(LedgerStorageNotificationListener.NULL);
         return ledgerStorage;
     }
 
@@ -402,7 +404,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         this.allocator = allocator;
         this.registrationManager = registrationManager;
         stateManager = initializeStateManager();
-        checkEnvironment(registrationManager);
+        checkEnvironment();
 
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
@@ -477,10 +479,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource, statsLogger);
         }
 
+        LedgerStorageNotificationListener storageNotificationListener = new LedgerStorageNotificationListener() {
+            @Override
+            public void ledgerRemovedFromStorage(long ledgerId) {
+                masterKeyCache.remove(ledgerId);
+            }
+        };
+
         ledgerStorage.setStateManager(stateManager);
         ledgerStorage.setCheckpointSource(checkpointSource);
         ledgerStorage.setCheckpointer(syncThread);
-
+        ledgerStorage.setStorageStorageNotificationListener(storageNotificationListener);
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
@@ -922,6 +931,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
+    @VisibleForTesting
+    public ByteBuf createMasterKeyEntry(long ledgerId, byte[] masterKey) {
+        // new handle, we should add the key to journal ensure we can rebuild
+        ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + masterKey.length);
+        bb.writeLong(ledgerId);
+        bb.writeLong(METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
+        return bb;
+    }
+
     /**
      * Add an entry to a ledger as specified by handle.
      */
@@ -939,15 +959,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             // Force the load into masterKey cache
             byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
             if (oldValue == null) {
-                // new handle, we should add the key to journal ensure we can rebuild
-                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-                bb.putLong(ledgerId);
-                bb.putLong(METAENTRY_ID_LEDGER_KEY);
-                bb.putInt(masterKey.length);
-                bb.put(masterKey);
-                bb.flip();
-
-                getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                ByteBuf masterKeyEntry = createMasterKeyEntry(ledgerId, masterKey);
+                try {
+                    getJournal(ledgerId).logAddEntry(
+                            masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                } finally {
+                    ReferenceCountUtil.safeRelease(masterKeyEntry);
+                }
             }
         }
 
@@ -993,11 +1011,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
         }
     }
 
-    private ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
+    @VisibleForTesting
+    public ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
         ByteBuf bb = allocator.directBuffer(8 + 8 + 4 + explicitLac.capacity());
         bb.writeLong(ledgerId);
         bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
@@ -1008,6 +1027,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
             throws IOException, InterruptedException, BookieException {
+        ByteBuf explicitLACEntry = null;
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
@@ -1015,12 +1035,17 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 entry.markReaderIndex();
                 handle.setExplicitLac(entry);
                 entry.resetReaderIndex();
-                ByteBuf explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
+                explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
                 getJournal(ledgerId).logAddEntry(explicitLACEntry, false /* ackBeforeSync */, writeCallback, ctx);
             }
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
+        } finally {
+            ReferenceCountUtil.safeRelease(entry);
+            if (explicitLACEntry != null) {
+                ReferenceCountUtil.safeRelease(explicitLACEntry);
+            }
         }
     }
 
@@ -1080,7 +1105,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
         }
     }
 

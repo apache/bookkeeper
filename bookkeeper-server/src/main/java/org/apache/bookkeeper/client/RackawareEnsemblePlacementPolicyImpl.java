@@ -1032,7 +1032,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 try {
                     if (knownBookies.containsKey(bookie)) {
                         racksInQuorum.add(knownBookies.get(bookie).getNetworkLocation());
-                    } else {
+                    } else if (LOG.isDebugEnabled()) {
                         LOG.debug("bookie {} is not in the list of knownBookies", bookie);
                     }
                 } catch (Exception e) {
@@ -1065,7 +1065,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             for (BookieId bookie : ackedBookies) {
                 if (knownBookies.containsKey(bookie)) {
                     rackCounter.add(knownBookies.get(bookie).getNetworkLocation());
-                } else {
+                } else if (LOG.isDebugEnabled()) {
                     LOG.debug("bookie {} is not in the list of knownBookies", bookie);
                 }
             }

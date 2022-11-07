@@ -118,7 +118,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             AuditorElector auditorElector = new AuditorElector(addr, conf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
-            LOG.debug("Starting Auditor Elector");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Starting Auditor Elector");
+            }
         }
 
         driver = MetadataDrivers.getBookieDriver(

@@ -50,13 +50,15 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
             if (!bookieId.toString().equals(res.toString())) {
                 // only print if the information is useful
                 log.info("Resolved {} as {}", bookieId, res);
-            } else {
+            } else if (log.isDebugEnabled()) {
                 log.debug("Resolved {} as {}", bookieId, res);
             }
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {
             if (BookieSocketAddress.isDummyBookieIdForHostname(bookieId)) {
-                log.debug("Resolving dummy bookie Id {} using legacy bookie resolver", bookieId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Resolving dummy bookie Id {} using legacy bookie resolver", bookieId);
+                }
                 return BookieSocketAddress.resolveLegacyBookieId(bookieId);
             }
             log.info("Cannot resolve {}, bookie is unknown {}", bookieId, ex.toString());

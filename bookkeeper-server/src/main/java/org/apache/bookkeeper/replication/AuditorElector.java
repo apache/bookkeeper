@@ -199,7 +199,9 @@ public class AuditorElector {
         try {
             return executor.submit(r);
         } catch (RejectedExecutionException e) {
-            LOG.debug("Executor was already closed");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Executor was already closed");
+            }
             return CompletableFuture.completedFuture(null);
         }
     }

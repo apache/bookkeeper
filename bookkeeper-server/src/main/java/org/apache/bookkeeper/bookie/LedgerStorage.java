@@ -60,6 +60,7 @@ public interface LedgerStorage {
     void setStateManager(StateManager stateManager);
     void setCheckpointSource(CheckpointSource checkpointSource);
     void setCheckpointer(Checkpointer checkpointer);
+    void setStorageStorageNotificationListener(LedgerStorageNotificationListener ledgerStorageNotificationListener);
 
     /**
      * Start any background threads belonging to the storage system. For example, garbage collection.
@@ -233,6 +234,30 @@ public interface LedgerStorage {
      */
     default void forceGC(Boolean forceMajor, Boolean forceMinor) {
         return;
+    }
+
+    default void suspendMinorGC() {
+        return;
+    }
+
+    default void suspendMajorGC() {
+        return;
+    }
+
+    default void resumeMinorGC() {
+        return;
+    }
+
+    default void resumeMajorGC() {
+        return;
+    }
+
+    default boolean isMajorGcSuspended() {
+        return false;
+    }
+
+    default boolean isMinorGcSuspended() {
+        return false;
     }
 
     /**

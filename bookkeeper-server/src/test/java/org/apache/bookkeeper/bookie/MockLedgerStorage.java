@@ -76,6 +76,11 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     public void setCheckpointer(Checkpointer checkpointer) {}
 
     @Override
+    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
+
+    }
+
+    @Override
     public void start() {}
     @Override
     public void shutdown() throws InterruptedException {}
@@ -273,6 +278,30 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     @Override
     public void forceGC(Boolean forceMajor, Boolean forceMinor) {
         CompactableLedgerStorage.super.forceGC(forceMajor, forceMinor);
+    }
+
+    public void suspendMinorGC() {
+        CompactableLedgerStorage.super.suspendMinorGC();
+    }
+
+    public void suspendMajorGC() {
+        CompactableLedgerStorage.super.suspendMajorGC();
+    }
+
+    public void resumeMinorGC() {
+        CompactableLedgerStorage.super.resumeMinorGC();
+    }
+
+    public void resumeMajorGC() {
+        CompactableLedgerStorage.super.suspendMajorGC();
+    }
+
+    public boolean isMajorGcSuspended() {
+        return CompactableLedgerStorage.super.isMajorGcSuspended();
+    }
+
+    public boolean isMinorGcSuspended() {
+        return CompactableLedgerStorage.super.isMinorGcSuspended();
     }
 
     @Override

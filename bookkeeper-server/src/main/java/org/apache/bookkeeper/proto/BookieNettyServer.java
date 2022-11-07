@@ -49,9 +49,10 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -316,7 +317,9 @@ class BookieNettyServer {
             bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            if (eventLoopGroup instanceof EpollEventLoopGroup) {
+            if (eventLoopGroup instanceof IOUringEventLoopGroup){
+                bootstrap.channel(IOUringServerSocketChannel.class);
+            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
                 bootstrap.channel(EpollServerSocketChannel.class);
             } else {
                 bootstrap.channel(NioServerSocketChannel.class);
@@ -337,11 +340,9 @@ class BookieNettyServer {
 
                     pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
 
-                    // For ByteBufList, skip the usual LengthFieldPrepender and have the encoder itself to add it
-                    pipeline.addLast("bytebufList", ByteBufList.ENCODER_WITH_SIZE);
+                    pipeline.addLast("bytebufList", ByteBufList.ENCODER);
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                    pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
@@ -386,6 +387,8 @@ class BookieNettyServer {
 
             if (jvmEventLoopGroup instanceof DefaultEventLoopGroup) {
                 jvmBootstrap.channel(LocalServerChannel.class);
+            } else if (jvmEventLoopGroup instanceof IOUringEventLoopGroup) {
+                jvmBootstrap.channel(IOUringServerSocketChannel.class);
             } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
                 jvmBootstrap.channel(EpollServerSocketChannel.class);
             } else {
@@ -406,7 +409,6 @@ class BookieNettyServer {
                     ChannelPipeline pipeline = ch.pipeline();
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                    pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));

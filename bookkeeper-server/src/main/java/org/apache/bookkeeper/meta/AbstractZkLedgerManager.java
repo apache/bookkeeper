@@ -105,10 +105,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 }
                 readLedgerMetadata(ledgerId, AbstractZkLedgerManager.this)
                     .whenComplete((metadata, exception) -> handleMetadata(metadata, exception));
-            } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
-                }
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
             }
         }
 
@@ -217,7 +215,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     @Override
     public void process(WatchedEvent event) {
-        LOG.debug("Received watched event {} from zookeeper based ledger manager.", event);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received watched event {} from zookeeper based ledger manager.", event);
+        }
         if (Event.EventType.None == event.getType()) {
             if (Event.KeeperState.Expired == event.getState()) {
                 LOG.info("ZooKeeper client expired on ledger manager.");
@@ -254,10 +254,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     }
                     listeners.remove(ledgerId, listenerSet);
                 }
-            } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No ledger metadata listeners to remove from ledger {} after it's deleted.", ledgerId);
-                }
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("No ledger metadata listeners to remove from ledger {} after it's deleted.",
+                        ledgerId);
             }
             break;
         case NodeDataChanged:
@@ -380,11 +379,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                                     "Remove registered ledger metadata listeners on ledger {} after ledger is deleted.",
                                     ledgerId);
                         }
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("No ledger metadata listeners to remove from ledger {} when it's being deleted.",
-                                    ledgerId);
-                        }
+                    } else if (LOG.isDebugEnabled()) {
+                        LOG.debug("No ledger metadata listeners to remove from ledger {} when it's being deleted.",
+                                ledgerId);
                     }
                     FutureUtils.complete(promise, null);
                 } else {

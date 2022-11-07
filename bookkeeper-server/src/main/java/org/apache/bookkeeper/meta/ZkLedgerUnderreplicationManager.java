@@ -813,7 +813,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public boolean initializeLostBookieRecoveryDelay(int lostBookieRecoveryDelay) throws UnavailableException {
-        LOG.debug("initializeLostBookieRecoveryDelay()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("initializeLostBookieRecoveryDelay()");
+        }
         try {
             zkc.create(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -836,7 +838,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void setLostBookieRecoveryDelay(int lostBookieRecoveryDelay) throws UnavailableException {
-        LOG.debug("setLostBookieRecoveryDelay()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setLostBookieRecoveryDelay()");
+        }
         try {
             if (zkc.exists(lostBookieRecoveryDelayZnode, false) != null) {
                 zkc.setData(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
@@ -856,7 +860,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public int getLostBookieRecoveryDelay() throws UnavailableException {
-        LOG.debug("getLostBookieRecoveryDelay()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getLostBookieRecoveryDelay()");
+        }
         try {
             byte[] data = zkc.getData(lostBookieRecoveryDelayZnode, false, null);
             return Integer.parseInt(new String(data, UTF_8));
@@ -871,7 +877,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb) throws UnavailableException {
-        LOG.debug("notifyUnderReplicationLedgerChanged()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("notifyUnderReplicationLedgerChanged()");
+        }
         Watcher w = new Watcher() {
             @Override
             public void process(WatchedEvent e) {
@@ -893,7 +901,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb) throws UnavailableException {
-        LOG.debug("notifyLostBookieRecoveryDelayChanged()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("notifyLostBookieRecoveryDelayChanged()");
+        }
         Watcher w = new Watcher() {
             @Override
             public void process(WatchedEvent e) {

@@ -111,7 +111,7 @@ If ZK is completely wiped, but snapshots are available, restore ZK from snapshot
 If the data stays on the disk for long time(years), it is possible to experience silent data degradation on the disk. In the current scenario we will not identify this until the data is read by the application.
 
 ### End to end checksum
-Bookies never validate the payload checksum. If the the client’s socket has issues, it might corrupt the data (at the source) and it won’t be detected until client reads it back. That will be too late as the original write was successful for the application. Use efficient checksum mechanisms and enforce checksum validations on the bookie’s write path. If checksum validation fails, the the write itself will fail and application will be notified. 
+Bookies never validate the payload checksum. If the client’s socket has issues, it might corrupt the data (at the source) and it won’t be detected until client reads it back. That will be too late as the original write was successful for the application. Use efficient checksum mechanisms and enforce checksum validations on the bookie’s write path. If checksum validation fails, write itself will fail and application will be notified. 
 
 
 ## Test strategy to validate durability

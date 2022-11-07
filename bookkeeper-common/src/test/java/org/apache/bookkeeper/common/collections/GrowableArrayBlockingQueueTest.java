@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Test;
 
 /**
@@ -40,7 +41,7 @@ public class GrowableArrayBlockingQueueTest {
 
     @Test
     public void simple() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>(4);
+        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>(4);
 
         assertEquals(null, queue.poll());
 
@@ -99,7 +100,7 @@ public class GrowableArrayBlockingQueueTest {
 
     @Test
     public void blockingTake() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>();
+        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>();
 
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -137,7 +138,7 @@ public class GrowableArrayBlockingQueueTest {
 
     @Test
     public void growArray() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>(4);
+        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>(4);
 
         assertEquals(null, queue.poll());
 
@@ -166,7 +167,7 @@ public class GrowableArrayBlockingQueueTest {
 
     @Test
     public void pollTimeout() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>(4);
+        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>(4);
 
         assertEquals(null, queue.poll(1, TimeUnit.MILLISECONDS));
 
@@ -184,7 +185,7 @@ public class GrowableArrayBlockingQueueTest {
 
     @Test
     public void pollTimeout2() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>();
+        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>();
 
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -203,5 +204,70 @@ public class GrowableArrayBlockingQueueTest {
         queue.put(1);
 
         latch.await();
+    }
+
+
+    static class TestThread extends Thread {
+
+        private volatile boolean stop;
+        private final BlockingQueue<Integer> readQ;
+        private final BlockingQueue<Integer> writeQ;
+
+        private final AtomicLong counter = new AtomicLong();
+
+        TestThread(BlockingQueue<Integer> readQ, BlockingQueue<Integer> writeQ) {
+            this.readQ = readQ;
+            this.writeQ = writeQ;
+        }
+
+        @Override
+        public void run() {
+            ArrayList<Integer> localQ = new ArrayList<>();
+
+            while (!stop) {
+                int items = readQ.drainTo(localQ);
+                if (items > 0) {
+                    for (int i = 0; i < items; i++) {
+                        writeQ.add(localQ.get(i));
+                    }
+
+                    counter.addAndGet(items);
+                    localQ.clear();
+                } else {
+                    try {
+                        writeQ.add(readQ.take());
+                        counter.incrementAndGet();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int n = 10_000;
+        BlockingQueue<Integer> q1 = new GrowableMpScArrayConsumerBlockingQueue<>();
+        BlockingQueue<Integer> q2 = new GrowableMpScArrayConsumerBlockingQueue<>();
+//        BlockingQueue<Integer> q1 = new ArrayBlockingQueue<>(N * 2);
+//        BlockingQueue<Integer> q2 = new ArrayBlockingQueue<>(N * 2);
+//        BlockingQueue<Integer> q1 = new LinkedBlockingQueue<>();
+//        BlockingQueue<Integer> q2 = new LinkedBlockingDeque<>();
+
+        TestThread t1 = new TestThread(q1, q2);
+        TestThread t2 = new TestThread(q2, q1);
+
+        for (int i = 0; i < n; i++) {
+            q1.add(i);
+        }
+
+        t1.start();
+        t2.start();
+
+        Thread.sleep(10_000);
+
+        System.out.println("Throughput " + (t1.counter.get() / 10 / 1e6) + " Millions items/s");
+        t1.stop = true;
+        t2.stop = true;
     }
 }

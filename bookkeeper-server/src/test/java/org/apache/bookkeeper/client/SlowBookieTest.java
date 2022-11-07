@@ -91,8 +91,8 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                 };
             lh.asyncAddEntry(entry, cb, null);
 
-            Thread.sleep(3000); // sleep 3 seconds to allow time to complete
-            assertEquals("Successfully added entry!", 0xdeadbeef, i.get());
+            Awaitility.await().untilAsserted(() ->
+                assertEquals("Successfully added entry!", 0xdeadbeef, i.get()));
             b0latch.countDown();
             b1latch.countDown();
             addEntrylatch.await(4000, TimeUnit.MILLISECONDS);
@@ -150,7 +150,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
                 public void operationComplete(int rc, Set<LedgerFragment> badFragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
+                    }
                     if (rc == BKException.Code.OK) {
                         numFragments.set(badFragments.size());
                     }
@@ -285,7 +287,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch checkLatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, (rc, fragments) -> {
-            LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            }
             if (rc == BKException.Code.OK) {
                 numFragments.set(fragments.size());
                 LOG.error("Checked ledgers returned {} {}", rc, fragments);
@@ -323,6 +327,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             // b2 or b3 is no more writeable
             int slowBookieIndex = writeSet.get(ThreadLocalRandom.current().nextInt(writeSet.size()));
             List<BookieId> curEns = lh.getCurrentEnsemble();
+
+            // Trigger connection to the bookie service first
+            bkc.getBookieInfo().get(curEns.get(slowBookieIndex));
+            // then mock channel is not writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, false);
 
             boolean isWriteable = lh.waitForWritable(writeSet, 0, 1000);
@@ -381,7 +389,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
                 public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                    }
                     if (rc == BKException.Code.OK) {
                         numFragments.set(fragments.size());
                     }
@@ -415,11 +425,9 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             final long timeout = 10000;
 
             // waitForWritable async
-           new Thread(() -> {
-                isWriteable.set(lh.waitForWritable(writeSet, 0, timeout));
-            }).start();
-            TimeUnit.MILLISECONDS.sleep(5000);
-            assertFalse(isWriteable.get());
+            new Thread(() -> isWriteable.set(lh.waitForWritable(writeSet, 0, timeout))).start();
+
+            Awaitility.await().pollDelay(5, TimeUnit.SECONDS).untilAsserted(() -> assertFalse(isWriteable.get()));
 
             // enable channel writable
             setTargetChannelState(bkc, curEns.get(slowBookieIndex), 0, true);

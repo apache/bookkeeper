@@ -102,9 +102,9 @@ public class BookieProtoEncodingTest {
         }
         assertEquals(0, outList.size());
 
-        v3Decoder.channelRead(
-            ctx,
-            v3Encoder.encode(v3Resp, UnpooledByteBufAllocator.DEFAULT));
+        ByteBuf serWithFrameSize = (ByteBuf) v3Encoder.encode(v3Resp, UnpooledByteBufAllocator.DEFAULT);
+        ByteBuf ser = serWithFrameSize.slice(4, serWithFrameSize.readableBytes() - 4);
+        v3Decoder.channelRead(ctx, ser);
         assertEquals(1, outList.size());
     }
 

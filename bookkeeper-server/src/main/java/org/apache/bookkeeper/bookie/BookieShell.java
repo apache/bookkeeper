@@ -2424,7 +2424,9 @@ public class BookieShell implements Tool {
         } else {
             shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(shell.bkConf);
         }
-        LOG.debug("Using ledgerIdFormatter {}", shell.ledgerIdFormatter.getClass());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Using ledgerIdFormatter {}", shell.ledgerIdFormatter.getClass());
+        }
 
         // entry format
         if (cmdLine.hasOption(ENTRY_FORMATTER_OPT)) {
@@ -2433,7 +2435,9 @@ public class BookieShell implements Tool {
         } else {
             shell.entryFormatter = EntryFormatter.newEntryFormatter(shell.bkConf);
         }
-        LOG.debug("Using entry formatter {}", shell.entryFormatter.getClass());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Using entry formatter {}", shell.entryFormatter.getClass());
+        }
 
         int res = shell.run(cmdLine.getArgs());
         System.exit(res);
