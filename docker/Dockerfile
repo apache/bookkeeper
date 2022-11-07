@@ -43,9 +43,9 @@ RUN set -x \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
     && apt-get -y --purge autoremove \
-     && apt-get autoclean \
-     && apt-get clean \
-     && rm -rf /var/lib/apt/lists/*
+    && apt-get autoclean \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
