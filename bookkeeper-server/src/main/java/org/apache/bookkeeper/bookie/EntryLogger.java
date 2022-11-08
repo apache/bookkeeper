@@ -1021,10 +1021,10 @@ public class EntryLogger {
                 long offset = pos;
                 pos += 4;
                 int entrySize = headerBuffer.readInt();
-                if (entrySize <= 0) {
-                    LOG.warn("bad read for ledger entry from entryLog {}@{} (entry size {})",
-                            entryLogId, pos, entrySize);
-                    return;
+                if (entrySize <= 0) { // hitting padding
+                    pos++;
+                    headerBuffer.clear();
+                    continue;
                 }
                 long ledgerId = headerBuffer.readLong();
                 headerBuffer.clear();
