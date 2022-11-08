@@ -10,7 +10,7 @@ The technical details of this release are summarized below.
 
 ### Notice
 
-* We introduced a break change for the RocksDB configuration in 4.15.0 but didn't consider the compatibility.
+* 4.15.0 introduced a breaking change about the RocksDB configuration in 4.15.0. Release 4.15.3 allows users to safely upgrade from 4.14.x without loosing the RocksDB runtime configuration
   For more details, refer to https://lists.apache.org/thread/drh4p5prxbcs8gszhxnd1xsv0g48vvbt
   See [PR #3523](https://github.com/apache/bookkeeper/pull/3523)
 
