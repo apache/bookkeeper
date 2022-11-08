@@ -34,7 +34,7 @@ The technical details of this release are summarized below.
 * Fix memory leak when reading entry but the connection disconnected. [PR #3528](https://github.com/apache/bookkeeper/pull/3528)
 * Fix byteBuf potential memory leak problem. [PR #3525](https://github.com/apache/bookkeeper/pull/3525)
 * LedgerOpenOp: Do not call blocking close() in the callback. [PR #3513](https://github.com/apache/bookkeeper/pull/3513)
-* Rename success with writableResult and update final writableResult about wait writeSet. [PR 3505](https://github.com/apache/bookkeeper/pull/3505)
+* Rename success with writableResult and update final writableResult about wait writeSet. [PR #3505](https://github.com/apache/bookkeeper/pull/3505)
 * Fix close ledgerAuditorManager repeatedly. [PR #3503](https://github.com/apache/bookkeeper/pull/3503)
 
 #### Improvements
