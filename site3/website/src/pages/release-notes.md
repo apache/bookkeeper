@@ -14,7 +14,7 @@ The technical details of this release are summarized below.
   For more details, refer to https://lists.apache.org/thread/drh4p5prxbcs8gszhxnd1xsv0g48vvbt
   See [PR #3523](https://github.com/apache/bookkeeper/pull/3523)
 
-* We handled Timeout Exception in Recovery. The exception will change from `LedgerRecoveryException` to `TimeoutException`.
+* Timeout exceptions are now handled in a better way during reads.
   See [PR #3562](https://github.com/apache/bookkeeper/pull/3562)
 
 ### Highlights
