@@ -63,7 +63,6 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final LongAdder tasksFailed = new LongAdder();
     private final LongAdder tasksTimeout = new LongAdder();
     private final long warnTimeMicroSec;
-    private final ScheduledExecutorService executor;
 
     enum State {
         Running,
@@ -92,14 +91,12 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         } else {
             this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
         }
-        this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory(EXECUTOR_NAME));
         this.warnTimeMicroSec = warnTimeMicroSec;
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
         this.startLatch = new CountDownLatch(1);
         this.runner.start();
-        this.executor.scheduleAtFixedRate(this::monitorTimeoutTasks, 0, MONITOR_INTERVAL, TimeUnit.SECONDS);
 
         // Ensure the runner is already fully working by the time the constructor is done
         this.startLatch.await();
@@ -149,6 +146,19 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private boolean safeRunTask(Runnable r) {
         try {
+            if (r instanceof TimedCallable) {
+                TimedCallable timedTask = (TimedCallable) r;
+                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
+                if (executionTime > warnTimeMicroSec) {
+                    tasksTimeout.increment();
+                }
+            } else if (r instanceof TimedRunnable) {
+                TimedRunnable timedTask = (TimedRunnable) r;
+                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
+                if (executionTime > warnTimeMicroSec) {
+                    tasksTimeout.increment();
+                }
+            }
             r.run();
             tasksCompleted.increment();
         } catch (Throwable t) {
@@ -170,14 +180,12 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         if (queue.isEmpty()) {
             runner.interrupt();
         }
-        executor.shutdown();
     }
 
     @Override
     public List<Runnable> shutdownNow() {
         this.state = State.Shutdown;
         this.runner.interrupt();
-        executor.shutdown();
         List<Runnable> remainingTasks = new ArrayList<>();
         queue.drainTo(remainingTasks);
         return remainingTasks;
@@ -243,26 +251,6 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
             }
         } catch (InterruptedException e) {
             throw new RejectedExecutionException("Executor thread was interrupted", e);
-        }
-    }
-
-    private void monitorTimeoutTasks() {
-        for (Runnable task : queue) {
-            if (task instanceof TimedCallable) {
-                TimedCallable timedTask = (TimedCallable) task;
-                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
-                if (executionTime > warnTimeMicroSec && !timedTask.isRecorded()) {
-                    tasksTimeout.increment();
-                    timedTask.setRecorded(true);
-                }
-            } else if (task instanceof TimedRunnable) {
-                TimedRunnable timedTask = (TimedRunnable) task;
-                long executionTime = (MathUtils.nowInNano() - timedTask.initNanos) / 1000;
-                if (executionTime > warnTimeMicroSec && !timedTask.isRecorded()) {
-                    tasksTimeout.increment();
-                    timedTask.setRecorded(true);
-                }
-            }
         }
     }
 
