@@ -196,6 +196,8 @@ public class EmbeddedServer {
 
         private BookieConfiguration conf;
 
+        boolean addExternalResourcesToLifecycle = true;
+
         private StatsProvider statsProvider;
 
         private MetadataBookieDriver metadataDriver;
@@ -215,6 +217,11 @@ public class EmbeddedServer {
             checkNotNull(conf, "bookieConfiguration cannot be null");
 
             this.conf = conf;
+        }
+
+        public Builder addExternalResourcesToLifecycle(boolean addExternalResourcesToLifecycle) {
+            this.addExternalResourcesToLifecycle = addExternalResourcesToLifecycle;
+            return this;
         }
 
         public Builder statsProvider(StatsProvider statsProvider) {
@@ -306,17 +313,23 @@ public class EmbeddedServer {
                     metadataDriver = BookieResources.createMetadataDriver(conf.getServerConf(), rootStatsLogger);
                     serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
                 }
+            } else if (addExternalResourcesToLifecycle) {
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
             }
 
             if (registrationManager == null) {
                 registrationManager = metadataDriver.createRegistrationManager();
                 serverBuilder.addComponent(
                         new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
+            } else if (addExternalResourcesToLifecycle) {
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
             }
 
             // 3. Build ledger manager
             if (ledgerManagerFactory == null) {
                 ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", ledgerManagerFactory));
+            } else if (addExternalResourcesToLifecycle) {
                 serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", ledgerManagerFactory));
             }
             LedgerManager ledgerManager = ledgerManagerFactory.newLedgerManager();
@@ -352,10 +365,9 @@ public class EmbeddedServer {
 
             if (uncleanShutdownDetection == null) {
                 uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
-                if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
-                    log.info("Unclean shutdown detected."
-                            + " The bookie did not register a graceful shutdown prior to this boot.");
-                }
+            }
+            if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
+                log.info("Unclean shutdown detected. The bookie did not register a graceful shutdown prior to this boot.");
             }
 
             // bookie takes ownership of storage, so shuts it down
