@@ -196,7 +196,7 @@ public class EmbeddedServer {
 
         private BookieConfiguration conf;
 
-        boolean addExternalResourcesToLifecycle = true;
+        boolean addExternalResourcesToLifecycle = false;
 
         private StatsProvider statsProvider;
 
@@ -219,6 +219,14 @@ public class EmbeddedServer {
             this.conf = conf;
         }
 
+        /**
+         * Add every external resource provided to this builder to the resulting
+         * {@link EmbeddedServer#getLifecycleComponentStack()}: given resources will be closed at lifecycle termination.
+         * By default provided external resources will not included in server lifecycle and should be manually closed.
+         *
+         * @param addExternalResourcesToLifecycle flag to include provided resources to server lifecycle
+         * @return this builder
+         */
         public Builder addExternalResourcesToLifecycle(boolean addExternalResourcesToLifecycle) {
             this.addExternalResourcesToLifecycle = addExternalResourcesToLifecycle;
             return this;
@@ -322,7 +330,8 @@ public class EmbeddedServer {
                 serverBuilder.addComponent(
                         new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
             } else if (addExternalResourcesToLifecycle) {
-                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
+                serverBuilder.addComponent(
+                        new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
             }
 
             // 3. Build ledger manager
@@ -355,6 +364,7 @@ public class EmbeddedServer {
             ByteBufAllocatorWithOomHandler allocatorWithOomHandler;
             if (allocator == null) {
                 allocatorWithOomHandler = BookieResources.createAllocator(conf.getServerConf());
+                allocator = allocatorWithOomHandler;
             } else {
                 if (allocator instanceof ByteBufAllocatorWithOomHandler) {
                     allocatorWithOomHandler = (ByteBufAllocatorWithOomHandler) allocator;
@@ -367,15 +377,14 @@ public class EmbeddedServer {
                 uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
             }
             if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
-                log.info("Unclean shutdown detected. The bookie did not register a graceful shutdown prior to this boot.");
+                log.info("Unclean shutdown detected. "
+                        + "The bookie did not register a graceful shutdown prior to this boot.");
             }
 
             // bookie takes ownership of storage, so shuts it down
-            LedgerStorage storage = BookieResources.createLedgerStorage(conf.getServerConf(),
-                    ledgerManager, ledgerDirsManager, indexDirsManager,
-                    bookieStats, allocator);
-
+            LedgerStorage storage = null;
             DataIntegrityCheck integCheck = null;
+
             if (conf.getServerConf().isDataIntegrityCheckingEnabled()) {
                 StatsLogger clientStats = bookieStats.scope(CLIENT_SCOPE);
                 ClientConfiguration clientConfiguration = new ClientConfiguration(conf.getServerConf());
@@ -393,6 +402,9 @@ public class EmbeddedServer {
                 serverBuilder.addComponent(
                         new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats,
                                 rxScheduler, rxExecutor));
+
+                storage = BookieResources.createLedgerStorage(
+                        conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
 
                 EntryCopier copier = new EntryCopierImpl(bookieId,
                         ((org.apache.bookkeeper.client.BookKeeper) bkc).getClientCtx().getBookieClient(),
@@ -416,6 +428,9 @@ public class EmbeddedServer {
                 CookieValidation cookieValidation =
                         new LegacyCookieValidation(conf.getServerConf(), registrationManager);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
+                // storage should be created after legacy validation or it will fail (it would find ledger dirs)
+                storage = BookieResources.createLedgerStorage(
+                        conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
             }
 
             Bookie bookie;

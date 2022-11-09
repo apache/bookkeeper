@@ -195,7 +195,7 @@ public class TestEmbeddedServer {
         assertSame(indexDirsManager, server.getIndexDirsManager());
 
         LifecycleComponentStack stack = server.getLifecycleComponentStack();
-        assertEquals(5, stack.getNumComponents());
+        assertEquals(3, stack.getNumComponents());
         assertTrue(stack.getComponent(2) instanceof TestComponent);
 
         stack.start();
