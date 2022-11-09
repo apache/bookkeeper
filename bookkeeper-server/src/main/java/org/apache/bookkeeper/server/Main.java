@@ -18,18 +18,6 @@
 
 package org.apache.bookkeeper.server;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
-import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
-import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
-import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
-
-import com.google.common.base.Ticker;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.reactivex.rxjava3.core.Scheduler;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -37,58 +25,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
-import org.apache.bookkeeper.bookie.BookieResources;
-import org.apache.bookkeeper.bookie.CookieValidation;
 import org.apache.bookkeeper.bookie.ExitCode;
-import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.LegacyCookieValidation;
-import org.apache.bookkeeper.bookie.ReadOnlyBookie;
-import org.apache.bookkeeper.bookie.ScrubberStats;
-import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
-import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
-import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCheck;
-import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCheckImpl;
-import org.apache.bookkeeper.bookie.datainteg.DataIntegrityCookieValidation;
-import org.apache.bookkeeper.bookie.datainteg.DataIntegrityService;
-import org.apache.bookkeeper.bookie.datainteg.EntryCopier;
-import org.apache.bookkeeper.bookie.datainteg.EntryCopierImpl;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
-import org.apache.bookkeeper.common.component.AutoCloseableLifecycleComponent;
-import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
-import org.apache.bookkeeper.common.component.RxSchedulerLifecycleComponent;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
-import org.apache.bookkeeper.discover.BookieServiceInfo;
-import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
-import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
-import org.apache.bookkeeper.server.service.AutoRecoveryService;
-import org.apache.bookkeeper.server.service.BookieService;
-import org.apache.bookkeeper.server.service.HttpService;
-import org.apache.bookkeeper.server.service.ScrubberService;
-import org.apache.bookkeeper.server.service.StatsProviderService;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -96,7 +41,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * A bookie server is a server that run bookie and serving rpc requests.
@@ -330,209 +274,7 @@ public class Main {
      * @return lifecycle stack
      */
     public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
-
-        final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();
-
-        final Supplier<BookieServiceInfo> bookieServiceInfoProvider =
-                () -> buildBookieServiceInfo(componentInfoPublisher);
-        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack
-                .newBuilder()
-                .withComponentInfoPublisher(componentInfoPublisher)
-                .withName("bookie-server");
-
-        // 1. build stats provider
-        StatsProviderService statsProviderService =
-            new StatsProviderService(conf);
-        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
-        serverBuilder.addComponent(statsProviderService);
-        log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
-
-        // 2. Build metadata driver
-        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
-                conf.getServerConf(), rootStatsLogger);
-        serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
-        RegistrationManager rm = metadataDriver.createRegistrationManager();
-        serverBuilder.addComponent(new AutoCloseableLifecycleComponent("registrationManager", rm));
-
-        // 3. Build ledger manager
-        LedgerManagerFactory lmFactory = metadataDriver.getLedgerManagerFactory();
-        serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", lmFactory));
-        LedgerManager ledgerManager = lmFactory.newLedgerManager();
-        serverBuilder.addComponent(new AutoCloseableLifecycleComponent("ledgerManager", ledgerManager));
-
-        // 4. Build bookie
-        StatsLogger bookieStats = rootStatsLogger.scope(BOOKIE_SCOPE);
-        DiskChecker diskChecker = BookieResources.createDiskChecker(conf.getServerConf());
-        LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
-                conf.getServerConf(), diskChecker, bookieStats.scope(LD_LEDGER_SCOPE));
-        LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
-                conf.getServerConf(), diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
-
-        ByteBufAllocatorWithOomHandler allocator = BookieResources.createAllocator(conf.getServerConf());
-
-        UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
-        if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
-            log.info("Unclean shutdown detected. The bookie did not register a graceful shutdown prior to this boot.");
-        }
-
-        // bookie takes ownership of storage, so shuts it down
-        LedgerStorage storage = null;
-        DataIntegrityCheck integCheck = null;
-
-        if (conf.getServerConf().isDataIntegrityCheckingEnabled()) {
-            StatsLogger clientStats = bookieStats.scope(CLIENT_SCOPE);
-            ClientConfiguration clientConfiguration = new ClientConfiguration(conf.getServerConf());
-            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
-            BookKeeper bkc = BookKeeper.forConfig(clientConfiguration).statsLogger(clientStats).build();
-            serverBuilder.addComponent(new AutoCloseableLifecycleComponent("bkc", bkc));
-
-            BookieId bookieId = BookieImpl.getBookieId(conf.getServerConf());
-            ExecutorService rxExecutor = Executors.newFixedThreadPool(
-                    2, new ThreadFactoryBuilder().setNameFormat("rx-schedule-%d")
-                    .setUncaughtExceptionHandler(
-                            (t, ex) -> log.error("Uncaught exception on thread {}", t.getName(), ex))
-                    .build());
-            Scheduler rxScheduler = Schedulers.from(rxExecutor);
-            serverBuilder.addComponent(
-                    new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats,
-                            rxScheduler, rxExecutor));
-
-            storage = BookieResources.createLedgerStorage(
-                    conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
-
-            EntryCopier copier = new EntryCopierImpl(bookieId,
-                    ((org.apache.bookkeeper.client.BookKeeper) bkc).getClientCtx().getBookieClient(),
-                    storage, Ticker.systemTicker());
-
-            integCheck = new DataIntegrityCheckImpl(bookieId,
-                                                    ledgerManager, storage, copier,
-                                                    new BookKeeperAdmin(bkc, clientStats, clientConfiguration),
-                                                    rxScheduler);
-
-            // if we're running with journal writes disabled and an unclean shutdown occurred then
-            // run the preboot check to protect against data loss and to perform data repair
-            if (!conf.getServerConf().getJournalWriteData()
-                    && uncleanShutdownDetection.lastShutdownWasUnclean()) {
-                integCheck.runPreBootCheck("UNCLEAN_SHUTDOWN");
-            }
-            CookieValidation cookieValidation = new DataIntegrityCookieValidation(conf.getServerConf(),
-                                                                 rm, integCheck);
-            cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
-        } else {
-            CookieValidation cookieValidation = new LegacyCookieValidation(conf.getServerConf(), rm);
-            cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
-            storage = BookieResources.createLedgerStorage(
-                    conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
-        }
-
-        Bookie bookie;
-        if (conf.getServerConf().isForceReadOnlyBookie()) {
-            bookie = new ReadOnlyBookie(conf.getServerConf(), rm, storage,
-                                        diskChecker,
-                                        ledgerDirsManager, indexDirsManager,
-                                        bookieStats, allocator,
-                                        bookieServiceInfoProvider);
-        } else {
-            bookie = new BookieImpl(conf.getServerConf(), rm, storage,
-                                    diskChecker,
-                                    ledgerDirsManager, indexDirsManager,
-                                    bookieStats, allocator,
-                                    bookieServiceInfoProvider);
-        }
-
-        // 5. build bookie server
-        BookieService bookieService =
-            new BookieService(conf, bookie, rootStatsLogger, allocator, uncleanShutdownDetection);
-
-        serverBuilder.addComponent(bookieService);
-        log.info("Load lifecycle component : {}", BookieService.class.getName());
-
-        if (conf.getServerConf().isLocalScrubEnabled()) {
-            serverBuilder.addComponent(
-                    new ScrubberService(
-                            rootStatsLogger.scope(ScrubberStats.SCOPE),
-                    conf, bookieService.getServer().getBookie().getLedgerStorage()));
-        }
-
-        // 6. build auto recovery
-        if (conf.getServerConf().isAutoRecoveryDaemonEnabled()) {
-            AutoRecoveryService autoRecoveryService =
-                new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
-
-            serverBuilder.addComponent(autoRecoveryService);
-            log.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
-        }
-
-        // 7. build data integrity check service
-        if (conf.getServerConf().isDataIntegrityCheckingEnabled()) {
-            checkNotNull(integCheck,
-                    "integCheck should have been initialized with the cookie validation");
-            DataIntegrityService dataIntegrityService =
-                    new DataIntegrityService(conf, rootStatsLogger.scope(REPLICATION_SCOPE),
-                    integCheck);
-            serverBuilder.addComponent(dataIntegrityService);
-            log.info("Load lifecycle component : {}", DataIntegrityService.class.getName());
-        }
-
-        // 8. build http service
-        if (conf.getServerConf().isHttpServerEnabled()) {
-            BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
-                .setBookieServer(bookieService.getServer())
-                .setServerConfiguration(conf.getServerConf())
-                .setStatsProvider(statsProviderService.getStatsProvider())
-                .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
-                .build();
-            HttpService httpService =
-                new HttpService(provider, conf, rootStatsLogger);
-            serverBuilder.addComponent(httpService);
-            log.info("Load lifecycle component : {}", HttpService.class.getName());
-        }
-
-        // 9. build extra services
-        String[] extraComponents = conf.getServerConf().getExtraServerComponents();
-        if (null != extraComponents) {
-            try {
-                List<ServerLifecycleComponent> components = loadServerComponents(
-                    extraComponents,
-                    conf,
-                    rootStatsLogger);
-                for (ServerLifecycleComponent component : components) {
-                    serverBuilder.addComponent(component);
-                    log.info("Load lifecycle component : {}", component.getClass().getName());
-                }
-            } catch (Exception e) {
-                if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {
-                    log.info("Failed to load extra components '{}' - {}. Continuing without those components.",
-                        StringUtils.join(extraComponents), e.getMessage());
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        return serverBuilder.build();
-    }
-
-    /**
-     * Create the {@link BookieServiceInfo} starting from the published endpoints.
-     *
-     * @see ComponentInfoPublisher
-     * @param componentInfoPublisher the endpoint publisher
-     * @return the created bookie service info
-     */
-    private static BookieServiceInfo buildBookieServiceInfo(ComponentInfoPublisher componentInfoPublisher) {
-        List<Endpoint> endpoints = componentInfoPublisher.getEndpoints().values()
-                .stream().map(e -> {
-                    return new Endpoint(
-                            e.getId(),
-                            e.getPort(),
-                            e.getHost(),
-                            e.getProtocol(),
-                            e.getAuth(),
-                            e.getExtensions()
-                    );
-                }).collect(Collectors.toList());
-        return new BookieServiceInfo(componentInfoPublisher.getProperties(), endpoints);
+        return EmbeddedServer.builder(conf).build().getLifecycleComponentStack();
     }
 
     public static List<File> storageDirectoriesFromConf(ServerConfiguration conf) throws IOException {
