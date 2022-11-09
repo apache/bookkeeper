@@ -196,8 +196,6 @@ public class EmbeddedServer {
 
         private BookieConfiguration conf;
 
-        boolean addExternalResourcesToLifecycle = false;
-
         private StatsProvider statsProvider;
 
         private MetadataBookieDriver metadataDriver;
@@ -217,19 +215,6 @@ public class EmbeddedServer {
             checkNotNull(conf, "bookieConfiguration cannot be null");
 
             this.conf = conf;
-        }
-
-        /**
-         * Add every external resource provided to this builder to the resulting
-         * {@link EmbeddedServer#getLifecycleComponentStack()}: given resources will be closed at lifecycle termination.
-         * By default provided external resources will not included in server lifecycle and should be manually closed.
-         *
-         * @param addExternalResourcesToLifecycle flag to include provided resources to server lifecycle
-         * @return this builder
-         */
-        public Builder addExternalResourcesToLifecycle(boolean addExternalResourcesToLifecycle) {
-            this.addExternalResourcesToLifecycle = addExternalResourcesToLifecycle;
-            return this;
         }
 
         public Builder statsProvider(StatsProvider statsProvider) {
@@ -321,15 +306,10 @@ public class EmbeddedServer {
                     metadataDriver = BookieResources.createMetadataDriver(conf.getServerConf(), rootStatsLogger);
                     serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
                 }
-            } else if (addExternalResourcesToLifecycle) {
-                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
             }
 
             if (registrationManager == null) {
                 registrationManager = metadataDriver.createRegistrationManager();
-                serverBuilder.addComponent(
-                        new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
-            } else if (addExternalResourcesToLifecycle) {
                 serverBuilder.addComponent(
                         new AutoCloseableLifecycleComponent("registrationManager", registrationManager));
             }
@@ -337,8 +317,6 @@ public class EmbeddedServer {
             // 3. Build ledger manager
             if (ledgerManagerFactory == null) {
                 ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
-                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", ledgerManagerFactory));
-            } else if (addExternalResourcesToLifecycle) {
                 serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", ledgerManagerFactory));
             }
             LedgerManager ledgerManager = ledgerManagerFactory.newLedgerManager();
