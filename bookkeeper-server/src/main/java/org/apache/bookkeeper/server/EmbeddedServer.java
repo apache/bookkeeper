@@ -403,8 +403,8 @@ public class EmbeddedServer {
                         new RxSchedulerLifecycleComponent("rx-scheduler", conf, bookieStats,
                                 rxScheduler, rxExecutor));
 
-                storage = BookieResources.createLedgerStorage(
-                        conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+                storage = BookieResources.createLedgerStorage(conf.getServerConf(), ledgerManager,
+                        ledgerDirsManager, indexDirsManager, bookieStats, allocator);
 
                 EntryCopier copier = new EntryCopierImpl(bookieId,
                         ((org.apache.bookkeeper.client.BookKeeper) bkc).getClientCtx().getBookieClient(),
@@ -429,8 +429,8 @@ public class EmbeddedServer {
                         new LegacyCookieValidation(conf.getServerConf(), registrationManager);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
                 // storage should be created after legacy validation or it will fail (it would find ledger dirs)
-                storage = BookieResources.createLedgerStorage(
-                        conf.getServerConf(), ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+                storage = BookieResources.createLedgerStorage(conf.getServerConf(), ledgerManager,
+                        ledgerDirsManager, indexDirsManager, bookieStats, allocator);
             }
 
             Bookie bookie;
