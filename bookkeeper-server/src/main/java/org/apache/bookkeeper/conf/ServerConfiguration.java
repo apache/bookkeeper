@@ -558,8 +558,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get the gc entry log size ratio.
      * When the current entry log total size less than GC_ENTRYLOG_SIZE_RATIO * ENTRY_LOG_SIZE_LIMIT,
-     * and the remaining usage less than the threshold, this entry log file will be compacted.
-     * This configuration is aiming to reduce small entry log files when using TransactionalEntryLogCompactor.
+     * this entry log file will be compacted. This configuration is aiming to reduce small entry log files
+     * when using TransactionalEntryLogCompactor.
      *
      * For example,
      *   - the current entry log file total size is 1MB
