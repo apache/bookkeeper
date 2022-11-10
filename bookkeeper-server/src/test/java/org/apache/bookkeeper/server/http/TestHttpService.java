@@ -865,10 +865,13 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         BookieSanityService service = new BookieSanityService(conf);
         HttpServiceResponse response1 = service.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
-        BookieSanity bs = JsonUtil.fromJson(response1.getBody(), BookieSanity.class);
-        assertEquals(true, bs.isPassed());
-        assertEquals(false, bs.isReadOnly());
-
+        // run multiple iteration to validate any server side throttling doesn't
+        // fail sequential requests.
+        for (int i = 0; i < 3; i++) {
+            BookieSanity bs = JsonUtil.fromJson(response1.getBody(), BookieSanity.class);
+            assertEquals(true, bs.isPassed());
+            assertEquals(false, bs.isReadOnly());
+        }
         HttpServiceResponse response2 = bookieStateServer.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
     }

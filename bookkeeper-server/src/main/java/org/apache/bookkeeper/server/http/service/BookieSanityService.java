@@ -20,6 +20,8 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.concurrent.Semaphore;
+
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -49,6 +51,7 @@ import lombok.NoArgsConstructor;
 public class BookieSanityService implements HttpEndpointService {
 
     private final ServerConfiguration config;
+    private Semaphore lock = new Semaphore(1);
 
     public BookieSanityService(ServerConfiguration config) {
         this.config = checkNotNull(config);
@@ -78,8 +81,15 @@ public class BookieSanityService implements HttpEndpointService {
 		if (config.isForceReadOnlyBookie()) {
 			bs.readOnly = true;
 		} else {
-			SanityTestCommand sanity = new SanityTestCommand();
-			bs.passed = sanity.apply(config, new SanityTestCommand.SanityFlags());
+		    try {
+                // allow max concurrent request as sanity-test check relatively
+                // longer time to complete
+		        lock.acquire();
+	            SanityTestCommand sanity = new SanityTestCommand();
+	            bs.passed = sanity.apply(config, new SanityTestCommand.SanityFlags());
+		    } finally {
+		        lock.release();
+		    }
 		}
 
 		String jsonResponse = JsonUtil.toJson(bs);
