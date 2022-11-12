@@ -104,6 +104,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-perf</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
        <!-- needed by ZooKeeper server -->
        <groupId>org.xerial.snappy</groupId>
        <artifactId>snappy-java</artifactId>
