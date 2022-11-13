@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +31,7 @@ import io.netty.buffer.Unpooled;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -124,8 +124,12 @@ public class PendingAddOpTest {
                 }, null).enableRecoveryAdd();
         assertSame(lh, op.lh);
         lh.pendingAddOps.add(op);
-        op.run();
-        assertTrue(op.maybeRecycled());
+        op.setEntryId(0);
+        lh.pendingAddOps.add(op);
+        lh.clientCtx.getMainWorkerPool().submitOrdered(lh.ledgerId, (Callable<Void>) () -> {
+            op.run();
+            return null;
+        }).get();
     }
 
     @Test
@@ -157,9 +161,12 @@ public class PendingAddOpTest {
                     rcHolder.set(rc);
                 }, null).enableRecoveryAdd();
         assertSame(lh, op.lh);
+        op.setEntryId(0);
         lh.pendingAddOps.add(op);
-        op.run();
-        assertTrue(op.maybeRecycled());
+        lh.clientCtx.getMainWorkerPool().submitOrdered(lh.ledgerId, (Callable<Void>) () -> {
+            op.run();
+            return null;
+        }).get();
     }
 
 }

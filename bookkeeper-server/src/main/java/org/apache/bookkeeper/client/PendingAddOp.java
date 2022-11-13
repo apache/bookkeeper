@@ -266,10 +266,6 @@ class PendingAddOp implements Runnable, WriteCallback {
         // We are about to send. Check if we need to make an ensemble change
         // because of delayed write errors
         lh.maybeHandleDelayedWriteBookieFailure();
-        // This op maybe recycled during bookie failures
-        if (maybeRecycled()) {
-            return;
-        }
 
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
@@ -496,10 +492,6 @@ class PendingAddOp implements Runnable, WriteCallback {
         if (hasRun && toSend == null && pendingWriteRequests == 0) {
             recyclePendAddOpObject();
         }
-    }
-
-    boolean maybeRecycled() {
-        return lh == null;
     }
 
     public void recyclePendAddOpObject() {
