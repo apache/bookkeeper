@@ -249,8 +249,8 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                                     + "EnsemblePlacementPolicy",
                             ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
                             ackQuorumSize);
-                } else if (segmentAdheringToPlacementPolicy ==
-                        EnsemblePlacementPolicy.PlacementPolicyAdherence.MEETS_SOFT) {
+                } else if (segmentAdheringToPlacementPolicy
+                        == EnsemblePlacementPolicy.PlacementPolicyAdherence.MEETS_SOFT) {
                     foundSegmentSoftlyAdheringToPlacementPolicy = true;
                     if (LOG.isDebugEnabled()) {
                         LOG.debug(
