@@ -1,6 +1,50 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.15.3
+
+Release 4.15.3 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.15.3.
+The technical details of this release are summarized below.
+
+### Notice
+
+* 4.15.0 introduced a breaking change in the RocksDB configuration in 4.15.0. Release 4.15.3 allows users to safely upgrade from 4.14.x without losing the RocksDB runtime configuration
+  For more details, refer to https://lists.apache.org/thread/drh4p5prxbcs8gszhxnd1xsv0g48vvbt
+  See [PR #3523](https://github.com/apache/bookkeeper/pull/3523)
+
+* Timeout exceptions are now handled in a better way during reads.
+  See [PR #3562](https://github.com/apache/bookkeeper/pull/3562)
+
+### Highlights
+
+#### Dependency updates
+
+* Upgrade dependencies for CVE-2022-3171 and CVE-2022-42003. [PR #3579](https://github.com/apache/bookkeeper/pull/3579)
+* Bump jackson version to 2.13.4 . [PR #3518](https://github.com/apache/bookkeeper/pull/3518)
+
+#### Bugs
+
+* Fix ByteBuf memory leak problem when setExplicitLac. [PR #3557](https://github.com/apache/bookkeeper/pull/3577)
+* Flush time started moved to after lock. [PR #3570](https://github.com/apache/bookkeeper/pull/3570)
+* Skip replicasCheck when replication disabled. [PR #3563](https://github.com/apache/bookkeeper/pull/3563)
+* Skipping placementPolicyCheck when ledger replication disabled. [PR #3561](https://github.com/apache/bookkeeper/pull/3561)
+* Fix the deadlock when only using io thread to handle request. [PR #3480](https://github.com/apache/bookkeeper/pull/3480)
+* Fix memory leak when reading entry but the connection disconnected. [PR #3528](https://github.com/apache/bookkeeper/pull/3528)
+* Fix byteBuf potential memory leak problem. [PR #3525](https://github.com/apache/bookkeeper/pull/3525)
+* LedgerOpenOp: Do not call blocking close() in the callback. [PR #3513](https://github.com/apache/bookkeeper/pull/3513)
+* Rename success with writableResult and update final writableResult about wait writeSet. [PR #3505](https://github.com/apache/bookkeeper/pull/3505)
+* Avoid closing the ledgerAuditorManager twice in the close method. [PR #3503](https://github.com/apache/bookkeeper/pull/3503)
+
+#### Improvements
+
+* When call openLedgerOp, make the timeout ex is a separate error code. [PR #3562](https://github.com/apache/bookkeeper/pull/3562)
+* Make the rocksDB configuration compatible with previous versions. [PR #3523](https://github.com/apache/bookkeeper/pull/3523)
+* Reduce unnecessary loop in removeIf if map is empty. [PR #3512](https://github.com/apache/bookkeeper/pull/3512)
+* Update default value of allocatorPoolingConcurrency. [PR #3001](https://github.com/apache/bookkeeper/pull/3001)
+
+
 ## 4.15.2
 
 Release 4.15.2 contains various bug fixes and some dependencies CVE fixes.
