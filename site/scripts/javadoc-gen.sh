@@ -18,7 +18,11 @@ function build_javadoc() {
   fi
   javadoc_dest_dir="${ROOT_DIR}/site/docs/${version}/api/javadoc"
   rm -rf $javadoc_dest_dir
-  mvn clean install javadoc:aggregate -DskipTests
+  if [[ "$use_gradle" == "true" ]]; then
+    ./gradlew generateApiJavadoc
+  else
+    mvn clean -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider install javadoc:aggregate -DskipTests -Pdelombok
+  fi
   mv $javadoc_gen_dir $javadoc_dest_dir
 
   echo "Built the javadoc for version ${version}."
