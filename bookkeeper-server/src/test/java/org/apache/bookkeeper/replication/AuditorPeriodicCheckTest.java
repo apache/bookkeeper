@@ -71,7 +71,6 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -355,7 +354,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                     try {
                         latch.countDown();
                         for (int i = 0; i < numLedgers; i++) {
-                            auditor.checkAllLedgers();
+                            ((AuditorCheckAllLedgersTask) auditor.newAuditorCheckAllLedgersTask()).checkAllLedgers();
                         }
                     } catch (Exception e) {
                         LOG.error("Caught exception while checking all ledgers", e);
@@ -409,7 +408,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         when(auditor.getBookKeeperAdmin(bookKeeper)).thenReturn(admin);
 
         try {
-            auditor.checkAllLedgers();
+            ((AuditorCheckAllLedgersTask) auditor.newAuditorCheckAllLedgersTask()).checkAllLedgers();
             verify(admin, times(numberLedgers)).asyncOpenLedgerNoRecovery(anyLong(),
                 any(AsyncCallback.OpenCallback.class), eq(null));
         } catch (Exception e) {
@@ -729,19 +728,16 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             super(bookieIdentifier, conf, statsLogger);
         }
 
-        void checkAllLedgers() throws BKException, IOException, InterruptedException {
-            super.checkAllLedgers();
-            latchRef.get().countDown();
+        AuditorTask newAuditorCheckAllLedgersTask() {
+            return new AuditorTestWrapperTask(super.newAuditorCheckAllLedgersTask(), latchRef);
         }
 
-        void placementPolicyCheck() throws BKAuditException {
-            super.placementPolicyCheck();
-            latchRef.get().countDown();
+        AuditorTask newAuditorPlacementPolicyCheckTask() {
+            return new AuditorTestWrapperTask(super.newAuditorPlacementPolicyCheckTask(), latchRef);
         }
 
-        void replicasCheck() throws BKAuditException {
-            super.replicasCheck();
-            latchRef.get().countDown();
+        AuditorTask newAuditorReplicasCheckTask() {
+            return new AuditorTestWrapperTask(super.newAuditorReplicasCheckTask(), latchRef);
         }
 
         CountDownLatch getLatch() {
@@ -750,6 +746,24 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         void setLatch(CountDownLatch latch) {
             latchRef.set(latch);
+        }
+
+        private static class AuditorTestWrapperTask extends AuditorTask {
+            private final AuditorTask innerTask;
+            private final AtomicReference<CountDownLatch> latchRef;
+
+            AuditorTestWrapperTask(AuditorTask innerTask, AtomicReference<CountDownLatch> latchRef) {
+                super(null, null, null, null, null,
+                        null, null);
+                this.innerTask = innerTask;
+                this.latchRef = latchRef;
+            }
+
+            @Override
+            protected void runTask() {
+                innerTask.runTask();
+                latchRef.get().countDown();
+            }
         }
     }
 
