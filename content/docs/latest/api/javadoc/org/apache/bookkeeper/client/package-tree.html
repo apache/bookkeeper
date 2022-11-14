@@ -131,6 +131,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.client.<a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">EnsemblePlacementPolicy.PlacementResult</span></a>&lt;T&gt;</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="EnsembleUtils.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">EnsembleUtils</span></a></li>
 <li class="circle">org.apache.bookkeeper.client.<a href="ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl</span></a> (implements org.apache.bookkeeper.client.<a href="ExplicitLacFlushPolicy.html" title="interface in org.apache.bookkeeper.client">ExplicitLacFlushPolicy</a>)</li>
+<li class="circle">org.apache.bookkeeper.client.<a href="ForceLedgerOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ForceLedgerOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback, java.lang.Runnable)</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="LedgerChecker.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerChecker</span></a></li>
 <li class="circle">org.apache.bookkeeper.client.<a href="LedgerCreateOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerCreateOp</span></a></li>
 <li class="circle">org.apache.bookkeeper.client.<a href="LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerCreateOp.CreateBuilderImpl</span></a> (implements org.apache.bookkeeper.client.api.<a href="api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a>)</li>
@@ -161,8 +162,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.client.<a href="LedgerOpenOp.OpenBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerOpenOp.OpenBuilderImpl</span></a></li>
 </ul>
 </li>
+<li class="circle">org.apache.bookkeeper.client.<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">PendingAddOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback, java.lang.Runnable)</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="PendingReadLacOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">PendingReadLacOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback)</li>
-<li class="circle">org.apache.bookkeeper.client.<a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">PendingReadOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback, org.apache.bookkeeper.common.util.SafeRunnable)
+<li class="circle">org.apache.bookkeeper.client.<a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">PendingReadOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback, java.lang.Runnable)
 <ul>
 <li class="circle">org.apache.bookkeeper.client.<a href="ListenerBasedPendingReadOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ListenerBasedPendingReadOp</span></a>
 <ul>
@@ -186,14 +188,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 <li class="circle">org.apache.bookkeeper.client.<a href="ReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadLastConfirmedOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback)</li>
+<li class="circle">org.apache.bookkeeper.client.<a href="ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadOnlyLedgerHandle.MetadataUpdater</span></a> (implements java.lang.Runnable)</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="RoundRobinDistributionSchedule.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">RoundRobinDistributionSchedule</span></a> (implements org.apache.bookkeeper.client.<a href="DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a>)</li>
-<li class="circle">org.apache.bookkeeper.util.SafeRunnable (implements org.apache.bookkeeper.common.util.SafeRunnable)
-<ul>
-<li class="circle">org.apache.bookkeeper.client.<a href="ForceLedgerOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ForceLedgerOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback)</li>
-<li class="circle">org.apache.bookkeeper.client.<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">PendingAddOp</span></a> (implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback)</li>
-<li class="circle">org.apache.bookkeeper.client.<a href="ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadOnlyLedgerHandle.MetadataUpdater</span></a></li>
-</ul>
-</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="SyncCallbackUtils.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils</span></a></li>
 <li class="circle">org.apache.bookkeeper.client.<a href="SyncCallbackUtils.LastAddConfirmedCallback.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.LastAddConfirmedCallback</span></a> (implements org.apache.bookkeeper.client.<a href="AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a>)</li>
 <li class="circle">org.apache.bookkeeper.client.<a href="SyncCallbackUtils.SyncCloseCallback.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.SyncCloseCallback</span></a> (implements org.apache.bookkeeper.client.<a href="AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>)</li>

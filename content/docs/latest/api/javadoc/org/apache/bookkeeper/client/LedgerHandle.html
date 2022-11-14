@@ -646,7 +646,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </tr>
 <tr id="i32" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable)">executeOrdered</a></span>&#8203;(org.apache.bookkeeper.common.util.SafeRunnable&nbsp;runnable)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeOrdered(java.lang.Runnable)">executeOrdered</a></span>&#8203;(java.lang.Runnable&nbsp;runnable)</code></th>
 <td class="colLast">
 <div class="block">Execute the callback in the thread pinned to the ledger.</div>
 </td>
@@ -2653,13 +2653,13 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  This will include all bookies that are cotna</div>
 </li>
 </ul>
-<a id="executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable)">
+<a id="executeOrdered(java.lang.Runnable)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>executeOrdered</h4>
-<pre class="methodSignature">void&nbsp;executeOrdered&#8203;(org.apache.bookkeeper.common.util.SafeRunnable&nbsp;runnable)
+<pre class="methodSignature">void&nbsp;executeOrdered&#8203;(java.lang.Runnable&nbsp;runnable)
              throws java.util.concurrent.RejectedExecutionException</pre>
 <div class="block">Execute the callback in the thread pinned to the ledger.</div>
 <dl>

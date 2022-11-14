@@ -123,12 +123,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
-<li>org.apache.bookkeeper.util.SafeRunnable</li>
-<li>
-<ul class="inheritance">
 <li>org.apache.bookkeeper.client.ReadOnlyLedgerHandle.MetadataUpdater</li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
@@ -137,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Runnable</code>, <code>org.apache.bookkeeper.common.util.SafeRunnable</code></dd>
+<dd><code>java.lang.Runnable</code></dd>
 </dl>
 <dl>
 <dt>Enclosing class:</dt>
@@ -145,7 +140,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">ReadOnlyLedgerHandle.MetadataUpdater</span>
-extends org.apache.bookkeeper.util.SafeRunnable</pre>
+extends java.lang.Object
+implements java.lang.Runnable</pre>
 </li>
 </ul>
 </div>
@@ -172,13 +168,6 @@ extends org.apache.bookkeeper.util.SafeRunnable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
-<ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
-<!--   -->
-</a>
-<h3>Fields inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
-<code>LOGGER</code></li>
-</ul>
 </li>
 </ul>
 </section>
@@ -219,7 +208,7 @@ extends org.apache.bookkeeper.util.SafeRunnable</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#safeRun()">safeRun</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#run()">run</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -229,25 +218,11 @@ extends org.apache.bookkeeper.util.SafeRunnable</pre>
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.util.SafeRunnable">
-<!--   -->
-</a>
-<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.util.SafeRunnable</h3>
-<code>safeRun, safeRun</code></li>
-</ul>
-<ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.Object</h3>
 <code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, wait, wait, wait</code></li>
-</ul>
-<ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
-<!--   -->
-</a>
-<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
-<code>run</code></li>
 </ul>
 </li>
 </ul>
@@ -303,13 +278,17 @@ extends org.apache.bookkeeper.util.SafeRunnable</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="safeRun()">
+<a id="run()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>safeRun</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;safeRun()</pre>
+<h4>run</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;run()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>run</code>&nbsp;in interface&nbsp;<code>java.lang.Runnable</code></dd>
+</dl>
 </li>
 </ul>
 <a id="toString()">

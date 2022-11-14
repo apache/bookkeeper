@@ -2083,7 +2083,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#execute()">execute()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp.OpenBuilderImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable)">executeOrdered(SafeRunnable)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#executeOrdered(java.lang.Runnable)">executeOrdered(Runnable)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Execute the callback in the thread pinned to the ledger.</div>
 </dd>
@@ -6765,7 +6765,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#%3Cinit%3E(org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble)">RRTopologyAwareCoverageEnsemble(TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ForceLedgerOp.html#run()">run()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ForceLedgerOp.html" title="class in org.apache.bookkeeper.client">ForceLedgerOp</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html#run()">run()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html" title="class in org.apache.bookkeeper.client">MetadataUpdateLoop</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#run()">run()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dd>
+<div class="block">Initiate the add operation.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#run()">run()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#run()">run()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#RW_REREPLICATE_BACKOFF_MS">RW_REREPLICATE_BACKOFF_MS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -6781,16 +6791,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h2 class="title">S</h2>
 <dl>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ForceLedgerOp.html#safeRun()">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ForceLedgerOp.html" title="class in org.apache.bookkeeper.client">ForceLedgerOp</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#safeRun()">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
-<dd>
-<div class="block">Initiate the add operation.</div>
-</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#safeRun()">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#safeRun()">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#scheduleBookieHealthCheckIfEnabled(org.apache.bookkeeper.conf.ClientConfiguration)">scheduleBookieHealthCheckIfEnabled(ClientConfiguration)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html#scheduledFuture">scheduledFuture</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html" title="class in org.apache.bookkeeper.client">ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl</a></dt>
