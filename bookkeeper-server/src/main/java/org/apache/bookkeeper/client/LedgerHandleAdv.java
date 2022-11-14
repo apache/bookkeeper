@@ -248,6 +248,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
                         op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
                                 LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
+                        op.recyclePendAddOpObject();
                     }
                     @Override
                     public String toString() {
@@ -258,6 +259,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
                                                                     BKException.Code.InterruptedException),
                         LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
+                op.recyclePendAddOpObject();
             }
             return;
         }
