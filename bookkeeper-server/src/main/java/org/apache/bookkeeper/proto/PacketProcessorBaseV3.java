@@ -82,6 +82,9 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
                 requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                if (response instanceof BookieProtocol.Response) {
+                    ((BookieProtocol.Response) response).release();
+                }
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
@@ -107,6 +110,9 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
                 }
             });
         } else {
+            if (response instanceof BookieProtocol.Response) {
+                ((BookieProtocol.Response) response).release();
+            }
             log.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
         }
