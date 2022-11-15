@@ -583,7 +583,7 @@ below.
 
 - [https://github.com/apache/bookkeeper/pull/2415] Spammy log when one bookie of ensemble is down
 
-### Compatiblity
+### Compatibility
 
 This is a point release and it does not bring API changes.
 

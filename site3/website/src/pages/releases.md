@@ -1,9 +1,5 @@
 <!-- markdown-link-check-disable -->
-
----
-id: releases
-title: Apache BookKeeper Releases
----
+# Releases
 
 Version **{{ site.latest_release }}** is the latest release of BookKeeper. The current stable version is **{{ site.stable_release }}**.
 
