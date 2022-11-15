@@ -44,6 +44,8 @@ class DbLedgerStorageStats {
 
     private static final String ADD_ENTRY = "add-entry";
     private static final String READ_ENTRY = "read-entry";
+    private static final String READ_ENTRY_LOCATIONS_INDEX_TIME = "read-locations-index-time";
+    private static final String READ_ENTRYLOG_TIME = "read-entrylog-time";
     private static final String READ_CACHE_HITS = "read-cache-hits";
     private static final String READ_CACHE_MISSES = "read-cache-misses";
     private static final String READAHEAD_BATCH_COUNT = "readahead-batch-count";
@@ -73,6 +75,20 @@ class DbLedgerStorageStats {
         parent = BOOKIE_ADD_ENTRY
     )
     private final OpStatsLogger readEntryStats;
+
+    @StatsDoc(
+            name = READ_ENTRY_LOCATIONS_INDEX_TIME,
+            help = "time spent reading entries from the locations index of the db ledger storage engine",
+            parent = READ_ENTRY
+    )
+    private final OpStatsLogger readFromLocationIndexTime;
+
+    @StatsDoc(
+        name = READ_ENTRYLOG_TIME,
+        help = "time spent reading entries from the entry log files of the db ledger storage engine",
+        parent = READ_ENTRY
+    )
+    private final OpStatsLogger readFromEntryLogTime;
     @StatsDoc(
         name = READ_CACHE_HITS,
         help = "operation stats of read cache hits",
@@ -149,6 +165,8 @@ class DbLedgerStorageStats {
                          Supplier<Long> readCacheCountSupplier) {
         addEntryStats = stats.getOpStatsLogger(ADD_ENTRY);
         readEntryStats = stats.getOpStatsLogger(READ_ENTRY);
+        readFromLocationIndexTime = stats.getOpStatsLogger(READ_ENTRY_LOCATIONS_INDEX_TIME);
+        readFromEntryLogTime = stats.getOpStatsLogger(READ_ENTRYLOG_TIME);
         readCacheHitStats = stats.getOpStatsLogger(READ_CACHE_HITS);
         readCacheMissStats = stats.getOpStatsLogger(READ_CACHE_MISSES);
         readAheadBatchCountStats = stats.getOpStatsLogger(READAHEAD_BATCH_COUNT);
