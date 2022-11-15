@@ -3663,7 +3663,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return http server trustStore password
      */
     public String getHttpServerTrustStorePassword() {
-        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+        return getString(HTTP_SERVER_TRUST_STORE_PASSWORD);
     }
 
     /**
