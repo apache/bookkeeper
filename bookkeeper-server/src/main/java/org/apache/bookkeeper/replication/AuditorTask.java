@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 abstract class AuditorTask implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorTask.class);
 
-    protected final Auditor auditor;
+    protected Auditor auditor;
     protected final ServerConfiguration conf;
     protected AuditorStats auditorStats;
     protected BookKeeperAdmin admin;
