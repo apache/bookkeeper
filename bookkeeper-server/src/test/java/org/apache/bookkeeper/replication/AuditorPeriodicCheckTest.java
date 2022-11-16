@@ -716,25 +716,28 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
                 StatsLogger statsLogger) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
-            renewAuditorTestWrapperTest();
+            renewAuditorTestWrapperTask();
         }
 
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
                 BookKeeperAdmin bkadmin, boolean ownadmin, StatsLogger statsLogger) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, bkadmin, ownadmin, statsLogger);
-            renewAuditorTestWrapperTest();
+            renewAuditorTestWrapperTask();
         }
 
         public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger)
                 throws UnavailableException {
             super(bookieIdentifier, conf, statsLogger);
-            renewAuditorTestWrapperTest();
+            renewAuditorTestWrapperTask();
         }
 
-        private void renewAuditorTestWrapperTest() {
-            super.auditorCheckAllLedgersTask = new AuditorTestWrapperTask(super.auditorCheckAllLedgersTask, latchRef);
-            super.auditorPlacementPolicyCheckTask = new AuditorTestWrapperTask(super.auditorPlacementPolicyCheckTask, latchRef);
-            super.auditorReplicasCheckTask = new AuditorTestWrapperTask(super.auditorReplicasCheckTask, latchRef);
+        private void renewAuditorTestWrapperTask() {
+            super.auditorCheckAllLedgersTask =
+                    new AuditorTestWrapperTask(super.auditorCheckAllLedgersTask, latchRef);
+            super.auditorPlacementPolicyCheckTask =
+                    new AuditorTestWrapperTask(super.auditorPlacementPolicyCheckTask, latchRef);
+            super.auditorReplicasCheckTask =
+                    new AuditorTestWrapperTask(super.auditorReplicasCheckTask, latchRef);
         }
 
         CountDownLatch getLatch() {
