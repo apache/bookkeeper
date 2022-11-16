@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 public class AuditorBookieCheckTask extends AuditorTask {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorBookieCheckTask.class);
 
-    private BookieLedgerIndexer bookieLedgerIndexer;
+    private final BookieLedgerIndexer bookieLedgerIndexer;
 
     public AuditorBookieCheckTask(Auditor auditor,
                                   ServerConfiguration conf,

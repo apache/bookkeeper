@@ -248,7 +248,6 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         try {
             final long timeMillis = System.currentTimeMillis();
             ledgerUnderreplicationManager.setReplicasCheckCTime(timeMillis);
-            LOG.info("ledgerUnderreplicationManager setReplicasCheckCTime {}", timeMillis);
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
             LOG.error("Non Recoverable Exception while reading from ZK", nre);
             submitShutdownTask();
@@ -445,12 +444,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         mcbForThisLedger.processResult(BKException.Code.OK, null, null);
                         continue;
                     }
-                    List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList = bookiesSegmentInfoMap
-                            .get(bookieInEnsemble);
-                    if (bookieSegmentInfoList == null) {
-                        bookieSegmentInfoList = new ArrayList<BookieExpectedToContainSegmentInfo>();
-                        bookiesSegmentInfoMap.put(bookieInEnsemble, bookieSegmentInfoList);
-                    }
+                    List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList =
+                            bookiesSegmentInfoMap.computeIfAbsent(bookieInEnsemble,
+                                    v -> new ArrayList<BookieExpectedToContainSegmentInfo>());
                     bookieSegmentInfoList.add(new BookieExpectedToContainSegmentInfo(startEntryIdOfSegment,
                             lastEntryIdOfSegment, segmentEnsemble, entriesStripedToThisBookie));
                 }

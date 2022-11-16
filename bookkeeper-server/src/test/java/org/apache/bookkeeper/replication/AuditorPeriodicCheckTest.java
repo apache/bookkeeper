@@ -354,7 +354,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                     try {
                         latch.countDown();
                         for (int i = 0; i < numLedgers; i++) {
-                            ((AuditorCheckAllLedgersTask) auditor.newAuditorCheckAllLedgersTask()).checkAllLedgers();
+                            ((AuditorCheckAllLedgersTask) auditor.auditorCheckAllLedgersTask).checkAllLedgers();
                         }
                     } catch (Exception e) {
                         LOG.error("Caught exception while checking all ledgers", e);
@@ -408,7 +408,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         when(auditor.getBookKeeperAdmin(bookKeeper)).thenReturn(admin);
 
         try {
-            ((AuditorCheckAllLedgersTask) auditor.newAuditorCheckAllLedgersTask()).checkAllLedgers();
+            ((AuditorCheckAllLedgersTask) auditor.auditorCheckAllLedgersTask).checkAllLedgers();
             verify(admin, times(numberLedgers)).asyncOpenLedgerNoRecovery(anyLong(),
                 any(AsyncCallback.OpenCallback.class), eq(null));
         } catch (Exception e) {
@@ -716,28 +716,25 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
                 StatsLogger statsLogger) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
+            renewAuditorTestWrapperTest();
         }
 
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
                 BookKeeperAdmin bkadmin, boolean ownadmin, StatsLogger statsLogger) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, bkadmin, ownadmin, statsLogger);
+            renewAuditorTestWrapperTest();
         }
 
         public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger)
                 throws UnavailableException {
             super(bookieIdentifier, conf, statsLogger);
+            renewAuditorTestWrapperTest();
         }
 
-        AuditorTask newAuditorCheckAllLedgersTask() {
-            return new AuditorTestWrapperTask(super.newAuditorCheckAllLedgersTask(), latchRef);
-        }
-
-        AuditorTask newAuditorPlacementPolicyCheckTask() {
-            return new AuditorTestWrapperTask(super.newAuditorPlacementPolicyCheckTask(), latchRef);
-        }
-
-        AuditorTask newAuditorReplicasCheckTask() {
-            return new AuditorTestWrapperTask(super.newAuditorReplicasCheckTask(), latchRef);
+        private void renewAuditorTestWrapperTest() {
+            super.auditorCheckAllLedgersTask = new AuditorTestWrapperTask(super.auditorCheckAllLedgersTask, latchRef);
+            super.auditorPlacementPolicyCheckTask = new AuditorTestWrapperTask(super.auditorPlacementPolicyCheckTask, latchRef);
+            super.auditorReplicasCheckTask = new AuditorTestWrapperTask(super.auditorReplicasCheckTask, latchRef);
         }
 
         CountDownLatch getLatch() {

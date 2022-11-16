@@ -39,7 +39,7 @@ abstract class AuditorTask implements Runnable {
     protected BookKeeperAdmin admin;
     protected LedgerManager ledgerManager;
     protected LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private Auditor.ShutdownTaskHandler shutdownTaskHandler;
+    private final Auditor.ShutdownTaskHandler shutdownTaskHandler;
 
     AuditorTask(Auditor auditor,
                 ServerConfiguration conf,

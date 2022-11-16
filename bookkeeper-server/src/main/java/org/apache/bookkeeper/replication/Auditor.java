@@ -83,7 +83,11 @@ public class Auditor implements AutoCloseable {
     private volatile int lostBookieRecoveryDelayBeforeChange;
     private final Semaphore openLedgerNoRecoverySemaphore;
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
-    private ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;;
+    private final ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;
+    protected AuditorBookieCheckTask auditorBookieCheckTask;
+    protected AuditorTask auditorCheckAllLedgersTask;
+    protected AuditorTask auditorPlacementPolicyCheckTask;
+    protected AuditorTask auditorReplicasCheckTask;
 
     private final AuditorStats auditorStats;
 
@@ -172,6 +176,20 @@ public class Auditor implements AutoCloseable {
         this.admin = admin;
         this.ownAdmin = ownAdmin;
         initialize(conf, bkc);
+
+        this.auditorBookieCheckTask = new AuditorBookieCheckTask(
+                this, conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, bookieLedgerIndexer);
+        this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
+                this, conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler,
+                openLedgerNoRecoverySemaphore, openLedgerNoRecoverySemaphoreWaitTimeoutMSec);
+        this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
+                this, conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler);
+        this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
+                this, conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
@@ -270,7 +288,7 @@ public class Auditor implements AutoCloseable {
 
                 knownBookies.removeAll(bookiesToBeAudited);
                 if (lostBookieRecoveryDelay == 0) {
-                    newAuditorBookieCheckTask().startAudit(false);
+                    auditorBookieCheckTask.startAudit(false);
                     bookiesToBeAudited.clear();
                     return;
                 }
@@ -284,14 +302,14 @@ public class Auditor implements AutoCloseable {
                         auditTask = null;
                         auditorStats.getNumDelayedBookieAuditsCancelled().inc();
                     }
-                    newAuditorBookieCheckTask().startAudit(false);
+                    auditorBookieCheckTask.startAudit(false);
                     bookiesToBeAudited.clear();
                     return;
                 }
                 if (auditTask == null) {
                     // if there is no scheduled audit, schedule one
                     auditTask = executor.schedule(() -> {
-                        newAuditorBookieCheckTask().startAudit(false);
+                        auditorBookieCheckTask.startAudit(false);
                         auditTask = null;
                         bookiesToBeAudited.clear();
                     }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
@@ -339,14 +357,14 @@ public class Auditor implements AutoCloseable {
                                     + "so starting AuditTask. Current lostBookieRecoveryDelay: {}, "
                                     + "previous lostBookieRecoveryDelay: {}",
                             lostBookieRecoveryDelay, lostBookieRecoveryDelayBeforeChange);
-                    newAuditorBookieCheckTask().startAudit(false);
+                    auditorBookieCheckTask.startAudit(false);
                     auditTask = null;
                     bookiesToBeAudited.clear();
                 } else if (auditTask != null) {
                     LOG.info("lostBookieRecoveryDelay has been set to {}, so rescheduling AuditTask accordingly",
                             lostBookieRecoveryDelay);
                     auditTask = executor.schedule(() -> {
-                        newAuditorBookieCheckTask().startAudit(false);
+                        auditorBookieCheckTask.startAudit(false);
                         auditTask = null;
                         bookiesToBeAudited.clear();
                     }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
@@ -410,34 +428,8 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    AuditorBookieCheckTask newAuditorBookieCheckTask() {
-        return new AuditorBookieCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler, bookieLedgerIndexer);
-    }
-
-    AuditorTask newAuditorCheckAllLedgersTask() {
-        return new AuditorCheckAllLedgersTask(
-                this, conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager,
-                shutdownTaskHandler, openLedgerNoRecoverySemaphore, openLedgerNoRecoverySemaphoreWaitTimeoutMSec);
-    }
-
-    AuditorTask newAuditorPlacementPolicyCheckTask() {
-        return new AuditorPlacementPolicyCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler
-        );
-    }
-
-    AuditorTask newAuditorReplicasCheckTask() {
-        return new AuditorReplicasCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler
-        );
-    }
-
     protected void submitBookieCheck() {
-        executor.submit(newAuditorBookieCheckTask());
+        executor.submit(auditorBookieCheckTask);
     }
 
     private void scheduleBookieCheckTask() {
@@ -448,12 +440,11 @@ public class Auditor implements AutoCloseable {
         } else {
             LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
                     bookieCheckInterval);
-            executor.scheduleAtFixedRate(
-                    newAuditorBookieCheckTask(), 0, bookieCheckInterval, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(auditorBookieCheckTask, 0, bookieCheckInterval, TimeUnit.SECONDS);
         }
     }
 
-    private void scheduleCheckAllLedgersTask(){
+    private void scheduleCheckAllLedgersTask() {
         long interval = conf.getAuditorPeriodicCheckInterval();
 
         if (interval > 0) {
@@ -491,7 +482,7 @@ public class Auditor implements AutoCloseable {
                             + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                     checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-            executor.scheduleAtFixedRate(newAuditorCheckAllLedgersTask(), initialDelay, interval, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(auditorCheckAllLedgersTask, initialDelay, interval, TimeUnit.SECONDS);
         } else {
             LOG.info("Periodic checking disabled");
         }
@@ -535,8 +526,7 @@ public class Auditor implements AutoCloseable {
                             + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                     placementPolicyCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-            executor.scheduleAtFixedRate(
-                    newAuditorPlacementPolicyCheckTask(), initialDelay, interval, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(auditorPlacementPolicyCheckTask, initialDelay, interval, TimeUnit.SECONDS);
         } else {
             LOG.info("Periodic placementPolicy check disabled");
         }
@@ -581,7 +571,7 @@ public class Auditor implements AutoCloseable {
                         + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                 replicasCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
-        executor.scheduleAtFixedRate(newAuditorReplicasCheckTask(), initialDelay, interval, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
     }
 
     private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
