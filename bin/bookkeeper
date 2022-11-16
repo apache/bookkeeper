@@ -23,6 +23,11 @@ set -e
 BINDIR=`dirname "$0"`
 BK_HOME=`cd ${BINDIR}/..;pwd`
 
+if [ -f $BK_HOME/conf/bkenv.sh ]
+then
+ . $BK_HOME/conf/bkenv.sh
+fi
+
 source ${BK_HOME}/bin/common.sh
 
 # default variables

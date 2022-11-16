@@ -48,6 +48,15 @@ else
   echo "JMX disabled by user request" >&2
 fi
 
+BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
+BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
+BK_CONFDIR=${BK_HOME}/conf
+DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j2.xml
+
+source ${BK_CONFDIR}/nettyenv.sh
+source ${BK_CONFDIR}/bkenv.sh
+source ${BK_CONFDIR}/bk_cli_env.sh
+
 # Check for the java to use
 if [[ -z ${JAVA_HOME} ]]; then
   JAVA=$(which java)
@@ -60,15 +69,6 @@ if [[ -z ${JAVA_HOME} ]]; then
 else
   JAVA=${JAVA_HOME}/bin/java
 fi
-
-BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
-BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
-BK_CONFDIR=${BK_HOME}/conf
-DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j2.xml
-
-source ${BK_CONFDIR}/nettyenv.sh
-source ${BK_CONFDIR}/bkenv.sh
-source ${BK_CONFDIR}/bk_cli_env.sh
 
 detect_jdk8() {
 
