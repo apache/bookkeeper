@@ -47,12 +47,14 @@ public class EntryLocationIndex implements Closeable {
 
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
+    private final int deleteEntriesBatchSize;
 
     private final EntryLocationIndexStats stats;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
         locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
+        deleteEntriesBatchSize = conf.getRocksDBDeleteEntriesBatchSize();
 
         this.stats = new EntryLocationIndexStats(
             stats,
@@ -190,8 +192,6 @@ public class EntryLocationIndex implements Closeable {
         deletedLedgers.add(ledgerId);
     }
 
-    private static final int DELETE_ENTRIES_BATCH_SIZE = 100000;
-
     public void removeOffsetFromDeletedLedgers() throws IOException {
         LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
         LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
@@ -254,7 +254,7 @@ public class EntryLocationIndex implements Closeable {
                     ++deletedEntries;
                 }
 
-                if (deletedEntriesInBatch > DELETE_ENTRIES_BATCH_SIZE) {
+                if (deletedEntriesInBatch > deleteEntriesBatchSize) {
                     batch.flush();
                     batch.clear();
                     deletedEntriesInBatch = 0;
