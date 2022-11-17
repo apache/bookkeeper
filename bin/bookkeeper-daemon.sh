@@ -111,71 +111,71 @@ mkdir -p "$BOOKIE_LOG_DIR"
 start()
 {
   if [ -f $pid_file ]; then
-        PREVIOUS_PID=$(cat $pid_file)
-        if kill -0 $PREVIOUS_PID > /dev/null 2>&1; then
-          echo $command running as process $PREVIOUS_PID.  Stop it first.
-          exit 1
-        fi
-      fi
-
-      rotate_out_log $out
-      echo starting $command, logging to $logfile
-      bookkeeper=$BK_HOME/bin/bookkeeper
-      nohup $bookkeeper $command "$@" > "$out" 2>&1 < /dev/null &
-      echo $! > $pid_file
-      sleep 1; head $out
-      sleep 2;
-      if ! kill -0 $! > /dev/null ; then
+      PREVIOUS_PID=$(cat $pid_file)
+      if kill -0 $PREVIOUS_PID > /dev/null 2>&1; then
+        echo $command running as process $PREVIOUS_PID.  Stop it first.
         exit 1
       fi
+    fi
+
+    rotate_out_log $out
+    echo starting $command, logging to $logfile
+    bookkeeper=$BK_HOME/bin/bookkeeper
+    nohup $bookkeeper $command "$@" > "$out" 2>&1 < /dev/null &
+    echo $! > $pid_file
+    sleep 1; head $out
+    sleep 2;
+    if ! kill -0 $! > /dev/null ; then
+      exit 1
+    fi
 }
 
 stop()
 {
   if [ -f $pid_file ]; then
-        TARGET_PID=$(cat $pid_file)
-        if kill -0 $TARGET_PID > /dev/null 2>&1; then
-          echo stopping $command
-          kill $TARGET_PID
+      TARGET_PID=$(cat $pid_file)
+      if kill -0 $TARGET_PID > /dev/null 2>&1; then
+        echo stopping $command
+        kill $TARGET_PID
 
-          count=0
-          location=$BOOKIE_LOG_DIR
-          while kill -0 $TARGET_PID > /dev/null 2>&1;
-          do
-            echo "Shutdown is in progress... Please wait..."
-            sleep 1
-            count=$(expr $count + 1)
+        count=0
+        location=$BOOKIE_LOG_DIR
+        while kill -0 $TARGET_PID > /dev/null 2>&1;
+        do
+          echo "Shutdown is in progress... Please wait..."
+          sleep 1
+          count=$(expr $count + 1)
 
-            if [ "$count" = "$BOOKIE_STOP_TIMEOUT" ]; then
-              break
-            fi
-           done
-
-          if [ "$count" != "$BOOKIE_STOP_TIMEOUT" ]; then
-            echo "Shutdown completed."
+          if [ "$count" = "$BOOKIE_STOP_TIMEOUT" ]; then
+            break
           fi
+         done
 
-          if kill -0 $TARGET_PID > /dev/null 2>&1; then
-            fileName=$location/$command.out
-            $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
-            echo Thread dumps are taken for analysis at $fileName
-            if [ "$1" == "-force" ]
-            then
-              echo forcefully stopping $command
-              kill -9 $TARGET_PID >/dev/null 2>&1
-              echo Successfully stopped the process
-            else
-              echo "WARNNING :  Bookie Server is not stopped completely."
-              exit 1
-            fi
-          fi
-        else
-          echo no $command to stop
+        if [ "$count" != "$BOOKIE_STOP_TIMEOUT" ]; then
+          echo "Shutdown completed."
         fi
-        rm $pid_file
+
+        if kill -0 $TARGET_PID > /dev/null 2>&1; then
+          fileName=$location/$command.out
+          $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
+          echo Thread dumps are taken for analysis at $fileName
+          if [ "$1" == "-force" ]
+          then
+            echo forcefully stopping $command
+            kill -9 $TARGET_PID >/dev/null 2>&1
+            echo Successfully stopped the process
+          else
+            echo "WARNNING :  Bookie Server is not stopped completely."
+            exit 1
+          fi
+        fi
       else
         echo no $command to stop
       fi
+      rm $pid_file
+    else
+      echo no $command to stop
+    fi
 }
 case $startStop in
   (start)
