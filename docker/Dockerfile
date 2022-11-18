@@ -18,11 +18,13 @@
 #
 
 FROM ubuntu:22.10
-MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
+LABEL maintainer="Apache BookKeeper <dev@bookkeeper.apache.org>"
+LABEL version=${BK_VERSION}
 
 ARG TARGETARCH
 
-ARG BK_VERSION=4.15.1
+ARG BK_VERSION
+RUN test -n "${BK_VERSION}"
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 

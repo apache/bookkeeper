@@ -1,9 +1,6 @@
 #!/bin/bash
 set -x
-# When we build 'latest' tag we want to not override BK_VERSION variable
-if [[ "$DOCKER_TAG" = "latest" ]]
-then
-  docker build -t $IMAGE_NAME .
-else
-  docker build --build-arg BK_VERSION=$DOCKER_TAG -t $IMAGE_NAME .
-fi
+
+BK_RELEASE_VERSION=`curl --silent https://api.github.com/repos/apache/bookkeeper/releases/latest | jq '.tag_name' | sed "s/\"release-\([0-9.]*\).*/\1/"`
+
+docker build --build-arg BK_VERSION=$BK_RELEASE_VERSION -t $IMAGE_NAME .
