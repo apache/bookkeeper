@@ -459,8 +459,9 @@ public class ReplicationWorker implements Runnable {
                     continue;
                 }
                 try {
-                    admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
-                    numFragsReplicated++;
+                    if (admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback)) {
+                        numFragsReplicated++;
+                    }
                 } catch (BKException.BKBookieHandleNotAvailableException e) {
                     LOG.warn("BKBookieHandleNotAvailableException while replicating the fragment", e);
                 } catch (BKException.BKLedgerRecoveryException e) {

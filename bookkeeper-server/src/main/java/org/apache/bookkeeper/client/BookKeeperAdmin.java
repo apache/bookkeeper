@@ -1130,7 +1130,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param ledgerFragment
      *            - LedgerFragment to replicate
      */
-    public void replicateLedgerFragment(LedgerHandle lh, final LedgerFragment ledgerFragment,
+    public boolean replicateLedgerFragment(LedgerHandle lh, final LedgerFragment ledgerFragment,
             final BiConsumer<Long, Long> onReadEntryFailureCallback) throws InterruptedException, BKException {
         Map<Integer, BookieId> targetBookieAddresses = null;
         if (LedgerFragment.ReplicateType.DATA_LOSS == ledgerFragment.getReplicateType()) {
@@ -1145,9 +1145,10 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (MapUtils.isEmpty(targetBookieAddresses)) {
             LOG.warn("Could not replicate for {} ledger: {}, not find target bookie.",
                     ledgerFragment.getReplicateType(), ledgerFragment.getLedgerId());
-            return;
+            return false;
         }
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
+        return true;
     }
 
     private void replicateLedgerFragment(LedgerHandle lh,

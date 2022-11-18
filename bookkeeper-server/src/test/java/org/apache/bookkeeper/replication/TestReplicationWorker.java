@@ -21,6 +21,7 @@ package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -1244,7 +1245,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 return ensemblePlacementPolicy;
             }
         };
-        ReplicationWorker rw = new ReplicationWorker(baseConf, bookKeeper, false, NullStatsLogger.INSTANCE);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(REPLICATION_SCOPE);
+        Counter numLedgersReplicatedCounter = statsLogger
+                .getCounter(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+        ReplicationWorker rw = new ReplicationWorker(baseConf, bookKeeper, false, statsLogger);
         rw.start();
 
         //start new bookie, the rack is /rack2
@@ -1261,6 +1266,9 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                     .exists("/ledgers/underreplication/ledgers/0000/0000/0000/0000/urL0000000000", false);
             assertNull(stat1);
         });
+
+        assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
+                1, numLedgersReplicatedCounter.get().longValue());
 
         for (BookieId rack1Book : firstThreeBookies) {
             killBookie(rack1Book);
