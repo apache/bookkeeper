@@ -79,6 +79,70 @@ public class EntryLocationIndexTest {
         idx.close();
     }
 
+    @Test
+    public void deleteBatchLedgersTest() throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
+
+        int numLedgers = 1000;
+        int numEntriesPerLedger = 100;
+
+        int location = 0;
+        KeyValueStorage.Batch batch = idx.newBatch();
+        for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
+            for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+                idx.addLocation(batch, ledgerId, entryId, location);
+                location++;
+            }
+        }
+        batch.flush();
+        batch.close();
+
+
+        int expectedLocation = 0;
+        for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
+            for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+                assertEquals(expectedLocation, idx.getLocation(ledgerId, entryId));
+                expectedLocation++;
+            }
+        }
+
+        for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+            if (ledgerId % 2 == 0) {
+                idx.delete(ledgerId);
+            }
+        }
+
+        expectedLocation = 0;
+        for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
+            for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+                assertEquals(expectedLocation, idx.getLocation(ledgerId, entryId));
+                expectedLocation++;
+            }
+        }
+
+        idx.removeOffsetFromDeletedLedgers();
+
+        expectedLocation = 0;
+        for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
+            for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+                if (ledgerId % 2 == 0) {
+                    assertEquals(0, idx.getLocation(ledgerId, entryId));
+                } else {
+                    assertEquals(expectedLocation, idx.getLocation(ledgerId, entryId));
+                }
+                expectedLocation++;
+            }
+        }
+
+        idx.close();
+    }
+
     // this tests if a ledger is added after it has been deleted
     @Test
     public void addLedgerAfterDeleteTest() throws Exception {
