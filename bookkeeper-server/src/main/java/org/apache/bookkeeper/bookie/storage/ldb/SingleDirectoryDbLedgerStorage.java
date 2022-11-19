@@ -448,15 +448,27 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         // Read from main storage
         long entryLocation;
+        long locationIndexStartNano = MathUtils.nowInNano();
         try {
             entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
             if (entryLocation == 0) {
+                recordFailedEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
                 throw new NoEntryException(ledgerId, entryId);
             }
+        } finally {
+            dbLedgerStorageStats.getReadFromLocationIndexTime().registerSuccessfulEvent(
+                MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
+        }
+
+        long readEntryStartNano = MathUtils.nowInNano();
+        try {
             entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
         } catch (NoEntryException e) {
             recordFailedEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
             throw e;
+        } finally {
+            dbLedgerStorageStats.getReadFromEntryLogTime().registerSuccessfulEvent(
+                MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
         }
 
         readCache.put(ledgerId, entryId, entry);
