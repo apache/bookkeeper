@@ -112,7 +112,7 @@ case $startStop in
   (start)
     if [ -f $pid_file ]; then
       PREVIOUS_PID=$(cat $pid_file)
-      if kill -0 $PREVIOUS_PID > /dev/null 2>&1; then
+      if ps -p $PREVIOUS_PID > /dev/null 2>&1; then
         echo $command running as process $PREVIOUS_PID.  Stop it first.
         exit 1
       fi
@@ -125,7 +125,7 @@ case $startStop in
     echo $! > $pid_file
     sleep 1; head $out
     sleep 2;
-    if ! kill -0 $! > /dev/null ; then
+    if ! ps -p $! > /dev/null ; then
       exit 1
     fi
     ;;
@@ -133,13 +133,13 @@ case $startStop in
   (stop)
     if [ -f $pid_file ]; then
       TARGET_PID=$(cat $pid_file)
-      if kill -0 $TARGET_PID > /dev/null 2>&1; then
+      if ps -p $TARGET_PID > /dev/null 2>&1; then
         echo stopping $command
         kill $TARGET_PID
 
         count=0
         location=$BOOKIE_LOG_DIR
-        while kill -0 $TARGET_PID > /dev/null 2>&1;
+        while ps -p $TARGET_PID > /dev/null 2>&1;
         do
           echo "Shutdown is in progress... Please wait..."
           sleep 1
@@ -154,7 +154,7 @@ case $startStop in
           echo "Shutdown completed."
         fi
 
-        if kill -0 $TARGET_PID > /dev/null 2>&1; then
+        if ps -p $TARGET_PID > /dev/null 2>&1; then
           fileName=$location/$command.out
           $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
           echo Thread dumps are taken for analysis at $fileName
