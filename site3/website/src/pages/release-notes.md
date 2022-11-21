@@ -18,6 +18,7 @@ The technical details of this release are summarized below.
 * Fix autoRecovery memory leak. [PR #3361](https://github.com/apache/bookkeeper/pull/3361)
 * Fix potential memory leak. [PR #3530](https://github.com/apache/bookkeeper/pull/3530)
 * Fix the V2 AddRequest object leak issue [PR #3323](https://github.com/apache/bookkeeper/pull/3323)
+* Fix ByteBuf memory leak problem when setExplicitLac [PR #3617](https://github.com/apache/bookkeeper/pull/3617)
 * Fix the problem that the abnormal file causes the bookie GC fail [PR #3611](https://github.com/apache/bookkeeper/pull/3611)
 * Fix the deadlock when only using io thread to handle request [PR #3480](https://github.com/apache/bookkeeper/pull/3480)
 * LedgerHandle: do not complete metadata operation on the ZookKeeper/Metadata callback thread [PR #3516](https://github.com/apache/bookkeeper/pull/3516)
