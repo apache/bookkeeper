@@ -7,7 +7,7 @@ then
   # GH API currently returns tags in the order they would be returned by the "git tag" command, which means they are alphabetically sorted.
   # BK_RELEASE_VERSION points to the "highest" released version
   BK_RELEASE_VERSION=`curl -s https://api.github.com/repos/apache/bookkeeper/tags | jq -r '.[0].name' | sed 's/release-\([0-9.]*\).*/\1/'`
-  docker build --build-arg BK_VERSION=$BK_RELEASE_VERSION -t $IMAGE_NAME:$BK_RELEASE_VERSION .
+  docker build --build-arg BK_VERSION=$BK_RELEASE_VERSION -t $IMAGE_NAME .
 else
   docker build --build-arg BK_VERSION=$DOCKER_TAG -t $IMAGE_NAME .
 fi
