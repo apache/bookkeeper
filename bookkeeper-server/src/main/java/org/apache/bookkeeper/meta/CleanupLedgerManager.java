@@ -34,11 +34,14 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A ledger manager that cleans up resources upon closing.
  */
 public class CleanupLedgerManager implements LedgerManager {
+    private static final Logger LOG = LoggerFactory.getLogger(CleanupLedgerManager.class);
 
     private class CleanupGenericCallback<T> implements GenericCallback<T> {
 
@@ -111,7 +114,12 @@ public class CleanupLedgerManager implements LedgerManager {
 
     private void recordPromise(CompletableFuture<?> promise) {
         futures.add(promise);
-        promise.thenRun(() -> futures.remove(promise));
+        promise.whenComplete((result, exception) -> {
+            futures.remove(promise);
+            if (exception != null) {
+                LOG.error("Failed on operating ledger metadata: {}", BKException.getExceptionCode(exception));
+            }
+        });
     }
 
     @Override
