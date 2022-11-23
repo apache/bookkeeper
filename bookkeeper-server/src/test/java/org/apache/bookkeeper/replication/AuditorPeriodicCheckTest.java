@@ -26,12 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import java.io.File;
@@ -57,7 +51,6 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
-import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -72,6 +65,7 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -81,7 +75,6 @@ import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -398,20 +391,16 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         ServerConfiguration configuration = confByIndex(0);
         configuration.setAuditorMaxNumberOfConcurrentOpenLedgerOperations(10);
 
-        Auditor auditor1 = new Auditor(BookieImpl.getBookieId(configuration).toString(),
-            configuration, NullStatsLogger.INSTANCE);
-        Auditor auditor = Mockito.spy(auditor1);
-        auditor1.auditorCheckAllLedgersTask.auditor = auditor;
-
-        BookKeeper bookKeeper = Mockito.spy(auditor.getBookKeeper(configuration));
-        BookKeeperAdmin admin = Mockito.spy(auditor.getBookKeeperAdmin(bookKeeper));
-        when(auditor.getBookKeeper(configuration)).thenReturn(bookKeeper);
-        when(auditor.getBookKeeperAdmin(bookKeeper)).thenReturn(admin);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numLedgersChecked = statsLogger
+                .getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(configuration).toString(),
+            configuration, statsLogger);
 
         try {
             ((AuditorCheckAllLedgersTask) auditor.auditorCheckAllLedgersTask).checkAllLedgers();
-            verify(admin, times(numberLedgers)).asyncOpenLedgerNoRecovery(anyLong(),
-                any(AsyncCallback.OpenCallback.class), eq(null));
+            assertEquals("NUM_LEDGERS_CHECKED", numberLedgers, (long) numLedgersChecked.get());
         } catch (Exception e) {
             LOG.error("Caught exception while checking all ledgers ", e);
             fail();

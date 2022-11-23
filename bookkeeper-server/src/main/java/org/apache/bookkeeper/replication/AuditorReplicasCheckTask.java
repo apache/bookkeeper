@@ -59,13 +59,14 @@ public class AuditorReplicasCheckTask extends AuditorTask {
 
     private final int zkOpTimeoutMs;
 
-    AuditorReplicasCheckTask(Auditor auditor,
-                             ServerConfiguration conf,
+    AuditorReplicasCheckTask(ServerConfiguration conf,
                              AuditorStats auditorStats, BookKeeperAdmin admin,
                              LedgerManager ledgerManager,
                              LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                             Auditor.ShutdownTaskHandler shutdownTaskHandler) {
-        super(auditor, conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                             SubmitTaskHandler submitTaskHandler,
+                             ShutdownTaskHandler shutdownTaskHandler) {
+        super(conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.zkOpTimeoutMs = conf.getZkTimeout() * 2;
     }
 

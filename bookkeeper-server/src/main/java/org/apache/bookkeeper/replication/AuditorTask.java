@@ -18,42 +18,49 @@
 package org.apache.bookkeeper.replication;
 
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.LongAdder;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 abstract class AuditorTask implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorTask.class);
 
-    protected Auditor auditor;
     protected final ServerConfiguration conf;
     protected AuditorStats auditorStats;
     protected BookKeeperAdmin admin;
     protected LedgerManager ledgerManager;
     protected LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private final Auditor.ShutdownTaskHandler shutdownTaskHandler;
+    private final SubmitTaskHandler submitTaskHandler;
+    private final ShutdownTaskHandler shutdownTaskHandler;
 
-    AuditorTask(Auditor auditor,
-                ServerConfiguration conf,
+    AuditorTask(ServerConfiguration conf,
                 AuditorStats auditorStats,
                 BookKeeperAdmin admin,
                 LedgerManager ledgerManager,
                 LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                Auditor.ShutdownTaskHandler shutdownTaskHandler) {
-        this.auditor = auditor;
+                SubmitTaskHandler submitTaskHandler,
+                ShutdownTaskHandler shutdownTaskHandler) {
         this.conf = conf;
         this.auditorStats = auditorStats;
         this.admin = admin;
         this.ledgerManager = ledgerManager;
         this.ledgerUnderreplicationManager = ledgerUnderreplicationManager;
+        this.submitTaskHandler = submitTaskHandler;
         this.shutdownTaskHandler = shutdownTaskHandler;
     }
 
@@ -66,10 +73,10 @@ abstract class AuditorTask implements Runnable {
 
     protected void waitIfLedgerReplicationDisabled() throws ReplicationException.UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!isLedgerReplicationEnabled()) {
             LOG.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
             cb.await();
         }
@@ -107,8 +114,63 @@ abstract class AuditorTask implements Runnable {
         );
     }
 
+    protected List<String> getAvailableBookies() throws BKException {
+        // Get the available bookies
+        Collection<BookieId> availableBkAddresses = admin.getAvailableBookies();
+        Collection<BookieId> readOnlyBkAddresses = admin.getReadOnlyBookies();
+        availableBkAddresses.addAll(readOnlyBkAddresses);
+
+        List<String> availableBookies = new ArrayList<String>();
+        for (BookieId addr : availableBkAddresses) {
+            availableBookies.add(addr.toString());
+        }
+        return availableBookies;
+    }
+
+    /**
+     * Get BookKeeper client according to configuration.
+     * @param conf
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    BookKeeper getBookKeeper(ServerConfiguration conf) throws IOException, InterruptedException {
+        return Auditor.createBookKeeperClient(conf);
+    }
+
+    /**
+     * Get BookKeeper admin according to bookKeeper client.
+     * @param bookKeeper
+     * @return
+     */
+    BookKeeperAdmin getBookKeeperAdmin(final BookKeeper bookKeeper) {
+        return new BookKeeperAdmin(bookKeeper, auditorStats.getStatsLogger(), new ClientConfiguration(conf));
+    }
+
     protected void submitShutdownTask() {
-        shutdownTaskHandler.submitShutdownTask();
+        if (shutdownTaskHandler != null) {
+            shutdownTaskHandler.submitShutdownTask();
+        }
+    }
+
+    protected void submitCheckTask() {
+        if (submitTaskHandler != null) {
+            submitTaskHandler.submitCheckTask();
+        }
+    }
+
+    /**
+     * ShutdownTaskHandler used to shutdown auditor executor.
+     */
+    interface ShutdownTaskHandler {
+        void submitShutdownTask();
+    }
+
+    /**
+     * SubmitTaskHandler used to submit auditor task.
+     */
+    interface SubmitTaskHandler {
+        void submitCheckTask();
     }
 
 }

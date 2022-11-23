@@ -36,6 +36,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -81,9 +83,6 @@ public class Auditor implements AutoCloseable {
     protected volatile Future<?> auditTask;
     private Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
-    private final Semaphore openLedgerNoRecoverySemaphore;
-    private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
-    private final ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;
     protected AuditorBookieCheckTask auditorBookieCheckTask;
     protected AuditorTask auditorCheckAllLedgersTask;
     protected AuditorTask auditorPlacementPolicyCheckTask;
@@ -161,14 +160,15 @@ public class Auditor implements AutoCloseable {
             LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
             throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
         }
-        this.openLedgerNoRecoverySemaphore = new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
+        Semaphore openLedgerNoRecoverySemaphore =
+                new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
 
         if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
             LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
             throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
                     + "should be greater than or equal to 0");
         }
-        this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
+        int openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
                 conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
 
         this.bkc = bkc;
@@ -177,19 +177,23 @@ public class Auditor implements AutoCloseable {
         this.ownAdmin = ownAdmin;
         initialize(conf, bkc);
 
+        AuditorTask.ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;
+        AuditorTask.SubmitTaskHandler submitBookieCheckTaskHandler = this::submitBookieCheckTask;
+        BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask = (flag, throwable) -> flag.set(auditTask != null);
         this.auditorBookieCheckTask = new AuditorBookieCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler, bookieLedgerIndexer);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, submitBookieCheckTaskHandler,
+                shutdownTaskHandler, bookieLedgerIndexer, hasAuditCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler,
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, null, shutdownTaskHandler,
                 openLedgerNoRecoverySemaphore, openLedgerNoRecoverySemaphoreWaitTimeoutMSec);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, null, shutdownTaskHandler);
         this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
-                this, conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, null, shutdownTaskHandler);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
@@ -428,7 +432,7 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    protected void submitBookieCheck() {
+    protected void submitBookieCheckTask() {
         executor.submit(auditorBookieCheckTask);
     }
 
@@ -436,7 +440,7 @@ public class Auditor implements AutoCloseable {
         long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
         if (bookieCheckInterval == 0) {
             LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
-            submitBookieCheck();
+            submitBookieCheckTask();
         } else {
             LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
                     bookieCheckInterval);
@@ -630,26 +634,6 @@ public class Auditor implements AutoCloseable {
     }
 
     /**
-     * Get BookKeeper client according to configuration.
-     * @param conf
-     * @return
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    BookKeeper getBookKeeper(ServerConfiguration conf) throws IOException, InterruptedException {
-        return Auditor.createBookKeeperClient(conf);
-    }
-
-    /**
-     * Get BookKeeper admin according to bookKeeper client.
-     * @param bookKeeper
-     * @return
-     */
-    BookKeeperAdmin getBookKeeperAdmin(final BookKeeper bookKeeper) {
-        return new BookKeeperAdmin(bookKeeper, auditorStats.getStatsLogger(), new ClientConfiguration(conf));
-    }
-
-    /**
      * Shutdown the auditor.
      */
     public void shutdown() {
@@ -694,12 +678,5 @@ public class Auditor implements AutoCloseable {
 
     Future<?> getAuditTask() {
         return auditTask;
-    }
-
-    /**
-     * ShutdownTaskHandler used to shutdown auditor executor.
-     */
-    interface ShutdownTaskHandler {
-        void submitShutdownTask();
     }
 }

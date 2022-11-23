@@ -45,14 +45,15 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
 
     private final long underreplicatedLedgerRecoveryGracePeriod;
 
-    AuditorPlacementPolicyCheckTask(Auditor auditor,
-                                    ServerConfiguration conf,
+    AuditorPlacementPolicyCheckTask(ServerConfiguration conf,
                                     AuditorStats auditorStats,
                                     BookKeeperAdmin admin,
                                     LedgerManager ledgerManager,
                                     LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                                    Auditor.ShutdownTaskHandler shutdownTaskHandler) {
-        super(auditor, conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                                    SubmitTaskHandler submitTaskHandler,
+                                    ShutdownTaskHandler shutdownTaskHandler) {
+        super(conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.underreplicatedLedgerRecoveryGracePeriod = conf.getUnderreplicatedLedgerRecoveryGracePeriod();
     }
 

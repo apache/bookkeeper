@@ -47,16 +47,17 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
     private final Semaphore openLedgerNoRecoverySemaphore;
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
 
-    AuditorCheckAllLedgersTask(Auditor auditor,
-                               ServerConfiguration conf,
+    AuditorCheckAllLedgersTask(ServerConfiguration conf,
                                AuditorStats auditorStats,
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                               Auditor.ShutdownTaskHandler shutdownTaskHandler,
+                               SubmitTaskHandler submitTaskHandler,
+                               ShutdownTaskHandler shutdownTaskHandler,
                                Semaphore openLedgerNoRecoverySemaphore,
                                int openLedgerNoRecoverySemaphoreWaitTimeoutMSec) {
-        super(auditor, conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+        super(conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.openLedgerNoRecoverySemaphore = openLedgerNoRecoverySemaphore;
         this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec = openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
     }
@@ -105,8 +106,8 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException {
-        final BookKeeper localClient = auditor.getBookKeeper(conf);
-        final BookKeeperAdmin localAdmin = auditor.getBookKeeperAdmin(localClient);
+        final BookKeeper localClient = getBookKeeper(conf);
+        final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
         try {
             final LedgerChecker checker = new LedgerChecker(localClient, conf.getInFlightReadEntryNumInLedgerChecker());
 

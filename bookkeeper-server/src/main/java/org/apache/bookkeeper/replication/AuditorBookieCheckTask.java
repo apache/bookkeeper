@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -39,22 +41,29 @@ public class AuditorBookieCheckTask extends AuditorTask {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorBookieCheckTask.class);
 
     private final BookieLedgerIndexer bookieLedgerIndexer;
+    private final BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask;
+    private final AtomicBoolean hasTask = new AtomicBoolean(false);
 
-    public AuditorBookieCheckTask(Auditor auditor,
-                                  ServerConfiguration conf,
+    public AuditorBookieCheckTask(ServerConfiguration conf,
                                   AuditorStats auditorStats,
                                   BookKeeperAdmin admin,
                                   LedgerManager ledgerManager,
                                   LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                                  Auditor.ShutdownTaskHandler shutdownTaskHandler,
-                                  BookieLedgerIndexer bookieLedgerIndexer) {
-        super(auditor, conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                                  SubmitTaskHandler submitTaskHandler,
+                                  ShutdownTaskHandler shutdownTaskHandler,
+                                  BookieLedgerIndexer bookieLedgerIndexer,
+                                  BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask) {
+        super(conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.bookieLedgerIndexer = bookieLedgerIndexer;
+        this.hasAuditCheckTask = hasAuditCheckTask;
     }
 
     @Override
     protected void runTask() {
-        if (auditor.auditTask == null) {
+        hasTask.set(false);
+        hasAuditCheckTask.accept(hasTask, null);
+        if (!hasTask.get()) {
             startAudit(true);
         } else {
             // if due to a lost bookie an audit task was scheduled,
@@ -109,7 +118,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             if (!isLedgerReplicationEnabled()) {
                 // has been disabled while we were generating the index
                 // discard this run, and schedule a new one
-                auditor.submitBookieCheck();
+                submitCheckTask();
                 return;
             }
         } catch (ReplicationException.UnavailableException ue) {
@@ -118,7 +127,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             return;
         }
 
-        List<String> availableBookies = auditor.getAvailableBookies();
+        List<String> availableBookies = getAvailableBookies();
         // find lost bookies
         Set<String> knownBookies = ledgerDetails.keySet();
         Collection<String> lostBookies = CollectionUtils.subtract(knownBookies,
