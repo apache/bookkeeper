@@ -1652,35 +1652,35 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals("region2", repp.address2Region.get(addr4.toBookieId()));
 
         // Update the rack.
-        // change addr2 rack info. /region1/rack-1 -> /region2/rack-2.
+        // change addr2 rack info. /region1/rack-1 -> /region1/rack-2.
         // change addr4 rack info. /region2/rack-1 -> /region1/rack-2
         List<BookieSocketAddress> bookieAddressList = new ArrayList<>();
         List<String> rackList = new ArrayList<>();
         bookieAddressList.add(addr2);
-        rackList.add("/region2/rack-2");
+        rackList.add("/region1/rack-2");
         bookieAddressList.add(addr4);
         rackList.add("/region1/rack-2");
         StaticDNSResolver.changeRack(bookieAddressList, rackList);
 
         assertEquals(4, repp.knownBookies.size());
         assertEquals("/region1/rack-1", repp.knownBookies.get(addr1.toBookieId()).getNetworkLocation());
-        assertEquals("/region2/rack-2", repp.knownBookies.get(addr2.toBookieId()).getNetworkLocation());
+        assertEquals("/region1/rack-2", repp.knownBookies.get(addr2.toBookieId()).getNetworkLocation());
         assertEquals("/region2/rack-1", repp.knownBookies.get(addr3.toBookieId()).getNetworkLocation());
         assertEquals("/region1/rack-2", repp.knownBookies.get(addr4.toBookieId()).getNetworkLocation());
 
         assertEquals(2, repp.perRegionPlacement.size());
         region1Placement = repp.perRegionPlacement.get("region1");
-        assertEquals(2, region1Placement.knownBookies.keySet().size());
+        assertEquals(3, region1Placement.knownBookies.keySet().size());
         assertEquals("/region1/rack-1", region1Placement.knownBookies.get(addr1.toBookieId()).getNetworkLocation());
+        assertEquals("/region1/rack-2", region1Placement.knownBookies.get(addr2.toBookieId()).getNetworkLocation());
         assertEquals("/region1/rack-2", region1Placement.knownBookies.get(addr4.toBookieId()).getNetworkLocation());
 
         region2Placement = repp.perRegionPlacement.get("region2");
-        assertEquals(2, region2Placement.knownBookies.keySet().size());
-        assertEquals("/region2/rack-2", region2Placement.knownBookies.get(addr2.toBookieId()).getNetworkLocation());
+        assertEquals(1, region2Placement.knownBookies.keySet().size());
         assertEquals("/region2/rack-1", region2Placement.knownBookies.get(addr3.toBookieId()).getNetworkLocation());
 
         assertEquals("region1", repp.address2Region.get(addr1.toBookieId()));
-        assertEquals("region2", repp.address2Region.get(addr2.toBookieId()));
+        assertEquals("region1", repp.address2Region.get(addr2.toBookieId()));
         assertEquals("region2", repp.address2Region.get(addr3.toBookieId()));
         assertEquals("region1", repp.address2Region.get(addr4.toBookieId()));
     }
