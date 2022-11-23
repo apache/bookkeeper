@@ -193,7 +193,6 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             address2Region.put(bookieAddress, newRegion);
                             TopologyAwareEnsemblePlacementPolicy oldRegionPlacement = perRegionPlacement.get(oldRegion);
                             oldRegionPlacement.handleBookiesThatLeft(Collections.singleton(bookieAddress));
-    
                             TopologyAwareEnsemblePlacementPolicy newRegionPlacement = perRegionPlacement.get(
                                     newRegion);
                             if (newRegionPlacement == null) {
