@@ -206,7 +206,7 @@ class LedgerOpenOp {
                             }
                             if (rc == BKException.Code.UnauthorizedAccessException
                                     || rc == BKException.Code.TimeoutException) {
-                                openComplete(rc, null);
+                                openComplete(bk.getReturnRc(rc), null);
                             } else {
                                 openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                             }
