@@ -42,12 +42,16 @@ jobs:
         id: changes
         uses: apache/pulsar-test-infra/paths-filter@master
         with:
-          filters: |
-            site3:
-              - 'site3/**'
+          filters: .github/changes-filter.yaml
+          list-files: csv
+
+      - name: Check changed files
+        id: check_changes
+        run: |
+          echo "docs_only=${{ fromJSON(steps.changes.outputs.all_count) == fromJSON(steps.changes.outputs.docs_count) && fromJSON(steps.changes.outputs.docs_count) > 0 }}" >> $GITHUB_OUTPUT
 
       - name: Cache local Maven repository
-        if: steps.changes.outputs.site3 != 'true'
+        if: steps.check_changes.outputs.docs_only != 'true'
         id: cache
         uses: actions/cache@v2
         with:
@@ -58,12 +62,12 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
-        if: steps.changes.outputs.site3 != 'true'
+        if: steps.check_changes.outputs.docs_only != 'true'
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 11
 
       - name: mvn package
-        if: steps.changes.outputs.site3 != 'true'
+        if: steps.check_changes.outputs.docs_only != 'true'
         run: mvn -B -nsu clean package -DskipTests
