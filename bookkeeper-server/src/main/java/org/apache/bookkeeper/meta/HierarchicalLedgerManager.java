@@ -123,4 +123,15 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     protected String getLedgerParentNodeRegex() {
         return StringUtils.HIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
     }
+
+    @Override
+    public void close() {
+        super.close();
+        if (legacyLM != null) {
+            legacyLM.close();
+        }
+        if (longLM != null) {
+            longLM.close();
+        }
+    }
 }
