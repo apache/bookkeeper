@@ -44,17 +44,15 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
-      - name: Detect changed pom files
+      - name: Detect changed files
         id: changes
         uses: apache/pulsar-test-infra/paths-filter@master
         with:
-          filters: |
-            poms:
-              - 'pom.xml'
-              - '**/pom.xml'
+          filters: .github/changes-filter.yaml
+          list-files: csv
 
       - name: Cache local Maven repository
-        if: ${{ steps.changes.outputs.poms == 'true' }}
+        if: ${{ steps.changes.outputs.need_owasp == 'true' }}
         id: cache
         uses: actions/cache@v2
         with:
@@ -66,12 +64,12 @@ jobs:
 
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
-        if: ${{ steps.changes.outputs.poms == 'true' }}
+        if: ${{ steps.changes.outputs.need_owasp == 'true' }}
         with:
           java-version: 1.8
 
       - name: run "clean install verify" to trigger dependency check
-        if: ${{ steps.changes.outputs.poms == 'true' }}
+        if: ${{ steps.changes.outputs.need_owasp == 'true' }}
         # excluding dlfs because it includes hadoop lib with
         # CVEs that we cannot patch up anyways
         run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs'

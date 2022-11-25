@@ -22,7 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -32,9 +33,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * HttpEndpointService that exposes the bookie sanity state.
