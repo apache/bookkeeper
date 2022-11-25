@@ -82,6 +82,7 @@ public interface HttpServer {
         GC,
         GC_DETAILS,
         BOOKIE_STATE,
+        BOOKIE_SANITY,
         BOOKIE_STATE_READONLY,
         BOOKIE_IS_READY,
         BOOKIE_INFO,
