@@ -98,7 +98,18 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
                 .when(spyBookie)
                 .createExplicitLACEntry(eq(ledgerId), eq(lacToAdd));
 
-        spyBookie.setExplicitLac(lacToAdd, null, null, masterKey);
+        AtomicBoolean complete = new AtomicBoolean(false);
+        final BookkeeperInternalCallbacks.WriteCallback writeCallback =
+                new BookkeeperInternalCallbacks.WriteCallback() {
+                    @Override
+                    public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
+                        complete.set(true);
+                    }
+                };
+
+        spyBookie.setExplicitLac(lacToAdd, writeCallback, null, masterKey);
+
+        Awaitility.await().untilAsserted(() -> assertTrue(complete.get()));
 
         assertEquals(0, lacToAdd.refCnt());
         assertEquals(0, explicitLACEntry.refCnt());
