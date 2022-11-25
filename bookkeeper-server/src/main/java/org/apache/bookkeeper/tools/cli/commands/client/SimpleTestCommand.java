@@ -29,6 +29,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
@@ -61,8 +62,6 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
         private int ackQuorumSize = 2;
         @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
         private int numEntries = 100;
-        @Parameter(names = { "-c", "--clean-up" }, description = "Clean up ledger created after simple test")
-        private boolean cleanup = false;
 
     }
     public SimpleTestCommand() {
@@ -102,10 +101,12 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                 }
             }
             LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
-            if (flags.cleanup) {
-                LOG.info("Cleaning up the ledger {}", wh.getId());
-                result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
+    
+            try (ReadHandle rh = result(bk.newOpenLedgerOp().withLedgerId(wh.getId()).withDigestType(DigestType.CRC32C)
+                    .withPassword(new byte[0]).execute())) {
+                rh.read(0, flags.numEntries);
             }
+            result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
         }
     }
 }
