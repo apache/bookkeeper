@@ -40,6 +40,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.server.http.service.AutoRecoveryStatusService;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieIsReadyService;
+import org.apache.bookkeeper.server.http.service.BookieSanityService;
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService;
 import org.apache.bookkeeper.server.http.service.BookieStateService;
 import org.apache.bookkeeper.server.http.service.ConfigurationService;
@@ -219,6 +220,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new GCDetailsService(configuration, bookieServer);
             case BOOKIE_STATE:
                 return new BookieStateService(bookieServer.getBookie());
+            case BOOKIE_SANITY:
+                return new BookieSanityService(configuration);
             case BOOKIE_STATE_READONLY:
                 return new BookieStateReadOnlyService(bookieServer.getBookie());
             case BOOKIE_IS_READY:

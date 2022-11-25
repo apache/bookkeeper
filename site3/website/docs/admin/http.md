@@ -413,6 +413,25 @@ Currently all the HTTP endpoints could be divided into these 5 components:
        }
       ```
 
+### Endpoint: /api/v1/bookie/sanity
+1. Method: GET
+   * Description:  Exposes the bookie sanity state
+   * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+   * Body:
+      ```json
+      {
+         "passed" : true,
+         "readOnly" : false
+       }
+      ```
+
+
 ### Endpoint: /api/v1/bookie/is_ready
 1. Method: GET
    * Description:  Return true if the bookie is ready

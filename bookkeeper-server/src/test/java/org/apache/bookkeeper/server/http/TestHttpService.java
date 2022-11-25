@@ -52,6 +52,8 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
+import org.apache.bookkeeper.server.http.service.BookieSanityService;
+import org.apache.bookkeeper.server.http.service.BookieSanityService.BookieSanity;
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -851,6 +853,27 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(false, bs.isReadOnly());
         assertEquals(true, bs.isAvailableForHighPriorityWrites());
         assertEquals(false, bs.isShuttingDown());
+    }
+
+    @Test
+    public void testGetBookieSanity() throws Exception {
+        HttpEndpointService bookieStateServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_SANITY);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        ServerConfiguration conf = servers.get(0).getConfiguration();
+        BookieSanityService service = new BookieSanityService(conf);
+        HttpServiceResponse response1 = service.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        // run multiple iteration to validate any server side throttling doesn't
+        // fail sequential requests.
+        for (int i = 0; i < 3; i++) {
+            BookieSanity bs = JsonUtil.fromJson(response1.getBody(), BookieSanity.class);
+            assertEquals(true, bs.isPassed());
+            assertEquals(false, bs.isReadOnly());
+        }
+        HttpServiceResponse response2 = bookieStateServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
     }
 
     @Test
