@@ -19,12 +19,14 @@
 
 package org.apache.bookkeeper.meta;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,13 +45,37 @@ public class CleanupLedgerManagerTest {
         ledgerManager = mock(LedgerManager.class);
         CompletableFuture<Versioned<LedgerMetadata>> future = new CompletableFuture<>();
         future.completeExceptionally(new Exception("LedgerNotExistException"));
+        when(ledgerManager.createLedgerMetadata(anyLong(), any())).thenReturn(future);
         when(ledgerManager.readLedgerMetadata(anyLong())).thenReturn(future);
+        when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(
+                future);
+        CompletableFuture<Void> removeFuture = new CompletableFuture<>();
+        removeFuture.completeExceptionally(new Exception("LedgerNotExistException"));
+        when(ledgerManager.removeLedgerMetadata(anyLong(), any())).thenReturn(removeFuture);
         cleanupLedgerManager = new CleanupLedgerManager(ledgerManager);
+    }
+
+    @Test
+    public void testCreateLedgerMetadataException() throws Exception {
+        cleanupLedgerManager.createLedgerMetadata(anyLong(), any(LedgerMetadata.class));
+        Assert.assertEquals(0, cleanupLedgerManager.getCurrentFuturePromiseSize());
     }
 
     @Test
     public void testReadLedgerMetadataException() throws Exception {
         cleanupLedgerManager.readLedgerMetadata(anyLong());
+        Assert.assertEquals(0, cleanupLedgerManager.getCurrentFuturePromiseSize());
+    }
+
+    @Test
+    public void testWriteLedgerMetadataException() throws Exception {
+        cleanupLedgerManager.writeLedgerMetadata(anyLong(), any(LedgerMetadata.class), any(Version.class));
+        Assert.assertEquals(0, cleanupLedgerManager.getCurrentFuturePromiseSize());
+    }
+
+    @Test
+    public void testRemoveLedgerMetadataException() throws Exception {
+        cleanupLedgerManager.removeLedgerMetadata(anyLong(), any(Version.class));
         Assert.assertEquals(0, cleanupLedgerManager.getCurrentFuturePromiseSize());
     }
 }
