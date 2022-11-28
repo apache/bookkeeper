@@ -30,13 +30,18 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommandTestBase;
 import org.junit.Test;
@@ -53,8 +58,7 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
             "-e", "5",
             "-w", "3",
             "-a", "3",
-            "-n", "10",
-            "-c");
+            "-n", "10");
     }
 
     @Test
@@ -63,8 +67,7 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
             "--ensemble-size", "5",
             "--write-quorum-size", "3",
             "--ack-quorum-size", "3",
-            "--num-entries", "10",
-            "-c");
+            "--num-entries", "10");
     }
 
     @SuppressWarnings("unchecked")
@@ -82,6 +85,16 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         when(createBuilder.withPassword(any(byte[].class))).thenReturn(createBuilder);
         when(createBuilder.execute()).thenReturn(CompletableFuture.completedFuture(wh));
         when(mockBk.newCreateLedgerOp()).thenReturn(createBuilder);
+    
+        ReadHandle rh = mock(ReadHandle.class);
+        when(rh.read(anyLong(), anyLong())).thenReturn(
+                LedgerEntriesImpl.create(Collections.singletonList(LedgerEntryImpl.create(0, 0))));
+        OpenBuilder openBuilder = mock(OpenBuilder.class);
+        when(openBuilder.withLedgerId(anyLong())).thenReturn(openBuilder);
+        when(openBuilder.withDigestType(any())).thenReturn(openBuilder);
+        when(openBuilder.withPassword(any())).thenReturn(openBuilder);
+        when(openBuilder.execute()).thenReturn(CompletableFuture.completedFuture(rh));
+        when(mockBk.newOpenLedgerOp()).thenReturn(openBuilder);
 
         DeleteBuilder deleteBuilder = mock(DeleteBuilder.class);
         when(deleteBuilder.withLedgerId(anyLong())).thenReturn(deleteBuilder);
@@ -102,12 +115,17 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         verify(createBuilder, times(1)).withDigestType(eq(DigestType.CRC32C));
         verify(createBuilder, times(1)).withPassword(eq(new byte[0]));
         verify(createBuilder, times(1)).execute();
-
+    
+        verify(openBuilder, times(1)).withLedgerId(eq(0L));
+        verify(openBuilder, times(1)).execute();
+        
         verify(deleteBuilder, times(1)).withLedgerId(eq(0L));
         verify(deleteBuilder, times(1)).execute();
 
         // verify appends
         verify(wh, times(10)).append(eq(new byte[100]));
+        
+        verify(rh, times(1)).read(anyLong(), anyLong());
     }
 
 }
