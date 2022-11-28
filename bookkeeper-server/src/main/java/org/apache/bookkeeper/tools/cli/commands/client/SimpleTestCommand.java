@@ -105,7 +105,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                 }
             }
             LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
-    
+
             try (ReadHandle rh = result(bk.newOpenLedgerOp().withLedgerId(wh.getId()).withDigestType(DigestType.CRC32C)
                     .withPassword(new byte[0]).execute())) {
                 LedgerEntries ledgerEntries = rh.read(0, flags.numEntries);
