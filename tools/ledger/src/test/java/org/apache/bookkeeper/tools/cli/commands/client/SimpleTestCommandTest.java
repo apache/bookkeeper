@@ -28,15 +28,24 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.buffer.UnpooledHeapByteBuf;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
@@ -85,10 +94,20 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         when(createBuilder.withPassword(any(byte[].class))).thenReturn(createBuilder);
         when(createBuilder.execute()).thenReturn(CompletableFuture.completedFuture(wh));
         when(mockBk.newCreateLedgerOp()).thenReturn(createBuilder);
-    
+
+        List<LedgerEntry> entries = new ArrayList<>();
+        byte[] data = new byte[100]; // test data
+        Arrays.fill(data, (byte) '1');
+        for (int i = 0; i < 10; i++) {
+            ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.heapBuffer(100);
+            buffer.writeBytes(data);
+            entries.add(LedgerEntryImpl.create(counter.get(), i, data.length, buffer));
+        }
+
+        LedgerEntriesImpl ledgerEntries = LedgerEntriesImpl.create(entries);
+
         ReadHandle rh = mock(ReadHandle.class);
-        when(rh.read(anyLong(), anyLong())).thenReturn(
-                LedgerEntriesImpl.create(Collections.singletonList(LedgerEntryImpl.create(0, 0))));
+        when(rh.read(anyLong(), anyLong())).thenReturn(ledgerEntries);
         OpenBuilder openBuilder = mock(OpenBuilder.class);
         when(openBuilder.withLedgerId(anyLong())).thenReturn(openBuilder);
         when(openBuilder.withDigestType(any())).thenReturn(openBuilder);
@@ -123,7 +142,7 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         verify(deleteBuilder, times(1)).execute();
 
         // verify appends
-        verify(wh, times(10)).append(eq(new byte[100]));
+        verify(wh, times(10)).append(eq(data));
         
         verify(rh, times(1)).read(anyLong(), anyLong());
     }

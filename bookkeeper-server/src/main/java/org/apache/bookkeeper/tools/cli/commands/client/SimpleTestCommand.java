@@ -24,11 +24,14 @@ import com.beust.jcommander.Parameter;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.Flags;
@@ -80,6 +83,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected void run(BookKeeper bk, Flags flags) throws Exception {
         byte[] data = new byte[100]; // test data
+        Arrays.fill(data, (byte) '1');
 
         try (WriteHandle wh = result(bk.newCreateLedgerOp()
             .withEnsembleSize(flags.ensembleSize)
@@ -104,7 +108,10 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
     
             try (ReadHandle rh = result(bk.newOpenLedgerOp().withLedgerId(wh.getId()).withDigestType(DigestType.CRC32C)
                     .withPassword(new byte[0]).execute())) {
-                rh.read(0, flags.numEntries);
+                LedgerEntries ledgerEntries = rh.read(0, flags.numEntries);
+                for (LedgerEntry ledgerEntry : ledgerEntries) {
+                    assert Arrays.equals(ledgerEntry.getEntryBytes(), data);
+                }
             }
             result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
         }
