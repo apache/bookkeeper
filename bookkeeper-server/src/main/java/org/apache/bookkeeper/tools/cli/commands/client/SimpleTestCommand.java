@@ -81,7 +81,7 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
     }
 
     @Override
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "DMI_RANDOM_USED_ONLY_ONCE"})
     protected void run(BookKeeper bk, Flags flags) throws Exception {
         byte[] data = new byte[100]; // test data
         Random random = new Random(0);
