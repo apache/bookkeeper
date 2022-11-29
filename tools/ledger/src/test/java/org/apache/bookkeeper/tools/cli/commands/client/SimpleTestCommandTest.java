@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.api.CreateBuilder;
@@ -92,7 +93,10 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
 
         List<LedgerEntry> entries = new ArrayList<>();
         byte[] data = new byte[100]; // test data
-        Arrays.fill(data, (byte) '1');
+        Random random = new Random(0);
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) (random.nextInt(26) + 65);
+        }
         for (int i = 0; i < 10; i++) {
             ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.heapBuffer(100);
             buffer.writeBytes(data);

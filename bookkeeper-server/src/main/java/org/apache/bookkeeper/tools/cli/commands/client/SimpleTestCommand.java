@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public class SimpleTestCommand extends ClientCommand<Flags> {
 
     private static final String NAME = "simpletest";
-    private static final String DESC = "Simple test to create a ledger and write entries to it.";
+    private static final String DESC = "Simple test to create a ledger and write entries to it, then read it.";
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTestCommand.class);
 
     /**
@@ -83,17 +84,20 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected void run(BookKeeper bk, Flags flags) throws Exception {
         byte[] data = new byte[100]; // test data
-        Arrays.fill(data, (byte) '1');
-
-        try (WriteHandle wh = result(bk.newCreateLedgerOp()
-            .withEnsembleSize(flags.ensembleSize)
-            .withWriteQuorumSize(flags.writeQuorumSize)
-            .withAckQuorumSize(flags.ackQuorumSize)
-            .withDigestType(DigestType.CRC32C)
-            .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
-            .withPassword(new byte[0])
-            .execute())) {
-
+        Random random = new Random(0);
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) (random.nextInt(26) + 65);
+        }
+        WriteHandle wh = null;
+        try {
+            wh = result(bk.newCreateLedgerOp()
+                    .withEnsembleSize(flags.ensembleSize)
+                    .withWriteQuorumSize(flags.writeQuorumSize)
+                    .withAckQuorumSize(flags.ackQuorumSize)
+                    .withDigestType(DigestType.CRC32C)
+                    .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
+                    .withPassword(new byte[0])
+                    .execute());
             LOG.info("Ledger ID: {}", wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
@@ -110,10 +114,16 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                     .withPassword(new byte[0]).execute())) {
                 LedgerEntries ledgerEntries = rh.read(0, flags.numEntries);
                 for (LedgerEntry ledgerEntry : ledgerEntries) {
-                    assert Arrays.equals(ledgerEntry.getEntryBytes(), data);
+                    if (!Arrays.equals(ledgerEntry.getEntryBytes(), data)) {
+                        LOG.error("Read test failed, the reading data is not equals writing data.");
+                    }
                 }
             }
-            result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
+        } finally {
+            if (wh != null) {
+                wh.close();
+                result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
+            }
         }
     }
 }
