@@ -32,6 +32,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.io.BufferedReader;
 import java.io.File;
@@ -188,7 +189,7 @@ public class EntryLogger {
                     throw e;
                 }
             } finally {
-                serializedMap.release();
+                ReferenceCountUtil.safeRelease(serializedMap);
             }
             // Flush the ledger's map out before we write the header.
             // Otherwise the header might point to something that is not fully
@@ -857,7 +858,7 @@ public class EntryLogger {
         ByteBuf data = allocator.buffer(entrySize, entrySize);
         int rc = readFromLogChannel(entryLogId, fc, data, pos);
         if (rc != entrySize) {
-            data.release();
+            ReferenceCountUtil.safeRelease(data);
             throw new IOException("Bad entry read from log file id: " + entryLogId,
                     new EntryLookupException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
@@ -895,7 +896,7 @@ public class EntryLogger {
             int ledgersCount = headers.readInt();
             return new Header(headerVersion, ledgersMapOffset, ledgersCount);
         } finally {
-            headers.release();
+            ReferenceCountUtil.safeRelease(headers);
         }
     }
 
@@ -1041,7 +1042,7 @@ public class EntryLogger {
                 pos += entrySize;
             }
         } finally {
-            data.release();
+            ReferenceCountUtil.safeRelease(data);
         }
     }
 
@@ -1144,7 +1145,7 @@ public class EntryLogger {
         } catch (IndexOutOfBoundsException e) {
             throw new IOException(e);
         } finally {
-            ledgersMap.release();
+            ReferenceCountUtil.safeRelease(ledgersMap);
         }
 
         if (meta.getLedgersMap().size() != header.ledgersCount) {
