@@ -617,7 +617,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // validate filtered log ids only when we have markedLogId
         if (markedLog.getLogFileId() > 0) {
             if (logs.size() == 0 || logs.get(0) != markedLog.getLogFileId()) {
-                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
+                String path = journal.getJournalDirectory().getAbsolutePath();
+                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing at " + path);
             }
         }
 

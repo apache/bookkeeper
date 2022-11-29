@@ -50,6 +50,7 @@ public abstract class HttpRouter<Handler> {
     public static final String SUSPEND_GC_COMPACTION        = "/api/v1/bookie/gc/suspend_compaction";
     public static final String RESUME_GC_COMPACTION         = "/api/v1/bookie/gc/resume_compaction";
     public static final String BOOKIE_STATE                 = "/api/v1/bookie/state";
+    public static final String BOOKIE_SANITY                 = "/api/v1/bookie/sanity";
     public static final String BOOKIE_STATE_READONLY        = "/api/v1/bookie/state/readonly";
     public static final String BOOKIE_IS_READY              = "/api/v1/bookie/is_ready";
     public static final String BOOKIE_INFO                  = "/api/v1/bookie/info";
@@ -85,6 +86,7 @@ public abstract class HttpRouter<Handler> {
         this.endpointHandlers.put(GC, handlerFactory.newHandler(HttpServer.ApiType.GC));
         this.endpointHandlers.put(GC_DETAILS, handlerFactory.newHandler(HttpServer.ApiType.GC_DETAILS));
         this.endpointHandlers.put(BOOKIE_STATE, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE));
+        this.endpointHandlers.put(BOOKIE_SANITY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_SANITY));
         this.endpointHandlers.put(BOOKIE_STATE_READONLY,
                 handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE_READONLY));
         this.endpointHandlers.put(BOOKIE_IS_READY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_IS_READY));
