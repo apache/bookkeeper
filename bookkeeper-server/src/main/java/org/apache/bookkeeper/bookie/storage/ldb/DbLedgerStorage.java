@@ -56,6 +56,7 @@ import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLoggerForEntryLogPerLedger;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -222,17 +223,32 @@ public class DbLedgerStorage implements LedgerStorage {
                     numReadThreads = conf.getServerNumIOThreads();
                 }
 
-                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ledgerDirsManager, slog),
-                    new NativeIOImpl(),
-                    allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
-                    conf.getEntryLogSizeLimit(),
-                    conf.getNettyMaxFrameSizeBytes() - 500,
-                    perDirectoryTotalWriteBufferSize,
-                    perDirectoryTotalReadBufferSize,
-                    readBufferSize,
-                    numReadThreads,
-                    maxFdCacheTimeSeconds,
-                    slog, statsLogger);
+                if (conf.isEntryLogPerLedgerEnabled()) {
+                    entrylogger = new DirectEntryLoggerForEntryLogPerLedger(conf, ledgerDir,
+                            new EntryLogIdsImpl(ledgerDirsManager, slog),
+                            new NativeIOImpl(),
+                            allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
+                            conf.getEntryLogSizeLimit(),
+                            conf.getNettyMaxFrameSizeBytes() - 500,
+                            perDirectoryTotalWriteBufferSize,
+                            perDirectoryTotalReadBufferSize,
+                            readBufferSize,
+                            numReadThreads,
+                            maxFdCacheTimeSeconds,
+                            slog, statsLogger);
+                } else {
+                    entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ledgerDirsManager, slog),
+                            new NativeIOImpl(),
+                            allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
+                            conf.getEntryLogSizeLimit(),
+                            conf.getNettyMaxFrameSizeBytes() - 500,
+                            perDirectoryTotalWriteBufferSize,
+                            perDirectoryTotalReadBufferSize,
+                            readBufferSize,
+                            numReadThreads,
+                            maxFdCacheTimeSeconds,
+                            slog, statsLogger);
+                }
             } else {
                 entrylogger = new DefaultEntryLogger(conf, ldm, null, statsLogger, allocator);
             }

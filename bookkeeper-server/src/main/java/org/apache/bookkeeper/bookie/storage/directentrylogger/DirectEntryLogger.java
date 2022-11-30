@@ -63,22 +63,22 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * DirectEntryLogger.
  */
 public class DirectEntryLogger implements EntryLogger {
-    private final Slogger slog;
+    protected final Slogger slog;
     private final File ledgerDir;
-    private final EntryLogIds ids;
+    protected final EntryLogIds ids;
     private final ExecutorService writeExecutor;
-    private final ExecutorService flushExecutor;
-    private final long maxFileSize;
-    private final DirectEntryLoggerStats stats;
-    private final ByteBufAllocator allocator;
+    protected final ExecutorService flushExecutor;
+    protected final long maxFileSize;
+    protected final DirectEntryLoggerStats stats;
+    protected final ByteBufAllocator allocator;
     private final BufferPool writeBuffers;
     private final int readBufferSize;
     private final int maxSaneEntrySize;
-    private final Set<Integer> unflushedLogs;
+    protected final Set<Integer> unflushedLogs;
 
     private WriterWithMetadata curWriter;
 
-    private List<Future<?>> pendingFlushes;
+    protected List<Future<?>> pendingFlushes;
     private final NativeIO nativeIO;
     private final List<Cache<?, ?>> allCaches = new CopyOnWriteArrayList<>();
     private final ThreadLocal<Cache<Integer, LogReader>> caches;
@@ -321,7 +321,7 @@ public class DirectEntryLogger implements EntryLogger {
         }
     }
 
-    private void flushAndCloseCurrent() throws IOException {
+    protected void flushAndCloseCurrent() throws IOException {
         WriterWithMetadata flushWriter;
 
         CompletableFuture<Void> flushPromise = new CompletableFuture<>();
@@ -331,6 +331,10 @@ public class DirectEntryLogger implements EntryLogger {
 
             pendingFlushes.add(flushPromise);
         }
+        flushAndCloseWriter(flushWriter, flushPromise);
+    }
+
+    protected void flushAndCloseWriter(WriterWithMetadata flushWriter, CompletableFuture<Void> flushPromise) {
         if (flushWriter != null) {
             flushExecutor.execute(() -> {
                 long start = System.nanoTime();
@@ -445,7 +449,7 @@ public class DirectEntryLogger implements EntryLogger {
                                 maxSaneEntrySize, stats.getReadBlockStats());
     }
 
-    private LogWriter newDirectWriter(int newId) throws IOException {
+    protected LogWriter newDirectWriter(int newId) throws IOException {
         unflushedLogs.add(newId);
         LogWriter writer = new DirectWriter(newId, logFilename(ledgerDir, newId), maxFileSize,
                                             writeExecutor, writeBuffers, nativeIO, slog);
