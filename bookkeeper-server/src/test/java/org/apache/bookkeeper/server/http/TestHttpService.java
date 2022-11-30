@@ -847,6 +847,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = gcDetailsService.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        assertTrue(JsonUtil.fromJson(response1.getBody(), List.class).get(0).toString().contains("ledgerDir"));
         LOG.info("Get response: {}", response1.getBody());
 
         //2, PUT, should return NOT_FOUND
