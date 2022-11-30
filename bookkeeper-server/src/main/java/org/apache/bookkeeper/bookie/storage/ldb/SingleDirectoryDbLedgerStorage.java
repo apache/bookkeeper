@@ -388,7 +388,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
 
         if (log.isDebugEnabled()) {
-            log.debug("isFenced: {}. ledger: {}", isFenced, ledgerId);
+            log.debug("ledger: {}, isFenced: {}.", ledgerId, isFenced);
         }
 
         // Only a negative result while in limbo equates to unknown
