@@ -43,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.ThreadRegistry;
@@ -233,7 +232,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
             log.warn("Failed to access netty DIRECT_MEMORY_COUNTER field {}", t.getMessage());
         }
         directMemoryUsage = tmpDirectMemoryUsage;
-    
+
         List<BufferPoolMXBean> platformMXBeans = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
         poolMxBeanOp = platformMXBeans.stream()
                 .filter(bufferPoolMXBean -> bufferPoolMXBean.getName().equals("direct")).findAny();
