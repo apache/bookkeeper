@@ -221,7 +221,6 @@ public class PrometheusMetricsProvider implements StatsProvider {
      */
     private static AtomicLong directMemoryUsage;
     private static Optional<BufferPoolMXBean> poolMxBeanOp;
-    
     private static Supplier<Long> getDirectMemoryUsage;
 
     static {
