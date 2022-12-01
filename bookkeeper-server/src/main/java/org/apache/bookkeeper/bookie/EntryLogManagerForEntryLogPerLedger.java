@@ -168,7 +168,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             this.entryLogsPerLedger = statsLogger.getOpStatsLogger(ENTRYLOGS_PER_LEDGER);
 
             ledgerIdEntryLogCounterCacheMap = CacheBuilder.newBuilder()
-                    .expireAfterAccess(entrylogMapAccessExpiryTimeInSeconds * entryLogPerLedgerCounterLimitsMultFactor,
+                    .expireAfterAccess(entryLogMapAccessExpiryTimeInSeconds * entryLogPerLedgerCounterLimitsMultFactor,
                             TimeUnit.SECONDS)
                     .maximumSize(maximumNumberOfActiveEntryLogs * entryLogPerLedgerCounterLimitsMultFactor)
                     .removalListener(new RemovalListener<Long, MutableInt>() {
@@ -256,7 +256,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     private final ConcurrentLongHashMap<BufferedLogChannelWithDirInfo> replicaOfCurrentLogChannels;
     private final CacheLoader<Long, EntryLogAndLockTuple> entryLogAndLockTupleCacheLoader;
     private final DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
-    private final int entrylogMapAccessExpiryTimeInSeconds;
+    private final int entryLogMapAccessExpiryTimeInSeconds;
     private final int maximumNumberOfActiveEntryLogs;
     private final int entryLogPerLedgerCounterLimitsMultFactor;
 
@@ -274,7 +274,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
         this.replicaOfCurrentLogChannels =
                 ConcurrentLongHashMap.<BufferedLogChannelWithDirInfo>newBuilder().build();
-        this.entrylogMapAccessExpiryTimeInSeconds = conf.getEntrylogMapAccessExpiryTimeInSeconds();
+        this.entryLogMapAccessExpiryTimeInSeconds = conf.getentryLogMapAccessExpiryTimeInSeconds();
         this.maximumNumberOfActiveEntryLogs = conf.getMaximumNumberOfActiveEntryLogs();
         this.entryLogPerLedgerCounterLimitsMultFactor = conf.getEntryLogPerLedgerCounterLimitsMultFactor();
 
@@ -290,7 +290,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
          * Currently we are relying on access time based eviction policy for
          * removal of EntryLogAndLockTuple, so if the EntryLogAndLockTuple of
          * the ledger is not accessed in
-         * entrylogMapAccessExpiryTimeInSeconds period, it will be removed
+         * entryLogMapAccessExpiryTimeInSeconds period, it will be removed
          * from the cache.
          *
          * We are going to introduce explicit advisory writeClose call, with
@@ -300,7 +300,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
          * receive successfully write close call in all the cases.
          */
         ledgerIdEntryLogMap = CacheBuilder.newBuilder()
-                .expireAfterAccess(entrylogMapAccessExpiryTimeInSeconds, TimeUnit.SECONDS)
+                .expireAfterAccess(entryLogMapAccessExpiryTimeInSeconds, TimeUnit.SECONDS)
                 .maximumSize(maximumNumberOfActiveEntryLogs)
                 .removalListener(new RemovalListener<Long, EntryLogAndLockTuple>() {
                     @Override
@@ -317,7 +317,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     /*
      * This method is called when an entry is removed from the cache. This could
      * be because access time of that ledger has elapsed
-     * entrylogMapAccessExpiryTimeInSeconds period, or number of active
+     * entryLogMapAccessExpiryTimeInSeconds period, or number of active
      * currentlogs in the cache has reached the size of
      * maximumNumberOfActiveEntryLogs, or if an entry is explicitly
      * invalidated/removed. In these cases entry for that ledger is removed from

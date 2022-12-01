@@ -1050,7 +1050,7 @@ public class DefaultEntryLogTest {
         conf.setEntryLogFilePreAllocationEnabled(false);
         conf.setEntryLogPerLedgerEnabled(true);
         conf.setLedgerDirNames(createAndGetLedgerDirs(2));
-        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        conf.setentryLogMapAccessExpiryTimeInSeconds(evictionPeriod);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
@@ -1235,7 +1235,7 @@ public class DefaultEntryLogTest {
         conf.setEntryLogFilePreAllocationEnabled(false);
         conf.setEntryLogPerLedgerEnabled(true);
         conf.setLedgerDirNames(createAndGetLedgerDirs(2));
-        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        conf.setentryLogMapAccessExpiryTimeInSeconds(evictionPeriod);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
@@ -1289,7 +1289,7 @@ public class DefaultEntryLogTest {
         conf.setEntryLogFilePreAllocationEnabled(false);
         conf.setEntryLogPerLedgerEnabled(true);
         conf.setLedgerDirNames(createAndGetLedgerDirs(2));
-        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        conf.setentryLogMapAccessExpiryTimeInSeconds(evictionPeriod);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
