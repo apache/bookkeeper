@@ -337,8 +337,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
-    protected static final String ROCKSDB_DELETE_ENTRIES_BATCH_SIZE = "rocksDBDeleteEntriesBatchSize";
-
     /**
      * Construct a default configuration object.
      */
@@ -3166,10 +3164,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             throw new ConfigurationException("For persisiting explicitLac, journalFormatVersionToWrite should be >= 6"
                     + "and FileInfoFormatVersionToWrite should be >= 1");
         }
-        if (getMinorCompactionInterval() * SECOND < getGcWaitTime()) {
+        if (getMinorCompactionInterval() > 0 && getMinorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("minorCompactionInterval should be >= gcWaitTime.");
         }
-        if (getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
+        if (getMajorCompactionInterval() > 0 && getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
         }
     }
@@ -4046,26 +4044,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
-        return this;
-    }
-
-    /**
-     * Get entry log location index delete entries batch size from RocksDB.
-     *
-     * @return Int rocksDB delete entries batch size configured in Service configuration.
-     */
-    public int getRocksDBDeleteEntriesBatchSize() {
-        return getInt(ROCKSDB_DELETE_ENTRIES_BATCH_SIZE, 100000);
-    }
-
-    /**
-     * Set entry log location index delete entries batch size from RocksDB.
-     *
-     * @param rocksDBDeleteEntriesBatchSize
-     * @return
-     */
-    public ServerConfiguration setRocksDBDeleteEntriesBatchSize(int rocksDBDeleteEntriesBatchSize) {
-        this.setProperty(ROCKSDB_DELETE_ENTRIES_BATCH_SIZE, rocksDBDeleteEntriesBatchSize);
         return this;
     }
 }
