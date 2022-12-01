@@ -839,6 +839,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             throw e;
         } catch (RuntimeException e) {
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
+            // not wrap IOException again
+            if (e.getCause() != null && e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            }
             // Wrap unchecked exceptions
             throw new IOException(e);
         } finally {
