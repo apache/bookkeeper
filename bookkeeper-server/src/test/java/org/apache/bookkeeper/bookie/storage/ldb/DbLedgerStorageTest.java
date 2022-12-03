@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -357,7 +358,7 @@ public class DbLedgerStorageTest {
 
         ByteBuf res = storage.getEntry(1, 2);
         assertEquals(entry2, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
 
         storage.flush();
 
@@ -370,7 +371,7 @@ public class DbLedgerStorageTest {
 
         res = storage.getEntry(1, 2);
         assertEquals(entry2, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
 
         ByteBuf entry1 = Unpooled.buffer(1024);
         entry1.writeLong(1); // ledger id
@@ -381,21 +382,21 @@ public class DbLedgerStorageTest {
 
         res = storage.getEntry(1, 1);
         assertEquals(entry1, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
 
         res = storage.getEntry(1, 2);
         assertEquals(entry2, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
 
         storage.flush();
 
         res = storage.getEntry(1, 1);
         assertEquals(entry1, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
 
         res = storage.getEntry(1, 2);
         assertEquals(entry2, res);
-        res.release();
+        ReferenceCountUtil.safeRelease(res);
     }
 
     @Test
