@@ -29,7 +29,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.util.ReferenceCountUtil;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
@@ -230,17 +229,17 @@ public class ByteBufAllocatorBuilderTest {
         ByteBuf buf1 = alloc.buffer();
         assertEquals(pooledAlloc, buf1.alloc());
         assertFalse(buf1.hasArray());
-        ReferenceCountUtil.safeRelease(buf1);
+        buf1.release();
 
         ByteBuf buf2 = alloc.directBuffer();
         assertEquals(pooledAlloc, buf2.alloc());
         assertFalse(buf2.hasArray());
-        ReferenceCountUtil.safeRelease(buf2);
+        buf2.release();
 
         ByteBuf buf3 = alloc.heapBuffer();
         assertEquals(pooledAlloc, buf3.alloc());
         assertTrue(buf3.hasArray());
-        ReferenceCountUtil.safeRelease(buf3);
+        buf3.release();
     }
 
     @Test
@@ -256,14 +255,14 @@ public class ByteBufAllocatorBuilderTest {
         assertEquals(PooledByteBufAllocator.class, buf1.alloc().getClass());
         assertEquals(3, ((PooledByteBufAllocator) buf1.alloc()).metric().numDirectArenas());
         assertFalse(buf1.hasArray());
-        ReferenceCountUtil.safeRelease(buf1);
+        buf1.release();
 
         ByteBuf buf2 = alloc.directBuffer();
         assertFalse(buf2.hasArray());
-        ReferenceCountUtil.safeRelease(buf2);
+        buf2.release();
 
         ByteBuf buf3 = alloc.heapBuffer();
         assertTrue(buf3.hasArray());
-        ReferenceCountUtil.safeRelease(buf3);
+        buf3.release();
     }
 }
