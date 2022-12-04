@@ -23,6 +23,7 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -76,7 +77,7 @@ final class KVUtils {
         try {
             cmd.writeTo(new ByteBufOutputStream(buf));
         } catch (IOException e) {
-            buf.release();
+            ReferenceCountUtil.safeRelease(buf);
             throw e;
         }
         return buf;

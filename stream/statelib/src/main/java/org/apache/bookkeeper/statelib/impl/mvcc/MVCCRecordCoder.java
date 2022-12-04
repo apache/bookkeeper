@@ -22,6 +22,7 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import lombok.AccessLevel;
@@ -76,7 +77,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         buf.writerIndex(buf.writerIndex() + metaLen);
         buf.writeInt(valLen);
         buf.writeBytes(record.getValue().slice());
-        buf.release();
+        ReferenceCountUtil.safeRelease(buf);
 
         return data;
     }

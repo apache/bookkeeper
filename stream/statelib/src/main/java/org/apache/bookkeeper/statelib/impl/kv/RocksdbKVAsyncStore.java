@@ -21,6 +21,7 @@ package org.apache.bookkeeper.statelib.impl.kv;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -99,7 +100,7 @@ public class RocksdbKVAsyncStore<K, V>
                 byte[] serializedBytes = ByteBufUtil.getBytes(serializedBuf);
                 localStore.put(keyBytes, serializedBytes, revision);
             } finally {
-                serializedBuf.release();
+                ReferenceCountUtil.safeRelease(serializedBuf);
             }
             return null;
         }, writeIOScheduler);
@@ -125,7 +126,7 @@ public class RocksdbKVAsyncStore<K, V>
                     return KVUtils.deserialize(valCoder, Unpooled.wrappedBuffer(prevValue));
                 }
             } finally {
-                serializedBuf.release();
+                ReferenceCountUtil.safeRelease(serializedBuf);
             }
         }, writeIOScheduler);
     }
