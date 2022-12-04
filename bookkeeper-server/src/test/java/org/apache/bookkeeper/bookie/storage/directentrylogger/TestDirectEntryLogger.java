@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,15 +139,15 @@ public class TestDirectEntryLogger {
             ByteBuf e2read = elog.readEntry(ledgerId1, 2L, loc2);
             assertEntryEquals(e1read, e1);
             assertEntryEquals(e2read, e2);
-            e1read.release();
-            e2read.release();
+            ReferenceCountUtil.safeRelease(e1read);
+            ReferenceCountUtil.safeRelease(e2read);
 
             long loc3 = elog.addEntry(ledgerId1, e3.slice());
             elog.flush();
 
             ByteBuf e3read = elog.readEntry(ledgerId1, 3L, loc3);
             assertEntryEquals(e3read, e3);
-            e3read.release();
+            ReferenceCountUtil.safeRelease(e3read);
         }
     }
 
@@ -199,7 +200,7 @@ public class TestDirectEntryLogger {
             }
             elog.flush();
             for (Long loc : locations) {
-                elog.readEntry(loc).release();
+                ReferenceCountUtil.safeRelease(elog.readEntry(loc));
             }
             assertThat(outstandingReaders.get(), equalTo(maxCachedReaders));
         } finally {
