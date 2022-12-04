@@ -30,6 +30,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -1271,7 +1272,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                      * (METAENTRY_ID_LEDGER_EXPLICITLAC) to Journal.
                      */
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    qe.entry.release();
+                    ReferenceCountUtil.safeRelease(qe.entry);
                 } else if (qe.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().addCount(entrySize);
@@ -1287,7 +1288,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     bc.write(lenBuff);
                     bc.write(qe.entry);
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    qe.entry.release();
+                    ReferenceCountUtil.safeRelease(qe.entry);
                 }
 
                 toFlush.add(qe);

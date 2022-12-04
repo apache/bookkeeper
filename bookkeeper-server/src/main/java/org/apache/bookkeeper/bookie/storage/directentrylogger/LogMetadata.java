@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -107,14 +108,14 @@ class LogMetadata {
                 throw e;
             }
         } finally {
-            serializedMap.release();
+            ReferenceCountUtil.safeRelease(serializedMap);
         }
         ByteBuf buf = allocator.buffer(Buffer.ALIGNMENT);
         try {
             Header.writeHeader(buf, ledgerMapOffset, numberOfLedgers);
             writer.writeAt(0, buf);
         } finally {
-            buf.release();
+            ReferenceCountUtil.safeRelease(buf);
         }
         writer.flush();
     }
@@ -177,7 +178,7 @@ class LogMetadata {
                                               .toString());
                     }
                 } finally {
-                    ledgerMapBuffer.release();
+                    ReferenceCountUtil.safeRelease(ledgerMapBuffer);
                 }
             }
             return meta;
@@ -185,7 +186,7 @@ class LogMetadata {
             throw new IOException(exMsg("Error reading index").kv("logId", reader.logId())
                                   .kv("reason", ioe.getMessage()).toString(), ioe);
         } finally {
-            header.release();
+            ReferenceCountUtil.safeRelease(header);
         }
     }
 }

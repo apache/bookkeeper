@@ -30,6 +30,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -455,7 +456,7 @@ public class DirectEntryLogger implements EntryLogger {
             writer.writeAt(0, buf);
             writer.position(buf.capacity());
         } finally {
-            buf.release();
+            ReferenceCountUtil.safeRelease(buf);
         }
         return writer;
     }

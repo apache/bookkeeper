@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -173,7 +174,7 @@ public class BookieJournalTest {
 
             fc.write(lenBuff);
             fc.write(packet.nioBuffer());
-            packet.release();
+            ReferenceCountUtil.safeRelease(packet);
         }
     }
 
@@ -217,7 +218,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.safeRelease(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -251,7 +252,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.safeRelease(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -284,7 +285,7 @@ public class BookieJournalTest {
             lenBuff.flip();
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.safeRelease(packet);
         }
         // write fence key
         ByteBuf packet = generateFenceEntry(1);
@@ -332,7 +333,7 @@ public class BookieJournalTest {
             }
             bc.write(lenBuff);
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.safeRelease(packet);
             Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key
