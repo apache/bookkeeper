@@ -207,12 +207,9 @@ class DirectReader implements LogReader {
         long bufferOffset = 0;
         long bytesToRead = Math.min(blockSize, bytesAvailable);
         long bytesOutstanding = bytesToRead;
-        int attempts = 0;
         long bytesRead = -1;
         try {
             while (true) {
-                attempts++;
-
                 long readSize = blockSize - bufferOffset;
                 long pointerWithOffset = nativeBuffer.pointer(bufferOffset, readSize);
                 bytesRead = nativeIO.pread(fd, pointerWithOffset,
