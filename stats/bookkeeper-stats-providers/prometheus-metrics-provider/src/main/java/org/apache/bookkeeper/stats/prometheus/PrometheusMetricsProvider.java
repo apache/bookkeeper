@@ -99,6 +99,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public void start(Configuration conf) {
         boolean httpEnabled = conf.getBoolean(PROMETHEUS_STATS_HTTP_ENABLE, DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE);
         boolean bkHttpServerEnabled = conf.getBoolean("httpServerEnabled", false);
+        boolean exposeDefaultJVMMetrics = conf.getBoolean("exposeDefaultJVMMetrics", true);
         // only start its own http server when prometheus http is enabled and bk http server is not enabled.
         if (httpEnabled && !bkHttpServerEnabled) {
             String httpAddr = conf.getString(PROMETHEUS_STATS_HTTP_ADDRESS, DEFAULT_PROMETHEUS_STATS_HTTP_ADDR);
@@ -119,26 +120,28 @@ public class PrometheusMetricsProvider implements StatsProvider {
             }
         }
 
-        // Include standard JVM stats
-        registerMetrics(new StandardExports());
-        registerMetrics(new MemoryPoolsExports());
-        registerMetrics(new GarbageCollectorExports());
-        registerMetrics(new ThreadExports());
+        if (exposeDefaultJVMMetrics) {
+            // Include standard JVM stats
+            registerMetrics(new StandardExports());
+            registerMetrics(new MemoryPoolsExports());
+            registerMetrics(new GarbageCollectorExports());
+            registerMetrics(new ThreadExports());
 
-        // Add direct memory allocated through unsafe
-        registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
-            @Override
-            public double get() {
-                return poolMxBeanOp.isPresent() ? poolMxBeanOp.get().getMemoryUsed() : Double.NaN;
-            }
-        }));
+            // Add direct memory allocated through unsafe
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
+                @Override
+                public double get() {
+                    return poolMxBeanOp.isPresent() ? poolMxBeanOp.get().getMemoryUsed() : Double.NaN;
+                }
+            }));
 
-        registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
-            @Override
-            public double get() {
-                return PlatformDependent.estimateMaxDirectMemory();
-            }
-        }));
+            registerMetrics(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
+                @Override
+                public double get() {
+                    return PlatformDependent.estimateMaxDirectMemory();
+                }
+            }));
+        }
 
         executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("metrics"));
 
