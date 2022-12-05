@@ -219,12 +219,13 @@ public class PrometheusMetricsProvider implements StatsProvider {
     /*
      * Try to get Netty counter of used direct memory. This will be correct, unlike the JVM values.
      */
-    private static AtomicLong directMemoryUsage;
-    private static Optional<BufferPoolMXBean> poolMxBeanOp;
-    private static Supplier<Long> getDirectMemoryUsage;
+    private static final AtomicLong directMemoryUsage;
+    private static final Optional<BufferPoolMXBean> poolMxBeanOp;
+    private static final Supplier<Double> getDirectMemoryUsage;
 
     static {
         if (PlatformDependent.useDirectBufferNoCleaner()) {
+            poolMxBeanOp = Optional.empty();
             AtomicLong tmpDirectMemoryUsage = null;
             try {
                 Field field = PlatformDependent.class.getDeclaredField("DIRECT_MEMORY_COUNTER");
@@ -234,12 +235,13 @@ public class PrometheusMetricsProvider implements StatsProvider {
                 log.warn("Failed to access netty DIRECT_MEMORY_COUNTER field {}", t.getMessage());
             }
             directMemoryUsage = tmpDirectMemoryUsage;
-            getDirectMemoryUsage = () -> directMemoryUsage.get();
+            getDirectMemoryUsage = () -> directMemoryUsage != null ? directMemoryUsage.get() : Double.NaN;
         } else {
+            directMemoryUsage = null;
             List<BufferPoolMXBean> platformMXBeans = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
             poolMxBeanOp = platformMXBeans.stream()
                     .filter(bufferPoolMXBean -> bufferPoolMXBean.getName().equals("direct")).findAny();
-            getDirectMemoryUsage = () -> poolMxBeanOp.get().getMemoryUsed();
+            getDirectMemoryUsage = () -> poolMxBeanOp.isPresent() ? poolMxBeanOp.get().getMemoryUsed() : Double.NaN;
         }
     }
 }
