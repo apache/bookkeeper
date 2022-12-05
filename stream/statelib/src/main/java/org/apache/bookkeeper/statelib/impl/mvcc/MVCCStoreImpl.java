@@ -30,6 +30,7 @@ import com.google.protobuf.TextFormat;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -491,7 +492,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         try {
             record = getKeyRecord(key, rawKey);
         } catch (StateStoreRuntimeException e) {
-            rawValBuf.release();
+            ReferenceCountUtil.safeRelease(rawValBuf);
             throw e;
         }
 

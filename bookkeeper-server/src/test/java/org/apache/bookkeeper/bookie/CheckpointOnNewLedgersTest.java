@@ -27,6 +27,7 @@ import static org.mockito.Mockito.spy;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -183,14 +184,14 @@ public class CheckpointOnNewLedgersTest {
             assertNotNull(entry);
             assertEquals(l2, entry.readLong());
             assertEquals((long) i, entry.readLong());
-            entry.release();
+            ReferenceCountUtil.safeRelease(entry);
         }
 
         ByteBuf entry = newBookie.readEntry(l1, 0L);
         assertNotNull(entry);
         assertEquals(l1, entry.readLong());
         assertEquals(0L, entry.readLong());
-        entry.release();
+        ReferenceCountUtil.safeRelease(entry);
         newBookie.shutdown();
     }
 

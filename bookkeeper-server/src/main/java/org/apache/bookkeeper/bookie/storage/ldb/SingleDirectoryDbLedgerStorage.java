@@ -144,9 +144,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final Counter flushExecutorTime;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
-            StatsLogger statsLogger, ByteBufAllocator allocator, ScheduledExecutorService gcExecutor,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize) throws IOException {
+                                          LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                                          EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
+                                          long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+            throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
