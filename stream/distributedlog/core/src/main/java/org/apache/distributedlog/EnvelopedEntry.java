@@ -18,6 +18,7 @@
 package org.apache.distributedlog;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.io.CompressionCodec;
@@ -102,7 +103,7 @@ class EnvelopedEntry {
             CompressionCodec codec = CompressionUtils.getCompressionCodec(Type.of(codecCode));
             decompressedBuf = codec.decompress(compressedBuf, originDataLen);
         } finally {
-            compressedBuf.release();
+            ReferenceCountUtil.safeRelease(compressedBuf);
         }
         return decompressedBuf;
     }
