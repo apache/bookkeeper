@@ -22,6 +22,7 @@ package org.apache.bookkeeper.tools.perf.table;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,7 @@ abstract class IncrementTask extends BenchmarkTask {
                     );
                     writeOpStats.recordOp(latencyMicros);
                 }
-                keyBuf.release();
+                ReferenceCountUtil.safeRelease(keyBuf);
             });
     }
 

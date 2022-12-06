@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -95,8 +96,8 @@ abstract class WriteTask extends BenchmarkTask {
                     );
                     writeOpStats.recordOp(latencyMicros);
                 }
-                keyBuf.release();
-                valBuf.release();
+                ReferenceCountUtil.safeRelease(keyBuf);
+                ReferenceCountUtil.safeRelease(valBuf);
             });
     }
 
