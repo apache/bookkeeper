@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +42,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.ThreadRegistry;
@@ -127,11 +130,11 @@ public class PrometheusMetricsProvider implements StatsProvider {
             registerMetrics(new GarbageCollectorExports());
             registerMetrics(new ThreadExports());
 
-            // Add direct memory allocated through unsafe
+        // Add direct memory allocated through unsafe
             registerMetrics(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
                 @Override
                 public double get() {
-                    return poolMxBeanOp.isPresent() ? poolMxBeanOp.get().getMemoryUsed() : Double.NaN;
+                    return getDirectMemoryUsage.get();
                 }
             }));
 
@@ -214,14 +217,34 @@ public class PrometheusMetricsProvider implements StatsProvider {
         }
     }
 
-
     private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsProvider.class);
 
+    /*
+     * Try to get Netty counter of used direct memory. This will be correct, unlike the JVM values.
+     */
+    private static final AtomicLong directMemoryUsage;
     private static final Optional<BufferPoolMXBean> poolMxBeanOp;
+    private static final Supplier<Double> getDirectMemoryUsage;
 
     static {
-        List<BufferPoolMXBean> platformMXBeans = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
-        poolMxBeanOp = platformMXBeans.stream()
-                .filter(bufferPoolMXBean -> bufferPoolMXBean.getName().equals("direct")).findAny();
+        if (PlatformDependent.useDirectBufferNoCleaner()) {
+            poolMxBeanOp = Optional.empty();
+            AtomicLong tmpDirectMemoryUsage = null;
+            try {
+                Field field = PlatformDependent.class.getDeclaredField("DIRECT_MEMORY_COUNTER");
+                field.setAccessible(true);
+                tmpDirectMemoryUsage = (AtomicLong) field.get(null);
+            } catch (Throwable t) {
+                log.warn("Failed to access netty DIRECT_MEMORY_COUNTER field {}", t.getMessage());
+            }
+            directMemoryUsage = tmpDirectMemoryUsage;
+            getDirectMemoryUsage = () -> directMemoryUsage != null ? directMemoryUsage.get() : Double.NaN;
+        } else {
+            directMemoryUsage = null;
+            List<BufferPoolMXBean> platformMXBeans = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
+            poolMxBeanOp = platformMXBeans.stream()
+                    .filter(bufferPoolMXBean -> bufferPoolMXBean.getName().equals("direct")).findAny();
+            getDirectMemoryUsage = () -> poolMxBeanOp.isPresent() ? poolMxBeanOp.get().getMemoryUsed() : Double.NaN;
+        }
     }
 }
