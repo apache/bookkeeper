@@ -331,8 +331,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 newEnsemblesFromRecovery.clear();
             }
             if (exception != null) {
-                LOG.error("When closeRecovered,failed on clearing newEnsemblesFromRecovery: {}",
-                        BKException.getExceptionCode(exception));
+                LOG.error("When closeRecovered,failed on clearing newEnsemblesFromRecovery.", exception);
             }
         });
         return f;
