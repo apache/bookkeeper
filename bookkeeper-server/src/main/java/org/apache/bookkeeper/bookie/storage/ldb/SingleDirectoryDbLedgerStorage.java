@@ -266,10 +266,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public boolean isFenced(long ledgerId) throws IOException {
+        boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
+
         if (log.isDebugEnabled()) {
-            log.debug("isFenced. ledger: {}", ledgerId);
+            log.debug("ledger: {}, isFenced: {}.", ledgerId, isFenced);
         }
-        return ledgerIndex.get(ledgerId).getFenced();
+
+        return isFenced;
     }
 
     @Override
