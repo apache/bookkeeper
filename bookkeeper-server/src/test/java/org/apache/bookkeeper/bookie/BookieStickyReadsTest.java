@@ -48,7 +48,7 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
 
     private static final int NUM_BOOKIES = 3;
 
-    private static final String READ_ENTRY_REQUEST_METRIC = "bookkeeper_server.READ_ENTRY_REQUEST";
+    private static final String READ_ENTRY_SCHEDULING_DELAY_METRIC = "bookkeeper_server.READ_ENTRY_SCHEDULING_DELAY";
 
     public BookieStickyReadsTest() {
         super(NUM_BOOKIES);
@@ -64,7 +64,8 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
         writeAndReadEntries(conf, 3, 3, 3);
 
         // All bookies should have received at least some read request
-        getBookieReadRequestStats().values().forEach(readRequests -> assertTrue(readRequests > 0));
+        getBookieReadEntrySchedulingDelayStats().values()
+                .forEach(readRequests -> assertTrue(readRequests > 0));
     }
 
     @Test
@@ -76,7 +77,8 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
 
         // All bookies should have received at least some read request since we
         // don't enable sticky reads when striping is enabled
-        getBookieReadRequestStats().values().forEach(readRequests -> assertTrue(readRequests > 0));
+        getBookieReadEntrySchedulingDelayStats().values()
+                .forEach(readRequests -> assertTrue(readRequests > 0));
     }
 
     @Test
@@ -87,7 +89,7 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
         writeAndReadEntries(conf, 3, 3, 3);
 
         // All read requests should have been made to a single bookie
-        Map<Integer, Long> stats = getBookieReadRequestStats();
+        Map<Integer, Long> stats = getBookieReadEntrySchedulingDelayStats();
         boolean foundBookieWithRequests = false;
         for (long readRequests : stats.values()) {
             if (readRequests > 0) {
@@ -137,7 +139,7 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
         // All read requests should have been made to a single bookie
         int bookieWithRequests = -1;
         for (int i = 0; i < NUM_BOOKIES; i++) {
-            long requests = getStatsProvider(i).getOpStatsLogger(READ_ENTRY_REQUEST_METRIC)
+            long requests = getStatsProvider(i).getOpStatsLogger(READ_ENTRY_SCHEDULING_DELAY_METRIC)
                     .getSuccessCount();
 
             log.info("Bookie {} --- requests: {}", i, requests);
@@ -162,18 +164,17 @@ public class BookieStickyReadsTest extends BookKeeperClusterTestCase {
         // At this point, we should have 1 bookie with 1 request (the initial
         // request), and a second bookie with 10 requests. The 3rd bookie should
         // have no requests
-        List<Long> requestCounts = Lists.newArrayList(getBookieReadRequestStats().values());
+        List<Long> requestCounts = Lists.newArrayList(getBookieReadEntrySchedulingDelayStats().values());
         Collections.sort(requestCounts);
 
         assertEquals(0, requestCounts.get(0).longValue());
         assertEquals(1, requestCounts.get(1).longValue());
         assertEquals(10, requestCounts.get(2).longValue());
     }
-
-    private Map<Integer, Long> getBookieReadRequestStats() throws Exception {
+    private Map<Integer, Long> getBookieReadEntrySchedulingDelayStats() throws Exception {
         Map<Integer, Long> stats = new TreeMap<>();
         for (int i = 0; i < NUM_BOOKIES; i++) {
-            stats.put(i, getStatsProvider(i).getOpStatsLogger(READ_ENTRY_REQUEST_METRIC)
+            stats.put(i, getStatsProvider(i).getOpStatsLogger(READ_ENTRY_SCHEDULING_DELAY_METRIC)
                     .getSuccessCount());
         }
 
