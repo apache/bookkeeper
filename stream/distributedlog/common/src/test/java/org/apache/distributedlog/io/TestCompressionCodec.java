@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.nio.ByteBuffer;
 import org.junit.Test;
 
@@ -70,9 +71,9 @@ public class TestCompressionCodec {
         decompressedBuf.readBytes(decompressedData);
         assertArrayEquals("The decompressed bytes should be same as the original bytes",
                 data, decompressedData);
-        buf.release();
-        compressedBuf.release();
-        decompressedBuf.release();
+        ReferenceCountUtil.safeRelease(buf);
+        ReferenceCountUtil.safeRelease(compressedBuf);
+        ReferenceCountUtil.safeRelease(decompressedBuf);
     }
 
     private void testCompressionCodec2(CompressionCodec codec) throws Exception {
@@ -93,9 +94,9 @@ public class TestCompressionCodec {
         byte[] decompressedData = new byte[decompressedBuf.readableBytes()];
         decompressedBuf.slice().readBytes(decompressedData);
 
-        buffer.release();
-        compressedBuf.release();
-        decompressedBuf.release();
+        ReferenceCountUtil.safeRelease(buffer);
+        ReferenceCountUtil.safeRelease(compressedBuf);
+        ReferenceCountUtil.safeRelease(decompressedBuf);
     }
 
 }
