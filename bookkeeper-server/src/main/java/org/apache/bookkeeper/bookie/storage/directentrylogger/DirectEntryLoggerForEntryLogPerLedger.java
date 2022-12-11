@@ -43,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;

@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.logIdFromLocation;
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -31,9 +36,6 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.junit.Test;
-import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 /**
  * TestDirectEntryLoggerForEntryLogPerLedger.
@@ -41,7 +43,6 @@ import static org.hamcrest.Matchers.equalTo;
 public class TestDirectEntryLoggerForEntryLogPerLedger {
 
     private final Slogger slog = Slogger.CONSOLE;
-    private static final long ledgerId1 = 1234;
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
