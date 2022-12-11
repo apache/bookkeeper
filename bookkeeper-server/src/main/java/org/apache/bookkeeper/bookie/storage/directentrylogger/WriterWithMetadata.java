@@ -25,6 +25,7 @@ import static com.google.common.base.Preconditions.checkState;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 
 /**
@@ -34,6 +35,16 @@ class WriterWithMetadata {
     private final LogWriter writer;
     private final EntryLogMetadata metadata;
     private final ByteBufAllocator allocator;
+
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
+
+    public AtomicBoolean getIsClosed() {
+        return isClosed;
+    }
+
+    public void setIsClosed(AtomicBoolean isClosed) {
+        this.isClosed = isClosed;
+    }
 
     WriterWithMetadata(LogWriter writer, EntryLogMetadata metadata,
                        ByteBufAllocator allocator) throws IOException {
@@ -72,8 +83,10 @@ class WriterWithMetadata {
     }
 
     void finalizeAndClose() throws IOException {
-        writer.flush();
-        LogMetadata.write(writer, metadata, allocator);
-        writer.close();
+        if (isClosed.compareAndSet(false, true)) {
+            writer.flush();
+            LogMetadata.write(writer, metadata, allocator);
+            writer.close();
+        }
     }
 }

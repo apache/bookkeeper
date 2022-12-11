@@ -90,11 +90,13 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
                         Lock lock = getLock(ledgerId);
                         lock.lock();
                         try {
-                            CompletableFuture<Void> flushPromise = new CompletableFuture<>();
-                            synchronized (this) {
-                                pendingFlushes.add(flushPromise);
+                            if (!writer.getIsClosed().get()) {
+                                CompletableFuture<Void> flushPromise = new CompletableFuture<>();
+                                synchronized (this) {
+                                    pendingFlushes.add(flushPromise);
+                                }
+                                flushAndCloseWriter(writer, flushPromise);
                             }
-                            flushAndCloseWriter(writer, flushPromise);
                         } finally {
                             lock.unlock();
                         }
@@ -112,9 +114,14 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
         try {
             WriterWithMetadata writer = getWriterForLedger(ledgerId);
             if (writer.shouldRoll(buf, maxFileSize)) {
+                CompletableFuture<Void> flushPromise = new CompletableFuture<>();
+                synchronized (this) {
+                    pendingFlushes.add(flushPromise);
+                }
                 // roll the log. asynchronously flush and close current log
-                flushAndCloseWriter(writer, new CompletableFuture<>());
+                flushAndCloseWriter(writer, flushPromise);
                 ledgerIdEntryLogMap.put(ledgerId, createWriterWithMetadata());
+                writer = getWriterForLedger(ledgerId);
             }
 
             offset = writer.addEntry(ledgerId, buf);
@@ -182,7 +189,11 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
     private Lock getLock(long ledgerId) {
         int lockIndex = MathUtils.signSafeMod(Long.hashCode(ledgerId), lockArrayPool.length());
         if (lockArrayPool.get(lockIndex) == null) {
-            lockArrayPool.compareAndSet(lockIndex, null, new ReentrantLock());
+            synchronized (this) {
+                if (lockArrayPool.get(lockIndex) == null) {
+                    lockArrayPool.compareAndSet(lockIndex, null, new ReentrantLock());
+                }
+            }
         }
         return lockArrayPool.get(lockIndex);
     }
