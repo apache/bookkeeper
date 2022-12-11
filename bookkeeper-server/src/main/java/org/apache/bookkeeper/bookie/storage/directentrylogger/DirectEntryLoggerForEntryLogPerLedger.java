@@ -55,11 +55,11 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
 
     private final AtomicReferenceArray<Lock> lockArrayPool;
     private final int maximumNumberOfActiveEntryLogs;
-    private final int entrylogMapAccessExpiryTimeInSeconds;
+    private final int entryLogMapAccessExpiryTimeInSeconds;
     private final CacheLoader<Long, WriterWithMetadata> entryLogAndLockTupleCacheLoader;
 
-
-    public DirectEntryLoggerForEntryLogPerLedger(ServerConfiguration conf,
+    public DirectEntryLoggerForEntryLogPerLedger(int maximumNumberOfActiveEntryLogs,
+                                                 int entryLogMapAccessExpiryTimeInSeconds,
                                                  File ledgerDir, EntryLogIds ids, NativeIO nativeIO,
                                                  ByteBufAllocator allocator, ExecutorService writeExecutor,
                                                  ExecutorService flushExecutor, long maxFileSize,
@@ -70,17 +70,17 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
         super(ledgerDir, ids, nativeIO, allocator, writeExecutor, flushExecutor, maxFileSize, maxSaneEntrySize,
                 totalWriteBufferSize, totalReadBufferSize, readBufferSize, numReadThreads, maxFdCacheTimeSeconds,
                 slogParent, stats);
-        this.maximumNumberOfActiveEntryLogs = conf.getMaximumNumberOfActiveEntryLogs();
-        this.entrylogMapAccessExpiryTimeInSeconds = conf.getEntrylogMapAccessExpiryTimeInSeconds();
-        this.lockArrayPool = new AtomicReferenceArray<>(maximumNumberOfActiveEntryLogs * 2);
+        this.maximumNumberOfActiveEntryLogs = maximumNumberOfActiveEntryLogs;
+        this.entryLogMapAccessExpiryTimeInSeconds = entryLogMapAccessExpiryTimeInSeconds;
+        this.lockArrayPool = new AtomicReferenceArray<>(this.maximumNumberOfActiveEntryLogs * 2);
         this.entryLogAndLockTupleCacheLoader = new CacheLoader<Long, WriterWithMetadata>() {
             @Override
             public WriterWithMetadata load(Long key) throws Exception {
-               return createWriterWithMetadata();
+                return createWriterWithMetadata();
             }
         };
         ledgerIdEntryLogMap = CacheBuilder.newBuilder()
-                .expireAfterAccess(entrylogMapAccessExpiryTimeInSeconds, TimeUnit.SECONDS)
+                .expireAfterAccess(this.entryLogMapAccessExpiryTimeInSeconds, TimeUnit.SECONDS)
                 .maximumSize(maximumNumberOfActiveEntryLogs)
                 .removalListener(new RemovalListener<Long, WriterWithMetadata>() {
                     @Override
@@ -103,7 +103,6 @@ public class DirectEntryLoggerForEntryLogPerLedger extends DirectEntryLogger {
                     }
                 }).build(entryLogAndLockTupleCacheLoader);
     }
-
 
     @Override
     public long addEntry(long ledgerId, ByteBuf buf) throws IOException {

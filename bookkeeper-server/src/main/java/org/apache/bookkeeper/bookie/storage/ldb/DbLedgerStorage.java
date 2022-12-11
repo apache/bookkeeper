@@ -224,7 +224,9 @@ public class DbLedgerStorage implements LedgerStorage {
                 }
 
                 if (conf.isEntryLogPerLedgerEnabled()) {
-                    entrylogger = new DirectEntryLoggerForEntryLogPerLedger(conf, ledgerDir,
+                    entrylogger = new DirectEntryLoggerForEntryLogPerLedger(conf.getMaximumNumberOfActiveEntryLogs(),
+                            conf.getEntrylogMapAccessExpiryTimeInSeconds(),
+                            ledgerDir,
                             new EntryLogIdsImpl(ledgerDirsManager, slog),
                             new NativeIOImpl(),
                             allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
