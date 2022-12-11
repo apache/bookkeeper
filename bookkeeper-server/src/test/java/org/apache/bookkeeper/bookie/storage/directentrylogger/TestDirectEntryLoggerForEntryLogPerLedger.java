@@ -35,6 +35,7 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -46,8 +47,14 @@ public class TestDirectEntryLoggerForEntryLogPerLedger {
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
+    @After
+    public void cleanup() throws Exception {
+        tmpDirs.cleanup();
+    }
+
+
     @Test
-    public void testLogRolling() throws Exception {
+    public void testAddEntry() throws Exception {
         File ledgerDir = tmpDirs.createNew("logRolling", "ledgers");
         File curDir = new File(ledgerDir, "current");
         curDir.mkdirs();
@@ -67,7 +74,7 @@ public class TestDirectEntryLoggerForEntryLogPerLedger {
                 ByteBufAllocator.DEFAULT,
                 MoreExecutors.newDirectExecutorService(),
                 MoreExecutors.newDirectExecutorService(),
-                9000, // max file size (header + size of one entry)
+                1 * 1024 * 1024 * 1024, // 1GB，max file size (header + size of one entry)
                 10 * 1024 * 1024, // max sane entry size
                 1024 * 1024, // total write buffer size
                 1024 * 1024, // total read buffer size
@@ -75,17 +82,19 @@ public class TestDirectEntryLoggerForEntryLogPerLedger {
                 1, // numReadThreads
                 300, // max fd cache time in seconds
                 slog, NullStatsLogger.INSTANCE)) {
+
+            // Data from different ledgers is no longer written to the same log file
             long loc1 = elog.addEntry(ledger1, e1.slice());
             int logId1 = logIdFromLocation(loc1);
             assertThat(logId1, equalTo(1));
 
             long loc2 = elog.addEntry(ledger2, e2.slice());
             int logId2 = logIdFromLocation(loc2);
-            assertThat(logId2, equalTo(1));
+            assertThat(logId2, equalTo(2));
 
             long loc3 = elog.addEntry(ledger3, e3.slice());
             int logId3 = logIdFromLocation(loc3);
-            assertThat(logId3, equalTo(1));
+            assertThat(logId3, equalTo(3));
         }
     }
 }
