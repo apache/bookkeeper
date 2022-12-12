@@ -21,8 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import java.io.StringWriter;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -131,7 +132,7 @@ public class TestPrometheusMetricsProvider {
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_PORT, 0);
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ADDRESS, "127.0.0.1");
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(25);
+        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.directBuffer(25);
         PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
         try {
             provider.start(config);
@@ -154,7 +155,7 @@ public class TestPrometheusMetricsProvider {
             Assert.assertNotEquals("Nan", directBytesUsed);
             Assert.assertTrue(Double.parseDouble(directBytesUsed) > 25);
             // ensure byteBuffer doesn't gc
-            byteBuffer.clear();
+            byteBuf.release();
         } finally {
             provider.stop();
         }

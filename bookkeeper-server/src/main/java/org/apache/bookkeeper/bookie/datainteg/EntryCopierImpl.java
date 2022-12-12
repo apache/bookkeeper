@@ -24,6 +24,7 @@ import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -142,7 +143,7 @@ public class EntryCopierImpl implements EntryCopier {
                         } catch (Throwable t) {
                             promise.completeExceptionally(t);
                         } finally {
-                            buffer.release();
+                            ReferenceCountUtil.safeRelease(buffer);
                         }
                     }
                 });
