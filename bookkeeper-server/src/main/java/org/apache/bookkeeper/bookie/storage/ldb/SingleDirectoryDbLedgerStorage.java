@@ -779,12 +779,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             Batch batch = entryLocationIndex.newBatch();
             writeCacheBeingFlushed.forEach((ledgerId, entryId, entry) -> {
-                try {
-                    long location = entryLogger.addEntry(ledgerId, entry);
-                    entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                long location = entryLogger.addEntry(ledgerId, entry);
+                entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
             });
 
             long entryLoggerStart = MathUtils.nowInNano();
@@ -837,14 +833,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             // Leave IOExecption as it is
             throw e;
-        } catch (RuntimeException e) {
-            recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
-            // not wrap IOException again
-            if (e.getCause() != null && e.getCause() instanceof IOException) {
-                throw (IOException) e.getCause();
-            }
-            // Wrap unchecked exceptions
-            throw new IOException(e);
         } finally {
             try {
                 isFlushOngoing.set(false);
