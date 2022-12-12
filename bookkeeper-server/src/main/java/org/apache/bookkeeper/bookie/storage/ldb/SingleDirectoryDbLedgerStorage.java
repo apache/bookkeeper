@@ -144,9 +144,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final Counter flushExecutorTime;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
-            StatsLogger statsLogger, ByteBufAllocator allocator, ScheduledExecutorService gcExecutor,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize) throws IOException {
+                                          LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                                          EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
+                                          long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+            throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
@@ -385,11 +386,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public boolean isFenced(long ledgerId) throws IOException, BookieException {
-        if (log.isDebugEnabled()) {
-            log.debug("isFenced. ledger: {}", ledgerId);
-        }
-
         boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
+
+        if (log.isDebugEnabled()) {
+            log.debug("ledger: {}, isFenced: {}.", ledgerId, isFenced);
+        }
 
         // Only a negative result while in limbo equates to unknown
         if (!isFenced) {
