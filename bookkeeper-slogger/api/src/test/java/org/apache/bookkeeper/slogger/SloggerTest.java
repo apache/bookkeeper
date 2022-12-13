@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Test;
 
@@ -80,7 +81,7 @@ public class SloggerTest {
     @Test
     public void testMap() throws Exception {
         MockSlogger root = new MockSlogger();
-        HashMap<Integer, Integer> map = new HashMap<>();
+        HashMap<Integer, Integer> map = new LinkedHashMap<>();
         map.put(1, 3);
         map.put(2, 4);
         root.kv("map", map).info(Events.FOOBAR);
