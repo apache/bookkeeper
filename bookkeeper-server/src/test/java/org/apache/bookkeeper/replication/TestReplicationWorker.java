@@ -1196,7 +1196,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 throw new RuntimeException(e);
             }
         };
-        testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class, checkReplicationStats);
+        testRepairedNotAdheringPlacementPolicyLedgerFragments(
+                RackawareEnsemblePlacementPolicy.class, checkReplicationStats);
     }
 
     private void testRepairedNotAdheringPlacementPolicyLedgerFragments(
