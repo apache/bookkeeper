@@ -19,10 +19,10 @@
 apiVersion: v1
 description: apache-bookkeeper-docker-compose
 name: apache-bookkeeper-docker-compose
-version: 4.8.0
+version: 4.15.3
 home: https://github.com/apache/bookkeeper
 sources:
-  - https://github.com/apache/bookkeeper/deploy/docker-compose
+  - https://github.com/apache/bookkeeper/tree/master/deploy/docker-compose
 keywords:
   - log storage
   - stream storage
