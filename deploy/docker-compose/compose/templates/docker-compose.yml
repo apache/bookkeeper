@@ -29,40 +29,38 @@
 {{- $bookieHttpPort := .Values.bookkeeper.bookieHttpPort | int }}
 
 {{- define "zookeeper_servers" }}
-  {{- range until (.Values.zookeeper.size | int) }}
-    {{- if . -}}
-      ,
-    {{- end -}}
-    zookeeper-{{ . }}:2181
-  {{- end -}}
+{{- range until (.Values.zookeeper.size | int) }}
+{{- if . -}}
+,
+{{- end -}}
+zookeeper-{{ add 1 . }}:2181
+{{- end -}}
 {{- end -}}
 
 {{- define "metadata_service_uri" }}
-  {{- range until (.Values.zookeeper.size | int) }}
-    {{- if . -}}
-      ;
-    {{- end -}}
-    zookeeper-{{ . }}:2181
-  {{- end -}}
+{{- range until (.Values.zookeeper.size | int) }}
+{{- if . -}}
+;
+{{- end -}}
+zookeeper-{{ add 1 . }}:2181
+{{- end -}}
 {{- end -}}
 
 
-{{- define "zookeeper_server_list" }} 
-  {{- $zk := dict "servers" (list) -}}
-  {{- range until (.Values.zookeeper.size | int) }}
-    {{- $noop := printf "server.%d=zookeeper-%d:%d:%d:participant;0.0.0.0:%d" . . ($.Values.zookeeper.peerPort | int) ($.Values.zookeeper.leaderPort | int) ($.Values.zookeeper.clientPort | int) | append $zk.servers | set $zk "servers" -}} 
-  {{- end -}}
-  {{- join " " $zk.servers -}}
+{{- define "zookeeper_server_list" }}
+{{- $zk := dict "servers" (list) -}}
+{{- range until (.Values.zookeeper.size | int) }}
+{{- $noop := printf "server.%d=zookeeper-%d:%d:%d;%d" (add 1 .) (add 1 .) ($.Values.zookeeper.peerPort | int) ($.Values.zookeeper.leaderPort | int) ($.Values.zookeeper.clientPort | int) | append $zk.servers | set $zk "servers" -}}
+{{- end -}}
+{{- join " " $zk.servers -}}
 {{- end -}}
 
 version: '3'
 
 services:
   {{- range until $zkSize }}
-  zookeeper-{{ . }}:
+  zookeeper-{{ add 1 . }}:
     image: {{ $.Values.zookeeper.image }}
-    hostname: zookeeper-{{ . }}
-    command: ["zookeeper"]
     {{- if eq $.Values.networkMode "host" }}
     network_mode: host
     {{- else }}
@@ -70,16 +68,15 @@ services:
       - "{{ add $zkAdminPort . 1000 }}:{{ $zkAdminPort }}"
       - "{{ add $zkClientPort . }}:{{ $zkClientPort }}"
     {{- end }}
+    {{- if $.Values.dataDir }}
     volumes:
-      - {{ $.Values.dataDir }}/zookeeper-{{ . }}/data:/data/zookeeper/data
-      - {{ $.Values.dataDir }}/zookeeper-{{ . }}/txlog:/data/zookeeper/txlog
+      - {{ $.Values.dataDir }}/zookeeper-{{ add 1 . }}/data:/data
+      - {{ $.Values.dataDir }}/zookeeper-{{ add 1 . }}/txlog:/datalog
+    {{- end }}
     environment:
-      - ZK_dataDir=/data/zookeeper/data
-      - ZK_dataLogDir=/data/zookeeper/txlog
-      - ZK_clientPort={{ $zkClientPort }}
-      - ZK_ID={{ . }}
-      - ZK_SERVERS={{- template "zookeeper_server_list" $ }}
-      - ZK_standaloneEnabled=false
+      - ZOO_MY_ID={{ add 1 . }}
+      - ZOO_SERVERS={{- template "zookeeper_server_list" $ }}
+      - ZOO_STANDALONE_ENABLED=false
     healthcheck:
       test: ["CMD", "curl", "-s", "http://localhost:{{ $zkAdminPort }}/commands/stat"]
       interval: 60s
@@ -89,9 +86,8 @@ services:
   {{ end }}
 
   {{- range until $bkSize }}
-  bookie-{{ . }}:
+  bookie-{{ add 1 . }}:
     image: {{ $.Values.bookkeeper.image }}
-    hostname: bookie-{{ . }}
     {{- if eq $.Values.networkMode "host" }}
     network_mode: host
     {{- else }}
@@ -104,13 +100,14 @@ services:
       - "{{ add $bookieHttpPort . }}:{{ $bookieHttpPort }}"
       - "{{ add $bookieGrpcPort . }}:{{ $bookieGrpcPort }}"
     {{- end }}
+    {{- if $.Values.dataDir }}
     volumes:
-      - {{ $.Values.dataDir }}/bookie-{{ . }}/journal:/data/bookkeeper/journal
-      - {{ $.Values.dataDir }}/bookie-{{ . }}/ledgers:/data/bookkeeper/ledgers
+      - {{ $.Values.dataDir }}/bookie-{{ add 1 . }}/journal:/data/bookkeeper/journal
+      - {{ $.Values.dataDir }}/bookie-{{ add 1 . }}/ledgers:/data/bookkeeper/ledgers
+    {{- end }}
     environment:
       - BK_zkServers={{- template "zookeeper_servers" $ }}
-      - BK_zkLedgersRootPath=/ledgers
-      - BK_metadataServiceUri=zk://{{- template "metadata_service_uri" $ }}/ledgers
+      - BK_metadataServiceUri=zk+hierarchical://{{- template "metadata_service_uri" $ }}/ledgers
       - BK_DATA_DIR=/data/bookkeeper
       {{- if eq $.Values.networkMode "host" }}
       - BK_bookiePort={{ $bookiePort }}
@@ -121,7 +118,7 @@ services:
       - BK_httpServerEnabled=true
     depends_on:
       {{- range until $zkSize }}
-      - "zookeeper-{{.}}"
+      - "zookeeper-{{add 1 .}}"
       {{- end }}
     healthcheck:
       test: ["CMD", "curl", "-s", "http://localhost:{{ $bookieHttpPort }}/heartbeat"]
