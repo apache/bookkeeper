@@ -606,6 +606,28 @@ public class ConcurrentLongHashMapTest {
         assertEquals(map.get(2).intValue(), 2);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testPutWhenNull() {
+        ConcurrentLongHashMap<Integer> map = ConcurrentLongHashMap.<Integer>newBuilder()
+                .expectedItems(5)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .build();
+        map.put(0, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testComputeIfAbsentWhenNull() {
+        ConcurrentLongHashMap<Integer> map = ConcurrentLongHashMap.<Integer>newBuilder()
+                .expectedItems(5)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .build();
+
+        LongFunction<Integer> nullProvider = key -> null;
+        map.computeIfAbsent(0, nullProvider);
+    }
+
     static final int Iterations = 1;
     static final int ReadIterations = 100;
     static final int N = 1_000_000;

@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 import org.junit.Test;
 
 /**
@@ -458,6 +459,27 @@ public class ConcurrentOpenHashMapTest {
 
         assertEquals(map.computeIfAbsent(2, provider).intValue(), 2);
         assertEquals(map.get(2).intValue(), 2);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPutWhenNull() {
+        ConcurrentOpenHashMap<Integer, Integer> map = ConcurrentOpenHashMap.<Integer, Integer>newBuilder()
+                .expectedItems(16)
+                .concurrencyLevel(1)
+                .build();
+        map.put(0, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testComputeIfAbsentWhenNull() {
+        ConcurrentOpenHashMap<Integer, Integer> map = ConcurrentOpenHashMap.<Integer, Integer>newBuilder()
+                .expectedItems(16)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .build();
+
+        Function<Integer, Integer>  nullProvider = key -> null;
+        map.computeIfAbsent(0, nullProvider);
     }
 
     @Test
