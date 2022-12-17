@@ -22,6 +22,10 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.apache.bookkeeper.bookie.storage.ldb.ReadAheadManager.DEFAULT_ENABLE_READ_AHEAD_ASYNC;
+import static org.apache.bookkeeper.bookie.storage.ldb.ReadAheadManager.ENABLE_READ_AHEAD_ASYNC;
+import static org.apache.bookkeeper.bookie.storage.ldb.ReadAheadManager.READ_AHEAD_MAX_BYTES;
+import static org.apache.bookkeeper.bookie.storage.ldb.ReadAheadManager.READ_AHEAD_MAX_ENTRIES;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -143,6 +147,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final Counter flushExecutorTime;
 
+    private final ReadAheadManager readAheadManager;
+
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                                           EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
@@ -221,6 +227,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         if (!ledgerBaseDir.equals(indexBaseDir)) {
             indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         }
+
+        if (conf.getBoolean(ENABLE_READ_AHEAD_ASYNC, DEFAULT_ENABLE_READ_AHEAD_ASYNC)) {
+            log.info("Read-ahead running in async mode.");
+        } else {
+            // overwrite and convert
+            conf.setProperty(READ_AHEAD_MAX_ENTRIES, readAheadCacheBatchSize);
+            conf.setProperty(READ_AHEAD_MAX_BYTES, maxReadAheadBytesSize);
+            log.info("Read-ahead running in sync mode.");
+        }
+        readAheadManager = new ReadAheadManager(
+                entryLogger, entryLocationIndex, readCache, dbLedgerStorageStats, conf);
     }
 
     @Override
@@ -321,6 +338,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             writeCacheBeingFlushed.close();
             readCache.close();
             executor.shutdown();
+
+            if (readAheadManager != null) {
+                readAheadManager.shutdown();
+            }
 
         } catch (IOException e) {
             log.error("Error closing db storage", e);
@@ -580,96 +601,18 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         dbLedgerStorageStats.getWriteCacheMissCounter().inc();
 
-        // Try reading from read-ahead cache
-        entry = readCache.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getReadCacheHitCounter().inc();
-            return entry;
-        }
-
-        dbLedgerStorageStats.getReadCacheMissCounter().inc();
-
-        // Read from main storage
-        long entryLocation;
-        long locationIndexStartNano = MathUtils.nowInNano();
+        // Get entry from storage and trigger read-ahead
+        long readAheadTotalStartNano = MathUtils.nowInNano();
         try {
-            entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
-            if (entryLocation == 0) {
-                // Only a negative result while in limbo equates to unknown
-                throwIfLimbo(ledgerId);
-
-                throw new NoEntryException(ledgerId, entryId);
-            }
-        } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                    MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
+            entry = readAheadManager.readEntry(ledgerId, entryId);
+        } catch (IOException e) {
+            // Only a negative result while in limbo equates to unknown
+            throwIfLimbo(ledgerId);
+            throw e;
         }
-
-        long readEntryStartNano = MathUtils.nowInNano();
-        try {
-            entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-        } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
-                    MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
-        }
-
-        readCache.put(ledgerId, entryId, entry);
-
-        // Try to read more entries
-        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        recordSuccessfulEvent(dbLedgerStorageStats.getReadAheadTotalTime(), readAheadTotalStartNano);
 
         return entry;
-    }
-
-    private void fillReadAheadCache(long orginalLedgerId, long firstEntryId, long firstEntryLocation) {
-        long readAheadStartNano = MathUtils.nowInNano();
-        int count = 0;
-        long size = 0;
-
-        try {
-            long firstEntryLogId = (firstEntryLocation >> 32);
-            long currentEntryLogId = firstEntryLogId;
-            long currentEntryLocation = firstEntryLocation;
-
-            while (count < readAheadCacheBatchSize
-                    && size < maxReadAheadBytesSize
-                    && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.readEntry(orginalLedgerId,
-                        firstEntryId, currentEntryLocation);
-
-                try {
-                    long currentEntryLedgerId = entry.getLong(0);
-                    long currentEntryId = entry.getLong(8);
-
-                    if (currentEntryLedgerId != orginalLedgerId) {
-                        // Found an entry belonging to a different ledger, stopping read-ahead
-                        break;
-                    }
-
-                    // Insert entry in read cache
-                    readCache.put(orginalLedgerId, currentEntryId, entry);
-
-                    count++;
-                    firstEntryId++;
-                    size += entry.readableBytes();
-
-                    currentEntryLocation += 4 + entry.readableBytes();
-                    currentEntryLogId = currentEntryLocation >> 32;
-                } finally {
-                    entry.release();
-                }
-            }
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Exception during read ahead for ledger: {}: e", orginalLedgerId, e);
-            }
-        } finally {
-            dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
-            dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
-            dbLedgerStorageStats.getReadAheadTime().addLatency(
-                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
-        }
     }
 
     public ByteBuf getLastEntry(long ledgerId) throws IOException, BookieException {
@@ -1060,6 +1003,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     public EntryLocationIndex getEntryLocationIndex() {
         return entryLocationIndex;
+    }
+
+    public ReadCache getReadCache() {
+        return readCache;
+    }
+
+    public DbLedgerStorageStats getDbLedgerStorageStats() {
+        return dbLedgerStorageStats;
     }
 
     private void recordSuccessfulEvent(OpStatsLogger logger, long startTimeNanos) {
