@@ -606,6 +606,56 @@ public class ConcurrentLongHashMapTest {
         assertEquals(map.get(2).intValue(), 2);
     }
 
+    @Test
+    public void testComputePutWhenOverWritten() {
+        ConcurrentLongHashMap<Integer> map = ConcurrentLongHashMap.<Integer>newBuilder()
+                .expectedItems(16)
+                .concurrencyLevel(1)
+                .build();
+        AtomicInteger counter = new AtomicInteger();
+        LongFunction<Integer> provider = new LongFunction<Integer>() {
+            public Integer apply(long key) {
+                return counter.getAndIncrement();
+            }
+        };
+        // key "0" is special because the Section.keys long array initializes each element to 0
+        // test key "0"  add, valueProvider.apply should be call
+        // storedValue == EmptyValue, We think that this key does not exist, so add key
+        assertEquals(map.computePut(0,  provider, true).intValue(), 0);
+        assertEquals(map.get(0).intValue(), 0);
+
+        // test key "0"  overwritten, valueProvider.apply should be call, overwritten, return old value
+        assertEquals(map.computePut(0,  provider, false).intValue(), 0);
+        assertEquals(map.get(0).intValue(), 1);
+
+        // test key "0" not overwritten, storedValue != EmptyValue, valueProvider.apply should not be call
+        // not overwritten, return old value
+        assertEquals(map.computePut(0,  provider, true).intValue(), 1);
+        assertEquals(map.get(0).intValue(), 1);
+
+        map.remove(0);
+
+        // test key "0"  add, valueProvider.apply should be call
+        // storedValue == EmptyValue or  storedValue == DeletedValue , We think that this key does not exist, so add key
+        assertEquals(map.computePut(0,  provider, true).intValue(), 2);
+        assertEquals(map.get(0).intValue(), 2);
+
+
+        // valueProvider.apply should be call
+        assertEquals(map.computePut(1, provider, false).intValue(), 3);
+        assertEquals(map.get(1).intValue(), 3);
+
+        // valueProvider.apply should not be call
+        assertEquals(map.computePut(1, provider, true).intValue(), 3);
+        assertEquals(map.get(1).intValue(), 3);
+
+        map.remove(1);
+
+        // valueProvider.apply should be call
+        assertEquals(map.computePut(1, provider, true).intValue(), 4);
+        assertEquals(map.get(1).intValue(), 4);
+    }
+
     @Test(expected = NullPointerException.class)
     public void testPutWhenNull() {
         ConcurrentLongHashMap<Integer> map = ConcurrentLongHashMap.<Integer>newBuilder()
@@ -616,7 +666,7 @@ public class ConcurrentLongHashMapTest {
         map.put(0, null);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testComputeIfAbsentWhenNull() {
         ConcurrentLongHashMap<Integer> map = ConcurrentLongHashMap.<Integer>newBuilder()
                 .expectedItems(5)
@@ -626,6 +676,8 @@ public class ConcurrentLongHashMapTest {
 
         LongFunction<Integer> nullProvider = key -> null;
         map.computeIfAbsent(0, nullProvider);
+        assertEquals(map.getUsedBucketCount(), 0);
+        assertEquals(map.size(), 0);
     }
 
     static final int Iterations = 1;

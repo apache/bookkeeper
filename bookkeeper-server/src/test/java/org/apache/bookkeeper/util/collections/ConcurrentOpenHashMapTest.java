@@ -461,6 +461,48 @@ public class ConcurrentOpenHashMapTest {
         assertEquals(map.get(2).intValue(), 2);
     }
 
+    @Test
+    public void testComputePutWhenOverWritten() {
+        ConcurrentOpenHashMap<Integer, Integer> map = ConcurrentOpenHashMap.<Integer, Integer>newBuilder()
+                .expectedItems(16)
+                .concurrencyLevel(1)
+                .build();
+        AtomicInteger counter = new AtomicInteger();
+        Function<Integer, Integer> provider = key -> counter.getAndIncrement();
+
+        // test key "0"  add, valueProvider.apply should be call
+        assertEquals(map.computePut(0,  provider, true).intValue(), 0);
+        assertEquals(map.get(0).intValue(), 0);
+
+        // test key "0"  overwritten, valueProvider.apply should be call, overwritten, return old value
+        assertEquals(map.computePut(0,  provider, false).intValue(), 0);
+        assertEquals(map.get(0).intValue(), 1);
+
+        // test key "0" not overwritten,  valueProvider.apply should not be call
+        assertEquals(map.computePut(0,  provider, true).intValue(), 1);
+        assertEquals(map.get(0).intValue(), 1);
+
+        map.remove(0);
+
+        // test key "0"  add, valueProvider.apply should be call
+        assertEquals(map.computePut(0,  provider, true).intValue(), 2);
+        assertEquals(map.get(0).intValue(), 2);
+
+        // valueProvider.apply should be call
+        assertEquals(map.computePut(1, provider, false).intValue(), 3);
+        assertEquals(map.get(1).intValue(), 3);
+
+        // valueProvider.apply should not be call
+        assertEquals(map.computePut(1, provider, true).intValue(), 3);
+        assertEquals(map.get(1).intValue(), 3);
+
+        map.remove(1);
+
+        // valueProvider.apply should be call
+        assertEquals(map.computePut(1, provider, true).intValue(), 4);
+        assertEquals(map.get(1).intValue(), 4);
+    }
+
     @Test(expected = NullPointerException.class)
     public void testPutWhenNull() {
         ConcurrentOpenHashMap<Integer, Integer> map = ConcurrentOpenHashMap.<Integer, Integer>newBuilder()
@@ -470,7 +512,7 @@ public class ConcurrentOpenHashMapTest {
         map.put(0, null);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testComputeIfAbsentWhenNull() {
         ConcurrentOpenHashMap<Integer, Integer> map = ConcurrentOpenHashMap.<Integer, Integer>newBuilder()
                 .expectedItems(16)
@@ -480,6 +522,8 @@ public class ConcurrentOpenHashMapTest {
 
         Function<Integer, Integer>  nullProvider = key -> null;
         map.computeIfAbsent(0, nullProvider);
+        assertEquals(map.getUsedBucketCount(), 0);
+        assertEquals(map.size(), 0);
     }
 
     @Test

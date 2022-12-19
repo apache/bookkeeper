@@ -218,6 +218,13 @@ public class ConcurrentOpenHashMap<K, V> {
         return getSection(h).put(key, null, (int) h, true, provider);
     }
 
+    public V computePut(K key, Function<K, V> provider,  boolean onlyIfAbsent) {
+        checkNotNull(key);
+        checkNotNull(provider);
+        long h = hash(key);
+        return getSection(h).put(key, null, (int) h, onlyIfAbsent, provider);
+    }
+
     public V remove(K key) {
         checkNotNull(key);
         long h = hash(key);
@@ -357,9 +364,8 @@ public class ConcurrentOpenHashMap<K, V> {
         }
 
         V put(K key, V value, int keyHash, boolean onlyIfAbsent, Function<K, V> valueProvider) {
-            if (value == null) {
-                checkNotNull(valueProvider.apply(key));
-            }
+            V provideValue = null;
+
             long stamp = writeLock();
             int bucket = signSafeMod(keyHash, capacity);
 
@@ -372,14 +378,36 @@ public class ConcurrentOpenHashMap<K, V> {
                     V storedValue = (V) table[bucket + 1];
 
                     if (key.equals(storedKey)) {
-                        if (!onlyIfAbsent) {
-                            // Over written an old value for same key
-                            table[bucket + 1] = value;
-                            return storedValue;
-                        } else {
+                        // The case is updated
+
+                        if (onlyIfAbsent) {
                             return storedValue;
                         }
+                        // Avoid leaks when valueProvider.apply(key) return null
+
+                        if (value == null) {
+                            provideValue = valueProvider != null ? valueProvider.apply(key): null;
+                            if (provideValue == null) {
+                                return null;
+                            }
+                        } else {
+                            provideValue = value;
+                        }
+                        // Overwritten an old value for same key
+                        table[bucket + 1] = provideValue;
+                        return storedValue;
+
                     } else if (storedKey == EmptyKey) {
+                        // The case is Add
+                        // Avoid leaks when valueProvider.apply(key) return null
+                        if (value == null) {
+                            provideValue = valueProvider != null ? valueProvider.apply(key): null;
+                            if (provideValue == null) {
+                                return null;
+                            }
+                        } else {
+                            provideValue = value;
+                        }
                         // Found an empty bucket. This means the key is not in the map. If we've already seen a deleted
                         // key, we should write at that position
                         if (firstDeletedKey != -1) {
@@ -387,15 +415,10 @@ public class ConcurrentOpenHashMap<K, V> {
                         } else {
                             ++usedBuckets;
                         }
-
-                        if (value == null) {
-                            value = valueProvider.apply(key);
-                        }
-
                         table[bucket] = key;
-                        table[bucket + 1] = value;
+                        table[bucket + 1] = provideValue;
                         ++size;
-                        return valueProvider != null ? value : null;
+                        return valueProvider != null ? provideValue : null;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
                         if (firstDeletedKey == -1) {

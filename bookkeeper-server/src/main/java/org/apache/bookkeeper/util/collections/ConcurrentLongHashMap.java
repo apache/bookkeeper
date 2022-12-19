@@ -226,6 +226,12 @@ public class ConcurrentLongHashMap<V> {
         return getSection(h).put(key, null, (int) h, true, provider);
     }
 
+    public V computePut(long key, LongFunction<V> provider, boolean onlyIfAbsent) {
+        checkNotNull(provider);
+        long h = hash(key);
+        return getSection(h).put(key, null, (int) h, onlyIfAbsent, provider);
+    }
+
     public V remove(long key) {
         long h = hash(key);
         return getSection(h).remove(key, null, (int) h);
@@ -382,9 +388,8 @@ public class ConcurrentLongHashMap<V> {
         }
 
         V put(long key, V value, int keyHash, boolean onlyIfAbsent, LongFunction<V> valueProvider) {
-            if (value == null) {
-                checkNotNull(valueProvider.apply(key));
-            }
+            V provideValue = null;
+
             int bucket = keyHash;
 
             long stamp = writeLock();
@@ -401,23 +406,52 @@ public class ConcurrentLongHashMap<V> {
                     V storedValue = values[bucket];
 
                     if (storedKey == key) {
+                        // The case is to add key or update key
+
+                        if (storedValue == DeletedValue || storedValue == EmptyValue) {
+                            // We think that this key does not exist, so add key
+                            onlyIfAbsent = false;
+                        }
+                        if (onlyIfAbsent) {
+                            return storedValue;
+                        }
+
+                        // Avoid leaks when valueProvider.apply(key) return null
+                        if (value == null) {
+                            provideValue = valueProvider != null ? valueProvider.apply(key): null;
+                            if (provideValue == null) {
+                                return null;
+                            }
+                        } else {
+                            provideValue = value;
+                        }
                         if (storedValue == EmptyValue) {
-                            values[bucket] = value != null ? value : valueProvider.apply(key);
+                            // add
+                            values[bucket] = provideValue;
                             ++size;
                             ++usedBuckets;
                             return valueProvider != null ? values[bucket] : null;
                         } else if (storedValue == DeletedValue) {
-                            values[bucket] = value != null ? value : valueProvider.apply(key);
+                            // add by reuse bucket
+                            values[bucket] = provideValue;
                             ++size;
                             return valueProvider != null ? values[bucket] : null;
-                        } else if (!onlyIfAbsent) {
-                            // Over written an old value for same key
-                            values[bucket] = value;
-                            return storedValue;
-                        } else {
+                        } else  {
+                            // Overwritten an old value for same key
+                            values[bucket] = provideValue;
                             return storedValue;
                         }
                     } else if (storedValue == EmptyValue) {
+                        // The case is Add
+                        // Avoid leaks when valueProvider.apply(key) return null
+                        if (value == null) {
+                            provideValue = valueProvider != null ? valueProvider.apply(key): null;
+                            if (provideValue == null) {
+                                return null;
+                            }
+                        } else {
+                            provideValue = value;
+                        }
                         // Found an empty bucket. This means the key is not in the map. If we've already seen a deleted
                         // key, we should write at that position
                         if (firstDeletedKey != -1) {
@@ -427,7 +461,7 @@ public class ConcurrentLongHashMap<V> {
                         }
 
                         keys[bucket] = key;
-                        values[bucket] = value != null ? value : valueProvider.apply(key);
+                        values[bucket] = provideValue;
                         ++size;
                         return valueProvider != null ? values[bucket] : null;
                     } else if (storedValue == DeletedValue) {
