@@ -471,9 +471,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
                     bookieToReplace, ensembleNodes, excludeNodes);
             }
-            // pick a candidate from same rack to replace
+            // pick a candidate from different rack of excludeNodes to replace
             BookieNode candidate = selectFromNetworkLocation(
-                    bn.getNetworkLocation(),
                     networkLocationsToBeExcluded,
                     excludeNodes,
                     TruePredicate.INSTANCE,
