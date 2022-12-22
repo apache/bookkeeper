@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -439,6 +439,18 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 </td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#onBookieRackChange(java.util.List)">onBookieRackChange</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookieAddressList)</code></th>
+<td class="colLast">
+<div class="block">Handle rack change for the bookies.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>protected java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseBookieRegion(org.apache.bookkeeper.net.BookieId)">parseBookieRegion</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;addr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadLACSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadLACSequence</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
                       <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
@@ -447,7 +459,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadSequence</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
                    <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
@@ -456,7 +468,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <div class="block">Reorder the read sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,org.apache.bookkeeper.net.BookieId,java.util.Set)">replaceBookie</a></span>&#8203;(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
@@ -469,7 +481,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>protected org.apache.bookkeeper.net.BookieNode</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceFromRack(org.apache.bookkeeper.net.BookieNode,java.util.Set,org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate,org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble,boolean)">replaceFromRack</a></span>&#8203;(org.apache.bookkeeper.net.BookieNode&nbsp;bookieNodeToReplace,
                java.util.Set&lt;org.apache.bookkeeper.net.Node&gt;&nbsp;excludeBookies,
@@ -478,7 +490,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
                boolean&nbsp;enforceDurability)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>protected java.util.List&lt;org.apache.bookkeeper.net.BookieNode&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#selectRandomFromRegions(java.util.Set,int,java.util.Set,org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate,org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble)">selectRandomFromRegions</a></span>&#8203;(java.util.Set&lt;java.lang.String&gt;&nbsp;availableRegions,
                        int&nbsp;numBookies,
@@ -507,7 +519,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></h3>
-<code><a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookiesToNodes(java.util.Collection)">convertBookiesToNodes</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookieToNode(org.apache.bookkeeper.net.BookieId)">convertBookieToNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createBookieNode(org.apache.bookkeeper.net.BookieId)">createBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createDummyLocalBookieNode(java.lang.String)">createDummyLocalBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#differBetweenBookies(java.util.List,java.util.List)">differBetweenBookies</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#getNetworkLocations(java.util.Set)">getNetworkLocations</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange(java.util.List)">onBookieRackChange</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#resolveNetworkLocation(org.apache.bookkeeper.net.BookieId)">resolveNetworkLocation</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#shuffleWithMask(org.apache.bookkeeper.client.DistributionSchedule.WriteSet,int,int)">shuffleWithMask</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code></li>
+<code><a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookiesToNodes(java.util.Collection)">convertBookiesToNodes</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookieToNode(org.apache.bookkeeper.net.BookieId)">convertBookieToNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createBookieNode(org.apache.bookkeeper.net.BookieId)">createBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createDummyLocalBookieNode(java.lang.String)">createDummyLocalBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#differBetweenBookies(java.util.List,java.util.List)">differBetweenBookies</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#getNetworkLocations(java.util.Set)">getNetworkLocations</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#resolveNetworkLocation(org.apache.bookkeeper.net.BookieId)">resolveNetworkLocation</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#shuffleWithMask(org.apache.bookkeeper.client.DistributionSchedule.WriteSet,int,int)">shuffleWithMask</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -522,13 +534,6 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></h3>
 <code><a href="EnsemblePlacementPolicy.html#areAckedBookiesAdheringToPlacementPolicy(java.util.Set,int,int)">areAckedBookiesAdheringToPlacementPolicy</a>, <a href="EnsemblePlacementPolicy.html#getStickyReadBookieIndex(org.apache.bookkeeper.client.api.LedgerMetadata,java.util.Optional)">getStickyReadBookieIndex</a>, <a href="EnsemblePlacementPolicy.html#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">registerSlowBookie</a>, <a href="EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code></li>
-</ul>
-<ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy">
-<!--   -->
-</a>
-<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a></h3>
-<code><a href="ITopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange(java.util.List)">onBookieRackChange</a></code></li>
 </ul>
 </li>
 </ul>
@@ -821,6 +826,15 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="getLocalRegion(org.apache.bookkeeper.net.BookieNode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getLocalRegion</h4>
+<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;getLocalRegion&#8203;(org.apache.bookkeeper.net.BookieNode&nbsp;node)</pre>
+</li>
+</ul>
 <a id="getRegion(org.apache.bookkeeper.net.BookieId)">
 <!--   -->
 </a>
@@ -830,13 +844,13 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;getRegion&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;addr)</pre>
 </li>
 </ul>
-<a id="getLocalRegion(org.apache.bookkeeper.net.BookieNode)">
+<a id="parseBookieRegion(org.apache.bookkeeper.net.BookieId)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getLocalRegion</h4>
-<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;getLocalRegion&#8203;(org.apache.bookkeeper.net.BookieNode&nbsp;node)</pre>
+<h4>parseBookieRegion</h4>
+<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;parseBookieRegion&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;addr)</pre>
 </li>
 </ul>
 <a id="handleBookiesThatLeft(java.util.Set)">
@@ -874,6 +888,23 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <dd><code><a href="RackawareEnsemblePlacementPolicy.html#handleBookiesThatJoined(java.util.Set)">handleBookiesThatJoined</a></code>&nbsp;in class&nbsp;<code><a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>joinedBookies</code> - bookies that joined.</dd>
+</dl>
+</li>
+</ul>
+<a id="onBookieRackChange(java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>onBookieRackChange</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;onBookieRackChange&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookieAddressList)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ITopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange(java.util.List)">ITopologyAwareEnsemblePlacementPolicy</a></code></span></div>
+<div class="block">Handle rack change for the bookies.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ITopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange(java.util.List)">onBookieRackChange</a></code>&nbsp;in interface&nbsp;<code><a href="ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;org.apache.bookkeeper.net.BookieNode&gt;</code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="TopologyAwareEnsemblePlacementPolicy.html#onBookieRackChange(java.util.List)">onBookieRackChange</a></code>&nbsp;in class&nbsp;<code><a href="TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></code></dd>
 </dl>
 </li>
 </ul>
