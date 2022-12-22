@@ -51,7 +51,11 @@
        <groupId>io.netty</groupId>
        <artifactId>netty-common</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>

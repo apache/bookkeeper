@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -121,8 +120,6 @@ public class DbLedgerStorage implements LedgerStorage {
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
-    // Keep 1 single Bookie GC thread so the compactions from multiple individual directories are serialized
-    private ScheduledExecutorService gcExecutor;
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
 
@@ -173,8 +170,6 @@ public class DbLedgerStorage implements LedgerStorage {
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
         int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
-
-        gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
 
         ledgerStorageList = Lists.newArrayList();
         for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
@@ -227,7 +222,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     entrylogger = new DirectEntryLoggerForEntryLogPerLedger(conf.getMaximumNumberOfActiveEntryLogs(),
                             conf.getEntrylogMapAccessExpiryTimeInSeconds(),
                             ledgerDir,
-                            new EntryLogIdsImpl(ledgerDirsManager, slog),
+                            new EntryLogIdsImpl(ldm, slog),
                             new NativeIOImpl(),
                             allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
                             conf.getEntryLogSizeLimit(),
@@ -239,7 +234,7 @@ public class DbLedgerStorage implements LedgerStorage {
                             maxFdCacheTimeSeconds,
                             slog, statsLogger);
                 } else {
-                    entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ledgerDirsManager, slog),
+                    entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, slog),
                             new NativeIOImpl(),
                             allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
                             conf.getEntryLogSizeLimit(),
@@ -256,7 +251,7 @@ public class DbLedgerStorage implements LedgerStorage {
             }
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm,
                 idm, entrylogger,
-                statsLogger, gcExecutor, perDirectoryWriteCacheSize,
+                statsLogger, perDirectoryWriteCacheSize,
                 perDirectoryReadCacheSize,
                 readAheadCacheBatchSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
@@ -296,12 +291,11 @@ public class DbLedgerStorage implements LedgerStorage {
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            EntryLogger entryLogger, StatsLogger statsLogger,
-            ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
+            EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
             int readAheadCacheBatchSize)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
-                                                  statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize,
+                                                  statsLogger, allocator, writeCacheSize, readCacheSize,
                                                   readAheadCacheBatchSize);
     }
 

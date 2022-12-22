@@ -2,23 +2,22 @@
 
 ## Requirements
 
-* Docker >= 16.10
-* Docker Compose >= 1.6.0
+* Docker >= 20.10
+* Docker Compose >= 2.12.0
 
 ## Quick start
 
 ```bash
 $ git clone https://github.com/apache/bookkeeper.git
 $ cd bookkeeper/deploy/docker-compose
-$ docker-compose pull # Get the latest Docker images
-$ docker-compose up -d
+$ docker compose pull # Get the latest Docker images
+$ docker compose up -d
 $ cd ../../
 $ bin/bkctl bookies list
 $ bin/bkctl ledger simpletest
 ```
 
 ## Access Apache BookKeeper cluster
-
 
 ### Ledger Service
 
@@ -41,13 +40,9 @@ $ bin/dlog tool create -u 'distributedlog://localhost:2181/distributedlog' --pre
 
 ### Install Helm
 
-[Helm](https://helm.sh) is used as a template render engine
+[Helm](https://helm.sh) is used as a template render engine.
 
-```
-curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-```
-
-Or if you use Mac, you can use homebrew to install Helm by `brew install kubernetes-helm`
+See how to [install Helm](https://helm.sh/docs/intro/install/).
 
 ### Bring up Apache BookKeeper cluster
 
@@ -56,6 +51,6 @@ $ git clone https://github.com/apache/bookkeeper.git
 $ cd bookkeeper/deploy/docker-compose
 $ vi compose/values.yaml # custom cluster size, docker image, port mapping etc
 $ helm template compose > generated-docker-compose.yaml
-$ docker-compose -f generated-docker-compose.yaml pull # Get the latest Docker images
-$ docker-compose -f generated-docker-compose.yaml up -d
+$ docker compose -f generated-docker-compose.yaml pull # Get the latest Docker images
+$ docker compose -f generated-docker-compose.yaml up -d
 ```
