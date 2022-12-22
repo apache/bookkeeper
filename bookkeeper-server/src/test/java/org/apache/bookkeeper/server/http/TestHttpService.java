@@ -56,6 +56,7 @@ import org.apache.bookkeeper.server.http.service.BookieSanityService;
 import org.apache.bookkeeper.server.http.service.BookieSanityService.BookieSanity;
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
+import org.apache.bookkeeper.server.http.service.ClusterInfoService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
@@ -917,6 +918,34 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // Try using POST instead of GET
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
         HttpServiceResponse response2 = bookieStateServer.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+    }
+
+    @Test
+    public void testGetClusterInfo() throws Exception {
+        HttpEndpointService clusterInfoServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.CLUSTER_INFO);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = clusterInfoServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        LOG.info("Get response: {}", response1.getBody());
+
+        ClusterInfoService.ClusterInfo info = JsonUtil.fromJson(response1.getBody(),
+                ClusterInfoService.ClusterInfo.class);
+        assertFalse(info.isAuditorElected());
+        assertTrue(info.getAuditorId().length() == 0);
+        assertFalse(info.isClusterUnderReplicated());
+        assertTrue(info.isLedgerReplicationEnabled());
+        assertTrue(info.getTotalBookiesCount() > 0);
+        assertTrue(info.getWritableBookiesCount() > 0);
+        assertTrue(info.getReadonlyBookiesCount() == 0);
+        assertTrue(info.getUnavailableBookiesCount() == 0);
+        assertTrue(info.getTotalBookiesCount() == info.getWritableBookiesCount());
+
+        // Try using POST instead of GET
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = clusterInfoServer.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
     }
 

@@ -234,6 +234,37 @@ Currently all the HTTP endpoints could be divided into these 5 components:
         }
         ```    
 
+### Endpoint: /api/v1/bookie/cluster_info
+1. Method: GET
+    * Description:  Get top-level info of this cluster.
+    * Response:
+
+      | Code   | Description |
+              |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Response Body format:
+
+        ```json
+        {
+          "auditorElected" : false,
+          "auditorId" : "",
+          "clusterUnderReplicated" : false,
+          "ledgerReplicationEnabled" : true,
+          "totalBookiesCount" : 1,
+          "writableBookiesCount" : 1,
+          "readonlyBookiesCount" : 0,
+          "unavailableBookiesCount" : 0
+        }
+        ```    
+   `clusterUnderReplicated` is true if there is any underreplicated ledger known currently. 
+    Trigger audit to increase precision. Audit might not be possible if `auditorElected` is false or
+    `ledgerReplicationEnabled` is false.
+
+   `totalBookiesCount` = `writableBookiesCount` + `readonlyBookiesCount` + `unavailableBookiesCount`.
+
+
 ### Endpoint: /api/v1/bookie/last_log_mark
 1. Method: GET
     * Description:  Get the last log marker.

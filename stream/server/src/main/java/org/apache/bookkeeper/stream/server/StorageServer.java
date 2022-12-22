@@ -28,15 +28,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.internal.StorageServerClientManagerImpl;
+import org.apache.bookkeeper.common.component.AutoCloseableLifecycleComponent;
 import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.server.service.HttpService;
@@ -256,10 +260,19 @@ public class StorageServer {
 
             // Build http service
             if (bkServerConf.isHttpServerEnabled()) {
+                MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(bkServerConf,
+                        rootStatsLogger);
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver",
+                        metadataDriver));
+                LedgerManagerFactory ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory",
+                        ledgerManagerFactory));
+
                 BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                         .setBookieServer(bookieService.getServer())
                         .setServerConfiguration(bkServerConf)
                         .setStatsProvider(statsProviderService.getStatsProvider())
+                        .setLedgerManagerFactory(ledgerManagerFactory)
                         .build();
                 HttpService httpService =
                         new HttpService(provider,
