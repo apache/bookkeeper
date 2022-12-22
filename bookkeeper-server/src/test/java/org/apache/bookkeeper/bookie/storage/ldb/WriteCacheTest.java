@@ -30,6 +30,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -78,7 +79,7 @@ public class WriteCacheTest {
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
 
-        entry1.release();
+        ReferenceCountUtil.safeRelease(entry1);
         cache.close();
     }
 
@@ -119,7 +120,7 @@ public class WriteCacheTest {
 
         assertEquals(0, findCount.get());
 
-        entry.release();
+        ReferenceCountUtil.safeRelease(entry);
         cache.close();
     }
 
