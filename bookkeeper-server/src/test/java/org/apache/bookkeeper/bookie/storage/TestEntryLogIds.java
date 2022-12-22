@@ -32,6 +32,7 @@ import static org.junit.Assert.assertEquals;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.File;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectCompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.slogger.Slogger;
@@ -125,6 +126,52 @@ public class TestEntryLogIds {
         assertThat(logId4, greaterThan(highestSoFar));
         touchLog(ledgerDir, logId4);
         highestSoFar = logId4;
+    }
+
+    @Test
+    public void testIdGenerator() throws Exception {
+        File base = tmpDirs.createNew("entryLogIds", "ledgers");
+        File ledgerDir1 = new File(base, "l1");
+        File ledgerDir2 = new File(base, "l2");
+        File ledgerDir3 = new File(base, "l3");
+        File ledgerDir4 = new File(base, "l4");
+        ledgerDir1.mkdir();
+        ledgerDir2.mkdir();
+        ledgerDir3.mkdir();
+        ledgerDir4.mkdir();
+
+        //case 1: use root ledgerDirsManager
+        LedgerDirsManager ledgerDirsManager = newDirsManager(ledgerDir1, ledgerDir2);
+        EntryLogIds ids1 = new EntryLogIdsImpl(ledgerDirsManager, slog);
+        for (int i = 0; i < 10; i++) {
+            int logId = ids1.nextId();
+            File log1 = new File(ledgerDir1 + "/current", logId + ".log");
+            log1.createNewFile();
+            assertEquals(logId, i);
+        }
+
+        EntryLogIds ids2 = new EntryLogIdsImpl(ledgerDirsManager, slog);
+        for (int i = 0; i < 10; i++) {
+            int logId = ids2.nextId();
+            assertEquals(logId, 10 + i);
+        }
+
+        // case 2: new LedgerDirsManager for per directory
+        LedgerDirsManager ledgerDirsManager3 = newDirsManager(ledgerDir3);
+        LedgerDirsManager ledgerDirsManager4 = newDirsManager(ledgerDir4);
+        EntryLogIds ids3 = new EntryLogIdsImpl(ledgerDirsManager3, slog);
+        for (int i = 0; i < 10; i++) {
+            int logId = ids3.nextId();
+            File log1 = new File(ledgerDir3 + "/current", logId + ".log");
+            log1.createNewFile();
+            assertEquals(logId, i);
+        }
+
+        EntryLogIds ids4 = new EntryLogIdsImpl(ledgerDirsManager4, slog);
+        for (int i = 0; i < 10; i++) {
+            int logId = ids4.nextId();
+            assertEquals(logId, i);
+        }
     }
 
     @Test
