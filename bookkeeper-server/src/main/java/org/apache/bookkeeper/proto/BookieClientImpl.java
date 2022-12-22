@@ -31,6 +31,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -269,7 +270,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
 
-            toSend.release();
+            ReferenceCountUtil.safeRelease(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -410,7 +411,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                               toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
-            toSend.release();
+            ReferenceCountUtil.safeRelease(toSend);
             recycle();
         }
 

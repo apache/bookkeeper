@@ -115,7 +115,7 @@ public abstract class DigestManager {
         final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
                 ? data.unwrap() : data;
         ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(data);
+        ReferenceCountUtil.safeRelease(data);
 
         if (unwrapped instanceof CompositeByteBuf) {
             ((CompositeByteBuf) unwrapped).forEach(this::update);
@@ -182,7 +182,7 @@ public abstract class DigestManager {
                 throw new BKDigestMatchException();
             }
         } finally {
-            digest.release();
+            ReferenceCountUtil.safeRelease(digest);
         }
 
         long actualLedgerId = dataReceived.readLong();
@@ -222,7 +222,7 @@ public abstract class DigestManager {
                 throw new BKDigestMatchException();
             }
         } finally {
-            digest.release();
+            ReferenceCountUtil.safeRelease(digest);
         }
 
         long actualLedgerId = dataReceived.readLong();

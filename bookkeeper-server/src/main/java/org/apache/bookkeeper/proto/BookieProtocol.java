@@ -333,7 +333,7 @@ public interface BookieProtocol {
         }
 
         void release() {
-            data.release();
+            ReferenceCountUtil.safeRelease(data);
         }
 
         private final Handle<ParsedAddRequest> recyclerHandle;

@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
@@ -657,7 +658,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     currentEntryLocation += 4 + entry.readableBytes();
                     currentEntryLogId = currentEntryLocation >> 32;
                 } finally {
-                    entry.release();
+                    ReferenceCountUtil.safeRelease(entry);
                 }
             }
         } catch (Exception e) {
@@ -940,7 +941,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 lac = bb.readLong();
                 lac = getOrAddLedgerInfo(ledgerId).setLastAddConfirmed(lac);
             } finally {
-                bb.release();
+                ReferenceCountUtil.safeRelease(bb);
             }
         }
         return lac;

@@ -61,6 +61,7 @@ import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
@@ -838,7 +839,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // usually checked in writeAndFlush, but we have extra check
             // because we need to release toSend.
             errorOut(completionKey);
-            toSend.release();
+            ReferenceCountUtil.safeRelease(toSend);
             return;
         } else {
             // addEntry times out on backpressure
@@ -1943,7 +1944,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             handleReadResponse(readResponse.getLedgerId(),
                                readResponse.getEntryId(),
                                status, buffer, maxLAC, lacUpdateTimestamp);
-            buffer.release(); // meaningless using unpooled, but client may expect to hold the last reference
+            ReferenceCountUtil.safeRelease(
+                    buffer); // meaningless using unpooled, but client may expect to hold the last reference
         }
 
         private void handleReadResponse(long ledgerId,
