@@ -260,10 +260,13 @@ public class StorageServer {
 
             // Build http service
             if (bkServerConf.isHttpServerEnabled()) {
-                MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(bkServerConf, rootStatsLogger);
-                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
+                MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(bkServerConf,
+                        rootStatsLogger);
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver",
+                        metadataDriver));
                 LedgerManagerFactory ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
-                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory", ledgerManagerFactory));
+                serverBuilder.addComponent(new AutoCloseableLifecycleComponent("lmFactory",
+                        ledgerManagerFactory));
 
                 BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                         .setBookieServer(bookieService.getServer())
