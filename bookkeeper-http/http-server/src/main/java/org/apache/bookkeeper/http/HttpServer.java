@@ -85,7 +85,7 @@ public interface HttpServer {
         BOOKIE_STATE_READONLY,
         BOOKIE_IS_READY,
         BOOKIE_INFO,
-
+        CLUSTER_INFO,
         // autorecovery
         AUTORECOVERY_STATUS,
         RECOVERY_BOOKIE,
