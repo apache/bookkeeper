@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -629,7 +629,7 @@ public class Auditor implements AutoCloseable {
 
     synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
         if (executor.isShutdown()) {
-            SettableFuture<Void> f = SettableFuture.<Void> create();
+            SettableFuture<Void> f = SettableFuture.<Void>create();
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
@@ -739,7 +739,7 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    private void scheduleCheckAllLedgersTask(){
+    private void scheduleCheckAllLedgersTask() {
         long interval = conf.getAuditorPeriodicCheckInterval();
 
         if (interval > 0) {
@@ -816,7 +816,7 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    private void schedulePlacementPolicyCheckTask(){
+    private void schedulePlacementPolicyCheckTask() {
         long interval = conf.getAuditorPeriodicPlacementPolicyCheckInterval();
 
         if (interval > 0) {
@@ -1109,8 +1109,7 @@ public class Auditor implements AutoCloseable {
     /**
      * Start running the actual audit task.
      *
-     * @param shutDownTask
-     *      A boolean that indicates whether or not to schedule shutdown task on any failure
+     * @param shutDownTask A boolean that indicates whether or not to schedule shutdown task on any failure
      */
     private void startAudit(boolean shutDownTask) {
         try {
@@ -1277,6 +1276,7 @@ public class Auditor implements AutoCloseable {
 
     /**
      * Get BookKeeper client according to configuration.
+     *
      * @param conf
      * @return
      * @throws IOException
@@ -1288,6 +1288,7 @@ public class Auditor implements AutoCloseable {
 
     /**
      * Get BookKeeper admin according to bookKeeper client.
+     *
      * @param bookKeeper
      * @return
      */
@@ -1656,7 +1657,7 @@ public class Auditor implements AutoCloseable {
             if (lastEntryId == -1) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Ledger: {} is closed but it doesn't has any entries, "
-                                    + "so skipping the replicas check", ledgerInRange);
+                            + "so skipping the replicas check", ledgerInRange);
                 }
                 mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                 return;
