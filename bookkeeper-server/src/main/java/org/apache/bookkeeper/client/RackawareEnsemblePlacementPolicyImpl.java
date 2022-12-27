@@ -428,7 +428,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         if (!curRack.startsWith("~")) {
                             curRack = "~" + prevNode.getNetworkLocation();
                         } else {
-                            curRack = curRack + "," + prevNode.getNetworkLocation();
+                            curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
                         }
                     }
                     prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble, false);
