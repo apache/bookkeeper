@@ -1519,7 +1519,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
     }
-    
+
     @Test
     public void testNewEnsembleWithPickDifferentRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
@@ -1538,13 +1538,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        
+
         int ensembleSize = 3;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
-        
+
         Set<BookieId> excludeBookies = new HashSet<>();
-        
+
         for (int i = 0; i < 50; ++i) {
             EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
                     repp.newEnsemble(ensembleSize, writeQuorumSize,
@@ -1554,7 +1554,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 fail("addr1 and addr2 is same rack.");
             }
         }
-        
+
         //addr4 shutdown.
         addrs.remove(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
@@ -1566,7 +1566,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             Assert.assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
         }
     }
-    
+
     @Test
     public void testMinNumRacksPerWriteQuorumOfRacks() throws Exception {
         int numOfRacksToCreate = 6;
