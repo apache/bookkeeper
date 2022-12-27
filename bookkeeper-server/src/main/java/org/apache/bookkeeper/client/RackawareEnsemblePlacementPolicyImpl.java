@@ -431,7 +431,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
                         }
                     }
-                    prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble, false);
+                    prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
                 }
             } catch (BKNotEnoughBookiesException e) {
                 //step down to old logic
