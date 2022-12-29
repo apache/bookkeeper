@@ -121,7 +121,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
                                 Ensemble<T> ensemble,
                                 boolean fallbackToRandom)
             throws BKException.BKNotEnoughBookiesException;
-    
+
     /**
      * Select a node from a given network location.
      *

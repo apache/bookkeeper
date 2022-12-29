@@ -1546,16 +1546,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             int ensembleSize = 3;
             int writeQuorumSize = 3;
             int ackQuorumSize = 2;
-            
+
             Set<BookieId> excludeBookies = new HashSet<>();
             excludeBookies.add(addr4.toBookieId());
-            
+
             for (int i = 0; i < 50; ++i) {
                 EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
                         repp.newEnsemble(ensembleSize, writeQuorumSize,
                                 ackQuorumSize, null, excludeBookies);
             }
-        } catch (Exception e ) {
+        } catch (Exception e) {
             fail("Can not new ensemble selection succeed");
         }
 

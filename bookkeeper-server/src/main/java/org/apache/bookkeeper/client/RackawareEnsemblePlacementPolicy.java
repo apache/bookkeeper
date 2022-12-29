@@ -192,7 +192,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             }
         }
     }
-    
+
     @Override
     public BookieNode selectFromNetworkLocationWithPickCommonRackFirst(String networkLoc, Set<Node> excludeBookies,
             Predicate<BookieNode> predicate, Ensemble<BookieNode> ensemble, boolean fallbackToRandom)
@@ -209,7 +209,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             }
         }
     }
-    
+
     @Override
     public BookieNode selectFromNetworkLocation(
             Set<String> excludeRacks,

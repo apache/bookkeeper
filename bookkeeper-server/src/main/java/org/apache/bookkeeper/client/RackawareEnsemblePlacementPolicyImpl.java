@@ -740,9 +740,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         List<Object[]> list = new ArrayList<>();
         for (String key : map.keySet()) {
             list.add(new Object[]{key, map.get(key)});
-        };
+        }
         list.sort((a, b) -> a[1] != b[1] ? (Integer) b[1] - (Integer) a[1] : ((String) b[0]).compareTo((String) a[0]));
-        
+
         List<Node> result = new ArrayList<>(nodeLists.size());
         for (Object[] objects : list) {
             String network = (String) objects[0];
