@@ -192,7 +192,24 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             }
         }
     }
-
+    
+    @Override
+    public BookieNode selectFromNetworkLocationWithPickCommonRackFirst(String networkLoc, Set<Node> excludeBookies,
+            Predicate<BookieNode> predicate, Ensemble<BookieNode> ensemble, boolean fallbackToRandom)
+            throws BKNotEnoughBookiesException {
+        try {
+            return super.selectFromNetworkLocationWithPickCommonRackFirst(networkLoc, excludeBookies, predicate,
+                    ensemble, fallbackToRandom);
+        } catch (BKException.BKNotEnoughBookiesException bnebe) {
+            if (slave == null) {
+                throw bnebe;
+            } else {
+                return slave.selectFromNetworkLocationWithPickCommonRackFirst(networkLoc, excludeBookies, predicate,
+                        ensemble, fallbackToRandom);
+            }
+        }
+    }
+    
     @Override
     public BookieNode selectFromNetworkLocation(
             Set<String> excludeRacks,

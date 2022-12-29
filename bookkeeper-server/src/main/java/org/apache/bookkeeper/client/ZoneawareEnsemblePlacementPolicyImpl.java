@@ -307,7 +307,16 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         throw new UnsupportedOperationException(
                 "selectFromNetworkLocation is not supported for ZoneawareEnsemblePlacementPolicyImpl");
     }
-
+    
+    @Override
+    public BookieNode selectFromNetworkLocationWithPickCommonRackFirst(String networkLoc, Set<Node> excludeBookies,
+            Predicate<BookieNode> predicate, Ensemble<BookieNode> ensemble, boolean fallbackToRandom)
+            throws BKNotEnoughBookiesException {
+        throw new UnsupportedOperationException(
+                "selectFromNetworkLocationWithPickCommonRackFirst is not supported "
+                        + "for ZoneawareEnsemblePlacementPolicyImpl");
+    }
+    
     @Override
     public BookieNode selectFromNetworkLocation(Set<String> excludeRacks, Set<Node> excludeBookies,
             org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate<BookieNode> predicate,

@@ -121,6 +121,29 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
                                 Ensemble<T> ensemble,
                                 boolean fallbackToRandom)
             throws BKException.BKNotEnoughBookiesException;
+    
+    /**
+     * Select a node from a given network location.
+     *
+     * @param networkLoc
+     *          network location
+     * @param excludeBookies
+     *          exclude bookies set
+     * @param predicate
+     *          predicate to apply
+     * @param ensemble
+     *          ensemble
+     * @param fallbackToRandom
+     *          fallbackToRandom
+     * @return the selected bookie.
+     * @throws BKException.BKNotEnoughBookiesException
+     */
+    T selectFromNetworkLocationWithPickCommonRackFirst(String networkLoc,
+            Set<Node> excludeBookies,
+            Predicate<T> predicate,
+            Ensemble<T> ensemble,
+            boolean fallbackToRandom)
+            throws BKException.BKNotEnoughBookiesException;
 
     /**
      * Select a node from cluster excluding excludeBookies and bookie nodes of

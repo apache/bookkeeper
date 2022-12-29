@@ -116,7 +116,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     // looks like these only assigned in the same thread as constructor, immediately after constructor;
     // no need to make volatile
     protected StatsLogger statsLogger = null;
-
     @StatsDoc(
             name = READ_REQUESTS_REORDERED,
             help = "The distribution of number of bookies reordered on each read request"
@@ -398,7 +397,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             parentEnsemble,
                             parentPredicate,
                             minNumRacksPerWriteQuorumForThisEnsemble);
-            BookieNode prevNode = null;
             int numRacks = topology.getNumOfRacks();
             // only one rack, use the random algorithm.
             if (numRacks < 2) {
@@ -414,21 +412,19 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 return PlacementResult.of(addrs, PlacementPolicyAdherence.FAIL);
             }
-
-            for (int i = 0; i < ensembleSize; i++) {
-                String curRack;
-                if (null == prevNode) {
-                    if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
-                        curRack = NodeBase.ROOT;
-                    } else {
-                        curRack = localNode.getNetworkLocation();
-                    }
-                } else {
-                    curRack = "~" + prevNode.getNetworkLocation();
-                }
-                boolean firstBookieInTheEnsemble = (null == prevNode);
-                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
-                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+            try {
+                selectBookieNode(ensembleSize, excludeNodes, ensemble, false);
+            } catch (BKNotEnoughBookiesException e) {
+                excludeNodes = convertBookiesToNodes(excludeBookies);
+                ensemble = new RRTopologyAwareCoverageEnsemble(
+                                ensembleSize,
+                                writeQuorumSize,
+                                ackQuorumSize,
+                                RACKNAME_DISTANCE_FROM_LEAVES,
+                                parentEnsemble,
+                                parentPredicate,
+                                minNumRacksPerWriteQuorumForThisEnsemble);
+                selectBookieNode(ensembleSize, excludeNodes, ensemble, true);
             }
             List<BookieId> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
@@ -441,6 +437,33 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                               bookieList, writeQuorumSize, ackQuorumSize));
         } finally {
             rwLock.readLock().unlock();
+        }
+    }
+
+    private void selectBookieNode(int ensembleSize, Set<Node> excludeNodes,
+            RRTopologyAwareCoverageEnsemble ensemble, boolean pickCommonRackFirst)
+            throws BKNotEnoughBookiesException {
+        BookieNode prevNode = null;
+
+        for (int i = 0; i < ensembleSize; i++) {
+            String curRack;
+            if (null == prevNode) {
+                if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
+                    curRack = NodeBase.ROOT;
+                } else {
+                    curRack = localNode.getNetworkLocation();
+                }
+            } else {
+                curRack = "~" + prevNode.getNetworkLocation();
+            }
+            boolean firstBookieInTheEnsemble = (null == prevNode);
+            if (pickCommonRackFirst) {
+                prevNode = selectFromNetworkLocationWithPickCommonRackFirst(curRack, excludeNodes, ensemble, ensemble,
+                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+            } else {
+                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
+                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+            }
         }
     }
 
@@ -510,7 +533,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throws BKNotEnoughBookiesException {
         // select one from local rack
         try {
-            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
+            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble, false);
         } catch (BKNotEnoughBookiesException e) {
             if (!fallbackToRandom) {
                 LOG.error(
@@ -528,6 +551,29 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
+    public BookieNode selectFromNetworkLocationWithPickCommonRackFirst(String networkLoc, Set<Node> excludeBookies,
+            Predicate<BookieNode> predicate, Ensemble<BookieNode> ensemble, boolean fallbackToRandom)
+            throws BKNotEnoughBookiesException {
+        // select one from local rack
+        try {
+            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble, true);
+        } catch (BKNotEnoughBookiesException e) {
+            if (!fallbackToRandom) {
+                LOG.error(
+                        "Failed to choose a bookie from {} : "
+                                + "excluded {}, enforceMinNumRacksPerWriteQuorum is enabled so giving up.",
+                        networkLoc, excludeBookies);
+                throw e;
+            }
+            LOG.warn("Failed to choose a bookie from {} : "
+                            + "excluded {}, fallback to choose bookie randomly from the cluster.",
+                    networkLoc, excludeBookies);
+            // randomly choose one from whole cluster, ignore the provided predicate.
+            return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
+        }
+    }
+
+    @Override
     public BookieNode selectFromNetworkLocation(String networkLoc,
                                                    Set<String> excludeRacks,
                                                    Set<Node> excludeBookies,
@@ -537,7 +583,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             throws BKNotEnoughBookiesException {
         // first attempt to select one from local rack
         try {
-            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
+            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble, false);
         } catch (BKNotEnoughBookiesException e) {
             /*
              * there is no enough bookie from local rack, select bookies from
@@ -628,11 +674,15 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * @return chosen bookie.
      */
     protected BookieNode selectRandomFromRack(String netPath, Set<Node> excludeBookies, Predicate<BookieNode> predicate,
-            Ensemble<BookieNode> ensemble) throws BKNotEnoughBookiesException {
+            Ensemble<BookieNode> ensemble, boolean pickCommonRackFirst) throws BKNotEnoughBookiesException {
         WeightedRandomSelection<BookieNode> wRSelection = null;
         List<Node> leaves = new ArrayList<Node>(topology.getLeaves(netPath));
         if (!this.isWeighted) {
-            Collections.shuffle(leaves);
+            if (pickCommonRackFirst) {
+                leaves = sortByCommonRack(leaves);
+            } else {
+                Collections.shuffle(leaves);
+            }
         } else {
             if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
                 throw new BKNotEnoughBookiesException();
@@ -676,6 +726,38 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             return bn;
         }
         throw new BKNotEnoughBookiesException();
+    }
+
+    /**
+     * Sort the node list by the network location.
+     * The higher the frequency of the network location, it will on the list head.
+     */
+    private List<Node> sortByCommonRack(List<Node> nodeLists) {
+        Map<String, Integer> map = new HashMap<>();
+        for (Node node : nodeLists) {
+            map.put(node.getNetworkLocation(), map.getOrDefault(node.getNetworkLocation(), 0) + 1);
+        }
+        List<Object[]> list = new ArrayList<>();
+        for (String key : map.keySet()) {
+            list.add(new Object[]{key, map.get(key)});
+        };
+        list.sort((a, b) -> a[1] != b[1] ? (Integer) b[1] - (Integer) a[1] : ((String) b[0]).compareTo((String) a[0]));
+        
+        List<Node> result = new ArrayList<>(nodeLists.size());
+        for (Object[] objects : list) {
+            String network = (String) objects[0];
+            Integer frequency = (Integer) objects[1];
+            for (Node node : nodeLists) {
+                if (node.getNetworkLocation().equals(network)) {
+                    result.add(node);
+                    frequency--;
+                    if (frequency == 0) {
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     /**

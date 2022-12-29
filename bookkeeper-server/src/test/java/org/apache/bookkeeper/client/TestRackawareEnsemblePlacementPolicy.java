@@ -1520,6 +1520,50 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testNewEnsembleWithMultipleRacksV2() throws Exception {
+        conf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        try {
+            int ensembleSize = 3;
+            int writeQuorumSize = 3;
+            int ackQuorumSize = 2;
+            
+            Set<BookieId> excludeBookies = new HashSet<>();
+            excludeBookies.add(addr4.toBookieId());
+            
+            for (int i = 0; i < 50; ++i) {
+                EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                        repp.newEnsemble(ensembleSize, writeQuorumSize,
+                                ackQuorumSize, null, excludeBookies);
+            }
+        } catch (Exception e ) {
+            fail("Can not new ensemble selection succeed");
+        }
+
+        //reset enforceMinNumRacksPerWriteQuorum
+        conf.setEnforceMinNumRacksPerWriteQuorum(false);
+    }
+
+    @Test
     public void testMinNumRacksPerWriteQuorumOfRacks() throws Exception {
         int numOfRacksToCreate = 6;
         int numOfNodesInEachRack = 5;
