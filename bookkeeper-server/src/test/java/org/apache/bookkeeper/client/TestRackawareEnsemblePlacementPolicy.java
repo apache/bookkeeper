@@ -1520,10 +1520,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
-    public void testNewEnsembleWithMultipleRacksV2() throws Exception {
+    public void testNewEnsembleWithMultipleRacksPickCommonRackFirst() throws Exception {
         conf.setEnforceMinNumRacksPerWriteQuorum(true);
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
