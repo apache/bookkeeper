@@ -1521,10 +1521,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     @Test
     public void testNewEnsembleWithMultipleRacksPickCommonRackFirst() throws Exception {
-        conf.setEnforceMinNumRacksPerWriteQuorum(true);
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(false);
         repp.uninitalize();
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping>empty(), timer,
                 DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
@@ -1561,9 +1562,6 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         } catch (Exception e) {
             fail("Can not new ensemble selection succeed");
         }
-
-        //reset enforceMinNumRacksPerWriteQuorum
-        conf.setEnforceMinNumRacksPerWriteQuorum(false);
     }
 
     @Test
