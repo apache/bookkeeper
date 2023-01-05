@@ -12,7 +12,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | Parameter | Description | Default
 | --------- | ----------- | ------- | 
 | bookiePort | The port that the bookie server listens on. | 3181 | 
-| allowMultipleDirsUnderSameDiskPartition | Configure the bookie to allow/disallow multiple ledger/index/journal directories in the same filesystem disk partition |  | 
+| allowMultipleDirsUnderSameDiskPartition | Configure the bookie to allow/disallow multiple ledger/index/journal directories in the same filesystem disk partition. | true | 
 | listeningInterface | The network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces. | eth0 | 
 | advertisedAddress | Configure a specific hostname or IP address that the bookie should use to advertise itself to<br />clients. If not set, bookie will advertised its own IP address or hostname, depending on the<br />`listeningInterface` and `useHostNameAsBookieID` settings.<br /> | eth0 | 
 | allowLoopback | Whether the bookie is allowed to use a loopback interface as its primary<br />interface (the interface it uses to establish its identity). By default, loopback interfaces are *not* allowed as the primary interface.<br /><br />Using a loopback interface as the primary interface usually indicates a configuration error. It's fairly common in some VPS setups, for example, to not configure a hostname or to have the hostname resolve to 127.0.0.1. If this is the case, then all bookies in the cluster will establish their identities as 127.0.0.1:3181, and only one will be able to join the cluster. For VPSs configured like this, you should explicitly set the listening interface.<br /> | false | 
