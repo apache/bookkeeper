@@ -37,6 +37,10 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
         this.registrationClient = registrationClient;
     }
 
+    public RegistrationClient getRegistrationClient() {
+        return registrationClient;
+    }
+
     @Override
     public BookieSocketAddress resolve(BookieId bookieId) {
         try {
