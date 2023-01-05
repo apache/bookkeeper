@@ -696,7 +696,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             int ensembleSize = 10;
             int writeQuorumSize = 10;
             int ackQuorumSize = 2;
-        
+
             for (int i = 0; i < 50; ++i) {
                 Set<BookieId> excludeBookies = new HashSet<>();
                 EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
