@@ -415,44 +415,32 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 return PlacementResult.of(addrs, PlacementPolicyAdherence.FAIL);
             }
-            try {
-                //Choose different rack nodes.
-                String curRack = null;
-                for (int i = 0; i < ensembleSize; i++) {
-                    if (null == prevNode) {
-                        if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
-                            curRack = NodeBase.ROOT;
-                        } else {
-                            curRack = localNode.getNetworkLocation();
-                        }
+            //Choose different rack nodes.
+            String curRack = null;
+            for (int i = 0; i < ensembleSize; i++) {
+                if (null == prevNode) {
+                    if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
+                        curRack = NodeBase.ROOT;
                     } else {
-                        if (!curRack.startsWith("~")) {
-                            curRack = "~" + prevNode.getNetworkLocation();
-                        } else {
-                            curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
-                        }
+                        curRack = localNode.getNetworkLocation();
                     }
-                     prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
-                }
-            } catch (BKNotEnoughBookiesException e) {
-                //step down to old logic
-                prevNode = null;
-                excludeNodes = convertBookiesToNodes(excludeBookies);
-                ensemble.reset();
-                for (int i = 0; i < ensembleSize; i++) {
-                    String curRack;
-                    if (null == prevNode) {
-                        if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
-                            curRack = NodeBase.ROOT;
-                        } else {
-                            curRack = localNode.getNetworkLocation();
-                        }
-                    } else {
+                } else {
+                    if (!curRack.startsWith("~")) {
                         curRack = "~" + prevNode.getNetworkLocation();
+                    } else {
+                        curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
                     }
-                    boolean firstBookieInTheEnsemble = (null == prevNode);
-                    prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
-                            !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+                }
+                try {
+                    prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
+                } catch (BKNotEnoughBookiesException e) {
+                    if (!curRack.equals(NodeBase.ROOT)) {
+                        curRack = NodeBase.ROOT;
+                        prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
+                                !enforceMinNumRacksPerWriteQuorum || prevNode == null);
+                    } else {
+                        throw e;
+                    }
                 }
             }
             List<BookieId> bookieList = ensemble.toList();
