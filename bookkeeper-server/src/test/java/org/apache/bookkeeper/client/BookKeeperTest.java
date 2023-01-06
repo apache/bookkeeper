@@ -1211,6 +1211,20 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
 
         try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = 0;
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+        } catch (IllegalArgumentException e) {
+            fail();
+        }
+
+        try {
             ensSize = 0;
             writeQuorumSize = 0;
             ackQuorumSize = 0;
@@ -1278,6 +1292,20 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             ensSize = 3;
             writeQuorumSize = 3;
             ackQuorumSize = 2;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(i, data);
+            }
+            lh.close();
+        } catch (IllegalArgumentException e) {
+            fail();
+        }
+
+        try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = 0;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
                 BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {

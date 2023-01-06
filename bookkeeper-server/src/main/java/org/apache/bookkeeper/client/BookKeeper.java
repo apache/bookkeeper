@@ -1661,7 +1661,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private void checkLedgerCreationParameters(int ensSize, int writeQuorumSize, int ackQuorumSize) {
         if (ensSize <= 0
             || writeQuorumSize <= 0
-            || ackQuorumSize <= 0
+            || ackQuorumSize < 0
             || writeQuorumSize > ensSize
             || ackQuorumSize > writeQuorumSize) {
             LOG.error("Illegal parameter: ensembleSize: {}, writeQuorumSize: {}, ackQuorumSize: {}",
