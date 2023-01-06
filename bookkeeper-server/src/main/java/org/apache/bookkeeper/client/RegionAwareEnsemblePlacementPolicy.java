@@ -294,7 +294,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         int effectiveMinRegionsForDurability = disableDurabilityFeature.isAvailable() ? 1 : minRegionsForDurability;
 
         // All of these conditions indicate bad configuration
-         if (ackQuorumSize < effectiveMinRegionsForDurability) {
+        if (ackQuorumSize < effectiveMinRegionsForDurability) {
             throw new IllegalArgumentException(
                     "Ack Quorum size provided are insufficient to meet the durability constraints");
         } else if (ensembleSize < writeQuorumSize) {
@@ -322,13 +322,13 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             List<String> availableRegions = new ArrayList<>();
             for (String region: perRegionPlacement.keySet()) {
-                 if ((null == disallowBookiePlacementInRegionFeatureName)
+                if ((null == disallowBookiePlacementInRegionFeatureName)
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)
                             .isAvailable()) {
                     availableRegions.add(region);
                 }
-             }
-             int numRegionsAvailable = availableRegions.size();
+            }
+            int numRegionsAvailable = availableRegions.size();
 
             // If we were unable to get region information or all regions are disallowed which is
             // an invalid configuration; default to random selection from the set of nodes

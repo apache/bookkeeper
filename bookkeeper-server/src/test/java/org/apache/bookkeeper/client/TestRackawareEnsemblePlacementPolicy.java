@@ -1562,7 +1562,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                     repp.newEnsemble(ensembleSize, writeQuorumSize,
                             ackQuorumSize, null, excludeBookies);
               List<BookieId> ensemble = ensembleResponse.getResult();
-            Assert.assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
+            assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
         }
     }
 

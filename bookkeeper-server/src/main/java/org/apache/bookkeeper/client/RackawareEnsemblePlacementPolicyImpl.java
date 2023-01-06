@@ -398,7 +398,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             parentEnsemble,
                             parentPredicate,
                             minNumRacksPerWriteQuorumForThisEnsemble);
-            ensemble.mark();
             BookieNode prevNode = null;
             int numRacks = topology.getNumOfRacks();
             // only one rack, use the random algorithm.

@@ -310,11 +310,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final int ackQuorumSize;
         final int minRacksOrRegionsForDurability;
         final int minNumRacksPerWriteQuorum;
+        final List<BookieNode> chosenNodes;
+        final Set<String> racksOrRegions;
+        private final CoverageSet[] quorums;
         final Predicate<BookieNode> parentPredicate;
         final Ensemble<BookieNode> parentEnsemble;
-        private final CoverageSet[] quorums;
-        List<BookieNode> chosenNodes;
-        Set<String> racksOrRegions;
 
         protected RRTopologyAwareCoverageEnsemble(RRTopologyAwareCoverageEnsemble that) {
             this.distanceFromLeaves = that.distanceFromLeaves;
@@ -490,7 +490,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             return ((minRacksOrRegionsForDurability == 0)
                     || (racksOrRegions.size() >= minRacksOrRegionsForDurability));
         }
-    
+
         @Override
         public String toString() {
             return chosenNodes.toString();
