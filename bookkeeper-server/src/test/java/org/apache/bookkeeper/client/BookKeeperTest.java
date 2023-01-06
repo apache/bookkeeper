@@ -1127,4 +1127,165 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test
+    public void testCreateLedgerWithIllegalArguments() throws Exception {
+        final byte[] PASSWD = "testpasswd".getBytes();
+        final byte[] data = "data".getBytes();
+        int ensSize = 0;
+        int writeQuorumSize = 0;
+        int ackQuorumSize = 0;
+
+        try {
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = -1;
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 2;
+            writeQuorumSize = 3;
+            ackQuorumSize = 1;
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 2;
+            writeQuorumSize = 2;
+            ackQuorumSize = 3;
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = 2;
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+        } catch (IllegalArgumentException e) {
+            fail();
+        }
+
+        try {
+            ensSize = 0;
+            writeQuorumSize = 0;
+            ackQuorumSize = 0;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = -1;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 2;
+            writeQuorumSize = 3;
+            ackQuorumSize = 1;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 2;
+            writeQuorumSize = 2;
+            ackQuorumSize = 3;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals(String.format("Illegal arguments, ensembleSize: %s, writeQuorumSize: %s, ackQuorumSize: %s",
+                ensSize, writeQuorumSize, ackQuorumSize), e.getMessage());
+        }
+
+        try {
+            ensSize = 3;
+            writeQuorumSize = 3;
+            ackQuorumSize = 2;
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, PASSWD);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(i, data);
+            }
+            lh.close();
+        } catch (IllegalArgumentException e) {
+            fail();
+        }
+    }
 }

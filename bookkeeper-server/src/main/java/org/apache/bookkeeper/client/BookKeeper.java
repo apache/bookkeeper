@@ -859,9 +859,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
+        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1058,9 +1056,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
+        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1165,9 +1161,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
+        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1662,5 +1656,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     public ClientContext getClientCtx() {
         return clientCtx;
+    }
+
+    private void checkLedgerCreationParameters(int ensSize, int writeQuorumSize, int ackQuorumSize) {
+        if (ensSize <= 0
+            || writeQuorumSize <= 0
+            || ackQuorumSize <= 0
+            || writeQuorumSize > ensSize
+            || ackQuorumSize > writeQuorumSize) {
+            LOG.error("Illegal parameter: ensembleSize: {}, writeQuorumSize: {}, ackQuorumSize: {}",
+                ensSize, writeQuorumSize, ackQuorumSize);
+            throw new IllegalArgumentException(String.format("Illegal arguments, ensembleSize: %s, "
+                + "writeQuorumSize: %s, ackQuorumSize: %s", ensSize, writeQuorumSize, ackQuorumSize));
+        }
     }
 }
