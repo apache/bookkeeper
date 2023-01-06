@@ -1466,14 +1466,6 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                         public boolean validate() {
                             return false;
                         }
-    
-                        @Override
-                        public void mark() {
-                        }
-    
-                        @Override
-                        public void reset() {
-                        }
                     }, false);
             fail("Should get not enough bookies exception since ensemble rejects all the nodes");
         } catch (BKNotEnoughBookiesException bnebe) {

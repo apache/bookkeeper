@@ -119,14 +119,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             return true;
         }
 
-        @Override
-        public void mark() {
-        }
-
-        @Override
-        public void reset() {
-        }
-
     }
 
     /**
@@ -497,32 +489,6 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
             return ((minRacksOrRegionsForDurability == 0)
                     || (racksOrRegions.size() >= minRacksOrRegionsForDurability));
-        }
-    
-        private RRTopologyAwareCoverageEnsemble mark;
-        
-        @Override
-        public void mark() {
-            if (parentEnsemble != null) {
-                parentEnsemble.mark();
-            }
-            this.mark = new RRTopologyAwareCoverageEnsemble(this);
-        }
-    
-        @Override
-        public void reset() {
-            if (parentEnsemble != null) {
-                parentEnsemble.reset();
-            }
-            if (mark == null) {
-                return;
-            }
-            this.chosenNodes = mark.chosenNodes;
-                this.racksOrRegions = mark.racksOrRegions;
-            for (int i = 0; i < quorums.length; i++) {
-                this.quorums[i] = mark.quorums[i];
-            }
-            mark = null;
         }
     
         @Override

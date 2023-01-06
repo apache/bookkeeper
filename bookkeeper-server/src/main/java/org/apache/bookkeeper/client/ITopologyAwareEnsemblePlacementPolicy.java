@@ -71,11 +71,6 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
          * @return true if the ensemble is valid; false otherwise
          */
         boolean validate();
-        
-        void mark();
-        
-        void reset();
-
     }
 
     /**
