@@ -302,7 +302,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * entrylog file after the last addEntry call for that ledger, if explicit
      * writeclose for that ledger is not received.
      */
-    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entrylogMapAccessExpiryTimeInSeconds";
+    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entryLogMapAccessExpiryTimeInSeconds";
 
     /*
      * in entryLogPerLedger feature, this specifies the maximum number of
@@ -3839,17 +3839,17 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * has elapsed after the entry's last access, that entry should be
      * automatically removed from the cache
      */
-    public int getEntrylogMapAccessExpiryTimeInSeconds() {
+    public int getentryLogMapAccessExpiryTimeInSeconds() {
         return this.getInt(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS, 5 * 60);
     }
 
     /*
-     * sets the time duration for entrylogMapAccessExpiryTimeInSeconds, which will be used for cache eviction
+     * sets the time duration for entryLogMapAccessExpiryTimeInSeconds, which will be used for cache eviction
      * policy, in entrylogperledger feature.
      */
-    public ServerConfiguration setEntrylogMapAccessExpiryTimeInSeconds(int entrylogMapAccessExpiryTimeInSeconds) {
+    public ServerConfiguration setentryLogMapAccessExpiryTimeInSeconds(int entryLogMapAccessExpiryTimeInSeconds) {
         this.setProperty(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS,
-                Integer.toString(entrylogMapAccessExpiryTimeInSeconds));
+                Integer.toString(entryLogMapAccessExpiryTimeInSeconds));
         return this;
     }
 

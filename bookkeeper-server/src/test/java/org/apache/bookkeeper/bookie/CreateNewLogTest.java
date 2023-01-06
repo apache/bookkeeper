@@ -718,7 +718,7 @@ public class CreateNewLogTest {
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
 
-        int entrylogMapAccessExpiryTimeInSeconds = 1;
+        int entryLogMapAccessExpiryTimeInSeconds = 1;
         int entryLogPerLedgerCounterLimitsMultFactor = 2;
 
         // Creating a new configuration with a number of ledger directories.
@@ -726,7 +726,7 @@ public class CreateNewLogTest {
         // pre-allocation is enabled
         conf.setEntryLogFilePreAllocationEnabled(true);
         conf.setEntryLogPerLedgerEnabled(true);
-        conf.setEntrylogMapAccessExpiryTimeInSeconds(entrylogMapAccessExpiryTimeInSeconds);
+        conf.setentryLogMapAccessExpiryTimeInSeconds(entryLogMapAccessExpiryTimeInSeconds);
         conf.setEntryLogPerLedgerCounterLimitsMultFactor(entryLogPerLedgerCounterLimitsMultFactor);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
@@ -748,14 +748,14 @@ public class CreateNewLogTest {
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY", 0,
                 numOfWriteLedgersRemovedCacheExpiry.get().intValue());
 
-        Thread.sleep(entrylogMapAccessExpiryTimeInSeconds * 1000 + 100);
+        Thread.sleep(entryLogMapAccessExpiryTimeInSeconds * 1000 + 100);
         entrylogManager.doEntryLogMapCleanup();
         entrylogManager.entryLogsPerLedgerCounter.doCounterMapCleanup();
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY", 1,
                 numOfWriteLedgersRemovedCacheExpiry.get().intValue());
         Assert.assertEquals("ENTRYLOGS_PER_LEDGER SuccessCount", 0, entryLogsPerLedger.getSuccessCount());
 
-        Thread.sleep(entrylogMapAccessExpiryTimeInSeconds * 1000 + 100);
+        Thread.sleep(entryLogMapAccessExpiryTimeInSeconds * 1000 + 100);
         entrylogManager.doEntryLogMapCleanup();
         entrylogManager.entryLogsPerLedgerCounter.doCounterMapCleanup();
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY", 1,
