@@ -1129,7 +1129,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testCreateLedgerWithIllegalArguments() throws Exception {
-        final byte[] PASSWD = "testpasswd".getBytes();
+        final byte[] passwd = "testpasswd".getBytes();
         final byte[] data = "data".getBytes();
         int ensSize = 0;
         int writeQuorumSize = 0;
@@ -1137,7 +1137,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         try {
             LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1153,7 +1153,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = -1;
             LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1169,7 +1169,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = 1;
             LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1185,7 +1185,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 2;
             ackQuorumSize = 3;
             LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1201,7 +1201,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = 2;
             LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1215,7 +1215,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 0;
             ackQuorumSize = 0;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1231,7 +1231,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = -1;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1247,7 +1247,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = 1;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1263,7 +1263,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 2;
             ackQuorumSize = 3;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(data);
             }
@@ -1279,7 +1279,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             writeQuorumSize = 3;
             ackQuorumSize = 2;
             LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
-                BookKeeper.DigestType.CRC32, PASSWD);
+                BookKeeper.DigestType.CRC32, passwd);
             for (int i = 0; i < 10; ++i) {
                 lh.addEntry(i, data);
             }
