@@ -53,7 +53,6 @@ import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -605,7 +604,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
     }
-    
+
     @Test
     public void testNewEnsembleWithPickDifferentRack() throws Exception {
         ClientConfiguration clientConf = new ClientConfiguration(conf);
@@ -615,7 +614,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(clientConf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL,
                 NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        
+
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -635,13 +634,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         addrs.add(addr5.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        
+
         int ensembleSize = 4;
         int writeQuorumSize = 4;
         int ackQuorumSize = 2;
-    
+
         Set<BookieId> excludeBookies = new HashSet<>();
-    
+
         for (int i = 0; i < 50; ++i) {
             EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
                     repp.newEnsemble(ensembleSize, writeQuorumSize,
@@ -651,7 +650,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 fail("addr1 and addr2 is same rack.");
             }
         }
-        
+
         //addr4 shutdown.
         addrs.remove(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
