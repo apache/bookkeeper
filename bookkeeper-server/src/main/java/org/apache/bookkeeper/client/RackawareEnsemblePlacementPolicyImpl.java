@@ -398,6 +398,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             parentEnsemble,
                             parentPredicate,
                             minNumRacksPerWriteQuorumForThisEnsemble);
+            ensemble.mark();
             BookieNode prevNode = null;
             int numRacks = topology.getNumOfRacks();
             // only one rack, use the random algorithm.
@@ -431,20 +432,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
                         }
                     }
-                    prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
+                     prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
                 }
             } catch (BKNotEnoughBookiesException e) {
                 //step down to old logic
                 prevNode = null;
                 excludeNodes = convertBookiesToNodes(excludeBookies);
-                ensemble = new RRTopologyAwareCoverageEnsemble(
-                        ensembleSize,
-                        writeQuorumSize,
-                        ackQuorumSize,
-                        RACKNAME_DISTANCE_FROM_LEAVES,
-                        parentEnsemble,
-                        parentPredicate,
-                        minNumRacksPerWriteQuorumForThisEnsemble);
+                ensemble.reset();
                 for (int i = 0; i < ensembleSize; i++) {
                     String curRack;
                     if (null == prevNode) {

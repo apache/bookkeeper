@@ -119,6 +119,14 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             return true;
         }
 
+        @Override
+        public void mark() {
+        }
+
+        @Override
+        public void reset() {
+        }
+
     }
 
     /**
@@ -310,11 +318,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final int ackQuorumSize;
         final int minRacksOrRegionsForDurability;
         final int minNumRacksPerWriteQuorum;
-        final List<BookieNode> chosenNodes;
-        final Set<String> racksOrRegions;
-        private final CoverageSet[] quorums;
         final Predicate<BookieNode> parentPredicate;
         final Ensemble<BookieNode> parentEnsemble;
+        private final CoverageSet[] quorums;
+        List<BookieNode> chosenNodes;
+        Set<String> racksOrRegions;
 
         protected RRTopologyAwareCoverageEnsemble(RRTopologyAwareCoverageEnsemble that) {
             this.distanceFromLeaves = that.distanceFromLeaves;
@@ -490,7 +498,33 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             return ((minRacksOrRegionsForDurability == 0)
                     || (racksOrRegions.size() >= minRacksOrRegionsForDurability));
         }
-
+    
+        private RRTopologyAwareCoverageEnsemble mark;
+        
+        @Override
+        public void mark() {
+            if (parentEnsemble != null) {
+                parentEnsemble.mark();
+            }
+            this.mark = new RRTopologyAwareCoverageEnsemble(this);
+        }
+    
+        @Override
+        public void reset() {
+            if (parentEnsemble != null) {
+                parentEnsemble.reset();
+            }
+            if (mark == null) {
+                return;
+            }
+            this.chosenNodes = mark.chosenNodes;
+                this.racksOrRegions = mark.racksOrRegions;
+            for (int i = 0; i < quorums.length; i++) {
+                this.quorums[i] = mark.quorums[i];
+            }
+            mark = null;
+        }
+    
         @Override
         public String toString() {
             return chosenNodes.toString();

@@ -1466,7 +1466,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                         public boolean validate() {
                             return false;
                         }
-
+    
+                        @Override
+                        public void mark() {
+                        }
+    
+                        @Override
+                        public void reset() {
+                        }
                     }, false);
             fail("Should get not enough bookies exception since ensemble rejects all the nodes");
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -1562,7 +1569,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
                     repp.newEnsemble(ensembleSize, writeQuorumSize,
                             ackQuorumSize, null, excludeBookies);
-            List<BookieId> ensemble = ensembleResponse.getResult();
+              List<BookieId> ensemble = ensembleResponse.getResult();
             Assert.assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
         }
     }
