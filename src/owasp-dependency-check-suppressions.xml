@@ -215,5 +215,18 @@
         <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
         <cve>CVE-2021-26291</cve>
     </suppress>
+
+  <suppress>
+    <notes>yaml_project is not used at all. Any CVEs reported for yaml_project are false positives.</notes>
+    <cpe>cpe:/a:yaml_project:yaml</cpe>
+  </suppress>
+
+  <suppress>
+    <notes><![CDATA[
+       file name: snakeyaml-1.32.jar
+       ]]></notes>
+    <sha1>e80612549feb5c9191c498de628c1aa80693cf0b</sha1>
+    <cve>CVE-2022-1471</cve>
+  </suppress>
 </suppressions>
 
