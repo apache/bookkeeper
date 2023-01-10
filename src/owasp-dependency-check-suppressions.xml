@@ -217,6 +217,11 @@
     </suppress>
 
   <suppress>
+    <notes>fredsmith utils library is not used at all. CVE-2021-4277 is a false positive.</notes>
+    <cve>CVE-2021-4277</cve>
+  </suppress>
+
+  <suppress>
     <notes>yaml_project is not used at all. Any CVEs reported for yaml_project are false positives.</notes>
     <cpe>cpe:/a:yaml_project:yaml</cpe>
   </suppress>
@@ -228,5 +233,12 @@
     <sha1>e80612549feb5c9191c498de628c1aa80693cf0b</sha1>
     <cve>CVE-2022-1471</cve>
   </suppress>
-</suppressions>
 
+  <suppress>
+    <notes><![CDATA[
+   file name: testng-7.5.jar
+   ]]></notes>
+    <sha1>1416a607fae667c14e390b484e8d02b5824c0674</sha1>
+    <vulnerabilityName>CVE-2022-4065</vulnerabilityName>
+  </suppress>
+</suppressions>
