@@ -143,14 +143,12 @@ jobs:
 
       - name: Test - ${{ matrix.step_name }}
         run: |
-          #!/bin/bash
           projects_list=
           if [[ ! -z "${{ matrix.module }}" ]]; then
             projects_list="-pl ${{ matrix.module }}"
           fi
           mvn -B -nsu $projects_list install -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip
           mvn -B -nsu $projects_list verify ${{ matrix.test_args }}
-          
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
         if: ${{ always() }}
