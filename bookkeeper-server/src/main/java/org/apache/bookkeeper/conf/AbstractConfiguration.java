@@ -1190,7 +1190,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *      the boolean flag indicating whether to limit stats logging
      */
     public boolean getLimitStatsLogging() {
-        return getBoolean(LIMIT_STATS_LOGGING, false);
+        return getBoolean(LIMIT_STATS_LOGGING, true);
     }
 
     /**
