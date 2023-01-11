@@ -128,6 +128,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
         baseClientConf.setUseV2WireProtocol(useV2Protocol);
+        baseClientConf.setLimitStatsLogging(false);
 
         switch (clientKeyStoreFormat) {
         case PEM:
