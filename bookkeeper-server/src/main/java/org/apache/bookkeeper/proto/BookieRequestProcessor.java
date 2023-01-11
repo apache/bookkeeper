@@ -731,7 +731,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         onResponseTimeout.accept(channel);
     }
 
-    private void writeAndFlush(Channel channel, Object msg) {
+    private static void writeAndFlush(Channel channel, Object msg) {
         NettyChannelUtil.writeAndFlushWithVoidPromise(channel, msg);
     }
 }
