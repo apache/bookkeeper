@@ -149,7 +149,7 @@ jobs:
             projects_list="-pl ${{ matrix.module }}"
           fi
           mvn -B -nsu $projects_list install -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip
-          mvn -B -nsu $projects_list ${{ matrix.module }} verify ${{ matrix.test_args }}
+          mvn -B -nsu $projects_list verify ${{ matrix.test_args }}
           
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
