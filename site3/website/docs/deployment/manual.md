@@ -16,10 +16,10 @@ We won't provide a full guide to setting up a ZooKeeper cluster here. We recomme
 
 Once your ZooKeeper cluster is up and running, there is some metadata that needs to be written to ZooKeeper, so you need to modify the bookie's configuration to make sure that it points to the right ZooKeeper cluster.
 
-On each bookie host, you need to [download](../getting-started/installation#download) the BookKeeper package as a tarball. Once you've done that, you need to configure the bookie by setting values in the `bookkeeper-server/conf/bk_server.conf` config file. The one parameter that you will absolutely need to change is the `zkServers` parameter, which you will need to set to the ZooKeeper connection string for your ZooKeeper cluster. Here's an example:
+On each bookie host, you need to [download](../getting-started/installation#download) the BookKeeper package as a tarball. Once you've done that, you need to configure the bookie by setting values in the `bookkeeper-server/conf/bk_server.conf` config file. The one parameter that you will absolutely need to change is the `metadataServiceUri` parameter, which you will need to set to the ZooKeeper connection string for your ZooKeeper cluster. Here's an example:
 
 ```properties
-zkServers=100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181
+metadataServiceUri=zk+hierarchical://100.0.0.1:2181;100.0.0.2:2181;100.0.0.3:2181/ledgers
 ```
 
 > A full listing of configurable parameters available in `bookkeeper-server/conf/bk_server.conf` can be found in the [Configuration](../reference/config) reference manual.
