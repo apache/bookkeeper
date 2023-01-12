@@ -1169,8 +1169,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             try {
                 final Method rereplicate = rw.getClass().getDeclaredMethod("rereplicate");
                 rereplicate.setAccessible(true);
-                final Object[] objects = new Object[0];
-                final Object result = rereplicate.invoke(rw, objects);
+                final Object result = rereplicate.invoke(rw);
                 final Field statsLoggerField = rw.getClass().getDeclaredField("statsLogger");
                 statsLoggerField.setAccessible(true);
                 final TestStatsLogger statsLogger = (TestStatsLogger) statsLoggerField.get(rw);
