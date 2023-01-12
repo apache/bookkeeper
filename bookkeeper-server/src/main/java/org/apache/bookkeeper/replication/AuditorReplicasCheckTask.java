@@ -48,6 +48,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,8 +200,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     LOG.error("Got InterruptedException while acquiring semaphore for replicascheck", ie);
-                    throw new ReplicationException.BKAuditException("Got InterruptedException while acquiring semaphore for replicascheck",
-                            ie);
+                    throw new ReplicationException.BKAuditException(
+                            "Got InterruptedException while acquiring semaphore for replicascheck", ie);
                 }
                 if (checkUnderReplicationForReplicasCheck(ledgerInRange, mcbForThisLedgerRange)) {
                     /*
@@ -226,12 +227,14 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                             "For LedgerRange with num of ledgers : {} it didn't complete replicascheck"
                                     + " in {} secs, so giving up",
                             numOfLedgersInRange, REPLICAS_CHECK_TIMEOUT_IN_SECS);
-                    throw new ReplicationException.BKAuditException("Got InterruptedException while doing replicascheck");
+                    throw new ReplicationException.BKAuditException(
+                            "Got InterruptedException while doing replicascheck");
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 LOG.error("Got InterruptedException while doing replicascheck", ie);
-                throw new ReplicationException.BKAuditException("Got InterruptedException while doing replicascheck", ie);
+                throw new ReplicationException.BKAuditException(
+                        "Got InterruptedException while doing replicascheck", ie);
             }
             reportLedgersWithMissingEntries(ledgersWithMissingEntries);
             reportLedgersWithUnavailableBookies(ledgersWithUnavailableBookies);
@@ -396,8 +399,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
              * since there are multiple segments, MultiCallback should be
              * created for (ensembleSize * segments.size()) calls.
              */
-            MultiCallback mcbForThisLedger = new MultiCallback(ensembleSize * segments.size(), mcbForThisLedgerRange,
-                    null, BKException.Code.OK, BKException.Code.ReadException);
+            MultiCallback mcbForThisLedger = new MultiCallback(ensembleSize * segments.size(),
+                    mcbForThisLedgerRange, null, BKException.Code.OK, BKException.Code.ReadException);
             HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoMap =
                     new HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>>();
             for (int segmentNum = 0; segmentNum < segments.size(); segmentNum++) {
@@ -557,8 +560,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                             unavailableBookiesInfoOfThisLedger.getMissingEntriesInfoList();
                     for (BookieExpectedToContainSegmentInfo bookieExpectedToContainSegmentInfo
                             : bookieExpectedToContainSegmentInfoList) {
-                        missingEntriesInfoList.add(new MissingEntriesInfo(ledgerInRange,
-                                bookieExpectedToContainSegmentInfo.getSegmentEnsemble(), bookieInEnsemble, null));
+                        missingEntriesInfoList.add(
+                                new MissingEntriesInfo(ledgerInRange,
+                                bookieExpectedToContainSegmentInfo.getSegmentEnsemble(),
+                                        bookieInEnsemble, null));
                         /*
                          * though GetListOfEntriesOfLedger has failed with
                          * exception, mcbForThisLedger should be called back
@@ -584,7 +589,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 final Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         bookieExpectedToContainSegmentInfo.getSegmentEnsemble();
                 final List<Long> unavailableEntriesList = availabilityOfEntriesOfLedger
-                        .getUnavailableEntries(startEntryIdOfSegment, lastEntryIdOfSegment, entriesStripedToThisBookie);
+                        .getUnavailableEntries(startEntryIdOfSegment,
+                                lastEntryIdOfSegment, entriesStripedToThisBookie);
                 if ((unavailableEntriesList != null) && (!unavailableEntriesList.isEmpty())) {
                     MissingEntriesInfoOfLedger missingEntriesInfoOfThisLedger = ledgersWithMissingEntries
                             .get(ledgerInRange);
@@ -595,8 +601,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                                         Collections.synchronizedList(new ArrayList<MissingEntriesInfo>())));
                         missingEntriesInfoOfThisLedger = ledgersWithMissingEntries.get(ledgerInRange);
                     }
-                    missingEntriesInfoOfThisLedger.getMissingEntriesInfoList().add(new MissingEntriesInfo(ledgerInRange,
-                            segmentEnsemble, bookieInEnsemble, unavailableEntriesList));
+                    missingEntriesInfoOfThisLedger.getMissingEntriesInfoList().add(
+                            new MissingEntriesInfo(ledgerInRange, segmentEnsemble,
+                                    bookieInEnsemble, unavailableEntriesList));
                 }
                 /*
                  * here though unavailableEntriesList is not empty,
@@ -711,7 +718,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         }
     }
 
-    boolean checkUnderReplicationForReplicasCheck(long ledgerInRange, AsyncCallback.VoidCallback mcbForThisLedgerRange) {
+    boolean checkUnderReplicationForReplicasCheck(long ledgerInRange, VoidCallback mcbForThisLedgerRange) {
         try {
             if (ledgerUnderreplicationManager.getLedgerUnreplicationInfo(ledgerInRange) == null) {
                 return false;
