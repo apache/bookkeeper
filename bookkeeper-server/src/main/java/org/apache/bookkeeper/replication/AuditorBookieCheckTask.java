@@ -77,8 +77,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
     /**
      * Start running the actual audit task.
      *
-     * @param shutDownTask
-     *      A boolean that indicates whether or not to schedule shutdown task on any failure
+     * @param shutDownTask A boolean that indicates whether or not to schedule shutdown task on any failure
      */
     void startAudit(boolean shutDownTask) {
         try {
