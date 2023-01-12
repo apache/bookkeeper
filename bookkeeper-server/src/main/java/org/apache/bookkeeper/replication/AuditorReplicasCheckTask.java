@@ -161,7 +161,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 }
             } catch (IOException ioe) {
                 LOG.error("Got IOException while iterating LedgerRangeIterator", ioe);
-                throw new ReplicationException.BKAuditException("Got IOException while iterating LedgerRangeIterator", ioe);
+                throw new ReplicationException.BKAuditException(
+                        "Got IOException while iterating LedgerRangeIterator", ioe);
             }
             ledgersWithMissingEntries.clear();
             ledgersWithUnavailableBookies.clear();
@@ -195,7 +196,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     if (!maxConcurrentSemaphore.tryAcquire(REPLICAS_CHECK_TIMEOUT_IN_SECS, TimeUnit.SECONDS)) {
                         LOG.error("Timedout ({} secs) while waiting for acquiring semaphore",
                                 REPLICAS_CHECK_TIMEOUT_IN_SECS);
-                        throw new ReplicationException.BKAuditException("Timedout while waiting for acquiring semaphore");
+                        throw new ReplicationException.BKAuditException(
+                                "Timedout while waiting for acquiring semaphore");
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
