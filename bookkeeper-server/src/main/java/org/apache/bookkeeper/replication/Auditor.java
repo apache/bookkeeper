@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -334,7 +334,7 @@ public class Auditor implements AutoCloseable {
 
     synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
         if (executor.isShutdown()) {
-            SettableFuture<Void> f = SettableFuture.<Void> create();
+            SettableFuture<Void> f = SettableFuture.<Void>create();
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }

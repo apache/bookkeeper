@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -43,7 +44,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
@@ -159,8 +160,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 }
             } catch (IOException ioe) {
                 LOG.error("Got IOException while iterating LedgerRangeIterator", ioe);
-                throw new ReplicationException.BKAuditException(
-                        "Got IOException while iterating LedgerRangeIterator", ioe);
+                throw new ReplicationException.BKAuditException("Got IOException while iterating LedgerRangeIterator", ioe);
             }
             ledgersWithMissingEntries.clear();
             ledgersWithUnavailableBookies.clear();
@@ -173,10 +173,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             final AtomicInteger resultCode = new AtomicInteger();
             final CountDownLatch replicasCheckLatch = new CountDownLatch(1);
 
-            ReplicasCheckFinalCallback
-                    finalCB = new ReplicasCheckFinalCallback(resultCode, replicasCheckLatch);
-            BookkeeperInternalCallbacks.MultiCallback mcbForThisLedgerRange =
-                    new BookkeeperInternalCallbacks.MultiCallback(numOfLedgersInRange, finalCB, null,
+            ReplicasCheckFinalCallback finalCB = new ReplicasCheckFinalCallback(resultCode, replicasCheckLatch);
+            MultiCallback mcbForThisLedgerRange = new MultiCallback(numOfLedgersInRange, finalCB, null,
                     BKException.Code.OK, BKException.Code.ReadException) {
                 @Override
                 public void processResult(int rc, String path, Object ctx) {
@@ -196,14 +194,13 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     if (!maxConcurrentSemaphore.tryAcquire(REPLICAS_CHECK_TIMEOUT_IN_SECS, TimeUnit.SECONDS)) {
                         LOG.error("Timedout ({} secs) while waiting for acquiring semaphore",
                                 REPLICAS_CHECK_TIMEOUT_IN_SECS);
-                        throw new ReplicationException.BKAuditException(
-                                "Timedout while waiting for acquiring semaphore");
+                        throw new ReplicationException.BKAuditException("Timedout while waiting for acquiring semaphore");
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     LOG.error("Got InterruptedException while acquiring semaphore for replicascheck", ie);
-                    throw new ReplicationException.BKAuditException(
-                            "Got InterruptedException while acquiring semaphore for replicascheck", ie);
+                    throw new ReplicationException.BKAuditException("Got InterruptedException while acquiring semaphore for replicascheck",
+                            ie);
                 }
                 if (checkUnderReplicationForReplicasCheck(ledgerInRange, mcbForThisLedgerRange)) {
                     /*
@@ -229,14 +226,12 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                             "For LedgerRange with num of ledgers : {} it didn't complete replicascheck"
                                     + " in {} secs, so giving up",
                             numOfLedgersInRange, REPLICAS_CHECK_TIMEOUT_IN_SECS);
-                    throw new ReplicationException.BKAuditException(
-                            "Got InterruptedException while doing replicascheck");
+                    throw new ReplicationException.BKAuditException("Got InterruptedException while doing replicascheck");
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 LOG.error("Got InterruptedException while doing replicascheck", ie);
-                throw new ReplicationException.BKAuditException(
-                        "Got InterruptedException while doing replicascheck", ie);
+                throw new ReplicationException.BKAuditException("Got InterruptedException while doing replicascheck", ie);
             }
             reportLedgersWithMissingEntries(ledgersWithMissingEntries);
             reportLedgersWithUnavailableBookies(ledgersWithUnavailableBookies);
@@ -247,8 +242,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             }
         }
         try {
-            final long timeMillis = System.currentTimeMillis();
-            ledgerUnderreplicationManager.setReplicasCheckCTime(timeMillis);
+            ledgerUnderreplicationManager.setReplicasCheckCTime(System.currentTimeMillis());
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
             LOG.error("Non Recoverable Exception while reading from ZK", nre);
             submitShutdownTask();
@@ -263,7 +257,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         /*
          * segment details, like start entryid of the segment and ensemble List.
          */
-        private final Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble;
+        private final Entry<Long, ? extends List<BookieId>> segmentEnsemble;
         // bookie missing these entries
         private final BookieId bookieMissingEntries;
         /*
@@ -272,7 +266,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
          */
         private final List<Long> unavailableEntriesList;
 
-        private MissingEntriesInfo(long ledgerId, Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble,
+        private MissingEntriesInfo(long ledgerId, Entry<Long, ? extends List<BookieId>> segmentEnsemble,
                                    BookieId bookieMissingEntries, List<Long> unavailableEntriesList) {
             this.ledgerId = ledgerId;
             this.segmentEnsemble = segmentEnsemble;
@@ -284,7 +278,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             return ledgerId;
         }
 
-        private Map.Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
+        private Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
             return segmentEnsemble;
         }
 
@@ -337,13 +331,13 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     private class ReadLedgerMetadataCallbackForReplicasCheck
             implements BiConsumer<Versioned<LedgerMetadata>, Throwable> {
         private final long ledgerInRange;
-        private final BookkeeperInternalCallbacks.MultiCallback mcbForThisLedgerRange;
+        private final MultiCallback mcbForThisLedgerRange;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies;
 
         ReadLedgerMetadataCallbackForReplicasCheck(
                 long ledgerInRange,
-                BookkeeperInternalCallbacks.MultiCallback mcbForThisLedgerRange,
+                MultiCallback mcbForThisLedgerRange,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies) {
             this.ledgerInRange = ledgerInRange;
@@ -355,8 +349,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         @Override
         public void accept(Versioned<LedgerMetadata> metadataVer, Throwable exception) {
             if (exception != null) {
-                if (BKException.getExceptionCode(exception)
-                        == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                if (BKException
+                        .getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Ignoring replicas check of already deleted ledger {}",
                                 ledgerInRange);
@@ -396,20 +390,18 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             int ensembleSize = metadata.getEnsembleSize();
             RoundRobinDistributionSchedule distributionSchedule = new RoundRobinDistributionSchedule(writeQuorumSize,
                     ackQuorumSize, ensembleSize);
-            List<Map.Entry<Long, ? extends List<BookieId>>> segments = new LinkedList<>(
+            List<Entry<Long, ? extends List<BookieId>>> segments = new LinkedList<>(
                     metadata.getAllEnsembles().entrySet());
             /*
              * since there are multiple segments, MultiCallback should be
              * created for (ensembleSize * segments.size()) calls.
              */
-            BookkeeperInternalCallbacks.MultiCallback mcbForThisLedger =
-                    new BookkeeperInternalCallbacks.MultiCallback(
-                            ensembleSize * segments.size(), mcbForThisLedgerRange,
-                            null, BKException.Code.OK, BKException.Code.ReadException);
+            MultiCallback mcbForThisLedger = new MultiCallback(ensembleSize * segments.size(), mcbForThisLedgerRange,
+                    null, BKException.Code.OK, BKException.Code.ReadException);
             HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoMap =
                     new HashMap<BookieId, List<BookieExpectedToContainSegmentInfo>>();
             for (int segmentNum = 0; segmentNum < segments.size(); segmentNum++) {
-                final Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble = segments.get(segmentNum);
+                final Entry<Long, ? extends List<BookieId>> segmentEnsemble = segments.get(segmentNum);
                 final List<BookieId> ensembleOfSegment = segmentEnsemble.getValue();
                 final long startEntryIdOfSegment = segmentEnsemble.getKey();
                 final boolean lastSegment = (segmentNum == (segments.size() - 1));
@@ -445,20 +437,23 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         mcbForThisLedger.processResult(BKException.Code.OK, null, null);
                         continue;
                     }
-                    List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList =
-                            bookiesSegmentInfoMap.computeIfAbsent(bookieInEnsemble,
-                                    v -> new ArrayList<BookieExpectedToContainSegmentInfo>());
+                    List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList = bookiesSegmentInfoMap
+                            .get(bookieInEnsemble);
+                    if (bookieSegmentInfoList == null) {
+                        bookieSegmentInfoList = new ArrayList<BookieExpectedToContainSegmentInfo>();
+                        bookiesSegmentInfoMap.put(bookieInEnsemble, bookieSegmentInfoList);
+                    }
                     bookieSegmentInfoList.add(new BookieExpectedToContainSegmentInfo(startEntryIdOfSegment,
                             lastEntryIdOfSegment, segmentEnsemble, entriesStripedToThisBookie));
                 }
             }
-            for (Map.Entry<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoTuple :
+            for (Entry<BookieId, List<BookieExpectedToContainSegmentInfo>> bookiesSegmentInfoTuple :
                     bookiesSegmentInfoMap.entrySet()) {
                 final BookieId bookieInEnsemble = bookiesSegmentInfoTuple.getKey();
                 final List<BookieExpectedToContainSegmentInfo> bookieSegmentInfoList = bookiesSegmentInfoTuple
                         .getValue();
-                admin.asyncGetListOfEntriesOfLedger(bookieInEnsemble, ledgerInRange).whenComplete(
-                        new GetListOfEntriesOfLedgerCallbackForReplicasCheck(ledgerInRange, ensembleSize,
+                admin.asyncGetListOfEntriesOfLedger(bookieInEnsemble, ledgerInRange)
+                        .whenComplete(new GetListOfEntriesOfLedgerCallbackForReplicasCheck(ledgerInRange, ensembleSize,
                                 writeQuorumSize, ackQuorumSize, bookieInEnsemble, bookieSegmentInfoList,
                                 ledgersWithMissingEntries, ledgersWithUnavailableBookies, mcbForThisLedger));
             }
@@ -468,11 +463,11 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     private static class BookieExpectedToContainSegmentInfo {
         private final long startEntryIdOfSegment;
         private final long lastEntryIdOfSegment;
-        private final Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble;
+        private final Entry<Long, ? extends List<BookieId>> segmentEnsemble;
         private final BitSet entriesOfSegmentStripedToThisBookie;
 
         private BookieExpectedToContainSegmentInfo(long startEntryIdOfSegment, long lastEntryIdOfSegment,
-                                                   Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble,
+                                                   Entry<Long, ? extends List<BookieId>> segmentEnsemble,
                                                    BitSet entriesOfSegmentStripedToThisBookie) {
             this.startEntryIdOfSegment = startEntryIdOfSegment;
             this.lastEntryIdOfSegment = lastEntryIdOfSegment;
@@ -488,7 +483,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             return lastEntryIdOfSegment;
         }
 
-        public Map.Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
+        public Entry<Long, ? extends List<BookieId>> getSegmentEnsemble() {
             return segmentEnsemble;
         }
 
@@ -507,7 +502,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         private final List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries;
         private final ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies;
-        private final BookkeeperInternalCallbacks.MultiCallback mcbForThisLedger;
+        private final MultiCallback mcbForThisLedger;
 
         private GetListOfEntriesOfLedgerCallbackForReplicasCheck(
                 long ledgerInRange,
@@ -518,7 +513,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 List<BookieExpectedToContainSegmentInfo> bookieExpectedToContainSegmentInfoList,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries,
                 ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithUnavailableBookies,
-                BookkeeperInternalCallbacks.MultiCallback mcbForThisLedger) {
+                MultiCallback mcbForThisLedger) {
             this.ledgerInRange = ledgerInRange;
             this.ensembleSize = ensembleSize;
             this.writeQuorumSize = writeQuorumSize;
@@ -563,8 +558,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     for (BookieExpectedToContainSegmentInfo bookieExpectedToContainSegmentInfo
                             : bookieExpectedToContainSegmentInfoList) {
                         missingEntriesInfoList.add(new MissingEntriesInfo(ledgerInRange,
-                                bookieExpectedToContainSegmentInfo.getSegmentEnsemble(),
-                                bookieInEnsemble, null));
+                                bookieExpectedToContainSegmentInfo.getSegmentEnsemble(), bookieInEnsemble, null));
                         /*
                          * though GetListOfEntriesOfLedger has failed with
                          * exception, mcbForThisLedger should be called back
@@ -587,11 +581,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 final long lastEntryIdOfSegment = bookieExpectedToContainSegmentInfo.getLastEntryIdOfSegment();
                 final BitSet entriesStripedToThisBookie = bookieExpectedToContainSegmentInfo
                         .getEntriesOfSegmentStripedToThisBookie();
-                final Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble =
+                final Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         bookieExpectedToContainSegmentInfo.getSegmentEnsemble();
-                final List<Long> unavailableEntriesList =
-                        availabilityOfEntriesOfLedger.getUnavailableEntries(
-                                startEntryIdOfSegment, lastEntryIdOfSegment, entriesStripedToThisBookie);
+                final List<Long> unavailableEntriesList = availabilityOfEntriesOfLedger
+                        .getUnavailableEntries(startEntryIdOfSegment, lastEntryIdOfSegment, entriesStripedToThisBookie);
                 if ((unavailableEntriesList != null) && (!unavailableEntriesList.isEmpty())) {
                     MissingEntriesInfoOfLedger missingEntriesInfoOfThisLedger = ledgersWithMissingEntries
                             .get(ledgerInRange);
@@ -602,8 +595,8 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                                         Collections.synchronizedList(new ArrayList<MissingEntriesInfo>())));
                         missingEntriesInfoOfThisLedger = ledgersWithMissingEntries.get(ledgerInRange);
                     }
-                    missingEntriesInfoOfThisLedger.getMissingEntriesInfoList().add(new MissingEntriesInfo(
-                            ledgerInRange, segmentEnsemble, bookieInEnsemble, unavailableEntriesList));
+                    missingEntriesInfoOfThisLedger.getMissingEntriesInfoList().add(new MissingEntriesInfo(ledgerInRange,
+                            segmentEnsemble, bookieInEnsemble, unavailableEntriesList));
                 }
                 /*
                  * here though unavailableEntriesList is not empty,
@@ -654,7 +647,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             for (int listInd = 0; listInd < missingEntriesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingEntriesInfo = missingEntriesInfoList.get(listInd);
                 List<Long> unavailableEntriesList = missingEntriesInfo.getUnavailableEntriesList();
-                Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble =
+                Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingEntriesInfo.getSegmentEnsemble();
                 missingEntries.addAll(unavailableEntriesList);
                 errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
@@ -686,9 +679,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         ackQuorumSize);
             } else if (leastNumOfReplicasOfAnEntry < writeQuorumSize) {
                 auditorStats.getNumLedgersFoundHavingLessThanWQReplicasOfAnEntry().incrementAndGet();
-                LOG.error("Ledger : {} entryId : {} is having: {} replicas, "
-                                + "less than writeQuorum num of replicas : {}", ledgerWithMissingEntries,
-                        entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry, writeQuorumSize);
+                LOG.error("Ledger : {} entryId : {} is having: {} replicas, less than writeQuorum num of replicas : {}",
+                        ledgerWithMissingEntries, entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry,
+                        writeQuorumSize);
             }
         }
     }
@@ -705,7 +698,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             errMessage.append("Ledger : " + ledgerWithUnavailableBookies + " has following unavailable bookies : ");
             for (int listInd = 0; listInd < missingBookiesInfoList.size(); listInd++) {
                 MissingEntriesInfo missingBookieInfo = missingBookiesInfoList.get(listInd);
-                Map.Entry<Long, ? extends List<BookieId>> segmentEnsemble =
+                Entry<Long, ? extends List<BookieId>> segmentEnsemble =
                         missingBookieInfo.getSegmentEnsemble();
                 errMessage.append("In segment starting at " + segmentEnsemble.getKey() + " with ensemble "
                         + segmentEnsemble.getValue() + ", following bookie has not responded "
@@ -718,8 +711,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         }
     }
 
-    boolean checkUnderReplicationForReplicasCheck(long ledgerInRange,
-                                                  AsyncCallback.VoidCallback mcbForThisLedgerRange) {
+    boolean checkUnderReplicationForReplicasCheck(long ledgerInRange, AsyncCallback.VoidCallback mcbForThisLedgerRange) {
         try {
             if (ledgerUnderreplicationManager.getLedgerUnreplicationInfo(ledgerInRange) == null) {
                 return false;

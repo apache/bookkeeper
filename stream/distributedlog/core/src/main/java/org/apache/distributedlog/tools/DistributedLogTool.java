@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1719,7 +1720,7 @@ import org.slf4j.LoggerFactory;
                     .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(segment.getVersion()))
                     .setEntry(lastEntry.getEntryBuffer())
                     .buildReader();
-            lastEntry.getEntryBuffer().release();
+            ReferenceCountUtil.safeRelease(lastEntry.getEntryBuffer());
             LogRecordWithDLSN record = reader.nextRecord();
             LogRecordWithDLSN lastRecord = null;
             while (null != record) {
@@ -2033,7 +2034,7 @@ import org.slf4j.LoggerFactory;
                                     .setEntry(rr.getValue())
                                     .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(metadataVersion))
                                     .buildReader();
-                            rr.getValue().release();
+                            ReferenceCountUtil.safeRelease(rr.getValue());
                             printEntry(reader);
                         } else {
                             System.out.println("status = " + BKException.getMessage(rr.getResultCode()));
@@ -2095,7 +2096,7 @@ import org.slf4j.LoggerFactory;
                         .setEntry(entry.getEntryBuffer())
                         .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(metadataVersion))
                         .buildReader();
-                entry.getEntryBuffer().release();
+                ReferenceCountUtil.safeRelease(entry.getEntryBuffer());
                 printEntry(reader);
                 ++i;
             }

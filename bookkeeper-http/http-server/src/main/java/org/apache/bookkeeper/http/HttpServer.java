@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -82,9 +82,11 @@ public interface HttpServer {
         GC,
         GC_DETAILS,
         BOOKIE_STATE,
+        BOOKIE_SANITY,
         BOOKIE_STATE_READONLY,
         BOOKIE_IS_READY,
         BOOKIE_INFO,
+        CLUSTER_INFO,
         RESUME_GC_COMPACTION,
         SUSPEND_GC_COMPACTION,
         // autorecovery
