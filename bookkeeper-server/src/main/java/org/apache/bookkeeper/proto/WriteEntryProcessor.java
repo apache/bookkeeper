@@ -111,7 +111,6 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             sendWriteReqResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
-            request.release();
             request.recycle();
         }
     }
