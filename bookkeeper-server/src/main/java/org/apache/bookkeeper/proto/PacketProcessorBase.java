@@ -113,6 +113,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
                 if (response instanceof BookieProtocol.Response) {
                     ((BookieProtocol.Response) response).release();
                 }
+                if (request instanceof BookieProtocol.ParsedAddRequest) {
+                    ((BookieProtocol.ParsedAddRequest) request).release();
+                    request.recycle();
+                }
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
@@ -129,6 +133,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
         } else {
             if (response instanceof BookieProtocol.Response) {
                 ((BookieProtocol.Response) response).release();
+            }
+            if (request instanceof BookieProtocol.ParsedAddRequest) {
+                ((BookieProtocol.ParsedAddRequest) request).release();
+                request.recycle();
             }
             logger.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
