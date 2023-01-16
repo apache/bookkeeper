@@ -82,16 +82,11 @@ public class MockLedgerHandle extends LedgerHandle {
 
         fenced = true;
         try {
-            bk.executor.execute(() -> cb.closeComplete(0, this, ctx));
+            executeOrdered(() -> cb.closeComplete(0, this, ctx));
         } catch (RejectedExecutionException e) {
             cb.closeComplete(0, this, ctx);
         }
 
-    }
-
-    @Override
-    void executeOrdered(Runnable runnable) throws RejectedExecutionException {
-        bk.executor.execute(runnable);
     }
 
     @Override
@@ -101,7 +96,7 @@ public class MockLedgerHandle extends LedgerHandle {
             return;
         }
 
-        bk.executor.execute(new Runnable() {
+        executeOrdered(new Runnable() {
             public void run() {
                 if (bk.getProgrammedFailStatus()) {
                     cb.readComplete(bk.failReturnCode, MockLedgerHandle.this, null, ctx);
@@ -188,7 +183,7 @@ public class MockLedgerHandle extends LedgerHandle {
         }
 
         data.retain();
-        bk.executor.execute(new Runnable() {
+        executeOrdered(new Runnable() {
             public void run() {
                 if (bk.getProgrammedFailStatus()) {
                     fenced = true;

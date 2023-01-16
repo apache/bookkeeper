@@ -101,7 +101,7 @@ public class LedgerHandle implements WriteHandle {
     final byte[] ledgerKey;
     private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
-    final ExecutorService orderExecutor;
+    final ExecutorService executor;
     long lastAddPushed;
 
     private enum HandleState {
@@ -196,7 +196,7 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
-        this.orderExecutor = clientCtx.getMainWorkerPool().chooseThread(ledgerId);
+        this.executor = clientCtx.getMainWorkerPool().chooseThread(ledgerId);
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
@@ -2088,7 +2088,7 @@ public class LedgerHandle implements WriteHandle {
      * @throws RejectedExecutionException
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
-        orderExecutor.execute(runnable);
+        executor.execute(runnable);
     }
 
 }
