@@ -188,7 +188,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = (DefaultEntryLogger) entryLogger;
-        this.entryLogger.addListener(this);
+        if (!SortedLedgerStorage.class.getName().equals(conf.getLedgerStorageClass())) {
+            this.entryLogger.addListener(this);
+        }
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
