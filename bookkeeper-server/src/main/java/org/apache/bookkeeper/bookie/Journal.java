@@ -347,8 +347,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             cbThreadPoolQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
-            recycle();
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            recycle();
         }
 
         private final Handle<QueueEntry> recyclerHandle;
