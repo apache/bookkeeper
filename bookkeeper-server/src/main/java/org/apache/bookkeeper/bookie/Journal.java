@@ -365,6 +365,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         };
 
         private void recycle() {
+            this.entry = null;
+            this.cb = null;
+            this.ctx = null;
+            this.journalAddEntryStats = null;
+            this.journalCbQueuedLatency = null;
+            this.journalCbQueueSize = null;
+            this.cbThreadPoolQueueSize = null;
+            this.callbackTime = null;
             recyclerHandle.recycle(this);
         }
     }
