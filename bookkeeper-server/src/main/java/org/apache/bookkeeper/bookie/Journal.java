@@ -443,6 +443,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         private void recycle() {
             logFile = null;
+            shouldClose = false;
+            isMarker = false;
+            enqueueTime = -1;
+            logId = -1;
+            lastFlushedPosition = -1;
             if (forceWriteWaiters != null) {
                 forceWriteWaiters.recycle();
                 forceWriteWaiters = null;
