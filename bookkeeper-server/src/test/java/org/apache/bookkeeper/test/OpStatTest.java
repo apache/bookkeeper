@@ -92,7 +92,7 @@ public class OpStatTest extends BookKeeperClusterTestCase {
     @Test
     public void testTopLevelBookieWriteCounters() throws Exception {
         long startNanos = MathUtils.nowInNano();
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++) {
             lh.addEntry("test".getBytes());
         }
         long elapsed = MathUtils.elapsedNanos(startNanos);
