@@ -517,7 +517,9 @@ class PendingAddOp implements Runnable, WriteCallback {
         writeFlags = null;
         addEntrySuccessBookies.clear();
         writeDelayedStartTime = -1;
-
+        qwcLatency = 0;
+        requestTimeNanos = Long.MAX_VALUE;
+        entryLength = -1;
         recyclerHandle.recycle(this);
     }
 }

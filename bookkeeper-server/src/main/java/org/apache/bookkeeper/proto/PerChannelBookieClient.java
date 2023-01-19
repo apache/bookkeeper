@@ -2397,6 +2397,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         public void release() {
+            ledgerId = -1;
+            entryId = -1;
             recyclerHandle.recycle(this);
         }
     }
