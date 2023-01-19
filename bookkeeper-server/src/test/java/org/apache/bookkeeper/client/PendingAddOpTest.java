@@ -123,7 +123,6 @@ public class PendingAddOpTest {
                     rcHolder.set(rc);
                 }, null).enableRecoveryAdd();
         assertSame(lh, op.lh);
-        lh.pendingAddOps.add(op);
         op.setEntryId(0);
         lh.pendingAddOps.add(op);
         lh.clientCtx.getMainWorkerPool().submitOrdered(lh.ledgerId, (Callable<Void>) () -> {
