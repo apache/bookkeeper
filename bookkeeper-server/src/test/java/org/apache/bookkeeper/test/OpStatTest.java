@@ -92,7 +92,7 @@ public class OpStatTest extends BookKeeperClusterTestCase {
     @Test
     public void testTopLevelBookieWriteCounters() throws Exception {
         long startNanos = MathUtils.nowInNano();
-        for (int i=0;i<5;i++) {
+        for (int i=0; i<5; i++) {
             lh.addEntry("test".getBytes());
         }
         long elapsed = MathUtils.elapsedNanos(startNanos);
@@ -119,13 +119,13 @@ public class OpStatTest extends BookKeeperClusterTestCase {
                 BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_CB_QUEUE_SIZE,
                 BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_QUEUE_SIZE
         }, (value, max) -> {
-            assertTrue(value ==  0);
+            assertTrue(value == 0);
             assertTrue(max == 6);
         });
         validateNonMonotonicCounterGauges(stats, new String[]{
                 BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
         }, (value, max) -> {
-            assertTrue(value ==  0);
+            assertTrue(value == 0);
             assertTrue(max == 10);
         });
     }
