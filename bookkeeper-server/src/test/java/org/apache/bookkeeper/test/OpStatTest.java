@@ -92,7 +92,9 @@ public class OpStatTest extends BookKeeperClusterTestCase {
     @Test
     public void testTopLevelBookieWriteCounters() throws Exception {
         long startNanos = MathUtils.nowInNano();
-        lh.addEntry("test".getBytes());
+        for (int i=0;i<5;i++) {
+            lh.addEntry("test".getBytes());
+        }
         long elapsed = MathUtils.elapsedNanos(startNanos);
         TestStatsProvider stats = getStatsProvider(0);
         validateOpStat(stats, new String[]{
@@ -102,23 +104,29 @@ public class OpStatTest extends BookKeeperClusterTestCase {
                 SERVER_SCOPE + ".BookieWriteThreadPool.task_execution",
                 SERVER_SCOPE + ".CHANNEL_WRITE"
         }, (count, average) -> {
-            assertTrue(count == 1);
+            assertTrue(count == 5);
             assertTrue(average > 0);
             assertTrue(average <= elapsed);
         });
         validateOpStat(stats, new String[]{
                 SERVER_SCOPE + ".CHANNEL_WRITE"
         }, (count, average) -> {
-            assertTrue(count > 0);
+            assertTrue(count == 5);
             assertTrue(average > 0);
             assertTrue(average <= elapsed);
         });
         validateNonMonotonicCounterGauges(stats, new String[]{
                 BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_CB_QUEUE_SIZE,
-                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
                 BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_QUEUE_SIZE
         }, (value, max) -> {
-            assertTrue(max > 0);
+            assertTrue(value ==  0);
+            assertTrue(max == 6);
+        });
+        validateNonMonotonicCounterGauges(stats, new String[]{
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + ".journalIndex_0." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
+        }, (value, max) -> {
+            assertTrue(value ==  0);
+            assertTrue(max == 10);
         });
     }
 

@@ -51,7 +51,8 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void inc() {
-            updateMax(val.incrementAndGet());
+            val.incrementAndGet();
+            updateMax(1);
         }
 
         @Override
@@ -61,13 +62,13 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void addCount(long delta) {
-            updateMax(val.addAndGet(delta));
+            updateMax(delta);
         }
 
         @Override
         public void addLatency(long eventLatency, TimeUnit unit) {
             long valueMillis = unit.toMillis(eventLatency);
-            updateMax(val.addAndGet(valueMillis));
+            updateMax(valueMillis);
         }
 
         @Override
@@ -76,15 +77,7 @@ public class TestStatsProvider implements StatsProvider {
         }
 
         private void updateMax(long newVal) {
-            while (true) {
-                long curMax = max.get();
-                if (curMax > newVal) {
-                    break;
-                }
-                if (max.compareAndSet(curMax, newVal)) {
-                    break;
-                }
-            }
+            max.addAndGet(newVal);
         }
 
         public Long getMax() {
