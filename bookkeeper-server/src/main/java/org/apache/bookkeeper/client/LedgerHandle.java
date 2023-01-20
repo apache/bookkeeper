@@ -1769,7 +1769,7 @@ public class LedgerHandle implements WriteHandle {
         if (getLedgerMetadata().getState() == LedgerMetadata.State.IN_RECOVERY) {
             // we should not close ledger if ledger is recovery mode
             // otherwise we may lose entry.
-            executeOrdered(() -> errorOutPendingAdds(rc));
+            errorOutPendingAdds(rc);
             return;
         }
         LOG.error("Closing ledger {} due to {}", ledgerId, BKException.codeLogger(rc));

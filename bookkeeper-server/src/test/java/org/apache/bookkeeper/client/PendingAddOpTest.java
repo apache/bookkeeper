@@ -104,34 +104,6 @@ public class PendingAddOpTest {
     }
 
     @Test
-    public void testLedgerHandleWithDeferredSyncDuringRecoveryAdd() throws Exception {
-        final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
-        final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
-        final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
-        MockClientContext clientCtx = MockClientContext.create();
-        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 0,
-                LedgerMetadataBuilder.create().withInRecoveryState().newEnsembleEntry(0L,
-                        Lists.newArrayList(b1, b2, b3)));
-        LedgerHandle lh = new LedgerHandle(clientCtx, 0, md, BookKeeper.DigestType.CRC32C,
-                ClientUtil.PASSWD, EnumSet.of(WriteFlag.DEFERRED_SYNC));
-        lh.notifyWriteFailed(0, b1);
-        AtomicInteger rcHolder = new AtomicInteger(-0xdead);
-        PendingAddOp op = PendingAddOp.create(
-                lh, mockClientContext, lh.getCurrentEnsemble(),
-                payload, EnumSet.of(WriteFlag.DEFERRED_SYNC),
-                (rc, handle, entryId, qwcLatency, ctx) -> {
-                    rcHolder.set(rc);
-                }, null).enableRecoveryAdd();
-        assertSame(lh, op.lh);
-        op.setEntryId(0);
-        lh.pendingAddOps.add(op);
-        lh.clientCtx.getMainWorkerPool().submitOrdered(lh.ledgerId, (Callable<Void>) () -> {
-            op.run();
-            return null;
-        }).get();
-    }
-
-    @Test
     public void testReadOnlyLedgerHandleWithNotEnoughBookiesExceptionDuringRecoveryAdd() throws Exception {
         final BookieId b1 = new BookieSocketAddress("b1", 3181).toBookieId();
         final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
