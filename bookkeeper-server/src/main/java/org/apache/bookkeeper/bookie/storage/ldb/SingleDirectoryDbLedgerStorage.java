@@ -988,13 +988,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
             return null;
         }
-        if (ledgerData.hasExplicitLac()) {
-            if (log.isDebugEnabled()) {
-                log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
-            }
-            ByteString persistedLac = ledgerData.getExplicitLac();
-            ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
+        if (log.isDebugEnabled()) {
+            log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
         }
+        ByteString persistedLac = ledgerData.getExplicitLac();
+        ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
         return ledgerInfo.getExplicitLac();
     }
 
