@@ -99,23 +99,30 @@ jobs:
         include:
           - step_name: Bookie Tests
             module: bookkeeper-server
+            flag: bookie
             test_args: "-Dtest='org.apache.bookkeeper.bookie.**'"
           - step_name: Client Tests
             module: bookkeeper-server
+            flag: client
             test_args: "-Dtest='org.apache.bookkeeper.client.**'"
           - step_name: Remaining Tests
             module: bookkeeper-server
+            flag: remaining
             test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
           - step_name: Replication Tests
             module: bookkeeper-server
+            flag: replication
             test_args: "-Dtest='!org.apache.bookkeeper.client.**,!org.apache.bookkeeper.bookie.**,!org.apache.bookkeeper.replication.**,!org.apache.bookkeeper.tls.**'"
           - step_name: TLS Tests
             module: bookkeeper-server
+            flag: tls
             test_args: "-Dtest='org.apache.bookkeeper.tls.**'"
           - step_name: StreamStorage Tests
             test_args: "-f stream/pom.xml -DstreamTests"
+            flag: stream
           - step_name: Shell tests
             module: tests/scripts
+            flag: shell
 
     steps:
       - name: checkout
@@ -155,7 +162,13 @@ jobs:
           if [[ ! -z "${{ matrix.module }}" ]]; then
             projects_list="-pl ${{ matrix.module }}"
           fi
-          mvn -B -nsu $projects_list verify ${{ matrix.test_args }}
+          mvn -Pcode-coverage -B -nsu $projects_list verify ${{ matrix.test_args }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.flag }} != 'shell'
+        uses: codecov/codecov-action@v3
+        with:
+          flags: ${{ matrix.flag }}
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
         if: ${{ always() }}
