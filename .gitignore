@@ -44,3 +44,5 @@ package-lock.json
 # gradle
 build/
 .gradle/
+*.log
+*.dat
