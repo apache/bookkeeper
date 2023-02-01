@@ -24,6 +24,10 @@ on:
     branches:
       - master
       - branch-*
+  push:
+    branches:
+      - master
+      - branch-*
   workflow_dispatch:
 
 env:
