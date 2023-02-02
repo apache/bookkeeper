@@ -277,7 +277,7 @@ public class WriteEntryProcessorTest {
         assertEquals(1, requestProcessor.getAddsSemaphore().availablePermits());
 
         request = ParsedAddRequest.create(
-                (byte)-1, // 0 is lowest protocol version which will work with the bookie
+                (byte) -1, // 0 is lowest protocol version which will work with the bookie
                 System.currentTimeMillis(),
                 System.currentTimeMillis() + 1,
                 (short) 0,
