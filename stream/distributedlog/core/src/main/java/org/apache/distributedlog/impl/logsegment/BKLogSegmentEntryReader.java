@@ -455,8 +455,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 lh.asyncClose(new AsyncCallback.CloseCallback() {
                     @Override
                     public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-                        logger.debug("Close the open ledger {} since the log segment reader is already closed",
-                                lh.getId());
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Close the open ledger {} "
+                                            + "since the log segment reader is already closed",
+                                    lh.getId());
+                        }
                     }
                 }, null);
                 return;

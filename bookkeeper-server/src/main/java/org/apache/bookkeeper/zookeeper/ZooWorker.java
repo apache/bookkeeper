@@ -133,7 +133,9 @@ class ZooWorker {
                 if (null != client) {
                     client.waitForConnection();
                 }
-                logger.debug("Execute {} at {} retry attempt.", proc, attempts);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Execute {} at {} retry attempt.", proc, attempts);
+                }
                 if (null != rateLimiter) {
                     rateLimiter.acquire();
                 }
@@ -150,7 +152,9 @@ class ZooWorker {
                 }
                 if (rethrow) {
                     statsLogger.registerFailedEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
-                    logger.debug("Stopped executing {} after {} attempts.", proc, attempts);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Stopped executing {} after {} attempts.", proc, attempts);
+                    }
                     throw e;
                 }
                 TimeUnit.MILLISECONDS.sleep(retryPolicy.nextRetryWaitTime(attempts, elapsedTime));

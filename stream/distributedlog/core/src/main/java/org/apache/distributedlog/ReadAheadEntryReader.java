@@ -406,8 +406,10 @@ class ReadAheadEntryReader implements
         try {
             scheduler.executeOrdered(streamName, runnable);
         } catch (RejectedExecutionException ree) {
-            logger.debug("Failed to submit and execute an operation for readhead entry reader of {}",
-                    streamName, ree);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Failed to submit and execute an operation for readhead entry reader of {}",
+                        streamName, ree);
+            }
         }
     }
 
@@ -524,7 +526,7 @@ class ReadAheadEntryReader implements
     }
 
     void setLastException(IOException cause) {
-        if (!lastException.compareAndSet(null, cause)) {
+        if (!lastException.compareAndSet(null, cause) && logger.isDebugEnabled()) {
             logger.debug("last exception has already been set to ", lastException.get());
         }
         // the exception is set and notify the state change
@@ -924,13 +926,17 @@ class ReadAheadEntryReader implements
             FutureUtils.ensure(
                 currentSegmentReader.close(),
                 removeClosedSegmentReadersFunc);
-            logger.debug("close current segment reader {}", currentSegmentReader.getSegment());
+            if (logger.isDebugEnabled()) {
+                logger.debug("close current segment reader {}", currentSegmentReader.getSegment());
+            }
             currentSegmentReader = null;
         }
         boolean hasSegmentToRead = false;
         if (null != nextSegmentReader) {
             currentSegmentReader = nextSegmentReader;
-            logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+            if (logger.isDebugEnabled()) {
+                logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+            }
             currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
             nextSegmentReader = null;
             // start reading
@@ -940,7 +946,9 @@ class ReadAheadEntryReader implements
             unsafePrefetchNextSegment(false);
             if (null != nextSegmentReader) {
                 currentSegmentReader = nextSegmentReader;
-                logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+                }
                 currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
                 nextSegmentReader = null;
                 unsafePrefetchNextSegment(true);

@@ -125,7 +125,7 @@ public class NamespaceDriverManager {
         }
         NamespaceDriverInfo newDriverInfo = new NamespaceDriverInfo(driver);
         oldDriverInfo = drivers.putIfAbsent(scheme, newDriverInfo);
-        if (null != oldDriverInfo) {
+        if (null != oldDriverInfo && logger.isDebugEnabled()) {
             logger.debug("Driver for {} is already there.", scheme);
         }
     }

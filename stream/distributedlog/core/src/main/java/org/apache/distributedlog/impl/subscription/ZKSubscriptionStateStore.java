@@ -72,11 +72,15 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
     CompletableFuture<DLSN> getLastCommitPositionFromZK() {
         final CompletableFuture<DLSN> result = new CompletableFuture<DLSN>();
         try {
-            logger.debug("Reading last commit position from path {}", zkPath);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Reading last commit position from path {}", zkPath);
+            }
             zooKeeperClient.get().getData(zkPath, false, new AsyncCallback.DataCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    logger.debug("Read last commit position from path {}: rc = {}", zkPath, rc);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Read last commit position from path {}: rc = {}", zkPath, rc);
+                    }
                     if (KeeperException.Code.NONODE.intValue() == rc) {
                         result.complete(DLSN.NonInclusiveLowerBound);
                     } else if (KeeperException.Code.OK.intValue() != rc) {

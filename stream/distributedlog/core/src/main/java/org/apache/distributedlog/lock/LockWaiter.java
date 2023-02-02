@@ -89,7 +89,9 @@ public class LockWaiter {
         } catch (DLInterruptedException ie) {
             Thread.currentThread().interrupt();
         } catch (LockTimeoutException lte) {
-            logger.debug("Timeout on lock acquiring", lte);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Timeout on lock acquiring", lte);
+            }
         } catch (IOException e) {
             logger.error("Caught exception waiting for lock acquired", e);
         }

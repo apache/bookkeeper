@@ -121,7 +121,7 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
 
         if (channel.isActive()) {
             ChannelPromise promise = channel.newPromise().addListener(future -> {
-                if (!future.isSuccess()) {
+                if (!future.isSuccess() && logger.isDebugEnabled()) {
                     logger.debug("Netty channel write exception. ", future.cause());
                 }
             });
@@ -130,8 +130,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
             if (response instanceof BookieProtocol.Response) {
                 ((BookieProtocol.Response) response).release();
             }
-            logger.debug("Netty channel {} is inactive, "
-                    + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Netty channel {} is inactive, "
+                        + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+            }
         }
         if (BookieProtocol.EOK == rc) {
             statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
@@ -154,7 +156,9 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
                 future.get();
             }
         } catch (ExecutionException | InterruptedException e) {
-            logger.debug("Netty channel write exception. ", e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Netty channel write exception. ", e);
+            }
             return;
         }
         if (BookieProtocol.EOK == rc) {

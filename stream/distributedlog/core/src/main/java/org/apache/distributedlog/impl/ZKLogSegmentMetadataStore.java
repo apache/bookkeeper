@@ -115,7 +115,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         public void run() {
             if (null != store.listeners.get(logSegmentsPath)) {
                 store.zkGetLogSegmentNames(logSegmentsPath, store).whenComplete(this);
-            } else {
+            } else if (logger.isDebugEnabled()) {
                 logger.debug("Log segments listener for {} has been removed.", logSegmentsPath);
             }
         }
@@ -411,8 +411,10 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
                         listenerSet.put(listener, new VersionedLogSegmentNamesListener(listener));
                         if (!listeners.containsKey(logSegmentsPath)) {
                             // listener set has been removed, add it back
-                            if (null != listeners.putIfAbsent(logSegmentsPath, listenerSet)) {
-                                logger.debug("Listener set is already found for log segments path {}", logSegmentsPath);
+                            if (null != listeners.putIfAbsent(logSegmentsPath, listenerSet)
+                                    && logger.isDebugEnabled()) {
+                                logger.debug("Listener set is already found for log segments path {}",
+                                        logSegmentsPath);
                             }
                         }
                     }

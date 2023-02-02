@@ -57,7 +57,9 @@ public class ZooKeeperClientUtils {
         oldZk.exists("/", new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                logger.debug("Receive event : {}", event);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Receive event : {}", event);
+                }
                 if (event.getType() == Event.EventType.None
                         && event.getState() == Event.KeeperState.Expired) {
                     expireLatch.countDown();

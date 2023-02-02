@@ -61,7 +61,9 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return readLacResponse.build();
         }
 
-        logger.debug("Received ReadLac request: {}", request);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Received ReadLac request: {}", request);
+        }
         StatusCode status = StatusCode.EOK;
         ByteBuf lastEntry = null;
         ByteBuf lac = null;
@@ -72,7 +74,9 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
+            }
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
             logger.error("Ledger {} in unknown state and cannot serve reacLac requests", ledgerId, e);
@@ -90,7 +94,9 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
+            }
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
             logger.error("Ledger in an unknown state while trying to read last entry: {}", ledgerId, e);

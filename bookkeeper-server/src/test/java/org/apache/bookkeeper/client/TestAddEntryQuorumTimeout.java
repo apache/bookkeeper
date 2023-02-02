@@ -94,7 +94,9 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
     private void waitForSyncObj(SyncObj syncObj) throws Exception {
         synchronized (syncObj) {
             while (syncObj.counter < 1) {
-                logger.debug("Entries counter = " + syncObj.counter);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Entries counter = " + syncObj.counter);
+                }
                 syncObj.wait();
             }
         }

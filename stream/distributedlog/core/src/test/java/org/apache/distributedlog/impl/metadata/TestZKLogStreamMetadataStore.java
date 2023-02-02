@@ -202,7 +202,9 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
                     ZooDefs.Ids.OPEN_ACL_UNSAFE,
                     CreateMode.PERSISTENT);
         } catch (KeeperException.NodeExistsException nee) {
-            logger.debug("The namespace uri already exists.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("The namespace uri already exists.");
+            }
         }
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
