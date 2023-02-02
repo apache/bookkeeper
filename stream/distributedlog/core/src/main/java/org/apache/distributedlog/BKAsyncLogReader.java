@@ -364,7 +364,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
         Throwable cause = lastExceptionUpdater.get(this);
         if (null != cause) {
-            LOG.trace("Cancelling pending reads");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Cancelling pending reads");
+            }
             cancelAllPendingReads(cause);
             return true;
         }
@@ -593,7 +595,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
                     // Queue is empty, nothing to read, return
                     if (null == nextRequest) {
-                        LOG.trace("{}: Queue Empty waiting for Input", readHandler.getFullyQualifiedName());
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("{}: Queue Empty waiting for Input", readHandler.getFullyQualifiedName());
+                        }
                         scheduleCountUpdater.set(this, 0);
                         backgroundReaderRunTime.registerSuccessfulEvent(
                             runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
@@ -709,7 +713,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     }
                 } else {
                     if (0 == scheduleCountLocal) {
-                        LOG.trace("Schedule count dropping to zero", lastExceptionUpdater.get(this));
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("Schedule count dropping to zero", lastExceptionUpdater.get(this));
+                        }
                         backgroundReaderRunTime.registerSuccessfulEvent(
                             runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                         return;

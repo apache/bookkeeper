@@ -269,10 +269,14 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                                             logMetadata.getFullyQualifiedName())));
                         } else if (KeeperException.Code.OK.intValue() == rc) {
                             FutureUtils.complete(promise, null);
-                            LOG.trace("Created path {}.", path);
+                            if (LOG.isTraceEnabled()) {
+                                LOG.trace("Created path {}.", path);
+                            }
                         } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
                             FutureUtils.complete(promise, null);
-                            LOG.trace("Path {} is already existed.", path);
+                            if (LOG.isTraceEnabled()) {
+                                LOG.trace("Path {} is already existed.", path);
+                            }
                         } else if (DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE == rc) {
                             FutureUtils.completeExceptionally(promise,
                                     new ZooKeeperClient.ZooKeeperConnectionException(path));

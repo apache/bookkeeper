@@ -770,7 +770,9 @@ class ZKSessionLock implements SessionLock {
 
                                         currentNode = name;
                                         currentId = getLockIdFromPath(currentNode);
-                                        LOG.trace("{} received member id for lock {}", lockId, currentId);
+                                        if (LOG.isTraceEnabled()) {
+                                            LOG.trace("{} received member id for lock {}", lockId, currentId);
+                                        }
 
                                         if (lockState.isExpiredOrClosing()) {
                                             // Delete node attempt may have come after PREPARING but before create node,

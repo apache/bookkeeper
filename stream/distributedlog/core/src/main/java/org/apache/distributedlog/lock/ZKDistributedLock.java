@@ -181,7 +181,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
 
     void doAsyncAcquire(final CompletableFuture<ZKDistributedLock> acquirePromise,
                         final long lockTimeout) {
-        LOG.trace("Async Lock Acquire {}", lockPath);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Async Lock Acquire {}", lockPath);
+        }
         try {
             checkLockState();
         } catch (IOException ioe) {
