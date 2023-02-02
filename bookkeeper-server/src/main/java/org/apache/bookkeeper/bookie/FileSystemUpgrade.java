@@ -99,7 +99,12 @@ public class FileSystemUpgrade {
     private static List<File> getAllDirectories(ServerConfiguration conf) {
         List<File> dirs = new ArrayList<>();
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
-        Collections.addAll(dirs, conf.getLedgerDirs());
+        final File[] ledgerDirs = conf.getLedgerDirs();
+        final File[] indexDirs = conf.getIndexDirs();
+        if (indexDirs != null && indexDirs != ledgerDirs) {
+            dirs.addAll(Lists.newArrayList(indexDirs));
+        }
+        Collections.addAll(dirs, ledgerDirs);
         return dirs;
     }
 
