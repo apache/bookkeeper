@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
@@ -39,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -262,5 +264,45 @@ public class WriteEntryProcessorTest {
         assertTrue(writtenObject.get() instanceof Response);
         Response response = (Response) writtenObject.get();
         assertEquals(BookieProtocol.ETOOMANYREQUESTS, response.getErrorCode());
+    }
+
+    @Test
+    public void testVersionNotCompatible() throws Exception {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setMaxAddsInProgressLimit(1);
+        requestProcessor = new BookieRequestProcessor(
+                conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT);
+
+        // assert the AddsSemaphore init value
+        assertEquals(1, requestProcessor.getAddsSemaphore().availablePermits());
+
+        request = ParsedAddRequest.create(
+                (byte)-1, // 0 is lowest protocol version which will work with the bookie
+                System.currentTimeMillis(),
+                System.currentTimeMillis() + 1,
+                (short) 0,
+                new byte[0],
+                Unpooled.wrappedBuffer("test-entry-data".getBytes(UTF_8)));
+        processor = WriteEntryProcessor.create(
+                request,
+                channel,
+                requestProcessor);
+
+        when(bookie.isReadOnly()).thenReturn(false);
+        ChannelPromise mockPromise = mock(ChannelPromise.class);
+        when(channel.newPromise()).thenReturn(mockPromise);
+        when(mockPromise.addListener(any())).thenReturn(mockPromise);
+        doAnswer(invocationOnMock -> {
+            processor.writeComplete(0, request.ledgerId, request.entryId, null, null);
+            return null;
+        }).when(bookie).addEntry(any(ByteBuf.class), eq(false), same(processor), same(channel), eq(new byte[0]));
+
+        // will acquire the AddsSemaphore after call `WriteEntryProcessor#create`
+        assertEquals(0, requestProcessor.getAddsSemaphore().availablePermits());
+
+        processor.run();
+
+        // will release the AddsSemaphore after `processor#run()` if isVersionCompatible is false
+        assertEquals(1, requestProcessor.getAddsSemaphore().availablePermits());
     }
 }
