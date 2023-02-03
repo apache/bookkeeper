@@ -228,10 +228,12 @@
 
   <suppress>
     <notes><![CDATA[
-       file name: snakeyaml-1.32.jar
-       ]]></notes>
-    <sha1>e80612549feb5c9191c498de628c1aa80693cf0b</sha1>
-    <cve>CVE-2022-1471</cve>
+    snakeyaml is not "fixing" CVE-2022-1471.
+    see: https://bitbucket.org/snakeyaml/snakeyaml/wiki/CVE%20&%20NIST.md
+         https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+    <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
   </suppress>
 
   <suppress>
