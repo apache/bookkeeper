@@ -213,7 +213,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     new DefaultThreadFactory("EntryLoggerFlush"));
 
                 int numReadThreads = conf.getNumReadWorkerThreads();
-                if (numReadThreads == 0) {
+                if (numReadThreads <= 0) {
                     numReadThreads = conf.getServerNumIOThreads();
                 }
 
