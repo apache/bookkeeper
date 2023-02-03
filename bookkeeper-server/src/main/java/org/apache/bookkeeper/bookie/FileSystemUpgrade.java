@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
@@ -97,13 +98,14 @@ public class FileSystemUpgrade {
             }
         };
 
-    private static List<File> getAllDirectories(ServerConfiguration conf) {
+    @VisibleForTesting
+    public static List<File> getAllDirectories(ServerConfiguration conf) {
         List<File> dirs = new ArrayList<>();
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         final File[] ledgerDirs = conf.getLedgerDirs();
         final File[] indexDirs = conf.getIndexDirs();
-        if (indexDirs != null
-                && !Arrays.asList(indexDirs).equals(Arrays.asList(ledgerDirs))) {
+        if (indexDirs != null && indexDirs.length == ledgerDirs.length
+                && !Arrays.asList(indexDirs).containsAll(Arrays.asList(ledgerDirs))) {
             dirs.addAll(Lists.newArrayList(indexDirs));
         }
         Collections.addAll(dirs, ledgerDirs);

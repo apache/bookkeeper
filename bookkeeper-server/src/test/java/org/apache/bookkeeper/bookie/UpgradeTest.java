@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -36,6 +37,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -355,5 +357,44 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             System.setOut(origout);
             System.setErr(origerr);
         }
+    }
+
+    @Test
+    public void testFSUGetAllDirectories() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        final File journalDir = tmpDirs.createNew("bookie", "journal");
+        final File ledgerDir1 = tmpDirs.createNew("bookie", "ledger");
+        final File ledgerDir2 = tmpDirs.createNew("bookie", "ledger");
+
+        // test1
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()});
+        List<File> allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(3, allDirectories.size());
+
+        // test2
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{ledgerDir2.getPath(), ledgerDir1.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(3, allDirectories.size());
+
+        final File indexDir1 = tmpDirs.createNew("bookie", "index");
+        final File indexDir2 = tmpDirs.createNew("bookie", "index");
+
+        // test3
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{indexDir1.getPath(), indexDir2.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(5, allDirectories.size());
+
+        // test4
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{indexDir2.getPath(), indexDir1.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(5, allDirectories.size());
     }
 }
