@@ -102,8 +102,8 @@ public class FileSystemUpgrade {
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         final File[] ledgerDirs = conf.getLedgerDirs();
         final File[] indexDirs = conf.getIndexDirs();
-        if (indexDirs != null &&
-                !Arrays.asList(indexDirs).equals(Arrays.asList(ledgerDirs))) {
+        if (indexDirs != null
+                && !Arrays.asList(indexDirs).equals(Arrays.asList(ledgerDirs))) {
             dirs.addAll(Lists.newArrayList(indexDirs));
         }
         Collections.addAll(dirs, ledgerDirs);
