@@ -1345,14 +1345,4 @@
       </build>
     </profile>
   </profiles>
-  <repositories>
-    <repository>
-      <id>central</id>
-      <layout>default</layout>
-      <url>https://repo1.maven.org/maven2</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>
