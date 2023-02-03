@@ -31,6 +31,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +102,8 @@ public class FileSystemUpgrade {
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         final File[] ledgerDirs = conf.getLedgerDirs();
         final File[] indexDirs = conf.getIndexDirs();
-        if (indexDirs != null && indexDirs != ledgerDirs) {
+        if (indexDirs != null &&
+                !Arrays.asList(indexDirs).equals(Arrays.asList(ledgerDirs))) {
             dirs.addAll(Lists.newArrayList(indexDirs));
         }
         Collections.addAll(dirs, ledgerDirs);
