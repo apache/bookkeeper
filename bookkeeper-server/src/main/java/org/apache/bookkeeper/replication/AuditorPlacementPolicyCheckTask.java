@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Getter;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
@@ -41,6 +42,7 @@ import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Getter
 public class AuditorPlacementPolicyCheckTask extends AuditorTask {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorPlacementPolicyCheckTask.class);
 

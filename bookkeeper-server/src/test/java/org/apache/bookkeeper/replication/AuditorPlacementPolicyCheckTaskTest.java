@@ -95,7 +95,8 @@ public class AuditorPlacementPolicyCheckTaskTest extends BookKeeperClusterTestCa
         assertEquals("PLACEMENT_POLICY_CHECK_TIME", 1, ((TestStatsProvider.TestOpStatsLogger)
                 statsLogger.getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME)).getSuccessCount());
         assertEquals("numOfClosedLedgersAuditedInPlacementPolicyCheck",
-                numLedgers, auditorStats.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().get());
+                numLedgers,
+                auditorPlacementPolicyCheckTask.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().get());
     }
 
 }
