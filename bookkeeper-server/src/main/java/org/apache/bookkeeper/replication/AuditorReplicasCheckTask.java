@@ -61,6 +61,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
 
     private final int zkOpTimeoutMs;
 
+    private final AtomicInteger numLedgersFoundHavingNoReplicaOfAnEntry;
+    private final AtomicInteger numLedgersFoundHavingLessThanAQReplicasOfAnEntry;
+    private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
+
     AuditorReplicasCheckTask(ServerConfiguration conf,
                              AuditorStats auditorStats, BookKeeperAdmin admin,
                              LedgerManager ledgerManager,
@@ -70,6 +74,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         super(conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.zkOpTimeoutMs = conf.getZkTimeout() * 2;
+        this.numLedgersFoundHavingNoReplicaOfAnEntry = new AtomicInteger(0);
+        this.numLedgersFoundHavingLessThanAQReplicasOfAnEntry = new AtomicInteger(0);
+        this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
     }
 
     @Override
@@ -84,11 +91,11 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             replicasCheck();
             long replicasCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
             int numLedgersFoundHavingNoReplicaOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingNoReplicaOfAnEntry().get();
+                    numLedgersFoundHavingNoReplicaOfAnEntry.get();
             int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingLessThanAQReplicasOfAnEntry().get();
+                    numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
             int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingLessThanWQReplicasOfAnEntry().get();
+                    numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
             LOG.info(
                     "Completed ReplicasCheck in {} milliSeconds numLedgersFoundHavingNoReplicaOfAnEntry {}"
                             + " numLedgersFoundHavingLessThanAQReplicasOfAnEntry {}"
@@ -107,7 +114,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         } catch (ReplicationException.BKAuditException e) {
             LOG.error("BKAuditException running periodic replicas check.", e);
             int numLedgersFoundHavingNoReplicaOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingNoReplicaOfAnEntry().get();
+                    numLedgersFoundHavingNoReplicaOfAnEntry.get();
             if (numLedgersFoundHavingNoReplicaOfAnEntryValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -118,7 +125,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         .set(numLedgersFoundHavingNoReplicaOfAnEntryValue);
             }
             int numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingLessThanAQReplicasOfAnEntry().get();
+                    numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
             if (numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -129,7 +136,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         .set(numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue);
             }
             int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
-                    auditorStats.getNumLedgersFoundHavingLessThanWQReplicasOfAnEntry().get();
+                    numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
             if (numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -166,9 +173,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             }
             ledgersWithMissingEntries.clear();
             ledgersWithUnavailableBookies.clear();
-            auditorStats.getNumLedgersFoundHavingNoReplicaOfAnEntry().set(0);
-            auditorStats.getNumLedgersFoundHavingLessThanAQReplicasOfAnEntry().set(0);
-            auditorStats.getNumLedgersFoundHavingLessThanWQReplicasOfAnEntry().set(0);
+            numLedgersFoundHavingNoReplicaOfAnEntry.set(0);
+            numLedgersFoundHavingLessThanAQReplicasOfAnEntry.set(0);
+            numLedgersFoundHavingLessThanWQReplicasOfAnEntry.set(0);
             Set<Long> ledgersInRange = ledgerRange.getLedgers();
             int numOfLedgersInRange = ledgersInRange.size();
             // Final result after processing all the ledgers
@@ -678,16 +685,16 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             }
             int leastNumOfReplicasOfAnEntry = writeQuorumSize - maxNumOfMissingReplicas;
             if (leastNumOfReplicasOfAnEntry == 0) {
-                auditorStats.getNumLedgersFoundHavingNoReplicaOfAnEntry().incrementAndGet();
+                numLedgersFoundHavingNoReplicaOfAnEntry.incrementAndGet();
                 LOG.error("Ledger : {} entryId : {} is missing all replicas", ledgerWithMissingEntries,
                         entryWithMaxNumOfMissingReplicas);
             } else if (leastNumOfReplicasOfAnEntry < ackQuorumSize) {
-                auditorStats.getNumLedgersFoundHavingLessThanAQReplicasOfAnEntry().incrementAndGet();
+                numLedgersFoundHavingLessThanAQReplicasOfAnEntry.incrementAndGet();
                 LOG.error("Ledger : {} entryId : {} is having: {} replicas, less than ackQuorum num of replicas : {}",
                         ledgerWithMissingEntries, entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry,
                         ackQuorumSize);
             } else if (leastNumOfReplicasOfAnEntry < writeQuorumSize) {
-                auditorStats.getNumLedgersFoundHavingLessThanWQReplicasOfAnEntry().incrementAndGet();
+                numLedgersFoundHavingLessThanWQReplicasOfAnEntry.incrementAndGet();
                 LOG.error("Ledger : {} entryId : {} is having: {} replicas, less than writeQuorum num of replicas : {}",
                         ledgerWithMissingEntries, entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry,
                         writeQuorumSize);

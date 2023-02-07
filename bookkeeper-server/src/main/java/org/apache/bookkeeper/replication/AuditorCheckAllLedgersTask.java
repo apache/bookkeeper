@@ -37,6 +37,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,13 +54,25 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
                                SubmitTaskHandler submitTaskHandler,
-                               ShutdownTaskHandler shutdownTaskHandler,
-                               Semaphore openLedgerNoRecoverySemaphore,
-                               int openLedgerNoRecoverySemaphoreWaitTimeoutMSec) {
+                               ShutdownTaskHandler shutdownTaskHandler)
+            throws UnavailableException {
         super(conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
-        this.openLedgerNoRecoverySemaphore = openLedgerNoRecoverySemaphore;
-        this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec = openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
+
+        if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
+            LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+            throw new ReplicationException.UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+        }
+        this.openLedgerNoRecoverySemaphore =
+                new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
+
+        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
+            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
+            throw new ReplicationException.UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
+                    + "should be greater than or equal to 0");
+        }
+        this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
+                conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
     }
 
     @Override

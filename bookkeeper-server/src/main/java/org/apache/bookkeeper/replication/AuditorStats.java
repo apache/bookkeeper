@@ -56,18 +56,11 @@ import org.apache.bookkeeper.stats.annotations.StatsDoc;
 public class AuditorStats {
 
     private final AtomicInteger ledgersNotAdheringToPlacementPolicyGuageValue;
-    private final AtomicInteger numOfLedgersFoundNotAdheringInPlacementPolicyCheck;
     private final AtomicInteger ledgersSoftlyAdheringToPlacementPolicyGuageValue;
-    private final AtomicInteger numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck;
-    private final AtomicInteger numOfClosedLedgersAuditedInPlacementPolicyCheck;
     private final AtomicInteger numOfURLedgersElapsedRecoveryGracePeriodGuageValue;
-    private final AtomicInteger numOfURLedgersElapsedRecoveryGracePeriod;
     private final AtomicInteger numLedgersHavingNoReplicaOfAnEntryGuageValue;
-    private final AtomicInteger numLedgersFoundHavingNoReplicaOfAnEntry;
     private final AtomicInteger numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue;
-    private final AtomicInteger numLedgersFoundHavingLessThanAQReplicasOfAnEntry;
     private final AtomicInteger numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue;
-    private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
     private final AtomicInteger underReplicatedLedgersGuageValue;
     private final StatsLogger statsLogger;
     @StatsDoc(
@@ -181,20 +174,12 @@ public class AuditorStats {
 
     public AuditorStats(StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
-        this.numOfLedgersFoundNotAdheringInPlacementPolicyCheck = new AtomicInteger(0);
         this.ledgersNotAdheringToPlacementPolicyGuageValue = new AtomicInteger(0);
-        this.numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck = new AtomicInteger(0);
         this.ledgersSoftlyAdheringToPlacementPolicyGuageValue = new AtomicInteger(0);
-        this.numOfClosedLedgersAuditedInPlacementPolicyCheck = new AtomicInteger(0);
-        this.numOfURLedgersElapsedRecoveryGracePeriod = new AtomicInteger(0);
         this.numOfURLedgersElapsedRecoveryGracePeriodGuageValue = new AtomicInteger(0);
         this.numLedgersHavingNoReplicaOfAnEntryGuageValue = new AtomicInteger(0);
-        this.numLedgersFoundHavingNoReplicaOfAnEntry = new AtomicInteger(0);
         this.numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
-        this.numLedgersFoundHavingLessThanAQReplicasOfAnEntry = new AtomicInteger(0);
         this.numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
-        this.numLedgersFoundHavingLessThanWQReplicasOfAnEntry = new AtomicInteger(0);
-
         this.underReplicatedLedgersGuageValue = new AtomicInteger(0);
         numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
         underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);

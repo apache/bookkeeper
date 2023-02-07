@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
@@ -45,6 +46,11 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
 
     private final long underreplicatedLedgerRecoveryGracePeriod;
 
+    private final AtomicInteger numOfLedgersFoundNotAdheringInPlacementPolicyCheck;
+    private final AtomicInteger numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck;
+    private final AtomicInteger numOfClosedLedgersAuditedInPlacementPolicyCheck;
+    private final AtomicInteger numOfURLedgersElapsedRecoveryGracePeriod;
+
     AuditorPlacementPolicyCheckTask(ServerConfiguration conf,
                                     AuditorStats auditorStats,
                                     BookKeeperAdmin admin,
@@ -55,6 +61,10 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
         super(conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
         this.underreplicatedLedgerRecoveryGracePeriod = conf.getUnderreplicatedLedgerRecoveryGracePeriod();
+        this.numOfLedgersFoundNotAdheringInPlacementPolicyCheck = new AtomicInteger(0);
+        this.numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck = new AtomicInteger(0);
+        this.numOfClosedLedgersAuditedInPlacementPolicyCheck = new AtomicInteger(0);
+        this.numOfURLedgersElapsedRecoveryGracePeriod = new AtomicInteger(0);
     }
 
     @Override
@@ -70,13 +80,13 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
             placementPolicyCheck();
             long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
             int numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue =
-                    auditorStats.getNumOfLedgersFoundNotAdheringInPlacementPolicyCheck().get();
+                    numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
             int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
-                    auditorStats.getNumOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck().get();
+                    numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
             int numOfClosedLedgersAuditedInPlacementPolicyCheckValue =
-                    auditorStats.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().get();
+                    numOfClosedLedgersAuditedInPlacementPolicyCheck.get();
             int numOfURLedgersElapsedRecoveryGracePeriodValue =
-                    auditorStats.getNumOfURLedgersElapsedRecoveryGracePeriod().get();
+                    numOfURLedgersElapsedRecoveryGracePeriod.get();
             LOG.info(
                     "Completed placementPolicyCheck in {} milliSeconds."
                             + " numOfClosedLedgersAuditedInPlacementPolicyCheck {}"
@@ -97,7 +107,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                     TimeUnit.MILLISECONDS);
         } catch (ReplicationException.BKAuditException e) {
             int numOfLedgersFoundInPlacementPolicyCheckValue =
-                    auditorStats.getNumOfLedgersFoundNotAdheringInPlacementPolicyCheck().get();
+                    numOfLedgersFoundNotAdheringInPlacementPolicyCheck.get();
             if (numOfLedgersFoundInPlacementPolicyCheckValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -109,7 +119,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
             }
 
             int numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue =
-                    auditorStats.getNumOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck().get();
+                    numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.get();
             if (numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -121,7 +131,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
             }
 
             int numOfURLedgersElapsedRecoveryGracePeriodValue =
-                    auditorStats.getNumOfURLedgersElapsedRecoveryGracePeriod().get();
+                    numOfURLedgersElapsedRecoveryGracePeriod.get();
             if (numOfURLedgersElapsedRecoveryGracePeriodValue > 0) {
                 /*
                  * Though there is BKAuditException while doing
@@ -147,10 +157,10 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
 
     void placementPolicyCheck() throws ReplicationException.BKAuditException {
         final CountDownLatch placementPolicyCheckLatch = new CountDownLatch(1);
-        auditorStats.getNumOfLedgersFoundNotAdheringInPlacementPolicyCheck().set(0);
-        auditorStats.getNumOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck().set(0);
-        auditorStats.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().set(0);
-        auditorStats.getNumOfURLedgersElapsedRecoveryGracePeriod().set(0);
+        numOfLedgersFoundNotAdheringInPlacementPolicyCheck.set(0);
+        numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck.set(0);
+        numOfClosedLedgersAuditedInPlacementPolicyCheck.set(0);
+        numOfURLedgersElapsedRecoveryGracePeriod.set(0);
         if (this.underreplicatedLedgerRecoveryGracePeriod > 0) {
             Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
                     .listLedgersToRereplicate(null);
@@ -163,7 +173,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                             (System.currentTimeMillis() - underreplicatedLedgerMarkTimeInMilSecs) / 1000;
                     if (elapsedTimeInSecs > this.underreplicatedLedgerRecoveryGracePeriod) {
                         urLedgersElapsedRecoveryGracePeriod.add(underreplicatedLedger.getLedgerId());
-                        auditorStats.getNumOfURLedgersElapsedRecoveryGracePeriod().incrementAndGet();
+                        numOfURLedgersElapsedRecoveryGracePeriod.incrementAndGet();
                     }
                 }
             }
@@ -264,7 +274,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                 }
             }
             if (foundSegmentNotAdheringToPlacementPolicy) {
-                auditorStats.getNumOfLedgersFoundNotAdheringInPlacementPolicyCheck().incrementAndGet();
+                numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
                 //If user enable repaired, mark this ledger to under replication manager.
                 if (conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
                     ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
@@ -282,10 +292,10 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                     });
                 }
             } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
-                auditorStats.getNumOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck()
+                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck
                         .incrementAndGet();
             }
-            auditorStats.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().incrementAndGet();
+            numOfClosedLedgersAuditedInPlacementPolicyCheck.incrementAndGet();
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ledger: {} is not yet closed, so skipping the placementPolicy"

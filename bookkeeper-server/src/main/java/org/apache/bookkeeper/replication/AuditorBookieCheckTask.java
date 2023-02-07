@@ -168,4 +168,15 @@ public class AuditorBookieCheckTask extends AuditorTask {
                 null
         );
     }
+
+    protected void waitIfLedgerReplicationDisabled() throws ReplicationException.UnavailableException,
+            InterruptedException {
+        if (!isLedgerReplicationEnabled()) {
+            LOG.info("LedgerReplication is disabled externally through Zookeeper, "
+                    + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
+            ReplicationEnableCb cb = new ReplicationEnableCb();
+            ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
+            cb.await();
+        }
+    }
 }

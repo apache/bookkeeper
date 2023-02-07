@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -156,21 +155,6 @@ public class Auditor implements AutoCloseable {
         this.bookieIdentifier = bookieIdentifier;
         this.auditorStats = new AuditorStats(statsLogger);
 
-        if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
-            LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
-            throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
-        }
-        Semaphore openLedgerNoRecoverySemaphore =
-                new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
-
-        if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
-            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
-            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
-                    + "should be greater than or equal to 0");
-        }
-        int openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
-                conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
-
         this.bkc = bkc;
         this.ownBkc = ownBkc;
         this.admin = admin;
@@ -186,8 +170,7 @@ public class Auditor implements AutoCloseable {
                 shutdownTaskHandler, bookieLedgerIndexer, hasAuditCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
                 conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, shutdownTaskHandler,
-                openLedgerNoRecoverySemaphore, openLedgerNoRecoverySemaphoreWaitTimeoutMSec);
+                ledgerUnderreplicationManager, null, shutdownTaskHandler);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
                 conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, null, shutdownTaskHandler);

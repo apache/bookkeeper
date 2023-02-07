@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -50,7 +49,6 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
     private BookKeeperAdmin admin;
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private Semaphore openLedgerNoRecoverySemaphore;
 
     public AuditorCheckAllLedgersTaskTest() {
         super(3);
@@ -66,7 +64,9 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
         LedgerManagerFactory ledgerManagerFactory = bookKeeper.getLedgerManagerFactory();
         ledgerManager = ledgerManagerFactory.newLedgerManager();
         ledgerUnderreplicationManager = ledgerManagerFactory.newLedgerUnderreplicationManager();
-        openLedgerNoRecoverySemaphore = new Semaphore(maxNumberOfConcurrentOpenLedgerOperations);
+        baseConf.setAuditorMaxNumberOfConcurrentOpenLedgerOperations(maxNumberOfConcurrentOpenLedgerOperations);
+        baseConf.setAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec(
+                acquireConcurrentOpenLedgerOperationsTimeoutMSec);
     }
 
     @Test
@@ -90,8 +90,7 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
 
         AuditorCheckAllLedgersTask auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
                 baseConf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, null,
-                openLedgerNoRecoverySemaphore, acquireConcurrentOpenLedgerOperationsTimeoutMSec);
+                ledgerUnderreplicationManager, null, null);
 
         // 3. checkAllLedgers
         auditorCheckAllLedgersTask.runTask();
