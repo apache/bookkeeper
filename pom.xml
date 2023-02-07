@@ -135,7 +135,7 @@
     <grpc.version>1.47.0</grpc.version>
     <guava.version>31.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
-    <hadoop.version>3.2.4</hadoop.version>
+    <hadoop.version>3.3.4</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.13.4.20221013</jackson.version>
@@ -169,12 +169,12 @@
     <rocksdb.version>6.29.4.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
-    <snakeyaml.version>1.32</snakeyaml.version>
+    <snakeyaml.version>1.33</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.15.1</testcontainers.version>
     <vertx.version>4.3.2</vertx.version>
-    <zookeeper.version>3.8.0</zookeeper.version>
+    <zookeeper.version>3.8.1</zookeeper.version>
     <snappy.version>1.1.7.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <!-- plugin dependencies -->
@@ -1142,8 +1142,16 @@
             <version>${jacoco-maven-plugin.version}</version>
             <executions>
               <execution>
+                <id>pre-test</id>
                 <goals>
                   <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>post-test</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>report</goal>
                 </goals>
               </execution>
             </executions>
