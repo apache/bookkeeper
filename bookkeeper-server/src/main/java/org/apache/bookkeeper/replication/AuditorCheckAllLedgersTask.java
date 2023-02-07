@@ -61,14 +61,14 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
 
         if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
             LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
-            throw new ReplicationException.UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+            throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
         }
         this.openLedgerNoRecoverySemaphore =
                 new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
 
         if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
             LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
-            throw new ReplicationException.UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
+            throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
                     + "should be greater than or equal to 0");
         }
         this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
