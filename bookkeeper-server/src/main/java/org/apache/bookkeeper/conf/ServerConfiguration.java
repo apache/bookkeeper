@@ -307,6 +307,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Certificate role based authorization
     protected static final String AUTHORIZED_ROLES = "authorizedRoles";
+    protected static final String ROCKSDB_DELETE_ENTRIES_BATCH_SIZE = "rocksDBDeleteEntriesBatchSize";
 
     /**
      * Construct a default configuration object.
@@ -3613,5 +3614,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getInFlightReadEntryNumInLedgerChecker(){
         return getInt(IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER, -1);
+    }
+
+    /**
+     * Get entry log location index delete entries batch size from RocksDB.
+     *
+     * @return Int rocksDB delete entries batch size configured in Service configuration.
+     */
+    public int getRocksDBDeleteEntriesBatchSize() {
+        return getInt(ROCKSDB_DELETE_ENTRIES_BATCH_SIZE, 100000);
+    }
+
+    /**
+     * Set entry log location index delete entries batch size from RocksDB.
+     *
+     * @param rocksDBDeleteEntriesBatchSize
+     * @return
+     */
+    public ServerConfiguration setRocksDBDeleteEntriesBatchSize(int rocksDBDeleteEntriesBatchSize) {
+        this.setProperty(ROCKSDB_DELETE_ENTRIES_BATCH_SIZE, rocksDBDeleteEntriesBatchSize);
+        return this;
     }
 }
