@@ -176,7 +176,9 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
             if (request instanceof BookieProtocol.ReadRequest) {
                 requestProcessor.onReadRequestFinish();
             }
-            if (request instanceof BookieProtocol.AddRequest) {
+            if (request instanceof BookieProtocol.ParsedAddRequest) {
+                ((BookieProtocol.ParsedAddRequest) request).release();
+                request.recycle();
                 requestProcessor.onAddRequestFinish();
             }
             return;
