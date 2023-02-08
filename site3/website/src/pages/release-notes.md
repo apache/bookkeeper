@@ -1,6 +1,26 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.14.7
+
+Release 4.14.7 includes multiple bug fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.14.7.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+* Revert PR#3653 and make delete entries batch size configurable [3768](https://github.com/apache/bookkeeper/pull/3768)
+* Fix QueueEntry recycle problem. [3747](https://github.com/apache/bookkeeper/pull/3747)
+* Fix memory leak when the Bookie is in read only mode [3746](https://github.com/apache/bookkeeper/pull/3746)
+* Expose registrationClient in DefaultBookieAddressResolver. [3724](https://github.com/apache/bookkeeper/pull/3724)
+* Added api/v1/bookie/cluster_info REST API [3714](https://github.com/apache/bookkeeper/pull/3714)
+
+### Details
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.14.7+is%3Aclosed
+
 ## 4.14.6
 
 Release 4.14.6 includes multiple bug fixes and some dependencies CVE fixes.
