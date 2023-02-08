@@ -50,7 +50,6 @@ import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.LedgerStorageNotificationListener;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -292,11 +291,6 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void setCheckpointer(Checkpointer checkpointer) {
         ledgerStorageList.forEach(s -> s.setCheckpointer(checkpointer));
-    }
-
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        ledgerStorageList.forEach(s -> s.setStorageStorageNotificationListener(storageNotificationListener));
     }
 
     @Override
