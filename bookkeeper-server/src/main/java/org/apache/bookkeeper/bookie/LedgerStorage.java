@@ -60,7 +60,6 @@ public interface LedgerStorage {
     void setStateManager(StateManager stateManager);
     void setCheckpointSource(CheckpointSource checkpointSource);
     void setCheckpointer(Checkpointer checkpointer);
-    void setStorageStorageNotificationListener(LedgerStorageNotificationListener ledgerStorageNotificationListener);
 
     /**
      * Start any background threads belonging to the storage system. For example, garbage collection.

@@ -376,7 +376,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 }
             });
         ledgerStorage.setCheckpointer(Checkpointer.NULL);
-        ledgerStorage.setStorageStorageNotificationListener(LedgerStorageNotificationListener.NULL);
         return ledgerStorage;
     }
 
@@ -479,9 +478,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource, statsLogger);
         }
 
-        LedgerStorageNotificationListener storageNotificationListener = new LedgerStorageNotificationListener() {
+        LedgerStorage.LedgerDeletionListener ledgerDeletionListener = new LedgerStorage.LedgerDeletionListener() {
             @Override
-            public void ledgerRemovedFromStorage(long ledgerId) {
+            public void ledgerDeleted(long ledgerId) {
                 masterKeyCache.remove(ledgerId);
             }
         };
@@ -489,7 +488,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         ledgerStorage.setStateManager(stateManager);
         ledgerStorage.setCheckpointSource(checkpointSource);
         ledgerStorage.setCheckpointer(syncThread);
-        ledgerStorage.setStorageStorageNotificationListener(storageNotificationListener);
+        ledgerStorage.registerLedgerDeletionListener(ledgerDeletionListener);
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
