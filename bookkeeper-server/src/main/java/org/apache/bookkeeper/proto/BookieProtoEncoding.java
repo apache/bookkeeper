@@ -183,7 +183,7 @@ public class BookieProtoEncoding {
                 packet.markReaderIndex();
                 return BookieProtocol.ParsedAddRequest.create(
                         version, ledgerId, entryId, flags,
-                        masterKey, packet.retain());
+                        masterKey, packet);
             }
 
             case BookieProtocol.READENTRY:
