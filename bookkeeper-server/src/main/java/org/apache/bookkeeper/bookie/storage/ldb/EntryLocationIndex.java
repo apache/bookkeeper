@@ -114,6 +114,14 @@ public class EntryLocationIndex implements Closeable {
     }
 
     private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
+        // Search the last entry in storage would be time consume in the case of empty ledger.
+        // check if ledge is empty first.
+        long entryLocation = getLocation(ledgerId, 0);
+        if (entryLocation == 0) {
+            log.warn("Tried to get last entry from an empty ledger: {}", ledgerId);
+            throw new Bookie.NoEntryException(ledgerId, -1);
+        }
+
         LongPairWrapper maxEntryId = LongPairWrapper.get(ledgerId, Long.MAX_VALUE);
 
         // Search the last entry in storage
