@@ -69,10 +69,9 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                              AuditorStats auditorStats, BookKeeperAdmin admin,
                              LedgerManager ledgerManager,
                              LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                             SubmitTaskHandler submitTaskHandler,
                              ShutdownTaskHandler shutdownTaskHandler) {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler);
         this.zkOpTimeoutMs = conf.getZkTimeout() * 2;
         this.numLedgersFoundHavingNoReplicaOfAnEntry = new AtomicInteger(0);
         this.numLedgersFoundHavingLessThanAQReplicasOfAnEntry = new AtomicInteger(0);

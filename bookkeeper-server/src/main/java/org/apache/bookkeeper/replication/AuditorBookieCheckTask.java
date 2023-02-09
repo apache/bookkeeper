@@ -43,20 +43,22 @@ public class AuditorBookieCheckTask extends AuditorTask {
     private final BookieLedgerIndexer bookieLedgerIndexer;
     private final BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask;
     private final AtomicBoolean hasTask = new AtomicBoolean(false);
+    private final BiConsumer<Void, Throwable> submitCheckTask;
 
     public AuditorBookieCheckTask(ServerConfiguration conf,
                                   AuditorStats auditorStats,
                                   BookKeeperAdmin admin,
                                   LedgerManager ledgerManager,
                                   LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                                  SubmitTaskHandler submitTaskHandler,
                                   ShutdownTaskHandler shutdownTaskHandler,
                                   BookieLedgerIndexer bookieLedgerIndexer,
-                                  BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask) {
+                                  BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask,
+                                  BiConsumer<Void, Throwable> submitCheckTask) {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler);
         this.bookieLedgerIndexer = bookieLedgerIndexer;
         this.hasAuditCheckTask = hasAuditCheckTask;
+        this.submitCheckTask = submitCheckTask;
     }
 
     @Override
@@ -117,7 +119,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             if (!isLedgerReplicationEnabled()) {
                 // has been disabled while we were generating the index
                 // discard this run, and schedule a new one
-                submitCheckTask();
+                submitCheckTask.accept(null, null);
                 return;
             }
         } catch (ReplicationException.UnavailableException ue) {

@@ -90,7 +90,7 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
 
         AuditorCheckAllLedgersTask auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
                 baseConf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, null);
+                ledgerUnderreplicationManager, null);
 
         // 3. checkAllLedgers
         auditorCheckAllLedgersTask.runTask();

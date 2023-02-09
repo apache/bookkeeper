@@ -86,7 +86,7 @@ public class AuditorPlacementPolicyCheckTaskTest extends BookKeeperClusterTestCa
 
         AuditorPlacementPolicyCheckTask auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
                 baseConf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, null);
+                ledgerUnderreplicationManager, null);
 
         // 3. placementPolicyCheck
         auditorPlacementPolicyCheckTask.runTask();

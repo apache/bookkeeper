@@ -744,7 +744,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
             AuditorTestWrapperTask(AuditorTask innerTask, AtomicReference<CountDownLatch> latchRef) {
                 super(null, null, null, null, null,
-                        null, null);
+                        null);
                 this.innerTask = innerTask;
                 this.latchRef = latchRef;
             }

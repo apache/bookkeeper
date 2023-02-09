@@ -162,21 +162,18 @@ public class Auditor implements AutoCloseable {
         initialize(conf, bkc);
 
         AuditorTask.ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;
-        AuditorTask.SubmitTaskHandler submitBookieCheckTaskHandler = this::submitBookieCheckTask;
+        BiConsumer<Void, Throwable> submitBookieCheckTask = (ignore, throwable) -> this.submitBookieCheckTask();
         BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask = (flag, throwable) -> flag.set(auditTask != null);
         this.auditorBookieCheckTask = new AuditorBookieCheckTask(
                 conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, submitBookieCheckTaskHandler,
-                shutdownTaskHandler, bookieLedgerIndexer, hasAuditCheckTask);
+                ledgerUnderreplicationManager, shutdownTaskHandler,
+                bookieLedgerIndexer, hasAuditCheckTask, submitBookieCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
-                conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
-                conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
         this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
-                conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override

@@ -45,7 +45,6 @@ abstract class AuditorTask implements Runnable {
     protected BookKeeperAdmin admin;
     protected LedgerManager ledgerManager;
     protected LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private final SubmitTaskHandler submitTaskHandler;
     private final ShutdownTaskHandler shutdownTaskHandler;
 
     AuditorTask(ServerConfiguration conf,
@@ -53,14 +52,12 @@ abstract class AuditorTask implements Runnable {
                 BookKeeperAdmin admin,
                 LedgerManager ledgerManager,
                 LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                SubmitTaskHandler submitTaskHandler,
                 ShutdownTaskHandler shutdownTaskHandler) {
         this.conf = conf;
         this.auditorStats = auditorStats;
         this.admin = admin;
         this.ledgerManager = ledgerManager;
         this.ledgerUnderreplicationManager = ledgerUnderreplicationManager;
-        this.submitTaskHandler = submitTaskHandler;
         this.shutdownTaskHandler = shutdownTaskHandler;
     }
 
@@ -142,24 +139,11 @@ abstract class AuditorTask implements Runnable {
         }
     }
 
-    protected void submitCheckTask() {
-        if (submitTaskHandler != null) {
-            submitTaskHandler.submitCheckTask();
-        }
-    }
-
     /**
      * ShutdownTaskHandler used to shutdown auditor executor.
      */
     interface ShutdownTaskHandler {
         void submitShutdownTask();
-    }
-
-    /**
-     * SubmitTaskHandler used to submit auditor task.
-     */
-    interface SubmitTaskHandler {
-        void submitCheckTask();
     }
 
 }

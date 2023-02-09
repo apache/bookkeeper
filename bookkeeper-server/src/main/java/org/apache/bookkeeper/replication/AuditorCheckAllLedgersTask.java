@@ -53,11 +53,10 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                               SubmitTaskHandler submitTaskHandler,
                                ShutdownTaskHandler shutdownTaskHandler)
             throws UnavailableException {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler);
 
         if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
             LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");

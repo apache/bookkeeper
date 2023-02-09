@@ -79,7 +79,7 @@ public class AuditorBookieCheckTaskTest {
         ledgerIndexer = mock(BookieLedgerIndexer.class);
         AuditorBookieCheckTask bookieCheckTask1 = new AuditorBookieCheckTask(
                 conf, this.auditorStats, admin, ledgerManager, underreplicationManager,
-                null, shutdownTaskHandler, ledgerIndexer, null);
+                shutdownTaskHandler, ledgerIndexer, null, null);
         bookieCheckTask = spy(bookieCheckTask1);
     }
 

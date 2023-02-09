@@ -85,7 +85,7 @@ public class AuditorReplicasCheckTaskTest extends BookKeeperClusterTestCase {
         final AuditorStats auditorStats = new AuditorStats(statsLogger);
         AuditorReplicasCheckTask auditorReplicasCheckTask = new AuditorReplicasCheckTask(
                 baseConf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, null);
+                ledgerUnderreplicationManager, null);
 
         // 3. replicasCheck
         auditorReplicasCheckTask.runTask();

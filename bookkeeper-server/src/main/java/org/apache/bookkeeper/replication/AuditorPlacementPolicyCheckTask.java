@@ -58,10 +58,9 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                                     BookKeeperAdmin admin,
                                     LedgerManager ledgerManager,
                                     LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                                    SubmitTaskHandler submitTaskHandler,
                                     ShutdownTaskHandler shutdownTaskHandler) {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, submitTaskHandler, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler);
         this.underreplicatedLedgerRecoveryGracePeriod = conf.getUnderreplicatedLedgerRecoveryGracePeriod();
         this.numOfLedgersFoundNotAdheringInPlacementPolicyCheck = new AtomicInteger(0);
         this.numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck = new AtomicInteger(0);
