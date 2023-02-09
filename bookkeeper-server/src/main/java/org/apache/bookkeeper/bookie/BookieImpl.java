@@ -810,30 +810,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     @Override
     public void run() {
-        // bookie thread wait for journal thread
-        try {
-            // start journals
-            for (Journal journal: journals) {
-                journal.start();
-            }
-
-            // wait until journal quits
-            for (Journal journal: journals) {
-
-                journal.joinThread();
-            }
-            LOG.info("Journal thread(s) quit.");
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            LOG.warn("Interrupted on running journal thread : ", ie);
-        }
-        // if the journal thread quits due to shutting down, it is ok
-        if (!stateManager.isShuttingDown()) {
-            // some error found in journal thread and it quits
-            // following add operations to it would hang unit client timeout
-            // so we should let bookie server exists
-            LOG.error("Journal manager quits unexpectedly.");
-            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+        // start journals
+        for (Journal journal: journals) {
+            journal.start();
         }
     }
 
