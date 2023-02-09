@@ -231,7 +231,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         assertEquals("writable dirs should have one dir", 1, ledgerDirsManager
                 .getWritableLedgerDirs().size());
         assertTrue("Bookie should shutdown if readOnlyMode not enabled",
-                bookie.isAlive());
+                bookie.isRunning());
     }
 
     private void startNewBookieWithMultipleLedgerDirs(int numOfLedgerDirs)
