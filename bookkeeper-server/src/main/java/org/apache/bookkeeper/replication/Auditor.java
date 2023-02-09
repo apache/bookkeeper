@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -77,6 +78,7 @@ public class Auditor implements AutoCloseable {
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ScheduledExecutorService executor;
+    private final ExecutorService ledgerCheckerExecutor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
     protected volatile Future<?> auditTask;
@@ -161,6 +163,15 @@ public class Auditor implements AutoCloseable {
         this.ownAdmin = ownAdmin;
         initialize(conf, bkc);
 
+        ledgerCheckerExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "AuditorBookie-LedgerChecker-" + bookieIdentifier);
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
         AuditorTask.ShutdownTaskHandler shutdownTaskHandler = this::submitShutdownTask;
         BiConsumer<Void, Throwable> submitBookieCheckTask = (ignore, throwable) -> this.submitBookieCheckTask();
         BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask = (flag, throwable) -> flag.set(auditTask != null);
@@ -169,7 +180,8 @@ public class Auditor implements AutoCloseable {
                 ledgerUnderreplicationManager, shutdownTaskHandler,
                 bookieLedgerIndexer, hasAuditCheckTask, submitBookieCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager,
+                shutdownTaskHandler, ledgerCheckerExecutor);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
                 conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
         this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
@@ -619,10 +631,15 @@ public class Auditor implements AutoCloseable {
     public void shutdown() {
         LOG.info("Shutting down auditor");
         executor.shutdown();
+        ledgerCheckerExecutor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 LOG.warn("Executor not shutting down, interrupting");
                 executor.shutdownNow();
+            }
+            while (!ledgerCheckerExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                LOG.warn("Executor for ledger checker not shutting down, interrupting");
+                ledgerCheckerExecutor.shutdownNow();
             }
             if (ownAdmin) {
                 admin.close();

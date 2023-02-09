@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -47,13 +48,15 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
 
     private final Semaphore openLedgerNoRecoverySemaphore;
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
+    private final ExecutorService ledgerCheckerExecutor;
 
     AuditorCheckAllLedgersTask(ServerConfiguration conf,
                                AuditorStats auditorStats,
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                               ShutdownTaskHandler shutdownTaskHandler)
+                               ShutdownTaskHandler shutdownTaskHandler,
+                               ExecutorService ledgerCheckerExecutor)
             throws UnavailableException {
         super(conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, shutdownTaskHandler);
@@ -72,6 +75,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         }
         this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
                 conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
+        this.ledgerCheckerExecutor = ledgerCheckerExecutor;
     }
 
     @Override
@@ -160,16 +164,20 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 localAdmin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
                     openLedgerNoRecoverySemaphore.release();
                     if (BKException.Code.OK == rc) {
-                        checker.checkLedger(lh,
-                                // the ledger handle will be closed after checkLedger is done.
-                                new ProcessLostFragmentsCb(lh, callback),
-                                conf.getAuditorLedgerVerificationPercentage());
-                        // we collect the following stats to get a measure of the
-                        // distribution of a single ledger within the bk cluster
-                        // the higher the number of fragments/bookies, the more distributed it is
-                        auditorStats.getNumFragmentsPerLedger().registerSuccessfulValue(lh.getNumFragments());
-                        auditorStats.getNumBookiesPerLedger().registerSuccessfulValue(lh.getNumBookies());
-                        auditorStats.getNumLedgersChecked().inc();
+                        // BookKeeperClientWorker-OrderedExecutor threads should not execute LedgerChecker#checkLedger
+                        // as this can lead to deadlocks
+                        ledgerCheckerExecutor.execute(() -> {
+                            checker.checkLedger(lh,
+                                    // the ledger handle will be closed after checkLedger is done.
+                                    new ProcessLostFragmentsCb(lh, callback),
+                                    conf.getAuditorLedgerVerificationPercentage());
+                            // we collect the following stats to get a measure of the
+                            // distribution of a single ledger within the bk cluster
+                            // the higher the number of fragments/bookies, the more distributed it is
+                            auditorStats.getNumFragmentsPerLedger().registerSuccessfulValue(lh.getNumFragments());
+                            auditorStats.getNumBookiesPerLedger().registerSuccessfulValue(lh.getNumBookies());
+                            auditorStats.getNumLedgersChecked().inc();
+                        });
                     } else if (BKException.Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Ledger {} was deleted before we could check it", ledgerId);
