@@ -215,5 +215,32 @@
         <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
         <cve>CVE-2021-26291</cve>
     </suppress>
-</suppressions>
 
+  <suppress>
+    <notes>fredsmith utils library is not used at all. CVE-2021-4277 is a false positive.</notes>
+    <cve>CVE-2021-4277</cve>
+  </suppress>
+
+  <suppress>
+    <notes>yaml_project is not used at all. Any CVEs reported for yaml_project are false positives.</notes>
+    <cpe>cpe:/a:yaml_project:yaml</cpe>
+  </suppress>
+
+  <suppress>
+    <notes><![CDATA[
+    snakeyaml is not "fixing" CVE-2022-1471.
+    see: https://bitbucket.org/snakeyaml/snakeyaml/wiki/CVE%20&%20NIST.md
+         https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+    <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
+  </suppress>
+
+  <suppress>
+    <notes><![CDATA[
+   file name: testng-7.5.jar
+   ]]></notes>
+    <sha1>1416a607fae667c14e390b484e8d02b5824c0674</sha1>
+    <vulnerabilityName>CVE-2022-4065</vulnerabilityName>
+  </suppress>
+</suppressions>
