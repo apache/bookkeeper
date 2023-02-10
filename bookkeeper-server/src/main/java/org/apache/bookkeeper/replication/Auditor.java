@@ -20,9 +20,9 @@
  */
 package org.apache.bookkeeper.replication;
 
-import com.beust.jcommander.internal.Lists;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
