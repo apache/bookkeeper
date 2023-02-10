@@ -150,6 +150,11 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         }
     }
 
+    @Override
+    public void shutdown() {
+
+    }
+
     void replicasCheck() throws ReplicationException.BKAuditException {
         ConcurrentHashMap<Long, MissingEntriesInfoOfLedger> ledgersWithMissingEntries =
                 new ConcurrentHashMap<Long, MissingEntriesInfoOfLedger>();

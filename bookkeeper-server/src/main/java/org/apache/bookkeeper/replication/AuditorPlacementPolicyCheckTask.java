@@ -156,6 +156,11 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
         }
     }
 
+    @Override
+    public void shutdown() {
+
+    }
+
     void placementPolicyCheck() throws ReplicationException.BKAuditException {
         final CountDownLatch placementPolicyCheckLatch = new CountDownLatch(1);
         numOfLedgersFoundNotAdheringInPlacementPolicyCheck.set(0);

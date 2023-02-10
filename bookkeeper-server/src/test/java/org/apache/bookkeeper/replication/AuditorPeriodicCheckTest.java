@@ -754,6 +754,13 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 innerTask.runTask();
                 latchRef.get().countDown();
             }
+
+            @Override
+            public void shutdown() {
+                if (innerTask != null) {
+                    innerTask.shutdown();
+                }
+            }
         }
     }
 

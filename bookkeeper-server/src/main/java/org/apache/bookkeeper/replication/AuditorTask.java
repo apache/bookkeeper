@@ -139,6 +139,8 @@ abstract class AuditorTask implements Runnable {
         }
     }
 
+    public abstract void shutdown();
+
     /**
      * ShutdownTaskHandler used to shutdown auditor executor.
      */

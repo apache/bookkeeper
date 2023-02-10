@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.BKException;
@@ -55,8 +57,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                               ShutdownTaskHandler shutdownTaskHandler,
-                               ExecutorService ledgerCheckerExecutor)
+                               ShutdownTaskHandler shutdownTaskHandler)
             throws UnavailableException {
         super(conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, shutdownTaskHandler);
@@ -75,7 +76,15 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         }
         this.openLedgerNoRecoverySemaphoreWaitTimeoutMSec =
                 conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec();
-        this.ledgerCheckerExecutor = ledgerCheckerExecutor;
+
+        this.ledgerCheckerExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "AuditorCheckAllLedgers-LedgerChecker");
+                t.setDaemon(true);
+                return t;
+            }
+        });
     }
 
     @Override
@@ -114,6 +123,22 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 auditorStats.getCheckAllLedgersTime()
                         .registerFailedEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
             }
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        LOG.info("Shutting down AuditorCheckAllLedgersTask");
+        ledgerCheckerExecutor.shutdown();
+        try {
+            while (!ledgerCheckerExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                LOG.warn("Executor for ledger checker not shutting down, interrupting");
+                ledgerCheckerExecutor.shutdownNow();
+            }
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.warn("Interrupted while shutting down AuditorCheckAllLedgersTask", ie);
         }
     }
 

@@ -97,6 +97,9 @@ public class AuditorPlacementPolicyCheckTaskTest extends BookKeeperClusterTestCa
         assertEquals("numOfClosedLedgersAuditedInPlacementPolicyCheck",
                 numLedgers,
                 auditorPlacementPolicyCheckTask.getNumOfClosedLedgersAuditedInPlacementPolicyCheck().get());
+        assertEquals("numOfLedgersFoundNotAdheringInPlacementPolicyCheck",
+                numLedgers,
+                auditorPlacementPolicyCheckTask.getNumOfLedgersFoundNotAdheringInPlacementPolicyCheck().get());
     }
 
 }

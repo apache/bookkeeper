@@ -76,6 +76,11 @@ public class AuditorBookieCheckTask extends AuditorTask {
         }
     }
 
+    @Override
+    public void shutdown() {
+
+    }
+
     /**
      * Start running the actual audit task.
      *

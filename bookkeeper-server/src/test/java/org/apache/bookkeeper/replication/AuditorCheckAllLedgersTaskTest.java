@@ -22,9 +22,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -91,18 +88,9 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
         final TestStatsProvider.TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
         final AuditorStats auditorStats = new AuditorStats(statsLogger);
 
-        ExecutorService ledgerCheckerExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "LedgerChecker-test");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
         AuditorCheckAllLedgersTask auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
                 baseConf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, null, ledgerCheckerExecutor);
+                ledgerUnderreplicationManager, null);
 
         // 3. checkAllLedgers
         auditorCheckAllLedgersTask.runTask();
@@ -110,9 +98,7 @@ public class AuditorCheckAllLedgersTaskTest extends BookKeeperClusterTestCase {
         // 4. verify
         assertEquals("CHECK_ALL_LEDGERS_TIME", 1, ((TestStatsProvider.TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME)).getSuccessCount());
-        assertEquals("", numLedgers,
+        assertEquals("NUM_LEDGERS_CHECKED", numLedgers,
                 (long) statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED).get());
-
-        ledgerCheckerExecutor.shutdown();
     }
 }
