@@ -306,6 +306,8 @@ public interface BookieProtocol {
 
     /**
      * This is similar to add request, but it used when processing the request on the bookie side.
+     * Note: ParseAddRequest need to invoke ParsedAddRequest#release to release the data. The ParsedAddRequest#recycle
+     * didn't release the data like AddRequest.
      */
     class ParsedAddRequest extends Request {
         ByteBuf data;

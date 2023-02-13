@@ -54,6 +54,7 @@ public class BookieProtocolTest {
         BookieProtocol.ParsedAddRequest parsedAddRequest = BookieProtocol.ParsedAddRequest.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 0, 0, (short) 1, "test".getBytes(UTF_8), byteBuf);
         assertEquals(ReferenceCountUtil.touch(parsedAddRequest).hashCode(), parsedAddRequest.hashCode());
+        parsedAddRequest.release();
         parsedAddRequest.recycle();
         byteBuf.release();
     }
