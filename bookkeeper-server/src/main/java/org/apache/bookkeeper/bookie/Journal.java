@@ -1136,10 +1136,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             qe = localQueueEntries.removeFirst();
                             dequeueStartTime = MathUtils.nowInNano();
                             busyStartTime = dequeueStartTime;
-                            journalStats.getJournalQueueSize().dec();
-                            journalStats.getJournalQueueStats()
-                                    .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
-                                            TimeUnit.NANOSECONDS);
                         } else {
                             long pollWaitTimeNanos = maxGroupWaitInNanos
                                     - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
