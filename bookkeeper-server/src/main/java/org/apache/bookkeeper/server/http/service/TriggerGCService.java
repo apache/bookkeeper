@@ -77,7 +77,29 @@ public class TriggerGCService implements HttpEndpointService {
 
                     forceMajor = Boolean.parseBoolean(configMap.getOrDefault("forceMajor", forceMajor).toString());
                     forceMinor = Boolean.parseBoolean(configMap.getOrDefault("forceMinor", forceMinor).toString());
-                    ledgerStorage.forceGC(forceMajor, forceMinor);
+
+                    double majorCompactionThreshold = (double) configMap.getOrDefault("majorCompactionThreshold",
+                            conf.getMajorCompactionThreshold());
+                    double minorCompactionThreshold = (double) configMap.getOrDefault("minorCompactionThreshold",
+                            conf.getMinorCompactionThreshold());
+                    long majorCompactionMaxTimeMillis =  configMap.get(
+                            "majorCompactionMaxTimeMillis") == null ? conf.getMajorCompactionMaxTimeMillis()
+                            : (long) (int) configMap.get("majorCompactionMaxTimeMillis");
+                    long minorCompactionMaxTimeMillis =  configMap.get(
+                            "minorCompactionMaxTimeMillis") == null ? conf.getMinorCompactionMaxTimeMillis()
+                            : (long) (int) configMap.get("majorCompactionMaxTimeMillis");
+
+                    if (majorCompactionThreshold > 1.0f || majorCompactionThreshold < 0
+                            || minorCompactionThreshold > 1.0f || minorCompactionThreshold < 0
+                            || minorCompactionThreshold >= majorCompactionThreshold) {
+                        response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                        response.setBody("Bad request parameters");
+                        return response;
+                    }
+
+                    ledgerStorage.forceGC(forceMajor, forceMinor,
+                            majorCompactionThreshold, minorCompactionThreshold,
+                            majorCompactionMaxTimeMillis, minorCompactionMaxTimeMillis);
                 }
 
                 String output = "Triggered GC on BookieServer: " + bookieServer.getBookieId();

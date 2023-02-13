@@ -809,6 +809,35 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response2 = triggerGCService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+
+        //3, PUT with body, should return OK
+        String putBody = "{\"forceMajor\": true, \"forceMinor\": true, \"majorCompactionThreshold\":0.4,"
+                + "\"minorCompactionThreshold\":0.3, \"majorCompactionMaxTimeMillis\": 20000, "
+                + "\"minorCompactionMaxTimeMillis\": 10000}";
+        HttpServiceRequest request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        HttpServiceResponse response3 = triggerGCService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+
+        // 4, Bad Parameters, majorCompactionThreshold > 1, minorCompactionThreshold > 1
+        putBody = "{\"forceMajor\": true, \"forceMinor\": true, \"majorCompactionThreshold\":1.2,"
+                + "\"minorCompactionThreshold\":1.1, \"majorCompactionMaxTimeMillis\": 20000, "
+                + "\"minorCompactionMaxTimeMillis\": 10000}";
+        request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        response3 = triggerGCService.handle(request3);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response3.getStatusCode());
+
+        // 5, Bad Parameters, minorCompactionThreshold > majorCompactionThreshold
+        putBody = "{\"forceMajor\": true, \"forceMinor\": true, \"majorCompactionThreshold\":1.2,"
+                + "\"minorCompactionThreshold\":1.3, \"majorCompactionMaxTimeMillis\": 20000, "
+                + "\"minorCompactionMaxTimeMillis\": 10000}";
+        request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        response3 = triggerGCService.handle(request3);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response3.getStatusCode());
+
+        putBody = "{\"forceMajor\": true, \"forceMinor\": true}";
+        request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        response3 = triggerGCService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
     }
 
     @Test
