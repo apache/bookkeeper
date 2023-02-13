@@ -20,14 +20,14 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Test;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
 
 public class BookieProtocolTest {
 
