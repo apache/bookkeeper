@@ -43,7 +43,7 @@ public class BookieProtocolTest {
                 0, 0, (short) 1, "test".getBytes(UTF_8), byteBufList);
         assertEquals(ReferenceCountUtil.touch(addRequest).hashCode(), addRequest.hashCode());
         assertEquals(ReferenceCountUtil.retain(addRequest).hashCode(), addRequest.hashCode());
-        
+
         addRequest.recycle();
         byteBufList.release();
         byteBuf.release();
