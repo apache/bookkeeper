@@ -19,6 +19,7 @@ The technical details of this release are summarized below.
 * Added api/v1/bookie/cluster_info REST API [PR #3714](https://github.com/apache/bookkeeper/pull/3714)
 * Check if channel closed before processing read request [PR #3486](https://github.com/apache/bookkeeper/pull/3486)
 * Add missed call to onReadRequestFinish() when read request rejected [PR #3482](https://github.com/apache/bookkeeper/pull/3482)
+* Avoid extra buffer to prepend frame size [PR #3560](https://github.com/apache/bookkeeper/pull/3560)
 
 ### Details
 https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.14.7+is%3Aclosed
