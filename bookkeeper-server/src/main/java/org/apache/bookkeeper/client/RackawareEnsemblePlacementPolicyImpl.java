@@ -675,6 +675,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
             return bn;
         }
+        LOG.warn("Failed to select bookie node from path: {}, leaves: {}, exclude Bookies: {}, ensemble: {}",
+            netPath, leaves, excludeBookies, ensemble);
         throw new BKNotEnoughBookiesException();
     }
 
