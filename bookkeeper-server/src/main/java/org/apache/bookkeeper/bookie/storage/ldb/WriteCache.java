@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,7 +56,7 @@ public class WriteCache implements Closeable {
      * Consumer that is used to scan the entire write cache.
      */
     public interface EntryConsumer {
-        void accept(long ledgerId, long entryId, ByteBuf entry);
+        void accept(long ledgerId, long entryId, ByteBuf entry) throws IOException;
     }
 
     private final ConcurrentLongLongPairHashMap index = ConcurrentLongLongPairHashMap.newBuilder()
@@ -218,7 +219,7 @@ public class WriteCache implements Closeable {
 
     private static final ArrayGroupSort groupSorter = new ArrayGroupSort(2, 4);
 
-    public void forEach(EntryConsumer consumer) {
+    public void forEach(EntryConsumer consumer) throws IOException {
         sortedEntriesLock.lock();
 
         try {
