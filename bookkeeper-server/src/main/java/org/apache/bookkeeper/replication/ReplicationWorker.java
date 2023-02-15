@@ -630,7 +630,7 @@ public class ReplicationWorker implements Runnable {
                         // Need recovery open, close the old ledger handle.
                         lh.close();
                         // Recovery open could result in client write failure.
-                        LOG.warn("Missing bookie(s) from last segment. Opening Ledger{} for Recovery.", ledgerId);
+                        LOG.warn("Missing bookie(s) from last segment. Opening Ledger {} for Recovery.", ledgerId);
                         lh = admin.openLedger(ledgerId);
                         isRecoveryOpen = true;
                     }
@@ -642,7 +642,7 @@ public class ReplicationWorker implements Runnable {
                                 // Need recovery open, close the old ledger handle.
                                 lh.close();
                                 // Recovery open could result in client write failure.
-                                LOG.warn("Open Fragment{}. Opening Ledger{} for Recovery.",
+                                LOG.warn("Open Fragment{}. Opening Ledger {} for Recovery.",
                                         fragment.getEnsemble(), ledgerId);
                                 lh = admin.openLedger(ledgerId);
                                 isRecoveryOpen = true;
