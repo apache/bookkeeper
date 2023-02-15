@@ -62,7 +62,6 @@ public class AuditorStats {
     private final AtomicInteger numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue;
     private final AtomicInteger numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue;
     private final AtomicInteger underReplicatedLedgersGuageValue;
-    private final StatsLogger statsLogger;
     @StatsDoc(
             name = NUM_UNDER_REPLICATED_LEDGERS,
             help = "the distribution of num under_replicated ledgers on each auditor run"
@@ -173,7 +172,6 @@ public class AuditorStats {
     private final Gauge<Integer> numUnderReplicatedLedgers;
 
     public AuditorStats(StatsLogger statsLogger) {
-        this.statsLogger = statsLogger;
         this.ledgersNotAdheringToPlacementPolicyGuageValue = new AtomicInteger(0);
         this.ledgersSoftlyAdheringToPlacementPolicyGuageValue = new AtomicInteger(0);
         this.numOfURLedgersElapsedRecoveryGracePeriodGuageValue = new AtomicInteger(0);
@@ -181,23 +179,23 @@ public class AuditorStats {
         this.numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
         this.numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue = new AtomicInteger(0);
         this.underReplicatedLedgersGuageValue = new AtomicInteger(0);
-        numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
-        underReplicatedLedgerTotalSize = this.statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
-        uRLPublishTimeForLostBookies = this.statsLogger
+        numUnderReplicatedLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
+        underReplicatedLedgerTotalSize = statsLogger.getOpStatsLogger(UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
+        uRLPublishTimeForLostBookies = statsLogger
                 .getOpStatsLogger(ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE);
-        bookieToLedgersMapCreationTime = this.statsLogger
+        bookieToLedgersMapCreationTime = statsLogger
                 .getOpStatsLogger(ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME);
-        checkAllLedgersTime = this.statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
-        placementPolicyCheckTime = this.statsLogger.getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
-        replicasCheckTime = this.statsLogger.getOpStatsLogger(ReplicationStats.REPLICAS_CHECK_TIME);
-        auditBookiesTime = this.statsLogger.getOpStatsLogger(ReplicationStats.AUDIT_BOOKIES_TIME);
-        numLedgersChecked = this.statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
+        checkAllLedgersTime = statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
+        placementPolicyCheckTime = statsLogger.getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
+        replicasCheckTime = statsLogger.getOpStatsLogger(ReplicationStats.REPLICAS_CHECK_TIME);
+        auditBookiesTime = statsLogger.getOpStatsLogger(ReplicationStats.AUDIT_BOOKIES_TIME);
+        numLedgersChecked = statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
         numFragmentsPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_FRAGMENTS_PER_LEDGER);
         numBookiesPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_BOOKIES_PER_LEDGER);
-        numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
-        numDelayedBookieAuditsCancelled = this.statsLogger
+        numBookieAuditsDelayed = statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
+        numDelayedBookieAuditsCancelled = statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
-        numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
+        numReplicatedLedgers = statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
@@ -209,7 +207,7 @@ public class AuditorStats {
                 return ledgersNotAdheringToPlacementPolicyGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY,
+        statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY,
                 numLedgersNotAdheringToPlacementPolicy);
         numLedgersSoftlyAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
@@ -222,7 +220,7 @@ public class AuditorStats {
                 return ledgersSoftlyAdheringToPlacementPolicyGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY,
+        statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY,
                 numLedgersSoftlyAdheringToPlacementPolicy);
 
         numUnderreplicatedLedgersElapsedRecoveryGracePeriod = new Gauge<Integer>() {
@@ -236,7 +234,7 @@ public class AuditorStats {
                 return numOfURLedgersElapsedRecoveryGracePeriodGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD,
+        statsLogger.registerGauge(ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD,
                 numUnderreplicatedLedgersElapsedRecoveryGracePeriod);
 
         numLedgersHavingNoReplicaOfAnEntry = new Gauge<Integer>() {
@@ -250,7 +248,7 @@ public class AuditorStats {
                 return numLedgersHavingNoReplicaOfAnEntryGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_NO_REPLICA_OF_AN_ENTRY,
+        statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_NO_REPLICA_OF_AN_ENTRY,
                 numLedgersHavingNoReplicaOfAnEntry);
         numLedgersHavingLessThanAQReplicasOfAnEntry = new Gauge<Integer>() {
             @Override
@@ -263,7 +261,7 @@ public class AuditorStats {
                 return numLedgersHavingLessThanAQReplicasOfAnEntryGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_AQ_REPLICAS_OF_AN_ENTRY,
+        statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_AQ_REPLICAS_OF_AN_ENTRY,
                 numLedgersHavingLessThanAQReplicasOfAnEntry);
         numLedgersHavingLessThanWQReplicasOfAnEntry = new Gauge<Integer>() {
             @Override
@@ -276,7 +274,7 @@ public class AuditorStats {
                 return numLedgersHavingLessThanWQReplicasOfAnEntryGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_WQ_REPLICAS_OF_AN_ENTRY,
+        statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_WQ_REPLICAS_OF_AN_ENTRY,
                 numLedgersHavingLessThanWQReplicasOfAnEntry);
         numUnderReplicatedLedgers = new Gauge<Integer>() {
             @Override
@@ -289,6 +287,6 @@ public class AuditorStats {
                 return underReplicatedLedgersGuageValue.get();
             }
         };
-        this.statsLogger.registerGauge(NUM_UNDER_REPLICATED_LEDGERS_GUAGE, numUnderReplicatedLedgers);
+        statsLogger.registerGauge(NUM_UNDER_REPLICATED_LEDGERS_GUAGE, numUnderReplicatedLedgers);
     }
 }

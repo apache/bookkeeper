@@ -114,7 +114,6 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
             LOG.error("Non Recoverable Exception while reading from ZK", nre);
             submitShutdownTask();
-            submitShutdownTask();
         } catch (ReplicationException.UnavailableException ue) {
             LOG.error("Underreplication manager unavailable running periodic check", ue);
         } finally {

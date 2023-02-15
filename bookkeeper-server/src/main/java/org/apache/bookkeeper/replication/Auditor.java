@@ -81,7 +81,7 @@ public class Auditor implements AutoCloseable {
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
     protected volatile Future<?> auditTask;
-    private Set<String> bookiesToBeAudited = Sets.newHashSet();
+    private final Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
     protected AuditorBookieCheckTask auditorBookieCheckTask;
     protected AuditorTask auditorCheckAllLedgersTask;
