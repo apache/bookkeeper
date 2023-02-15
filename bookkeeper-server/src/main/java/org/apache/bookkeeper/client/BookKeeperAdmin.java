@@ -1145,7 +1145,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (MapUtils.isEmpty(targetBookieAddresses)) {
             LOG.warn("Could not replicate for {} ledger: {}, not find target bookie.",
                     ledgerFragment.getReplicateType(), ledgerFragment.getLedgerId());
-            return;
+            throw new BKException.BKLedgerRecoveryException();
         }
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
     }
