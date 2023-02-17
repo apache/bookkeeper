@@ -347,8 +347,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             cbThreadPoolQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
-            recycle();
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            recycle();
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -365,6 +365,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         };
 
         private void recycle() {
+            this.entry = null;
+            this.cb = null;
+            this.ctx = null;
+            this.journalAddEntryStats = null;
+            this.journalCbQueuedLatency = null;
+            this.journalCbQueueSize = null;
+            this.cbThreadPoolQueueSize = null;
+            this.callbackTime = null;
             recyclerHandle.recycle(this);
         }
     }
@@ -1128,10 +1136,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             qe = localQueueEntries.removeFirst();
                             dequeueStartTime = MathUtils.nowInNano();
                             busyStartTime = dequeueStartTime;
-                            journalStats.getJournalQueueSize().dec();
-                            journalStats.getJournalQueueStats()
-                                    .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
-                                            TimeUnit.NANOSECONDS);
                         } else {
                             long pollWaitTimeNanos = maxGroupWaitInNanos
                                     - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);

@@ -114,7 +114,13 @@ public class LocationsIndexRebuildOp {
                         // Update the ledger index page
                         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
                         LongWrapper value = LongWrapper.get(location);
-                        batch.get().put(key.array, value.array);
+
+                        try {
+                            batch.get().put(key.array, value.array);
+                        } finally {
+                            key.recycle();
+                            value.recycle();
+                        }
 
                         if (count.incrementAndGet() > BATCH_COMMIT_SIZE) {
                             batch.get().flush();

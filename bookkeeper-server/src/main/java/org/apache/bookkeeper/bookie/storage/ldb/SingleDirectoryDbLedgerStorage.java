@@ -64,7 +64,6 @@ import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
-import org.apache.bookkeeper.bookie.LedgerStorageNotificationListener;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
@@ -240,11 +239,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
     @Override
     public void setCheckpointer(Checkpointer checkpointer) { }
-
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
-    }
 
     /**
      * Evict all the ledger info object that were not used recently.
@@ -781,12 +775,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             Batch batch = entryLocationIndex.newBatch();
             writeCacheBeingFlushed.forEach((ledgerId, entryId, entry) -> {
-                try {
-                    long location = entryLogger.addEntry(ledgerId, entry);
-                    entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                long location = entryLogger.addEntry(ledgerId, entry);
+                entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
             });
 
             long entryLoggerStart = MathUtils.nowInNano();
@@ -839,10 +829,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             // Leave IOExecption as it is
             throw e;
-        } catch (RuntimeException e) {
-            recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
-            // Wrap unchecked exceptions
-            throw new IOException(e);
         } finally {
             try {
                 isFlushOngoing.set(false);
@@ -988,13 +974,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
             return null;
         }
-        if (ledgerData.hasExplicitLac()) {
-            if (log.isDebugEnabled()) {
-                log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
-            }
-            ByteString persistedLac = ledgerData.getExplicitLac();
-            ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
+        if (log.isDebugEnabled()) {
+            log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
         }
+        ByteString persistedLac = ledgerData.getExplicitLac();
+        ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
         return ledgerInfo.getExplicitLac();
     }
 
