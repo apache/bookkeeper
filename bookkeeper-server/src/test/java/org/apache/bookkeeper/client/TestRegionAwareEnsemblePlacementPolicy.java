@@ -606,6 +606,64 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testNewEnsembleWithPickDifferentRack() throws Exception {
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setMinNumRacksPerWriteQuorum(2);
+        clientConf.setEnforceMinNumFaultDomainsForWrite(false);
+        repp.uninitalize();
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region-1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region-1/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region-1/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region-1/r3");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region-2/r1");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        int ensembleSize = 4;
+        int writeQuorumSize = 4;
+        int ackQuorumSize = 2;
+
+        Set<BookieId> excludeBookies = new HashSet<>();
+
+        for (int i = 0; i < 50; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            if (ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId())) {
+                fail("addr1 and addr2 is same rack.");
+            }
+        }
+
+        //addr4 shutdown.
+        addrs.remove(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        for (int i = 0; i < 50; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                     repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
+        }
+    }
+
+    @Test
     public void testNewEnsembleWithEnoughRegions() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
