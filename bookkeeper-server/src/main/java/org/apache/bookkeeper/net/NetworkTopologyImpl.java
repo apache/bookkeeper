@@ -45,6 +45,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
     public static final int DEFAULT_HOST_LEVEL = 2;
     public static final Logger LOG = LoggerFactory.getLogger(NetworkTopologyImpl.class);
     public static final String NODE_SEPARATOR = ",";
+    public static final String INVERSE = "~";
 
     /**
      * A marker for an InvalidTopology Exception.
@@ -708,7 +709,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
     public Node chooseRandom(String scope) {
         netlock.readLock().lock();
         try {
-            if (scope.startsWith("~")) {
+            if (scope.startsWith(INVERSE)) {
                 return chooseRandom(NodeBase.ROOT, scope.substring(1));
             } else {
                 return chooseRandom(scope, null);
@@ -774,7 +775,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
     public Set<Node> getLeaves(String scope) {
         netlock.readLock().lock();
         try {
-            if (scope.startsWith("~")) {
+            if (scope.startsWith(INVERSE)) {
                 Set<Node> allNodes = doGetLeaves(NodeBase.ROOT);
                 String[] excludeScopes = scope.substring(1).split(NODE_SEPARATOR);
                 Set<Node> excludeNodes = new HashSet<Node>();
@@ -794,7 +795,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
     @Override
     public int countNumOfAvailableNodes(String scope, Collection<Node> excludedNodes) {
         boolean isExcluded = false;
-        if (scope.startsWith("~")) {
+        if (scope.startsWith(INVERSE)) {
             isExcluded = true;
             scope = scope.substring(1);
         }
