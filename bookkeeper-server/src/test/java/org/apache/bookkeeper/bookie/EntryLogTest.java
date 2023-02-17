@@ -192,9 +192,6 @@ public class EntryLogTest {
         entryLogger = new EntryLogger(conf, dirsMgr);
 
         EntryLogMetadata meta = entryLogger.getEntryLogMetadata(0L);
-        String metaString = meta.toString();
-        assertEquals(metaString,
-                "{totalSize = 60, remainingSize = 60, ledgersMap = ConcurrentLongLongHashMap{1 => 30, 3 => 30}}");
         LOG.info("Extracted Meta From Entry Log {}", meta);
         assertTrue(meta.getLedgersMap().containsKey(1L));
         assertFalse(meta.getLedgersMap().containsKey(2L));

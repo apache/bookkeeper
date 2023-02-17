@@ -107,8 +107,8 @@ public class EntryLogMetadata {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("{totalSize = ").append(totalSize).append(", remainingSize = ").append(remainingSize)
-                .append(", ledgersMap = ").append(ledgersMap.toString()).append("}");
+        sb.append("{ totalSize = ").append(totalSize).append(", remainingSize = ").append(remainingSize)
+                .append(", ledgersMap = ").append(ledgersMap).append(" }");
         return sb.toString();
     }
 
