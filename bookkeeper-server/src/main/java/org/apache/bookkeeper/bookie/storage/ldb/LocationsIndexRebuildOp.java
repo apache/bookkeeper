@@ -105,7 +105,7 @@ public class LocationsIndexRebuildOp {
                     // Update the ledger index page
                     LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
                     LongWrapper value = LongWrapper.get(location);
-                    
+
                     try {
                         batch.get().put(key.array, value.array);
                     } finally {

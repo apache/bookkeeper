@@ -30,7 +30,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
