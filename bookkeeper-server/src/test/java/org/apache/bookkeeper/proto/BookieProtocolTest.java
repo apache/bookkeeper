@@ -42,7 +42,9 @@ public class BookieProtocolTest {
         BookieProtocol.AddRequest addRequest = BookieProtocol.AddRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                 0, 0, (short) 1, "test".getBytes(UTF_8), byteBufList);
         assertEquals(ReferenceCountUtil.touch(addRequest).hashCode(), addRequest.hashCode());
+        assertEquals(ReferenceCountUtil.touch(addRequest, "hint").hashCode(), addRequest.hashCode());
         assertEquals(ReferenceCountUtil.retain(addRequest).hashCode(), addRequest.hashCode());
+        assertEquals(ReferenceCountUtil.retain(addRequest, 1).hashCode(), addRequest.hashCode());
 
         addRequest.recycle();
         byteBufList.release();
@@ -57,7 +59,9 @@ public class BookieProtocolTest {
         BookieProtocol.ParsedAddRequest parsedAddRequest = BookieProtocol.ParsedAddRequest.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 0, 0, (short) 1, "test".getBytes(UTF_8), byteBuf);
         assertEquals(ReferenceCountUtil.touch(parsedAddRequest).hashCode(), parsedAddRequest.hashCode());
+        assertEquals(ReferenceCountUtil.touch(parsedAddRequest, "hint").hashCode(), parsedAddRequest.hashCode());
         assertEquals(ReferenceCountUtil.retain(parsedAddRequest).hashCode(), parsedAddRequest.hashCode());
+        assertEquals(ReferenceCountUtil.retain(parsedAddRequest, 1).hashCode(), parsedAddRequest.hashCode());
 
         parsedAddRequest.release();
         parsedAddRequest.recycle();
@@ -69,7 +73,9 @@ public class BookieProtocolTest {
         BookieProtocol.AddResponse addResponse = BookieProtocol.AddResponse.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 0, 0, 0);
         assertEquals(ReferenceCountUtil.touch(addResponse).hashCode(), addResponse.hashCode());
+        assertEquals(ReferenceCountUtil.touch(addResponse, "hint").hashCode(), addResponse.hashCode());
         assertEquals(ReferenceCountUtil.retain(addResponse).hashCode(), addResponse.hashCode());
+        assertEquals(ReferenceCountUtil.retain(addResponse, 1).hashCode(), addResponse.hashCode());
     }
 
     @Test
@@ -79,7 +85,9 @@ public class BookieProtocolTest {
         BookieProtocol.AuthRequest authRequest = new BookieProtocol.AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                 authMessage);
         assertEquals(ReferenceCountUtil.touch(authRequest).hashCode(), authRequest.hashCode());
+        assertEquals(ReferenceCountUtil.touch(authRequest, "hint").hashCode(), authRequest.hashCode());
         assertEquals(ReferenceCountUtil.retain(authRequest).hashCode(), authRequest.hashCode());
+        assertEquals(ReferenceCountUtil.retain(authRequest, 1).hashCode(), authRequest.hashCode());
     }
 
     @Test
@@ -89,7 +97,8 @@ public class BookieProtocolTest {
         BookieProtocol.AuthResponse authResponse = new BookieProtocol.AuthResponse(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
         assertEquals(ReferenceCountUtil.touch(authResponse).hashCode(), authResponse.hashCode());
-        assertEquals(ReferenceCountUtil.retain(authResponse).hashCode(), authResponse.hashCode());
+        assertEquals(ReferenceCountUtil.touch(authResponse, "hint").hashCode(), authResponse.hashCode());
+        assertEquals(ReferenceCountUtil.retain(authResponse, 1).hashCode(), authResponse.hashCode());
     }
 
     @Test
@@ -97,7 +106,9 @@ public class BookieProtocolTest {
         BookieProtocol.ErrorResponse errorResponse = new BookieProtocol.ErrorResponse(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, (byte) 0, 0, 0, 0);
         assertEquals(ReferenceCountUtil.touch(errorResponse).hashCode(), errorResponse.hashCode());
+        assertEquals(ReferenceCountUtil.touch(errorResponse, "hint").hashCode(), errorResponse.hashCode());
         assertEquals(ReferenceCountUtil.retain(errorResponse).hashCode(), errorResponse.hashCode());
+        assertEquals(ReferenceCountUtil.retain(errorResponse, 1).hashCode(), errorResponse.hashCode());
     }
 
     @Test
@@ -105,7 +116,9 @@ public class BookieProtocolTest {
         BookieProtocol.ReadRequest readRequest = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                 0, 0, BookieProtocol.FLAG_DO_FENCING, new byte[] {});
         assertEquals(ReferenceCountUtil.touch(readRequest).hashCode(), readRequest.hashCode());
+        assertEquals(ReferenceCountUtil.touch(readRequest, "hint").hashCode(), readRequest.hashCode());
         assertEquals(ReferenceCountUtil.retain(readRequest).hashCode(), readRequest.hashCode());
+        assertEquals(ReferenceCountUtil.retain(readRequest, 1).hashCode(), readRequest.hashCode());
     }
 
     @Test
@@ -115,7 +128,11 @@ public class BookieProtocolTest {
         BookieProtocol.ReadResponse readResponse = new BookieProtocol.ReadResponse(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 0, 0, 0, byteBuf);
         assertEquals(ReferenceCountUtil.touch(readResponse).hashCode(), readResponse.hashCode());
+        assertEquals(ReferenceCountUtil.touch(readResponse, "1").hashCode(), readResponse.hashCode());
         assertEquals(ReferenceCountUtil.retain(readResponse).hashCode(), readResponse.hashCode());
+        //This release for the Explicit retain.
+        readResponse.release();
+        assertEquals(ReferenceCountUtil.retain(readResponse, 1).hashCode(), readResponse.hashCode());
         //This release for the Explicit retain.
         readResponse.release();
 

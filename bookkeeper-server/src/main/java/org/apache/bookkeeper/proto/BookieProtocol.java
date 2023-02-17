@@ -479,7 +479,8 @@ public interface BookieProtocol {
 
         @Override
         public ReferenceCounted retain(int increment) {
-            return data.retain(increment);
+            data.retain(increment);
+            return this;
         }
 
         @Override
