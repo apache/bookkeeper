@@ -616,7 +616,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (excludeZones.isEmpty()) {
             return "";
         }
-        StringBuilder excludedZonesString = new StringBuilder("~");
+        StringBuilder excludedZonesString = new StringBuilder(NetworkTopologyImpl.INVERSE);
         boolean firstZone = true;
         for (String excludeZone : excludeZones) {
             if (!firstZone) {
