@@ -430,13 +430,14 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
                     }
                 }
+                boolean firstBookieInTheEnsemble = (null == prevNode);
                 try {
                     prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
                 } catch (BKNotEnoughBookiesException e) {
                     if (!curRack.equals(NodeBase.ROOT)) {
                         curRack = NodeBase.ROOT;
                         prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
-                                !enforceMinNumRacksPerWriteQuorum || prevNode == null);
+                                !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
                     } else {
                         throw e;
                     }
