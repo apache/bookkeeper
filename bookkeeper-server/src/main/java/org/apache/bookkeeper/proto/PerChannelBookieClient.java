@@ -21,7 +21,6 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
@@ -806,7 +805,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             ByteString body = null;
-            Preconditions.checkArgument(toSend instanceof ByteBufList);
             ByteBufList bufToSend = (ByteBufList) toSend;
 
             if (bufToSend.hasArray()) {

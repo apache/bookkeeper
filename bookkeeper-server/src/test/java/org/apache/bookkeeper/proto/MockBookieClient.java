@@ -23,7 +23,6 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
 import java.util.Arrays;
