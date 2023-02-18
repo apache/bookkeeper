@@ -519,9 +519,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         networkLoc, excludeBookies);
                 throw e;
             }
-            LOG.warn("Failed to choose a bookie from {} : "
-                     + "excluded {}, fallback to choose bookie randomly from the cluster.",
-                     networkLoc, excludeBookies);
+            LOG.warn("Failed to choose a bookie from {} : leaves {}, excluded {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                     networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             // randomly choose one from whole cluster, ignore the provided predicate.
             return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
         }
@@ -544,6 +544,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
              * the whole cluster and exclude the racks specified at
              * <tt>excludeRacks</tt>.
              */
+            LOG.info("Failed to choose a bookie node from {} : leaves {}, exclude Bookies {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
         }
     }
@@ -675,8 +678,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
             return bn;
         }
-        LOG.warn("Failed to select bookie node from path: {}, leaves: {}, exclude Bookies: {}, ensemble: {}",
-            netPath, leaves, excludeBookies, ensemble);
         throw new BKNotEnoughBookiesException();
     }
 
