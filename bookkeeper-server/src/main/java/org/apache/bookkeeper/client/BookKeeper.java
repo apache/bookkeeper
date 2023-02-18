@@ -859,7 +859,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
-        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1056,7 +1060,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
-        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1161,7 +1169,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
-        checkLedgerCreationParameters(ensSize, writeQuorumSize, ackQuorumSize);
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1658,16 +1670,22 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return clientCtx;
     }
 
-    private void checkLedgerCreationParameters(int ensSize, int writeQuorumSize, int ackQuorumSize) {
-        if (ensSize <= 0
-            || writeQuorumSize <= 0
-            || ackQuorumSize < 0
-            || writeQuorumSize > ensSize
-            || ackQuorumSize > writeQuorumSize) {
-            LOG.error("Illegal parameter: ensembleSize: {}, writeQuorumSize: {}, ackQuorumSize: {}",
-                ensSize, writeQuorumSize, ackQuorumSize);
-            throw new IllegalArgumentException(String.format("Illegal arguments, ensembleSize: %s, "
-                + "writeQuorumSize: %s, ackQuorumSize: %s", ensSize, writeQuorumSize, ackQuorumSize));
+    private boolean validate(int ensembleSize, int writeQuorumSize, int ackQuorumSize) {
+
+        if (writeQuorumSize > ensembleSize) {
+            LOG.error("Invalid writeQuorumSize {} > ensembleSize {}", writeQuorumSize, ensembleSize);
+            return false;
         }
+
+        if (ackQuorumSize > writeQuorumSize) {
+            LOG.error("Invalid ackQuorumSize {} > writeQuorumSize {}", ackQuorumSize, writeQuorumSize);
+            return false;
+        }
+
+        if (ackQuorumSize <= 0) {
+            LOG.error("Invalid ackQuorumSize {} <= 0", ackQuorumSize);
+            return false;
+        }
+        return true;
     }
 }
