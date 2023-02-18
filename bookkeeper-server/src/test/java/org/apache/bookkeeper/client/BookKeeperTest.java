@@ -1133,7 +1133,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @DataProvider
-    public static Object[][] IllegalLedgerCreationArguments() {
+    public static Object[][] illegalLedgerCreationArguments() {
         return new Object[][] {
             {0, 0, 0},
             {3, 3, -1},
@@ -1143,8 +1143,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         };
     }
     @Test
-    @UseDataProvider("IllegalLedgerCreationArguments")
-    public void testCreateLedgerWithIllegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) throws Exception {
+    @UseDataProvider("illegalLedgerCreationArguments")
+    public void testCreateLedgerWithIllegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) {
         final byte[] passwd = "testpasswd".getBytes();
         final byte[] data = "data".getBytes();
 
@@ -1188,7 +1188,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     @Test
     @UseDataProvider("legalLedgerCreationArguments")
-    public void testCreateLedgerWithlegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) throws Exception {
+    public void testCreateLedgerWithlegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) {
         final byte[] passwd = "testpasswd".getBytes();
         final byte[] data = "data".getBytes();
 
