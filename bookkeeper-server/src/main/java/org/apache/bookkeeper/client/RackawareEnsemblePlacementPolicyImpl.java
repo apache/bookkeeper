@@ -544,7 +544,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
              * the whole cluster and exclude the racks specified at
              * <tt>excludeRacks</tt>.
              */
-            LOG.info("Failed to choose a bookie node from {} : leaves {}, exclude Bookies {}, "
+            LOG.warn("Failed to choose a bookie node from {} : leaves {}, exclude Bookies {}, "
                     + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
                 networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
