@@ -113,12 +113,13 @@ class DirectWriter implements LogWriter {
         checkArgument(Buffer.isAligned(buf.readableBytes()),
                       "Buffer must write multiple of alignment bytes (%d), %d is not",
                       Buffer.ALIGNMENT, buf.readableBytes());
-        Buffer tmpBuffer = bufferPool.acquire();
+
         int bytesToWrite = buf.readableBytes();
         if (bytesToWrite <= 0) {
             return;
         }
 
+        Buffer tmpBuffer = bufferPool.acquire();
         tmpBuffer.reset();
         tmpBuffer.writeByteBuf(buf);
         Future<?> f = writeExecutor.submit(() -> {
