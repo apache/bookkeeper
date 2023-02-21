@@ -60,7 +60,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BookieImpl.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*", "javax.xml.*",
+    "com.sun.org.apache.xerces.*", "org.w3c.*", "org.xml.*"})
 @Slf4j
 public class BookieWriteToJournalTest {
 

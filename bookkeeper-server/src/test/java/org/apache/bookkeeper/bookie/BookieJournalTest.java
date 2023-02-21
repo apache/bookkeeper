@@ -60,7 +60,8 @@ import org.slf4j.LoggerFactory;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JournalChannel.class, FileChannelProvider.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
+    "com.sun.org.apache.xerces.*", "javax.naming.*"})
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 

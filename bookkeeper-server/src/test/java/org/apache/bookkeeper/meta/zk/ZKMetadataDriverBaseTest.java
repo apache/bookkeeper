@@ -46,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -53,6 +54,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link ZKMetadataDriverBase}.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
 @PrepareForTest({ ZKMetadataDriverBase.class, ZooKeeperClient.class, AbstractZkLedgerManagerFactory.class })
 public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 

@@ -86,7 +86,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link AbstractZkLedgerManager}.
  */
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
 @PrepareForTest({ AbstractZkLedgerManager.class, ZkUtils.class })
 public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
