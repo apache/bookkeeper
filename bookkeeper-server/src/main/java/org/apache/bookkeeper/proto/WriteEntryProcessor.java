@@ -102,8 +102,6 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                       request.ledgerId, request.entryId, t.getMessage(), t);
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
-        } finally {
-            addData.release();
         }
 
         if (rc != BookieProtocol.EOK) {
