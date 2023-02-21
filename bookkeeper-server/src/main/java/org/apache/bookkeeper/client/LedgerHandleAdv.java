@@ -275,13 +275,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             }
         }
 
-        try {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
-        } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                BKException.Code.InterruptedException),
-                              LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
-        }
+        op.initiate();
     }
 
     @Override

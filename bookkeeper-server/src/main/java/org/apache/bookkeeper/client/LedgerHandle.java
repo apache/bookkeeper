@@ -1337,7 +1337,7 @@ public class LedgerHandle implements WriteHandle {
                 });
             } catch (RejectedExecutionException e) {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                    BKException.Code.InterruptedException),
+                                BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
                 op.recyclePendAddOpObject();
             }
@@ -1355,13 +1355,8 @@ public class LedgerHandle implements WriteHandle {
             }
         }
 
-        try {
-            executeOrdered(op);
-        } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(
-                    BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
-                    LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
-        }
+        op.initiate();
+
     }
 
     synchronized void updateLastConfirmed(long lac, long len) {
