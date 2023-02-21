@@ -26,6 +26,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLEngine;
+
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.internal.SystemPropertyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
@@ -1129,8 +1132,17 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Return the configured leak detection policy for the allocator.
      */
     public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
-        return LeakDetectionPolicy
-                .valueOf(this.getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString()));
+        //see: https://lists.apache.org/thread/d3zw8bxhlg0wxfhocyjglq0nbxrww3sg
+        String nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetectionLevel", ResourceLeakDetector.Level.DISABLED.name());
+        nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetection.level", nettyLevelStr);
+        String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString());
+        LeakDetectionPolicy nettyLevel = LeakDetectionPolicy.parseLevel(nettyLevelStr);
+        LeakDetectionPolicy bkLevel = LeakDetectionPolicy.parseLevel(bkLevelStr);
+        if (nettyLevel.ordinal() >= bkLevel.ordinal()) {
+            return nettyLevel;
+        } else {
+            return bkLevel;
+        }
     }
 
     /**

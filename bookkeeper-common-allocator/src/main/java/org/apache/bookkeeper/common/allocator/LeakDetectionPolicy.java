@@ -43,5 +43,15 @@ public enum LeakDetectionPolicy {
      * stack traces of places where the buffer was used. Introduce very
      * significant overhead.
      */
-    Paranoid,
+    Paranoid;
+    
+    public static LeakDetectionPolicy parseLevel(String levelStr) {
+        String trimmedLevelStr = levelStr.trim();
+        for (LeakDetectionPolicy policy : values()) {
+            if (trimmedLevelStr.equalsIgnoreCase(policy.name())) {
+                return policy;
+            }
+        }
+        return LeakDetectionPolicy.Disabled;
+    }
 }
