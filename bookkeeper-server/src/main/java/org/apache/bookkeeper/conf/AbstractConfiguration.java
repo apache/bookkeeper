@@ -20,15 +20,14 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.internal.SystemPropertyUtil;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLEngine;
-
-import io.netty.util.ResourceLeakDetector;
-import io.netty.util.internal.SystemPropertyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
@@ -1133,7 +1132,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
         //see: https://lists.apache.org/thread/d3zw8bxhlg0wxfhocyjglq0nbxrww3sg
-        String nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetectionLevel", ResourceLeakDetector.Level.DISABLED.name());
+        String nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetectionLevel",
+                ResourceLeakDetector.Level.DISABLED.name());
         nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetection.level", nettyLevelStr);
         String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString());
         LeakDetectionPolicy nettyLevel = LeakDetectionPolicy.parseLevel(nettyLevelStr);

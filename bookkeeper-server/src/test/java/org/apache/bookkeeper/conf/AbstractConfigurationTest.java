@@ -135,40 +135,40 @@ public class AbstractConfigurationTest {
     public void testAllocatorLeakDetectionPolicy() {
         String nettyOldLevelKey = "io.netty.leakDetectionLevel";
         String nettyLevelKey = "io.netty.leakDetection.level";
-    
+
         String nettyOldLevelStr = System.getProperty(nettyOldLevelKey);
         String nettyLevelStr = System.getProperty(nettyLevelKey);
-        
+
         //Remove netty property for test.
         System.getProperties().remove(nettyOldLevelKey);
         System.getProperties().remove(nettyLevelKey);
-    
+
         assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
-        
+
         System.getProperties().put(nettyOldLevelKey, "zazaza");
         assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
-    
+
         conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "zazaza");
         assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
-    
+
         System.getProperties().put(nettyOldLevelKey, "simple");
         assertEquals(LeakDetectionPolicy.Simple, conf.getAllocatorLeakDetectionPolicy());
-    
+
         System.getProperties().put(nettyLevelKey, "disabled");
         assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
-    
+
         System.getProperties().put(nettyLevelKey, "advanCed");
         assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
-        
+
         conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "simPle");
         assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
-    
+
         conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "advanCed");
         assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
-    
+
         conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "paranoiD");
         assertEquals(LeakDetectionPolicy.Paranoid, conf.getAllocatorLeakDetectionPolicy());
-        
+
         System.getProperties().remove(nettyOldLevelKey);
         System.getProperties().remove(nettyLevelKey);
         //Revert the netty properties.
@@ -179,5 +179,4 @@ public class AbstractConfigurationTest {
             System.getProperties().put(nettyLevelKey, nettyLevelStr);
         }
     }
-
 }
