@@ -28,7 +28,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Test;
 import org.rocksdb.BlockBasedTableConfig;
@@ -39,7 +38,6 @@ import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Options;
 
-@Slf4j
 public class KeyValueStorageRocksDBTest {
 
     @Test
