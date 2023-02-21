@@ -21,7 +21,6 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ResourceLeakDetector;
-import io.netty.util.internal.SystemPropertyUtil;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1132,9 +1131,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
         //see: https://lists.apache.org/thread/d3zw8bxhlg0wxfhocyjglq0nbxrww3sg
-        String nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetectionLevel",
+        String nettyLevelStr = System.getProperty("io.netty.leakDetectionLevel",
                 ResourceLeakDetector.Level.DISABLED.name());
-        nettyLevelStr = SystemPropertyUtil.get("io.netty.leakDetection.level", nettyLevelStr);
+        nettyLevelStr = System.getProperty("io.netty.leakDetection.level", nettyLevelStr);
         String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString());
         LeakDetectionPolicy nettyLevel = LeakDetectionPolicy.parseLevel(nettyLevelStr);
         LeakDetectionPolicy bkLevel = LeakDetectionPolicy.parseLevel(bkLevelStr);

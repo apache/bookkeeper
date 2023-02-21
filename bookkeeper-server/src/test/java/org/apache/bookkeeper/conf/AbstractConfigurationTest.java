@@ -130,7 +130,7 @@ public class AbstractConfigurationTest {
         conf.setLedgerManagerFactoryClass(mockZkFactory.getClass());
         conf.getMetadataServiceUri();
     }
-    
+
     @Test
     public void testAllocatorLeakDetectionPolicy() {
         String nettyOldLevelKey = "io.netty.leakDetectionLevel";
