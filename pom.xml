@@ -1132,8 +1132,7 @@
               <forkCount>${forkCount.variable}</forkCount>
               <reuseForks>false</reuseForks>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-              <!-- we want build to complete even in case of failures -->
-              <testFailureIgnore>true</testFailureIgnore>
+              <rerunFailingTestsCount>${testRetryCount}</rerunFailingTestsCount>
             </configuration>
           </plugin>
           <plugin>
