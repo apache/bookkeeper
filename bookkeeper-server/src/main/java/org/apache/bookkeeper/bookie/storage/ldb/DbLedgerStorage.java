@@ -81,11 +81,11 @@ public class DbLedgerStorage implements LedgerStorage {
     public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
     public static final String DIRECT_IO_ENTRYLOGGER = "dbStorage_directIOEntryLogger";
     public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMb";
+        "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerTotalReadBufferSizeMb";
+        "dbStorage_directIOEntryLoggerTotalReadBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerReadBufferSizeMb";
+        "dbStorage_directIOEntryLoggerReadBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS =
         "dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds";
 
