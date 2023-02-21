@@ -44,7 +44,7 @@ public enum LeakDetectionPolicy {
      * significant overhead.
      */
     Paranoid;
-    
+
     public static LeakDetectionPolicy parseLevel(String levelStr) {
         String trimmedLevelStr = levelStr.trim();
         for (LeakDetectionPolicy policy : values()) {
