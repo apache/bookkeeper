@@ -1134,7 +1134,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         String nettyLevelStr = System.getProperty("io.netty.leakDetectionLevel",
                 ResourceLeakDetector.Level.DISABLED.name());
         nettyLevelStr = System.getProperty("io.netty.leakDetection.level", nettyLevelStr);
-        String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString());
+        String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.name());
         LeakDetectionPolicy nettyLevel = LeakDetectionPolicy.parseLevel(nettyLevelStr);
         LeakDetectionPolicy bkLevel = LeakDetectionPolicy.parseLevel(bkLevelStr);
         if (nettyLevel.ordinal() >= bkLevel.ordinal()) {
