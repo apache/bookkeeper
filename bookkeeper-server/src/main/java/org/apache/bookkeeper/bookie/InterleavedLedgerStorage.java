@@ -345,7 +345,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                     lac = bb.readLong();
                     lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
                 } finally {
-                    ReferenceCountUtil.safeRelease(bb);
+                    ReferenceCountUtil.release(bb);
                 }
             }
         }

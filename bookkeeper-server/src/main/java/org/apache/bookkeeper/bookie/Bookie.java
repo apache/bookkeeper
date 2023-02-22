@@ -1416,9 +1416,9 @@ public class Bookie extends BookieCriticalThread {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
         }  finally {
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
             if (explicitLACEntry != null) {
-                ReferenceCountUtil.safeRelease(explicitLACEntry);
+                ReferenceCountUtil.release(explicitLACEntry);
             }
         }
     }
