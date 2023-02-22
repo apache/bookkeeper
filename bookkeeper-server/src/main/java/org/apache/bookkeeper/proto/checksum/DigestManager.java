@@ -116,7 +116,7 @@ public abstract class DigestManager {
         final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
                 ? data.unwrap() : data;
         ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.safeRelease(data);
+        ReferenceCountUtil.release(data);
 
         if (unwrapped instanceof CompositeByteBuf) {
             CompositeByteBuf cbb = ((CompositeByteBuf) unwrapped);

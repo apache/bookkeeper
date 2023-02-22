@@ -80,7 +80,7 @@ public class WriteCacheTest {
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
 
-        ReferenceCountUtil.safeRelease(entry1);
+        ReferenceCountUtil.release(entry1);
         cache.close();
     }
 
@@ -121,7 +121,7 @@ public class WriteCacheTest {
 
         assertEquals(0, findCount.get());
 
-        ReferenceCountUtil.safeRelease(entry);
+        ReferenceCountUtil.release(entry);
         cache.close();
     }
 

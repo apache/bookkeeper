@@ -39,7 +39,7 @@ public abstract class AbstractHashRouter<K> implements HashRouter<K> {
             return Murmur3.hash128(
                 keyData, keyData.readerIndex(), keyData.readableBytes(), HASH_SEED)[0];
         } finally {
-            ReferenceCountUtil.safeRelease(keyData);
+            ReferenceCountUtil.release(keyData);
         }
     }
 

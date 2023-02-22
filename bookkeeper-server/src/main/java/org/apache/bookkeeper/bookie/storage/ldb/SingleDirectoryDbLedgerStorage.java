@@ -652,7 +652,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     currentEntryLocation += 4 + entry.readableBytes();
                     currentEntryLogId = currentEntryLocation >> 32;
                 } finally {
-                    ReferenceCountUtil.safeRelease(entry);
+                    ReferenceCountUtil.release(entry);
                 }
             }
         } catch (Exception e) {
@@ -927,7 +927,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 lac = bb.readLong();
                 lac = getOrAddLedgerInfo(ledgerId).setLastAddConfirmed(lac);
             } finally {
-                ReferenceCountUtil.safeRelease(bb);
+                ReferenceCountUtil.release(bb);
             }
         }
         return lac;

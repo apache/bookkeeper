@@ -90,7 +90,7 @@ public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
 
     public void setValue(ByteBuf buf, ValueType valueType) {
         if (null != value) {
-            ReferenceCountUtil.safeRelease(value);
+            ReferenceCountUtil.release(value);
         }
         this.value = buf;
         this.valueType = valueType;
@@ -105,7 +105,7 @@ public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
 
     private void reset() {
         if (null != value) {
-            ReferenceCountUtil.safeRelease(value);
+            ReferenceCountUtil.release(value);
             value = null;
         }
         modRev = -1L;
