@@ -55,7 +55,7 @@ public enum LeakDetectionPolicy {
                 return policy;
             }
         }
-        log.warn("Parse leak detection policy level failed. Use the default level: "
+        log.warn("Parse leak detection policy levelStr " + levelStr + " failed. Use the default level: "
                 + LeakDetectionPolicy.Disabled.name());
         return LeakDetectionPolicy.Disabled;
     }
