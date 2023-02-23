@@ -60,8 +60,12 @@ public class ArrayGroupSort {
         }
     }
 
+    private int alignGroup(int count) {
+        return count - (count % groupSize);
+    }
+
     private int partition(long[] array, int low, int high) {
-        int mid = low + (high - low) / 2;
+        int mid = low + alignGroup((high - low) / 2);
         swap(array, mid, high);
 
         int i = low;
