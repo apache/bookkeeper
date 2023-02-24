@@ -1,6 +1,6 @@
 # Community meetings
 
-The community meeting runs bi-weekly on Thursday 8am - 9am PST. The meeting link is [https://goo.gl/iyRA6G](https://goo.gl/iyRA6G).
+The community meeting runs bi-weekly on Thursday 8am - 9am PST.
 
 The meeting is typically comprised of 3 parts:
 
