@@ -358,7 +358,7 @@ class PendingAddOp implements WriteCallback {
             } else {
                 LOG.warn("Failed to write entry ({}, {}) to bookie ({}, {}): {}",
                         ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
-                lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr));
+                lh.executeOrdered(() -> lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr)));
             }
             return;
         }
