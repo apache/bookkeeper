@@ -217,8 +217,6 @@ public class WriteCache implements Closeable {
         deletedLedgers.add(ledgerId);
     }
 
-    private static final ArrayGroupSort groupSorter = new ArrayGroupSort(2, 4);
-
     public void forEach(EntryConsumer consumer) throws IOException {
         sortedEntriesLock.lock();
 
@@ -251,7 +249,7 @@ public class WriteCache implements Closeable {
             startTime = MathUtils.nowInNano();
 
             // Sort entries by (ledgerId, entryId) maintaining the 4 items groups
-            groupSorter.sort(sortedEntries, 0, sortedEntriesIdx);
+            ArrayGroupSort.sort(sortedEntries, 0, sortedEntriesIdx);
             if (log.isDebugEnabled()) {
                 log.debug("sorting {} ms", (MathUtils.elapsedNanos(startTime) / 1e6));
             }
