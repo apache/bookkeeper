@@ -52,9 +52,9 @@ class CRC32CDigestManager extends DigestManager {
     }
 
     @Override
-    void update(ByteBuf data) {
+    void update(ByteBuf data, int offset, int len) {
         MutableInt current = currentCrc.get();
         final int lastCrc = current.intValue();
-        current.setValue(Crc32cIntChecksum.resumeChecksum(lastCrc, data));
+        current.setValue(Crc32cIntChecksum.resumeChecksum(lastCrc, data, offset, len));
     }
 }
