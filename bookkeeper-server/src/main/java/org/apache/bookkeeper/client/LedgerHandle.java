@@ -1870,7 +1870,8 @@ public class LedgerHandle implements WriteHandle {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
                     failedBookies, ledgerId);
             }
-            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet());
+            executeOrdered(() ->
+                    unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet()));
             return;
         }
 
