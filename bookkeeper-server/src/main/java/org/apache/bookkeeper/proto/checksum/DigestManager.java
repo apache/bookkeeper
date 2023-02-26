@@ -135,7 +135,18 @@ public abstract class DigestManager {
 
         // Compute checksum over the headers
         update(buf);
-        update(data);
+
+        // don't unwrap slices
+        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
+                ? data.unwrap() : data;
+        ReferenceCountUtil.retain(unwrapped);
+        ReferenceCountUtil.safeRelease(data);
+
+        if (unwrapped instanceof CompositeByteBuf) {
+            ((CompositeByteBuf) unwrapped).forEach(this::update);
+        } else {
+            update(unwrapped);
+        }
 
         populateValueAndReset(buf);
 
