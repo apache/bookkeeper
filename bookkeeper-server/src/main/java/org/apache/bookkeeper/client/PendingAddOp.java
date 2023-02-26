@@ -231,7 +231,7 @@ class PendingAddOp implements WriteCallback {
     /**
      * Initiate the add operation.
      */
-    public void initiate() {
+    public synchronized void initiate() {
         hasRun = true;
         if (callbackTriggered) {
             // this should only be true if the request was failed due
@@ -452,7 +452,7 @@ class PendingAddOp implements WriteCallback {
     }
 
 
-    private void maybeRecycle() {
+    private synchronized void maybeRecycle() {
         /**
          * We have opportunity to recycle two objects here.
          * PendingAddOp#toSend and LedgerHandle#pendingAddOp
@@ -482,7 +482,7 @@ class PendingAddOp implements WriteCallback {
         }
     }
 
-    public void recyclePendAddOpObject() {
+    public synchronized void recyclePendAddOpObject() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
         if (payload != null) {
