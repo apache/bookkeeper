@@ -51,6 +51,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -59,6 +60,7 @@ import org.powermock.reflect.Whitebox;
  * Test the bookie journal PageCache flush interval.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
 @PrepareForTest({JournalChannel.class, Journal.class})
 @Slf4j
 public class BookieJournalPageCacheFlushTest {
