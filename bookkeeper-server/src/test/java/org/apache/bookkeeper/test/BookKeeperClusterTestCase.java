@@ -947,6 +947,8 @@ public abstract class BookKeeperClusterTestCase {
         }
 
         public void shutdown() throws Exception {
+            stopReplicationService();
+
             server.shutdown();
 
             if (ledgerManager != null) {
@@ -960,13 +962,6 @@ public abstract class BookKeeperClusterTestCase {
             }
             if (metadataDriver != null) {
                 metadataDriver.close();
-            }
-
-            if (autoRecovery != null) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Shutdown auto recovery for bookieserver: {}", address);
-                }
-                autoRecovery.shutdown();
             }
         }
     }
