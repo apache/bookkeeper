@@ -33,7 +33,7 @@ class CRC32DigestManager extends DigestManager {
     interface CRC32Digest {
         long getValueAndReset();
 
-        void update(ByteBuf buf);
+        void update(ByteBuf buf, int offset,  int len);
     }
 
     private static final FastThreadLocal<CRC32Digest> crc = new FastThreadLocal<CRC32Digest>() {
@@ -62,7 +62,7 @@ class CRC32DigestManager extends DigestManager {
     }
 
     @Override
-    void update(ByteBuf data) {
-        crc.get().update(data);
+    void update(ByteBuf data, int offset, int len) {
+        crc.get().update(data, offset, len);
     }
 }

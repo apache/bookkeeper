@@ -38,7 +38,7 @@ public class DummyDigestManager extends DigestManager {
     }
 
     @Override
-    void update(ByteBuf buffer) {}
+    void update(ByteBuf buffer, int offset, int len) {}
 
     @Override
     void populateValueAndReset(ByteBuf buffer) {}

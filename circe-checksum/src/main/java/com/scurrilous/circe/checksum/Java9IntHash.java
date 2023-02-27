@@ -71,6 +71,11 @@ public class Java9IntHash implements IntHash {
         return resume(0, buffer);
     }
 
+    @Override
+    public int calculate(ByteBuf buffer, int offset, int len) {
+        return resume(0, buffer, offset, len);
+    }
+
     private int resume(int current, long address, int offset, int length) {
         try {
             return (int) UPDATE_DIRECT_BYTEBUFFER.invoke(null, current, address, offset, offset + length);
@@ -89,19 +94,24 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, ByteBuf buffer) {
+        return resume(current, buffer, buffer.readerIndex(), buffer.readableBytes());
+    }
+
+    @Override
+    public int resume(int current, ByteBuf buffer, int offset, int len) {
         int negCrc = ~current;
 
         if (buffer.hasMemoryAddress()) {
-            negCrc = resume(negCrc, buffer.memoryAddress(), buffer.readerIndex(), buffer.readableBytes());
+            negCrc = resume(negCrc, buffer.memoryAddress(), offset, len);
         } else if (buffer.hasArray()) {
-            int offset = buffer.arrayOffset() + buffer.readerIndex();
-            negCrc = resume(negCrc, buffer.array(), offset, buffer.readableBytes());
+            int arrayOffset = buffer.arrayOffset() + offset;
+            negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
         } else {
             byte[] b = TL_BUFFER.get();
-            int toRead = buffer.readableBytes();
+            int toRead = len;
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
-                buffer.readBytes(b, 0, length);
+                buffer.slice(offset, len).readBytes(b, 0, length);
                 negCrc = resume(negCrc, b, 0, length);
                 toRead -= length;
             }
