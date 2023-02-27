@@ -57,12 +57,19 @@ class CRC32DigestManager extends DigestManager {
     }
 
     @Override
-    void populateValueAndReset(ByteBuf buf) {
+    void populateValueAndReset(int digest, ByteBuf buf) {
         buf.writeLong(crc.get().getValueAndReset());
     }
 
     @Override
-    void update(ByteBuf data, int offset, int len) {
+    int update(int digest, ByteBuf data, int offset, int len) {
         crc.get().update(data, offset, len);
+        return 0;
+    }
+
+    @Override
+    boolean isInt32Digest() {
+        // This is stored as 8 bytes
+        return false;
     }
 }

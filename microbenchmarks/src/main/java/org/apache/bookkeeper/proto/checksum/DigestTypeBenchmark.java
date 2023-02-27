@@ -172,9 +172,9 @@ public class DigestTypeBenchmark {
     public void digestManager(MyState state) {
         final ByteBuf buff = state.getByteBuff(state.bufferType);
         final DigestManager dm = state.getDigestManager(state.digest);
-        dm.update(buff, 0, buff.readableBytes());
+        int digest = dm.update(0, buff, 0, buff.readableBytes());
         state.digestBuf.clear();
-        dm.populateValueAndReset(state.digestBuf);
+        dm.populateValueAndReset(digest, state.digestBuf);
     }
 
 }
