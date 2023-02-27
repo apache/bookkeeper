@@ -96,8 +96,8 @@ public class MacDigestManager extends DigestManager {
     }
 
     @Override
-    void update(ByteBuf data) {
-        mac.get().update(data.nioBuffer());
+    void update(ByteBuf data, int offset, int len) {
+        mac.get().update(data.slice(offset, len).nioBuffer());
     }
 
 
