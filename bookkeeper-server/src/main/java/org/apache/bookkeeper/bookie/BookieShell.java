@@ -805,6 +805,7 @@ public class BookieShell implements Tool {
             opts.addOption("l", "ledgerid", true, "Ledger ID");
             opts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
             opts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
+            opts.addOption("update", false, "Update metadata if ledger already exist");
         }
 
         @Override
@@ -827,6 +828,7 @@ public class BookieShell implements Tool {
             if (cmdLine.hasOption("restorefromfile")) {
                 flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
             }
+            flag.update(cmdLine.hasOption("update"));
 
             LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flag);
