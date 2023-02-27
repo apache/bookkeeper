@@ -54,9 +54,6 @@ public class GroupSortBenchmark {
 
         private long[] items;
 
-
-        private final ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-
         public TestState() {
             Random r = new Random();
             for (int i = 0; i < (N * 4); i++) {
@@ -64,7 +61,7 @@ public class GroupSortBenchmark {
             }
 
             groupSortedItems = Arrays.copyOf(randomItems, randomItems.length);
-            sorter.sort(groupSortedItems);
+            ArrayGroupSort.sort(groupSortedItems);
             for (int i = 0; i < (N * 4); i += 4) {
                 reverseGroupSortedItems[i] = groupSortedItems[(N - 1) * 4 - i];
                 reverseGroupSortedItems[i + 1] = groupSortedItems[(N - 1) * 4 - i + 1];
@@ -87,7 +84,7 @@ public class GroupSortBenchmark {
 
     @Benchmark
     public void randomGroupSort(GroupSortBenchmark.TestState s) {
-        s.sorter.sort(s.items);
+        ArrayGroupSort.sort(s.items);
     }
 
 
@@ -99,7 +96,7 @@ public class GroupSortBenchmark {
 
     @Benchmark
     public void preSortedGroupSort(GroupSortBenchmark.TestState s) {
-        s.sorter.sort(s.groupSortedItems);
+        ArrayGroupSort.sort(s.groupSortedItems);
     }
 
 
@@ -110,7 +107,7 @@ public class GroupSortBenchmark {
 
     @Benchmark
     public void reverseSortedGroupSort(GroupSortBenchmark.TestState s) {
-        s.sorter.sort(s.reverseGroupSortedItems);
+        ArrayGroupSort.sort(s.reverseGroupSortedItems);
     }
 
 
