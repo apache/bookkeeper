@@ -21,9 +21,7 @@ package org.apache.bookkeeper.proto.checksum;
 import com.scurrilous.circe.checksum.Crc32cIntChecksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.util.concurrent.FastThreadLocal;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 @Slf4j
 class CRC32CDigestManager extends DigestManager {
