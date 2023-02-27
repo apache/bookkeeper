@@ -944,7 +944,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
             @Override
             protected void runTask() {
-                if (exceptedRun != null && exceptedRun.get()) {
+                if (exceptedRun == null || exceptedRun.get()) {
                     innerTask.runTask();
                     latchRef.get().countDown();
                 }
