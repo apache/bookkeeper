@@ -166,8 +166,15 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
 
     @Override
     public void run() {
-        requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
-                .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        if (request instanceof BookieProtocol.ReadRequest) {
+            requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        }
+        if (request instanceof BookieProtocol.ParsedAddRequest) {
+            requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        }
+
         if (!isVersionCompatible()) {
             sendResponse(BookieProtocol.EBADVERSION,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),
