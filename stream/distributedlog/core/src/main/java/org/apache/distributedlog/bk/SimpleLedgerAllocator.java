@@ -382,7 +382,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 allocatePath, DistributedLogConstants.EMPTY_BYTES, (int) version.getLongVersion());
         ZKVersionedSetOp commitOp = new ZKVersionedSetOp(zkSetDataOp, this);
         tryObtainTxn.addOp(commitOp);
-        setPhase(Phase.HANDING_OVER);
+        if (this.phase != Phase.ALLOCATED) {
+            setPhase(Phase.HANDING_OVER);
+        }
         allocatePromise.complete(lh);
     }
 
