@@ -28,19 +28,27 @@ public class JniIntHash implements IntHash {
 
     @Override
     public int calculate(ByteBuf buffer) {
-        return resume(0, buffer);
+        return calculate(buffer, buffer.readerIndex(), buffer.readableBytes());
     }
 
     @Override
     public int resume(int current, ByteBuf buffer) {
+        return resume(current, buffer, buffer.readerIndex(), buffer.readableBytes());
+    }
+
+    @Override
+    public int calculate(ByteBuf buffer, int offset, int len) {
+        return resume(0, buffer, offset, len);
+    }
+
+    @Override
+    public int resume(int current, ByteBuf buffer, int offset, int len) {
         if (buffer.hasMemoryAddress()) {
-            return hash.resume(current, buffer.memoryAddress() + buffer.readerIndex(),
-                    buffer.readableBytes());
+            return hash.resume(current, buffer.memoryAddress() + offset, len);
         } else if (buffer.hasArray()) {
-            return hash.resume(current, buffer.array(), buffer.arrayOffset() + buffer.readerIndex(),
-                    buffer.readableBytes());
+            return hash.resume(current, buffer.array(), buffer.arrayOffset() + offset, len);
         } else {
-            return hash.resume(current, buffer.nioBuffer());
+            return hash.resume(current, buffer.slice(offset, len).nioBuffer());
         }
     }
 }

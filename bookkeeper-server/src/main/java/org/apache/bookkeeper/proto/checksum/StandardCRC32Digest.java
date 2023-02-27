@@ -36,7 +36,7 @@ class StandardCRC32Digest implements CRC32Digest {
     }
 
     @Override
-    public void update(ByteBuf buf) {
-        crc.update(buf.nioBuffer());
+    public void update(ByteBuf buf, int offset, int len) {
+        crc.update(buf.slice(offset, len).nioBuffer());
     }
 }
