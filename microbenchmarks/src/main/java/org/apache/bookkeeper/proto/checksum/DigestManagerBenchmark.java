@@ -83,8 +83,9 @@ public class DigestManagerBenchmark {
             data.writeBytes(randomBytes(entrySize));
 
             digestBuf = ByteBufAllocator.DEFAULT.directBuffer();
-            digestBuf.writeBytes(ByteBufList.coalesce(
-                    dm.computeDigestAndPackageForSending(1234, 1234, entrySize, data)));
+            digestBuf.writeBytes((ByteBuf)
+                    dm.computeDigestAndPackageForSending(1234, 1234, entrySize, data,
+                            new byte[0], 0));
         }
     }
 
