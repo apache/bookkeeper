@@ -135,7 +135,7 @@ public abstract class DigestManager {
         buf.writeLong(length);
 
         // Compute checksum over the headers
-        update(buf, buf.readerIndex(), buf.readableBytes());
+        int digest = update(0, buf, buf.readerIndex(), buf.readableBytes());
 
         // don't unwrap slices
         final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
@@ -147,13 +147,13 @@ public abstract class DigestManager {
             CompositeByteBuf cbb = (CompositeByteBuf) unwrapped;
             for (int i = 0; i < cbb.numComponents(); i++) {
                 ByteBuf b = cbb.component(i);
-                update(b, b.readerIndex(), b.readableBytes());
+                digest = update(digest, b, b.readerIndex(), b.readableBytes());
             }
         } else {
-            update(unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
+            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
         }
 
-        populateValueAndReset(buf);
+        populateValueAndReset(digest, buf);
 
         // Reset the reader index to the beginning
         buf.readerIndex(0);
