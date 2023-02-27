@@ -38,8 +38,15 @@ public class DummyDigestManager extends DigestManager {
     }
 
     @Override
-    void update(ByteBuf buffer, int offset, int len) {}
+    int update(int digest, ByteBuf buffer, int offset, int len) {
+        return 0;
+    }
 
     @Override
-    void populateValueAndReset(ByteBuf buffer) {}
+    void populateValueAndReset(int digest, ByteBuf buffer) {}
+
+    @Override
+    boolean isInt32Digest() {
+        return false;
+    }
 }
