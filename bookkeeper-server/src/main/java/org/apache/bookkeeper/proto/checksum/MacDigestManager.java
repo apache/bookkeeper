@@ -91,14 +91,18 @@ public class MacDigestManager extends DigestManager {
 
 
     @Override
-    void populateValueAndReset(ByteBuf buffer) {
+    void populateValueAndReset(int digest, ByteBuf buffer) {
         buffer.writeBytes(mac.get().doFinal());
     }
 
     @Override
-    void update(ByteBuf data, int offset, int len) {
+    int update(int digest, ByteBuf data, int offset, int len) {
         mac.get().update(data.slice(offset, len).nioBuffer());
+        return 0;
     }
 
-
+    @Override
+    boolean isInt32Digest() {
+        return false;
+    }
 }
