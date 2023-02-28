@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10};
+var data = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -133,12 +133,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Runnable</code>, <code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</code></dd>
+<dd><code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</code></dd>
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">PendingAddOp</span>
 extends java.lang.Object
-implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</pre>
+implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</pre>
 <div class="block">This represents a pending add operation. When it has got success from all
  bookies, it sees if its at the head of the pending adds queue, and if yes,
  sends ack back to the application. If a bookie fails, a replacement is made
@@ -331,21 +331,21 @@ implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCal
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiate()">initiate</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Initiate the add operation.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maybeTimeout()">maybeTimeout</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recyclePendAddOpObject()">recyclePendAddOpObject</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#run()">run</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Initiate the add operation.</div>
-</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
@@ -354,42 +354,36 @@ implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCal
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendWriteRequest(java.util.List,int)">sendWriteRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
-                int&nbsp;bookieIndex)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryId(long)">setEntryId</a></span>&#8203;(long&nbsp;entryId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryId(long)">setEntryId</a></span>&#8203;(long&nbsp;entryId)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLedgerLength(long)">setLedgerLength</a></span>&#8203;(long&nbsp;ledgerLength)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLedgerLength(long)">setLedgerLength</a></span>&#8203;(long&nbsp;ledgerLength)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#submitCallback(int)">submitCallback</a></span>&#8203;(int&nbsp;rc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#submitCallback(int)">submitCallback</a></span>&#8203;(int&nbsp;rc)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#timeoutQuorumWait()">timeoutQuorumWait</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unsetSuccessAndSendWriteRequest(java.util.List,int)">unsetSuccessAndSendWriteRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
                                int&nbsp;bookieIndex)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeComplete(int,long,long,org.apache.bookkeeper.net.BookieId,java.lang.Object)">writeComplete</a></span>&#8203;(int&nbsp;rc,
              long&nbsp;ledgerId,
@@ -527,7 +521,7 @@ implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCal
 <ul class="blockList">
 <li class="blockList">
 <h4>requestTimeNanos</h4>
-<pre>long requestTimeNanos</pre>
+<pre>volatile&nbsp;long requestTimeNanos</pre>
 </li>
 </ul>
 <a id="qwcLatency">
@@ -695,16 +689,6 @@ implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCal
 <pre class="methodSignature">long&nbsp;getEntryId()</pre>
 </li>
 </ul>
-<a id="sendWriteRequest(java.util.List,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>sendWriteRequest</h4>
-<pre class="methodSignature">void&nbsp;sendWriteRequest&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
-                      int&nbsp;bookieIndex)</pre>
-</li>
-</ul>
 <a id="maybeTimeout()">
 <!--   -->
 </a>
@@ -733,18 +717,14 @@ implements java.lang.Runnable, org.apache.bookkeeper.proto.BookkeeperInternalCal
                                      int&nbsp;bookieIndex)</pre>
 </li>
 </ul>
-<a id="run()">
+<a id="initiate()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>run</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;run()</pre>
+<h4>initiate</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;initiate()</pre>
 <div class="block">Initiate the add operation.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>run</code>&nbsp;in interface&nbsp;<code>java.lang.Runnable</code></dd>
-</dl>
 </li>
 </ul>
 <a id="writeComplete(int,long,long,org.apache.bookkeeper.net.BookieId,java.lang.Object)">
