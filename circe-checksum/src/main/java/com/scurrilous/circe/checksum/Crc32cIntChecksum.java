@@ -53,8 +53,8 @@ public class Crc32cIntChecksum {
      * @param payload
      * @return
      */
-    public static int resumeChecksum(int previousChecksum, ByteBuf payload) {
-        return CRC32C_HASH.resume(previousChecksum, payload);
+    public static int resumeChecksum(int previousChecksum, ByteBuf payload, int offset, int len) {
+        return CRC32C_HASH.resume(previousChecksum, payload, offset, len);
     }
 
 }

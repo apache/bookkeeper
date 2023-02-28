@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -1190,7 +1190,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *      the boolean flag indicating whether to limit stats logging
      */
     public boolean getLimitStatsLogging() {
-        return getBoolean(LIMIT_STATS_LOGGING, false);
+        return getBoolean(LIMIT_STATS_LOGGING, true);
     }
 
     /**

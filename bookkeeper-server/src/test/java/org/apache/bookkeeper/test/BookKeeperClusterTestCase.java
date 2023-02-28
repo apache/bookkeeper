@@ -275,6 +275,7 @@ public abstract class BookKeeperClusterTestCase {
             bkc.close();
         }
 
+        stopReplicationService();
         for (ServerTester t : servers) {
             t.shutdown();
         }
@@ -316,6 +317,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     protected void stopAllBookies(boolean shutdownClient) throws Exception {
+        stopReplicationService();
         for (ServerTester t : servers) {
             t.shutdown();
         }
@@ -607,6 +609,7 @@ public abstract class BookKeeperClusterTestCase {
             throws Exception {
         // shut down bookie server
         List<ServerConfiguration> confs = new ArrayList<>();
+        stopReplicationService();
         for (ServerTester server : servers) {
             server.shutdown();
             confs.add(server.getConfiguration());
@@ -964,7 +967,7 @@ public abstract class BookKeeperClusterTestCase {
 
             if (autoRecovery != null) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Shutdown auto recovery for bookieserver: {}", address);
+                    LOG.debug("Shutdown auto recovery for bookie server: {}", address);
                 }
                 autoRecovery.shutdown();
             }

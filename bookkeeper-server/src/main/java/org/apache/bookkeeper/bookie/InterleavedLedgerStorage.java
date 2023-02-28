@@ -36,6 +36,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -171,11 +172,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void setCheckpointer(Checkpointer checkpointer) {
         this.checkpointer = checkpointer;
-    }
-
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
     }
 
     public void initializeWithEntryLogger(ServerConfiguration conf,
@@ -374,7 +370,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                     lac = bb.readLong();
                     lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
                 } finally {
-                    bb.release();
+                    ReferenceCountUtil.safeRelease(bb);
                 }
             }
         }

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -183,7 +183,7 @@ public class BookieProtoEncoding {
                 packet.markReaderIndex();
                 return BookieProtocol.ParsedAddRequest.create(
                         version, ledgerId, entryId, flags,
-                        masterKey, packet.retain());
+                        masterKey, packet);
             }
 
             case BookieProtocol.READENTRY:

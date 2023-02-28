@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -805,6 +805,7 @@ public class BookieShell implements Tool {
             opts.addOption("l", "ledgerid", true, "Ledger ID");
             opts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
             opts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
+            opts.addOption("update", false, "Update metadata if ledger already exist");
         }
 
         @Override
@@ -814,7 +815,7 @@ public class BookieShell implements Tool {
                 System.err.println("Must specify a ledger id");
                 return -1;
             }
-            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
                 System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
                 return -2;
             }
@@ -827,6 +828,7 @@ public class BookieShell implements Tool {
             if (cmdLine.hasOption("restorefromfile")) {
                 flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
             }
+            flag.update(cmdLine.hasOption("update"));
 
             LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flag);
@@ -840,7 +842,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid> [--dump-to-file FILENAME|--restore-from-file FILENAME]";
+            return "ledgermetadata -ledgerid <ledgerid> [--dumptofile FILENAME|--restorefromfile FILENAME]";
         }
 
         @Override
@@ -2397,50 +2399,56 @@ public class BookieShell implements Tool {
         }
     }
 
-    public static void main(String[] argv) throws Exception {
-        BookieShell shell = new BookieShell();
+    public static void main(String[] argv) {
+        int res = -1;
+        try {
+            BookieShell shell = new BookieShell();
 
-        // handle some common options for multiple cmds
-        Options opts = new Options();
-        opts.addOption(CONF_OPT, true, "configuration file");
-        opts.addOption(LEDGERID_FORMATTER_OPT, true, "format of ledgerId");
-        opts.addOption(ENTRY_FORMATTER_OPT, true, "format of entries");
-        BasicParser parser = new BasicParser();
-        CommandLine cmdLine = parser.parse(opts, argv, true);
+            // handle some common options for multiple cmds
+            Options opts = new Options();
+            opts.addOption(CONF_OPT, true, "configuration file");
+            opts.addOption(LEDGERID_FORMATTER_OPT, true, "format of ledgerId");
+            opts.addOption(ENTRY_FORMATTER_OPT, true, "format of entries");
+            BasicParser parser = new BasicParser();
+            CommandLine cmdLine = parser.parse(opts, argv, true);
 
-        // load configuration
-        CompositeConfiguration conf = new CompositeConfiguration();
-        if (cmdLine.hasOption(CONF_OPT)) {
-            String val = cmdLine.getOptionValue(CONF_OPT);
-            conf.addConfiguration(new PropertiesConfiguration(
-                    new File(val).toURI().toURL()));
-        }
-        shell.setConf(conf);
+            // load configuration
+            CompositeConfiguration conf = new CompositeConfiguration();
+            if (cmdLine.hasOption(CONF_OPT)) {
+                String val = cmdLine.getOptionValue(CONF_OPT);
+                conf.addConfiguration(new PropertiesConfiguration(
+                        new File(val).toURI().toURL()));
+            }
+            shell.setConf(conf);
 
-        // ledgerid format
-        if (cmdLine.hasOption(LEDGERID_FORMATTER_OPT)) {
-            String val = cmdLine.getOptionValue(LEDGERID_FORMATTER_OPT);
-            shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(val, shell.bkConf);
-        } else {
-            shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(shell.bkConf);
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Using ledgerIdFormatter {}", shell.ledgerIdFormatter.getClass());
-        }
+            // ledgerid format
+            if (cmdLine.hasOption(LEDGERID_FORMATTER_OPT)) {
+                String val = cmdLine.getOptionValue(LEDGERID_FORMATTER_OPT);
+                shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(val, shell.bkConf);
+            } else {
+                shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(shell.bkConf);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using ledgerIdFormatter {}", shell.ledgerIdFormatter.getClass());
+            }
 
-        // entry format
-        if (cmdLine.hasOption(ENTRY_FORMATTER_OPT)) {
-            String val = cmdLine.getOptionValue(ENTRY_FORMATTER_OPT);
-            shell.entryFormatter = EntryFormatter.newEntryFormatter(val, shell.bkConf);
-        } else {
-            shell.entryFormatter = EntryFormatter.newEntryFormatter(shell.bkConf);
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Using entry formatter {}", shell.entryFormatter.getClass());
-        }
+            // entry format
+            if (cmdLine.hasOption(ENTRY_FORMATTER_OPT)) {
+                String val = cmdLine.getOptionValue(ENTRY_FORMATTER_OPT);
+                shell.entryFormatter = EntryFormatter.newEntryFormatter(val, shell.bkConf);
+            } else {
+                shell.entryFormatter = EntryFormatter.newEntryFormatter(shell.bkConf);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using entry formatter {}", shell.entryFormatter.getClass());
+            }
 
-        int res = shell.run(cmdLine.getArgs());
-        System.exit(res);
+            res = shell.run(cmdLine.getArgs());
+        } catch (Throwable e) {
+            LOG.error("Got an exception", e);
+        } finally {
+            System.exit(res);
+        }
     }
 
     private synchronized void initEntryLogger() throws IOException {

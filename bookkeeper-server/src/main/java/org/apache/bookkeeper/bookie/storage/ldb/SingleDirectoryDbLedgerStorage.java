@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +64,6 @@ import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
-import org.apache.bookkeeper.bookie.LedgerStorageNotificationListener;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
@@ -144,9 +144,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final Counter flushExecutorTime;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
-            StatsLogger statsLogger, ByteBufAllocator allocator, ScheduledExecutorService gcExecutor,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize) throws IOException {
+                                          LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                                          EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
+                                          long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+            throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
@@ -238,11 +239,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
     @Override
     public void setCheckpointer(Checkpointer checkpointer) { }
-
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
-    }
 
     /**
      * Evict all the ledger info object that were not used recently.
@@ -385,11 +381,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public boolean isFenced(long ledgerId) throws IOException, BookieException {
-        if (log.isDebugEnabled()) {
-            log.debug("isFenced. ledger: {}", ledgerId);
-        }
-
         boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
+
+        if (log.isDebugEnabled()) {
+            log.debug("ledger: {}, isFenced: {}.", ledgerId, isFenced);
+        }
 
         // Only a negative result while in limbo equates to unknown
         if (!isFenced) {
@@ -656,7 +652,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     currentEntryLocation += 4 + entry.readableBytes();
                     currentEntryLogId = currentEntryLocation >> 32;
                 } finally {
-                    entry.release();
+                    ReferenceCountUtil.safeRelease(entry);
                 }
             }
         } catch (Exception e) {
@@ -779,12 +775,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             Batch batch = entryLocationIndex.newBatch();
             writeCacheBeingFlushed.forEach((ledgerId, entryId, entry) -> {
-                try {
-                    long location = entryLogger.addEntry(ledgerId, entry);
-                    entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                long location = entryLogger.addEntry(ledgerId, entry);
+                entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
             });
 
             long entryLoggerStart = MathUtils.nowInNano();
@@ -837,10 +829,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             // Leave IOExecption as it is
             throw e;
-        } catch (RuntimeException e) {
-            recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
-            // Wrap unchecked exceptions
-            throw new IOException(e);
         } finally {
             try {
                 isFlushOngoing.set(false);
@@ -939,7 +927,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 lac = bb.readLong();
                 lac = getOrAddLedgerInfo(ledgerId).setLastAddConfirmed(lac);
             } finally {
-                bb.release();
+                ReferenceCountUtil.safeRelease(bb);
             }
         }
         return lac;
@@ -986,13 +974,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
             return null;
         }
-        if (ledgerData.hasExplicitLac()) {
-            if (log.isDebugEnabled()) {
-                log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
-            }
-            ByteString persistedLac = ledgerData.getExplicitLac();
-            ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
+        if (log.isDebugEnabled()) {
+            log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
         }
+        ByteString persistedLac = ledgerData.getExplicitLac();
+        ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
         return ledgerInfo.getExplicitLac();
     }
 

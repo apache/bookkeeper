@@ -157,7 +157,9 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
                                 }
                                 cb.processResult(BKException.Code.OK, null, null);
                             } else if (BKException.getExceptionCode(exception)
-                                      == BKException.Code.NoSuchLedgerExistsException) {
+                                        == BKException.Code.NoSuchLedgerExistsException
+                                    || BKException.getExceptionCode(exception)
+                                        == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 cb.processResult(BKException.Code.OK, null, null);
                             } else {
                                 LOG.error("Unable to read the ledger: {} information", ledgerId);

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -284,11 +284,6 @@ public class SyncThreadTest {
         public void setCheckpointSource(CheckpointSource checkpointSource) {}
         @Override
         public void setCheckpointer(Checkpointer checkpointer) {}
-
-        @Override
-        public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageListener) {
-
-        }
 
         @Override
         public void deleteLedger(long ledgerId) throws IOException {

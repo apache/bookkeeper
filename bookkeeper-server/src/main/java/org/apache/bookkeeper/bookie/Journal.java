@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,6 +30,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -346,8 +347,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             cbThreadPoolQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
-            recycle();
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            recycle();
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -364,6 +365,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         };
 
         private void recycle() {
+            this.entry = null;
+            this.cb = null;
+            this.ctx = null;
+            this.journalAddEntryStats = null;
+            this.journalCbQueuedLatency = null;
+            this.journalCbQueueSize = null;
+            this.cbThreadPoolQueueSize = null;
+            this.callbackTime = null;
             recyclerHandle.recycle(this);
         }
     }
@@ -1127,10 +1136,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             qe = localQueueEntries.removeFirst();
                             dequeueStartTime = MathUtils.nowInNano();
                             busyStartTime = dequeueStartTime;
-                            journalStats.getJournalQueueSize().dec();
-                            journalStats.getJournalQueueStats()
-                                    .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
-                                            TimeUnit.NANOSECONDS);
                         } else {
                             long pollWaitTimeNanos = maxGroupWaitInNanos
                                     - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
@@ -1271,7 +1276,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                      * (METAENTRY_ID_LEDGER_EXPLICITLAC) to Journal.
                      */
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    qe.entry.release();
+                    ReferenceCountUtil.safeRelease(qe.entry);
                 } else if (qe.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().addCount(entrySize);
@@ -1287,7 +1292,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     bc.write(lenBuff);
                     bc.write(qe.entry);
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    qe.entry.release();
+                    ReferenceCountUtil.safeRelease(qe.entry);
                 }
 
                 toFlush.add(qe);

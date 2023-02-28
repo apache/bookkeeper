@@ -414,9 +414,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 return PlacementResult.of(addrs, PlacementPolicyAdherence.FAIL);
             }
-
+            //Choose different rack nodes.
+            String curRack = null;
             for (int i = 0; i < ensembleSize; i++) {
-                String curRack;
                 if (null == prevNode) {
                     if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
                         curRack = NodeBase.ROOT;
@@ -424,11 +424,24 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         curRack = localNode.getNetworkLocation();
                     }
                 } else {
-                    curRack = "~" + prevNode.getNetworkLocation();
+                    if (!curRack.startsWith("~")) {
+                        curRack = "~" + prevNode.getNetworkLocation();
+                    } else {
+                        curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
+                    }
                 }
                 boolean firstBookieInTheEnsemble = (null == prevNode);
-                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
-                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+                try {
+                    prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
+                } catch (BKNotEnoughBookiesException e) {
+                    if (!curRack.equals(NodeBase.ROOT)) {
+                        curRack = NodeBase.ROOT;
+                        prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
+                                !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+                    } else {
+                        throw e;
+                    }
+                }
             }
             List<BookieId> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
@@ -519,9 +532,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         networkLoc, excludeBookies);
                 throw e;
             }
-            LOG.warn("Failed to choose a bookie from {} : "
-                     + "excluded {}, fallback to choose bookie randomly from the cluster.",
-                     networkLoc, excludeBookies);
+            LOG.warn("Failed to choose a bookie from network location {}, "
+                    + "the bookies in the network location are {}, excluded bookies {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                     networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             // randomly choose one from whole cluster, ignore the provided predicate.
             return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
         }
@@ -544,6 +558,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
              * the whole cluster and exclude the racks specified at
              * <tt>excludeRacks</tt>.
              */
+            LOG.warn("Failed to choose a bookie node from network location {}, "
+                    + "the bookies in the network location are {}, excluded bookies {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
         }
     }
@@ -1173,7 +1191,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     curRack = localNode.getNetworkLocation();
                 }
             } else {
-                curRack = "~" + prevNode.getNetworkLocation();
+                curRack = NetworkTopologyImpl.INVERSE + prevNode.getNetworkLocation();
             }
             try {
                 prevNode = replaceToAdherePlacementPolicyInternal(
@@ -1240,7 +1258,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         // avoid additional replace from write quorum candidates by preExcludeRacks and postExcludeRacks
         // avoid to use first candidate bookies for election by provisionalEnsembleNodes
         conditionList.add(Pair.of(
-                "~" + String.join(",",
+                NetworkTopologyImpl.INVERSE + String.join(",",
                         Stream.concat(preExcludeRacks.stream(), postExcludeRacks.stream()).collect(Collectors.toSet())),
                 provisionalEnsembleNodes
         ));

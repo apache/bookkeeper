@@ -31,6 +31,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -269,7 +270,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
 
-            toSend.release();
+            ReferenceCountUtil.safeRelease(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -279,20 +280,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                              final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
-        try {
-            executor.executeOrdered(ledgerId, new Runnable() {
-                @Override
-                public void run() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                }
-                @Override
-                public String toString() {
-                    return String.format("CompleteWrite(ledgerId=%d, entryId=%d, addr=%s)", ledgerId, entryId, addr);
-                }
-            });
-        } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
-        }
+        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
     }
 
     @Override
@@ -410,7 +398,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                               toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
-            toSend.release();
+            ReferenceCountUtil.safeRelease(toSend);
             recycle();
         }
 

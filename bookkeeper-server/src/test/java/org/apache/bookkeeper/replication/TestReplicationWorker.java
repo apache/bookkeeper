@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -32,6 +32,8 @@ import static org.junit.Assert.fail;
 
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
@@ -45,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -1157,11 +1160,55 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
-        testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class);
+        testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class, null);
+    }
+
+    @Test
+    public void testReplicationStats() throws Exception {
+        BiConsumer<Boolean, ReplicationWorker> checkReplicationStats = (first, rw) -> {
+            try {
+                final Method rereplicate = rw.getClass().getDeclaredMethod("rereplicate");
+                rereplicate.setAccessible(true);
+                final Object result = rereplicate.invoke(rw);
+                final Field statsLoggerField = rw.getClass().getDeclaredField("statsLogger");
+                statsLoggerField.setAccessible(true);
+                final TestStatsLogger statsLogger = (TestStatsLogger) statsLoggerField.get(rw);
+
+                final Counter numDeferLedgerLockReleaseOfFailedLedgerCounter =
+                        statsLogger.getCounter(ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
+                final Counter numLedgersReplicatedCounter =
+                        statsLogger.getCounter(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+                final Counter numNotAdheringPlacementLedgersCounter = statsLogger
+                        .getCounter(ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
+
+                assertEquals("NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER",
+                        1, numDeferLedgerLockReleaseOfFailedLedgerCounter.get().longValue());
+
+                if (first) {
+                    assertFalse((boolean) result);
+                    assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
+                            0, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            0, numNotAdheringPlacementLedgersCounter.get().longValue());
+
+                } else {
+                    assertTrue((boolean) result);
+                    assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
+                            1, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            1, numNotAdheringPlacementLedgersCounter.get().longValue());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+        testRepairedNotAdheringPlacementPolicyLedgerFragments(
+                RackawareEnsemblePlacementPolicy.class, checkReplicationStats);
     }
 
     private void testRepairedNotAdheringPlacementPolicyLedgerFragments(
-            Class<? extends EnsemblePlacementPolicy> placementPolicyClass) throws Exception {
+            Class<? extends EnsemblePlacementPolicy> placementPolicyClass,
+            BiConsumer<Boolean, ReplicationWorker> checkReplicationStats) throws Exception {
         List<BookieId> firstThreeBookies = servers.stream().map(ele -> {
             try {
                 return ele.getServer().getBookieId();
@@ -1245,16 +1292,22 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 return ensemblePlacementPolicy;
             }
         };
-
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(REPLICATION_SCOPE);
-        Counter numNotAdheringPlacementLedgersCounter = statsLogger
-                .getCounter(ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
         ReplicationWorker rw = new ReplicationWorker(baseConf, bookKeeper, false, statsLogger);
-        rw.start();
+
+        if (checkReplicationStats != null) {
+            checkReplicationStats.accept(true, rw);
+        } else {
+            rw.start();
+        }
 
         //start new bookie, the rack is /rack2
         BookieId newBookieId = startNewBookieAndReturnBookieId();
+
+        if (checkReplicationStats != null) {
+            checkReplicationStats.accept(false, rw);
+        }
 
         Awaitility.await().untilAsserted(() -> {
             LedgerMetadata metadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
@@ -1268,14 +1321,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             assertNull(stat1);
         });
 
-        assertTrue("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
-                numNotAdheringPlacementLedgersCounter.get() >= 1);
-
         for (BookieId rack1Book : firstThreeBookies) {
             killBookie(rack1Book);
         }
 
         verifyRecoveredLedgers(lh, 0, entrySize - 1);
+
+        if (checkReplicationStats == null) {
+            rw.shutdown();
+        }
     }
 
     private EnsemblePlacementPolicy buildRackAwareEnsemblePlacementPolicy(List<BookieId> bookieIds) {

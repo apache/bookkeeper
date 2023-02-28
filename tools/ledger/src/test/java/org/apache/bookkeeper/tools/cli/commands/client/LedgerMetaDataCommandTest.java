@@ -30,7 +30,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.client.BKException.BKLedgerExistException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
@@ -79,6 +81,7 @@ public class LedgerMetaDataCommandTest extends BookieCommandTestBase {
         });
 
         when(ledgerManager.createLedgerMetadata(anyLong(), eq(ledgerMetadata))).thenReturn(future);
+        when(ledgerManager.writeLedgerMetadata(anyLong(), eq(ledgerMetadata), any())).thenReturn(future);
     }
 
     @Test
@@ -112,4 +115,14 @@ public class LedgerMetaDataCommandTest extends BookieCommandTestBase {
         verify(ledgerManager, times(1)).readLedgerMetadata(anyLong());
     }
 
+    @Test
+    public void testWithRestoreFromFileWithExistingLedger() throws IOException {
+        when(ledgerManager.createLedgerMetadata(anyLong(), any()))
+                .thenReturn(FutureUtils.exception(new BKLedgerExistException()));
+        File file = testDir.newFile("testrestore");
+        LedgerMetaDataCommand cmd = new LedgerMetaDataCommand();
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1", "-u", "-r", file.getAbsolutePath() }));
+
+        verify(ledgerManager, times(1)).createLedgerMetadata(anyLong(), any(LedgerMetadata.class));
+    }
 }
