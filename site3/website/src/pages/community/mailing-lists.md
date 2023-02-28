@@ -10,7 +10,7 @@ If you use Apache BookKeeper, please subscribe to the BookKeeper user mailing li
 
 * [Subscribe](mailto:user-subscribe@bookkeeper.apache.org)
 * [Unsubscribe](mailto:user-unsubscribe@bookkeeper.apache.org)
-* [Archives](http://mail-archives.apache.org/mod_mbox/bookkeeper-user/)
+* [Archives](https://lists.apache.org/list.html?user@bookkeeper.apache.org)
 
 ## Developers
 
@@ -18,7 +18,7 @@ If you'd like to contribute to the Apache BookKeeper project, please subscribe t
 
 * [Subscribe](mailto:dev-subscribe@bookkeeper.apache.org)
 * [Unsubscribe](mailto:dev-unsubscribe@bookkeeper.apache.org)
-* [Archives](http://mail-archives.apache.org/mod_mbox/bookkeeper-dev/)
+* [Archives](https://lists.apache.org/list.html?dev@bookkeeper.apache.org)
 
 ## Issues
 
@@ -27,7 +27,7 @@ BookKeeper issues mailing list at [issues@bookkeeper.apache.org](mailto:issues@b
 
 * [Subscribe](mailto:issues-subscribe@bookkeeper.apache.org)
 * [Unsubscribe](mailto:issues-unsubscribe@bookkeeper.apache.org)
-* [Archives](http://mail-archives.apache.org/mod_mbox/bookkeeper-issues/)
+* [Archives](https://lists.apache.org/list.html?issues@bookkeeper.apache.org)
 
 ### Mail Filters
 
@@ -45,4 +45,4 @@ If you'd like to see changes made in BookKeeper's version control system then su
 
 * [Subscribe](mailto:commits-subscribe@bookkeeper.apache.org)
 * [Unsubscribe](mailto:commits-unsubscribe@bookkeeper.apache.org)
-* [Archives](http://mail-archives.apache.org/mod_mbox/bookkeeper-commits/)
+* [Archives](https://lists.apache.org/list.html?commits@bookkeeper.apache.org)
