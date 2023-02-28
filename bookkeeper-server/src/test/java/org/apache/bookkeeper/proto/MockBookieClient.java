@@ -264,10 +264,14 @@ public class MockBookieClient implements BookieClient {
     }
 
     public static ByteBuf copyData(ReferenceCounted rc) {
+        ByteBuf res;
         if (rc instanceof ByteBuf) {
-            return Unpooled.copiedBuffer((ByteBuf) rc);
+            res = Unpooled.copiedBuffer((ByteBuf) rc);
         } else {
-            return ByteBufList.coalesce((ByteBufList) rc);
+            res = ByteBufList.coalesce((ByteBufList) rc);
         }
+
+        rc.release();
+        return res;
     }
 }
