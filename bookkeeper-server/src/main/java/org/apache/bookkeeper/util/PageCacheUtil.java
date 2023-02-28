@@ -34,7 +34,7 @@ public final class PageCacheUtil {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
-    private static boolean FADVISE_POSSIBLE = true;
+    private static boolean fADVISE_POSSIBLE = true;
 
     private static final NativeIO NATIVE_IO;
 
@@ -44,7 +44,7 @@ public final class PageCacheUtil {
             nativeIO = new NativeIOImpl();
         } catch (Exception e) {
             log.warn("Unable to initialize NativeIO for posix_fdavise: {}", e.getMessage());
-            FADVISE_POSSIBLE = false;
+            fADVISE_POSSIBLE = false;
         }
 
         NATIVE_IO = nativeIO;
@@ -90,14 +90,14 @@ public final class PageCacheUtil {
      * @param len    The length to be flushed.
      */
     public static void bestEffortRemoveFromPageCache(int fd, long offset, long len) {
-        if (!FADVISE_POSSIBLE || fd < 0) {
+        if (!fADVISE_POSSIBLE || fd < 0) {
             return;
         }
         try {
             NATIVE_IO.posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
         } catch (Exception e) {
             log.warn("Failed to perform posix_fadvise: {}", e.getMessage());
-            FADVISE_POSSIBLE = false;
+            fADVISE_POSSIBLE = false;
         }
     }
 }
