@@ -89,7 +89,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
         @Parameter(names = { "-d", "--dumptofile" }, description = "Dump metadata for ledger, to a file")
         private String dumpToFile = DEFAULT;
 
-        @Parameter(names = { "-r", "--restorefromefile" }, description = "Restore metadata for ledger, from a file")
+        @Parameter(names = { "-r", "--restorefromfile" }, description = "Restore metadata for ledger, from a file")
         private String restoreFromFile = DEFAULT;
 
         @Parameter(names =  {"-lf", "--ledgeridformatter"}, description = "Set ledger id formatter")

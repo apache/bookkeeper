@@ -815,7 +815,7 @@ public class BookieShell implements Tool {
                 System.err.println("Must specify a ledger id");
                 return -1;
             }
-            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
                 System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
                 return -2;
             }
