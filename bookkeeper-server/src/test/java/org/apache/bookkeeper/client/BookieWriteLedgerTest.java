@@ -28,6 +28,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.AbstractByteBufAllocator;
@@ -48,6 +54,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -58,6 +66,8 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
@@ -68,6 +78,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,6 +136,13 @@ public class BookieWriteLedgerTest extends
          */
         baseConf.setSkipListSizeLimit(4 * 1024 * 1024);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+    }
+
+    private byte[] randomPayload() {
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        return entry.array();
     }
 
     /**
@@ -695,7 +713,6 @@ public class BookieWriteLedgerTest extends
         entry = ByteBuffer.allocate(4);
         entry.putInt(rng.nextInt(maxInt));
         entry.position(0);
-        entries1.add(entry.array());
         try {
             lh.addEntry(3, entry.array());
             fail("AddEntry is called after the close of LedgerHandle,"
@@ -851,6 +868,104 @@ public class BookieWriteLedgerTest extends
             lhArray[lc].close();
             bkc.deleteLedger(lid);
         }
+    }
+
+    @Test
+    public void testWrittenEntriesBlockedByEnsembleChanging() throws Throwable {
+        // This test constructs a scenario:
+        // * Ensemble size is two, write/ack quorum size is one. Let's assume
+        //   initial ensemble members are b0 and b1.
+        // * Write four entries e0, e2, .. e3. The distribution algorithm will
+        //   write e0 and e2 to b0, e1 and e3 to b1.
+        // * e1 completes its write. Bookie b1 crashes. Ensemble changing initiates.
+        //   e0 completes its write but blocked from success due to ensemble changing.
+        // * Ensemble changing completes. The ledger will unset success and resend
+        //   write requests if needed.
+        //
+        // In this scenario, after ensemble changed, all pending entries should proceed
+        // to success finally. Especially, e1 should unset its success and resend its write.
+        int numberEntries = 4;
+
+        // Trigger e3's sending only after bookie b1 failed.
+        CompletableFuture<Void> b1FailedFuture = new CompletableFuture<>();
+
+        // Intercept ensemble changing and trigger e0's sending so that successfully written
+        // entries e0, e1 and e3 are blocked by ensemble changing.
+        CompletableFuture<InvocationOnMock> ensembleChangingFuture = new CompletableFuture<>();
+
+        // Start ensemble changing work after e0's write completes.
+        CompletableFuture<Void> e0WrittenFuture = new CompletableFuture<>();
+
+        // Kill bookie b1 after e1 written.
+        CompletableFuture<Void> e1WrittenFuture = new CompletableFuture<>();
+
+        CountDownLatch entriesAddedLatch = new CountDownLatch(numberEntries);
+
+        lh = bkc.createLedger(2, 1, digestType, ledgerPassword);
+
+        ClientContext clientCtx = lh.clientCtx;
+        OrderedExecutor executor = clientCtx.getMainWorkerPool();
+        OrderedExecutor spiedExecutor = spy(executor);
+
+        ClientContext spiedClientCtx = spy(clientCtx);
+        doReturn(spiedExecutor).when(spiedClientCtx).getMainWorkerPool();
+        Whitebox.setInternalState(lh, "clientCtx", spiedClientCtx);
+
+        lh = spy(lh);
+        doAnswer(invocation -> {
+            ensembleChangingFuture.complete(invocation);
+            return null;
+        }).when(lh).ensembleChangeLoop(any(), any());
+
+        doAnswer(invocation -> {
+            Object callable = invocation.getArgument(1);
+            if (callable instanceof PendingAddOp) {
+                PendingAddOp addOp = (PendingAddOp) callable;
+                if (addOp.entryId == 0) {
+                    ensembleChangingFuture.join();
+                    PendingAddOp spiedAddOp = spy(addOp);
+                    doAnswer(invocation1 -> {
+                        e0WrittenFuture.complete(null);
+                        return invocation1.callRealMethod();
+                    }).when(spiedAddOp).writeComplete(anyInt(), anyLong(), anyLong(), any(), any());
+                    executor.executeOrdered(lh.ledgerId, spiedAddOp);
+                } else if (addOp.entryId == 3) {
+                    b1FailedFuture.join();
+                } else if (addOp.entryId == 1) {
+                    PendingAddOp spiedAddOp = spy(addOp);
+                    doAnswer(invocation1 -> {
+                        e1WrittenFuture.complete(null);
+                        return invocation1.callRealMethod();
+                    }).when(spiedAddOp).writeComplete(anyInt(), anyLong(), anyLong(), any(), any());
+                    executor.executeOrdered(lh.ledgerId, spiedAddOp);
+                }
+            }
+            return invocation.callRealMethod();
+        }).when(spiedExecutor).executeOrdered(anyLong(), any(SafeRunnable.class));
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        for (int i = 0; i < numberEntries; i++) {
+            entries1.add(new byte[0]);
+            executorService.execute(() -> {
+                byte[] bytes = randomPayload();
+                CompletableFuture<Long> appending = lh.appendAsync(bytes);
+                long entryId = appending.join();
+                int entryIndex = (int) entryId;
+                entries1.set(entryIndex, bytes);
+                entriesAddedLatch.countDown();
+            });
+        }
+
+        e1WrittenFuture.join();
+        BookieId b1 = lh.getCurrentEnsemble().get(1);
+        killBookie(b1);
+        b1FailedFuture.complete(null);
+        e0WrittenFuture.join();
+        ensembleChangingFuture.join().callRealMethod();
+
+        entriesAddedLatch.await();
+
+        readEntries(lh, entries1);
     }
 
     /**
@@ -1445,7 +1560,7 @@ public class BookieWriteLedgerTest extends
     }
 
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {
-        ls = lh.readEntries(0, numEntriesToWrite - 1);
+        ls = lh.readEntries(0, entries.size() - 1);
         int index = 0;
         while (ls.hasMoreElements()) {
             ByteBuffer origbb = ByteBuffer.wrap(entries.get(index++));
