@@ -41,6 +41,11 @@ public class NativeIOImpl implements NativeIO {
     }
 
     @Override
+    public int posix_fadvise(int fd, long offset, long len, int flag) throws NativeIOException {
+        return NativeIOJni.posix_fadvise(fd, offset, len, flag);
+    }
+
+    @Override
     public long lseek(int fd, long offset, int whence) throws NativeIOException {
         return NativeIOJni.lseek(fd, offset, whence);
     }
