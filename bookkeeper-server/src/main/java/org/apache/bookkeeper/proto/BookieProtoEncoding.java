@@ -110,23 +110,7 @@ public class BookieProtoEncoding {
                 return msg;
             }
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
-            if (r instanceof BookieProtocol.AddRequest) {
-                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) r;
-                ByteBufList data = ar.getData();
-
-                int totalHeaderSize = 4 // for the request header
-                        + BookieProtocol.MASTER_KEY_LENGTH; // for the master key
-
-                int totalPayloadSize = totalHeaderSize + data.readableBytes();
-                ByteBuf buf = allocator.buffer(totalHeaderSize + 4 /* frame size */);
-                buf.writeInt(totalPayloadSize); // Frame header
-                buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
-                buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
-
-                ar.recycle();
-                data.prepend(buf);
-                return data;
-            } else if (r instanceof BookieProtocol.ReadRequest) {
+            if (r instanceof BookieProtocol.ReadRequest) {
                 int totalHeaderSize = 4 // for request type
                     + 8 // for ledgerId
                     + 8; // for entryId
