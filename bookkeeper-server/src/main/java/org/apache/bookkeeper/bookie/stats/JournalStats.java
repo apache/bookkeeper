@@ -42,6 +42,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_QUEUE_S
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SYNC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_WRITE_BYTES;
+
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
