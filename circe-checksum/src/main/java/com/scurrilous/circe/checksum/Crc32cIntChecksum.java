@@ -47,6 +47,28 @@ public class Crc32cIntChecksum {
     }
 
     /**
+     * Computes crc32c checksum: if it is able to load crc32c native library then it computes using that native library
+     * which is faster as it computes using hardware machine instruction else it computes using crc32c algo.
+     *
+     * @param payload
+     * @return
+     */
+    public static int computeChecksum(ByteBuf payload, int offset, int len) {
+        return CRC32C_HASH.calculate(payload, offset, len);
+    }
+
+    /**
+     * Computes incremental checksum with input previousChecksum and input payload
+     *
+     * @param previousChecksum : previously computed checksum
+     * @param payload
+     * @return
+     */
+    public static int resumeChecksum(int previousChecksum, ByteBuf payload) {
+        return CRC32C_HASH.resume(previousChecksum, payload);
+    }
+
+    /**
      * Computes incremental checksum with input previousChecksum and input payload
      *
      * @param previousChecksum : previously computed checksum
