@@ -414,7 +414,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (qe != null) {
                         qe.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
                         journalStats.getCbThreadPoolQueueSize().inc();
-                        cbThreadPool.execute(qe);
+                        qe.run();
                     }
                 }
 
@@ -713,14 +713,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private final String lastMarkFileName;
 
-    /**
-     * The thread pool used to handle callback.
-     */
-    private final ExecutorService cbThreadPool;
-
     private final Counter callbackTime;
     private final Counter journalTime;
-    private static String journalThreadName = "BookieJournal";
+    private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
     final BlockingQueue<QueueEntry> queue;
@@ -778,14 +773,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         this.journalReuseFiles = conf.getJournalReuseFiles();
-        if (conf.getNumJournalCallbackThreads() > 0) {
-            this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
-                                                        new CbThreadFactory());
-            this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-thread-time");
-        } else {
-            this.cbThreadPool = MoreExecutors.newDirectExecutorService();
-            this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
-        }
+        this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
 
         this.journalTime = journalStatsLogger.getThreadScopedCounter("journal-thread-time");
 
@@ -1202,7 +1190,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     numEntriesToFlush--;
                                     entry.setEnqueueCbThreadPooleQueueTime(MathUtils.nowInNano());
                                     journalStats.getCbThreadPoolQueueSize().inc();
-                                    cbThreadPool.execute(entry);
+                                    entry.run();
                                 }
                             }
 
@@ -1336,11 +1324,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
 
             forceWriteThread.shutdown();
-            cbThreadPool.shutdown();
-            if (!cbThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                LOG.warn("Couldn't shutdown journal callback thread gracefully. Forcing");
-            }
-            cbThreadPool.shutdownNow();
 
             running = false;
             this.interrupt();
