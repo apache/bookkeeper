@@ -201,7 +201,7 @@ Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_fallocate(
  * Signature: (IJJI)I
  */
 JNIEXPORT jint JNICALL
-Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_posix_fadvise(
+Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_posix_1fadvise(
     JNIEnv* env, jclass clazz,
     jint fd, jlong offset, jlong len, jint flag) {
 #ifdef __linux__
@@ -211,7 +211,7 @@ Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_posix_fadvise(
     }
     return res;
 #else
-    throwException(env, "fallocate is not available");
+    throwException(env, "posix_fadvise is not available");
     return -1;
 #endif
 }
