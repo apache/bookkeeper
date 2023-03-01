@@ -61,7 +61,7 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
     }
 
     public String getExternalGrpcEndpointStr() {
-        return getContainerIpAddress() + ":" + getMappedPort(BOOKIE_GRPC_PORT);
+        return getHost() + ":" + getMappedPort(BOOKIE_GRPC_PORT);
     }
 
     public String getInternalGrpcEndpointStr() {

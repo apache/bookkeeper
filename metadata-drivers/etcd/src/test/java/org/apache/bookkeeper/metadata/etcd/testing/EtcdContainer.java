@@ -59,7 +59,7 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     }
 
     public String getExternalServiceUri() {
-        return "etcd://" + getContainerIpAddress() + ":" + getEtcdClientPort() + "/clusters/" + clusterName;
+        return "etcd://" + getHost() + ":" + getEtcdClientPort() + "/clusters/" + clusterName;
     }
 
     public String getInternalServiceUri() {
@@ -113,7 +113,7 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     }
 
     public String getClientEndpoint() {
-        return String.format("http://%s:%d", getContainerIpAddress(), getEtcdClientPort());
+        return String.format("http://%s:%d", getHost(), getEtcdClientPort());
     }
 
     private WaitStrategy waitStrategy() {
