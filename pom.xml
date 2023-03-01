@@ -144,7 +144,6 @@
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
-    <jna.version>5.12.1</jna.version>
     <junit.version>4.12</junit.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
     <junit5.version>5.8.2</junit5.version>
@@ -331,13 +330,6 @@
         <groupId>net.jpountz.lz4</groupId>
         <artifactId>lz4</artifactId>
         <version>${lz4.version}</version>
-      </dependency>
-
-      <!-- JNA -->
-      <dependency>
-        <groupId>net.java.dev.jna</groupId>
-        <artifactId>jna</artifactId>
-        <version>${jna.version}</version>
       </dependency>
 
       <!-- yaml dependencies -->

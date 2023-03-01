@@ -78,7 +78,6 @@
                   <include>com.fasterxml.jackson.core:jackson-annotations</include>
                   <include>com.google.guava:guava</include>
                   <include>com.google.protobuf:protobuf-java</include>
-                  <include>net.java.dev.jna:jna</include>
                   <include>net.jpountz.lz4:lz4</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-common-allocator</include>
@@ -159,11 +158,6 @@
                 <relocation>
                   <pattern>com.fasterxml.jackson</pattern>
                   <shadedPattern>dlshade.com.fasterxml.jackson</shadedPattern>
-                </relocation>
-                <!-- jna -->
-                <relocation>
-                  <pattern>com.sun.jna</pattern>
-                  <shadedPattern>dlshade.com.sun.jna</shadedPattern>
                 </relocation>
                 <!-- guava & protobuf -->
                 <relocation>

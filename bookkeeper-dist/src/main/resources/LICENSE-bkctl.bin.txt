@@ -243,7 +243,6 @@ Apache Software License, Version 2.
 - lib/org.apache.logging.log4j-log4j-api-2.18.0.jar [16]
 - lib/org.apache.logging.log4j-log4j-core-2.18.0.jar [16]
 - lib/org.apache.logging.log4j-log4j-slf4j-impl-2.18.0.jar [16]
-- lib/net.java.dev.jna-jna-5.12.1.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-lang3-3.6.jar [19]
 - lib/org.apache.zookeeper-zookeeper-3.8.1.jar [20]
@@ -305,7 +304,6 @@ Apache Software License, Version 2.
 [10] Source available at https://github.com/apache/commons-logging/tree/commons-logging-1.1.1
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.89.Final
 [16] Source available at https://github.com/apache/logging-log4j2/tree/rel/2.18.0
-[17] Source available at https://github.com/java-native-access/jna/tree/5.12.1
 [18] Source available at https://github.com/apache/commons-collections/tree/collections-4.1
 [19] Source available at https://github.com/apache/commons-lang/tree/LANG_3_6
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
