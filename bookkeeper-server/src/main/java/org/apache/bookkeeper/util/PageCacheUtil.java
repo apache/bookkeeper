@@ -18,41 +18,37 @@
 
 package org.apache.bookkeeper.util;
 
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.util.nativeio.NativeIO;
+import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 
 /**
  * Native I/O operations.
  */
-public final class NativeIO {
-    private static final Logger LOG = LoggerFactory.getLogger(NativeIO.class);
+@UtilityClass
+@Slf4j
+public final class PageCacheUtil {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
-    private static boolean initialized = false;
     private static boolean fadvisePossible = true;
 
+    private static final NativeIO NATIVE_IO;
+
     static {
+        NativeIO nativeIO = null;
         try {
-            Native.register("c");
-            initialized = true;
-        } catch (NoClassDefFoundError e) {
-            LOG.info("JNA not found. Native methods will be disabled.");
-        } catch (UnsatisfiedLinkError e) {
-            LOG.info("Unable to link C library. Native methods will be disabled.");
-        } catch (NoSuchMethodError e) {
-            LOG.warn("Obsolete version of JNA present; unable to register C library");
+            nativeIO = new NativeIOImpl();
+        } catch (Exception e) {
+            log.warn("Unable to initialize NativeIO for posix_fdavise: {}", e.getMessage());
+            fadvisePossible = false;
         }
+
+        NATIVE_IO = nativeIO;
     }
-
-    // fadvice
-    public static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
-
-    private NativeIO() {}
 
     private static Field getFieldByReflection(Class cls, String fieldName) {
         Field field = null;
@@ -63,7 +59,7 @@ public final class NativeIO {
         } catch (Exception e) {
             // We don't really expect this so throw an assertion to
             // catch this during development
-            LOG.warn("Unable to read {} field from {}", fieldName, cls.getName());
+            log.warn("Unable to read {} field from {}", fieldName, cls.getName());
             assert false;
         }
 
@@ -79,14 +75,14 @@ public final class NativeIO {
         try {
             return field.getInt(descriptor);
         } catch (Exception e) {
-            LOG.warn("Unable to read fd field from java.io.FileDescriptor");
+            log.warn("Unable to read fd field from java.io.FileDescriptor");
         }
 
         return -1;
     }
 
     /**
-     * Remove pages from the file system page cache when they wont
+     * Remove pages from the file system page cache when they won't
      * be accessed again.
      *
      * @param fd     The file descriptor of the source file.
@@ -94,26 +90,14 @@ public final class NativeIO {
      * @param len    The length to be flushed.
      */
     public static void bestEffortRemoveFromPageCache(int fd, long offset, long len) {
-        if (!initialized || !fadvisePossible || fd < 0) {
+        if (!fadvisePossible || fd < 0) {
             return;
         }
         try {
-            posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
-        } catch (UnsupportedOperationException uoe) {
-            LOG.warn("posix_fadvise is not supported : ", uoe);
-            fadvisePossible = false;
-        } catch (UnsatisfiedLinkError ule) {
-            // if JNA is unavailable just skipping Direct I/O
-            // instance of this class will act like normal RandomAccessFile
-            LOG.warn("Unsatisfied Link error: posix_fadvise failed on file descriptor {}, offset {} : ",
-                    fd, offset, ule);
-            fadvisePossible = false;
+            NATIVE_IO.posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
         } catch (Exception e) {
-            // This is best effort anyway so lets just log that there was an
-            // exception and forget
-            LOG.warn("Unknown exception: posix_fadvise failed on file descriptor {}, offset {} : ",
-                    fd, offset, e);
+            log.warn("Failed to perform posix_fadvise: {}", e.getMessage());
+            fadvisePossible = false;
         }
     }
-
 }
