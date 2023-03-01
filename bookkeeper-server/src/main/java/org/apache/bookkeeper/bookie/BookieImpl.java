@@ -871,8 +871,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
 
-                // close Ledger Manager
-
                 //Shutdown disk checker
                 dirsMonitor.shutdown();
             }
