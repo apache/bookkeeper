@@ -79,13 +79,9 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void initiate(ByteBufList toSend) {
         this.toSend = toSend;
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(lac);
-        try {
-            for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteLacRequest(writeSet.get(i));
-            }
-        } finally {
-            writeSet.recycle();
+
+        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
+            sendWriteLacRequest(lh.distributionSchedule.getWriteSetBookieIndex(lac, i));
         }
     }
 
