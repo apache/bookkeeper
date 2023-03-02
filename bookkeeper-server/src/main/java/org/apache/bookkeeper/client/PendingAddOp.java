@@ -198,14 +198,9 @@ class PendingAddOp implements WriteCallback {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-        try {
-            if (!writeSet.contains(bookieIndex)) {
-                lh.sendAddSuccessCallbacks();
-                return;
-            }
-        } finally {
-            writeSet.recycle();
+        if (!lh.distributionSchedule.hasEntry(entryId, bookieIndex)) {
+            lh.sendAddSuccessCallbacks();
+            return;
         }
 
         if (callbackTriggered) {
@@ -256,14 +251,8 @@ class PendingAddOp implements WriteCallback {
         lh.maybeHandleDelayedWriteBookieFailure();
 
         // Iterate over set and trigger the sendWriteRequests
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-
-        try {
-            for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteRequest(ensemble, writeSet.get(i));
-            }
-        } finally {
-            writeSet.recycle();
+        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
+            sendWriteRequest(ensemble, lh.distributionSchedule.getWriteSetBookieIndex(entryId, i));
         }
     }
 

@@ -136,10 +136,22 @@ public interface DistributionSchedule {
             }
         };
 
+    int getWriteQuorumSize();
+
     /**
      * Return the set of bookie indices to send the message to.
      */
     WriteSet getWriteSet(long entryId);
+
+    /**
+     * Return the WriteSet bookie index for a given and index
+     * in the WriteSet.
+     *
+     * @param entryId
+     * @param writeSetIndex
+     * @return
+     */
+    int getWriteSetBookieIndex(long entryId, int writeSetIndex);
 
     /**
      * Return the set of bookies indices to send the messages to the whole ensemble.

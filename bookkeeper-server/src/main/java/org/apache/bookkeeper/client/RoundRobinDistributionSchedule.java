@@ -25,6 +25,7 @@ import io.netty.util.Recycler.Handle;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map;
+import lombok.Getter;
 import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RoundRobinDistributionSchedule implements DistributionSchedule {
     private static final Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionSchedule.class);
+    @Getter
     private final int writeQuorumSize;
     private final int ackQuorumSize;
     private final int ensembleSize;
@@ -51,6 +53,11 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
     @Override
     public WriteSet getWriteSet(long entryId) {
         return WriteSetImpl.create(ensembleSize, writeQuorumSize, entryId);
+    }
+
+    @Override
+    public int getWriteSetBookieIndex(long entryId, int writeSetIndex) {
+        return (int) (entryId + writeSetIndex) % ensembleSize;
     }
 
     @Override
@@ -418,12 +425,13 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
-        WriteSet w = getWriteSet(entryId);
-        try {
-            return w.contains(bookieIndex);
-        } finally {
-            w.recycle();
+        for (int w = 0; w < writeQuorumSize; w++) {
+            if (bookieIndex == getWriteSetBookieIndex(entryId, w)) {
+                return true;
+            }
         }
+
+        return false;
     }
 
     @Override
