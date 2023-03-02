@@ -1,6 +1,59 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.15.4
+
+Release 4.15.4 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.15.4.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+* Fix QueueEntry recycle problem [PR #3747](https://github.com/apache/bookkeeper/pull/3747)
+* Fix memory leak when the Bookie is in read only mode [PR #3746](https://github.com/apache/bookkeeper/pull/3746)
+* Fix RegionAwareEnsemblePlacementPolicy.newEnsemble sometimes failed problem [PR #3725](https://github.com/apache/bookkeeper/pull/3725)
+* Not wrap IOException twice form checkpoint [PR #3683](https://github.com/apache/bookkeeper/pull/3683)
+* Make `jvm_memory_direct_bytes_used` metrics compatible with jdk8 [PR #3677](https://github.com/apache/bookkeeper/pull/3677)
+* Fix memory leak when closeRecovered,failed on clearing newEnsemblesFromRecovery [PR #3672](https://github.com/apache/bookkeeper/pull/3672)
+* Fix RegionAwareEnsemblePlacementPolicy update rack info problem [PR #3666](https://github.com/apache/bookkeeper/pull/3666)
+* Exit bookkeeper shell correctly even if fails to run for some reason [PR #3663](https://github.com/apache/bookkeeper/pull/3663)
+* Fix memory leak when operating ledger metadata [PR #3662](https://github.com/apache/bookkeeper/pull/3662)
+* Check client if closed when complete callback [PR #3661](https://github.com/apache/bookkeeper/pull/3661)
+* Fix issue where checkAllLedgers could get stuck when read throttling is enabled [PR #3655](https://github.com/apache/bookkeeper/pull/3655)
+* Fix GetBookieInfo failed event stats [PR #3622](https://github.com/apache/bookkeeper/pull/3622)
+* Apply recycle logic during add entry creation but ledger close to LedgerHandleAdv [PR #3621](https://github.com/apache/bookkeeper/pull/3621)
+* BookieImpl remove wait until journal quits [PR #3603](https://github.com/apache/bookkeeper/pull/3603)
+
+#### Improvements
+
+* Support build in the aarch64 linux platform [PR #3828](https://github.com/apache/bookkeeper/pull/3828)
+* Use ReferenceCountUtil.release() instead of ReferenceCountUtil.safeRelease() [PR #3797](https://github.com/apache/bookkeeper/pull/3797)
+* Added api/v1/bookie/cluster_info REST API [PR #3713](https://github.com/apache/bookkeeper/pull/3713)
+* Expose registrationClient in DefaultBookieAddressResolver [PR #3724](https://github.com/apache/bookkeeper/pull/3724)
+* New ensemble choose different rack first [PR #3721](https://github.com/apache/bookkeeper/pull/3721)
+* Improve bk_server.conf docs [PR #3715](https://github.com/apache/bookkeeper/pull/3715)
+* Show result of isFenced in log [PR #3678](https://github.com/apache/bookkeeper/pull/3678)
+* Include bkperf into bk all package [PR #3632](https://github.com/apache/bookkeeper/pull/3632)
+* Add journal file path that caused failure in multi-journal config [PR #3623](https://github.com/apache/bookkeeper/pull/3623)
+* Avoid extra buffer to prepend frame size [PR #3560](https://github.com/apache/bookkeeper/pull/3560)
+* Using a separate thread pool to execute openWithMetadata [PR #3548](https://github.com/apache/bookkeeper/pull/3548)
+* LedgerHandle: do not complete metadata operation on the ZookKeeper/Metadata callback thread [PR #3516](https://github.com/apache/bookkeeper/pull/3516)
+* ledgerFragment check and results keep order [PR #3504](https://github.com/apache/bookkeeper/pull/3504)
+* Simplified No network topology script is found default log stack output [PR #3496](https://github.com/apache/bookkeeper/pull/3496)
+* Support apple m1 build [PR #3175](https://github.com/apache/bookkeeper/pull/3175)
+
+#### Dependency updates
+
+* Bump vertx-web from 4.3.2 to 4.3.8 [PR #3775](https://github.com/apache/bookkeeper/pull/3775)
+* Upgrade docker image version to fix CVEs [PR #3640](https://github.com/apache/bookkeeper/pull/3640)
+* Bump jcommander from 1.78 to 1.82 [PR #3476](https://github.com/apache/bookkeeper/pull/3476)
+
+### Details
+https://github.com/apache/bookkeeper/pulls?page=1&q=is%3Apr+label%3Arelease%2F4.15.4+is%3Aclosed
+
 ## 4.14.7
 
 Release 4.14.7 includes multiple bug fixes.
