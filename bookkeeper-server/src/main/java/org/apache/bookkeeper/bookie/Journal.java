@@ -371,7 +371,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 // Notify the waiters that the force write succeeded
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
                     QueueEntry qe = forceWriteWaiters.get(i);
-                    qe.run();
+                    if (qe != null) {
+                        qe.run();
+                    }
                 }
 
                 return forceWriteWaiters.size();
