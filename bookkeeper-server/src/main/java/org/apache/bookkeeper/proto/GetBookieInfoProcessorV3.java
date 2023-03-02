@@ -38,9 +38,9 @@ import org.slf4j.LoggerFactory;
 public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(GetBookieInfoProcessorV3.class);
 
-    public GetBookieInfoProcessorV3(Request request, Channel channel,
+    public GetBookieInfoProcessorV3(Request request, BookieRequestHandler requestHandler,
                                      BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        super(request, requestHandler, requestProcessor);
     }
 
     private GetBookieInfoResponse getGetBookieInfoResponse() {

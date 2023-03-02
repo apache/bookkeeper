@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.processor;
 
 import io.netty.channel.Channel;
+import org.apache.bookkeeper.proto.BookieRequestHandler;
 
 /**
  * A request processor that is used for processing requests at bookie side.
@@ -41,5 +42,5 @@ public interface RequestProcessor extends AutoCloseable {
      * @param channel
      *          channel received the given request <i>r</i>
      */
-    void processRequest(Object r, Channel channel);
+    void processRequest(Object r, BookieRequestHandler channel);
 }

@@ -47,11 +47,11 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         startTimeNanos = -1L;
     }
 
-    public static WriteEntryProcessor create(ParsedAddRequest request, Channel channel,
+    public static WriteEntryProcessor create(ParsedAddRequest request, BookieRequestHandler requestHandler,
                                              BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
-        wep.init(request, channel, requestProcessor);
-        requestProcessor.onAddRequestStart(channel);
+        wep.init(request, requestHandler, requestProcessor);
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
         return wep;
     }
 
@@ -74,9 +74,10 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         ByteBuf addData = request.getData();
         try {
             if (request.isRecoveryAdd()) {
-                requestProcessor.getBookie().recoveryAddEntry(addData, this, channel, request.getMasterKey());
+                requestProcessor.getBookie().recoveryAddEntry(addData, this, requestHandler, request.getMasterKey());
             } else {
-                requestProcessor.getBookie().addEntry(addData, false, this, channel, request.getMasterKey());
+                requestProcessor.getBookie().addEntry(addData, false, this,
+                        requestHandler, request.getMasterKey());
             }
         } catch (OperationRejectedException e) {
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
