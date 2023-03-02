@@ -1284,6 +1284,18 @@
       </build>
     </profile>
     <profile>
+      <id>aarch64-linux-nar-aol</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <nar.aolProperties>src/aarch64_aol.properties</nar.aolProperties>
+      </properties>
+    </profile>
+    <profile>
       <id>mac-apple-silicon</id>
       <activation>
         <os>
@@ -1292,7 +1304,7 @@
         </os>
       </activation>
       <properties>
-        <nar.aolProperties>src/apple_m1_aol.properties</nar.aolProperties>
+        <nar.aolProperties>src/aarch64_aol.properties</nar.aolProperties>
       </properties>
     </profile>
     <profile>
