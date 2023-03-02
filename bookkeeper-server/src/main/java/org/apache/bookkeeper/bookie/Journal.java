@@ -359,7 +359,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * Token which represents the need to force a write to the Journal.
      */
     @VisibleForTesting
-    public class ForceWriteRequest {
+    public static class ForceWriteRequest {
         private JournalChannel logFile;
         private RecyclableArrayList<QueueEntry> forceWriteWaiters;
         private boolean shouldClose;
@@ -367,19 +367,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         private long logId;
 
         public int process() {
-            try {
-                // Notify the waiters that the force write succeeded
-                for (int i = 0; i < forceWriteWaiters.size(); i++) {
-                    QueueEntry qe = forceWriteWaiters.get(i);
-                    if (qe != null) {
-                        qe.run();
-                    }
-                }
+            closeFileIfNecessary();
 
-                return forceWriteWaiters.size();
-            } finally {
-                closeFileIfNecessary();
+            // Notify the waiters that the force write succeeded
+            for (int i = 0; i < forceWriteWaiters.size(); i++) {
+                QueueEntry qe = forceWriteWaiters.get(i);
+                if (qe != null) {
+                    qe.run();
+                }
             }
+
+            return forceWriteWaiters.size();
         }
 
         public void closeFileIfNecessary() {
@@ -429,7 +427,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return req;
     }
 
-    private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler = new Recycler<ForceWriteRequest>() {
+    private static final Recycler<ForceWriteRequest> forceWriteRequestsRecycler = new Recycler<ForceWriteRequest>() {
                 @Override
                 protected ForceWriteRequest newObject(
                         Recycler.Handle<ForceWriteRequest> handle) {
