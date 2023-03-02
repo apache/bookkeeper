@@ -19,11 +19,13 @@
 package org.apache.bookkeeper.util;
 
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
+import org.apache.commons.lang3.SystemUtils;
 
 /**
  * Native I/O operations.
@@ -34,20 +36,37 @@ public final class PageCacheUtil {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
-    private static boolean fadvisePossible = true;
+    private static boolean fadvisePossible = false;
 
     private static final NativeIO NATIVE_IO;
 
     static {
         NativeIO nativeIO = null;
         try {
+            if (SystemUtils.IS_OS_MAC_OSX) {
+                checkLibrary("/lib/libnative-io.jnilib");
+            } else if (SystemUtils.IS_OS_LINUX) {
+                checkLibrary("/lib/libnative-io.so");
+            } else {
+                throw new UnsupportedOperationException("OS not supported by Native-IO utils");
+            }
             nativeIO = new NativeIOImpl();
+            fadvisePossible = true;
+        } catch (FileNotFoundException e) {
+            log.info("Library not found. Native methods will be disabled.");
+        } catch (UnsupportedOperationException e) {
+            log.info("OS not supported by Native-IO utils. Native methods will be disabled.");
         } catch (Exception e) {
             log.warn("Unable to initialize NativeIO for posix_fdavise: {}", e.getMessage());
-            fadvisePossible = false;
         }
 
         NATIVE_IO = nativeIO;
+    }
+
+    private static void checkLibrary(String path) throws FileNotFoundException {
+        if (PageCacheUtil.class.getResource(path) == null) {
+            throw new FileNotFoundException("Could not found library file: " + path);
+        }
     }
 
     private static Field getFieldByReflection(Class cls, String fieldName) {
