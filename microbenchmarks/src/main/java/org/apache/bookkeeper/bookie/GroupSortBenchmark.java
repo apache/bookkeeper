@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
