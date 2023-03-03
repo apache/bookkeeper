@@ -386,6 +386,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 // We should guard against exceptions so its
                 // safe to call in catch blocks
                 try {
+                    logFile.forceWrite(false);
                     logFile.close();
                     // Call close only once
                     shouldClose = false;
@@ -415,8 +416,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                           long logId,
                           long lastFlushedPosition,
                           RecyclableArrayList<QueueEntry> forceWriteWaiters,
-                          boolean shouldClose,
-                          boolean isMarker) {
+                          boolean shouldClose) {
         ForceWriteRequest req = forceWriteRequestsRecycler.get();
         req.forceWriteWaiters = forceWriteWaiters;
         req.logFile = logFile;
@@ -1131,7 +1131,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     || (System.currentTimeMillis() - lastFlushTimeMs
                                     >= journalPageCacheFlushIntervalMSec)) {
                                 forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                        toFlush, shouldRolloverJournal, false));
+                                        toFlush, shouldRolloverJournal));
                                 lastFlushTimeMs = System.currentTimeMillis();
                             }
                             toFlush = entryListRecycler.newInstance();
