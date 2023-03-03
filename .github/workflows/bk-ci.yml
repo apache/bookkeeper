@@ -159,6 +159,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build
         run: |
           projects_list=
@@ -230,6 +235,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build with Maven
         run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
@@ -271,6 +281,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 8
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: Build with Maven
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
@@ -318,6 +333,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
 
@@ -349,6 +369,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -394,6 +419,11 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
@@ -428,6 +458,11 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 11
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: run "clean install verify" to trigger dependency check
         # excluding dlfs because it includes hadoop lib with
