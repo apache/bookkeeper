@@ -21,8 +21,10 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.storage.ldb.ArrayGroupSort;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -55,7 +57,7 @@ public class GroupSortBenchmark {
         private long[] items;
 
         public TestState() {
-            Random r = new Random();
+            Random r = ThreadLocalRandom.current();
             for (int i = 0; i < (N * 4); i++) {
                 randomItems[i] = r.nextLong();
             }
