@@ -317,7 +317,7 @@
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~.*\.TransformedRecord" />
   </Match>
-  <!-- distributedlog-messaging -->
+  <!-- micro-benchmarks -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.bookie\.generated.*" />
