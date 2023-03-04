@@ -22,7 +22,6 @@ package org.apache.bookkeeper.common.collections;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import sun.jvm.hotspot.opto.Block;
 
 public interface BatchedBlockingQueue<T> extends BlockingQueue<T> {
     void putAll(T[] a, int offset, int len) throws InterruptedException;

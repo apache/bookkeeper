@@ -135,7 +135,7 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
         int items = 0;
 
         T t;
-        while (items < array.length && ( t = poll()) != null) {
+        while (items < array.length && (t = poll()) != null) {
             array[items++] = t;
         }
 
@@ -151,11 +151,11 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
         int items = 0;
 
         T t;
-        while (items < array.length && ( t = poll()) != null) {
+        while (items < array.length && (t = poll()) != null) {
             array[items++] = t;
         }
 
-        if (items == 0 && ( t = poll(timeout, unit)) != null) {
+        if (items == 0 && (t = poll(timeout, unit)) != null) {
             array[items++] = t;
         }
 

@@ -333,7 +333,8 @@ public class BatchedArrayBlockingQueue<T>
         return internalTakeAll(array, false, timeout, unit);
     }
 
-    private int internalTakeAll(T[] array, boolean waitForever, long timeout, TimeUnit unit) throws InterruptedException {
+    private int internalTakeAll(T[] array, boolean waitForever, long timeout, TimeUnit unit)
+            throws InterruptedException {
         lock.lockInterruptibly();
         try {
             while (size == 0) {
