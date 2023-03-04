@@ -323,20 +323,25 @@ public class BatchedArrayBlockingQueue<T>
         }
     }
 
-    /**
-     * Drain the queue into an array.
-     * Wait if there are no items in the queue.
-     *
-     * @param array
-     * @return
-     * @throws InterruptedException
-     */
     @Override
     public int takeAll(T[] array) throws InterruptedException {
+        return internalTakeAll(array, true, 0, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public int pollAll(T[] array, long timeout, TimeUnit unit) throws InterruptedException {
+        return internalTakeAll(array, false, timeout, unit);
+    }
+
+    private int internalTakeAll(T[] array, boolean waitForever, long timeout, TimeUnit unit) throws InterruptedException {
         lock.lockInterruptibly();
         try {
             while (size == 0) {
-                notEmpty.await();
+                if (waitForever) {
+                    notEmpty.await();
+                } else {
+                    notEmpty.await(timeout, unit);
+                }
             }
 
             int toDrain = Math.min(size, array.length);
