@@ -109,7 +109,8 @@ public class ReadEntryProcessorTest {
         long ledgerId = System.currentTimeMillis();
         ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
-        ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, service, true);
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, service, true);
         processor.run();
 
         fenceResult.complete(result);

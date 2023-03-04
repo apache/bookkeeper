@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
-import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;

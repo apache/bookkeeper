@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.proto;
 
-import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest;

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
-import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import java.io.IOException;
