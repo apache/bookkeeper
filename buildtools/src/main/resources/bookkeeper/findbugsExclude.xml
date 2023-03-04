@@ -317,6 +317,11 @@
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~.*\.TransformedRecord" />
   </Match>
+  <!-- micro-benchmarks -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.bookie\.generated.*" />
+  </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
     <Class name="org.apache.distributedlog.messaging.PartitionedMultiWriter" />
