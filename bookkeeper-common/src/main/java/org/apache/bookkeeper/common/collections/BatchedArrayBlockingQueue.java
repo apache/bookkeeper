@@ -341,7 +341,9 @@ public class BatchedArrayBlockingQueue<T>
                 if (waitForever) {
                     notEmpty.await();
                 } else {
-                    notEmpty.await(timeout, unit);
+                    if (!notEmpty.await(timeout, unit)) {
+                        return 0;
+                    }
                 }
             }
 
