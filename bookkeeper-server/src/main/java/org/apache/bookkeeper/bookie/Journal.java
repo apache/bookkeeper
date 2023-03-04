@@ -46,6 +46,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
+import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
+import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.common.util.MemoryLimitController;
@@ -472,35 +474,33 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
             }
 
-            final List<ForceWriteRequest> localRequests = new ArrayList<>();
+            long busyStartTime = System.nanoTime();
+
+            final ForceWriteRequest[] localRequests = new ForceWriteRequest[conf.getJournalQueueSize()];
+            int requestsCount = 0;
 
             while (running) {
                 try {
-                    int numReqInLastForceWrite = 0;
+                    int numEntriesInLastForceWrite = 0;
 
-                    int requestsCount = forceWriteRequests.drainTo(localRequests);
-                    if (requestsCount == 0) {
-                        ForceWriteRequest fwr = forceWriteRequests.take();
-                        localRequests.add(fwr);
-                        requestsCount = 1;
-                    }
+                    requestsCount = forceWriteRequests.takeAll(localRequests);
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
 
                     // Sync and mark the journal up to the position of the last entry in the batch
-                    ForceWriteRequest lastRequest = localRequests.get(requestsCount - 1);
+                    ForceWriteRequest lastRequest = localRequests[requestsCount - 1];
                     syncJournal(lastRequest);
 
                     // All the requests in the batch are now fully-synced. We can trigger sending the
                     // responses
                     for (int i = 0; i < requestsCount; i++) {
-                        ForceWriteRequest req = localRequests.get(i);
-                        numReqInLastForceWrite += req.process();
+                        ForceWriteRequest req = localRequests[i];
+                        numEntriesInLastForceWrite += req.process();
                         req.recycle();
                     }
 
                     journalStats.getForceWriteGroupingCountStats()
-                            .registerSuccessfulValue(numReqInLastForceWrite);
+                            .registerSuccessfulValue(numEntriesInLastForceWrite);
 
                     if (requestProcessor != null) {
                         requestProcessor.flushPendingResponses();
@@ -513,15 +513,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     Thread.currentThread().interrupt();
                     LOG.info("ForceWrite thread interrupted");
                     // close is idempotent
-                    if (!localRequests.isEmpty()) {
-                        ForceWriteRequest req = localRequests.get(localRequests.size() - 1);
+                    if (requestsCount > 0) {
+                        ForceWriteRequest req = localRequests[requestsCount - 1];
                         req.shouldClose = true;
                         req.closeFileIfNecessary();
                     }
                     running = false;
                 }
-
-                localRequests.clear();
             }
             // Regardless of what caused us to exit, we should notify the
             // the parent thread as it should either exit or be in the process
@@ -636,8 +634,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
-    final BlockingQueue<QueueEntry> queue;
-    final BlockingQueue<ForceWriteRequest> forceWriteRequests;
+    final BatchedBlockingQueue<QueueEntry> queue;
+    final BatchedBlockingQueue<ForceWriteRequest> forceWriteRequests;
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -667,8 +665,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
         } else {
-            queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
-            forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+            queue = new BatchedArrayBlockingQueue<>(conf.getJournalQueueSize());
+            forceWriteRequests = new BatchedArrayBlockingQueue<>(conf.getJournalQueueSize());
         }
 
         // Adjust the journal max memory in case there are multiple journals configured.
@@ -974,7 +972,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long lastFlushTimeMs = System.currentTimeMillis();
 
             long busyStartTime = System.nanoTime();
-            ArrayDeque<QueueEntry> localQueueEntries = new ArrayDeque<>();
+            QueueEntry[] localQueueEntries = new QueueEntry[conf.getJournalQueueSize()];
+            int localQueueEntriesIdx = 0;
+            int localQueueEntriesLen = 0;
 
             QueueEntry qe = null;
             while (true) {
@@ -1008,152 +1008,137 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             .registerSuccessfulEvent(MathUtils.elapsedNanos(dequeueStartTime), TimeUnit.NANOSECONDS);
                     }
 
-                    if (numEntriesToFlush == 0 && localQueueEntries.isEmpty()) {
-                        queue.drainTo(localQueueEntries);
-
-                        journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
-                        if (!localQueueEntries.isEmpty()) {
-                            qe = localQueueEntries.removeFirst();
-                        } else {
-                            qe = queue.take();
+                    // At this point the local queue will always be empty, otherwise we would have
+                    // advanced to the next `qe` at the end of the loop
+                    localQueueEntriesIdx = 0;
+                    if (numEntriesToFlush == 0) {
+                        // There are no entries pending. We can wait indefinitely until the next
+                        // one is available
+                        localQueueEntriesLen = queue.takeAll(localQueueEntries);
+                    } else {
+                        // There are already some entries pending. We must adjust
+                        // the waiting time to the remaining groupWait time
+                        long pollWaitTimeNanos = maxGroupWaitInNanos
+                                - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
+                        if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
+                            pollWaitTimeNanos = 0;
                         }
 
-                        dequeueStartTime = MathUtils.nowInNano();
-                        busyStartTime = dequeueStartTime;
+                        localQueueEntriesLen = queue.pollAll(localQueueEntries,
+                                pollWaitTimeNanos, TimeUnit.NANOSECONDS);
+                    }
+
+                    dequeueStartTime = MathUtils.nowInNano();
+                    busyStartTime = dequeueStartTime;
+
+                    if (localQueueEntriesLen > 0) {
+                        qe = localQueueEntries[localQueueEntriesIdx++];
                         journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
-                                .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
-                                        TimeUnit.NANOSECONDS);
-                    } else {
-                        if (localQueueEntries.isEmpty()) {
-                            queue.drainTo(localQueueEntries);
-                        }
-
-                        if (!localQueueEntries.isEmpty()) {
-                            journalTime.addLatency(MathUtils.elapsedNanos(busyStartTime), TimeUnit.NANOSECONDS);
-                            qe = localQueueEntries.removeFirst();
-                            dequeueStartTime = MathUtils.nowInNano();
-                            busyStartTime = dequeueStartTime;
-                        } else {
-                            long pollWaitTimeNanos = maxGroupWaitInNanos
-                                    - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
-                            if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
-                                pollWaitTimeNanos = 0;
-                            }
-                            qe = queue.poll(pollWaitTimeNanos, TimeUnit.NANOSECONDS);
-                            dequeueStartTime = MathUtils.nowInNano();
-                        }
-
-                        if (qe != null) {
-                            journalStats.getJournalQueueSize().dec();
-                            journalStats.getJournalQueueStats()
                                 .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+                    }
+
+                    boolean shouldFlush = false;
+                    // We should issue a forceWrite if any of the three conditions below holds good
+                    // 1. If the oldest pending entry has been pending for longer than the max wait time
+                    if (maxGroupWaitInNanos > 0 && !groupWhenTimeout && (MathUtils
+                            .elapsedNanos(toFlush.get(0).enqueueTime) > maxGroupWaitInNanos)) {
+                        groupWhenTimeout = true;
+                    } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout
+                        && (qe == null // no entry to group
+                            || MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos)) {
+                        // when group timeout, it would be better to look forward, as there might be lots of
+                        // entries already timeout
+                        // due to a previous slow write (writing to filesystem which impacted by force write).
+                        // Group those entries in the queue
+                        // a) already timeout
+                        // b) limit the number of entries to group
+                        groupWhenTimeout = false;
+                        shouldFlush = true;
+                        journalStats.getFlushMaxWaitCounter().inc();
+                    } else if (qe != null
+                            && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
+                            || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
+                        // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
+                        groupWhenTimeout = false;
+                        shouldFlush = true;
+                        journalStats.getFlushMaxOutstandingBytesCounter().inc();
+                    } else if (qe == null && flushWhenQueueEmpty) {
+                        // We should get here only if we flushWhenQueueEmpty is true else we would wait
+                        // for timeout that would put is past the maxWait threshold
+                        // 3. If the queue is empty i.e. no benefit of grouping. This happens when we have one
+                        // publish at a time - common case in tests.
+                        groupWhenTimeout = false;
+                        shouldFlush = true;
+                        journalStats.getFlushEmptyQueueCounter().inc();
+                    }
+
+                    // toFlush is non null and not empty so should be safe to access getFirst
+                    if (shouldFlush) {
+                        if (journalFormatVersionToWrite >= JournalChannel.V5) {
+                            writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
+                        }
+                        journalFlushWatcher.reset().start();
+                        bc.flush();
+
+                        for (int i = 0; i < toFlush.size(); i++) {
+                            QueueEntry entry = toFlush.get(i);
+                            if (entry != null && (!syncData || entry.ackBeforeSync)) {
+                                toFlush.set(i, null);
+                                numEntriesToFlush--;
+                                entry.run();
+                            }
+
+                            forceWriteThread.requestProcessor.flushPendingResponses();
                         }
 
-                        boolean shouldFlush = false;
-                        // We should issue a forceWrite if any of the three conditions below holds good
-                        // 1. If the oldest pending entry has been pending for longer than the max wait time
-                        if (maxGroupWaitInNanos > 0 && !groupWhenTimeout && (MathUtils
-                                .elapsedNanos(toFlush.get(0).enqueueTime) > maxGroupWaitInNanos)) {
-                            groupWhenTimeout = true;
-                        } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout
-                            && (qe == null // no entry to group
-                                || MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos)) {
-                            // when group timeout, it would be better to look forward, as there might be lots of
-                            // entries already timeout
-                            // due to a previous slow write (writing to filesystem which impacted by force write).
-                            // Group those entries in the queue
-                            // a) already timeout
-                            // b) limit the number of entries to group
-                            groupWhenTimeout = false;
-                            shouldFlush = true;
-                            journalStats.getFlushMaxWaitCounter().inc();
-                        } else if (qe != null
-                                && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
-                                || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
-                            // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
-                            groupWhenTimeout = false;
-                            shouldFlush = true;
-                            journalStats.getFlushMaxOutstandingBytesCounter().inc();
-                        } else if (qe == null && flushWhenQueueEmpty) {
-                            // We should get here only if we flushWhenQueueEmpty is true else we would wait
-                            // for timeout that would put is past the maxWait threshold
-                            // 3. If the queue is empty i.e. no benefit of grouping. This happens when we have one
-                            // publish at a time - common case in tests.
-                            groupWhenTimeout = false;
-                            shouldFlush = true;
-                            journalStats.getFlushEmptyQueueCounter().inc();
+                        lastFlushPosition = bc.position();
+                        journalStats.getJournalFlushStats().registerSuccessfulEvent(
+                                journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+
+                        // Trace the lifetime of entries through persistence
+                        if (LOG.isDebugEnabled()) {
+                            for (QueueEntry e : toFlush) {
+                                if (e != null && LOG.isDebugEnabled()) {
+                                    LOG.debug("Written and queuing for flush Ledger: {}  Entry: {}",
+                                              e.ledgerId, e.entryId);
+                                }
+                            }
                         }
 
-                        // toFlush is non null and not empty so should be safe to access getFirst
-                        if (shouldFlush) {
-                            if (journalFormatVersionToWrite >= JournalChannel.V5) {
-                                writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
-                            }
-                            journalFlushWatcher.reset().start();
-                            bc.flush();
+                        journalStats.getForceWriteBatchEntriesStats()
+                            .registerSuccessfulValue(numEntriesToFlush);
+                        journalStats.getForceWriteBatchBytesStats()
+                            .registerSuccessfulValue(batchSize);
 
-                            for (int i = 0; i < toFlush.size(); i++) {
-                                QueueEntry entry = toFlush.get(i);
-                                if (entry != null && (!syncData || entry.ackBeforeSync)) {
-                                    toFlush.set(i, null);
-                                    numEntriesToFlush--;
-                                    entry.run();
-                                }
+                        boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
+                        // Trigger data sync to disk in the "Force-Write" thread.
+                        // Trigger data sync to disk has three situations:
+                        // 1. journalSyncData enabled, usually for SSD used as journal storage
+                        // 2. shouldRolloverJournal is true, that is the journal file reaches maxJournalSize
+                        // 3. if journalSyncData disabled and shouldRolloverJournal is false, we can use
+                        //   journalPageCacheFlushIntervalMSec to control sync frequency, preventing disk
+                        //   synchronize frequently, which will increase disk io util.
+                        //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s),
+                        //   it will trigger data sync to disk
+                        if (syncData
+                                || shouldRolloverJournal
+                                || (System.currentTimeMillis() - lastFlushTimeMs
+                                >= journalPageCacheFlushIntervalMSec)) {
+                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                                    toFlush, shouldRolloverJournal));
+                            lastFlushTimeMs = System.currentTimeMillis();
+                        }
+                        toFlush = entryListRecycler.newInstance();
+                        numEntriesToFlush = 0;
 
-                                if (forceWriteThread.requestProcessor != null) {
-                                    forceWriteThread.requestProcessor.flushPendingResponses();
-                                }
-                            }
-
-                            lastFlushPosition = bc.position();
-                            journalStats.getJournalFlushStats().registerSuccessfulEvent(
-                                    journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
-
-                            // Trace the lifetime of entries through persistence
-                            if (LOG.isDebugEnabled()) {
-                                for (QueueEntry e : toFlush) {
-                                    if (e != null && LOG.isDebugEnabled()) {
-                                        LOG.debug("Written and queuing for flush Ledger: {}  Entry: {}",
-                                                  e.ledgerId, e.entryId);
-                                    }
-                                }
-                            }
-
-                            journalStats.getForceWriteBatchEntriesStats()
-                                .registerSuccessfulValue(numEntriesToFlush);
-                            journalStats.getForceWriteBatchBytesStats()
-                                .registerSuccessfulValue(batchSize);
-
-                            boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
-                            // Trigger data sync to disk in the "Force-Write" thread.
-                            // Trigger data sync to disk has three situations:
-                            // 1. journalSyncData enabled, usually for SSD used as journal storage
-                            // 2. shouldRolloverJournal is true, that is the journal file reaches maxJournalSize
-                            // 3. if journalSyncData disabled and shouldRolloverJournal is false, we can use
-                            //   journalPageCacheFlushIntervalMSec to control sync frequency, preventing disk
-                            //   synchronize frequently, which will increase disk io util.
-                            //   when flush interval reaches journalPageCacheFlushIntervalMSec (default: 1s),
-                            //   it will trigger data sync to disk
-                            if (syncData
-                                    || shouldRolloverJournal
-                                    || (System.currentTimeMillis() - lastFlushTimeMs
-                                    >= journalPageCacheFlushIntervalMSec)) {
-                                forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                        toFlush, shouldRolloverJournal));
-                                lastFlushTimeMs = System.currentTimeMillis();
-                            }
-                            toFlush = entryListRecycler.newInstance();
-                            numEntriesToFlush = 0;
-
-                            batchSize = 0L;
-                            // check whether journal file is over file limit
-                            if (shouldRolloverJournal) {
-                                // if the journal file is rolled over, the journal file will be closed after last
-                                // entry is force written to disk.
-                                logFile = null;
-                                continue;
-                            }
+                        batchSize = 0L;
+                        // check whether journal file is over file limit
+                        if (shouldRolloverJournal) {
+                            // if the journal file is rolled over, the journal file will be closed after last
+                            // entry is force written to disk.
+                            logFile = null;
+                            continue;
                         }
                     }
                 }
@@ -1197,7 +1182,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                 toFlush.add(qe);
                 numEntriesToFlush++;
-                qe = null;
+
+                if (localQueueEntriesIdx < localQueueEntriesLen) {
+                    qe = localQueueEntries[localQueueEntriesIdx++];
+                } else {
+                    qe = null;
+                }
             }
         } catch (IOException ioe) {
             LOG.error("I/O exception in Journal thread!", ioe);
