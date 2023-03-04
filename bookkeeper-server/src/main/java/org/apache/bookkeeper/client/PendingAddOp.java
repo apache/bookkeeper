@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -80,6 +81,7 @@ class PendingAddOp implements WriteCallback {
     boolean allowFailFast = false;
     List<BookieId> ensemble;
 
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
                                List<BookieId> ensemble,
                                ByteBuf payload, EnumSet<WriteFlag> writeFlags,

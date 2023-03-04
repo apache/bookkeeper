@@ -95,7 +95,7 @@ public final class PageCacheUtil {
         }
         try {
             NATIVE_IO.posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.warn("Failed to perform posix_fadvise: {}", e.getMessage());
             fadvisePossible = false;
         }
