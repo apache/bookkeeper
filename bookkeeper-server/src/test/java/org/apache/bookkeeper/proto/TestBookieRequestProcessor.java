@@ -146,7 +146,8 @@ public class TestBookieRequestProcessor {
         BookieRequestHandler requestHandler = mock(BookieRequestHandler.class);
         when(requestHandler.ctx()).thenReturn(ctx);
 
-        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler, requestProcessor);
+        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler,
+                requestProcessor);
         String toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
