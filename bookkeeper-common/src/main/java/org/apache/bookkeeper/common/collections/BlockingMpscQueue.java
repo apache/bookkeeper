@@ -146,6 +146,22 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
         return items;
     }
 
+    @Override
+    public int pollAll(T[] array, long timeout, TimeUnit unit) throws InterruptedException {
+        int items = 0;
+
+        T t;
+        while (items < array.length && ( t = poll()) != null) {
+            array[items++] = t;
+        }
+
+        if (items == 0 && ( t = poll(timeout, unit)) != null) {
+            array[items++] = t;
+        }
+
+        return items;
+    }
+
     /**
      * Wait strategy combined with exit condition, for draining the queue.
      */
