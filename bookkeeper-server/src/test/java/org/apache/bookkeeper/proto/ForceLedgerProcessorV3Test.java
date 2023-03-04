@@ -113,7 +113,7 @@ public class ForceLedgerProcessorV3Test {
         }).when(bookie).forceLedger(
             eq(request.getForceLedgerRequest().getLedgerId()),
             any(WriteCallback.class),
-            same(channel));
+            same(requestHandler));
 
         ChannelPromise promise = new DefaultChannelPromise(channel);
         AtomicReference<Object> writtenObject = new AtomicReference<>();
@@ -128,7 +128,7 @@ public class ForceLedgerProcessorV3Test {
 
         verify(bookie, times(1))
             .forceLedger(eq(request.getForceLedgerRequest().getLedgerId()),
-                    any(WriteCallback.class), same(channel));
+                    any(WriteCallback.class), same(requestHandler));
         verify(channel, times(1)).writeAndFlush(any(Response.class));
 
         latch.await();
