@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -797,13 +798,17 @@ public class LedgerCacheTest {
         // after flush failure, the bookie is set to readOnly
         assertTrue("Bookie is expected to be in Read mode", bookie.isReadOnly());
         // write fail
+        CountDownLatch latch = new CountDownLatch(1);
         bookie.addEntry(generateEntry(1, 3), false, new BookkeeperInternalCallbacks.WriteCallback(){
             public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx){
-                LOG.info("fail write to bk");
-                assertTrue(rc != OK);
+                LOG.info("Write to bk succeed due to the bookie readOnly mode check is in the request parse step. "
+                    + "In the addEntry step, we won't check bookie's mode");
+                assertEquals(OK, rc);
+                latch.countDown();
             }
 
         }, null, "passwd".getBytes());
+        latch.await();
         bookie.shutdown();
 
     }
