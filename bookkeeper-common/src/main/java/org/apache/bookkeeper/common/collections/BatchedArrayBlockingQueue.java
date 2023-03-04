@@ -35,7 +35,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * <p>This queue only allows 1 consumer thread to dequeue items and multiple producer threads.
  */
-public class BatchedArrayBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
+public class BatchedArrayBlockingQueue<T>
+        extends AbstractQueue<T>
+        implements BlockingQueue<T>, BatchedBlockingQueue<T> {
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -177,6 +179,7 @@ public class BatchedArrayBlockingQueue<T> extends AbstractQueue<T> implements Bl
         }
     }
 
+    @Override
     public void putAll(T[] a, int offset, int len) throws InterruptedException {
         while (len > 0) {
             int published = internalPutAll(a, offset, len);
@@ -328,6 +331,7 @@ public class BatchedArrayBlockingQueue<T> extends AbstractQueue<T> implements Bl
      * @return
      * @throws InterruptedException
      */
+    @Override
     public int takeAll(T[] array) throws InterruptedException {
         lock.lockInterruptibly();
         try {
