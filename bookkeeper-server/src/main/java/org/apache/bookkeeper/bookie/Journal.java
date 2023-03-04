@@ -469,8 +469,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
             }
 
-            long busyStartTime = System.nanoTime();
-
             final List<ForceWriteRequest> localRequests = new ArrayList<>();
 
             while (running) {
