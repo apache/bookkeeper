@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.channel.EventLoop;
@@ -53,6 +54,7 @@ import org.junit.Test;
 public class ReadEntryProcessorTest {
 
     private Channel channel;
+    private BookieRequestHandler requestHandler;
     private BookieRequestProcessor requestProcessor;
     private Bookie bookie;
 
@@ -60,6 +62,12 @@ public class ReadEntryProcessorTest {
     public void setup() throws IOException, BookieException {
         channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);
+
+        requestHandler = mock(BookieRequestHandler.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
@@ -101,7 +109,8 @@ public class ReadEntryProcessorTest {
         long ledgerId = System.currentTimeMillis();
         ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
-        ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, service, true);
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, service, true);
         processor.run();
 
         fenceResult.complete(result);
@@ -143,7 +152,7 @@ public class ReadEntryProcessorTest {
         long ledgerId = System.currentTimeMillis();
         ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
-        ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, null, true);
+        ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
         fenceResult.complete(result);
         processor.run();
 
@@ -173,7 +182,7 @@ public class ReadEntryProcessorTest {
         long ledgerId = System.currentTimeMillis();
         ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, (short) 0, new byte[]{});
-        ReadEntryProcessor processor = ReadEntryProcessor.create(request, channel, requestProcessor, null, true);
+        ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
         processor.run();
 
         latch.await();

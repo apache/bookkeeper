@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
@@ -44,15 +43,15 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     private boolean throttleReadResponses;
 
     public static ReadEntryProcessor create(ReadRequest request,
-                                            Channel channel,
+                                            BookieRequestHandler requestHandler,
                                             BookieRequestProcessor requestProcessor,
                                             ExecutorService fenceThreadPool,
                                             boolean throttleReadResponses) {
         ReadEntryProcessor rep = RECYCLER.get();
-        rep.init(request, channel, requestProcessor);
+        rep.init(request, requestHandler, requestProcessor);
         rep.fenceThreadPool = fenceThreadPool;
         rep.throttleReadResponses = throttleReadResponses;
-        requestProcessor.onReadRequestStart(channel);
+        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
         return rep;
     }
 
@@ -61,9 +60,9 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received new read request: {}", request);
         }
-        if (!channel.isOpen()) {
+        if (!requestHandler.ctx().channel().isOpen()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Dropping read request for closed channel: {}", channel);
+                LOG.debug("Dropping read request for closed channel: {}", requestHandler.ctx().channel());
             }
             requestProcessor.onReadRequestFinish();
             return;
@@ -74,7 +73,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         try {
             CompletableFuture<Boolean> fenceResult = null;
             if (request.isFencing()) {
-                LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(), channel.remoteAddress());
+                LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(),
+                        requestHandler.ctx().channel().remoteAddress());
 
                 if (request.hasMasterKey()) {
                     fenceResult = requestProcessor.getBookie().fenceLedger(request.getLedgerId(),

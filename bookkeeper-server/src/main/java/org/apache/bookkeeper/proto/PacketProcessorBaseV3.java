@@ -40,14 +40,14 @@ import org.apache.bookkeeper.util.StringUtils;
 public abstract class PacketProcessorBaseV3 implements Runnable {
 
     final Request request;
-    final Channel channel;
+    final BookieRequestHandler requestHandler;
     final BookieRequestProcessor requestProcessor;
     final long enqueueNanos;
 
-    public PacketProcessorBaseV3(Request request, Channel channel,
+    public PacketProcessorBaseV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
         this.request = request;
-        this.channel = channel;
+        this.requestHandler = requestHandler;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();
     }
@@ -55,6 +55,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
         final long writeNanos = MathUtils.nowInNano();
 
+        Channel channel = requestHandler.ctx().channel();
         final long timeOut = requestProcessor.getWaitTimeoutOnBackpressureMillis();
         if (timeOut >= 0 && !channel.isWritable()) {
             if (!requestProcessor.isBlacklisted(channel)) {

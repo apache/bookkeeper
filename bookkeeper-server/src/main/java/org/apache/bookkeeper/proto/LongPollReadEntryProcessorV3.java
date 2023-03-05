@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
-import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import java.io.IOException;
@@ -55,12 +54,12 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     private boolean shouldReadEntry = false;
 
     LongPollReadEntryProcessorV3(Request request,
-                                 Channel channel,
+                                 BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor,
                                  ExecutorService fenceThreadPool,
                                  ExecutorService longPollThreadPool,
                                  HashedWheelTimer requestTimer) {
-        super(request, channel, requestProcessor, fenceThreadPool);
+        super(request, requestHandler, requestProcessor, fenceThreadPool);
         this.previousLAC = readRequest.getPreviousLAC();
         this.longPollThreadPool = longPollThreadPool;
         this.requestTimer = requestTimer;
