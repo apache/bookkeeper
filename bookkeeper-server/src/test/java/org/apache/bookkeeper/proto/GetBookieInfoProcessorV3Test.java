@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -38,6 +39,7 @@ import org.junit.Test;
  */
 public class GetBookieInfoProcessorV3Test {
 
+    private BookieRequestHandler requestHandler;
     private Channel channel;
     private BookieRequestProcessor requestProcessor;
     private Bookie bookie;
@@ -55,9 +57,17 @@ public class GetBookieInfoProcessorV3Test {
         requestProcessor = mock(BookieRequestProcessor.class);
         bookie = mock(Bookie.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
+
+        requestHandler = mock(BookieRequestHandler.class);
+
         channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);
         when(channel.isActive()).thenReturn(true);
+
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
         when(requestProcessor.getRequestStats()).thenReturn(requestStats);
         when(requestProcessor.getRequestStats().getGetBookieInfoStats())
                 .thenReturn(getBookieInfoStats);
@@ -85,7 +95,7 @@ public class GetBookieInfoProcessorV3Test {
                 .build();
 
         GetBookieInfoProcessorV3 getBookieInfo = new GetBookieInfoProcessorV3(
-                getBookieInfoRequest, channel, requestProcessor);
+                getBookieInfoRequest, requestHandler, requestProcessor);
         getBookieInfo.run();
 
         // get BookieInfo succeeded.

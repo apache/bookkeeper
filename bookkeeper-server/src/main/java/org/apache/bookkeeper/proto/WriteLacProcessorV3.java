@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -40,9 +39,9 @@ import org.slf4j.LoggerFactory;
 class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
-    public WriteLacProcessorV3(Request request, Channel channel,
+    public WriteLacProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        super(request, requestHandler, requestProcessor);
     }
 
     // Returns null if there is no exception thrown
@@ -103,7 +102,8 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         byte[] masterKey = writeLacRequest.getMasterKey().toByteArray();
 
         try {
-            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd), writeCallback, channel, masterKey);
+            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd),
+                    writeCallback, requestHandler, masterKey);
             status = StatusCode.EOK;
         } catch (IOException e) {
             logger.error("Error saving lac {} for ledger:{}",

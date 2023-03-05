@@ -32,20 +32,27 @@ import org.slf4j.LoggerFactory;
 /**
  * Serverside handler for bookkeeper requests.
  */
-class BookieRequestHandler extends ChannelInboundHandlerAdapter {
+public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
+
+    private ChannelHandlerContext ctx;
 
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
     }
 
+    public ChannelHandlerContext ctx() {
+        return ctx;
+    }
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         LOG.info("Channel connected  {}", ctx.channel());
+        this.ctx = ctx;
         super.channelActive(ctx);
     }
 
@@ -75,6 +82,6 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg);
             return;
         }
-        requestProcessor.processRequest(msg, ctx.channel());
+        requestProcessor.processRequest(msg, this);
     }
 }

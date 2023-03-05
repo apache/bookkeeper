@@ -22,7 +22,6 @@ package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import io.netty.channel.Channel;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.net.BookieId;
@@ -39,9 +38,9 @@ import org.slf4j.LoggerFactory;
 class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ForceLedgerProcessorV3.class);
 
-    public ForceLedgerProcessorV3(Request request, Channel channel,
+    public ForceLedgerProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        super(request, requestHandler, requestProcessor);
     }
 
     // Returns null if there is no exception thrown
@@ -98,7 +97,7 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         };
         StatusCode status = null;
         try {
-            requestProcessor.getBookie().forceLedger(ledgerId, wcb, channel);
+            requestProcessor.getBookie().forceLedger(ledgerId, wcb, requestHandler);
             status = StatusCode.EOK;
         } catch (Throwable t) {
             logger.error("Unexpected exception while forcing ledger {} : ", ledgerId, t);

@@ -22,7 +22,6 @@ package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -43,9 +42,9 @@ import org.slf4j.LoggerFactory;
 class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
 
-    public ReadLacProcessorV3(Request request, Channel channel,
+    public ReadLacProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        super(request, requestHandler, requestProcessor);
     }
 
     // Returns null if there is no exception thrown

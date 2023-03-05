@@ -57,11 +57,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected final OpStatsLogger reqStats;
 
     public ReadEntryProcessorV3(Request request,
-                                Channel channel,
+                                BookieRequestHandler requestHandler,
                                 BookieRequestProcessor requestProcessor,
                                 ExecutorService fenceThreadPool) {
-        super(request, channel, requestProcessor);
-        requestProcessor.onReadRequestStart(channel);
+        super(request, requestHandler, requestProcessor);
+        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
 
         this.readRequest = request.getReadRequest();
         this.ledgerId = readRequest.getLedgerId();
@@ -194,6 +194,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     protected ReadResponse getReadResponse() {
         final Stopwatch startTimeSw = Stopwatch.createStarted();
+        final Channel channel = requestHandler.ctx().channel();
 
         final ReadResponse.Builder readResponse = ReadResponse.newBuilder()
             .setLedgerId(ledgerId)
@@ -249,9 +250,9 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     public void run() {
         requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-        if (!channel.isOpen()) {
+        if (!requestHandler.ctx().channel().isOpen()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Dropping read request for closed channel: {}", channel);
+                LOG.debug("Dropping read request for closed channel: {}", requestHandler.ctx().channel());
             }
             requestProcessor.onReadRequestFinish();
             return;

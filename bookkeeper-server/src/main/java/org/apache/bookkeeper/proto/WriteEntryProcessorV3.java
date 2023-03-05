@@ -22,7 +22,6 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -43,10 +42,10 @@ import org.slf4j.LoggerFactory;
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     private static final Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
-    public WriteEntryProcessorV3(Request request, Channel channel,
+    public WriteEntryProcessorV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
-        requestProcessor.onAddRequestStart(channel);
+        super(request, requestHandler, requestProcessor);
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
     }
 
     // Returns null if there is no exception thrown
@@ -118,9 +117,11 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
         try {
             if (RequestUtils.hasFlag(addRequest, AddRequest.Flag.RECOVERY_ADD)) {
-                requestProcessor.getBookie().recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.getBookie().recoveryAddEntry(entryToAdd, wcb,
+                        requestHandler.ctx().channel(), masterKey);
             } else {
-                requestProcessor.getBookie().addEntry(entryToAdd, ackBeforeSync, wcb, channel, masterKey);
+                requestProcessor.getBookie().addEntry(entryToAdd, ackBeforeSync, wcb,
+                        requestHandler.ctx().channel(), masterKey);
             }
             status = StatusCode.EOK;
         } catch (OperationRejectedException e) {
