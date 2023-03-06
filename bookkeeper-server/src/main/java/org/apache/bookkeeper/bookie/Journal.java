@@ -1101,7 +1101,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     entry.run();
                                 }
 
-                                forceWriteThread.requestProcessor.flushPendingResponses();
+                                if (forceWriteThread.requestProcessor != null) {
+                                    forceWriteThread.requestProcessor.flushPendingResponses();
+                                }
                             }
 
                             lastFlushPosition = bc.position();
