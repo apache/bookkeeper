@@ -122,6 +122,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
+        request.recycle();
         sendResponse(data, errorCode, startTimeNanos);
     }
 
