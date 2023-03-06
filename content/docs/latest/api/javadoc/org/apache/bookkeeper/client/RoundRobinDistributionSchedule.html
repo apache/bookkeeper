@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":9};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -259,13 +259,27 @@ implements <a href="DistributionSchedule.html" title="interface in org.apache.bo
 </td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWriteQuorumSize()">getWriteQuorumSize</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWriteSet(long)">getWriteSet</a></span>&#8203;(long&nbsp;entryId)</code></th>
 <td class="colLast">
 <div class="block">Return the set of bookie indices to send the message to.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWriteSetBookieIndex(long,int)">getWriteSetBookieIndex</a></span>&#8203;(long&nbsp;entryId,
+                      int&nbsp;writeSetIndex)</code></th>
+<td class="colLast">
+<div class="block">Return the WriteSet bookie index for a given and index
+ in the WriteSet.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasEntry(long,int)">hasEntry</a></span>&#8203;(long&nbsp;entryId,
         int&nbsp;bookieIndex)</code></th>
@@ -273,7 +287,7 @@ implements <a href="DistributionSchedule.html" title="interface in org.apache.bo
 <div class="block">Whether entry presents on given bookie index.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeSetFromValues(java.lang.Integer...)">writeSetFromValues</a></span>&#8203;(java.lang.Integer...&nbsp;values)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -335,6 +349,24 @@ implements <a href="DistributionSchedule.html" title="interface in org.apache.bo
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="DistributionSchedule.html#getWriteSet(long)">getWriteSet</a></code>&nbsp;in interface&nbsp;<code><a href="DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="getWriteSetBookieIndex(long,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWriteSetBookieIndex</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getWriteSetBookieIndex&#8203;(long&nbsp;entryId,
+                                  int&nbsp;writeSetIndex)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="DistributionSchedule.html#getWriteSetBookieIndex(long,int)">DistributionSchedule</a></code></span></div>
+<div class="block">Return the WriteSet bookie index for a given and index
+ in the WriteSet.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="DistributionSchedule.html#getWriteSetBookieIndex(long,int)">getWriteSetBookieIndex</a></code>&nbsp;in interface&nbsp;<code><a href="DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
 </dl>
 </li>
 </ul>
@@ -435,7 +467,7 @@ implements <a href="DistributionSchedule.html" title="interface in org.apache.bo
 <a id="getEntriesStripedToTheBookie(int,long,long)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getEntriesStripedToTheBookie</h4>
 <pre class="methodSignature">public&nbsp;java.util.BitSet&nbsp;getEntriesStripedToTheBookie&#8203;(int&nbsp;bookieIndex,
@@ -456,6 +488,19 @@ implements <a href="DistributionSchedule.html" title="interface in org.apache.bo
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the bitset representing the entries that would be striped to the
          bookie</dd>
+</dl>
+</li>
+</ul>
+<a id="getWriteQuorumSize()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getWriteQuorumSize</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getWriteQuorumSize()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="DistributionSchedule.html#getWriteQuorumSize()">getWriteQuorumSize</a></code>&nbsp;in interface&nbsp;<code><a href="DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
 </dl>
 </li>
 </ul>
