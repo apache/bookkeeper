@@ -27,3 +27,7 @@
 [CFOptions "default"]
  # set by jni: options.setLogFileTimeToRoll
  log_file_time_to_roll=86400
+
+[TableOptions/BlockBasedTable "default"]
+ # set by jni: tableOptions.setChecksumType
+ checksum=kxxHash
