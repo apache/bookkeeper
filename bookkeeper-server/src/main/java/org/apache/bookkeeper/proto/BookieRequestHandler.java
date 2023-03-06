@@ -28,8 +28,6 @@ import java.nio.channels.ClosedChannelException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Serverside handler for bookkeeper requests.
@@ -94,8 +92,8 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
         if (pendingSendResponses == null) {
-            pendingSendResponses = ctx.alloc().directBuffer(maxPendingResponsesSize != 0 ?
-                    maxPendingResponsesSize : 256);
+            pendingSendResponses = ctx.alloc().directBuffer(maxPendingResponsesSize != 0
+                    ? maxPendingResponsesSize : 256);
         }
 
         BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
