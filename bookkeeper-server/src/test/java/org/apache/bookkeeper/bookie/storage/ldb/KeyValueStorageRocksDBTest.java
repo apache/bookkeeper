@@ -84,7 +84,6 @@ public class KeyValueStorageRocksDBTest {
     @Test
     public void testReadChecksumTypeFromBookieConfiguration() throws Exception {
         ServerConfiguration configuration = new ServerConfiguration();
-        configuration.setProperty("dbStorage_rocksDB_checksum_type", "kxxHash");
         configuration.setEntryLocationRocksdbConf("entry_location_rocksdb.conf");
         File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-conf").toFile();
         Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
