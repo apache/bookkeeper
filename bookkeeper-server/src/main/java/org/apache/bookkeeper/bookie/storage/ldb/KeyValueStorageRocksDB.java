@@ -97,6 +97,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
     private static final String ROCKSDB_FORMAT_VERSION = "dbStorage_rocksDB_format_version";
+    private static final String ROCKSDB_CHECKSUM_TYPE = "dbStorage_rocksDB_checksum_type";
 
     public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf)
             throws IOException {
@@ -177,6 +178,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                                            ServerConfiguration conf, boolean readOnly) throws IOException {
         Options options = new Options();
         options.setCreateIfMissing(true);
+        ChecksumType checksumType = ChecksumType.valueOf(conf.getString(ROCKSDB_CHECKSUM_TYPE, "kxxHash"));
 
         if (dbConfigType == DbConfigType.EntryLocation) {
             /* Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override */
@@ -217,7 +219,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             tableOptions.setBlockSize(blockSize);
             tableOptions.setBlockCache(cache);
             tableOptions.setFormatVersion(formatVersion);
-            tableOptions.setChecksumType(ChecksumType.kxxHash);
+            tableOptions.setChecksumType(checksumType);
             if (bloomFilterBitsPerKey > 0) {
                 tableOptions.setFilterPolicy(new BloomFilter(bloomFilterBitsPerKey, false));
             }
@@ -229,6 +231,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setTableFormatConfig(tableOptions);
         } else {
             this.cache = null;
+            BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
+            tableOptions.setChecksumType(checksumType);
+            options.setTableFormatConfig(tableOptions);
         }
 
             // Configure file path
