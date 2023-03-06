@@ -456,7 +456,7 @@ public class DirectEntryLogger implements EntryLogger {
             writer.writeAt(0, buf);
             writer.position(buf.capacity());
         } finally {
-            ReferenceCountUtil.safeRelease(buf);
+            ReferenceCountUtil.release(buf);
         }
         return writer;
     }

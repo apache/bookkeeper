@@ -71,9 +71,9 @@ public class TestCompressionCodec {
         decompressedBuf.readBytes(decompressedData);
         assertArrayEquals("The decompressed bytes should be same as the original bytes",
                 data, decompressedData);
-        ReferenceCountUtil.safeRelease(buf);
-        ReferenceCountUtil.safeRelease(compressedBuf);
-        ReferenceCountUtil.safeRelease(decompressedBuf);
+        ReferenceCountUtil.release(buf);
+        ReferenceCountUtil.release(compressedBuf);
+        ReferenceCountUtil.release(decompressedBuf);
     }
 
     private void testCompressionCodec2(CompressionCodec codec) throws Exception {
@@ -94,9 +94,9 @@ public class TestCompressionCodec {
         byte[] decompressedData = new byte[decompressedBuf.readableBytes()];
         decompressedBuf.slice().readBytes(decompressedData);
 
-        ReferenceCountUtil.safeRelease(buffer);
-        ReferenceCountUtil.safeRelease(compressedBuf);
-        ReferenceCountUtil.safeRelease(decompressedBuf);
+        ReferenceCountUtil.release(buffer);
+        ReferenceCountUtil.release(compressedBuf);
+        ReferenceCountUtil.release(decompressedBuf);
     }
 
 }

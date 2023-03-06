@@ -108,14 +108,14 @@ class LogMetadata {
                 throw e;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(serializedMap);
+            ReferenceCountUtil.release(serializedMap);
         }
         ByteBuf buf = allocator.buffer(Buffer.ALIGNMENT);
         try {
             Header.writeHeader(buf, ledgerMapOffset, numberOfLedgers);
             writer.writeAt(0, buf);
         } finally {
-            ReferenceCountUtil.safeRelease(buf);
+            ReferenceCountUtil.release(buf);
         }
         writer.flush();
     }
@@ -178,7 +178,7 @@ class LogMetadata {
                                               .toString());
                     }
                 } finally {
-                    ReferenceCountUtil.safeRelease(ledgerMapBuffer);
+                    ReferenceCountUtil.release(ledgerMapBuffer);
                 }
             }
             return meta;
@@ -186,7 +186,7 @@ class LogMetadata {
             throw new IOException(exMsg("Error reading index").kv("logId", reader.logId())
                                   .kv("reason", ioe.getMessage()).toString(), ioe);
         } finally {
-            ReferenceCountUtil.safeRelease(header);
+            ReferenceCountUtil.release(header);
         }
     }
 }

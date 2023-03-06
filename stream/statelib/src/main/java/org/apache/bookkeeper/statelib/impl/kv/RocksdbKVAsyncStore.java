@@ -100,7 +100,7 @@ public class RocksdbKVAsyncStore<K, V>
                 byte[] serializedBytes = ByteBufUtil.getBytes(serializedBuf);
                 localStore.put(keyBytes, serializedBytes, revision);
             } finally {
-                ReferenceCountUtil.safeRelease(serializedBuf);
+                ReferenceCountUtil.release(serializedBuf);
             }
             return null;
         }, writeIOScheduler);
@@ -126,7 +126,7 @@ public class RocksdbKVAsyncStore<K, V>
                     return KVUtils.deserialize(valCoder, Unpooled.wrappedBuffer(prevValue));
                 }
             } finally {
-                ReferenceCountUtil.safeRelease(serializedBuf);
+                ReferenceCountUtil.release(serializedBuf);
             }
         }, writeIOScheduler);
     }

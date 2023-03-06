@@ -270,7 +270,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -398,7 +398,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                               toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
             recycle();
         }
 

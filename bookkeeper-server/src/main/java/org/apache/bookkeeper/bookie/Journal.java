@@ -1165,7 +1165,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                      * (METAENTRY_ID_LEDGER_EXPLICITLAC) to Journal.
                      */
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    ReferenceCountUtil.safeRelease(qe.entry);
+                    ReferenceCountUtil.release(qe.entry);
                 } else if (qe.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                     int entrySize = qe.entry.readableBytes();
                     journalStats.getJournalWriteBytes().addCount(entrySize);
@@ -1181,7 +1181,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     bc.write(lenBuff);
                     bc.write(qe.entry);
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
-                    ReferenceCountUtil.safeRelease(qe.entry);
+                    ReferenceCountUtil.release(qe.entry);
                 }
 
                 toFlush.add(qe);
