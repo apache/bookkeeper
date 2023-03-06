@@ -96,8 +96,8 @@ abstract class WriteTask extends BenchmarkTask {
                     );
                     writeOpStats.recordOp(latencyMicros);
                 }
-                ReferenceCountUtil.safeRelease(keyBuf);
-                ReferenceCountUtil.safeRelease(valBuf);
+                ReferenceCountUtil.release(keyBuf);
+                ReferenceCountUtil.release(valBuf);
             });
     }
 

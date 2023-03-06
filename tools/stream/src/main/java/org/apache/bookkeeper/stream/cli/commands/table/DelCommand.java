@@ -70,7 +70,7 @@ public class DelCommand extends ClientCommand<Flags> {
             ByteBuf value = result(table.delete(
                 Unpooled.wrappedBuffer(key.getBytes(UTF_8))));
             if (null != value) {
-                ReferenceCountUtil.safeRelease(value);
+                ReferenceCountUtil.release(value);
                 spec.console().println("Successfully deleted key: ('" + key + "').");
             } else {
                 spec.console().println("key '" + key + "' doesn't exist.");

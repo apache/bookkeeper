@@ -77,7 +77,7 @@ final class KVUtils {
         try {
             cmd.writeTo(new ByteBufOutputStream(buf));
         } catch (IOException e) {
-            ReferenceCountUtil.safeRelease(buf);
+            ReferenceCountUtil.release(buf);
             throw e;
         }
         return buf;

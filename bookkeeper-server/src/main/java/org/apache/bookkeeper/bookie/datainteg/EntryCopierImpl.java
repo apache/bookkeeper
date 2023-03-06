@@ -143,7 +143,7 @@ public class EntryCopierImpl implements EntryCopier {
                         } catch (Throwable t) {
                             promise.completeExceptionally(t);
                         } finally {
-                            ReferenceCountUtil.safeRelease(buffer);
+                            ReferenceCountUtil.release(buffer);
                         }
                     }
                 });

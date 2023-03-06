@@ -328,7 +328,7 @@ public class ByteBufList extends AbstractReferenceCounted {
                         ctx.write(bx.retainedDuplicate(), i == (buffersCount - 1) ? promise : ctx.voidPromise());
                     }
                 } finally {
-                    ReferenceCountUtil.safeRelease(b);
+                    ReferenceCountUtil.release(b);
                 }
             } else {
                 ctx.write(msg, promise);

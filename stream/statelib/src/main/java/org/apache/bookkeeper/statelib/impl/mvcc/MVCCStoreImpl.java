@@ -492,7 +492,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         try {
             record = getKeyRecord(key, rawKey);
         } catch (StateStoreRuntimeException e) {
-            ReferenceCountUtil.safeRelease(rawValBuf);
+            ReferenceCountUtil.release(rawValBuf);
             throw e;
         }
 

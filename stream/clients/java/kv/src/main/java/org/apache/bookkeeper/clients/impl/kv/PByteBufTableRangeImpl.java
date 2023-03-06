@@ -104,10 +104,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             executor,
             backoffPolicy
         ).process().whenComplete((value, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
             if (null != option.endKey()) {
-                ReferenceCountUtil.safeRelease(option.endKey());
+                ReferenceCountUtil.release(option.endKey());
             }
         });
     }
@@ -129,9 +129,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             executor,
             backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
-            ReferenceCountUtil.safeRelease(value);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
+            ReferenceCountUtil.release(value);
         });
     }
 
@@ -153,10 +153,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             executor,
             backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
             if (null != option.endKey()) {
-                ReferenceCountUtil.safeRelease(option.endKey());
+                ReferenceCountUtil.release(option.endKey());
             }
         });
     }
@@ -177,8 +177,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             executor,
             backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
         });
     }
 
@@ -252,7 +252,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                 executor,
                 backoffPolicy
             ).process().whenComplete((ignored, cause) -> {
-                ReferenceCountUtil.safeRelease(pKey);
+                ReferenceCountUtil.release(pKey);
                 for (AutoCloseable resource : resourcesToRelease) {
                     closeResource(resource);
                 }

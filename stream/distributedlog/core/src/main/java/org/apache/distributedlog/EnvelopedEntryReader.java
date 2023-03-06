@@ -81,7 +81,7 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
 
     private void releaseBuffer() {
         isExhausted = true;
-        ReferenceCountUtil.safeRelease(this.src);
+        ReferenceCountUtil.release(this.src);
     }
 
     @Override

@@ -298,7 +298,7 @@ public interface BookieProtocol {
             ledgerId = -1;
             entryId = -1;
             masterKey = null;
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
             data = null;
             recyclerHandle.recycle(this);
         }
@@ -333,7 +333,7 @@ public interface BookieProtocol {
         }
 
         void release() {
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
         }
 
         private final Handle<ParsedAddRequest> recyclerHandle;

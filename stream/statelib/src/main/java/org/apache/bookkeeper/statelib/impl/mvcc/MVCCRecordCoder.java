@@ -77,7 +77,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         buf.writerIndex(buf.writerIndex() + metaLen);
         buf.writeInt(valLen);
         buf.writeBytes(record.getValue().slice());
-        ReferenceCountUtil.safeRelease(buf);
+        ReferenceCountUtil.release(buf);
 
         return data;
     }

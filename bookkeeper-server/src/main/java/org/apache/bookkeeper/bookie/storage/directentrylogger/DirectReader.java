@@ -91,7 +91,7 @@ class DirectReader implements LogReader {
         try {
             readIntoBufferAt(buf, offset, size);
         } catch (IOException e) {
-            ReferenceCountUtil.safeRelease(buf);
+            ReferenceCountUtil.release(buf);
             throw e;
         }
 
@@ -121,7 +121,7 @@ class DirectReader implements LogReader {
                 try {
                     return intBuf.getInt(0);
                 } finally {
-                    ReferenceCountUtil.safeRelease(intBuf);
+                    ReferenceCountUtil.release(intBuf);
                 }
             }
         }
@@ -138,7 +138,7 @@ class DirectReader implements LogReader {
                 try {
                     return longBuf.getLong(0);
                 } finally {
-                    ReferenceCountUtil.safeRelease(longBuf);
+                    ReferenceCountUtil.release(longBuf);
                 }
             }
         }

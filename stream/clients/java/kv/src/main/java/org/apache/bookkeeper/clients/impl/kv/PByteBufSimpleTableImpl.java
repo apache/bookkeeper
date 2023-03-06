@@ -152,10 +152,10 @@ public class PByteBufSimpleTableImpl
         ))
         .thenApply(response -> KvUtils.newRangeResult(response, resultFactory, kvFactory))
         .whenComplete((value, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
             if (null != option.endKey()) {
-                ReferenceCountUtil.safeRelease(option.endKey());
+                ReferenceCountUtil.release(option.endKey());
             }
         });
     }
@@ -176,9 +176,9 @@ public class PByteBufSimpleTableImpl
             ))
             .thenApply(response -> KvUtils.newPutResult(response, resultFactory, kvFactory))
             .whenComplete((ignored, cause) -> {
-                ReferenceCountUtil.safeRelease(pKey);
-                ReferenceCountUtil.safeRelease(lKey);
-                ReferenceCountUtil.safeRelease(value);
+                ReferenceCountUtil.release(pKey);
+                ReferenceCountUtil.release(lKey);
+                ReferenceCountUtil.release(value);
             });
     }
 
@@ -200,10 +200,10 @@ public class PByteBufSimpleTableImpl
         ))
         .thenApply(response -> KvUtils.newDeleteResult(response, resultFactory, kvFactory))
         .whenComplete((ignored, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
             if (null != option.endKey()) {
-                ReferenceCountUtil.safeRelease(option.endKey());
+                ReferenceCountUtil.release(option.endKey());
             }
         });
     }
@@ -223,8 +223,8 @@ public class PByteBufSimpleTableImpl
         ))
         .thenApply(response -> KvUtils.newIncrementResult(response, resultFactory, kvFactory))
         .whenComplete((ignored, cause) -> {
-            ReferenceCountUtil.safeRelease(pKey);
-            ReferenceCountUtil.safeRelease(lKey);
+            ReferenceCountUtil.release(pKey);
+            ReferenceCountUtil.release(lKey);
         });
     }
 
@@ -298,7 +298,7 @@ public class PByteBufSimpleTableImpl
             ))
             .thenApply(response -> KvUtils.newKvTxnResult(response, resultFactory, kvFactory))
             .whenComplete((ignored, cause) -> {
-                ReferenceCountUtil.safeRelease(pKey);
+                ReferenceCountUtil.release(pKey);
                 for (AutoCloseable resource : resourcesToRelease) {
                     closeResource(resource);
                 }

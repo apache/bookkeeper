@@ -90,7 +90,7 @@ abstract class IncrementTask extends BenchmarkTask {
                     );
                     writeOpStats.recordOp(latencyMicros);
                 }
-                ReferenceCountUtil.safeRelease(keyBuf);
+                ReferenceCountUtil.release(keyBuf);
             });
     }
 

@@ -111,7 +111,7 @@ public class LedgerReader {
                             eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
 
                     } finally {
-                        ReferenceCountUtil.safeRelease(buffer);
+                        ReferenceCountUtil.release(buffer);
                     }
                 }
                 readResults.add(rr);

@@ -228,7 +228,7 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
             buffer.writeBytes(is, bytes);
         } catch (IOException e) {
             log.warn("Encountered exceptions in transferring bytes to the buffer", e);
-            ReferenceCountUtil.safeRelease(buffer);
+            ReferenceCountUtil.release(buffer);
             throw new RuntimeException("Encountered exceptions in transferring bytes to the buffer", e);
         }
         return method

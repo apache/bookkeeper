@@ -549,7 +549,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         long txId = ++nextRevision;
         return FutureUtils.ensure(
             writer.write(new LogRecord(txId, cmdBuf.nioBuffer())),
-            () -> ReferenceCountUtil.safeRelease(cmdBuf));
+            () -> ReferenceCountUtil.release(cmdBuf));
     }
 
     protected synchronized CompletableFuture<Long> writeCommandBufReturnTxId(ByteBuf cmdBuf) {
@@ -557,7 +557,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         return FutureUtils.ensure(
             writer.write(new LogRecord(txId, cmdBuf.nioBuffer()))
                 .thenApply(dlsn -> txId),
-            () -> ReferenceCountUtil.safeRelease(cmdBuf));
+            () -> ReferenceCountUtil.release(cmdBuf));
     }
 
     //

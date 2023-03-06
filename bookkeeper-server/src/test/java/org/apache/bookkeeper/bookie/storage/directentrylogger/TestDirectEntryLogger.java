@@ -139,15 +139,15 @@ public class TestDirectEntryLogger {
             ByteBuf e2read = elog.readEntry(ledgerId1, 2L, loc2);
             assertEntryEquals(e1read, e1);
             assertEntryEquals(e2read, e2);
-            ReferenceCountUtil.safeRelease(e1read);
-            ReferenceCountUtil.safeRelease(e2read);
+            ReferenceCountUtil.release(e1read);
+            ReferenceCountUtil.release(e2read);
 
             long loc3 = elog.addEntry(ledgerId1, e3.slice());
             elog.flush();
 
             ByteBuf e3read = elog.readEntry(ledgerId1, 3L, loc3);
             assertEntryEquals(e3read, e3);
-            ReferenceCountUtil.safeRelease(e3read);
+            ReferenceCountUtil.release(e3read);
         }
     }
 
@@ -200,7 +200,7 @@ public class TestDirectEntryLogger {
             }
             elog.flush();
             for (Long loc : locations) {
-                ReferenceCountUtil.safeRelease(elog.readEntry(loc));
+                ReferenceCountUtil.release(elog.readEntry(loc));
             }
             assertThat(outstandingReaders.get(), equalTo(maxCachedReaders));
         } finally {

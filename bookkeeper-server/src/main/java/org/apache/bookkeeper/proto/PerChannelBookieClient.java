@@ -837,7 +837,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // usually checked in writeAndFlush, but we have extra check
             // because we need to release toSend.
             errorOut(completionKey);
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
             return;
         } else {
             // addEntry times out on backpressure
@@ -1942,7 +1942,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             handleReadResponse(readResponse.getLedgerId(),
                                readResponse.getEntryId(),
                                status, buffer, maxLAC, lacUpdateTimestamp);
-            ReferenceCountUtil.safeRelease(
+            ReferenceCountUtil.release(
                     buffer); // meaningless using unpooled, but client may expect to hold the last reference
         }
 

@@ -230,17 +230,17 @@ public class ByteBufAllocatorBuilderTest {
         ByteBuf buf1 = alloc.buffer();
         assertEquals(pooledAlloc, buf1.alloc());
         assertFalse(buf1.hasArray());
-        ReferenceCountUtil.safeRelease(buf1);
+        ReferenceCountUtil.release(buf1);
 
         ByteBuf buf2 = alloc.directBuffer();
         assertEquals(pooledAlloc, buf2.alloc());
         assertFalse(buf2.hasArray());
-        ReferenceCountUtil.safeRelease(buf2);
+        ReferenceCountUtil.release(buf2);
 
         ByteBuf buf3 = alloc.heapBuffer();
         assertEquals(pooledAlloc, buf3.alloc());
         assertTrue(buf3.hasArray());
-        ReferenceCountUtil.safeRelease(buf3);
+        ReferenceCountUtil.release(buf3);
     }
 
     @Test
@@ -256,14 +256,14 @@ public class ByteBufAllocatorBuilderTest {
         assertEquals(PooledByteBufAllocator.class, buf1.alloc().getClass());
         assertEquals(3, ((PooledByteBufAllocator) buf1.alloc()).metric().numDirectArenas());
         assertFalse(buf1.hasArray());
-        ReferenceCountUtil.safeRelease(buf1);
+        ReferenceCountUtil.release(buf1);
 
         ByteBuf buf2 = alloc.directBuffer();
         assertFalse(buf2.hasArray());
-        ReferenceCountUtil.safeRelease(buf2);
+        ReferenceCountUtil.release(buf2);
 
         ByteBuf buf3 = alloc.heapBuffer();
         assertTrue(buf3.hasArray());
-        ReferenceCountUtil.safeRelease(buf3);
+        ReferenceCountUtil.release(buf3);
     }
 }

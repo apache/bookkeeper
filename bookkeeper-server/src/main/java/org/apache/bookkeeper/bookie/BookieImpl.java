@@ -941,7 +941,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                     getJournal(ledgerId).logAddEntry(
                             masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
                 } finally {
-                    ReferenceCountUtil.safeRelease(masterKeyEntry);
+                    ReferenceCountUtil.release(masterKeyEntry);
                 }
             }
         }
@@ -988,7 +988,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
         }
     }
 
@@ -1019,9 +1019,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
         } finally {
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
             if (explicitLACEntry != null) {
-                ReferenceCountUtil.safeRelease(explicitLACEntry);
+                ReferenceCountUtil.release(explicitLACEntry);
             }
         }
     }
@@ -1082,7 +1082,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
         }
     }
 

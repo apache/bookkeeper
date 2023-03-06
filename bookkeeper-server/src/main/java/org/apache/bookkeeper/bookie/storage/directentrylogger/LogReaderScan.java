@@ -56,7 +56,7 @@ class LogReaderScan {
                 offset += entrySize;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
         }
     }
 }

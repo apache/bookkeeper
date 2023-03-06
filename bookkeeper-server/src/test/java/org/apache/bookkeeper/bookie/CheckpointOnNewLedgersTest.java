@@ -184,14 +184,14 @@ public class CheckpointOnNewLedgersTest {
             assertNotNull(entry);
             assertEquals(l2, entry.readLong());
             assertEquals((long) i, entry.readLong());
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
         }
 
         ByteBuf entry = newBookie.readEntry(l1, 0L);
         assertNotNull(entry);
         assertEquals(l1, entry.readLong());
         assertEquals(0L, entry.readLong());
-        ReferenceCountUtil.safeRelease(entry);
+        ReferenceCountUtil.release(entry);
         newBookie.shutdown();
     }
 

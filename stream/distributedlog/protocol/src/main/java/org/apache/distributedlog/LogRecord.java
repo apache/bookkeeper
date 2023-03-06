@@ -226,7 +226,7 @@ public class LogRecord {
 
     void setPayloadBuf(ByteBuf payload, boolean copyData) {
         if (null != this.payload) {
-            ReferenceCountUtil.safeRelease(this.payload);
+            ReferenceCountUtil.release(this.payload);
         }
         if (copyData) {
             this.payload = Unpooled.copiedBuffer(payload);

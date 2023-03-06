@@ -243,7 +243,7 @@ class Buffer {
      * Free the memory that backs this buffer.
      */
     void free() {
-        ReferenceCountUtil.safeRelease(buffer);
+        ReferenceCountUtil.release(buffer);
         buffer = null;
         byteBuffer = null;
     }

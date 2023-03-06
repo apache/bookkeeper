@@ -157,14 +157,14 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
     @Override
     public synchronized void completeTransmit(long lssn, long entryId, long startSlotId) {
         satisfyPromises(lssn, entryId, startSlotId);
-        ReferenceCountUtil.safeRelease(buffer);
-        ReferenceCountUtil.safeRelease(recordSetBuffer);
+        ReferenceCountUtil.release(buffer);
+        ReferenceCountUtil.release(recordSetBuffer);
     }
 
     @Override
     public synchronized void abortTransmit(Throwable reason) {
         cancelPromises(reason);
-        ReferenceCountUtil.safeRelease(buffer);
-        ReferenceCountUtil.safeRelease(recordSetBuffer);
+        ReferenceCountUtil.release(buffer);
+        ReferenceCountUtil.release(recordSetBuffer);
     }
 }
