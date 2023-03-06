@@ -191,7 +191,7 @@ public class DefaultEntryLogger implements EntryLogger {
                     throw e;
                 }
             } finally {
-                ReferenceCountUtil.safeRelease(serializedMap);
+                ReferenceCountUtil.release(serializedMap);
             }
             // Flush the ledger's map out before we write the header.
             // Otherwise the header might point to something that is not fully
@@ -843,7 +843,7 @@ public class DefaultEntryLogger implements EntryLogger {
         ByteBuf data = allocator.buffer(entrySize, entrySize);
         int rc = readFromLogChannel(entryLogId, fc, data, pos);
         if (rc != entrySize) {
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
             throw new IOException("Bad entry read from log file id: " + entryLogId,
                     new EntryLookupException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
@@ -877,7 +877,7 @@ public class DefaultEntryLogger implements EntryLogger {
             int ledgersCount = headers.readInt();
             return new Header(headerVersion, ledgersMapOffset, ledgersCount);
         } finally {
-            ReferenceCountUtil.safeRelease(headers);
+            ReferenceCountUtil.release(headers);
         }
     }
 
@@ -1026,7 +1026,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 pos += entrySize;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
         }
     }
 
@@ -1118,7 +1118,7 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (IndexOutOfBoundsException e) {
             throw new IOException(e);
         } finally {
-            ReferenceCountUtil.safeRelease(ledgersMap);
+            ReferenceCountUtil.release(ledgersMap);
         }
 
         if (meta.getLedgersMap().size() != header.ledgersCount) {
