@@ -142,7 +142,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | allowStorageExpansion | Allow the expansion of bookie storage capacity. Newly added ledger and index directories must be empty. | false | 
 
 
-## Entry log settings
+## Default Entry log settings
 
 | Parameter | Description | Default
 | --------- | ----------- | ------- | 
@@ -155,6 +155,17 @@ The table below lists parameters that you can set to configure bookies. All conf
 | entrylogMapAccessExpiryTimeInSeconds | config specifying if the entrylog per ledger is enabled, then the amount of time EntryLogManagerForEntryLogPerLedger should wait for closing the entrylog file after the last addEntry call for that ledger, if explicit writeclose for that ledger is not received. | 300 | 
 | maximumNumberOfActiveEntryLogs | in entryLogPerLedger feature, this specifies the maximum number of entrylogs that can be active at a given point in time. If there are more number of active entryLogs then the maximumNumberOfActiveEntryLogs then the entrylog will be evicted from the cache. | 500 | 
 | entryLogPerLedgerCounterLimitsMultFactor | in EntryLogManagerForEntryLogPerLedger, this config value specifies the metrics cache size limits in multiples of entrylogMap cache size limits. | 10 | 
+
+## DirectIO Entry log settings (Only support DbLedgerStorage)
+
+| Parameter | Description                                                                                                                                                               | Default
+| --------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------- | 
+| dbStorage_directIOEntryLogger | Enable/Disable directIO entry logger.                                                                                                                                     | false |
+| dbStorage_directIOEntryLoggerTotalWriteBufferSizeMB | Total write buffer size in megabytes for all the entry directories. The write buffer size of each entry directory needs to be divided by the number of entry directories. | 1/8 of max direct memory |
+| dbStorage_directIOEntryLoggerTotalReadBufferSizeMB | Total read buffer size in megabytes for all the entry directories. The read buffer size of each entry directory needs to be divided by the number of entry directories.   | 1/8 of max direct memory |
+| dbStorage_directIOEntryLoggerReadBufferSizeMB | The buffer size, in megabytes, for each direct reader to read data from the entry log file. An entry log file will have only one direct reader.                           | 8 |
+| dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds | Maximum cache time after a direct reader is accessed.                                                                                                                     | 300 |
+| logSizeLimit | Max file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation.                                          | 2147483648 |  
 
 
 ## Entry log compaction settings
