@@ -99,25 +99,11 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof BookieProtocol.ParsedAddRequest
             && ADDENTRY == ((BookieProtocol.ParsedAddRequest) msg).getOpCode()
             && !((BookieProtocol.ParsedAddRequest) msg).isHighPriority()
-            && isVersionCompatible((BookieProtocol.ParsedAddRequest) msg)
+            && ((BookieProtocol.ParsedAddRequest) msg).getProtocolVersion() == BookieProtocol.CURRENT_PROTOCOL_VERSION
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
             msgs.put((BookieProtocol.ParsedAddRequest) msg);
         } else {
             requestProcessor.processRequest(msg, this);
-        }
-    }
-
-    private boolean isVersionCompatible(BookieProtocol.ParsedAddRequest r) {
-        byte version = r.getProtocolVersion();
-        if (version < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
-            || version > BookieProtocol.CURRENT_PROTOCOL_VERSION) {
-            log.error("Invalid protocol version, expected something between "
-                    + BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
-                    + " & " + BookieProtocol.CURRENT_PROTOCOL_VERSION
-                    + ". got " + r.getProtocolVersion());
-            return false;
-        } else {
-            return true;
         }
     }
 

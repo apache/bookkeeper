@@ -1133,6 +1133,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                     .registerFailedEvent(MathUtils.elapsedNanos(requestNans), TimeUnit.NANOSECONDS);
                 cb.writeComplete(rc, request.getLedgerId(), request.getEntryId(), null, ctx);
                 iter.remove();
+                request.release();
                 request.recycle();
             }
         }
@@ -1141,6 +1142,11 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             List<ByteBuf> entries = requests.stream()
                 .map(ParsedAddRequest::getData).collect(Collectors.toList());
             getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
+
+            requests.forEach(t -> {
+                t.release();
+                t.recycle();
+            });
         }
 
     }

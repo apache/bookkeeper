@@ -733,7 +733,7 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     @Override
     public void processAddRequest(List<BookieProtocol.ParsedAddRequest> msgs, BookieRequestHandler requestHandler) {
-        WriteEntryProcessor write = WriteEntryProcessor.create(msgs, requestHandler, this);
+        WriteBatchEntryProcessor write = WriteBatchEntryProcessor.create(msgs, requestHandler, this);
         if (writeThreadPool == null) {
             write.run();
         } else {

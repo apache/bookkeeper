@@ -20,7 +20,6 @@ package org.apache.bookkeeper.proto;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
@@ -39,18 +38,9 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
     BookieRequestHandler requestHandler;
     BookieRequestProcessor requestProcessor;
     long enqueueNanos;
-    List<T> requests;
 
     protected void init(T request, BookieRequestHandler requestHandler, BookieRequestProcessor requestProcessor) {
         this.request = request;
-        this.requestHandler = requestHandler;
-        this.requestProcessor = requestProcessor;
-        this.enqueueNanos = MathUtils.nowInNano();
-    }
-
-    protected void init(List<T> requests, BookieRequestHandler requestHandler,
-                        BookieRequestProcessor requestProcessor) {
-        this.requests = requests;
         this.requestHandler = requestHandler;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();

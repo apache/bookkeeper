@@ -39,6 +39,10 @@ class ResponseBuilder {
                                               r.getEntryId());
     }
 
+    static BookieProtocol.Response buildAddResponse(byte protocolVersion, long ledgerId, long entryId) {
+        return BookieProtocol.AddResponse.create(protocolVersion, BookieProtocol.EOK, ledgerId, entryId);
+    }
+
     static BookieProtocol.Response buildReadResponse(ByteBuf data, BookieProtocol.Request r) {
         return new BookieProtocol.ReadResponse(r.getProtocolVersion(), BookieProtocol.EOK,
                 r.getLedgerId(), r.getEntryId(), data);
