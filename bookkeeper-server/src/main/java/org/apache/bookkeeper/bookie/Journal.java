@@ -471,8 +471,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
             }
 
-            long busyStartTime = System.nanoTime();
-
             final ForceWriteRequest[] localRequests = new ForceWriteRequest[conf.getJournalQueueSize()];
             int requestsCount = 0;
 
