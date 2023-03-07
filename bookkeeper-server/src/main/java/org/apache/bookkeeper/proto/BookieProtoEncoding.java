@@ -271,6 +271,7 @@ public class BookieProtoEncoding {
 
                     if (isSmallEntry) {
                         buf.writeBytes(rr.getData());
+                        rr.release();
                         return buf;
                     } else {
                         return ByteBufList.get(buf, rr.getData());
