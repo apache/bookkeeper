@@ -122,7 +122,6 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
-        request.recycle();
         sendResponse(data, errorCode, startTimeNanos);
     }
 
@@ -190,6 +189,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     }
 
     private void recycle() {
+        request.recycle();
         super.reset();
         this.recyclerHandle.recycle(this);
     }

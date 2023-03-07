@@ -367,6 +367,7 @@ public interface BookieProtocol {
                   short flags, byte[] masterKey) {
             ReadRequest read = RECYCLER.get();
             read.protocolVersion = protocolVersion;
+            read.opCode = READENTRY;
             read.ledgerId = ledgerId;
             read.entryId = entryId;
             read.flags = flags;

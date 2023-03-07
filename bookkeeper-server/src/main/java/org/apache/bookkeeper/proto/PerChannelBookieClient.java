@@ -1143,6 +1143,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
+
+            // If the request is a V2 add request, we retained the data's reference when creating the AddRequest
+            // object. To avoid the object leak, we need to release the reference if we met any errors
+            // before sending it.
+            if (request instanceof BookieProtocol.AddRequest) {
+                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) request;
+                ar.recycle();
+            }
             return;
         }
 
@@ -1160,16 +1168,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
             });
-
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
-        } finally {
-            if (request instanceof BookieProtocol.Request) {
-                BookieProtocol.Request r = (BookieProtocol.Request) request;
-                r.recycle();
-            }
         }
     }
 

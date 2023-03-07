@@ -142,7 +142,7 @@ public class BookieProtoEncoding {
                 if (r.hasMasterKey()) {
                     buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
                 }
-
+                r.recycle();
                 return buf;
             } else if (r instanceof BookieProtocol.AuthRequest) {
                 BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
