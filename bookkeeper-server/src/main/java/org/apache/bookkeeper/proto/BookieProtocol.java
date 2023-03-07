@@ -223,7 +223,7 @@ public interface BookieProtocol {
             return ledgerId;
         }
 
-        long getEntryId() {
+        public long getEntryId() {
             return entryId;
         }
 

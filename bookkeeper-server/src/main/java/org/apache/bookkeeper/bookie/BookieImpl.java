@@ -45,6 +45,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
@@ -72,6 +73,7 @@ import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.RequestStats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
@@ -1089,11 +1091,13 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     public void addEntry(List<ParsedAddRequest> requests, boolean ackBeforeSync,
-                         WriteCallback cb, Object ctx) throws IOException, BookieException, InterruptedException {
+                         WriteCallback cb, Object ctx, RequestStats requestStats)
+        throws InterruptedException {
         long requestNans = MathUtils.nowInNano();
-        boolean success = false;
-        List<ParsedAddRequest> failedRequests = new ArrayList<>();
-        requests.forEach(request -> {
+        ListIterator<ParsedAddRequest> iter = requests.listIterator();
+        while (iter.hasNext()) {
+            ParsedAddRequest request = iter.next();
+            int rc = BookieProtocol.EOK;
             try {
                 LedgerDescriptor handle = getLedgerForEntry(request.getData(), request.getMasterKey());
                 synchronized (handle) {
@@ -1103,15 +1107,40 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
                     addEntryInternalWithoutJournal(handle, request.getData(), ackBeforeSync, cb, ctx, request.getMasterKey());
                 }
-            } catch (BookieException.LedgerFencedException e) {
-
+            } catch (BookieException.OperationRejectedException e) {
+                requestStats.getAddEntryRejectedCounter().inc();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Operation rejected while writing {} ", request, e);
+                }
+                rc = BookieProtocol.ETOOMANYREQUESTS;
             } catch (IOException e) {
-
+                LOG.error("Error writing {}", request, e);
+                rc = BookieProtocol.EIO;
+            } catch (BookieException.LedgerFencedException lfe) {
+                LOG.error("Attempt to write to fenced ledger ", lfe);
+            } catch (BookieException e) {
+                LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
+                rc = BookieProtocol.EUA;
+            } catch (Throwable t) {
+                LOG.error("Unexpected exception while writing {}@{} : {} ",
+                    request.getLedgerId(), request.getEntryId(), t.getMessage(), t);
+                rc = BookieProtocol.EBADREQ;
             }
-        });
 
-        List<ByteBuf> entries = requests.stream().filter(failedRequests::contains).map(ParsedAddRequest::getData).collect(Collectors.toList());
-        getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
+            if (rc != BookieProtocol.EOK) {
+                requestStats.getAddEntryStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(requestNans), TimeUnit.NANOSECONDS);
+                cb.writeComplete(rc, request.getLedgerId(), request.getEntryId(), null, ctx);
+                iter.remove();
+                request.recycle();
+            }
+        }
+
+        if (writeDataToJournal) {
+            List<ByteBuf> entries = requests.stream()
+                .map(ParsedAddRequest::getData).collect(Collectors.toList());
+            getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
+        }
 
     }
 

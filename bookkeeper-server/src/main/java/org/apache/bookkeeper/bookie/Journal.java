@@ -48,6 +48,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
+import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
+import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.common.util.MemoryLimitController;
@@ -638,7 +640,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
-    final BlockingQueue<QueueEntry> queue;
+    final BatchedBlockingQueue<QueueEntry> queue;
     final BlockingQueue<ForceWriteRequest> forceWriteRequests;
 
     volatile boolean running = true;
@@ -669,7 +671,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
         } else {
-            queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+            queue = new BatchedArrayBlockingQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
         }
 
@@ -891,7 +893,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         throws InterruptedException {
         AtomicLong reserveMemory = new AtomicLong();
         List<QueueEntry> queueEntries = entries.stream().map(entry -> {
-            long ledgerId = entry.getLong(entry.readerIndex() + 0);
+            long ledgerId = entry.getLong(entry.readerIndex());
             long entryId = entry.getLong(entry.readerIndex() + 8);
             entry.retain();
             reserveMemory.addAndGet(entry.readableBytes());
@@ -900,7 +902,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         memoryLimitController.releaseMemory(reserveMemory.get());
         journalStats.getJournalQueueSize().addCount(entries.size());
-        queue.putAll();
+        queue.putAll(queueEntries.toArray(new QueueEntry[0]), 0, queueEntries.size());
     }
 
     @VisibleForTesting

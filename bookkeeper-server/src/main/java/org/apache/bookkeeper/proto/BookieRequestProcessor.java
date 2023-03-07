@@ -745,9 +745,12 @@ public class BookieRequestProcessor implements RequestProcessor {
                 }
                 getRequestStats().getAddEntryRejectedCounter().addCount(msgs.size());
 
-                write.sendWriteReqResponse(BookieProtocol.ETOOMANYREQUESTS,
-                    ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, msgs),
-                    requestStats.getAddRequestStats());
+                for (BookieProtocol.ParsedAddRequest request : msgs) {
+                    write.sendWriteReqResponse(BookieProtocol.ETOOMANYREQUESTS,
+                        ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, request),
+                        requestStats.getAddRequestStats());
+                    request.recycle();
+                }
             }
         }
     }
