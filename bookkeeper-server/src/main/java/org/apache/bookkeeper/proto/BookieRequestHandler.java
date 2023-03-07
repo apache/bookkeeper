@@ -32,8 +32,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import org.apache.bookkeeper.common.collections.GrowableArrayBlockingQueue;
 
 /**
  * Serverside handler for bookkeeper requests.
@@ -55,7 +55,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
-        this.msgs = new GrowableArrayBlockingQueue<>();
+        this.msgs = new ArrayBlockingQueue<>(10_000);
     }
 
     public ChannelHandlerContext ctx() {
