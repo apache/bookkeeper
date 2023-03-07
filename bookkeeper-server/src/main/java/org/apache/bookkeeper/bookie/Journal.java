@@ -365,7 +365,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         private boolean shouldClose;
         private long lastFlushedPosition;
         private long logId;
-        private boolean flushedToDisk;
+        private boolean flushed;
 
         public int process() {
             closeFileIfNecessary();
@@ -381,10 +381,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             return forceWriteWaiters.size();
         }
         
-        private void flushToDisk() throws IOException {
-            if (!flushedToDisk) {
+        private void flushFileToDisk() throws IOException {
+            if (!flushed) {
                 logFile.forceWrite(false);
-                flushedToDisk = true;
+                flushed = true;
             }
         }
 
@@ -394,7 +394,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 // We should guard against exceptions so its
                 // safe to call in catch blocks
                 try {
-                    flushToDisk();
+                    flushFileToDisk();
                     logFile.close();
                     // Call close only once
                     shouldClose = false;
@@ -533,7 +533,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         private void syncJournal(ForceWriteRequest lastRequest) throws IOException {
             long fsyncStartTime = MathUtils.nowInNano();
             try {
-                lastRequest.flushToDisk();
+                lastRequest.flushFileToDisk();
                 journalStats.getJournalSyncStats().registerSuccessfulEvent(MathUtils.elapsedNanos(fsyncStartTime),
                         TimeUnit.NANOSECONDS);
                 lastLogMark.setCurLogMark(lastRequest.logId, lastRequest.lastFlushedPosition);
