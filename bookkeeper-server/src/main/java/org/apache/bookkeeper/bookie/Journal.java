@@ -380,7 +380,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
             return forceWriteWaiters.size();
         }
-        
+
         private void flushFileToDisk() throws IOException {
             if (!flushed) {
                 logFile.forceWrite(false);
