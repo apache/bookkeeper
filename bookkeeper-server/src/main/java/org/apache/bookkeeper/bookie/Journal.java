@@ -897,7 +897,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long entryId = entry.getLong(entry.readerIndex() + 8);
             entry.retain();
             reserveMemory.addAndGet(entry.readableBytes());
-            return QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), journalStats.getJournalAddEntryStats(), callbackTime);
+            return QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx,
+                MathUtils.nowInNano(), journalStats.getJournalAddEntryStats(), callbackTime);
         }).collect(Collectors.toList());
 
         memoryLimitController.releaseMemory(reserveMemory.get());

@@ -1105,7 +1105,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         throw BookieException.create(BookieException.Code.LedgerFencedException);
                     }
 
-                    addEntryInternalWithoutJournal(handle, request.getData(), ackBeforeSync, cb, ctx, request.getMasterKey());
+                    addEntryInternalWithoutJournal(handle, request.getData(), ackBeforeSync,
+                        cb, ctx, request.getMasterKey());
                 }
             } catch (BookieException.OperationRejectedException e) {
                 requestStats.getAddEntryRejectedCounter().inc();

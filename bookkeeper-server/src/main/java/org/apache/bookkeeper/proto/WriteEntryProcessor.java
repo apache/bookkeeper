@@ -199,7 +199,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                         ResponseBuilder.buildErrorResponse(rc, request),
                         requestProcessor.getRequestStats().getAddRequestStats());
                     request.recycle();
-                };
+                }
             }
         }
     }
