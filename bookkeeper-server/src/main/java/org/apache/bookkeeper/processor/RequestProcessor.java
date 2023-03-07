@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.processor;
 
+import java.util.List;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookieRequestHandler;
 
 /**
@@ -47,4 +49,5 @@ public interface RequestProcessor extends AutoCloseable {
      * Flush any pending response staged on all the client connections.
      */
     void flushPendingResponses();
+    void processAddRequest(List<BookieProtocol.ParsedAddRequest> r, BookieRequestHandler channel);
 }

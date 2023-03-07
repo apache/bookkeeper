@@ -35,6 +35,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -205,14 +206,14 @@ public class BookieRequestProcessor implements RequestProcessor {
         readsSemaphore = maxReads > 0 ? new Semaphore(maxReads, true) : null;
     }
 
-    protected void onAddRequestStart(Channel channel) {
+    protected void onAddRequestStart(Channel channel, int permits) {
         if (addsSemaphore != null) {
-            if (!addsSemaphore.tryAcquire()) {
+            if (!addsSemaphore.tryAcquire(permits)) {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
                 LOG.info("Too many add requests in progress, disabling autoread on channel {}", channel);
                 requestStats.blockAddRequest();
-                addsSemaphore.acquireUninterruptibly();
+                addsSemaphore.acquireUninterruptibly(permits);
                 channel.config().setAutoRead(true);
                 final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
                 LOG.info("Re-enabled autoread on channel {} after AddRequest delay of {} nanos", channel, delayNanos);
@@ -728,5 +729,26 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     public void handleNonWritableChannel(Channel channel) {
         onResponseTimeout.accept(channel);
+    }
+
+    @Override
+    public void processAddRequest(List<BookieProtocol.ParsedAddRequest> msgs, BookieRequestHandler requestHandler) {
+        WriteEntryProcessor write = WriteEntryProcessor.create(msgs, requestHandler, this);
+        if (writeThreadPool == null) {
+            write.run();
+        } else {
+            try {
+                writeThreadPool.execute(write);
+            } catch (RejectedExecutionException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to process request to add entry. Too many pending requests ", e);
+                }
+                getRequestStats().getAddEntryRejectedCounter().addCount(msgs.size());
+
+                write.sendWriteReqResponse(BookieProtocol.ETOOMANYREQUESTS,
+                    ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, msgs),
+                    requestStats.getAddRequestStats());
+            }
+        }
     }
 }

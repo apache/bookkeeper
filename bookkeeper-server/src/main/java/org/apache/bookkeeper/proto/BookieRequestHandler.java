@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.proto.BookieProtocol.ADDENTRY;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -28,6 +30,10 @@ import java.nio.channels.ClosedChannelException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import org.apache.bookkeeper.common.collections.GrowableArrayBlockingQueue;
 
 /**
  * Serverside handler for bookkeeper requests.
@@ -41,6 +47,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     private final ChannelGroup allChannels;
 
     private ChannelHandlerContext ctx;
+    private BlockingQueue<BookieProtocol.ParsedAddRequest> msgs;
 
     private ByteBuf pendingSendResponses = null;
     private int maxPendingResponsesSize;
@@ -48,6 +55,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
+        this.msgs = new GrowableArrayBlockingQueue<>();
     }
 
     public ChannelHandlerContext ctx() {
@@ -87,7 +95,39 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg);
             return;
         }
-        requestProcessor.processRequest(msg, this);
+
+        if (msg instanceof BookieProtocol.ParsedAddRequest
+            && ADDENTRY == ((BookieProtocol.ParsedAddRequest) msg).getOpCode()
+            && !((BookieProtocol.ParsedAddRequest) msg).isHighPriority()
+            && isVersionCompatible((BookieProtocol.ParsedAddRequest) msg)
+            && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
+            msgs.put((BookieProtocol.ParsedAddRequest) msg);
+        } else {
+            requestProcessor.processRequest(msg, this);
+        }
+    }
+
+    private boolean isVersionCompatible(BookieProtocol.ParsedAddRequest r) {
+        byte version = r.getProtocolVersion();
+        if (version < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
+            || version > BookieProtocol.CURRENT_PROTOCOL_VERSION) {
+            log.error("Invalid protocol version, expected something between "
+                    + BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
+                    + " & " + BookieProtocol.CURRENT_PROTOCOL_VERSION
+                    + ". got " + r.getProtocolVersion());
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        if (!msgs.isEmpty()) {
+            List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>();
+            msgs.drainTo(c);
+            requestProcessor.processAddRequest(c, this);
+        }
     }
 
     public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {

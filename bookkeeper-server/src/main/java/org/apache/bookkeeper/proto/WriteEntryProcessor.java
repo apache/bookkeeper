@@ -21,7 +21,9 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.net.BookieId;
@@ -50,7 +52,15 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                                              BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
         wep.init(request, requestHandler, requestProcessor);
-        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel(), 1);
+        return wep;
+    }
+
+    public static WriteEntryProcessor create(List<ParsedAddRequest> requests, BookieRequestHandler requestHandler,
+                                             BookieRequestProcessor requestProcessor) {
+        WriteEntryProcessor wep = RECYCLER.get();
+        wep.init(requests, requestHandler, requestProcessor);
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel(), requests.size());
         return wep;
     }
 
@@ -154,4 +164,48 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             return new WriteEntryProcessor(handle);
         }
     };
+
+    @Override
+    public void run() {
+        if (request != null) {
+            super.run();
+        } else if (requests != null && !requests.isEmpty()){
+            if (requestProcessor.getBookie().isReadOnly()) {
+                LOG.warn("BookieServer is running in readOnly mode, so rejecting the request from the client!");
+                sendWriteReqResponse(BookieProtocol.EREADONLY,
+                    ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, requests),
+                    requestProcessor.getRequestStats().getAddRequestStats());
+                requests.forEach(ParsedAddRequest::release);
+                requests.forEach(ParsedAddRequest::recycle);
+                return;
+            }
+
+            startTimeNanos = MathUtils.nowInNano();
+            int rc = BookieProtocol.EOK;
+            try {
+                requestProcessor.getBookie().addEntry(requests, false, this, requestHandler);
+            } catch (OperationRejectedException e) {
+                requestProcessor.getRequestStats().getAddEntryRejectedCounter().addCount(requests.size());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Operation rejected while writing ", e);
+                }
+                rc = BookieProtocol.ETOOMANYREQUESTS;
+            } catch (IOException e) {
+                LOG.error("Error writing request ", e);
+                rc = BookieProtocol.EIO;
+            } catch ( Throwable t) {
+                LOG.error("Unexpected exception while writing requests {}", t.getMessage(), t);
+                rc = BookieProtocol.EBADREQ;
+            }
+
+            if (rc != BookieProtocol.EOK) {
+                requestProcessor.getRequestStats().getAddRequestStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                sendWriteReqResponse(rc,
+                    ResponseBuilder.buildErrorResponse(rc, requests),
+                    requestProcessor.getRequestStats().getAddRequestStats());
+                requests.forEach(ParsedAddRequest::recycle);
+            }
+        }
+    }
 }

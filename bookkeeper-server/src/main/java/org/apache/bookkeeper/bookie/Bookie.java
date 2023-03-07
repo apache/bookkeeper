@@ -20,10 +20,12 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.util.List;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 
 /**
@@ -44,6 +46,8 @@ public interface Bookie {
     // TODO: replace ackBeforeSync with flags
     void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException, InterruptedException;
+    void addEntry(List<BookieProtocol.ParsedAddRequest> requests, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+        throws IOException, BookieException, InterruptedException;
     void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException, InterruptedException;
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx);

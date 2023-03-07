@@ -70,6 +70,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -1084,6 +1085,67 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
 
             ReferenceCountUtil.release(entry);
+        }
+    }
+
+    public void addEntry(List<ParsedAddRequest> requests, boolean ackBeforeSync,
+                         WriteCallback cb, Object ctx) throws IOException, BookieException, InterruptedException {
+        long requestNans = MathUtils.nowInNano();
+        boolean success = false;
+        List<ParsedAddRequest> failedRequests = new ArrayList<>();
+        requests.forEach(request -> {
+            try {
+                LedgerDescriptor handle = getLedgerForEntry(request.getData(), request.getMasterKey());
+                synchronized (handle) {
+                    if (handle.isFenced()) {
+                        throw BookieException.create(BookieException.Code.LedgerFencedException);
+                    }
+
+                    addEntryInternalWithoutJournal(handle, request.getData(), ackBeforeSync, cb, ctx, request.getMasterKey());
+                }
+            } catch (BookieException.LedgerFencedException e) {
+
+            } catch (IOException e) {
+
+            }
+        });
+
+        List<ByteBuf> entries = requests.stream().filter(failedRequests::contains).map(ParsedAddRequest::getData).collect(Collectors.toList());
+        getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
+
+    }
+
+    private void addEntryInternalWithoutJournal(LedgerDescriptor handle, ByteBuf entry,
+                                  boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
+            throws IOException, BookieException, InterruptedException {
+        long ledgerId = handle.getLedgerId();
+        long entryId = handle.addEntry(entry);
+
+        bookieStats.getWriteBytes().addCount(entry.readableBytes());
+
+        // journal `addEntry` should happen after the entry is added to ledger storage.
+        // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
+        if (masterKeyCache.get(ledgerId) == null) {
+            // Force the load into masterKey cache
+            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
+            if (oldValue == null) {
+                ByteBuf masterKeyEntry = createMasterKeyEntry(ledgerId, masterKey);
+                try {
+                    getJournal(ledgerId).logAddEntry(
+                            masterKeyEntry, false /* ackBeforeSync */, new NopWriteCallback(), null);
+                } finally {
+                    ReferenceCountUtil.safeRelease(masterKeyEntry);
+                }
+            }
+        }
+
+        if (!writeDataToJournal) {
+            cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            return;
+        }
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
     }
 
