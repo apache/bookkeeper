@@ -27,13 +27,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
 import java.nio.channels.ClosedChannelException;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.processor.RequestProcessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.processor.RequestProcessor;
 
 /**
  * Serverside handler for bookkeeper requests.
@@ -42,12 +42,13 @@ import java.util.concurrent.BlockingQueue;
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     static final Object EVENT_FLUSH_ALL_PENDING_RESPONSES = new Object();
+    private static final int CAPACITY = 10_000;
 
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
 
     private ChannelHandlerContext ctx;
-    private BlockingQueue<BookieProtocol.ParsedAddRequest> msgs;
+    private final BlockingQueue<BookieProtocol.ParsedAddRequest> msgs;
 
     private ByteBuf pendingSendResponses = null;
     private int maxPendingResponsesSize;
@@ -55,7 +56,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
-        this.msgs = new ArrayBlockingQueue<>(10_000);
+        this.msgs = new ArrayBlockingQueue<>(CAPACITY);
     }
 
     public ChannelHandlerContext ctx() {
@@ -102,6 +103,13 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             && ((BookieProtocol.ParsedAddRequest) msg).getProtocolVersion() == BookieProtocol.CURRENT_PROTOCOL_VERSION
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
             msgs.put((BookieProtocol.ParsedAddRequest) msg);
+
+            if (msgs.size() == CAPACITY) {
+                int count = msgs.size();
+                List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
+                msgs.drainTo(c, count);
+                requestProcessor.processAddRequest(c, this);
+            }
         } else {
             requestProcessor.processRequest(msg, this);
         }
@@ -110,8 +118,9 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         if (!msgs.isEmpty()) {
-            List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>();
-            msgs.drainTo(c);
+            int count = msgs.size();
+            List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
+            msgs.drainTo(c, count);
             requestProcessor.processAddRequest(c, this);
         }
     }
