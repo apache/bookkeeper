@@ -476,6 +476,47 @@ Currently all the HTTP endpoints could be divided into these 5 components:
         |503 | Bookie is not ready |
    * Body: &lt;empty&gt;
 
+### Endpoint: /api/v1/bookie/entry_location_compact
+1. Method: PUT
+    * Description:  trigger entry location index rocksDB compact. Trigger all entry location rocksDB compact, if entryLocations not be specified.
+    * Parameters: 
+
+      | Name | Type | Required | Description |
+              |:-----|:-----|:---------|:------------|
+      |entryLocationRocksDBCompact  | String | Yes | Configuration name(key) |
+      |entryLocations | String | no | entry location rocksDB path |
+    * Body:
+         ```json
+         {
+            "entryLocationRocksDBCompact": "true",
+            "entryLocations":"/data1/bookkeeper/ledgers/current/locations,/data2/bookkeeper/ledgers/current/locations"
+         }
+         ```
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |405 | Method Not Allowed |
+
+2. Method: GET
+    * Description:  All entry location index rocksDB compact status on bookie. true for is running.
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |405 | Method Not Allowed |
+    * Body:
+       ```json
+       {
+          "/data1/bookkeeper/ledgers/current/locations" : true,
+          "/data2/bookkeeper/ledgers/current/locations" : false
+       }
+       ```
+
 
 ## Auto recovery
 

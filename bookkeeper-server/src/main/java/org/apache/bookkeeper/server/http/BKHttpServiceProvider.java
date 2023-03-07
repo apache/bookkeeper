@@ -64,6 +64,7 @@ import org.apache.bookkeeper.server.http.service.ResumeCompactionService;
 import org.apache.bookkeeper.server.http.service.SuspendCompactionService;
 import org.apache.bookkeeper.server.http.service.TriggerAuditService;
 import org.apache.bookkeeper.server.http.service.TriggerGCService;
+import org.apache.bookkeeper.server.http.service.TriggerLocationCompactService;
 import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.zookeeper.KeeperException;
@@ -235,6 +236,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new SuspendCompactionService(bookieServer);
             case RESUME_GC_COMPACTION:
                 return new ResumeCompactionService(bookieServer);
+            case TRIGGER_ENTRY_LOCATION_COMPACT:
+                return new TriggerLocationCompactService(bookieServer);
 
             // autorecovery
             case AUTORECOVERY_STATUS:
