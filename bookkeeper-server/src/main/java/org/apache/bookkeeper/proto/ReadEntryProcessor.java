@@ -189,6 +189,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     }
 
     private void recycle() {
+        request.recycle();
         super.reset();
         this.recyclerHandle.recycle(this);
     }
