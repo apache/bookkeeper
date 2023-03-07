@@ -107,7 +107,7 @@ public class ReadEntryProcessorTest {
 
         ExecutorService service = Executors.newCachedThreadPool();
         long ledgerId = System.currentTimeMillis();
-        ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
         ReadEntryProcessor processor = ReadEntryProcessor.create(
                 request, requestHandler, requestProcessor, service, true);
@@ -150,7 +150,7 @@ public class ReadEntryProcessorTest {
         }).when(channel).writeAndFlush(any(Response.class));
 
         long ledgerId = System.currentTimeMillis();
-        ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
         ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
         fenceResult.complete(result);
@@ -180,7 +180,7 @@ public class ReadEntryProcessorTest {
         }).when(channel).writeAndFlush(any(Response.class));
 
         long ledgerId = System.currentTimeMillis();
-        ReadRequest request = new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
                 1, (short) 0, new byte[]{});
         ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
         processor.run();

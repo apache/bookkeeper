@@ -362,13 +362,42 @@ public interface BookieProtocol {
      * A Request that reads data.
      */
     class ReadRequest extends Request {
-        ReadRequest(byte protocolVersion, long ledgerId, long entryId,
-                    short flags, byte[] masterKey) {
-            init(protocolVersion, READENTRY, ledgerId, entryId, flags, masterKey);
+
+        static ReadRequest create(byte protocolVersion, long ledgerId, long entryId,
+                  short flags, byte[] masterKey) {
+            ReadRequest read = RECYCLER.get();
+            read.protocolVersion = protocolVersion;
+            read.opCode = READENTRY;
+            read.ledgerId = ledgerId;
+            read.entryId = entryId;
+            read.flags = flags;
+            read.masterKey = masterKey;
+            return read;
         }
 
         boolean isFencing() {
             return (flags & FLAG_DO_FENCING) == FLAG_DO_FENCING;
+        }
+
+        private final Handle<ReadRequest> recyclerHandle;
+
+        private ReadRequest(Handle<ReadRequest> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<ReadRequest> RECYCLER = new Recycler<ReadRequest>() {
+            @Override
+            protected ReadRequest newObject(Handle<ReadRequest> handle) {
+                return new ReadRequest(handle);
+            }
+        };
+
+        @Override
+        public void recycle() {
+            ledgerId = -1;
+            entryId = -1;
+            masterKey = null;
+            recyclerHandle.recycle(this);
         }
     }
 

@@ -142,7 +142,7 @@ public class BookieProtoEncoding {
                 if (r.hasMasterKey()) {
                     buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
                 }
-
+                r.recycle();
                 return buf;
             } else if (r instanceof BookieProtocol.AuthRequest) {
                 BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
@@ -193,9 +193,9 @@ public class BookieProtoEncoding {
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING
                     && version >= 2) {
                     byte[] masterKey = readMasterKey(packet);
-                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, masterKey);
+                    return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, masterKey);
                 } else {
-                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, null);
+                    return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, null);
                 }
             case BookieProtocol.AUTH:
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
