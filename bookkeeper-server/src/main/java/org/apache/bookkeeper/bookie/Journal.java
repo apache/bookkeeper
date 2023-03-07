@@ -51,6 +51,7 @@ import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -444,6 +445,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         // This holds the queue entries that should be notified after a
         // successful force write
         Thread threadToNotifyOnEx;
+
+        RequestProcessor requestProcessor;
         // should we group force writes
         private final boolean enableGroupForceWrites;
         private final Counter forceWriteThreadTime;
@@ -498,6 +501,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     journalStats.getForceWriteGroupingCountStats()
                             .registerSuccessfulValue(numReqInLastForceWrite);
+
+                    if (requestProcessor != null) {
+                        requestProcessor.flushPendingResponses();
+                    }
 
                 } catch (IOException ioe) {
                     LOG.error("I/O exception in ForceWrite thread", ioe);
@@ -1093,6 +1100,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     numEntriesToFlush--;
                                     entry.run();
                                 }
+
+                                if (forceWriteThread.requestProcessor != null) {
+                                    forceWriteThread.requestProcessor.flushPendingResponses();
+                                }
                             }
 
                             lastFlushPosition = bc.position();
@@ -1209,6 +1220,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public BufferedChannelBuilder getBufferedChannelBuilder() {
         return (FileChannel fc, int capacity) -> new BufferedChannel(allocator, fc, capacity);
+    }
+
+    public void setRequestProcessor(RequestProcessor requestProcessor) {
+        forceWriteThread.requestProcessor = requestProcessor;
     }
 
     /**

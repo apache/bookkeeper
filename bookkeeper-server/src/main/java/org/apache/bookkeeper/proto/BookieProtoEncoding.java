@@ -334,6 +334,14 @@ public class BookieProtoEncoding {
                 throw new IllegalStateException("Received unknown response : op code = " + opCode);
             }
         }
+
+        public static void serializeAddResponseInto(int rc, BookieProtocol.ParsedAddRequest req, ByteBuf buf) {
+            buf.writeInt(RESPONSE_HEADERS_SIZE); // Frame size
+            buf.writeInt(PacketHeader.toInt(req.getProtocolVersion(), req.getOpCode(), (short) 0));
+            buf.writeInt(rc); // rc-code
+            buf.writeLong(req.getLedgerId());
+            buf.writeLong(req.getEntryId());
+        }
     }
 
     /**
@@ -504,7 +512,10 @@ public class BookieProtoEncoding {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
             }
-            if (msg instanceof BookkeeperProtocol.Response) {
+
+            if (msg instanceof ByteBuf) {
+                ctx.write(msg, promise);
+            } else if (msg instanceof BookkeeperProtocol.Response) {
                 ctx.write(repV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Response) {
                 ctx.write(repPreV3.encode(msg, ctx.alloc()), promise);
