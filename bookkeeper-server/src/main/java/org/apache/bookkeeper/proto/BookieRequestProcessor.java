@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
@@ -118,6 +119,8 @@ public class BookieRequestProcessor implements RequestProcessor {
     final Semaphore addsSemaphore;
     final Semaphore readsSemaphore;
 
+    final ChannelGroup allChannels;
+
     // to temporary blacklist channels
     final Optional<Cache<Channel, Boolean>> blacklistedChannels;
     final Consumer<Channel> onResponseTimeout;
@@ -127,9 +130,11 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final boolean throttleReadResponses;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie, StatsLogger statsLogger,
-            SecurityHandlerFactory shFactory, ByteBufAllocator allocator) throws SecurityException {
+                                  SecurityHandlerFactory shFactory, ByteBufAllocator allocator,
+                                  ChannelGroup allChannels) throws SecurityException {
         this.serverCfg = serverCfg;
         this.allocator = allocator;
+        this.allChannels = allChannels;
         this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();
         this.preserveMdcForTaskExecution = serverCfg.getPreserveMdcForTaskExecution();
         this.bookie = bookie;
@@ -691,6 +696,13 @@ public class BookieRequestProcessor implements RequestProcessor {
                     requestStats.getReadRequestStats());
                 onReadRequestFinish();
             }
+        }
+    }
+
+    @Override
+    public void flushPendingResponses() {
+        for (Channel c : allChannels) {
+            c.pipeline().fireUserEventTriggered(BookieRequestHandler.EVENT_FLUSH_ALL_PENDING_RESPONSES);
         }
     }
 

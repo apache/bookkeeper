@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
@@ -181,28 +182,25 @@ public class WriteEntryProcessorTest {
             return null;
         }).when(bookie).addEntry(any(ByteBuf.class), eq(false), same(processor), same(requestHandler), eq(new byte[0]));
 
-        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        AtomicReference<Integer> writtenObject = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocationOnMock -> {
             writtenObject.set(invocationOnMock.getArgument(0));
             latch.countDown();
             return null;
-        }).when(channel).writeAndFlush(any(), any());
+        }).when(requestHandler).prepareSendResponseV2(anyInt(), any());
 
         processor.run();
 
         verify(bookie, times(1))
             .addEntry(any(ByteBuf.class), eq(false), same(processor), same(requestHandler), eq(new byte[0]));
-        verify(channel, times(1)).writeAndFlush(any(), any());
+        verify(requestHandler, times(1)).prepareSendResponseV2(anyInt(), any());
+//        verify(channel, times(1)).writeAndFlush(any(), any());
 
         latch.await();
 
-        assertTrue(writtenObject.get() instanceof Response);
-        Response response = (Response) writtenObject.get();
-        assertEquals(BookieProtocol.EOK, response.getErrorCode());
-
-        response.release();
-        response.recycle();
+        assertTrue(writtenObject.get() instanceof Integer);
+        assertEquals(BookieProtocol.EOK, (int) writtenObject.get());
     }
 
     @Test
@@ -216,28 +214,23 @@ public class WriteEntryProcessorTest {
             return null;
         }).when(bookie).addEntry(any(ByteBuf.class), eq(false), same(processor), same(requestHandler), eq(new byte[0]));
 
-        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        AtomicReference<Integer> writtenObject = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocationOnMock -> {
             writtenObject.set(invocationOnMock.getArgument(0));
             latch.countDown();
             return null;
-        }).when(channel).writeAndFlush(any(), any());
+        }).when(requestHandler).prepareSendResponseV2(anyInt(), any());
 
         processor.run();
 
         verify(bookie, times(1))
             .addEntry(any(ByteBuf.class), eq(false), same(processor), same(requestHandler), eq(new byte[0]));
-        verify(channel, times(1)).writeAndFlush(any(), any());
+        verify(requestHandler, times(1)).prepareSendResponseV2(anyInt(), any());
 
         latch.await();
 
-        assertTrue(writtenObject.get() instanceof Response);
-        Response response = (Response) writtenObject.get();
-        assertEquals(BookieProtocol.EOK, response.getErrorCode());
-
-        response.release();
-        response.recycle();
+        assertEquals(BookieProtocol.EOK, (int) writtenObject.get());
     }
 
     @Test

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 
 /**
@@ -85,6 +86,8 @@ public interface Bookie {
 
     // TODO: Should be constructed and passed in as a parameter
     LedgerStorage getLedgerStorage();
+
+    void setRequestProcessor(RequestProcessor requestProcessor);
 
     // TODO: Move this exceptions somewhere else
     /**
