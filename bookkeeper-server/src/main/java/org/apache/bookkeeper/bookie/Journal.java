@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
-import com.scurrilous.circe.Hash;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -31,26 +30,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
-import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-import org.apache.bookkeeper.bookie.stats.JournalStats;
-import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
-import org.apache.bookkeeper.common.collections.RecyclableArrayList;
-import org.apache.bookkeeper.common.util.MemoryLimitController;
-import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.processor.RequestProcessor;
-import org.apache.bookkeeper.proto.BookieRequestHandler;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.ThreadRegistry;
-import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.MathUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -67,6 +46,24 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.stats.JournalStats;
+import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList;
+import org.apache.bookkeeper.common.util.MemoryLimitController;
+import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieRequestHandler;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.MathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provide journal related management.
@@ -337,11 +334,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             recycle();
         }
-    
+
         private Object getCtx() {
             return ctx;
         }
-    
+
         private final Handle<QueueEntry> recyclerHandle;
 
         private QueueEntry(Handle<QueueEntry> recyclerHandle) {
@@ -397,11 +394,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 flushed = true;
             }
         }
-    
+
         private RecyclableArrayList<QueueEntry> getForceWriteWaiters() {
             return forceWriteWaiters;
         }
-    
+
         public void closeFileIfNecessary() {
             // Close if shouldClose is set
             if (shouldClose) {
@@ -467,7 +464,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         // successful force write
         Thread threadToNotifyOnEx;
 
-        RequestProcessor requestProcessor;
         // should we group force writes
         private final boolean enableGroupForceWrites;
         private final Counter forceWriteThreadTime;
@@ -507,7 +503,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
-    
+
                     Set<BookieRequestHandler> writeHandlers = new HashSet<>();
                     // Sync and mark the journal up to the position of the last entry in the batch
                     ForceWriteRequest lastRequest = localRequests.get(requestsCount - 1);
@@ -530,7 +526,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     journalStats.getForceWriteGroupingCountStats()
                             .registerSuccessfulValue(numReqInLastForceWrite);
-    
+
                     for (BookieRequestHandler writeHandler : writeHandlers) {
                         writeHandler.flushPendingResponse();
                     }
@@ -1120,7 +1116,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             }
                             journalFlushWatcher.reset().start();
                             bc.flush();
-                            
+
                             Set<BookieRequestHandler> writeHandlers = new HashSet<>();
                             for (int i = 0; i < toFlush.size(); i++) {
                                 QueueEntry entry = toFlush.get(i);
@@ -1137,7 +1133,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             for (BookieRequestHandler writeHandler : writeHandlers) {
                                 writeHandler.flushPendingResponse();
                             }
-                            
+
                             lastFlushPosition = bc.position();
                             journalStats.getJournalFlushStats().registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -1252,10 +1248,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public BufferedChannelBuilder getBufferedChannelBuilder() {
         return (FileChannel fc, int capacity) -> new BufferedChannel(allocator, fc, capacity);
-    }
-
-    public void setRequestProcessor(RequestProcessor requestProcessor) {
-        forceWriteThread.requestProcessor = requestProcessor;
     }
 
     /**

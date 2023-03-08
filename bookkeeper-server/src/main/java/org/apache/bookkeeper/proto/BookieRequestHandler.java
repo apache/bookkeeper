@@ -44,7 +44,6 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     private ByteBuf pendingSendResponses = null;
     private int maxPendingResponsesSize = DEFAULT_PENDING_RESPONSE_SIZE;
-    
 
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
@@ -97,7 +96,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         }
         BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
     }
-    
+
     public synchronized void flushPendingResponse() {
         if (pendingSendResponses != null) {
             maxPendingResponsesSize = (int) Math.max(
