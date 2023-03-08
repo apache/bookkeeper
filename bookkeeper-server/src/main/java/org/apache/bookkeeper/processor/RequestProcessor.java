@@ -42,9 +42,4 @@ public interface RequestProcessor extends AutoCloseable {
      *          channel received the given request <i>r</i>
      */
     void processRequest(Object r, BookieRequestHandler channel);
-
-    /**
-     * Flush any pending response staged on all the client connections.
-     */
-    void flushPendingResponses();
 }

@@ -699,13 +699,6 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    @Override
-    public void flushPendingResponses() {
-        for (Channel c : allChannels) {
-            c.pipeline().fireUserEventTriggered(BookieRequestHandler.EVENT_FLUSH_ALL_PENDING_RESPONSES);
-        }
-    }
-
     public long getWaitTimeoutOnBackpressureMillis() {
         return waitTimeoutOnBackpressureMillis;
     }

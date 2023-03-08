@@ -338,7 +338,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             recycle();
         }
     
-        public Object getCtx() {
+        private Object getCtx() {
             return ctx;
         }
     
@@ -398,7 +398,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
         }
     
-        public RecyclableArrayList<QueueEntry> getForceWriteWaiters() {
+        private RecyclableArrayList<QueueEntry> getForceWriteWaiters() {
             return forceWriteWaiters;
         }
     
@@ -519,7 +519,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         ForceWriteRequest req = localRequests.get(i);
                         req.getForceWriteWaiters().forEach(ele -> {
                             Object ctx = ele.getCtx();
-                            if (ctx instanceof BookieRequestHandler) {
+                            if (ctx instanceof BookieRequestHandler
+                                    && ele.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
                                 writeHandlers.add((BookieRequestHandler) ctx);
                             }
                         });
@@ -924,7 +925,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         memoryLimitController.reserveMemory(entry.readableBytes());
 
         queue.put(QueueEntry.create(
-                entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
+                entry, ackBeforeSync, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalStats.getJournalAddEntryStats(),
                 callbackTime));
     }
@@ -1119,20 +1120,24 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             }
                             journalFlushWatcher.reset().start();
                             bc.flush();
-
+                            
+                            Set<BookieRequestHandler> writeHandlers = new HashSet<>();
                             for (int i = 0; i < toFlush.size(); i++) {
                                 QueueEntry entry = toFlush.get(i);
                                 if (entry != null && (!syncData || entry.ackBeforeSync)) {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
+                                    if (entry.getCtx() instanceof BookieRequestHandler
+                                            && entry.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
+                                        writeHandlers.add((BookieRequestHandler) entry.getCtx());
+                                    }
                                     entry.run();
                                 }
-
-                                if (forceWriteThread.requestProcessor != null) {
-                                    forceWriteThread.requestProcessor.flushPendingResponses();
-                                }
                             }
-
+                            for (BookieRequestHandler writeHandler : writeHandlers) {
+                                writeHandler.flushPendingResponse();
+                            }
+                            
                             lastFlushPosition = bc.position();
                             journalStats.getJournalFlushStats().registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);

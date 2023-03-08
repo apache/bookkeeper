@@ -35,8 +35,6 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 @Slf4j
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
-    static final Object EVENT_FLUSH_ALL_PENDING_RESPONSES = new Object();
-    
     private static final int DEFAULT_PENDING_RESPONSE_SIZE = 256;
 
     private final RequestProcessor requestProcessor;
@@ -97,7 +95,6 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         if (pendingSendResponses == null) {
             pendingSendResponses = ctx.alloc().directBuffer(maxPendingResponsesSize);
         }
-
         BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
     }
     
@@ -112,28 +109,6 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
                 pendingSendResponses.release();
             }
             pendingSendResponses = null;
-        }
-    }
-    
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt == EVENT_FLUSH_ALL_PENDING_RESPONSES) {
-            synchronized (this) {
-                if (pendingSendResponses != null) {
-                    maxPendingResponsesSize = (int) Math.max(
-                            maxPendingResponsesSize * 0.9 + 0.1 * pendingSendResponses.readableBytes(),
-                            DEFAULT_PENDING_RESPONSE_SIZE);
-                    if (ctx.channel().isActive()) {
-                        ctx.writeAndFlush(pendingSendResponses, ctx.voidPromise());
-                    } else {
-                        pendingSendResponses.release();
-                    }
-
-                    pendingSendResponses = null;
-                }
-            }
-        } else {
-            super.userEventTriggered(ctx, evt);
         }
     }
 }
