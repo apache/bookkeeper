@@ -514,6 +514,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     for (int i = 0; i < requestsCount; i++) {
                         ForceWriteRequest req = localRequests.get(i);
                         req.getForceWriteWaiters().forEach(ele -> {
+                            if (ele == null) {
+                                return;
+                            }
                             Object ctx = ele.getCtx();
                             if (ctx instanceof BookieRequestHandler
                                     && ele.entryId != BookieImpl.METAENTRY_ID_FORCE_LEDGER) {
