@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.scurrilous.circe.Hash;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -30,20 +31,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
@@ -52,6 +39,7 @@ import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.proto.BookieRequestHandler;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -62,6 +50,23 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provide journal related management.
@@ -332,7 +337,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             recycle();
         }
-
+    
+        public Object getCtx() {
+            return ctx;
+        }
+    
         private final Handle<QueueEntry> recyclerHandle;
 
         private QueueEntry(Handle<QueueEntry> recyclerHandle) {
@@ -388,7 +397,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 flushed = true;
             }
         }
-
+    
+        public RecyclableArrayList<QueueEntry> getForceWriteWaiters() {
+            return forceWriteWaiters;
+        }
+    
         public void closeFileIfNecessary() {
             // Close if shouldClose is set
             if (shouldClose) {
@@ -494,7 +507,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
-
+    
+                    Set<BookieRequestHandler> writeHandlers = new HashSet<>();
                     // Sync and mark the journal up to the position of the last entry in the batch
                     ForceWriteRequest lastRequest = localRequests.get(requestsCount - 1);
                     syncJournal(lastRequest);
@@ -503,17 +517,22 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     // responses
                     for (int i = 0; i < requestsCount; i++) {
                         ForceWriteRequest req = localRequests.get(i);
+                        req.getForceWriteWaiters().forEach(ele -> {
+                            Object ctx = ele.getCtx();
+                            if (ctx instanceof BookieRequestHandler) {
+                                writeHandlers.add((BookieRequestHandler) ctx);
+                            }
+                        });
                         numReqInLastForceWrite += req.process();
                         req.recycle();
                     }
 
                     journalStats.getForceWriteGroupingCountStats()
                             .registerSuccessfulValue(numReqInLastForceWrite);
-
-                    if (requestProcessor != null) {
-                        requestProcessor.flushPendingResponses();
+    
+                    for (BookieRequestHandler writeHandler : writeHandlers) {
+                        writeHandler.flushPendingResponse();
                     }
-
                 } catch (IOException ioe) {
                     LOG.error("I/O exception in ForceWrite thread", ioe);
                     running = false;
