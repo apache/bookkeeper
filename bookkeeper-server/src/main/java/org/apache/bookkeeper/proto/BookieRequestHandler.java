@@ -56,7 +56,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("Channel connected  {}", ctx.channel());
+        log.info("Channel connected {}", ctx.channel());
         this.ctx = ctx;
         super.channelActive(ctx);
     }
@@ -92,7 +92,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
         if (pendingSendResponses == null) {
-            pendingSendResponses = ctx.alloc().directBuffer(maxPendingResponsesSize);
+            pendingSendResponses = ctx().alloc().directBuffer(maxPendingResponsesSize);
         }
         BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
     }
@@ -102,8 +102,8 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             maxPendingResponsesSize = (int) Math.max(
                     maxPendingResponsesSize * 0.9 + 0.1 * pendingSendResponses.readableBytes(),
                     DEFAULT_PENDING_RESPONSE_SIZE);
-            if (ctx.channel().isActive()) {
-                ctx.writeAndFlush(pendingSendResponses, ctx.voidPromise());
+            if (ctx().channel().isActive()) {
+                ctx().writeAndFlush(pendingSendResponses, ctx.voidPromise());
             } else {
                 pendingSendResponses.release();
             }
