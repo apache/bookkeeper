@@ -22,7 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import com.carrotsearch.hppc.ObjectHashSet;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
+import com.carrotsearch.hppc.procedures.ObjectProcedure;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBuf;
@@ -519,7 +519,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     journalStats.getForceWriteGroupingCountStats()
                             .registerSuccessfulValue(numReqInLastForceWrite);
-                    writeHandlers.forEach(wh -> wh.flushPendingResponse());
+                    writeHandlers.forEach(
+                            (ObjectProcedure<? super BookieRequestHandler>)
+                                    BookieRequestHandler::flushPendingResponse);
                     writeHandlers.clear();
                 } catch (IOException ioe) {
                     LOG.error("I/O exception in ForceWrite thread", ioe);
@@ -1121,12 +1123,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     entry.run();
                                 }
                             }
-                            if (writeHandlers.size() > 0) {
-                                for (ObjectCursor<BookieRequestHandler> writeHandler : writeHandlers) {
-                                    writeHandler.value.flushPendingResponse();
-                                }
-                                writeHandlers.clear();
-                            }
+                            writeHandlers.forEach(
+                                    (ObjectProcedure<? super BookieRequestHandler>)
+                                            BookieRequestHandler::flushPendingResponse);
+                            writeHandlers.clear();
                             lastFlushPosition = bc.position();
                             journalStats.getJournalFlushStats().registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
