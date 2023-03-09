@@ -519,12 +519,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     journalStats.getForceWriteGroupingCountStats()
                             .registerSuccessfulValue(numReqInLastForceWrite);
-                    if (writeHandlers.size() > 0) {
-                        for (ObjectCursor<BookieRequestHandler> writeHandler : writeHandlers) {
-                            writeHandler.value.flushPendingResponse();
-                        }
-                        writeHandlers.clear();
-                    }
+                    writeHandlers.forEach(wh -> wh.flushPendingResponse());
+                    writeHandlers.clear();
                 } catch (IOException ioe) {
                     LOG.error("I/O exception in ForceWrite thread", ioe);
                     running = false;
