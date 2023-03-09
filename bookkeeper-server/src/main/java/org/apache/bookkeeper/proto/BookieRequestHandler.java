@@ -100,7 +100,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     public synchronized void flushPendingResponse() {
         if (pendingSendResponses != null) {
             maxPendingResponsesSize = (int) Math.max(
-                    maxPendingResponsesSize * 0.9 + 0.1 * pendingSendResponses.readableBytes(),
+                    maxPendingResponsesSize * 0.5 + 0.5 * pendingSendResponses.readableBytes(),
                     DEFAULT_PENDING_RESPONSE_SIZE);
             if (ctx().channel().isActive()) {
                 ctx().writeAndFlush(pendingSendResponses, ctx.voidPromise());
