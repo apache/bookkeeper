@@ -49,5 +49,11 @@ public interface RequestProcessor extends AutoCloseable {
      * Flush any pending response staged on all the client connections.
      */
     void flushPendingResponses();
+
+    /**
+     * Process a list of ParsedAddRequests.
+     * @param r
+     * @param channel
+     */
     void processAddRequest(List<BookieProtocol.ParsedAddRequest> r, BookieRequestHandler channel);
 }

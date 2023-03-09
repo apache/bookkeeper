@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.proto.BookieProtocol.ADDENTRY;
+
 import io.netty.util.Recycler;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -79,11 +81,11 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
 
-        sendWriteReqResponse(rc,
-            ResponseBuilder.buildAddResponse(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId),
-            requestProcessor.getRequestStats().getAddRequestStats());
+        requestHandler.prepareSendResponseV2(rc, BookieProtocol.CURRENT_PROTOCOL_VERSION, ADDENTRY, ledgerId, entryId);
+        requestProcessor.onAddRequestFinishWithoutUnTrack();
 
         if (requestCount.decrementAndGet() == 0) {
+            requestProcessor.onAddRequestUnTrack();
             recycle();
         }
     }
@@ -119,6 +121,7 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
                 r.release();
                 r.recycle();
             }
+            requestProcessor.flushPendingResponses();
         }
     }
 

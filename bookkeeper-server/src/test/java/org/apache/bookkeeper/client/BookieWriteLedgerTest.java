@@ -1448,12 +1448,14 @@ public class BookieWriteLedgerTest extends
     @Test
     public void testReadWriteEntry() throws Exception {
         lh = bkc.createLedgerAdv(3, 3, 3, digestType, ledgerPassword);
-        LOG.info("Ledger ID: {}", lh.ledgerId);
-        CountDownLatch latch = new CountDownLatch(1000);
-        for (int i = 0; i < 1000; ++i) {
+        numEntriesToWrite = 15000;
+        List<byte[]> entries = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(numEntriesToWrite);
+        for (int i = 0; i < numEntriesToWrite; ++i) {
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
             entry.position(0);
+            entries.add(entry.array());
             lh.asyncAddEntry(i, entry.array(), new AddCallback() {
                 @Override
                 public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
@@ -1463,6 +1465,10 @@ public class BookieWriteLedgerTest extends
             }, null);
         }
         latch.await();
+
+        readEntries(lh, entries);
+        lh.close();
+
     }
 
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {

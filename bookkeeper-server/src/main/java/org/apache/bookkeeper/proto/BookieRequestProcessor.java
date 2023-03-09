@@ -230,6 +230,16 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
+    protected void onAddRequestFinishWithoutUnTrack() {
+        if (addsSemaphore != null) {
+            addsSemaphore.release();
+        }
+    }
+
+    protected void onAddRequestUnTrack() {
+        requestStats.untrackAddRequest();
+    }
+
     protected void onReadRequestStart(Channel channel) {
         if (readsSemaphore != null) {
             if (!readsSemaphore.tryAcquire()) {

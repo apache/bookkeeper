@@ -103,7 +103,6 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             && ((BookieProtocol.ParsedAddRequest) msg).getProtocolVersion() == BookieProtocol.CURRENT_PROTOCOL_VERSION
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
             msgs.put((BookieProtocol.ParsedAddRequest) msg);
-
             if (msgs.size() == CAPACITY) {
                 int count = msgs.size();
                 List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
@@ -132,6 +131,15 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         }
 
         BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
+    }
+
+    public synchronized void prepareSendResponseV2(int rc, byte version, byte opCode, long ledgerId, long entryId) {
+        if (pendingSendResponses == null) {
+            pendingSendResponses = ctx.alloc().directBuffer(maxPendingResponsesSize != 0
+                ? maxPendingResponsesSize : 256);
+        }
+        BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, version, opCode, ledgerId, entryId,
+            pendingSendResponses);
     }
 
     @Override

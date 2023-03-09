@@ -130,6 +130,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
+    private RequestProcessor requestProcessor;
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -1092,9 +1093,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     }
 
     public void addEntry(List<ParsedAddRequest> requests, boolean ackBeforeSync,
-                         WriteCallback cb, Object ctx, RequestStats requestStats)
-        throws InterruptedException {
+                         WriteCallback cb, Object ctx, RequestStats requestStats) throws InterruptedException {
         long requestNans = MathUtils.nowInNano();
+        boolean hasFailedRequests = false;
         ListIterator<ParsedAddRequest> iter = requests.listIterator();
         while (iter.hasNext()) {
             ParsedAddRequest request = iter.next();
@@ -1120,6 +1121,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 rc = BookieProtocol.EIO;
             } catch (BookieException.LedgerFencedException lfe) {
                 LOG.error("Attempt to write to fenced ledger ", lfe);
+                rc = BookieProtocol.EFENCED;
             } catch (BookieException e) {
                 LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
                 rc = BookieProtocol.EUA;
@@ -1130,6 +1132,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
 
             if (rc != BookieProtocol.EOK) {
+                hasFailedRequests = true;
                 requestStats.getAddEntryStats()
                     .registerFailedEvent(MathUtils.elapsedNanos(requestNans), TimeUnit.NANOSECONDS);
                 cb.writeComplete(rc, request.getLedgerId(), request.getEntryId(), null, ctx);
@@ -1139,7 +1142,11 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
         }
 
-        if (writeDataToJournal) {
+        if (hasFailedRequests && requestProcessor != null) {
+            requestProcessor.flushPendingResponses();
+        }
+
+        if (writeDataToJournal && !requests.isEmpty()) {
             List<ByteBuf> entries = requests.stream()
                 .map(ParsedAddRequest::getData).collect(Collectors.toList());
             getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
@@ -1149,7 +1156,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 t.recycle();
             });
         }
-
     }
 
     private void addEntryInternalWithoutJournal(LedgerDescriptor handle, ByteBuf entry,
@@ -1387,5 +1393,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         for (Journal journal : journals) {
             journal.setRequestProcessor(requestProcessor);
         }
+        this.requestProcessor = requestProcessor;
     }
 }
