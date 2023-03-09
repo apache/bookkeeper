@@ -41,9 +41,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -493,7 +491,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
             final List<ForceWriteRequest> localRequests = new ArrayList<>();
             final ObjectHashSet<BookieRequestHandler> writeHandlers = new ObjectHashSet<>();
-            
+
             while (running) {
                 try {
                     int numReqInLastForceWrite = 0;
@@ -506,7 +504,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
-    
+
                     // Sync and mark the journal up to the position of the last entry in the batch
                     ForceWriteRequest lastRequest = localRequests.get(requestsCount - 1);
                     syncJournal(lastRequest);
@@ -997,7 +995,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             long busyStartTime = System.nanoTime();
             ArrayDeque<QueueEntry> localQueueEntries = new ArrayDeque<>();
             final ObjectHashSet<BookieRequestHandler> writeHandlers = new ObjectHashSet<>();
-    
+
             QueueEntry qe = null;
             while (true) {
                 // new journal file to write
