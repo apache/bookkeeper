@@ -370,6 +370,7 @@ Apache Software License, Version 2.
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7.7
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/HdrHistogram/HdrHistogram/tree/HdrHistogram-2.1.10
+[53] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.89.Final.jar bundles some 3rd party dependencies
