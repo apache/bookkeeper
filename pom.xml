@@ -1122,6 +1122,7 @@
               <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
               <forkCount>${forkCount.variable}</forkCount>
               <reuseForks>false</reuseForks>
+              <trimStackTrace>false</trimStackTrace>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
               <rerunFailingTestsCount>${testRetryCount}</rerunFailingTestsCount>
             </configuration>
