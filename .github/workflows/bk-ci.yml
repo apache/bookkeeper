@@ -116,11 +116,11 @@ jobs:
             module: bookkeeper-server
             flag: client
             test_args: "-Dtest='org.apache.bookkeeper.client.**'"
-          - step_name: Remaining Tests
+          - step_name: Replication Tests
             module: bookkeeper-server
             flag: remaining
             test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
-          - step_name: Replication Tests
+          - step_name: Remaining Tests
             module: bookkeeper-server
             flag: replication
             test_args: "-Dtest='!org.apache.bookkeeper.client.**,!org.apache.bookkeeper.bookie.**,!org.apache.bookkeeper.replication.**,!org.apache.bookkeeper.tls.**'"
