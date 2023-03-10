@@ -85,6 +85,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1092,16 +1093,23 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    public void addEntry(List<ParsedAddRequest> requests, boolean ackBeforeSync,
+    public void addEntryList(List<ParsedAddRequest> requests, boolean ackBeforeSync,
                          WriteCallback cb, Object ctx, RequestStats requestStats) throws InterruptedException {
         long requestNans = MathUtils.nowInNano();
         boolean hasFailedRequests = false;
+        Map<Pair<Long, byte[]>, LedgerDescriptor> handleMap = new HashMap<>();
         ListIterator<ParsedAddRequest> iter = requests.listIterator();
         while (iter.hasNext()) {
             ParsedAddRequest request = iter.next();
             int rc = BookieProtocol.EOK;
             try {
-                LedgerDescriptor handle = getLedgerForEntry(request.getData(), request.getMasterKey());
+                Pair<Long, byte[]> ledgerIdMasterKey = Pair.of(request.getLedgerId(), request.getMasterKey());
+                LedgerDescriptor handle = handleMap.get(ledgerIdMasterKey);
+                if (handle == null) {
+                    handle = getLedgerForEntry(request.getData(), request.getMasterKey());
+                    handleMap.put(ledgerIdMasterKey, handle);
+                }
+
                 synchronized (handle) {
                     if (handle.isFenced()) {
                         throw BookieException.create(BookieException.Code.LedgerFencedException);
@@ -1141,6 +1149,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 request.recycle();
             }
         }
+        handleMap.clear();
 
         if (hasFailedRequests && requestProcessor != null) {
             requestProcessor.flushPendingResponses();

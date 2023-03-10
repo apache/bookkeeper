@@ -1459,7 +1459,7 @@ public class BookieWriteLedgerTest extends
             lh.asyncAddEntry(i, entry.array(), new AddCallback() {
                 @Override
                 public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    LOG.info("Write entry: {}:{}, result: {}", lh.ledgerId, entryId, rc);
+                    assertEquals(0, rc);
                     latch.countDown();
                 }
             }, null);
