@@ -54,7 +54,7 @@ public class HandleFailuresTest {
     private static final BookieId b4 = new BookieSocketAddress("b4", 3181).toBookieId();
     private static final BookieId b5 = new BookieSocketAddress("b5", 3181).toBookieId();
 
-    @Test
+    @Test(timeout = 30000)
     public void testChangeTriggeredOneTimeForOneFailure() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -77,7 +77,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSecondFailureOccursWhileFirstBeingHandled() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -125,7 +125,7 @@ public class HandleFailuresTest {
         Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b5));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testHandlingFailuresOneBookieFailsImmediately() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -145,7 +145,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testHandlingFailuresOneBookieFailsAfterOneEntry() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -168,7 +168,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testHandlingFailuresMultipleBookieFailImmediatelyNotEnoughToReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -194,7 +194,7 @@ public class HandleFailuresTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testHandlingFailuresMultipleBookieFailAfterOneEntryNotEnoughToReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -222,7 +222,7 @@ public class HandleFailuresTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testClientClosesWhileFailureHandlerInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -264,7 +264,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testMetadataSetToClosedDuringFailureHandler() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -308,7 +308,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1234L);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testMetadataSetToInRecoveryDuringFailureHandler() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -350,7 +350,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testOldEnsembleChangedDuringFailureHandler() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -403,7 +403,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(2L), Lists.newArrayList(b5, b2, b4));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testNoAddsAreCompletedWhileFailureHandlingInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
@@ -445,7 +445,7 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testHandleFailureBookieNotInWriteSet() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,

@@ -80,7 +80,7 @@ public class FileInfoBackingCacheTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void basicTest() throws Exception {
         FileInfoBackingCache cache = new FileInfoBackingCache(
                 (ledgerId, createIfNotFound) -> {
@@ -108,7 +108,7 @@ public class FileInfoBackingCacheTest {
         Assert.assertEquals(fi.getLf(), fi4.getLf());
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = IOException.class, timeout = 30000)
     public void testNoKey() throws Exception {
         FileInfoBackingCache cache = new FileInfoBackingCache(
                 (ledgerId, createIfNotFound) -> {
@@ -122,7 +122,7 @@ public class FileInfoBackingCacheTest {
      * Of course this can't prove they don't exist, but
      * try to shake them out none the less.
      */
-    @Test
+    @Test(timeout = 30000)
     public void testForDeadlocks() throws Exception {
         int numRunners = 20;
         int maxLedgerId = 10;
@@ -184,7 +184,7 @@ public class FileInfoBackingCacheTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRefCountRace() throws Exception {
         AtomicBoolean done = new AtomicBoolean(false);
         FileInfoBackingCache cache = new FileInfoBackingCache(
@@ -229,7 +229,7 @@ public class FileInfoBackingCacheTest {
         notification.getValue().release();
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRaceGuavaEvictAndReleaseBeforeRetain() throws Exception {
         AtomicBoolean done = new AtomicBoolean(false);
         FileInfoBackingCache cache = new FileInfoBackingCache(
