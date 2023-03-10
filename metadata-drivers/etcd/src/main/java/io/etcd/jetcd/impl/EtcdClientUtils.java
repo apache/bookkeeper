@@ -16,7 +16,22 @@
  * limitations under the License.
  */
 
+package io.etcd.jetcd.impl;
+
+import java.lang.reflect.Field;
+
 /**
- * Etcd client changes for bookkeeper metadata driver.
+ * Utils to access fields in Etcd client.
  */
-package io.etcd.jetcd;
+class EtcdClientUtils {
+
+    @SuppressWarnings("unchecked")
+    static <T> T getField(Object obj, String fieldName)
+        throws NoSuchFieldException, IllegalAccessException {
+        Class cls = obj.getClass();
+        Field field = cls.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (T) field.get(obj);
+    }
+
+}

@@ -128,7 +128,7 @@
     <bouncycastle.version>1.0.2.3</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
-    <etcd.version>0.5.11</etcd.version>
+    <etcd.version>0.7.5</etcd.version>
     <freebuilder.version>2.7.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
@@ -200,7 +200,7 @@
     <maven-shade-plugin.version>3.2.0</maven-shade-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
-    <dependency-check-maven.version>8.0.2</dependency-check-maven.version>
+    <dependency-check-maven.version>8.1.2</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
