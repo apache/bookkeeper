@@ -40,9 +40,9 @@ import org.apache.bookkeeper.processor.RequestProcessor;
  */
 @Slf4j
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
-
+    private static final int DEFAULT_CAPACITY = 1_000;
     static final Object EVENT_FLUSH_ALL_PENDING_RESPONSES = new Object();
-    private static final int CAPACITY = 10_000;
+    private final int maxCapacity;
 
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
@@ -56,7 +56,8 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
-        this.msgs = new ArrayBlockingQueue<>(CAPACITY);
+        this.maxCapacity = conf.getMaxAddsInProgressLimit() > 0 ? conf.getMaxAddsInProgressLimit() : DEFAULT_CAPACITY;
+        this.msgs = new ArrayBlockingQueue<>(maxCapacity);
     }
 
     public ChannelHandlerContext ctx() {
@@ -103,7 +104,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             && ((BookieProtocol.ParsedAddRequest) msg).getProtocolVersion() == BookieProtocol.CURRENT_PROTOCOL_VERSION
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
             msgs.put((BookieProtocol.ParsedAddRequest) msg);
-            if (msgs.size() == CAPACITY) {
+            if (msgs.size() >= maxCapacity) {
                 int count = msgs.size();
                 List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
                 msgs.drainTo(c, count);
