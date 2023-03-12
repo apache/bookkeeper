@@ -26,6 +26,7 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -232,6 +233,7 @@ public class FileInfoBackingCacheTest {
     @Test(timeout = 30000)
     public void testRaceGuavaEvictAndReleaseBeforeRetain() throws Exception {
         AtomicBoolean done = new AtomicBoolean(false);
+        Random random = new SecureRandom();
         FileInfoBackingCache cache = new FileInfoBackingCache(
                 (ledgerId, createIfNotFound) -> {
                     File f = new File(baseDir, String.valueOf(ledgerId));
@@ -248,21 +250,25 @@ public class FileInfoBackingCacheTest {
             LongStream.range(0L, 2L).mapToObj(
                     (i) -> {
                         Callable<Set<CachedFileInfo>> c = () -> {
-                            Set<CachedFileInfo> allFileInfos = new HashSet<>();
-                            while (!done.get()) {
-                                CachedFileInfo fi = null;
+                            try {
+                                Set<CachedFileInfo> allFileInfos = new HashSet<>();
+                                while (!done.get()) {
+                                    CachedFileInfo fi = null;
 
-                                do {
-                                    fi = guavaCache.get(
+                                    do {
+                                        fi = guavaCache.get(
                                             i, () -> cache.loadFileInfo(i, masterKey));
-                                    allFileInfos.add(fi);
-                                    Thread.sleep(100);
-                                } while (!fi.tryRetain());
+                                        allFileInfos.add(fi);
+                                        Thread.sleep(random.nextInt(100));
+                                    } while (!fi.tryRetain());
 
-                                Assert.assertFalse(fi.isClosed());
-                                fi.release();
+                                    Assert.assertFalse(fi.isClosed());
+                                    fi.release();
+                                }
+                                return allFileInfos;
+                            } catch (Exception e) {
+                                return null;
                             }
-                            return allFileInfos;
                         };
                         return executor.submit(c);
                     }).collect(Collectors.toList());
