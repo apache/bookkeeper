@@ -250,25 +250,21 @@ public class FileInfoBackingCacheTest {
             LongStream.range(0L, 2L).mapToObj(
                     (i) -> {
                         Callable<Set<CachedFileInfo>> c = () -> {
-                            try {
-                                Set<CachedFileInfo> allFileInfos = new HashSet<>();
-                                while (!done.get()) {
-                                    CachedFileInfo fi = null;
+                            Set<CachedFileInfo> allFileInfos = new HashSet<>();
+                            while (!done.get()) {
+                                CachedFileInfo fi = null;
 
-                                    do {
-                                        fi = guavaCache.get(
-                                            i, () -> cache.loadFileInfo(i, masterKey));
-                                        allFileInfos.add(fi);
-                                        Thread.sleep(random.nextInt(100));
-                                    } while (!fi.tryRetain());
+                                do {
+                                    fi = guavaCache.get(
+                                        i, () -> cache.loadFileInfo(i, masterKey));
+                                    allFileInfos.add(fi);
+                                    Thread.sleep(random.nextInt(100));
+                                } while (!fi.tryRetain());
 
-                                    Assert.assertFalse(fi.isClosed());
-                                    fi.release();
-                                }
-                                return allFileInfos;
-                            } catch (Exception e) {
-                                return null;
+                                Assert.assertFalse(fi.isClosed());
+                                fi.release();
                             }
+                            return allFileInfos;
                         };
                         return executor.submit(c);
                     }).collect(Collectors.toList());
