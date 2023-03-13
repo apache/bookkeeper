@@ -589,7 +589,7 @@ public class GarbageCollectorThread implements Runnable {
 
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
         stopCompaction:
-        for (int currBucket = 0; currBucket < maxBucket; currBucket++) {
+        for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
             LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
             while (!entryLogIds.isEmpty()) {
                 if (timeDiff.getValue() < maxTimeMillis) {

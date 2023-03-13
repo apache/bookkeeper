@@ -266,26 +266,29 @@ public class GarbageCollectorThreadTest {
         assertThat(logIdFromLocation(loc4), greaterThan(logIdFromLocation(loc3)));
         long loc5 = entryLogger.addEntry(3L, makeEntry(3L, 1L, 1000));
         assertThat(logIdFromLocation(loc5), equalTo(logIdFromLocation(loc4)));
+        long loc6 = entryLogger.addEntry(3L, makeEntry(3L, 2L, 5000));
 
         long logId1 = logIdFromLocation(loc2);
         long logId2 = logIdFromLocation(loc3);
         long logId3 = logIdFromLocation(loc5);
+        long logId4 = logIdFromLocation(loc6);
         entryLogger.flush();
 
         storage.setMasterKey(1L, new byte[0]);
         storage.setMasterKey(2L, new byte[0]);
         storage.setMasterKey(3L, new byte[0]);
 
-        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2));
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2, logId3));
         assertTrue(entryLogger.logExists(logId1));
         assertTrue(entryLogger.logExists(logId2));
         assertTrue(entryLogger.logExists(logId3));
+        assertTrue(entryLogger.logExists(logId4));
 
         // all ledgers exist, nothing should disappear
         final EntryLogMetadataMap entryLogMetaMap = gcThread.getEntryLogMetaMap();
         gcThread.extractMetaFromEntryLogs();
 
-        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2));
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2, logId3));
         assertTrue(entryLogMetaMap.containsKey(logId1));
         assertTrue(entryLogMetaMap.containsKey(logId2));
         assertTrue(entryLogger.logExists(logId3));
@@ -306,7 +309,7 @@ public class GarbageCollectorThreadTest {
         EntryLocation location2 = storage.getUpdatedLocations().get(0);
         assertEquals(2, location2.getLedger());
         assertEquals(1, location2.getEntry());
-        assertEquals(logIdFromLocation(location2.getLocation()), logId3 + 1);
+        assertEquals(logIdFromLocation(location2.getLocation()), logId4);
     }
 
     @Test

@@ -308,7 +308,6 @@ class BookieNettyServer {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.option(ChannelOption.ALLOCATOR, allocator);
             bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
-            bootstrap.childOption(ChannelOption.MAX_MESSAGES_PER_READ, 100);
             bootstrap.group(acceptorGroup, eventLoopGroup);
             bootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
             bootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
