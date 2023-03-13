@@ -546,24 +546,14 @@ public class GarbageCollectorThread implements Runnable {
     @VisibleForTesting
     void doCompactEntryLogs(double threshold, long maxTimeMillis) throws EntryLogMetadataMapException {
         LOG.info("Do compaction to compact those files lower than {}", threshold);
-        double tmpGcEntryLogSizeRatio = conf.getGcEntryLogSizeRatio() <= 0 ? 0 : conf.getGcEntryLogSizeRatio();
-        final double gcEntryLogSizeRatio = tmpGcEntryLogSizeRatio > 1 ? 1.0 : tmpGcEntryLogSizeRatio;
-        if (gcEntryLogSizeRatio > 0.5) {
-            LOG.warn("Configured gcEntryLogSizeRatio: {}, updated gcEntryLogSizeRatio: {} gratter than 0.5, "
-                + "which means any entryLog file size less than {} will be compacted and it will bring heavy pressure "
-                + "on garbage collection.", conf.getGcEntryLogSizeRatio(), gcEntryLogSizeRatio,
-                gcEntryLogSizeRatio * conf.getEntryLogSizeLimit());
-        }
 
         final int numBuckets = 10;
         int[] entryLogUsageBuckets = new int[numBuckets];
         int[] compactedBuckets = new int[numBuckets];
 
         ArrayList<LinkedList<Long>> compactableBuckets = new ArrayList<>(numBuckets);
-        ArrayList<LinkedList<Long>> smallFilesCompactableBuckets = new ArrayList<>(numBuckets);
         for (int i = 0; i < numBuckets; i++) {
             compactableBuckets.add(new LinkedList<>());
-            smallFilesCompactableBuckets.add(new LinkedList<>());
         }
 
         long start = System.currentTimeMillis();
@@ -571,27 +561,26 @@ public class GarbageCollectorThread implements Runnable {
         MutableLong timeDiff = new MutableLong(0);
 
         entryLogMetaMap.forEach((entryLogId, meta) -> {
-            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
+            double usage = meta.getUsage();
+            if (conf.isUseTargetEntryLogSizeForGc() && usage < 1.0d) {
+                usage = (double) meta.getRemainingSize() / Math.max(meta.getTotalSize(), conf.getEntryLogSizeLimit());
+            }
+            int bucketIndex = calculateUsageIndex(numBuckets, usage);
             entryLogUsageBuckets[bucketIndex]++;
 
             if (timeDiff.getValue() < maxTimeMillis) {
                 end.setValue(System.currentTimeMillis());
                 timeDiff.setValue(end.getValue() - start);
             }
-            if ((meta.getUsage() >= threshold
-                && meta.getTotalSize() >= conf.getEntryLogSizeLimit() * gcEntryLogSizeRatio)
+            if ((usage >= threshold
                 || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
-                || !running) {
+                || !running)) {
                 // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;
             }
 
-            if (meta.getTotalSize() < conf.getEntryLogSizeLimit() * gcEntryLogSizeRatio) {
-                smallFilesCompactableBuckets.get(bucketIndex).add(meta.getEntryLogId());
-            } else {
-                compactableBuckets.get(bucketIndex).add(meta.getEntryLogId());
-            }
+            compactableBuckets.get(bucketIndex).add(meta.getEntryLogId());
         });
 
         LOG.info(
@@ -600,11 +589,8 @@ public class GarbageCollectorThread implements Runnable {
 
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
         stopCompaction:
-        for (int currBucket = 0; currBucket < numBuckets; currBucket++) {
-            LinkedList<Long> entryLogIds = smallFilesCompactableBuckets.get(currBucket);
-            if (currBucket <= maxBucket) {
-                entryLogIds.addAll(compactableBuckets.get(currBucket));
-            }
+        for (int currBucket = 0; currBucket < maxBucket; currBucket++) {
+            LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
             while (!entryLogIds.isEmpty()) {
                 if (timeDiff.getValue() < maxTimeMillis) {
                     end.setValue(System.currentTimeMillis());

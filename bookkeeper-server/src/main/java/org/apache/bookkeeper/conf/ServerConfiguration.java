@@ -116,7 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     protected static final String GC_ENTRYLOGMETADATA_CACHE_ENABLED = "gcEntryLogMetadataCacheEnabled";
     protected static final String GC_ENTRYLOG_METADATA_CACHE_PATH = "gcEntryLogMetadataCachePath";
-    protected static final String GC_ENTRYLOG_SIZE_RATIO = "gcEntryLogSizeRatio";
+    protected static final String USE_TARGET_ENTRYLOG_SIZE_FOR_GC = "useTargetEntryLogSizeForGc";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -555,36 +555,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
-    /**
-     * Get the gc entry log size ratio.
-     * When the current entry log total size less than GC_ENTRYLOG_SIZE_RATIO * ENTRY_LOG_SIZE_LIMIT,
-     * this entry log file will be compacted. This configuration is aiming to reduce small entry log files
-     * when using TransactionalEntryLogCompactor.
-     *
-     * For example,
-     *   - the current entry log file total size is 1MB
-     *   - the current entry log file usage is 0.9
-     *   - the garbage collection threshold is 0.5
-     *   - ENTRY_LOG_SIZE_LIMIT = 1GB
-     *
-     *   The entry log file usage is greater than garbage collection threshold,
-     *   it will skip to compact this entry log file if we don't have entry log file size check.
-     *   If we set add the entry log file size check, it will have the following cases.
-     *   case 1: GC_ENTRYLOG_SIZE_RATIO = 0.0, 1MB > 0.0 * 1GB, we will skip the entry log file garbage collection
-     *   case 2: GC_ENTRYLOG_SIZE_RATIO = 0.5, 1MB < 1.0 * 1GB, we will compact the entry log file
-     *   case 3: GC_ENTRYLOG_SIZE_RATIO = 1.0, 1MB < 1.0 * 1GB, we will compact the entry log file
-     *
-     *   If GC_ENTRYLOG_SIZE_RATIO <= 0.0, it means disable the entry log file size check.
-     *   By default, the GC_ENTRYLOG_SIZE_RATIO = 0.0.
-     *
-     * @return the gcEntryLogSizeRatio, default is 1.0.
-     */
-    public double getGcEntryLogSizeRatio() {
-        return getDouble(GC_ENTRYLOG_SIZE_RATIO, 0.0);
+    public boolean isUseTargetEntryLogSizeForGc() {
+        return getBoolean(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, false);
     }
 
-    public ServerConfiguration setGcEntryLogSizeRatio(double gcEntryLogSizeRatio) {
-        this.setProperty(GC_ENTRYLOG_SIZE_RATIO, gcEntryLogSizeRatio);
+    public ServerConfiguration setUseTargetEntryLogSizeForGc(boolean useTargetEntryLogSizeForGc) {
+        this.setProperty(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, useTargetEntryLogSizeForGc);
         return this;
     }
 

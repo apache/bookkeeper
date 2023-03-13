@@ -249,7 +249,7 @@ public class GarbageCollectorThreadTest {
         MockLedgerManager lm = new MockLedgerManager();
 
         GarbageCollectorThread gcThread = new GarbageCollectorThread(
-            TestBKConfiguration.newServerConfiguration().setGcEntryLogSizeRatio(0.5), lm,
+            TestBKConfiguration.newServerConfiguration().setUseTargetEntryLogSizeForGc(true), lm,
             newDirsManager(ledgerDir),
             storage, entryLogger, NullStatsLogger.INSTANCE);
 
@@ -290,31 +290,23 @@ public class GarbageCollectorThreadTest {
         assertTrue(entryLogMetaMap.containsKey(logId2));
         assertTrue(entryLogger.logExists(logId3));
 
+        storage.deleteLedger(1);
+        // only logId 1 will be compacted.
         gcThread.runWithFlags(true, true, false);
 
         // logId1 and logId2 should be compacted
         assertFalse(entryLogger.logExists(logId1));
-        assertFalse(entryLogger.logExists(logId2));
+        assertTrue(entryLogger.logExists(logId2));
         assertTrue(entryLogger.logExists(logId3));
         assertFalse(entryLogMetaMap.containsKey(logId1));
-        assertFalse(entryLogMetaMap.containsKey(logId2));
+        assertTrue(entryLogMetaMap.containsKey(logId2));
 
-        assertEquals(3, storage.getUpdatedLocations().size());
+        assertEquals(1, storage.getUpdatedLocations().size());
 
-        EntryLocation location1 = storage.getUpdatedLocations().get(0);
-        assertEquals(1, location1.getLedger());
-        assertEquals(1, location1.getEntry());
-        assertThat(logIdFromLocation(location1.getLocation()), greaterThan((int) logId3));
-
-        EntryLocation location2 = storage.getUpdatedLocations().get(1);
+        EntryLocation location2 = storage.getUpdatedLocations().get(0);
         assertEquals(2, location2.getLedger());
         assertEquals(1, location2.getEntry());
-        assertEquals(logIdFromLocation(location2.getLocation()), logIdFromLocation(location1.getLocation()));
-
-        EntryLocation location3 = storage.getUpdatedLocations().get(2);
-        assertEquals(2, location3.getLedger());
-        assertEquals(2, location3.getEntry());
-        assertThat(logIdFromLocation(loc4), greaterThan(logIdFromLocation(loc3)));
+        assertEquals(logIdFromLocation(location2.getLocation()), logId3 + 1);
     }
 
     @Test
