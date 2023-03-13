@@ -111,7 +111,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     Random rand = new Random();
     public void close() throws InterruptedException, BKException {
         for (int i = 0; i < numberOfLedgers; i++) {
-            lh[i].close();
+            if (lh[i] != null) {
+                lh[i].close();
+            }
         }
         bk.close();
     }
