@@ -316,6 +316,14 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     @Override
     public void processRequest(Object msg, BookieRequestHandler requestHandler) {
+        if (msg instanceof List) {
+            if (!((List<?>) msg).isEmpty()
+                && ((List<?>) msg).get(0) instanceof BookieProtocol.ParsedAddRequest) {
+                processBatchAddRequest((List<BookieProtocol.ParsedAddRequest>) msg, requestHandler);
+            }
+            return;
+        }
+
         Channel channel = requestHandler.ctx().channel();
         // If we can decode this packet as a Request protobuf packet, process
         // it as a version 3 packet. Else, just use the old protocol.
@@ -741,8 +749,8 @@ public class BookieRequestProcessor implements RequestProcessor {
         onResponseTimeout.accept(channel);
     }
 
-    @Override
-    public void processAddRequest(List<BookieProtocol.ParsedAddRequest> msgs, BookieRequestHandler requestHandler) {
+    private void processBatchAddRequest(List<BookieProtocol.ParsedAddRequest> msgs,
+                                        BookieRequestHandler requestHandler) {
         WriteBatchEntryProcessor write = WriteBatchEntryProcessor.create(msgs, requestHandler, this);
         if (writeThreadPool == null) {
             write.run();

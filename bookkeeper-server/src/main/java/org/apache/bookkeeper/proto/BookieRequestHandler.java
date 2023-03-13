@@ -42,7 +42,6 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     private static final int DEFAULT_CAPACITY = 1_000;
     static final Object EVENT_FLUSH_ALL_PENDING_RESPONSES = new Object();
-    private final int maxCapacity;
 
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
@@ -56,7 +55,8 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
-        this.maxCapacity = conf.getMaxAddsInProgressLimit() > 0 ? conf.getMaxAddsInProgressLimit() : DEFAULT_CAPACITY;
+
+        int maxCapacity = conf.getMaxAddsInProgressLimit() > 0 ? conf.getMaxAddsInProgressLimit() : DEFAULT_CAPACITY;
         this.msgs = new ArrayBlockingQueue<>(maxCapacity);
     }
 
@@ -103,12 +103,10 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             && !((BookieProtocol.ParsedAddRequest) msg).isHighPriority()
             && ((BookieProtocol.ParsedAddRequest) msg).getProtocolVersion() == BookieProtocol.CURRENT_PROTOCOL_VERSION
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
-            msgs.put((BookieProtocol.ParsedAddRequest) msg);
-            if (msgs.size() >= maxCapacity) {
-                int count = msgs.size();
-                List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
-                msgs.drainTo(c, count);
-                requestProcessor.processAddRequest(c, this);
+            BookieProtocol.ParsedAddRequest request = (BookieProtocol.ParsedAddRequest) msg;
+            if (!msgs.offer(request)) {
+                ctx.fireChannelReadComplete();
+                msgs.put(request);
             }
         } else {
             requestProcessor.processRequest(msg, this);
@@ -121,7 +119,9 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             int count = msgs.size();
             List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
             msgs.drainTo(c, count);
-            requestProcessor.processAddRequest(c, this);
+            if (!c.isEmpty()) {
+                requestProcessor.processRequest(c, this);
+            }
         }
     }
 

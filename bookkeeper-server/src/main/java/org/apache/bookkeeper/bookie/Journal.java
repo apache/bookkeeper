@@ -44,7 +44,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
@@ -890,19 +889,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public void logAddEntry(List<ByteBuf> entries, boolean ackBeforeSync, WriteCallback cb, Object ctx)
         throws InterruptedException {
-        AtomicLong reserveMemory = new AtomicLong();
+        long reserveMemory = 0;
         QueueEntry[] queueEntries = new QueueEntry[entries.size()];
         for (int i = 0; i < entries.size(); ++i) {
             ByteBuf entry = entries.get(i);
             long ledgerId = entry.getLong(entry.readerIndex());
             long entryId = entry.getLong(entry.readerIndex() + 8);
             entry.retain();
-            reserveMemory.addAndGet(entry.readableBytes());
+            reserveMemory += entry.readableBytes();
             queueEntries[i] = QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx,
                 MathUtils.nowInNano(), journalStats.getJournalAddEntryStats(), callbackTime);
         }
 
-        memoryLimitController.releaseMemory(reserveMemory.get());
+        memoryLimitController.releaseMemory(reserveMemory);
         journalStats.getJournalQueueSize().addCount(entries.size());
         queue.putAll(queueEntries, 0, queueEntries.length);
     }
