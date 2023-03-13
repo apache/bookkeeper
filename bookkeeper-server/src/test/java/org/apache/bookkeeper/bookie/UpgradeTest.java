@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -36,6 +37,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -60,6 +62,28 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
 
     public UpgradeTest() {
         super(0);
+    }
+
+    static void writeLedgerDirWithIndexDir(File ledgerDir,
+                                           File indexDir,
+                                           byte[] masterKey)
+            throws Exception {
+        long ledgerId = 1;
+
+        File fn = new File(indexDir, IndexPersistenceMgr.getLedgerName(ledgerId));
+        fn.getParentFile().mkdirs();
+        FileInfo fi = new FileInfo(fn, masterKey, FileInfo.CURRENT_HEADER_VERSION);
+        // force creation of index file
+        fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
+        fi.close(true);
+
+        long logId = 0;
+        ByteBuffer logfileHeader = ByteBuffer.allocate(1024);
+        logfileHeader.put("BKLO".getBytes());
+        FileChannel logfile = new RandomAccessFile(
+                new File(ledgerDir, Long.toHexString(logId) + ".log"), "rw").getChannel();
+        logfile.write((ByteBuffer) logfileHeader.clear());
+        logfile.close();
     }
 
     static void writeLedgerDir(File dir,
@@ -122,6 +146,12 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         return d;
     }
 
+    static File initV1LedgerDirectoryWithIndexDir(File ledgerDir,
+                                                  File indexDir) throws Exception {
+        writeLedgerDirWithIndexDir(ledgerDir, indexDir, "foobar".getBytes());
+        return ledgerDir;
+    }
+
     static void createVersion2File(File dir) throws Exception {
         File versionFile = new File(dir, "VERSION");
 
@@ -148,12 +178,21 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         return d;
     }
 
-    private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
+    static File initV2LedgerDirectoryWithIndexDir(File ledgerDir, File indexDir) throws Exception {
+        initV1LedgerDirectoryWithIndexDir(ledgerDir, indexDir);
+        createVersion2File(ledgerDir);
+        createVersion2File(indexDir);
+        return ledgerDir;
+    }
+
+    private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir, String indexDir)
+            throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
         conf.setJournalDirName(journalDir)
-            .setLedgerDirNames(new String[] { ledgerDir })
-            .setBookiePort(bookiePort);
+                .setLedgerDirNames(new String[]{ledgerDir})
+                .setIndexDirName(new String[]{indexDir})
+                .setBookiePort(bookiePort);
         Bookie b = null;
 
         try (MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
@@ -211,21 +250,62 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     public void testUpgradeV1toCurrent() throws Exception {
         File journalDir = initV1JournalDirectory(tmpDirs.createNew("bookie", "journal"));
         File ledgerDir = initV1LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+                ledgerDir.getPath(), ledgerDir.getPath());
+    }
+
+    @Test
+    public void testUpgradeV1toCurrentWithIndexDir() throws Exception {
+        File journalDir = initV1JournalDirectory(tmpDirs.createNew("bookie", "journal"));
+        File indexDir = tmpDirs.createNew("bookie", "index");
+        File ledgerDir = initV1LedgerDirectoryWithIndexDir(
+                tmpDirs.createNew("bookie", "ledger"), indexDir);
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+                ledgerDir.getPath(), indexDir.getPath());
     }
 
     @Test
     public void testUpgradeV2toCurrent() throws Exception {
         File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
         File ledgerDir = initV2LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
+        File indexDir = tmpDirs.createNew("bookie", "index");
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+                ledgerDir.getPath(), indexDir.getPath());
+    }
+
+    @Test
+    public void testUpgradeV2toCurrentWithIndexDir() throws Exception {
+        File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
+        File indexDir = tmpDirs.createNew("bookie", "index");
+        File ledgerDir = initV2LedgerDirectoryWithIndexDir(
+                tmpDirs.createNew("bookie", "ledger"), indexDir);
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+                ledgerDir.getPath(), indexDir.getPath());
     }
 
     @Test
     public void testUpgradeCurrent() throws Exception {
+        testUpgradeCurrent(false);
+    }
+
+    @Test
+    public void testUpgradeCurrentWithIndexDir() throws Exception {
+        testUpgradeCurrent(true);
+    }
+
+    public void testUpgradeCurrent(boolean hasIndexDir) throws Exception {
         File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
-        File ledgerDir = initV2LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
+        File ledgerDir = tmpDirs.createNew("bookie", "ledger");
+        File indexDir = ledgerDir;
+        if (hasIndexDir) {
+            indexDir = tmpDirs.createNew("bookie", "index");
+            initV2LedgerDirectoryWithIndexDir(ledgerDir, indexDir);
+        } else {
+            initV2LedgerDirectory(ledgerDir);
+        }
+
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+                ledgerDir.getPath(), indexDir.getPath());
 
         // Upgrade again
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -277,5 +357,44 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             System.setOut(origout);
             System.setErr(origerr);
         }
+    }
+
+    @Test
+    public void testFSUGetAllDirectories() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        final File journalDir = tmpDirs.createNew("bookie", "journal");
+        final File ledgerDir1 = tmpDirs.createNew("bookie", "ledger");
+        final File ledgerDir2 = tmpDirs.createNew("bookie", "ledger");
+
+        // test1
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()});
+        List<File> allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(3, allDirectories.size());
+
+        // test2
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{ledgerDir2.getPath(), ledgerDir1.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(3, allDirectories.size());
+
+        final File indexDir1 = tmpDirs.createNew("bookie", "index");
+        final File indexDir2 = tmpDirs.createNew("bookie", "index");
+
+        // test3
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{indexDir1.getPath(), indexDir2.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(5, allDirectories.size());
+
+        // test4
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir1.getPath(), ledgerDir2.getPath()})
+                .setIndexDirName(new String[]{indexDir2.getPath(), indexDir1.getPath()});
+        allDirectories = FileSystemUpgrade.getAllDirectories(conf);
+        assertEquals(5, allDirectories.size());
     }
 }
