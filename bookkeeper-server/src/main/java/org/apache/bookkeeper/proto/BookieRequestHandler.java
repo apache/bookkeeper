@@ -105,7 +105,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             && !((BookieProtocol.ParsedAddRequest) msg).isRecoveryAdd()) {
             BookieProtocol.ParsedAddRequest request = (BookieProtocol.ParsedAddRequest) msg;
             if (!msgs.offer(request)) {
-                ctx.fireChannelReadComplete();
+                channelReadComplete(ctx);
                 msgs.put(request);
             }
         } else {
