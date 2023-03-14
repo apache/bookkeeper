@@ -46,6 +46,7 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
         requests = null;
         requestHandler = null;
         requestProcessor = null;
+        requestCount = null;
         startTimeNanos = -1L;
     }
 

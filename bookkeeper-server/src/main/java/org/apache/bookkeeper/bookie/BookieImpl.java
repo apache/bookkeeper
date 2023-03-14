@@ -1162,12 +1162,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             List<ByteBuf> entries = requests.stream()
                 .map(ParsedAddRequest::getData).collect(Collectors.toList());
             getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
-
-            requests.forEach(t -> {
-                t.release();
-                t.recycle();
-            });
         }
+
+        requests.forEach(t -> {
+            t.release();
+            t.recycle();
+        });
     }
 
     /**

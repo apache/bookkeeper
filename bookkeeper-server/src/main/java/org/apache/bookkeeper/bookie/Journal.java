@@ -891,6 +891,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         throws InterruptedException {
         long reserveMemory = 0;
         QueueEntry[] queueEntries = new QueueEntry[entries.size()];
+        long start = MathUtils.nowInNano();
         for (int i = 0; i < entries.size(); ++i) {
             ByteBuf entry = entries.get(i);
             long ledgerId = entry.getLong(entry.readerIndex());
@@ -898,10 +899,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             entry.retain();
             reserveMemory += entry.readableBytes();
             queueEntries[i] = QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx,
-                MathUtils.nowInNano(), journalStats.getJournalAddEntryStats(), callbackTime);
+                start, journalStats.getJournalAddEntryStats(), callbackTime);
         }
 
-        memoryLimitController.releaseMemory(reserveMemory);
+        memoryLimitController.reserveMemory(reserveMemory);
         journalStats.getJournalQueueSize().addCount(entries.size());
         queue.putAll(queueEntries, 0, queueEntries.length);
     }
