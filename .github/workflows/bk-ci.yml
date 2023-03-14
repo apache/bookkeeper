@@ -178,13 +178,7 @@ jobs:
           if [[ ! -z "${{ matrix.module }}" ]]; then
             projects_list="-pl ${{ matrix.module }}"
           fi
-          mvn -Pcode-coverage -B -nsu $projects_list verify ${{ matrix.test_args }}
-
-      - name: Upload coverage to Codecov
-        if: ${{ matrix.flag }} != 'shell'
-        uses: codecov/codecov-action@v3
-        with:
-          flags: ${{ matrix.flag }}
+          mvn -B -nsu $projects_list verify ${{ matrix.test_args }}
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
         if: ${{ always() }}
