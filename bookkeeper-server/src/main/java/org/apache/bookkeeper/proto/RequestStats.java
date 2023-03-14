@@ -343,8 +343,8 @@ public class RequestStats {
         addsBlocked.decrementAndGet();
     }
 
-    void trackAddRequest() {
-        final int curr = addsInProgress.incrementAndGet();
+    void trackAddRequest(int permits) {
+        final int curr = addsInProgress.addAndGet(permits);
         maxAddsInProgress.accumulateAndGet(curr, Integer::max);
     }
 

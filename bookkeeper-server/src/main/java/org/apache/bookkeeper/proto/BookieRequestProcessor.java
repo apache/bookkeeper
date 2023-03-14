@@ -220,7 +220,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 requestStats.unblockAddRequest(delayNanos);
             }
         }
-        requestStats.trackAddRequest();
+        requestStats.trackAddRequest(permits);
     }
 
     protected void onAddRequestFinish() {
@@ -228,16 +228,6 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (addsSemaphore != null) {
             addsSemaphore.release();
         }
-    }
-
-    protected void onAddRequestFinishWithoutUnTrack() {
-        if (addsSemaphore != null) {
-            addsSemaphore.release();
-        }
-    }
-
-    protected void onAddRequestUnTrack() {
-        requestStats.untrackAddRequest();
     }
 
     protected void onReadRequestStart(Channel channel) {

@@ -39,14 +39,14 @@ import org.apache.bookkeeper.util.MathUtils;
 public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implements WriteCallback {
     long startTimeNanos;
     List<ParsedAddRequest> requests;
-    AtomicInteger requestCount;
+    AtomicInteger requestCount = new AtomicInteger(0);
 
     @Override
     protected void reset() {
         requests = null;
         requestHandler = null;
         requestProcessor = null;
-        requestCount = null;
+        requestCount.set(0);
         startTimeNanos = -1L;
     }
 
@@ -64,7 +64,7 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
         this.requestHandler = requestHandler;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();
-        this.requestCount = new AtomicInteger(requests.size());
+        this.requestCount.set(requests.size());
     }
 
     @Override
@@ -83,10 +83,9 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
         }
 
         requestHandler.prepareSendResponseV2(rc, BookieProtocol.CURRENT_PROTOCOL_VERSION, ADDENTRY, ledgerId, entryId);
-        requestProcessor.onAddRequestFinishWithoutUnTrack();
+        requestProcessor.onAddRequestFinish();
 
         if (requestCount.decrementAndGet() == 0) {
-            requestProcessor.onAddRequestUnTrack();
             recycle();
         }
     }
