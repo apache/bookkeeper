@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -32,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-class PendingAddOp implements Runnable, WriteCallback {
+class PendingAddOp implements WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
@@ -68,7 +68,7 @@ class PendingAddOp implements Runnable, WriteCallback {
     LedgerHandle lh;
     ClientContext clientCtx;
     boolean isRecoveryAdd = false;
-    long requestTimeNanos;
+    volatile long requestTimeNanos;
     long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
     Set<BookieId> addEntrySuccessBookies;
     long writeDelayedStartTime; // min fault domains completion latency after response from ack quorum bookies
@@ -81,6 +81,7 @@ class PendingAddOp implements Runnable, WriteCallback {
     boolean allowFailFast = false;
     List<BookieId> ensemble;
 
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
                                List<BookieId> ensemble,
                                ByteBuf payload, EnumSet<WriteFlag> writeFlags,
@@ -143,7 +144,7 @@ class PendingAddOp implements Runnable, WriteCallback {
         return this.entryId;
     }
 
-    void sendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
+    private void sendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
         clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
@@ -160,32 +161,22 @@ class PendingAddOp implements Runnable, WriteCallback {
         return false;
     }
 
-    void timeoutQuorumWait() {
-        try {
-            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new Runnable() {
-                @Override
-                public void run() {
-                    if (completed) {
-                        return;
-                    } else if (addEntrySuccessBookies.size() >= lh.getLedgerMetadata().getAckQuorumSize()) {
-                        // If ackQuorum number of bookies have acknowledged the write but still not complete, indicates
-                        // failures due to not having been written to enough fault domains. Increment corresponding
-                        // counter.
-                        clientCtx.getClientStats().getWriteTimedOutDueToNotEnoughFaultDomains().inc();
-                    }
-                    lh.handleUnrecoverableErrorDuringAdd(BKException.Code.AddEntryQuorumTimeoutException);
-                }
-                @Override
-                public String toString() {
-                    return String.format("AddEntryQuorumTimeout(lid=%d, eid=%d)", lh.ledgerId, entryId);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            LOG.warn("Timeout add entry quorum wait failed {} entry: {}", lh.ledgerId, entryId);
+    synchronized void timeoutQuorumWait() {
+        if (completed) {
+            return;
         }
+
+        if (addEntrySuccessBookies.size() >= lh.getLedgerMetadata().getAckQuorumSize()) {
+            // If ackQuorum number of bookies have acknowledged the write but still not complete, indicates
+            // failures due to not having been written to enough fault domains. Increment corresponding
+            // counter.
+            clientCtx.getClientStats().getWriteTimedOutDueToNotEnoughFaultDomains().inc();
+        }
+
+        lh.handleUnrecoverableErrorDuringAdd(BKException.Code.AddEntryQuorumTimeoutException);
     }
 
-    void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
+    synchronized void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         // update the ensemble
         this.ensemble = ensemble;
 
@@ -209,14 +200,9 @@ class PendingAddOp implements Runnable, WriteCallback {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-        try {
-            if (!writeSet.contains(bookieIndex)) {
-                lh.sendAddSuccessCallbacks();
-                return;
-            }
-        } finally {
-            writeSet.recycle();
+        if (!lh.distributionSchedule.hasEntry(entryId, bookieIndex)) {
+            lh.sendAddSuccessCallbacks();
+            return;
         }
 
         if (callbackTriggered) {
@@ -242,8 +228,7 @@ class PendingAddOp implements Runnable, WriteCallback {
     /**
      * Initiate the add operation.
      */
-    @Override
-    public void run() {
+    public synchronized void initiate() {
         hasRun = true;
         if (callbackTriggered) {
             // this should only be true if the request was failed due
@@ -268,19 +253,13 @@ class PendingAddOp implements Runnable, WriteCallback {
         lh.maybeHandleDelayedWriteBookieFailure();
 
         // Iterate over set and trigger the sendWriteRequests
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-
-        try {
-            for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteRequest(ensemble, writeSet.get(i));
-            }
-        } finally {
-            writeSet.recycle();
+        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
+            sendWriteRequest(ensemble, lh.distributionSchedule.getWriteSetBookieIndex(entryId, i));
         }
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
+    public synchronized void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
         --pendingWriteRequests;
 
@@ -410,7 +389,7 @@ class PendingAddOp implements Runnable, WriteCallback {
         lh.sendAddSuccessCallbacks();
     }
 
-    void submitCallback(final int rc) {
+    synchronized void submitCallback(final int rc) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Submit callback (lid:{}, eid: {}). rc:{}", lh.getId(), entryId, rc);
         }
@@ -464,7 +443,7 @@ class PendingAddOp implements Runnable, WriteCallback {
     }
 
 
-    private void maybeRecycle() {
+    private synchronized void maybeRecycle() {
         /**
          * We have opportunity to recycle two objects here.
          * PendingAddOp#toSend and LedgerHandle#pendingAddOp
@@ -494,7 +473,7 @@ class PendingAddOp implements Runnable, WriteCallback {
         }
     }
 
-    public void recyclePendAddOpObject() {
+    public synchronized void recyclePendAddOpObject() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
         if (payload != null) {

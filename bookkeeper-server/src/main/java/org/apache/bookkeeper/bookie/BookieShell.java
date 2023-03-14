@@ -805,6 +805,7 @@ public class BookieShell implements Tool {
             opts.addOption("l", "ledgerid", true, "Ledger ID");
             opts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
             opts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
+            opts.addOption("update", false, "Update metadata if ledger already exist");
         }
 
         @Override
@@ -814,7 +815,7 @@ public class BookieShell implements Tool {
                 System.err.println("Must specify a ledger id");
                 return -1;
             }
-            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromefile")) {
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
                 System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
                 return -2;
             }
@@ -827,6 +828,7 @@ public class BookieShell implements Tool {
             if (cmdLine.hasOption("restorefromfile")) {
                 flag.restoreFromFile(cmdLine.getOptionValue("restorefromfile"));
             }
+            flag.update(cmdLine.hasOption("update"));
 
             LedgerMetaDataCommand cmd = new LedgerMetaDataCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flag);
@@ -840,7 +842,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid> [--dump-to-file FILENAME|--restore-from-file FILENAME]";
+            return "ledgermetadata -ledgerid <ledgerid> [--dumptofile FILENAME|--restorefromfile FILENAME]";
         }
 
         @Override

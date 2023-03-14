@@ -60,7 +60,8 @@ import org.slf4j.LoggerFactory;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JournalChannel.class, FileChannelProvider.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
+    "com.sun.org.apache.xerces.*", "javax.naming.*"})
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -174,7 +175,7 @@ public class BookieJournalTest {
 
             fc.write(lenBuff);
             fc.write(packet.nioBuffer());
-            ReferenceCountUtil.safeRelease(packet);
+            ReferenceCountUtil.release(packet);
         }
     }
 
@@ -218,7 +219,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            ReferenceCountUtil.safeRelease(packet);
+            ReferenceCountUtil.release(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -252,7 +253,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            ReferenceCountUtil.safeRelease(packet);
+            ReferenceCountUtil.release(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -285,7 +286,7 @@ public class BookieJournalTest {
             lenBuff.flip();
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            ReferenceCountUtil.safeRelease(packet);
+            ReferenceCountUtil.release(packet);
         }
         // write fence key
         ByteBuf packet = generateFenceEntry(1);
@@ -333,7 +334,7 @@ public class BookieJournalTest {
             }
             bc.write(lenBuff);
             bc.write(packet);
-            ReferenceCountUtil.safeRelease(packet);
+            ReferenceCountUtil.release(packet);
             Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key

@@ -142,7 +142,7 @@ public class BookieProtoEncoding {
                 if (r.hasMasterKey()) {
                     buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
                 }
-
+                r.recycle();
                 return buf;
             } else if (r instanceof BookieProtocol.AuthRequest) {
                 BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
@@ -193,9 +193,9 @@ public class BookieProtoEncoding {
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING
                     && version >= 2) {
                     byte[] masterKey = readMasterKey(packet);
-                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, masterKey);
+                    return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, masterKey);
                 } else {
-                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, null);
+                    return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, null);
                 }
             case BookieProtocol.AUTH:
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
@@ -271,6 +271,7 @@ public class BookieProtoEncoding {
 
                     if (isSmallEntry) {
                         buf.writeBytes(rr.getData());
+                        rr.release();
                         return buf;
                     } else {
                         return ByteBufList.get(buf, rr.getData());
@@ -333,6 +334,14 @@ public class BookieProtoEncoding {
             default:
                 throw new IllegalStateException("Received unknown response : op code = " + opCode);
             }
+        }
+
+        public static void serializeAddResponseInto(int rc, BookieProtocol.ParsedAddRequest req, ByteBuf buf) {
+            buf.writeInt(RESPONSE_HEADERS_SIZE); // Frame size
+            buf.writeInt(PacketHeader.toInt(req.getProtocolVersion(), req.getOpCode(), (short) 0));
+            buf.writeInt(rc); // rc-code
+            buf.writeLong(req.getLedgerId());
+            buf.writeLong(req.getEntryId());
         }
     }
 
@@ -504,7 +513,10 @@ public class BookieProtoEncoding {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
             }
-            if (msg instanceof BookkeeperProtocol.Response) {
+
+            if (msg instanceof ByteBuf) {
+                ctx.write(msg, promise);
+            } else if (msg instanceof BookkeeperProtocol.Response) {
                 ctx.write(repV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Response) {
                 ctx.write(repPreV3.encode(msg, ctx.alloc()), promise);

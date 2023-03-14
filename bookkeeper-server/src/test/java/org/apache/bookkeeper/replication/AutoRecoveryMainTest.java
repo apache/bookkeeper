@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieId;
@@ -118,7 +119,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         assertNotNull(currentAuditor);
         Auditor auditor1 = main1.auditorElector.getAuditor();
         assertEquals("Current Auditor should be AR1", currentAuditor, BookieImpl.getBookieId(confByIndex(0)));
-        Awaitility.await().untilAsserted(() -> {
+        Awaitility.waitAtMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
             assertNotNull(auditor1);
             assertTrue("Auditor of AR1 should be running", auditor1.isRunning());
         });

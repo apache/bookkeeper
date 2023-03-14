@@ -51,37 +51,19 @@ public class ArraySortGroupTest {
                 5, 6, 3, 1, //
         };
 
-        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-        sorter.sort(data);
+        ArrayGroupSort.sort(data);
 
         assertArrayEquals(expectedSorted, data);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void keySmallerThanTotalSize() {
-        new ArrayGroupSort(3, 2);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void negativeKeySize() {
-        new ArrayGroupSort(-1, 2);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void negativeTotalSize() {
-        new ArrayGroupSort(1, -1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void arraySizeIsNotMultiple() {
-        ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
-        sorter.sort(new long[] { 1, 2, 3, 4 });
+        ArrayGroupSort.sort(new long[] { 1, 2, 3, 4, 5 });
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void arraySizeIsShorterThanRequired() {
-        ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
-        sorter.sort(new long[] { 1, 2 });
+        ArrayGroupSort.sort(new long[] { 1, 2 });
     }
 
     @Test
@@ -90,8 +72,7 @@ public class ArraySortGroupTest {
 
         long[] expectedSorted = new long[] {};
 
-        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-        sorter.sort(data);
+        ArrayGroupSort.sort(data);
 
         assertArrayEquals(expectedSorted, data);
     }
@@ -101,8 +82,7 @@ public class ArraySortGroupTest {
         long[] data = new long[] { 1, 2, 3, 4 };
         long[] expectedSorted = new long[] { 1, 2, 3, 4 };
 
-        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-        sorter.sort(data);
+        ArrayGroupSort.sort(data);
 
         assertArrayEquals(expectedSorted, data);
     }
@@ -112,8 +92,7 @@ public class ArraySortGroupTest {
         long[] data = new long[] { 1, 2, 3, 4, 1, 1, 5, 5 };
         long[] expectedSorted = new long[] { 1, 1, 5, 5, 1, 2, 3, 4 };
 
-        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-        sorter.sort(data);
+        ArrayGroupSort.sort(data);
 
         assertArrayEquals(expectedSorted, data);
     }
@@ -123,8 +102,7 @@ public class ArraySortGroupTest {
         long[] data = new long[] { 1, 2, 3, 4, 1, 1, 5, 5, 1, 0, 2, 1 };
         long[] expectedSorted = new long[] { 1, 0, 2, 1, 1, 1, 5, 5, 1, 2, 3, 4 };
 
-        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
-        sorter.sort(data);
+        ArrayGroupSort.sort(data);
 
         assertArrayEquals(expectedSorted, data);
     }

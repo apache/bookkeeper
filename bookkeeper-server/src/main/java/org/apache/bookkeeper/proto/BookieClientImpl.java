@@ -270,7 +270,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -280,20 +280,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                              final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
-        try {
-            executor.executeOrdered(ledgerId, new Runnable() {
-                @Override
-                public void run() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                }
-                @Override
-                public String toString() {
-                    return String.format("CompleteWrite(ledgerId=%d, entryId=%d, addr=%s)", ledgerId, entryId, addr);
-                }
-            });
-        } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
-        }
+        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
     }
 
     @Override
@@ -411,7 +398,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                               toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
             recycle();
         }
 

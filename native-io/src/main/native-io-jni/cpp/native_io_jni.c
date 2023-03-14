@@ -197,6 +197,27 @@ Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_fallocate(
 
 /*
  * Class:     org_apache_bookkeeper_common_util_nativeio_NativeIOJni
+ * Method:    posix_fadvise
+ * Signature: (IJJI)I
+ */
+JNIEXPORT jint JNICALL
+Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_posix_1fadvise(
+    JNIEnv* env, jclass clazz,
+    jint fd, jlong offset, jlong len, jint flag) {
+#ifdef __linux__
+    int res = posix_fadvise(fd, offset, len, flag);
+    if (res == -1) {
+        throwExceptionWithErrno(env, "Failed to posix_fadvise");
+    }
+    return res;
+#else
+    throwException(env, "posix_fadvise is not available");
+    return -1;
+#endif
+}
+
+/*
+ * Class:     org_apache_bookkeeper_common_util_nativeio_NativeIOJni
  * Method:    lseek
  * Signature: (IJI)J
  */

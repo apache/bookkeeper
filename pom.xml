@@ -144,18 +144,17 @@
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
-    <jna.version>5.12.1</jna.version>
     <junit.version>4.12</junit.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
     <junit5.version>5.8.2</junit5.version>
     <libthrift.version>0.14.2</libthrift.version>
-    <lombok.version>1.18.22</lombok.version>
+    <lombok.version>1.18.26</lombok.version>
     <log4j.version>2.18.0</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>3.12.4</mockito.version>
-    <netty.version>4.1.87.Final</netty.version>
+    <netty.version>4.1.89.Final</netty.version>
     <netty-boringssl.version>2.0.56.Final</netty-boringssl.version>
-    <netty-iouring.version>0.0.17.Final</netty-iouring.version>
+    <netty-iouring.version>0.0.18.Final</netty-iouring.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.9</powermock.version>
     <prometheus.version>0.15.0</prometheus.version>
@@ -166,14 +165,14 @@
     <protoc3.version>3.19.6</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>6.29.4.1</rocksdb.version>
+    <rocksdb.version>7.9.2</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
     <snakeyaml.version>1.33</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
-    <testcontainers.version>1.15.1</testcontainers.version>
-    <vertx.version>4.3.2</vertx.version>
+    <testcontainers.version>1.17.6</testcontainers.version>
+    <vertx.version>4.3.8</vertx.version>
     <zookeeper.version>3.8.1</zookeeper.version>
     <snappy.version>1.1.7.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
@@ -190,7 +189,7 @@
     <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.0.2</maven-dependency-plugin.version>
@@ -206,7 +205,7 @@
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
-    <spotbugs-maven-plugin.version>4.6.0.0</spotbugs-maven-plugin.version>
+    <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
@@ -331,13 +330,6 @@
         <groupId>net.jpountz.lz4</groupId>
         <artifactId>lz4</artifactId>
         <version>${lz4.version}</version>
-      </dependency>
-
-      <!-- JNA -->
-      <dependency>
-        <groupId>net.java.dev.jna</groupId>
-        <artifactId>jna</artifactId>
-        <version>${jna.version}</version>
       </dependency>
 
       <!-- yaml dependencies -->
@@ -930,7 +922,6 @@
           <source>${javac.target}</source>
           <target>${javac.target}</target>
           <compilerArgs>
-            <compilerArg>-Werror</compilerArg>
             <compilerArg>-Xlint:deprecation</compilerArg>
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
@@ -1127,13 +1118,13 @@
             <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <!-- @{argLine} is a variable injected by JaCoCo-->
-              <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+              <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid</argLine>
               <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
               <forkCount>${forkCount.variable}</forkCount>
               <reuseForks>false</reuseForks>
+              <trimStackTrace>false</trimStackTrace>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-              <!-- we want build to complete even in case of failures -->
-              <testFailureIgnore>true</testFailureIgnore>
+              <rerunFailingTestsCount>${testRetryCount}</rerunFailingTestsCount>
             </configuration>
           </plugin>
           <plugin>
@@ -1282,7 +1273,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>${maven-surefire-plugin.version}</version>
             <configuration>
-              <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dbookkeeper.log.root.level=INFO -Dbookkeeper.log.root.appender=CONSOLE</argLine>
+              <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid -Dbookkeeper.log.root.level=INFO -Dbookkeeper.log.root.appender=CONSOLE</argLine>
               <redirectTestOutputToFile>false</redirectTestOutputToFile>
               <forkCount>${forkCount.variable}</forkCount>
               <reuseForks>false</reuseForks>
@@ -1294,6 +1285,18 @@
       </build>
     </profile>
     <profile>
+      <id>aarch64-linux-nar-aol</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <nar.aolProperties>src/aarch64_aol.properties</nar.aolProperties>
+      </properties>
+    </profile>
+    <profile>
       <id>mac-apple-silicon</id>
       <activation>
         <os>
@@ -1302,7 +1305,7 @@
         </os>
       </activation>
       <properties>
-        <nar.aolProperties>src/apple_m1_aol.properties</nar.aolProperties>
+        <nar.aolProperties>src/aarch64_aol.properties</nar.aolProperties>
       </properties>
     </profile>
     <profile>
