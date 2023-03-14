@@ -118,11 +118,11 @@ jobs:
             test_args: "-Dtest='org.apache.bookkeeper.client.**'"
           - step_name: Replication Tests
             module: bookkeeper-server
-            flag: remaining
+            flag: replication
             test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
           - step_name: Remaining Tests
             module: bookkeeper-server
-            flag: replication
+            flag: remaining
             test_args: "-Dtest='!org.apache.bookkeeper.client.**,!org.apache.bookkeeper.bookie.**,!org.apache.bookkeeper.replication.**,!org.apache.bookkeeper.tls.**'"
           - step_name: TLS Tests
             module: bookkeeper-server
