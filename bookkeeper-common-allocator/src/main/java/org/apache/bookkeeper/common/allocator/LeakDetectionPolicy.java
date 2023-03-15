@@ -17,9 +17,12 @@
  */
 package org.apache.bookkeeper.common.allocator;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Define the policy for the Netty leak detector.
  */
+@Slf4j
 public enum LeakDetectionPolicy {
 
     /**
@@ -43,5 +46,17 @@ public enum LeakDetectionPolicy {
      * stack traces of places where the buffer was used. Introduce very
      * significant overhead.
      */
-    Paranoid,
+    Paranoid;
+
+    public static LeakDetectionPolicy parseLevel(String levelStr) {
+        String trimmedLevelStr = levelStr.trim();
+        for (LeakDetectionPolicy policy : values()) {
+            if (trimmedLevelStr.equalsIgnoreCase(policy.name())) {
+                return policy;
+            }
+        }
+        log.warn("Parse leak detection policy level {} failed. Use the default level: {}", levelStr,
+                LeakDetectionPolicy.Disabled.name());
+        return LeakDetectionPolicy.Disabled;
+    }
 }
