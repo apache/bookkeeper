@@ -123,12 +123,12 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         Set<Long> s2 = getLedgers(admin);
         LOG.info("Ledgers after write: " + s2);
         dlm.delete();
+        assertEquals(1, s2.size() - s1.size()); // exact 1 ledger created only
 
         Set<Long> s3 = getLedgers(admin);
         LOG.info("Ledgers after delete: " + s3);
 
-        assertEquals(0, s3.size());
-        assertEquals(s1.size() + 1, s2.size());
+        assertEquals(s1.size(), s3.size());
 
     }
 

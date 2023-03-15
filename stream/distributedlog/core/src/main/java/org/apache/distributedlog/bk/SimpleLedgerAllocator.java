@@ -310,7 +310,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 tryObtainTxn = null;
                 tryObtainListener = null;
                 // mark flag to issue an allocation request
-                shouldAllocate = true;
+                if (lhToNotify == null) {
+                    shouldAllocate = true;
+                }
             }
         }
         if (null != listenerToNotify && null != lhToNotify) {
@@ -382,11 +384,6 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 allocatePath, DistributedLogConstants.EMPTY_BYTES, (int) version.getLongVersion());
         ZKVersionedSetOp commitOp = new ZKVersionedSetOp(zkSetDataOp, this);
         tryObtainTxn.addOp(commitOp);
-        if (this.phase == Phase.ALLOCATED) {
-            // please check issue: https://github.com/apache/bookkeeper/issues/3812
-            allocatePromise.complete(lh);
-            return;
-        } // otherwise, it is ALLOCATING phase
         setPhase(Phase.HANDING_OVER);
         allocatePromise.complete(lh);
     }
