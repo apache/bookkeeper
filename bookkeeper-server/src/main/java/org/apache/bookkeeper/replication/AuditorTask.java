@@ -76,7 +76,7 @@ abstract class AuditorTask implements Runnable {
         return ledgerUnderreplicationManager.isLedgerReplicationEnabled();
     }
 
-    private CompletableFuture<?> publishSuspectedLedgersAsync(Collection<String> missingBookies, Set<Long> ledgers) {
+    protected CompletableFuture<?> publishSuspectedLedgersAsync(Collection<String> missingBookies, Set<Long> ledgers) {
         if (null == ledgers || ledgers.size() == 0) {
             // there is no ledgers available for this bookie and just
             // ignoring the bookie failures
