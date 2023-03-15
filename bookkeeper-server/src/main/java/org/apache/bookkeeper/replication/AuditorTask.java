@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -46,6 +47,7 @@ abstract class AuditorTask implements Runnable {
     protected LedgerManager ledgerManager;
     protected LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ShutdownTaskHandler shutdownTaskHandler;
+    private final Semaphore openLedgerNoRecoverySemaphore;
 
     AuditorTask(ServerConfiguration conf,
                 AuditorStats auditorStats,
@@ -59,6 +61,8 @@ abstract class AuditorTask implements Runnable {
         this.ledgerManager = ledgerManager;
         this.ledgerUnderreplicationManager = ledgerUnderreplicationManager;
         this.shutdownTaskHandler = shutdownTaskHandler;
+        this.openLedgerNoRecoverySemaphore =
+                new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
     }
 
     @Override
@@ -72,7 +76,7 @@ abstract class AuditorTask implements Runnable {
         return ledgerUnderreplicationManager.isLedgerReplicationEnabled();
     }
 
-    protected CompletableFuture<?> publishSuspectedLedgersAsync(Collection<String> missingBookies, Set<Long> ledgers) {
+    private CompletableFuture<?> publishSuspectedLedgersAsync(Collection<String> missingBookies, Set<Long> ledgers) {
         if (null == ledgers || ledgers.size() == 0) {
             // there is no ledgers available for this bookie and just
             // ignoring the bookie failures
@@ -82,22 +86,37 @@ abstract class AuditorTask implements Runnable {
         LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, missingBookies);
         auditorStats.getNumUnderReplicatedLedger().registerSuccessfulValue(ledgers.size());
         LongAdder underReplicatedSize = new LongAdder();
+
         FutureUtils.processList(
                 Lists.newArrayList(ledgers),
-                ledgerId ->
-                        ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
-                            if (exception == null) {
-                                underReplicatedSize.add(metadata.getValue().getLength());
-                            }
-                        }), null).whenComplete((res, e) -> {
-            auditorStats.getUnderReplicatedLedgerTotalSize().registerSuccessfulValue(underReplicatedSize.longValue());
-        });
+                ledgerId -> {
+                    try {
+                        openLedgerNoRecoverySemaphore.acquire();
+                    } catch (InterruptedException e) {
+                        LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                        Thread.currentThread().interrupt();
+                    }
+                    return ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
+                        if (exception == null) {
+                            underReplicatedSize.add(metadata.getValue().getLength());
+                        }
+                        openLedgerNoRecoverySemaphore.release();
+                    });
+                }, null).whenComplete((res, e) ->
+                auditorStats.getUnderReplicatedLedgerTotalSize().registerSuccessfulValue(underReplicatedSize.longValue()));
 
         return FutureUtils.processList(
                 Lists.newArrayList(ledgers),
-                ledgerId -> ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies),
-                null
-        );
+                ledgerId -> {
+                    try {
+                        openLedgerNoRecoverySemaphore.acquire();
+                    } catch (InterruptedException e) {
+                        LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                        Thread.currentThread().interrupt();
+                    }
+                    return ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies)
+                            .whenComplete((ignore, exception) -> openLedgerNoRecoverySemaphore.release());
+                }, null);
     }
 
     protected List<String> getAvailableBookies() throws BKException {
