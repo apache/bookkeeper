@@ -55,6 +55,7 @@ public abstract class HttpRouter<Handler> {
     public static final String BOOKIE_IS_READY              = "/api/v1/bookie/is_ready";
     public static final String BOOKIE_INFO                  = "/api/v1/bookie/info";
     public static final String CLUSTER_INFO                  = "/api/v1/bookie/cluster_info";
+    public static final String ENTRY_LOCATION_COMPACT       = "/api/v1/bookie/entry_location_compact";
     // autorecovery
     public static final String AUTORECOVERY_STATUS          = "/api/v1/autorecovery/status";
     public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
@@ -97,6 +98,8 @@ public abstract class HttpRouter<Handler> {
             handlerFactory.newHandler(HttpServer.ApiType.SUSPEND_GC_COMPACTION));
         this.endpointHandlers.put(RESUME_GC_COMPACTION,
             handlerFactory.newHandler(HttpServer.ApiType.RESUME_GC_COMPACTION));
+        this.endpointHandlers.put(ENTRY_LOCATION_COMPACT,
+                handlerFactory.newHandler(HttpServer.ApiType.TRIGGER_ENTRY_LOCATION_COMPACT));
 
         // autorecovery
         this.endpointHandlers.put(AUTORECOVERY_STATUS, handlerFactory
