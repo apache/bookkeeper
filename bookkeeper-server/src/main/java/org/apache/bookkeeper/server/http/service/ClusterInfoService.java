@@ -82,7 +82,7 @@ public class ClusterInfoService implements HttpEndpointService {
         final HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET != request.getMethod()) {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Only GET is supported.");
             return response;
         }

@@ -48,7 +48,7 @@ public class MetricsService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
         if (Method.GET != request.getMethod()) {
-            response.setCode(StatusCode.FORBIDDEN);
+            response.setCode(StatusCode.METHOD_NOT_ALLOWED);
             response.setBody(request.getMethod() + " is forbidden. Should be GET method");
             return response;
         }

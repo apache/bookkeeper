@@ -52,7 +52,7 @@ public class ConfigurationService implements HttpEndpointService {
         } else if (HttpServer.Method.PUT == request.getMethod()) {
             String requestBody = request.getBody();
             if (null == requestBody) {
-                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
                 response.setBody("Request body not found. should contains k-v pairs");
                 return response;
             }

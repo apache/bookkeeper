@@ -76,7 +76,7 @@ public class GCDetailsService implements HttpEndpointService {
             response.setCode(HttpServer.StatusCode.OK);
             return response;
         } else {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Only support GET method to retrieve GC details."
                 + " If you want to trigger gc, send a POST to gc endpoint.");
             return response;

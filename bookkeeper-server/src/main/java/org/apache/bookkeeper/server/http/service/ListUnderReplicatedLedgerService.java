@@ -141,7 +141,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 return response;
             }
         } else {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Not found method. Should be GET method");
             return response;
         }

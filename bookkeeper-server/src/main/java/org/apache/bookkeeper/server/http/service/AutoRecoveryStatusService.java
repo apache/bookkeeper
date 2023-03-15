@@ -64,7 +64,7 @@ public class AutoRecoveryStatusService implements HttpEndpointService {
                                 return handlePutStatus(request, ledgerUnderreplicationManager);
                             default:
                                 return new HttpServiceResponse("Not found method. Should be GET or PUT method",
-                                        HttpServer.StatusCode.NOT_FOUND);
+                                        HttpServer.StatusCode.METHOD_NOT_ALLOWED);
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();

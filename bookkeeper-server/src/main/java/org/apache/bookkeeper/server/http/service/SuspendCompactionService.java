@@ -90,7 +90,7 @@ public class SuspendCompactionService implements HttpEndpointService {
             response.setCode(HttpServer.StatusCode.OK);
             return response;
         } else {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Not found method. Should be PUT to suspend major or minor compaction, "
                     + "Or GET to get compaction state.");
             return response;

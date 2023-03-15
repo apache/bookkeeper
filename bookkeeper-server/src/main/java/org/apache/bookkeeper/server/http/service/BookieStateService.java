@@ -71,7 +71,7 @@ public class BookieStateService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET != request.getMethod()) {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Only support GET method to retrieve bookie state.");
             return response;
         }

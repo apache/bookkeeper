@@ -58,7 +58,7 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
                 stateManager.transitionToReadOnlyMode().get();
             }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Unsupported method. Should be GET or PUT method");
             return response;
         }
