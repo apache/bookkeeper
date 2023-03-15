@@ -103,7 +103,8 @@ abstract class AuditorTask implements Runnable {
                         openLedgerNoRecoverySemaphore.release();
                     });
                 }, null).whenComplete((res, e) ->
-                auditorStats.getUnderReplicatedLedgerTotalSize().registerSuccessfulValue(underReplicatedSize.longValue()));
+                auditorStats.getUnderReplicatedLedgerTotalSize()
+                        .registerSuccessfulValue(underReplicatedSize.longValue()));
 
         return FutureUtils.processList(
                 Lists.newArrayList(ledgers),
