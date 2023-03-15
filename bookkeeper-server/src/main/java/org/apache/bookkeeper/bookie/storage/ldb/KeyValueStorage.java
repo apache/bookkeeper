@@ -107,6 +107,16 @@ public interface KeyValueStorage extends Closeable {
     default void compact(byte[] firstKey, byte[] lastKey) throws IOException {}
 
     /**
+     * Compact storage full range.
+     */
+    default void compact() throws IOException {}
+
+    /**
+     * Get storage path.
+     */
+    String getDBPath();
+
+    /**
      * Get an iterator over to scan sequentially through all the keys in the
      * database.
      *

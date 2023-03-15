@@ -51,6 +51,7 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.LRUCache;
+import org.rocksdb.LiveFileMetaData;
 import org.rocksdb.Options;
 import org.rocksdb.OptionsUtil;
 import org.rocksdb.ReadOptions;
@@ -83,6 +84,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private final ReadOptions optionCache;
     private final ReadOptions optionDontCache;
     private final WriteBatch emptyBatch;
+
+    private String dbPath;
 
     private static final String ROCKSDB_LOG_PATH = "dbStorage_rocksDB_logPath";
     private static final String ROCKSDB_LOG_LEVEL = "dbStorage_rocksDB_logLevel";
@@ -158,13 +161,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
                 dbOptions.setDbLogDir(logPathSetting.toString());
             }
-            String path = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
+            this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
             this.options = dbOptions;
             this.columnFamilyDescriptors = cfDescs;
             if (readOnly) {
-                return RocksDB.openReadOnly(dbOptions, path, cfDescs, cfHandles);
+                return RocksDB.openReadOnly(dbOptions, dbPath, cfDescs, cfHandles);
             } else {
-                return RocksDB.open(dbOptions, path, cfDescs, cfHandles);
+                return RocksDB.open(dbOptions, dbPath, cfDescs, cfHandles);
             }
         } catch (RocksDBException e) {
             throw new IOException("Error open RocksDB database", e);
@@ -241,7 +244,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
             options.setDbLogDir(logPathSetting.toString());
         }
-        String path = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
+        this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
 
         // Configure log level
         String logLevel = conf.getString(ROCKSDB_LOG_LEVEL, "info");
@@ -268,9 +271,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         this.options = options;
         try {
             if (readOnly) {
-                return RocksDB.openReadOnly(options, path);
+                return RocksDB.openReadOnly(options, dbPath);
             } else {
-                return RocksDB.open(options, path);
+                return RocksDB.open(options, dbPath);
             }
         } catch (RocksDBException e) {
             throw new IOException("Error open RocksDB database", e);
@@ -366,12 +369,47 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    public String getDBPath() {
+        return dbPath;
+    }
+
+    @Override
     public void compact(byte[] firstKey, byte[] lastKey) throws IOException {
         try {
             db.compactRange(firstKey, lastKey);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB compact", e);
         }
+    }
+
+    @Override
+    public void compact() throws IOException {
+        try {
+            final long start = System.currentTimeMillis();
+            final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
+            final long oriRocksDBSize = getRocksDBSize();
+            log.info("Starting RocksDB {} compact, current RocksDB hold {} files and {} Bytes.",
+                    db.getName(), oriRocksDBFileCount, oriRocksDBSize);
+
+            db.compactRange();
+
+            final long end = System.currentTimeMillis();
+            final int rocksDBFileCount = db.getLiveFilesMetaData().size();
+            final long rocksDBSize = getRocksDBSize();
+            log.info("RocksDB {} compact finished {} ms, space reduced {} Bytes, current hold {} files and {} Bytes.",
+                    db.getName(), end - start, oriRocksDBSize - rocksDBSize, rocksDBFileCount, rocksDBSize);
+        } catch (RocksDBException e) {
+            throw new IOException("Error in RocksDB compact", e);
+        }
+    }
+
+    private long getRocksDBSize() {
+        List<LiveFileMetaData> liveFilesMetaData = db.getLiveFilesMetaData();
+        long rocksDBFileSize = 0L;
+        for (LiveFileMetaData fileMetaData : liveFilesMetaData) {
+            rocksDBFileSize += fileMetaData.size();
+        }
+        return rocksDBFileSize;
     }
 
     @Override

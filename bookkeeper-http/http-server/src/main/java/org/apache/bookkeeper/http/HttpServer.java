@@ -36,6 +36,7 @@ public interface HttpServer {
         BAD_REQUEST(400),
         FORBIDDEN(403),
         NOT_FOUND(404),
+        METHOD_NOT_ALLOWED(405),
         INTERNAL_ERROR(500),
         SERVICE_UNAVAILABLE(503);
 
@@ -89,6 +90,7 @@ public interface HttpServer {
         CLUSTER_INFO,
         RESUME_GC_COMPACTION,
         SUSPEND_GC_COMPACTION,
+        TRIGGER_ENTRY_LOCATION_COMPACT,
         // autorecovery
         AUTORECOVERY_STATUS,
         RECOVERY_BOOKIE,
