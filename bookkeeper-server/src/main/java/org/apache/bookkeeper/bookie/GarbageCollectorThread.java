@@ -466,15 +466,21 @@ public class GarbageCollectorThread extends SafeRunnable {
         long timeDiff = 0;
 
         for (EntryLogMetadata meta : logsToCompact) {
-            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
+            double usage = meta.getUsage();
+            if (conf.isUseTargetEntryLogSizeForGc() && usage < 1.0d) {
+                usage = (double) meta.getRemainingSize() / Math.max(meta.getTotalSize(), conf.getEntryLogSizeLimit());
+            }
+            int bucketIndex = calculateUsageIndex(numBuckets, usage);
             entryLogUsageBuckets[bucketIndex]++;
 
             if (timeDiff < maxTimeMillis) {
                 end = System.currentTimeMillis();
                 timeDiff = end - start;
             }
-            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff > maxTimeMillis) || !running) {
-                // We allow the usage limit calculation to continue so that we get a accurate
+            if ((usage >= threshold
+                || (maxTimeMillis > 0 && timeDiff >= maxTimeMillis)
+                || !running)) {
+                // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 continue;
             }
