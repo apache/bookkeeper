@@ -813,47 +813,70 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     @Test
     public void testGCDetailsService() throws Exception {
-        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
-        int numLedgers = 4;
-        int numMsgs = 100;
-        LedgerHandle[] lh = new LedgerHandle[numLedgers];
-        // create ledgers
-        for (int i = 0; i < numLedgers; i++) {
-            lh[i] = bkc.createLedger(digestType, "".getBytes());
-        }
-        String content = "This is test for GC details service!";
-        // add entries
-        for (int i = 0; i < numMsgs; i++) {
-            for (int j = 0; j < numLedgers; j++) {
-                lh[j].addEntry(content.getBytes());
+        for (String storageClass: Arrays.asList(DbLedgerStorage.class.getName(),
+                SortedLedgerStorage.class.getName(),
+                InterleavedLedgerStorage.class.getName())) {
+            baseConf.setLedgerStorageClass(storageClass);
+            baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+            ServerTester server = startBookie(baseConf);
+            MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                    baseConf, NullStatsLogger.INSTANCE);
+            this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
+                    .setBookieServer(server.getServer())
+                    .setServerConfiguration(baseConf)
+                    .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
+                    .build();
+            BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+            int numLedgers = 4;
+            int numMsgs = 100;
+            LedgerHandle[] lh = new LedgerHandle[numLedgers];
+            // create ledgers
+            for (int i = 0; i < numLedgers; i++) {
+                lh[i] = bkc.createLedger(digestType, "".getBytes());
             }
+            String content = "This is test for GC details service!";
+            // add entries
+            for (int i = 0; i < numMsgs; i++) {
+                for (int j = 0; j < numLedgers; j++) {
+                    lh[j].addEntry(content.getBytes());
+                }
+            }
+            // close ledgers
+            for (int i = 0; i < numLedgers; i++) {
+                lh[i].close();
+            }
+            HttpEndpointService gcDetailsService = bkHttpServiceProvider
+                    .provideHttpEndpointService(HttpServer.ApiType.GC_DETAILS);
+
+            // force trigger a GC
+            HttpEndpointService triggerGCService = bkHttpServiceProvider
+                    .provideHttpEndpointService(HttpServer.ApiType.GC);
+            HttpServiceRequest request0 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+            HttpServiceResponse response0 = triggerGCService.handle(request0);
+            assertEquals(HttpServer.StatusCode.OK.getValue(), response0.getStatusCode());
+
+            //1,  GET, should return OK
+            HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+            HttpServiceResponse response1 = gcDetailsService.handle(request1);
+            assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+            Map<String, Object> respMap = (LinkedHashMap) JsonUtil.fromJson(response1.getBody(), List.class).get(0);
+            assertTrue(respMap.containsKey("ledgerDir"));
+            assertTrue(respMap.containsKey("forceCompacting"));
+            assertTrue(respMap.containsKey("majorCompacting"));
+            assertTrue(respMap.containsKey("minorCompacting"));
+            assertTrue(respMap.containsKey("lastMajorCompactionTime"));
+            assertTrue(respMap.containsKey("lastMinorCompactionTime"));
+            assertTrue(respMap.containsKey("majorCompactionCounter"));
+            assertTrue(respMap.containsKey("minorCompactionCounter"));
+            LOG.info("Get response: {}", response1.getBody());
+
+            //2, PUT, should return NOT_FOUND
+            HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+            HttpServiceResponse response3 = gcDetailsService.handle(request3);
+            assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
+            server.shutdown();
         }
-        // close ledgers
-        for (int i = 0; i < numLedgers; i++) {
-            lh[i].close();
-        }
-        HttpEndpointService gcDetailsService = bkHttpServiceProvider
-            .provideHttpEndpointService(HttpServer.ApiType.GC_DETAILS);
 
-        // force trigger a GC
-        HttpEndpointService triggerGCService = bkHttpServiceProvider
-            .provideHttpEndpointService(HttpServer.ApiType.GC);
-        HttpServiceRequest request0 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
-        HttpServiceResponse response0 = triggerGCService.handle(request0);
-        assertEquals(HttpServer.StatusCode.OK.getValue(), response0.getStatusCode());
-
-        //1,  GET, should return OK
-        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
-        HttpServiceResponse response1 = gcDetailsService.handle(request1);
-        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
-        assertTrue(JsonUtil.fromJson(response1.getBody(), List.class).get(0).toString().contains("ledgerDir"));
-        LOG.info("Get response: {}", response1.getBody());
-
-        //2, PUT, should return NOT_FOUND
-        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
-        HttpServiceResponse response3 = gcDetailsService.handle(request3);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
     }
 
     @Test
