@@ -410,12 +410,13 @@ public class GarbageCollectorThread implements Runnable {
         compactor.cleanUpAndRecover();
 
         try {
-         // Extract all of the ledger ID's that comprise all of the entry logs
+            // gc inactive/deleted ledgers
+            // this is used in extractMetaFromEntryLogs to calculate the usage of entry log
+            doGcLedgers();
+
+            // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
             extractMetaFromEntryLogs();
-
-            // gc inactive/deleted ledgers
-            doGcLedgers();
 
             // gc entry logs
             doGcEntryLogs();
