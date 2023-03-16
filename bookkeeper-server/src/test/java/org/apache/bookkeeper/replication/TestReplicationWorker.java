@@ -1374,7 +1374,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
         final AuditorPeriodicCheckTest.TestAuditor auditor = new AuditorPeriodicCheckTest.TestAuditor(
-                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger);
+                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger, null);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0,

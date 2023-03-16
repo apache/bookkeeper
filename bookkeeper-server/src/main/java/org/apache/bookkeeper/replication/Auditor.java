@@ -172,13 +172,16 @@ public class Auditor implements AutoCloseable {
                 bookieLedgerIndexer, hasAuditCheckTask, submitBookieCheckTask);
         allAuditorTasks.add(auditorBookieCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorCheckAllLedgersTask);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorPlacementPolicyCheckTask);
         this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorReplicasCheckTask);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {

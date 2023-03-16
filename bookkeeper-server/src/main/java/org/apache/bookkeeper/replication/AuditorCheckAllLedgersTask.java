@@ -27,6 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -57,10 +59,11 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
                                LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                               ShutdownTaskHandler shutdownTaskHandler)
+                               ShutdownTaskHandler shutdownTaskHandler,
+                               BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask)
             throws UnavailableException {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
 
         if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
             LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
@@ -89,6 +92,11 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
 
     @Override
     protected void runTask() {
+        if (hasBookieCheckTask()) {
+            LOG.info("Audit bookie task already scheduled; skipping periodic all ledgers check task");
+            return;
+        }
+
         Stopwatch stopwatch = Stopwatch.createStarted();
         boolean checkSuccess = false;
         try {

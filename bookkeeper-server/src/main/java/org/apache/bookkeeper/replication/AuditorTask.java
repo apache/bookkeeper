@@ -24,7 +24,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -46,19 +48,23 @@ abstract class AuditorTask implements Runnable {
     protected LedgerManager ledgerManager;
     protected LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ShutdownTaskHandler shutdownTaskHandler;
+    private final BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask;
+    private final AtomicBoolean hasTask = new AtomicBoolean(false);
 
     AuditorTask(ServerConfiguration conf,
                 AuditorStats auditorStats,
                 BookKeeperAdmin admin,
                 LedgerManager ledgerManager,
                 LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                ShutdownTaskHandler shutdownTaskHandler) {
+                ShutdownTaskHandler shutdownTaskHandler,
+                BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask) {
         this.conf = conf;
         this.auditorStats = auditorStats;
         this.admin = admin;
         this.ledgerManager = ledgerManager;
         this.ledgerUnderreplicationManager = ledgerUnderreplicationManager;
         this.shutdownTaskHandler = shutdownTaskHandler;
+        this.hasAuditCheckTask = hasAuditCheckTask;
     }
 
     @Override
@@ -140,6 +146,12 @@ abstract class AuditorTask implements Runnable {
     }
 
     public abstract void shutdown();
+
+    protected boolean hasBookieCheckTask() {
+        hasTask.set(false);
+        hasAuditCheckTask.accept(hasTask, null);
+        return hasTask.get();
+    }
 
     /**
      * ShutdownTaskHandler used to shutdown auditor executor.
