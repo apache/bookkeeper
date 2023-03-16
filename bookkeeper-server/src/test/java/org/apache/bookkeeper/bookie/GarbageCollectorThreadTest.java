@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
@@ -238,4 +239,138 @@ public class GarbageCollectorThreadTest {
         assertTrue(entryLogMetaMap.isEmpty());
         assertFalse(entryLogger.logExists(logId3));
     }
+
+    @Test
+    public void testCompactionWithFileSizeCheck() throws Exception {
+        File ledgerDir = tmpDirs.createNew("testFileSize", "ledgers");
+        EntryLogger entryLogger = newLegacyEntryLogger(20000, ledgerDir);
+
+        MockLedgerStorage storage = new MockLedgerStorage();
+        MockLedgerManager lm = new MockLedgerManager();
+
+        GarbageCollectorThread gcThread = new GarbageCollectorThread(
+            TestBKConfiguration.newServerConfiguration().setUseTargetEntryLogSizeForGc(true), lm,
+            newDirsManager(ledgerDir),
+            storage, entryLogger, NullStatsLogger.INSTANCE);
+
+        // Add entries.
+        // Ledger 1 is on first entry log
+        // Ledger 2 spans first, second and third entry log
+        // Ledger 3 is on the third entry log (which is still active when extract meta)
+        long loc1 = entryLogger.addEntry(1L, makeEntry(1L, 1L, 5000));
+        long loc2 = entryLogger.addEntry(2L, makeEntry(2L, 1L, 5000));
+        assertThat(logIdFromLocation(loc2), equalTo(logIdFromLocation(loc1)));
+        long loc3 = entryLogger.addEntry(2L, makeEntry(2L, 2L, 15000));
+        assertThat(logIdFromLocation(loc3), greaterThan(logIdFromLocation(loc2)));
+        long loc4 = entryLogger.addEntry(2L, makeEntry(2L, 3L, 15000));
+        assertThat(logIdFromLocation(loc4), greaterThan(logIdFromLocation(loc3)));
+        long loc5 = entryLogger.addEntry(3L, makeEntry(3L, 1L, 1000));
+        assertThat(logIdFromLocation(loc5), equalTo(logIdFromLocation(loc4)));
+        long loc6 = entryLogger.addEntry(3L, makeEntry(3L, 2L, 5000));
+
+        long logId1 = logIdFromLocation(loc2);
+        long logId2 = logIdFromLocation(loc3);
+        long logId3 = logIdFromLocation(loc5);
+        long logId4 = logIdFromLocation(loc6);
+        entryLogger.flush();
+
+        storage.setMasterKey(1L, new byte[0]);
+        storage.setMasterKey(2L, new byte[0]);
+        storage.setMasterKey(3L, new byte[0]);
+
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2, logId3));
+        assertTrue(entryLogger.logExists(logId1));
+        assertTrue(entryLogger.logExists(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+        assertTrue(entryLogger.logExists(logId4));
+
+        // all ledgers exist, nothing should disappear
+        final EntryLogMetadataMap entryLogMetaMap = gcThread.getEntryLogMetaMap();
+        gcThread.extractMetaFromEntryLogs();
+
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2, logId3));
+        assertTrue(entryLogMetaMap.containsKey(logId1));
+        assertTrue(entryLogMetaMap.containsKey(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+
+        storage.deleteLedger(1);
+        // only logId 1 will be compacted.
+        gcThread.runWithFlags(true, true, false);
+
+        // logId1 and logId2 should be compacted
+        assertFalse(entryLogger.logExists(logId1));
+        assertTrue(entryLogger.logExists(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+        assertFalse(entryLogMetaMap.containsKey(logId1));
+        assertTrue(entryLogMetaMap.containsKey(logId2));
+
+        assertEquals(1, storage.getUpdatedLocations().size());
+
+        EntryLocation location2 = storage.getUpdatedLocations().get(0);
+        assertEquals(2, location2.getLedger());
+        assertEquals(1, location2.getEntry());
+        assertEquals(logIdFromLocation(location2.getLocation()), logId4);
+    }
+
+    @Test
+    public void testCompactionWithoutFileSizeCheck() throws Exception {
+        File ledgerDir = tmpDirs.createNew("testFileSize", "ledgers");
+        EntryLogger entryLogger = newLegacyEntryLogger(20000, ledgerDir);
+
+        MockLedgerStorage storage = new MockLedgerStorage();
+        MockLedgerManager lm = new MockLedgerManager();
+
+        GarbageCollectorThread gcThread = new GarbageCollectorThread(
+            TestBKConfiguration.newServerConfiguration(), lm,
+            newDirsManager(ledgerDir),
+            storage, entryLogger, NullStatsLogger.INSTANCE);
+
+        // Add entries.
+        // Ledger 1 is on first entry log
+        // Ledger 2 spans first, second and third entry log
+        // Ledger 3 is on the third entry log (which is still active when extract meta)
+        long loc1 = entryLogger.addEntry(1L, makeEntry(1L, 1L, 5000));
+        long loc2 = entryLogger.addEntry(2L, makeEntry(2L, 1L, 5000));
+        assertThat(logIdFromLocation(loc2), equalTo(logIdFromLocation(loc1)));
+        long loc3 = entryLogger.addEntry(2L, makeEntry(2L, 2L, 15000));
+        assertThat(logIdFromLocation(loc3), greaterThan(logIdFromLocation(loc2)));
+        long loc4 = entryLogger.addEntry(2L, makeEntry(2L, 3L, 15000));
+        assertThat(logIdFromLocation(loc4), greaterThan(logIdFromLocation(loc3)));
+        long loc5 = entryLogger.addEntry(3L, makeEntry(3L, 1L, 1000));
+        assertThat(logIdFromLocation(loc5), equalTo(logIdFromLocation(loc4)));
+
+        long logId1 = logIdFromLocation(loc2);
+        long logId2 = logIdFromLocation(loc3);
+        long logId3 = logIdFromLocation(loc5);
+        entryLogger.flush();
+
+        storage.setMasterKey(1L, new byte[0]);
+        storage.setMasterKey(2L, new byte[0]);
+        storage.setMasterKey(3L, new byte[0]);
+
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2));
+        assertTrue(entryLogger.logExists(logId1));
+        assertTrue(entryLogger.logExists(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+
+        // all ledgers exist, nothing should disappear
+        final EntryLogMetadataMap entryLogMetaMap = gcThread.getEntryLogMetaMap();
+        gcThread.extractMetaFromEntryLogs();
+
+        assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2));
+        assertTrue(entryLogMetaMap.containsKey(logId1));
+        assertTrue(entryLogMetaMap.containsKey(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+
+        gcThread.runWithFlags(true, true, false);
+
+        assertTrue(entryLogger.logExists(logId1));
+        assertTrue(entryLogger.logExists(logId2));
+        assertTrue(entryLogger.logExists(logId3));
+        assertTrue(entryLogMetaMap.containsKey(logId1));
+        assertTrue(entryLogMetaMap.containsKey(logId2));
+
+        assertEquals(0, storage.getUpdatedLocations().size());
+    }
+
 }
