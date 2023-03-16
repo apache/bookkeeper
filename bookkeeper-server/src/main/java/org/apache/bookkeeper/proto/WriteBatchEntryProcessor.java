@@ -92,6 +92,9 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
 
     @Override
     public void run() {
+        requestProcessor.getRequestStats().getWriteThreadQueuedLatency()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+
         if (requestProcessor.getBookie().isReadOnly()) {
                 log.warn("BookieServer is running in readOnly mode, so rejecting the request from the client!");
                 for (ParsedAddRequest r : requests) {
