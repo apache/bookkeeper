@@ -106,7 +106,7 @@ public class WriteBatchEntryProcessor extends PacketProcessorBase<ParsedAddReque
         startTimeNanos = MathUtils.nowInNano();
         int rc = BookieProtocol.EOK;
         try {
-            requestProcessor.getBookie().addEntryList(requests, false, this, requestHandler,
+            requestProcessor.getBookie().addEntries(requests, false, this, requestHandler,
                 requestProcessor.getRequestStats());
         } catch (Throwable t) {
             log.error("Unexpected exception while writing requests ", t);

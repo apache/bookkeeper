@@ -117,6 +117,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
     public void channelReadComplete(ChannelHandlerContext ctx) {
         if (!msgs.isEmpty()) {
             int count = msgs.size();
+            log.info("[hangc] count: {}", count);
             List<BookieProtocol.ParsedAddRequest> c = new ArrayList<>(count);
             msgs.drainTo(c, count);
             if (!c.isEmpty()) {

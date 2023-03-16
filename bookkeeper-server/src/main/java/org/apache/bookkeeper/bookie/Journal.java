@@ -887,7 +887,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         logAddEntry(ledgerId, entryId, entry, ackBeforeSync, cb, ctx);
     }
 
-    public void logAddEntry(List<ByteBuf> entries, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+    public void logAddEntries(List<ByteBuf> entries, boolean ackBeforeSync, WriteCallback cb, Object ctx)
         throws InterruptedException {
         long reserveMemory = 0;
         QueueEntry[] queueEntries = new QueueEntry[entries.size()];

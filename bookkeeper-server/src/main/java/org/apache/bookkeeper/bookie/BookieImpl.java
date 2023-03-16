@@ -1096,7 +1096,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
     }
 
-    public void addEntryList(List<ParsedAddRequest> requests, boolean ackBeforeSync,
+    public void addEntries(List<ParsedAddRequest> requests, boolean ackBeforeSync,
                          WriteCallback cb, Object ctx, RequestStats requestStats) throws InterruptedException {
         long requestNans = MathUtils.nowInNano();
         boolean hasFailedRequests = false;
@@ -1154,20 +1154,22 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         }
         handleMap.clear();
 
-        if (hasFailedRequests && requestProcessor != null) {
-            requestProcessor.flushPendingResponses();
-        }
+        try {
+            if (hasFailedRequests && requestProcessor != null) {
+                requestProcessor.flushPendingResponses();
+            }
 
-        if (writeDataToJournal && !requests.isEmpty()) {
-            List<ByteBuf> entries = requests.stream()
-                .map(ParsedAddRequest::getData).collect(Collectors.toList());
-            getJournal(requests.get(0).getLedgerId()).logAddEntry(entries, ackBeforeSync, cb, ctx);
+            if (writeDataToJournal && !requests.isEmpty()) {
+                List<ByteBuf> entries = requests.stream()
+                    .map(ParsedAddRequest::getData).collect(Collectors.toList());
+                getJournal(requests.get(0).getLedgerId()).logAddEntries(entries, ackBeforeSync, cb, ctx);
+            }
+        } finally {
+            requests.forEach(t -> {
+                t.release();
+                t.recycle();
+            });
         }
-
-        requests.forEach(t -> {
-            t.release();
-            t.recycle();
-        });
     }
 
     /**

@@ -47,7 +47,7 @@ public interface Bookie {
     // TODO: replace ackBeforeSync with flags
     void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException, InterruptedException;
-    void addEntryList(List<BookieProtocol.ParsedAddRequest> requests, boolean ackBeforeSync, WriteCallback cb,
+    void addEntries(List<BookieProtocol.ParsedAddRequest> requests, boolean ackBeforeSync, WriteCallback cb,
                   Object ctx, RequestStats requestStats) throws InterruptedException;
     void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException, InterruptedException;
