@@ -377,11 +377,7 @@ public class DirectEntryLogger implements EntryLogger {
         checkArgument(entryLogId < Integer.MAX_VALUE, "Entry log id must be an int [%d]", entryLogId);
         File file = logFile(ledgerDir, (int) entryLogId);
         boolean result = file.delete();
-        if (result) {
-            slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
-        } else {
-            slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED_FAILED);
-        }
+        slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
         return result;
     }
 
