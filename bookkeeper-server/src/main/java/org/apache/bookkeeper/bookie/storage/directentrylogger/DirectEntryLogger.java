@@ -59,15 +59,11 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * DirectEntryLogger.
  */
 public class DirectEntryLogger implements EntryLogger {
-    private static final Logger LOG = LoggerFactory.getLogger(DirectEntryLogger.class);
-
     private final Slogger slog;
     private final File ledgerDir;
     private final EntryLogIds ids;
@@ -381,10 +377,11 @@ public class DirectEntryLogger implements EntryLogger {
         checkArgument(entryLogId < Integer.MAX_VALUE, "Entry log id must be an int [%d]", entryLogId);
         File file = logFile(ledgerDir, (int) entryLogId);
         boolean result = file.delete();
-        if (!result) {
-            LOG.warn("Could not delete entry log file {}", file);
+        if (result) {
+            slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
+        } else {
+            slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED_FAILED);
         }
-        slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
         return result;
     }
 

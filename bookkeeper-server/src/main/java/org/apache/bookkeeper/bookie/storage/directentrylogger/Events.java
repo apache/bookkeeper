@@ -66,6 +66,11 @@ public enum Events {
      * log.
      */
     LOG_DELETED,
+    
+    /**
+     * delete failed for {@link #LOG_DELETED})
+     */
+    LOG_DELETED_FAILED,
 
     /**
      * An error occurred closing an entrylog reader. This is non-fatal but it may leak the file handle
