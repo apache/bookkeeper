@@ -302,7 +302,7 @@ public class EmbeddedServer {
 
             // 2. Build metadata driver
             if (metadataDriver == null) {
-                if (ledgerManagerFactory == null && registrationManager == null) {
+                if (ledgerManagerFactory == null || registrationManager == null) {
                     metadataDriver = BookieResources.createMetadataDriver(conf.getServerConf(), rootStatsLogger);
                     serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
                 }
