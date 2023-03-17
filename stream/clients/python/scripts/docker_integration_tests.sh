@@ -19,11 +19,14 @@ set -e -x -u
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 NOXSESSION=${NOXSESSION:-"integration"}
+PY_VERSION=${PY_VERSION:-"3.10"}
 
 docker run \
     -v "${SCRIPT_DIR}/..":/opt/bookkeeper_python_client \
-    -w /opt/bookkeeper_python_client \
+    -w /opt/bookkeeper \
     -e NOXSESSION="${NOXSESSION}" \
+    -e PY_VERSION=${PY_VERSION} \
     --entrypoint=/bin/bash \
-    apachebookkeeper/bookkeeper-current \
+    apache/bookkeeper:local \
     /opt/bookkeeper_python_client/scripts/run_integration_tests.sh
+
