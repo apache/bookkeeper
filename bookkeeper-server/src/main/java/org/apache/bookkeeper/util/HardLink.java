@@ -22,12 +22,12 @@ package org.apache.bookkeeper.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
