@@ -20,14 +20,20 @@ package org.apache.hadoop.fs;
 */
 package org.apache.bookkeeper.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class for creating hardlinks.
@@ -42,7 +48,7 @@ import java.util.Arrays;
  * efficient - and minimizes the impact of the extra buffer creations.
  */
 public class HardLink {
-
+  private static final Logger LOG = LoggerFactory.getLogger(HardLink.class);
   /**
    * OS Types.
    */
@@ -395,6 +401,50 @@ public class HardLink {
     return getHardLinkCommand.getMaxAllowedCmdArgLength();
   }
 
+  private static final AtomicBoolean ATOMIC_MOVE_AVAILABLE = new AtomicBoolean(false);
+
+  static {
+    testIfAtomicMoveAvailable();
+  }
+
+  private static void testIfAtomicMoveAvailable() {
+    File tmpFile = null;
+    File renameFile = null;
+    try {
+      tmpFile = File.createTempFile("temp", "bkatomicmovetest");
+      renameFile = new File(tmpFile.getParent(), "bkatomicmove" + System.currentTimeMillis());
+
+      if (tmpFile.exists() && !renameFile.exists()) {
+        try {
+          Path movedFile = Files.move(tmpFile.toPath(), renameFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+          if (movedFile.toFile().exists()) {
+            LOG.info("test atomic move success. will try to use when create hardlink.");
+            ATOMIC_MOVE_AVAILABLE.set(true);
+          }
+        } catch (AtomicMoveNotSupportedException e) {
+          LOG.error("atomic move not supported", e);
+          ATOMIC_MOVE_AVAILABLE.set(false);
+        }
+      }
+
+    } catch (IOException e) {
+      LOG.error("error when test atomic move", e);
+      ATOMIC_MOVE_AVAILABLE.set(false);
+    } finally {
+      try {
+        if (tmpFile != null && tmpFile.exists()) {
+          tmpFile.delete();
+        }
+
+        if (renameFile != null && renameFile.exists()) {
+          renameFile.delete();
+        }
+      } catch (Exception e) {
+        LOG.error("error when delete atomic move test file", e);
+      }
+    }
+  }
+
   /*
    * ****************************************************
    * Complexity is above.  User-visible functionality is below
@@ -416,6 +466,19 @@ public class HardLink {
       throw new IOException(
           "invalid arguments to createHardLink: link name is null");
     }
+
+    // if atomic move available try first, else fall back to shell command.
+    if (ATOMIC_MOVE_AVAILABLE.get()) {
+      try {
+        Path newFile = Files.move(file.toPath(), linkName.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        if (newFile.toFile().exists()) {
+          return;
+        }
+      } catch (IOException e) {
+        LOG.error("error when create hard link use atomic move", e);
+      }
+    }
+
     // construct and execute shell command
     String[] hardLinkCommand = getHardLinkCommand.linkOne(file, linkName);
     Process process = Runtime.getRuntime().exec(hardLinkCommand);
