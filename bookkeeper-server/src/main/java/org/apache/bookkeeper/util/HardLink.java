@@ -402,13 +402,13 @@ public class HardLink {
     return getHardLinkCommand.getMaxAllowedCmdArgLength();
   }
 
-  private static final AtomicBoolean ATOMIC_MOVE_AVAILABLE = new AtomicBoolean(false);
+  private static final AtomicBoolean CREATE_LINK_SUPPORTED = new AtomicBoolean(false);
 
   static {
-    testIfAtomicMoveAvailable();
+    testIfCreateLinkAvailable();
   }
 
-  private static void testIfAtomicMoveAvailable() {
+  private static void testIfCreateLinkAvailable() {
     File tmpFile = null;
     File renameFile = null;
     try {
@@ -417,20 +417,20 @@ public class HardLink {
 
       if (tmpFile.exists() && !renameFile.exists()) {
         try {
-          Path movedFile = Files.move(tmpFile.toPath(), renameFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+          Path movedFile = Files.createLink(renameFile.toPath(), tmpFile.toPath());
           if (movedFile.toFile().exists()) {
-            LOG.info("test atomic move success. will try to use when create hardlink.");
-            ATOMIC_MOVE_AVAILABLE.set(true);
+            LOG.info("test createLink success. will try to use when create hardlink.");
+            CREATE_LINK_SUPPORTED.set(true);
           }
-        } catch (AtomicMoveNotSupportedException e) {
-          LOG.error("atomic move not supported", e);
-          ATOMIC_MOVE_AVAILABLE.set(false);
+        } catch (UnsupportedOperationException e) {
+          LOG.error("createLink not supported", e);
+          CREATE_LINK_SUPPORTED.set(false);
         }
       }
 
     } catch (IOException e) {
-      LOG.error("error when test atomic move", e);
-      ATOMIC_MOVE_AVAILABLE.set(false);
+      LOG.error("error when test createLink", e);
+      CREATE_LINK_SUPPORTED.set(false);
     } finally {
       try {
         if (tmpFile != null && tmpFile.exists()) {
@@ -447,7 +447,7 @@ public class HardLink {
           }
         }
       } catch (Exception e) {
-        LOG.error("error when delete atomic move test file", e);
+        LOG.error("error when delete createLink test file", e);
       }
     }
   }
@@ -474,15 +474,15 @@ public class HardLink {
           "invalid arguments to createHardLink: link name is null");
     }
 
-    // if atomic move available try first, else fall back to shell command.
-    if (ATOMIC_MOVE_AVAILABLE.get()) {
+    // if createLink available try first, else fall back to shell command.
+    if (CREATE_LINK_SUPPORTED.get()) {
       try {
-        Path newFile = Files.move(file.toPath(), linkName.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        Path newFile = Files.createLink(linkName.toPath(), file.toPath());
         if (newFile.toFile().exists()) {
           return;
         }
       } catch (IOException e) {
-        LOG.error("error when create hard link use atomic move", e);
+        LOG.error("error when create hard link use createLink", e);
       }
     }
 
