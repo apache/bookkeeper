@@ -20,20 +20,21 @@ package org.apache.hadoop.fs;
 */
 package org.apache.bookkeeper.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class for creating hardlinks.
@@ -433,11 +434,17 @@ public class HardLink {
     } finally {
       try {
         if (tmpFile != null && tmpFile.exists()) {
-          tmpFile.delete();
+          boolean delete = tmpFile.delete();
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("tmp file deleted {}", delete);
+          }
         }
 
         if (renameFile != null && renameFile.exists()) {
-          renameFile.delete();
+          boolean delete = renameFile.delete();
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("rename file deleted {}", delete);
+          }
         }
       } catch (Exception e) {
         LOG.error("error when delete atomic move test file", e);
