@@ -396,7 +396,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
        }
       ```
 
-1. Method: PUT
+2. Method: PUT
     * Description: Set bookie readOnly state.
     * Body: 
         ```json
@@ -408,7 +408,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
      
         | Name | Type | Required | Description |
         |:-----|:-----|:---------|:------------|
-        | readOnly | Boolean | Yes |  Set bookie readOnly state. |
+        | readOnly | Boolean | Yes |  Whether bookie readOnly state. |
     * Response:
     
         | Code   | Description |
@@ -425,6 +425,45 @@ Currently all the HTTP endpoints could be divided into these 5 components:
 
 
 ## Auto recovery
+
+### Endpoint: /api/v1/autorecovery/status?enabled=<boolean>
+1. Method: GET
+    * Description:  Get autorecovery enable status with cluster.
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Response Body format:
+
+        ```json
+        {
+          "enabled": true
+        }
+        ```
+
+2. Method: PUT
+    * Description:  Get autorecovery enable status with cluster.
+    * Parameters:
+
+      | Name | Type | Required | Description                        |
+      |:-----|:---------|:-----------------------------------|:------------|
+      |enabled    | Boolean | Yes      | Whether autorecovery enable status |
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Body:
+        ```json
+        {
+          "enabled": true
+        }
+        ```
 
 ### Endpoint: /api/v1/autorecovery/bookie/
 1. Method: PUT
