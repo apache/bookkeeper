@@ -508,6 +508,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     for (int i = 0; i < requestsCount; i++) {
                         ForceWriteRequest req = localRequests[i];
                         numEntriesInLastForceWrite += req.process(writeHandlers);
+                        localRequests[i] = null;
                         req.recycle();
                     }
 
@@ -517,7 +518,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             (ObjectProcedure<? super BookieRequestHandler>)
                                     BookieRequestHandler::flushPendingResponse);
                     writeHandlers.clear();
-
                 } catch (IOException ioe) {
                     LOG.error("I/O exception in ForceWrite thread", ioe);
                     running = false;
@@ -985,7 +985,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
-
                     logId = logId + 1;
                     journalIds = listJournalIds(journalDirectory, null);
                     Long replaceLogId = fileChannelProvider.supportReuseFile() && journalReuseFiles
@@ -1036,12 +1035,18 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     dequeueStartTime = MathUtils.nowInNano();
 
                     if (localQueueEntriesLen > 0) {
-                        qe = localQueueEntries[localQueueEntriesIdx++];
+                        qe = localQueueEntries[localQueueEntriesIdx];
+                        localQueueEntries[localQueueEntriesIdx++] = null;
                         journalStats.getJournalQueueSize().dec();
                         journalStats.getJournalQueueStats()
                                 .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                     }
-
+                } else {
+                    journalStats.getJournalQueueSize().dec();
+                    journalStats.getJournalQueueStats()
+                            .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+                }
+                if (numEntriesToFlush > 0) {
                     boolean shouldFlush = false;
                     // We should issue a forceWrite if any of the three conditions below holds good
                     // 1. If the oldest pending entry has been pending for longer than the max wait time
@@ -1193,7 +1198,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 numEntriesToFlush++;
 
                 if (localQueueEntriesIdx < localQueueEntriesLen) {
-                    qe = localQueueEntries[localQueueEntriesIdx++];
+                    qe = localQueueEntries[localQueueEntriesIdx];
+                    localQueueEntries[localQueueEntriesIdx++] = null;
                 } else {
                     qe = null;
                 }
