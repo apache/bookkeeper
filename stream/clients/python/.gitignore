@@ -26,3 +26,5 @@ pip-selfcheck.json
 
 # egg-info
 **egg-info/
+
+**/bookkeeper-server-bin.tar.gz

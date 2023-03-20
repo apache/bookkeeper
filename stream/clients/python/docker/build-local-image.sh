@@ -15,30 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e -x -u
+set -e -x
 
-BK_HOME=/opt/bookkeeper
+CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+ROOT_DIR=$( cd "${CURRENT_DIR}/../../../../" && pwd )
+BK_TAR_BALL="bookkeeper-server-bin.tar.gz"
 
-cp -R /opt/bookkeeper_python_client/* /opt/bookkeeper
-cd ${BK_HOME}
+if [ -f "${CURRENT_DIR}/${BK_TAR_BALL}" ]; then
+  rm "${CURRENT_DIR}/${BK_TAR_BALL}"
+fi
 
-echo "starting bookkeeper standalone ..."
-${BK_HOME}/bin/standalone process up
+cp ${ROOT_DIR}/bookkeeper-dist/server/target/bookkeeper-server*-bin.tar.gz "${CURRENT_DIR}/${BK_TAR_BALL}"
 
-echo "installing nox ..."
-find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
-pip install nox-automation
-echo "installed nox."
-
-TABLE="test-java-updates"
-echo "creating test table ..."
-${BK_HOME}/bin/bkctl tables create -r 1 ${TABLE}
-for x in {0..20}; do
-    echo "write kv pair '${x}'"
-    ${BK_HOME}/bin/bkctl table put ${TABLE} java-key-$x java-value-$x;
-done
-echo "ingested kv pairs for testing."
-
-echo "run integration tests"
-nox --session integration
-echo "done integration tests"
+pushd "${CURRENT_DIR}"
+docker build --build-arg BK_TAR_BALL=${BK_TAR_BALL} -t apache/bookkeeper:local .
+popd

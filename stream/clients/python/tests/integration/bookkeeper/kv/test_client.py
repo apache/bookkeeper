@@ -16,7 +16,6 @@ from bookkeeper.common.exceptions import BadRequest
 from bookkeeper.proto import storage_pb2
 import grpc
 import logging
-import pytest
 import uuid
 
 __logger__ = logging.getLogger("bookkeeper.kv.test_client")
