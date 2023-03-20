@@ -273,8 +273,6 @@ public class MockBookieClient implements BookieClient {
 
         // Skip headers
         res.skipBytes(28);
-
-        rc.release();
         return res;
     }
 }
