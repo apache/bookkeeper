@@ -410,12 +410,13 @@ public class GarbageCollectorThread implements Runnable {
         compactor.cleanUpAndRecover();
 
         try {
-         // Extract all of the ledger ID's that comprise all of the entry logs
+            // gc inactive/deleted ledgers
+            // this is used in extractMetaFromEntryLogs to calculate the usage of entry log
+            doGcLedgers();
+
+            // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
             extractMetaFromEntryLogs();
-
-            // gc inactive/deleted ledgers
-            doGcLedgers();
 
             // gc entry logs
             doGcEntryLogs();
@@ -561,15 +562,20 @@ public class GarbageCollectorThread implements Runnable {
         MutableLong timeDiff = new MutableLong(0);
 
         entryLogMetaMap.forEach((entryLogId, meta) -> {
-            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
+            double usage = meta.getUsage();
+            if (conf.isUseTargetEntryLogSizeForGc() && usage < 1.0d) {
+                usage = (double) meta.getRemainingSize() / Math.max(meta.getTotalSize(), conf.getEntryLogSizeLimit());
+            }
+            int bucketIndex = calculateUsageIndex(numBuckets, usage);
             entryLogUsageBuckets[bucketIndex]++;
 
             if (timeDiff.getValue() < maxTimeMillis) {
                 end.setValue(System.currentTimeMillis());
                 timeDiff.setValue(end.getValue() - start);
             }
-            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
-                    || !running) {
+            if ((usage >= threshold
+                || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
+                || !running)) {
                 // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;

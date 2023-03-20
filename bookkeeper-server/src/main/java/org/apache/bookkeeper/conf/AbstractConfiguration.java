@@ -1129,8 +1129,17 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Return the configured leak detection policy for the allocator.
      */
     public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
-        return LeakDetectionPolicy
-                .valueOf(this.getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString()));
+        //see: https://lists.apache.org/thread/d3zw8bxhlg0wxfhocyjglq0nbxrww3sg
+        String nettyLevelStr = System.getProperty("io.netty.leakDetectionLevel", LeakDetectionPolicy.Disabled.name());
+        nettyLevelStr = System.getProperty("io.netty.leakDetection.level", nettyLevelStr);
+        String bkLevelStr = getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.name());
+        LeakDetectionPolicy nettyLevel = LeakDetectionPolicy.parseLevel(nettyLevelStr);
+        LeakDetectionPolicy bkLevel = LeakDetectionPolicy.parseLevel(bkLevelStr);
+        if (nettyLevel.ordinal() >= bkLevel.ordinal()) {
+            return nettyLevel;
+        } else {
+            return bkLevel;
+        }
     }
 
     /**
