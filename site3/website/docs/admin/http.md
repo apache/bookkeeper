@@ -22,9 +22,9 @@ Currently all the HTTP endpoints could be divided into these 5 components:
 * Description: Get heartbeat status for a specific bookie
 * Response: 
 
-| Code   | Description |
-|:-------|:------------|
-|200 | Successful operation |
+    | Code   | Description |
+    |:-------|:------------|
+    |200 | Successful operation |
 
 ## Config
 
@@ -388,7 +388,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
     * Response:
 
       | Code   | Description |
-              |:-------|:------------|
+      |:-------|:------------|
       |200 | Successful operation |
       |403 | Permission denied |
       |404 | Not found |
@@ -398,7 +398,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
     * Response:
 
       | Code   | Description |
-              |:-------|:------------|
+      |:-------|:------------|
       |200 | Successful operation |
       |403 | Permission denied |
       |404 | Not found |
@@ -424,7 +424,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
     * Response:
 
       | Code   | Description |
-                    |:-------|:------------|
+      |:-------|:------------|
       |200 | Successful operation |
       |403 | Permission denied |
       |404 | Not found |
