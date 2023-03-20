@@ -79,22 +79,6 @@ public class ProtocolBenchmark {
         this.reqEnDeV3 = new RequestEnDecoderV3(null);
     }
 
-
-    @Benchmark
-    public void testAddEntryV2() throws Exception {
-        ByteBufList list = ByteBufList.get(entry.retainedSlice());
-        BookieProtocol.AddRequest req = BookieProtocol.AddRequest.create(
-                BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                ledgerId,
-                entryId,
-                flags,
-                masterKey,
-                list);
-        Object res = this.reqEnDeV2.encode(req, ByteBufAllocator.DEFAULT);
-        ReferenceCountUtil.release(res);
-        ReferenceCountUtil.release(list);
-    }
-
     @Benchmark
     public void testAddEntryV3() throws Exception {
         // Build the request and calculate the total size to be included in the packet.

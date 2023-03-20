@@ -24,11 +24,14 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.proto.BookieProtoEncoding;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
@@ -97,14 +100,76 @@ public abstract class DigestManager {
      * @param data
      * @return
      */
-    public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
-            ByteBuf data) {
-        ByteBuf headersBuffer;
+    public ReferenceCounted computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
+                                                              ByteBuf data, byte[] masterKey, int flags) {
         if (this.useV2Protocol) {
-            headersBuffer = allocator.buffer(METADATA_LENGTH + macCodeLength);
+            return computeDigestAndPackageForSendingV2(entryId, lastAddConfirmed, length, data, masterKey, flags);
         } else {
-            headersBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength);
+            return computeDigestAndPackageForSendingV3(entryId, lastAddConfirmed, length, data);
         }
+    }
+
+    private ReferenceCounted computeDigestAndPackageForSendingV2(long entryId, long lastAddConfirmed, long length,
+                                                                 ByteBuf data, byte[] masterKey, int flags) {
+        boolean isSmallEntry = data.readableBytes() < BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD;
+
+        int headersSize = 4 // Request header
+                        + BookieProtocol.MASTER_KEY_LENGTH // for the master key
+                        + METADATA_LENGTH  //
+                        + macCodeLength;
+        int payloadSize = data.readableBytes();
+        int bufferSize = 4 + headersSize + (isSmallEntry ? payloadSize : 0);
+
+        ByteBuf buf = allocator.buffer(bufferSize, bufferSize);
+        buf.writeInt(headersSize + payloadSize);
+        buf.writeInt(
+                BookieProtocol.PacketHeader.toInt(
+                        BookieProtocol.CURRENT_PROTOCOL_VERSION, BookieProtocol.ADDENTRY, (short) flags));
+        buf.writeBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+
+        // The checksum is computed on the next part of the buffer only
+        buf.readerIndex(buf.writerIndex());
+        buf.writeLong(ledgerId);
+        buf.writeLong(entryId);
+        buf.writeLong(lastAddConfirmed);
+        buf.writeLong(length);
+
+        // Compute checksum over the headers
+        int digest = update(0, buf, buf.readerIndex(), buf.readableBytes());
+
+        // don't unwrap slices
+        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
+                ? data.unwrap() : data;
+        ReferenceCountUtil.retain(unwrapped);
+        ReferenceCountUtil.safeRelease(data);
+
+        if (unwrapped instanceof CompositeByteBuf) {
+            CompositeByteBuf cbb = (CompositeByteBuf) unwrapped;
+            for (int i = 0; i < cbb.numComponents(); i++) {
+                ByteBuf b = cbb.component(i);
+                digest = update(digest, b, b.readerIndex(), b.readableBytes());
+            }
+        } else {
+            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
+        }
+
+        populateValueAndReset(digest, buf);
+
+        // Reset the reader index to the beginning
+        buf.readerIndex(0);
+
+        if (isSmallEntry) {
+            buf.writeBytes(unwrapped);
+            unwrapped.release();
+            return buf;
+        } else {
+            return ByteBufList.get(buf, unwrapped);
+        }
+    }
+
+    private ByteBufList computeDigestAndPackageForSendingV3(long entryId, long lastAddConfirmed, long length,
+                                                            ByteBuf data) {
+        ByteBuf headersBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength);
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(entryId);
         headersBuffer.writeLong(lastAddConfirmed);

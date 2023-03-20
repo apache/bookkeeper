@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +39,6 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ class PendingAddOp implements WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
-    ByteBufList toSend;
+    ReferenceCounted toSend;
     AddCallbackWithLatency cb;
     Object ctx;
     long entryId;
@@ -242,9 +242,10 @@ class PendingAddOp implements WriteCallback {
         checkNotNull(lh);
         checkNotNull(lh.macManager);
 
+        int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
         this.toSend = lh.macManager.computeDigestAndPackageForSending(
                 entryId, lh.lastAddConfirmed, currentLedgerLength,
-                payload);
+                payload, lh.ledgerKey, flags);
         // ownership of RefCounted ByteBuf was passed to computeDigestAndPackageForSending
         payload = null;
 

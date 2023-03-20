@@ -27,8 +27,8 @@ import java.util.function.Function;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
+import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Versioned;
 
 /**
@@ -48,8 +48,8 @@ public class ClientUtil {
             int offset, int len) throws GeneralSecurityException {
         DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32,
                 UnpooledByteBufAllocator.DEFAULT, true);
-        return ByteBufList.coalesce(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
-                Unpooled.wrappedBuffer(data, offset, len)));
+        return MockBookieClient.copyDataWithSkipHeader(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
+            length, Unpooled.wrappedBuffer(data, offset, len), new byte[20], 0));
     }
 
     /**

@@ -32,6 +32,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -288,7 +289,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                          final long ledgerId,
                          final byte[] masterKey,
                          final long entryId,
-                         final ByteBufList toSend,
+                         final ReferenceCounted toSend,
                          final WriteCallback cb,
                          final Object ctx,
                          final int options,
@@ -357,7 +358,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
 
         private BookieClientImpl bookieClient;
-        private ByteBufList toSend;
+        private ReferenceCounted toSend;
         private long ledgerId;
         private long entryId;
         private BookieId addr;
@@ -369,7 +370,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private EnumSet<WriteFlag> writeFlags;
 
         static ChannelReadyForAddEntryCallback create(
-                BookieClientImpl bookieClient, ByteBufList toSend, long ledgerId,
+                BookieClientImpl bookieClient, ReferenceCounted toSend, long ledgerId,
                 long entryId, BookieId addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
                 EnumSet<WriteFlag> writeFlags) {
