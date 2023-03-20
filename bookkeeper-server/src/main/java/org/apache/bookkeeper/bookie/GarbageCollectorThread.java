@@ -751,6 +751,7 @@ public class GarbageCollectorThread implements Runnable {
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
+                    LOG.info("Entry log file {} is empty, delete it from disk.", Long.toHexString(entryLogId));
                     entryLogger.removeEntryLog(entryLogId);
                     // remove it from entrylogmetadata-map if it is present in
                     // the map
