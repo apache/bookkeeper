@@ -271,8 +271,21 @@ public class MockBookieClient implements BookieClient {
             res = ByteBufList.coalesce((ByteBufList) rc);
         }
 
+        return res;
+    }
+
+    public static ByteBuf copyDataWithSkipHeader(ReferenceCounted rc) {
+        ByteBuf res;
+        if (rc instanceof ByteBuf) {
+            res = Unpooled.copiedBuffer((ByteBuf) rc);
+        } else {
+            res = ByteBufList.coalesce((ByteBufList) rc);
+        }
+
         // Skip headers
         res.skipBytes(28);
+        rc.release();
+
         return res;
     }
 }

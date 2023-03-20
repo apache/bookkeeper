@@ -48,8 +48,8 @@ public class ClientUtil {
             int offset, int len) throws GeneralSecurityException {
         DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32,
                 UnpooledByteBufAllocator.DEFAULT, true);
-        return MockBookieClient.copyData(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
-                Unpooled.wrappedBuffer(data, offset, len), new byte[20], 0));
+        return MockBookieClient.copyDataWithSkipHeader(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
+            length, Unpooled.wrappedBuffer(data, offset, len), new byte[20], 0));
     }
 
     /**
