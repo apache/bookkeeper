@@ -327,6 +327,15 @@ public class BookieProtoEncoding {
             buf.writeLong(req.getLedgerId());
             buf.writeLong(req.getEntryId());
         }
+
+        public static void serializeAddResponseInto(int rc, byte version, byte opCode,
+                                                    long ledgerId, long entryId, ByteBuf buf) {
+            buf.writeInt(RESPONSE_HEADERS_SIZE); // Frame size
+            buf.writeInt(PacketHeader.toInt(version, opCode, (short) 0));
+            buf.writeInt(rc); // rc-code
+            buf.writeLong(ledgerId);
+            buf.writeLong(entryId);
+        }
     }
 
     /**

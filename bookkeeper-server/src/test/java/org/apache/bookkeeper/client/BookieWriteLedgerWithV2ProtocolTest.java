@@ -18,34 +18,18 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.processor;
+package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.proto.BookieRequestHandler;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 
 /**
- * A request processor that is used for processing requests at bookie side.
+ * Testing ledger write entry cases.
  */
-public interface RequestProcessor extends AutoCloseable {
+public class BookieWriteLedgerWithV2ProtocolTest extends
+    BookieWriteLedgerTest implements AddCallback {
 
-    /**
-     * Close the request processor.
-     */
-    @Override
-    void close();
-
-    /**
-     * Process request.
-     *
-     * @param r
-     *          request to process
-     * @param channel
-     *          channel received the given request <i>r</i>
-     */
-    void processRequest(Object r, BookieRequestHandler channel);
-
-    /**
-     * Flush any pending response staged on all the client connections.
-     */
-    void flushPendingResponses();
-
+    public BookieWriteLedgerWithV2ProtocolTest() {
+        super();
+        baseClientConf.setUseV2WireProtocol(true);
+    }
 }

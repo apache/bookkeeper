@@ -45,7 +45,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     public WriteEntryProcessorV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
         super(request, requestHandler, requestProcessor);
-        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel(), 1);
     }
 
     // Returns null if there is no exception thrown

@@ -50,7 +50,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                                              BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
         wep.init(request, requestHandler, requestProcessor);
-        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel(), 1);
         return wep;
     }
 
@@ -154,4 +154,5 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             return new WriteEntryProcessor(handle);
         }
     };
+
 }

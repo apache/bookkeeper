@@ -35,6 +35,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -205,21 +206,21 @@ public class BookieRequestProcessor implements RequestProcessor {
         readsSemaphore = maxReads > 0 ? new Semaphore(maxReads, true) : null;
     }
 
-    protected void onAddRequestStart(Channel channel) {
+    protected void onAddRequestStart(Channel channel, int permits) {
         if (addsSemaphore != null) {
-            if (!addsSemaphore.tryAcquire()) {
+            if (!addsSemaphore.tryAcquire(permits)) {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
                 LOG.info("Too many add requests in progress, disabling autoread on channel {}", channel);
                 requestStats.blockAddRequest();
-                addsSemaphore.acquireUninterruptibly();
+                addsSemaphore.acquireUninterruptibly(permits);
                 channel.config().setAutoRead(true);
                 final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
                 LOG.info("Re-enabled autoread on channel {} after AddRequest delay of {} nanos", channel, delayNanos);
                 requestStats.unblockAddRequest(delayNanos);
             }
         }
-        requestStats.trackAddRequest();
+        requestStats.trackAddRequest(permits);
     }
 
     protected void onAddRequestFinish() {
@@ -305,6 +306,14 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     @Override
     public void processRequest(Object msg, BookieRequestHandler requestHandler) {
+        if (msg instanceof List) {
+            if (!((List<?>) msg).isEmpty()
+                && ((List<?>) msg).get(0) instanceof BookieProtocol.ParsedAddRequest) {
+                processBatchAddRequest((List<BookieProtocol.ParsedAddRequest>) msg, requestHandler);
+            }
+            return;
+        }
+
         Channel channel = requestHandler.ctx().channel();
         // If we can decode this packet as a Request protobuf packet, process
         // it as a version 3 packet. Else, just use the old protocol.
@@ -728,5 +737,29 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     public void handleNonWritableChannel(Channel channel) {
         onResponseTimeout.accept(channel);
+    }
+
+    private void processBatchAddRequest(List<BookieProtocol.ParsedAddRequest> msgs,
+                                        BookieRequestHandler requestHandler) {
+        WriteBatchEntryProcessor write = WriteBatchEntryProcessor.create(msgs, requestHandler, this);
+        if (writeThreadPool == null) {
+            write.run();
+        } else {
+            try {
+                writeThreadPool.execute(write);
+            } catch (RejectedExecutionException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to process request to add entry. Too many pending requests ", e);
+                }
+                getRequestStats().getAddEntryRejectedCounter().addCount(msgs.size());
+
+                for (BookieProtocol.ParsedAddRequest request : msgs) {
+                    write.sendWriteReqResponse(BookieProtocol.ETOOMANYREQUESTS,
+                        ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, request),
+                        requestStats.getAddRequestStats());
+                    request.recycle();
+                }
+            }
+        }
     }
 }

@@ -46,6 +46,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
+import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
+import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.common.util.MemoryLimitController;
@@ -644,7 +646,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
-    final BlockingQueue<QueueEntry> queue;
+    final BatchedBlockingQueue<QueueEntry> queue;
     final BlockingQueue<ForceWriteRequest> forceWriteRequests;
 
     volatile boolean running = true;
@@ -675,7 +677,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
         } else {
-            queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+            queue = new BatchedArrayBlockingQueue<>(conf.getJournalQueueSize());
             forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
         }
 
@@ -891,6 +893,26 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         logAddEntry(ledgerId, entryId, entry, ackBeforeSync, cb, ctx);
+    }
+
+    public void logAddEntries(List<ByteBuf> entries, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+        throws InterruptedException {
+        long reserveMemory = 0;
+        QueueEntry[] queueEntries = new QueueEntry[entries.size()];
+        long start = MathUtils.nowInNano();
+        for (int i = 0; i < entries.size(); ++i) {
+            ByteBuf entry = entries.get(i);
+            long ledgerId = entry.getLong(entry.readerIndex());
+            long entryId = entry.getLong(entry.readerIndex() + 8);
+            entry.retain();
+            reserveMemory += entry.readableBytes();
+            queueEntries[i] = QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId, cb, ctx,
+                start, journalStats.getJournalAddEntryStats(), callbackTime);
+        }
+
+        memoryLimitController.reserveMemory(reserveMemory);
+        journalStats.getJournalQueueSize().addCount(entries.size());
+        queue.putAll(queueEntries, 0, queueEntries.length);
     }
 
     @VisibleForTesting

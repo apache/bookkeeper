@@ -218,11 +218,11 @@ public interface BookieProtocol {
             return opCode;
         }
 
-        long getLedgerId() {
+        public long getLedgerId() {
             return ledgerId;
         }
 
-        long getEntryId() {
+        public long getEntryId() {
             return entryId;
         }
 
@@ -234,7 +234,7 @@ public interface BookieProtocol {
             return masterKey != null;
         }
 
-        byte[] getMasterKey() {
+        public byte[] getMasterKey() {
             assert hasMasterKey();
             return masterKey;
         }
@@ -270,7 +270,7 @@ public interface BookieProtocol {
             return add;
         }
 
-        ByteBuf getData() {
+        public ByteBuf getData() {
             // We need to have different ByteBufList instances for each bookie write
             return data;
         }
@@ -279,7 +279,7 @@ public interface BookieProtocol {
             return (flags & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD;
         }
 
-        void release() {
+        public void release() {
             ReferenceCountUtil.release(data);
         }
 

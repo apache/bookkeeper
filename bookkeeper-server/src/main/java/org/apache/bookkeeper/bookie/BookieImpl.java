@@ -45,6 +45,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
@@ -70,7 +71,10 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.RequestStats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
@@ -81,6 +85,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +131,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
+    private RequestProcessor requestProcessor;
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -924,8 +930,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      * Add an entry to a ledger as specified by handle.
      */
     private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
-                                  boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException, InterruptedException {
+                                  boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey,
+                                  boolean writeJournal) throws IOException, BookieException, InterruptedException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
 
@@ -955,7 +961,10 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
+
+        if (writeJournal) {
+            getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
+        }
     }
 
     /**
@@ -973,7 +982,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx, masterKey);
+                addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx, masterKey, true);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1067,7 +1076,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, ackBeforeSync, cb, ctx, masterKey);
+                addEntryInternal(handle, entry, ackBeforeSync, cb, ctx, masterKey, true);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1084,6 +1093,82 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
 
             ReferenceCountUtil.release(entry);
+        }
+    }
+
+    public void addEntries(List<ParsedAddRequest> requests, boolean ackBeforeSync,
+                         WriteCallback cb, Object ctx, RequestStats requestStats) throws InterruptedException {
+        long requestNans = MathUtils.nowInNano();
+        boolean hasFailedRequests = false;
+        Map<Pair<Long, byte[]>, LedgerDescriptor> handleMap = new HashMap<>();
+        ListIterator<ParsedAddRequest> iter = requests.listIterator();
+        while (iter.hasNext()) {
+            ParsedAddRequest request = iter.next();
+            int rc = BookieProtocol.EOK;
+            try {
+                Pair<Long, byte[]> ledgerIdMasterKey = Pair.of(request.getLedgerId(), request.getMasterKey());
+                LedgerDescriptor handle = handleMap.get(ledgerIdMasterKey);
+                if (handle == null) {
+                    handle = getLedgerForEntry(request.getData(), request.getMasterKey());
+                    handleMap.put(ledgerIdMasterKey, handle);
+                }
+
+                synchronized (handle) {
+                    if (handle.isFenced()) {
+                        throw BookieException.create(BookieException.Code.LedgerFencedException);
+                    }
+
+                    addEntryInternal(handle, request.getData(), ackBeforeSync,
+                        cb, ctx, request.getMasterKey(), false);
+                }
+            } catch (BookieException.OperationRejectedException e) {
+                requestStats.getAddEntryRejectedCounter().inc();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Operation rejected while writing {} ", request, e);
+                }
+                rc = BookieProtocol.ETOOMANYREQUESTS;
+            } catch (IOException e) {
+                LOG.error("Error writing {}", request, e);
+                rc = BookieProtocol.EIO;
+            } catch (BookieException.LedgerFencedException lfe) {
+                LOG.error("Attempt to write to fenced ledger ", lfe);
+                rc = BookieProtocol.EFENCED;
+            } catch (BookieException e) {
+                LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
+                rc = BookieProtocol.EUA;
+            } catch (Throwable t) {
+                LOG.error("Unexpected exception while writing {}@{} : {} ",
+                    request.getLedgerId(), request.getEntryId(), t.getMessage(), t);
+                rc = BookieProtocol.EBADREQ;
+            }
+
+            if (rc != BookieProtocol.EOK) {
+                hasFailedRequests = true;
+                requestStats.getAddEntryStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(requestNans), TimeUnit.NANOSECONDS);
+                cb.writeComplete(rc, request.getLedgerId(), request.getEntryId(), null, ctx);
+                iter.remove();
+                request.release();
+                request.recycle();
+            }
+        }
+        handleMap.clear();
+
+        try {
+            if (hasFailedRequests && requestProcessor != null) {
+                requestProcessor.flushPendingResponses();
+            }
+
+            if (writeDataToJournal && !requests.isEmpty()) {
+                List<ByteBuf> entries = requests.stream()
+                    .map(ParsedAddRequest::getData).collect(Collectors.toList());
+                getJournal(requests.get(0).getLedgerId()).logAddEntries(entries, ackBeforeSync, cb, ctx);
+            }
+        } finally {
+            requests.forEach(t -> {
+                t.release();
+                t.recycle();
+            });
         }
     }
 
@@ -1288,5 +1373,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         for (Journal journal : journals) {
             journal.setRequestProcessor(requestProcessor);
         }
+        this.requestProcessor = requestProcessor;
     }
 }

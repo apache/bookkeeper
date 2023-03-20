@@ -125,6 +125,7 @@ public class BookieWriteLedgerTest extends
          */
         baseConf.setSkipListSizeLimit(4 * 1024 * 1024);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setUseV2WireProtocol(true);
     }
 
     /**
@@ -1442,6 +1443,32 @@ public class BookieWriteLedgerTest extends
         lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
         assertEquals(lh.getLedgerMetadata().getMetadataFormatVersion(), LedgerMetadataSerDe.METADATA_FORMAT_VERSION_2);
         lh.close();
+    }
+
+    @Test
+    public void testReadWriteEntry() throws Exception {
+        lh = bkc.createLedgerAdv(3, 3, 3, digestType, ledgerPassword);
+        numEntriesToWrite = 15000;
+        List<byte[]> entries = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(numEntriesToWrite);
+        for (int i = 0; i < numEntriesToWrite; ++i) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            entries.add(entry.array());
+            lh.asyncAddEntry(i, entry.array(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    assertEquals(0, rc);
+                    latch.countDown();
+                }
+            }, null);
+        }
+        latch.await();
+
+        readEntries(lh, entries);
+        lh.close();
+
     }
 
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {
