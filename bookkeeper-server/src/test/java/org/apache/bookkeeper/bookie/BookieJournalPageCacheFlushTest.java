@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
+import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieId;
@@ -71,20 +72,20 @@ public class BookieJournalPageCacheFlushTest {
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     @SuppressWarnings("unchecked")
-    private LinkedBlockingQueue<ForceWriteRequest> enableForceWriteThreadSuspension(
+    private BatchedArrayBlockingQueue<ForceWriteRequest> enableForceWriteThreadSuspension(
             CountDownLatch forceWriteThreadSuspendedLatch,
             Journal journal) throws InterruptedException {
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
+        BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue = new BatchedArrayBlockingQueue<>(10000);
+        BatchedArrayBlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BatchedArrayBlockingQueue.class);
         doAnswer((Answer) (InvocationOnMock iom) -> {
             supportQueue.put(iom.getArgument(0));
             return null;
         }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
-        when(forceWriteRequests.take()).thenAnswer(i -> {
-            // suspend the force write thread
+        doAnswer((Answer) (InvocationOnMock iom) -> {
             forceWriteThreadSuspendedLatch.await();
-            return supportQueue.take();
-        });
+            ForceWriteRequest[] array = iom.getArgument(0);
+            return supportQueue.takeAll(array);
+        }).when(forceWriteRequests).takeAll(any());
         Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
         return supportQueue;
     }
@@ -108,7 +109,7 @@ public class BookieJournalPageCacheFlushTest {
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
+        BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
         journal.start();
 
@@ -175,7 +176,7 @@ public class BookieJournalPageCacheFlushTest {
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
+        BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
         journal.start();
 
@@ -238,7 +239,7 @@ public class BookieJournalPageCacheFlushTest {
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
+        BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
         journal.start();
 
