@@ -84,8 +84,8 @@ public class MockBookies {
         DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0],
                 DataFormats.LedgerMetadataFormat.DigestType.CRC32C,
                 UnpooledByteBufAllocator.DEFAULT, false);
-        return ByteBufList.coalesce(digestManager.computeDigestAndPackageForSending(
-                entryId, lac, 0, Unpooled.buffer(10)));
+        return ByteBufList.coalesce((ByteBufList) digestManager.computeDigestAndPackageForSending(
+                entryId, lac, 0, Unpooled.buffer(10), new byte[20], 0));
 
     }
 

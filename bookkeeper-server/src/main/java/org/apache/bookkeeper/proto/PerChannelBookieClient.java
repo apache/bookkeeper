@@ -62,6 +62,7 @@ import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
@@ -771,7 +772,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      * @param writeFlags
      *          WriteFlags
      */
-    void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
+    void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ReferenceCounted toSend, WriteCallback cb,
                   Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
         CompletionKey completionKey = null;
@@ -782,9 +783,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return;
             }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
-            request = BookieProtocol.AddRequest.create(
-                    BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
-                    (short) options, masterKey, toSend);
+
+            if (toSend instanceof ByteBuf) {
+                request = ((ByteBuf) toSend).retainedDuplicate();
+            } else {
+                request = ByteBufList.clone((ByteBufList) toSend);
+            }
         } else {
             final long txnId = getTxnId();
             completionKey = new V3CompletionKey(txnId, OperationType.ADD_ENTRY);
@@ -799,11 +803,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             ByteString body = null;
-            if (toSend.hasArray()) {
-                body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+            ByteBufList bufToSend = (ByteBufList) toSend;
+
+            if (bufToSend.hasArray()) {
+                body = UnsafeByteOperations.unsafeWrap(bufToSend.array(), bufToSend.arrayOffset(),
+                        bufToSend.readableBytes());
             } else {
-                for (int i = 0; i < toSend.size(); i++) {
-                    ByteString piece = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(i).nioBuffer());
+                for (int i = 0; i < bufToSend.size(); i++) {
+                    ByteString piece = UnsafeByteOperations.unsafeWrap(bufToSend.getBuffer(i).nioBuffer());
                     // use ByteString.concat to avoid byte[] allocation when toSend has multiple ByteBufs
                     body = (body == null) ? piece : body.concat(piece);
                 }
@@ -1143,14 +1150,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
-
-            // If the request is a V2 add request, we retained the data's reference when creating the AddRequest
-            // object. To avoid the object leak, we need to release the reference if we met any errors
-            // before sending it.
-            if (request instanceof BookieProtocol.AddRequest) {
-                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) request;
-                ar.recycle();
-            }
             return;
         }
 

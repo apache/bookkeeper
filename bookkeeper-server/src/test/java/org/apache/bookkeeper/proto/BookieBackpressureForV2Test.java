@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import org.apache.bookkeeper.client.BookKeeperTestClient;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Before;
 
 /**
@@ -30,6 +32,8 @@ public class BookieBackpressureForV2Test extends BookieBackpressureTest {
     public void setUp() throws Exception {
         super.setUp();
         baseClientConf.setUseV2WireProtocol(true);
+        bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
+
         // the backpressure will bloc the read response, disable it to let it use backpressure mechanism
         confByIndex(0).setReadWorkerThreadsThrottlingEnabled(false);
     }

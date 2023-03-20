@@ -20,7 +20,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.proto.MockBookieClient;
 
 /**
  * Adapter for tests to get the public access from LedgerHandle for its default
@@ -28,8 +28,9 @@ import org.apache.bookkeeper.util.ByteBufList;
  */
 public class LedgerHandleAdapter {
 
-    public static ByteBufList toSend(LedgerHandle lh, long entryId, ByteBuf data) {
-        return lh.getDigestManager().computeDigestAndPackageForSending(entryId, lh.getLastAddConfirmed(),
-                lh.addToLength(data.readableBytes()), data);
+    public static ByteBuf toSend(LedgerHandle lh, long entryId, ByteBuf data) {
+        return MockBookieClient.copyData(lh.getDigestManager()
+                .computeDigestAndPackageForSending(entryId, lh.getLastAddConfirmed(),
+                        lh.addToLength(data.readableBytes()), data, new byte[20], 0));
     }
 }

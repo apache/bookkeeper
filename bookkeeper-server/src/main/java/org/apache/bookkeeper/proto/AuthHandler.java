@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.auth.AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME;
 
 import com.google.protobuf.ByteString;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -39,6 +40,7 @@ import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -358,8 +360,10 @@ class AuthHandler {
                     } else {
                         waitingForAuth.add(msg);
                     }
+                } else if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
+                    waitingForAuth.add(msg);
                 } else {
-                    LOG.info("dropping write of message {}", msg);
+                    LOG.info("[{}] dropping write of message {}", ctx.channel(), msg);
                 }
             }
         }

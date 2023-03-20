@@ -23,8 +23,10 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Test;
@@ -57,17 +59,20 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
             public void initiate() {
                 for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
                     final int index = i;
-                    ByteBufList buffer = lh.getDigestManager().computeDigestAndPackageForSending(
+                    ReferenceCounted toSend = lh.getDigestManager().computeDigestAndPackageForSending(
                             2,
                             1,
                             data.length,
-                            Unpooled.wrappedBuffer(data));
+                            Unpooled.wrappedBuffer(data),
+                            new byte[20],
+                            0);
+
                     bkc.scheduler.schedule(() -> {
                         readLacComplete(
                                 0,
                                 lh.getId(),
                                 null,
-                                Unpooled.copiedBuffer(buffer.toArray()),
+                                MockBookieClient.copyData(toSend),
                                 index);
 
                     }, 0, TimeUnit.SECONDS);
