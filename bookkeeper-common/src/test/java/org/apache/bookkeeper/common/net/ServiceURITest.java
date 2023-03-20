@@ -172,7 +172,8 @@ public class ServiceURITest {
 
     @Test
     public void testMultipleHostsSemiColonIPV6() {
-        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;[fec0:0:0:ffff::3]:2181" +
+                "/path/to/namespace";
         assertServiceUri(
                 serviceUri,
                 "bk",
@@ -196,7 +197,8 @@ public class ServiceURITest {
 
     @Test
     public void testMultipleHostsCommaIPV6() {
-        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181,[fec0:0:0:ffff::2]:2181,[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        String serviceUri = "bk://[fec0:0:0:ffff::1]:2181,[fec0:0:0:ffff::2]:2181,[fec0:0:0:ffff::3]:2181" +
+                "/path/to/namespace";
         assertServiceUri(
                 serviceUri,
                 "bk",
@@ -292,7 +294,8 @@ public class ServiceURITest {
 
     @Test
     public void testUserInfoWithMultipleHostsIPV6() {
-        String serviceUri = "bk://bookkeeper@[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;[fec0:0:0:ffff::3]:2181/path/to/namespace";
+        String serviceUri = "bk://bookkeeper@[fec0:0:0:ffff::1]:2181;[fec0:0:0:ffff::2]:2181;" +
+                "[fec0:0:0:ffff::3]:2181/path/to/namespace";
         assertServiceUri(
                 serviceUri,
                 "bk",
