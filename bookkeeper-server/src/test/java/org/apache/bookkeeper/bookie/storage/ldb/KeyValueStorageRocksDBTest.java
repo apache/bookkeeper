@@ -30,6 +30,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Test;
+import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.CompressionType;
@@ -52,6 +54,7 @@ public class KeyValueStorageRocksDBTest {
         assertEquals(64 * 1024 * 1024, options.writeBufferSize());
         assertEquals(4, options.maxWriteBufferNumber());
         assertEquals(256 * 1024 * 1024, options.maxBytesForLevelBase());
+        assertEquals(true, options.levelCompactionDynamicLevelBytes());
         rocksDB.close();
     }
 
@@ -76,6 +79,56 @@ public class KeyValueStorageRocksDBTest {
         assertEquals(CompressionType.LZ4_COMPRESSION, familyOptions.compressionType());
         assertEquals(1024, familyOptions.writeBufferSize());
         assertEquals(1, familyOptions.maxWriteBufferNumber());
+        assertEquals(true, familyOptions.levelCompactionDynamicLevelBytes());
         rocksDB.close();
+    }
+
+    @Test
+    public void testReadChecksumTypeFromBookieConfiguration() throws Exception {
+        ServerConfiguration configuration = new ServerConfiguration();
+        configuration.setEntryLocationRocksdbConf("entry_location_rocksdb.conf");
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-conf").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+            KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        assertNull(rocksDB.getColumnFamilyDescriptors());
+
+        Options options = (Options) rocksDB.getOptions();
+        assertEquals(ChecksumType.kxxHash, ((BlockBasedTableConfig) options.tableFormatConfig()).checksumType());
+    }
+
+    //@Test
+    public void testReadChecksumTypeFromConfigurationFile() throws Exception {
+        ServerConfiguration configuration = new ServerConfiguration();
+        URL url = getClass().getClassLoader().getResource("test_entry_location_rocksdb.conf");
+        configuration.setEntryLocationRocksdbConf(url.getPath());
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-file").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+            KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        assertNotNull(rocksDB.getColumnFamilyDescriptors());
+
+        List<ColumnFamilyDescriptor> columnFamilyDescriptorList = rocksDB.getColumnFamilyDescriptors();
+        ColumnFamilyOptions familyOptions = columnFamilyDescriptorList.get(0).getOptions();
+        // There is a bug in RocksDB, which can't load BlockedBasedTableConfig from Options file.
+        // https://github.com/facebook/rocksdb/issues/5297
+        // After the PR: https://github.com/facebook/rocksdb/pull/10826 merge, we can turn on this test.
+        assertEquals(ChecksumType.kxxHash, ((BlockBasedTableConfig) familyOptions.tableFormatConfig()).checksumType());
+    }
+
+    @Test
+    public void testLevelCompactionDynamicLevelBytesFromConfigurationFile() throws Exception {
+        ServerConfiguration configuration = new ServerConfiguration();
+        URL url = getClass().getClassLoader().getResource("conf/entry_location_rocksdb.conf");
+        configuration.setEntryLocationRocksdbConf(url.getPath());
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-file").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+                KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        assertNotNull(rocksDB.getColumnFamilyDescriptors());
+
+        List<ColumnFamilyDescriptor> columnFamilyDescriptorList = rocksDB.getColumnFamilyDescriptors();
+        ColumnFamilyOptions familyOptions = columnFamilyDescriptorList.get(0).getOptions();
+        assertEquals(true, familyOptions.levelCompactionDynamicLevelBytes());
     }
 }

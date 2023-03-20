@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
-import io.netty.channel.Channel;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -44,9 +43,9 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
     protected final GetListOfEntriesOfLedgerRequest getListOfEntriesOfLedgerRequest;
     protected final long ledgerId;
 
-    public GetListOfEntriesOfLedgerProcessorV3(Request request, Channel channel,
+    public GetListOfEntriesOfLedgerProcessorV3(Request request, BookieRequestHandler requestHandler,
             BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        super(request, requestHandler, requestProcessor);
         this.getListOfEntriesOfLedgerRequest = request.getGetListOfEntriesOfLedgerRequest();
         this.ledgerId = getListOfEntriesOfLedgerRequest.getLedgerId();
     }

@@ -116,6 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     protected static final String GC_ENTRYLOGMETADATA_CACHE_ENABLED = "gcEntryLogMetadataCacheEnabled";
     protected static final String GC_ENTRYLOG_METADATA_CACHE_PATH = "gcEntryLogMetadataCachePath";
+    protected static final String USE_TARGET_ENTRYLOG_SIZE_FOR_GC = "useTargetEntryLogSizeForGc";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -551,6 +552,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {
         this.setProperty(GC_ENTRYLOG_METADATA_CACHE_PATH, gcEntrylogMetadataCachePath);
+        return this;
+    }
+
+    public boolean isUseTargetEntryLogSizeForGc() {
+        return getBoolean(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, false);
+    }
+
+    public ServerConfiguration setUseTargetEntryLogSizeForGc(boolean useTargetEntryLogSizeForGc) {
+        this.setProperty(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, useTargetEntryLogSizeForGc);
         return this;
     }
 
@@ -1666,7 +1676,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of minor compaction
      */
     public double getMinorCompactionThreshold() {
-        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2f);
+        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2d);
     }
 
     /**
@@ -1694,7 +1704,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8d);
     }
 
     /**
@@ -2146,6 +2156,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          number of threads to handle journal callbacks.
      * @return server configuration
      */
+    @Deprecated
     public ServerConfiguration setNumJournalCallbackThreads(int numThreads) {
         setProperty(NUM_JOURNAL_CALLBACK_THREADS, numThreads);
         return this;
@@ -2156,6 +2167,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return the number of threads that handle journal callbacks.
      */
+    @Deprecated
     public int getNumJournalCallbackThreads() {
         return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
     }

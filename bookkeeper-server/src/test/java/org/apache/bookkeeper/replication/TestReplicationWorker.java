@@ -1178,6 +1178,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                         statsLogger.getCounter(ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
                 final Counter numLedgersReplicatedCounter =
                         statsLogger.getCounter(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+                final Counter numNotAdheringPlacementLedgersCounter = statsLogger
+                        .getCounter(ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
 
                 assertEquals("NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER",
                         1, numDeferLedgerLockReleaseOfFailedLedgerCounter.get().longValue());
@@ -1186,10 +1188,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                     assertFalse((boolean) result);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             0, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            0, numNotAdheringPlacementLedgersCounter.get().longValue());
+
                 } else {
                     assertTrue((boolean) result);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             1, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            1, numNotAdheringPlacementLedgersCounter.get().longValue());
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -1367,7 +1374,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
         final AuditorPeriodicCheckTest.TestAuditor auditor = new AuditorPeriodicCheckTest.TestAuditor(
-                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger);
+                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger, null);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0,

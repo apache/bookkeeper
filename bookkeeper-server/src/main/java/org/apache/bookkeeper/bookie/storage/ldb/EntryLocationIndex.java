@@ -48,6 +48,7 @@ public class EntryLocationIndex implements Closeable {
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
     private final EntryLocationIndexStats stats;
+    private boolean isCompacting;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
@@ -187,6 +188,23 @@ public class EntryLocationIndex implements Closeable {
         // We need to find all the LedgerIndexPage records belonging to one specific
         // ledgers
         deletedLedgers.add(ledgerId);
+    }
+
+    public String getEntryLocationDBPath() {
+        return locationsDb.getDBPath();
+    }
+
+    public void compact() throws IOException {
+        try {
+            isCompacting = true;
+            locationsDb.compact();
+        } finally {
+            isCompacting = false;
+        }
+    }
+
+    public boolean isCompacting() {
+        return isCompacting;
     }
 
     public void removeOffsetFromDeletedLedgers() throws IOException {

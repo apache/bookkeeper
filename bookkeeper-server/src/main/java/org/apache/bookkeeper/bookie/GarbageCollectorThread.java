@@ -218,7 +218,7 @@ public class GarbageCollectorThread implements Runnable {
 
         this.throttler = new AbstractLogCompactor.Throttler(conf);
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
-            if (minorCompactionThreshold > 1.0f) {
+            if (minorCompactionThreshold > 1.0d) {
                 throw new IOException("Invalid minor compaction threshold "
                                     + minorCompactionThreshold);
             }
@@ -230,16 +230,16 @@ public class GarbageCollectorThread implements Runnable {
         }
 
         if (isForceAllowCompaction) {
-            if (minorCompactionThreshold > 0 && minorCompactionThreshold < 1.0f) {
+            if (minorCompactionThreshold > 0 && minorCompactionThreshold < 1.0d) {
                 isForceMinorCompactionAllow = true;
             }
-            if (majorCompactionThreshold > 0 && majorCompactionThreshold < 1.0f) {
+            if (majorCompactionThreshold > 0 && majorCompactionThreshold < 1.0d) {
                 isForceMajorCompactionAllow = true;
             }
         }
 
         if (majorCompactionInterval > 0 && majorCompactionThreshold > 0) {
-            if (majorCompactionThreshold > 1.0f) {
+            if (majorCompactionThreshold > 1.0d) {
                 throw new IOException("Invalid major compaction threshold "
                                     + majorCompactionThreshold);
             }
@@ -410,12 +410,13 @@ public class GarbageCollectorThread implements Runnable {
         compactor.cleanUpAndRecover();
 
         try {
-         // Extract all of the ledger ID's that comprise all of the entry logs
+            // gc inactive/deleted ledgers
+            // this is used in extractMetaFromEntryLogs to calculate the usage of entry log
+            doGcLedgers();
+
+            // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
             extractMetaFromEntryLogs();
-
-            // gc inactive/deleted ledgers
-            doGcLedgers();
 
             // gc entry logs
             doGcEntryLogs();
@@ -561,15 +562,20 @@ public class GarbageCollectorThread implements Runnable {
         MutableLong timeDiff = new MutableLong(0);
 
         entryLogMetaMap.forEach((entryLogId, meta) -> {
-            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
+            double usage = meta.getUsage();
+            if (conf.isUseTargetEntryLogSizeForGc() && usage < 1.0d) {
+                usage = (double) meta.getRemainingSize() / Math.max(meta.getTotalSize(), conf.getEntryLogSizeLimit());
+            }
+            int bucketIndex = calculateUsageIndex(numBuckets, usage);
             entryLogUsageBuckets[bucketIndex]++;
 
             if (timeDiff.getValue() < maxTimeMillis) {
                 end.setValue(System.currentTimeMillis());
                 timeDiff.setValue(end.getValue() - start);
             }
-            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
-                    || !running) {
+            if ((usage >= threshold
+                || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
+                || !running)) {
                 // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;

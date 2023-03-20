@@ -301,25 +301,25 @@ public class ByteBufListTest {
 
         @Override
         public ChannelFuture write(Object msg) {
-            ReferenceCountUtil.safeRelease(msg);
+            ReferenceCountUtil.release(msg);
             return null;
         }
 
         @Override
         public ChannelFuture write(Object msg, ChannelPromise promise) {
-            ReferenceCountUtil.safeRelease(msg);
+            ReferenceCountUtil.release(msg);
             return null;
         }
 
         @Override
         public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-            ReferenceCountUtil.safeRelease(msg);
+            ReferenceCountUtil.release(msg);
             return null;
         }
 
         @Override
         public ChannelFuture writeAndFlush(Object msg) {
-            ReferenceCountUtil.safeRelease(msg);
+            ReferenceCountUtil.release(msg);
             return null;
         }
 

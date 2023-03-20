@@ -299,6 +299,34 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
+    public void entryLocationCompact() {
+        if (entryLocationIndex.isCompacting()) {
+            // RocksDB already running compact.
+            return;
+        }
+        cleanupExecutor.execute(() -> {
+            // There can only be one single cleanup task running because the cleanupExecutor
+            // is single-threaded
+            try {
+                log.info("Trigger entry location index RocksDB compact.");
+                entryLocationIndex.compact();
+            } catch (Throwable t) {
+                log.warn("Failed to trigger entry location index RocksDB compact", t);
+            }
+        });
+    }
+
+    @Override
+    public boolean isEntryLocationCompacting() {
+        return entryLocationIndex.isCompacting();
+    }
+
+    @Override
+    public List<String> getEntryLocationDBPath() {
+        return Lists.newArrayList(entryLocationIndex.getEntryLocationDBPath());
+    }
+
+    @Override
     public void shutdown() throws InterruptedException {
         try {
             flush();
@@ -652,7 +680,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     currentEntryLocation += 4 + entry.readableBytes();
                     currentEntryLogId = currentEntryLocation >> 32;
                 } finally {
-                    ReferenceCountUtil.safeRelease(entry);
+                    ReferenceCountUtil.release(entry);
                 }
             }
         } catch (Exception e) {
@@ -927,7 +955,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 lac = bb.readLong();
                 lac = getOrAddLedgerInfo(ledgerId).setLastAddConfirmed(lac);
             } finally {
-                ReferenceCountUtil.safeRelease(bb);
+                ReferenceCountUtil.release(bb);
             }
         }
         return lac;

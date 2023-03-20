@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -80,6 +81,7 @@ class PendingAddOp implements WriteCallback {
     boolean allowFailFast = false;
     List<BookieId> ensemble;
 
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
                                List<BookieId> ensemble,
                                ByteBuf payload, EnumSet<WriteFlag> writeFlags,
@@ -198,14 +200,9 @@ class PendingAddOp implements WriteCallback {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-        try {
-            if (!writeSet.contains(bookieIndex)) {
-                lh.sendAddSuccessCallbacks();
-                return;
-            }
-        } finally {
-            writeSet.recycle();
+        if (!lh.distributionSchedule.hasEntry(entryId, bookieIndex)) {
+            lh.sendAddSuccessCallbacks();
+            return;
         }
 
         if (callbackTriggered) {
@@ -257,14 +254,8 @@ class PendingAddOp implements WriteCallback {
         lh.maybeHandleDelayedWriteBookieFailure();
 
         // Iterate over set and trigger the sendWriteRequests
-        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
-
-        try {
-            for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteRequest(ensemble, writeSet.get(i));
-            }
-        } finally {
-            writeSet.recycle();
+        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
+            sendWriteRequest(ensemble, lh.distributionSchedule.getWriteSetBookieIndex(entryId, i));
         }
     }
 
