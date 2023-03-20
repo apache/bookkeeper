@@ -487,7 +487,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
     * Parameters: 
 
       | Name | Type | Required | Description |
-              |:-----|:-----|:---------|:------------|
+      |:-----|:-----|:---------|:------------|
       |entryLocationRocksDBCompact  | String | Yes | Configuration name(key) |
       |entryLocations | String | no | entry location rocksDB path |
     * Body:
