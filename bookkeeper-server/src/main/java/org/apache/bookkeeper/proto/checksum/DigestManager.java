@@ -110,7 +110,7 @@ public abstract class DigestManager {
     }
 
     private ReferenceCounted computeDigestAndPackageForSendingV2(long entryId, long lastAddConfirmed, long length,
-                                                            ByteBuf data, byte[] masterKey, int flags) {
+                                                                 ByteBuf data, byte[] masterKey, int flags) {
         boolean isSmallEntry = data.readableBytes() < BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD;
 
         int headersSize = 4 // Request header
