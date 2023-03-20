@@ -1676,7 +1676,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of minor compaction
      */
     public double getMinorCompactionThreshold() {
-        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2f);
+        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2d);
     }
 
     /**
@@ -1704,7 +1704,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8d);
     }
 
     /**
