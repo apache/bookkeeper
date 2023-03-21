@@ -103,7 +103,7 @@ class EnvelopedEntry {
             CompressionCodec codec = CompressionUtils.getCompressionCodec(Type.of(codecCode));
             decompressedBuf = codec.decompress(compressedBuf, originDataLen);
         } finally {
-            ReferenceCountUtil.safeRelease(compressedBuf);
+            ReferenceCountUtil.release(compressedBuf);
         }
         return decompressedBuf;
     }

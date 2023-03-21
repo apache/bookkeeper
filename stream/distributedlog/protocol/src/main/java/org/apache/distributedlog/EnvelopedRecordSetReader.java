@@ -81,10 +81,10 @@ class EnvelopedRecordSetReader implements LogRecordSet.Reader {
             CompressionCodec codec = CompressionUtils.getCompressionCodec(Type.of(codecCode));
             this.reader = codec.decompress(compressedBuf, decompressedDataLen);
         } finally {
-            ReferenceCountUtil.safeRelease(compressedBuf);
+            ReferenceCountUtil.release(compressedBuf);
         }
         if (numRecords == 0) {
-            ReferenceCountUtil.safeRelease(this.reader);
+            ReferenceCountUtil.release(this.reader);
         }
     }
 
@@ -111,7 +111,7 @@ class EnvelopedRecordSetReader implements LogRecordSet.Reader {
 
         // release the record set buffer when exhausting the reader
         if (0 == numRecords) {
-            ReferenceCountUtil.safeRelease(this.reader);
+            ReferenceCountUtil.release(this.reader);
         }
 
         return record;
@@ -121,7 +121,7 @@ class EnvelopedRecordSetReader implements LogRecordSet.Reader {
     public void release() {
         if (0 != numRecords) {
             numRecords = 0;
-            ReferenceCountUtil.safeRelease(reader);
+            ReferenceCountUtil.release(reader);
         }
     }
 }
