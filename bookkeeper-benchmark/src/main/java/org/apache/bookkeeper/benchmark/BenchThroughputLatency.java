@@ -259,7 +259,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         options.addOption("skipwarmup", false, "Skip warm up, default false");
         options.addOption("sendlimit", true, "Max number of entries to send. Default 20000000");
         options.addOption("latencyFile", true, "File to dump latencies. Default is latencyDump.dat");
-        options.addOption("useV2", false, "Whether use V2 protocol to send requests to the bookie server");
+        options.addOption("useV2", false, "Whether use V2 protocol to send requests to the bookie server.");
         options.addOption("warmupMessages", true, "Number of messages to warm up. Default 10000");
         options.addOption("help", false, "This message");
 
