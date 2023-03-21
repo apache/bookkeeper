@@ -16,6 +16,13 @@ The technical details of this release are summarized below.
 ### Details
 https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.1+is%3Aclosed
 
+## 4.16.0
+
+Release 4.16.0 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.0.
+The technical details of this release are summarized below.
+
 
 ## 4.15.4
 
