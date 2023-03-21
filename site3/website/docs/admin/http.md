@@ -569,7 +569,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
 
 ## Auto recovery
 
-### Endpoint: /api/v1/autorecovery/status?enabled=<boolean>
+### Endpoint: /api/v1/autorecovery/status?enabled=&lt;boolean&gt;
 1. Method: GET
     * Description:  Get autorecovery enable status with cluster.
     * Response:
