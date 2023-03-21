@@ -106,7 +106,6 @@ public class BookieServer {
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory, allocator, nettyServer.allChannels);
         this.nettyServer.setRequestProcessor(this.requestProcessor);
-        this.bookie.setRequestProcessor(this.requestProcessor);
     }
 
     /**

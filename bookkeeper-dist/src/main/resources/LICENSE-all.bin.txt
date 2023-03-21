@@ -320,6 +320,7 @@ Apache Software License, Version 2.
 - lib/org.xerial.snappy-snappy-java-1.1.7.7.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/org.hdrhistogram-HdrHistogram-2.1.10.jar [52]
+- lib/com.carrotsearch-hppc-0.9.1.jar [53]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.13.4
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.13.4
@@ -369,6 +370,7 @@ Apache Software License, Version 2.
 [50] Source available at https://github.com/google/snappy/releases/tag/1.1.7.7
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/HdrHistogram/HdrHistogram/tree/HdrHistogram-2.1.10
+[53] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.89.Final.jar bundles some 3rd party dependencies
