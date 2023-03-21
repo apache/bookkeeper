@@ -176,6 +176,7 @@
     <zookeeper.version>3.8.1</zookeeper.version>
     <snappy.version>1.1.7.7</snappy.version>
     <jctools.version>2.1.2</jctools.version>
+    <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
@@ -800,6 +801,12 @@
         <groupId>io.reactivex.rxjava3</groupId>
         <artifactId>rxjava</artifactId>
         <version>${rxjava.version}</version>
+      </dependency>
+  
+      <dependency>
+        <groupId>com.carrotsearch</groupId>
+        <artifactId>hppc</artifactId>
+        <version>${hppc.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
