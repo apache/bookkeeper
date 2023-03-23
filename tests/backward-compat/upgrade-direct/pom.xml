@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>backward-compat</artifactId>
-    <version>4.16.0</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -28,9 +28,4 @@
   <artifactId>upgrade-direct</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test upgrade between 4.1.0 and current version</name>
-
-
-  <scm>
-    <tag>v4.16.0-rc0</tag>
-  </scm>
 </project>
