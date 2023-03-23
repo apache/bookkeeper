@@ -52,6 +52,7 @@ The technical details of this release are summarized below.
 * Use JNI directly for posix_fadvise [PR #3824](https://github.com/apache/bookkeeper/pull/3824)
 * Improvements in ArrayGroupSort [PR #3807](https://github.com/apache/bookkeeper/pull/3807)
 * Single buffer for small add requests [PR #3783](https://github.com/apache/bookkeeper/pull/3783)
+* Use BatchedArrayBlockingQueue in Journal [PR #3843](https://github.com/apache/bookkeeper/pull/3843)
 
 #### Bookie
 * [Bugfix] make metadataDriver initialization more robust [PR #3873](https://github.com/apache/bookkeeper/pull/3873)
