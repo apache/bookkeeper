@@ -400,55 +400,7 @@ public class HardLink {
     return getHardLinkCommand.getMaxAllowedCmdArgLength();
   }
 
-  private static final AtomicBoolean CREATE_LINK_SUPPORTED = new AtomicBoolean(false);
-
-  static {
-    testIfCreateLinkAvailable();
-  }
-
-  private static void testIfCreateLinkAvailable() {
-    File tmpFile = null;
-    File renameFile = null;
-    try {
-      tmpFile = File.createTempFile("temp", "bkatomicmovetest");
-      renameFile = new File(tmpFile.getParent(), "bkatomicmove" + System.currentTimeMillis());
-
-      if (tmpFile.exists() && !renameFile.exists()) {
-        try {
-          Path movedFile = Files.createLink(renameFile.toPath(), tmpFile.toPath());
-          if (movedFile.toFile().exists()) {
-            LOG.info("test createLink success. will try to use when create hardlink.");
-            CREATE_LINK_SUPPORTED.set(true);
-          }
-        } catch (UnsupportedOperationException e) {
-          LOG.error("createLink not supported", e);
-          CREATE_LINK_SUPPORTED.set(false);
-        }
-      }
-
-    } catch (IOException e) {
-      LOG.error("error when test createLink", e);
-      CREATE_LINK_SUPPORTED.set(false);
-    } finally {
-      try {
-        if (tmpFile != null && tmpFile.exists()) {
-          boolean delete = tmpFile.delete();
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("tmp file deleted {}", delete);
-          }
-        }
-
-        if (renameFile != null && renameFile.exists()) {
-          boolean delete = renameFile.delete();
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("rename file deleted {}", delete);
-          }
-        }
-      } catch (Exception e) {
-        LOG.error("error when delete createLink test file", e);
-      }
-    }
-  }
+  private static final AtomicBoolean CREATE_LINK_SUPPORTED = new AtomicBoolean(true);
 
   /*
    * ****************************************************
@@ -479,8 +431,12 @@ public class HardLink {
         if (newFile.toFile().exists()) {
           return;
         }
+      } catch (UnsupportedOperationException e) {
+        LOG.error("createLink not supported", e);
+        CREATE_LINK_SUPPORTED.set(false);
       } catch (IOException e) {
         LOG.error("error when create hard link use createLink", e);
+        CREATE_LINK_SUPPORTED.set(false);
       }
     }
 
