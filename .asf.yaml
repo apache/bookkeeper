@@ -87,6 +87,7 @@ github:
     branch-4.13: {}
     branch-4.14: {}
     branch-4.15: {}
+    branch-4.16: {}
 
 notifications:
   commits:      commits@bookkeeper.apache.org
