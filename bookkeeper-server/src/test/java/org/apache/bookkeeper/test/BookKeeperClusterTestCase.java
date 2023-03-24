@@ -252,6 +252,10 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected void startBKCluster(String metadataServiceUri) throws Exception {
         baseConf.setMetadataServiceUri(metadataServiceUri);
+        baseConf.setJournalAdaptiveGroupWrites(true);
+        baseConf.setJournalMaxGroupWaitMSec(100);
+        baseConf.setJournalFlushWhenQueueEmpty(false);
+        //baseConf.setJournalWriteData(false);
         baseClientConf.setMetadataServiceUri(metadataServiceUri);
         baseClientConf.setAllocatorPoolingPolicy(PoolingPolicy.UnpooledHeap);
         if (numBookies > 0) {

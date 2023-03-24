@@ -276,6 +276,13 @@ public class ByteBufList extends AbstractReferenceCounted {
         return res;
     }
 
+    public void writeTo(ByteBuf buf) {
+        for (int i = 0; i < buffers.size(); ++i) {
+            ByteBuf b = buffers.get(i);
+            buf.writeBytes(b, b.readerIndex(), b.readableBytes());
+        }
+    }
+
     @Override
     public ByteBufList retain() {
         super.retain();

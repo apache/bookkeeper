@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -173,6 +174,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
+    private static final int DEFAULT_PENDING_REQUEST_SIZE = 4096;
+
+    private static final int MAX_PENDING_REQUEST_SIZE = 1024 * 1024;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieId bookieId;
@@ -349,6 +353,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
     private long lastBookieUnavailableLogTimestamp = 0;
+    private ByteBuf pendingSendRequests = null;
+    private final Set<CompletionKey> pendingSendKeys = new HashSet<>();
+    private int maxPendingRequestsSize = DEFAULT_PENDING_REQUEST_SIZE;
+    private Future<?> nextScheduledFlush = null;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -1154,25 +1162,75 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         try {
-            final long startTime = MathUtils.nowInNano();
-
-            ChannelPromise promise = channel.newPromise().addListener(future -> {
-                if (future.isSuccess()) {
-                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                    CompletionValue completion = completionObjects.get(key);
-                    if (completion != null) {
-                        completion.setOutstanding();
-                    }
-                } else {
-                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            if (request instanceof ByteBuf || request instanceof ByteBufList) {
+                prepareSendRequests(channel, request, key);
+                if (pendingSendRequests.readableBytes() > MAX_PENDING_REQUEST_SIZE) {
+                    flushPendingRequests();
+                } else if (nextScheduledFlush == null) {
+                    nextScheduledFlush = channel.eventLoop().scheduleAtFixedRate(this::flushPendingRequests, 1, 5, TimeUnit.MILLISECONDS);
                 }
-            });
-            channel.writeAndFlush(request, promise);
+            } else {
+                final long startTime = MathUtils.nowInNano();
+
+                ChannelPromise promise = channel.newPromise().addListener(future -> {
+                    if (future.isSuccess()) {
+                        nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                        CompletionValue completion = completionObjects.get(key);
+                        if (completion != null) {
+                            completion.setOutstanding();
+                        }
+                    } else {
+                        nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                    }
+                });
+                channel.writeAndFlush(request, promise);
+            }
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
         }
     }
+
+    public synchronized void prepareSendRequests(Channel channel, Object request, CompletionKey key) {
+            if (pendingSendRequests == null) {
+                pendingSendRequests = channel.alloc().directBuffer(maxPendingRequestsSize);
+            }
+            BookieProtoEncoding.RequestEnDeCoderPreV3.serializeAddRequests(request, pendingSendRequests);
+            pendingSendKeys.add(key);
+        }
+
+        public synchronized void flushPendingRequests() {
+            final long startTime = MathUtils.nowInNano();
+            Set<CompletionKey> keys = new HashSet<>(pendingSendKeys);
+            ChannelPromise promise = channel.newPromise().addListener(future -> {
+                if (future.isSuccess()) {
+                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                    for(CompletionKey completionKey : keys) {
+                        CompletionValue completion = completionObjects.get(completionKey);
+                        if (completion != null) {
+                            completion.setOutstanding();
+                        }
+                    }
+                } else {
+                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                }
+            });
+
+            if (pendingSendRequests != null) {
+                maxPendingRequestsSize = (int) Math.max(
+                    maxPendingRequestsSize * 0.5 + pendingSendRequests.readableBytes() * 0.5,
+                    DEFAULT_PENDING_REQUEST_SIZE);
+
+                if (channel != null && channel.isActive()) {
+                    //LOG.info("[hangc] pendingSendRequests size: {}", pendingSendRequests.readableBytes());
+                    channel.writeAndFlush(pendingSendRequests, promise);
+                } else {
+                    pendingSendRequests.release();
+                }
+                pendingSendRequests = null;
+                pendingSendKeys.clear();
+            }
+        }
 
     void errorOut(final CompletionKey key) {
         if (LOG.isDebugEnabled()) {

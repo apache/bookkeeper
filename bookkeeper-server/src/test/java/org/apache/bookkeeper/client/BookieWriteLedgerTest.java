@@ -134,7 +134,7 @@ public class BookieWriteLedgerTest extends
     }
 
     public BookieWriteLedgerTest() {
-        super(5, 180);
+        super(5, 1800);
         this.digestType = DigestType.CRC32;
         String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
@@ -1548,6 +1548,36 @@ public class BookieWriteLedgerTest extends
             }
             return localBuf;
         }
+
+    }
+
+    @Test
+    public void testReadWriteEntry() throws Exception {
+        lh = bkc.createLedgerAdv(1, 1, 1, digestType, ledgerPassword);
+        numEntriesToWrite = 10000;
+        List<byte[]> entries = new ArrayList<>();
+        long start = System.currentTimeMillis();
+        CountDownLatch latch = new CountDownLatch(numEntriesToWrite);
+        for (int i = 0; i < numEntriesToWrite; ++i) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            entries.add(entry.array());
+            lh.asyncAddEntry(i, entry.array(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    assertEquals(0, rc);
+                    //LOG.info("[hangc] entry: {}, rc: {}", entryId, rc);
+                    latch.countDown();
+                }
+            }, null);
+        }
+        latch.await();
+
+        LOG.info("[hangc] send cost: {} ms", System.currentTimeMillis() - start);
+        LOG.info("[hangc] start to read....");
+        readEntries(lh, entries);
+        lh.close();
 
     }
 }
