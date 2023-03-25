@@ -134,7 +134,7 @@ public class BookieWriteLedgerTest extends
     }
 
     public BookieWriteLedgerTest() {
-        super(5, 1800);
+        super(5, 180);
         this.digestType = DigestType.CRC32;
         String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
