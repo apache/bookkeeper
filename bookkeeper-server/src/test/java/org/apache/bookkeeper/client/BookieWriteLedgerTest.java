@@ -1556,7 +1556,6 @@ public class BookieWriteLedgerTest extends
         lh = bkc.createLedgerAdv(1, 1, 1, digestType, ledgerPassword);
         numEntriesToWrite = 10000;
         List<byte[]> entries = new ArrayList<>();
-        long start = System.currentTimeMillis();
         CountDownLatch latch = new CountDownLatch(numEntriesToWrite);
         for (int i = 0; i < numEntriesToWrite; ++i) {
             ByteBuffer entry = ByteBuffer.allocate(4);
@@ -1572,7 +1571,6 @@ public class BookieWriteLedgerTest extends
             }, null);
         }
         latch.await();
-
         readEntries(lh, entries);
         lh.close();
 

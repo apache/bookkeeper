@@ -356,7 +356,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private ByteBuf pendingSendRequests = null;
     private final Set<CompletionKey> pendingSendKeys = new HashSet<>();
     private int maxPendingRequestsSize = DEFAULT_PENDING_REQUEST_SIZE;
-    private Future<?> nextScheduledFlush = null;
+    private volatile Future<?> nextScheduledFlush = null;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -1167,7 +1167,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 if (pendingSendRequests.readableBytes() > MAX_PENDING_REQUEST_SIZE) {
                     flushPendingRequests();
                 } else if (nextScheduledFlush == null) {
-                    nextScheduledFlush = channel.eventLoop().scheduleWithFixedDelay(this::flushPendingRequests, 1, 1, TimeUnit.MILLISECONDS);
+                    nextScheduledFlush = channel.eventLoop().scheduleWithFixedDelay(this::flushPendingRequests,
+                        1, 1, TimeUnit.MILLISECONDS);
                 }
             } else {
                 final long startTime = MathUtils.nowInNano();
@@ -1205,7 +1206,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             ChannelPromise promise = channel.newPromise().addListener(future -> {
                 if (future.isSuccess()) {
                     nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                    for(CompletionKey completionKey : keys) {
+                    for (CompletionKey completionKey : keys) {
                         CompletionValue completion = completionObjects.get(completionKey);
                         if (completion != null) {
                             completion.setOutstanding();
