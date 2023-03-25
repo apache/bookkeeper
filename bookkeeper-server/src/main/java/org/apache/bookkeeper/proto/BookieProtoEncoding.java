@@ -218,8 +218,9 @@ public class BookieProtoEncoding {
 
         public static void serializeAddRequests(Object request, ByteBuf buf) {
             if (request instanceof ByteBuf) {
-                buf.writeBytes((ByteBuf) request);
-                ((ByteBuf) request).release();
+                ByteBuf r = (ByteBuf) request;
+                buf.writeBytes(r);
+                r.release();
             } else if (request instanceof ByteBufList) {
                 ByteBufList list = (ByteBufList) request;
                 list.writeTo(buf);

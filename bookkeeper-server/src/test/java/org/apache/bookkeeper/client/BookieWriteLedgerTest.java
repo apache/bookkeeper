@@ -1567,15 +1567,12 @@ public class BookieWriteLedgerTest extends
                 @Override
                 public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
                     assertEquals(0, rc);
-                    //LOG.info("[hangc] entry: {}, rc: {}", entryId, rc);
                     latch.countDown();
                 }
             }, null);
         }
         latch.await();
 
-        LOG.info("[hangc] send cost: {} ms", System.currentTimeMillis() - start);
-        LOG.info("[hangc] start to read....");
         readEntries(lh, entries);
         lh.close();
 

@@ -174,7 +174,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
-    private static final int DEFAULT_PENDING_REQUEST_SIZE = 4096;
+    private static final int DEFAULT_PENDING_REQUEST_SIZE = 1024;
 
     private static final int MAX_PENDING_REQUEST_SIZE = 1024 * 1024;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
@@ -1167,7 +1167,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 if (pendingSendRequests.readableBytes() > MAX_PENDING_REQUEST_SIZE) {
                     flushPendingRequests();
                 } else if (nextScheduledFlush == null) {
-                    nextScheduledFlush = channel.eventLoop().scheduleAtFixedRate(this::flushPendingRequests, 1, 5, TimeUnit.MILLISECONDS);
+                    nextScheduledFlush = channel.eventLoop().scheduleWithFixedDelay(this::flushPendingRequests, 1, 1, TimeUnit.MILLISECONDS);
                 }
             } else {
                 final long startTime = MathUtils.nowInNano();
@@ -1222,10 +1222,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     DEFAULT_PENDING_REQUEST_SIZE);
 
                 if (channel != null && channel.isActive()) {
-                    //LOG.info("[hangc] pendingSendRequests size: {}", pendingSendRequests.readableBytes());
                     channel.writeAndFlush(pendingSendRequests, promise);
                 } else {
                     pendingSendRequests.release();
+                    keys.forEach(key -> errorOut(key, BKException.Code.TooManyRequestsException));
+
                 }
                 pendingSendRequests = null;
                 pendingSendKeys.clear();
