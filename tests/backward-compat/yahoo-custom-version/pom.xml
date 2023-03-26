@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>backward-compat</artifactId>
-    <version>4.16.0</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -28,8 +28,4 @@
   <artifactId>yahoo-custom-version</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test upgrade between yahoo custom version and current</name>
-
-  <scm>
-    <tag>v4.16.0-rc1</tag>
-  </scm>
 </project>
