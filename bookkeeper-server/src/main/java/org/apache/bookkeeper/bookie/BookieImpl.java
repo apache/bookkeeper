@@ -69,6 +69,7 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
+import org.apache.bookkeeper.proto.BookieRequestHandler;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -948,6 +949,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         if (!writeDataToJournal) {
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            if (ctx instanceof BookieRequestHandler) {
+                ((BookieRequestHandler) ctx).flushPendingResponse();
+            }
             return;
         }
 

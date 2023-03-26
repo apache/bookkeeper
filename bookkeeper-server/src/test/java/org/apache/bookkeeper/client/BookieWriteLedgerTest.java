@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +69,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,11 +78,25 @@ import org.slf4j.LoggerFactory;
 /**
  * Testing ledger write entry cases.
  */
+@RunWith(Parameterized.class)
 public class BookieWriteLedgerTest extends
     BookKeeperClusterTestCase implements AddCallback {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+            { true, true }, { true, false }, { false, true }, { false, false }
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useV2;
+
+    @Parameterized.Parameter(1)
+    public boolean writeJournal;
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
@@ -119,12 +136,14 @@ public class BookieWriteLedgerTest extends
         String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseConf.setJournalWriteData(writeJournal);
         /*
          * 'testLedgerCreateAdvWithLedgerIdInLoop2' testcase relies on skipListSizeLimit,
          * so setting it to some small value for making that testcase lite.
          */
         baseConf.setSkipListSizeLimit(4 * 1024 * 1024);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setUseV2WireProtocol(useV2);
     }
 
     /**
