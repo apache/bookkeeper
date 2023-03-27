@@ -123,6 +123,9 @@ public class BookieWriteLedgerTest extends
     @Override
     @Before
     public void setUp() throws Exception {
+        baseConf.setJournalWriteData(writeJournal);
+        baseClientConf.setUseV2WireProtocol(useV2);
+
         super.setUp();
         rng = new Random(0); // Initialize the Random
         // Number Generator
@@ -136,14 +139,12 @@ public class BookieWriteLedgerTest extends
         String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        baseConf.setJournalWriteData(writeJournal);
         /*
          * 'testLedgerCreateAdvWithLedgerIdInLoop2' testcase relies on skipListSizeLimit,
          * so setting it to some small value for making that testcase lite.
          */
         baseConf.setSkipListSizeLimit(4 * 1024 * 1024);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        baseClientConf.setUseV2WireProtocol(useV2);
     }
 
     /**
