@@ -1374,7 +1374,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private void readV2Responses(List<BookieProtocol.Response> responses) {
-        Map<ExecutorService, BatchedReadV2ResponseCallback> callBackMap = new HashMap<>();
+        Map<ExecutorService, BatchedReadV2ResponseCallback> callbackMap = new HashMap<>();
         for (BookieProtocol.Response r : responses) {
             OperationType operationType = getOperationType(r.getOpCode());
             StatusCode statusCode = getStatusCodeFromErrorCode(r.errorCode);
@@ -1390,13 +1390,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
                 r.release();
             } else {
-                callBackMap.computeIfAbsent(executor.chooseThread(r.ledgerId),
+                callbackMap.computeIfAbsent(executor.chooseThread(r.ledgerId),
                     k -> new BatchedReadV2ResponseCallback())
                     .addCallback(ReadV2ResponseCallback.create(completionValue, r.ledgerId, r.entryId, statusCode, r));
             }
         }
 
-        callBackMap.forEach(Executor::execute);
+        callbackMap.forEach(Executor::execute);
+        callbackMap.clear();
     }
 
     private static class ReadV2ResponseCallback implements Runnable {
@@ -1457,14 +1458,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void run() {
             callbacks.forEach(ReadV2ResponseCallback::run);
+            callbacks.clear();
         }
 
         void addCallback(ReadV2ResponseCallback callback) {
             callbacks.add(callback);
-        }
-
-        void recycle() {
-            callbacks.clear();
         }
     }
 
