@@ -76,13 +76,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -173,6 +178,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
+    private static final int DEFAULT_CAPACITY = 1_000;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieId bookieId;
@@ -326,6 +332,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     volatile Channel channel = null;
     private final ClientConnectionPeer connectionPeer;
     private volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
+    private final BlockingQueue<BookieProtocol.Response> responses;
 
     @SneakyThrows
     private FailedChannelFutureImpl processBookieNotResolvedError(long startTime,
@@ -410,6 +417,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (shFactory != null) {
             shFactory.init(NodeType.Client, conf, allocator);
         }
+        this.responses = new ArrayBlockingQueue<>(DEFAULT_CAPACITY);
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
             .scopeLabel(BookKeeperClientStats.BOOKIE_LABEL, bookieId.toString());
@@ -1341,7 +1349,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (msg instanceof BookieProtocol.Response) {
             BookieProtocol.Response response = (BookieProtocol.Response) msg;
-            readV2Response(response);
+            if (!responses.offer(response)) {
+                channelReadComplete(ctx);
+                responses.put(response);
+            }
         } else if (msg instanceof Response) {
             Response response = (Response) msg;
             readV3Response(response);
@@ -1350,27 +1361,42 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void readV2Response(final BookieProtocol.Response response) {
-        OperationType operationType = getOperationType(response.getOpCode());
-        StatusCode status = getStatusCodeFromErrorCode(response.errorCode);
-
-        CompletionKey key = acquireV2Key(response.ledgerId, response.entryId, operationType);
-        CompletionValue completionValue = getCompletionValue(key);
-        key.release();
-
-        if (null == completionValue) {
-            // Unexpected response, so log it. The txnId should have been present.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
-                        + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (!responses.isEmpty()) {
+            int count = responses.size();
+            List<BookieProtocol.Response> c = new ArrayList<>(count);
+            responses.drainTo(c);
+            if (!c.isEmpty()) {
+                readV2Responses(c);
             }
-            response.release();
-        } else {
-            long orderingKey = completionValue.ledgerId;
-            executor.executeOrdered(orderingKey,
-                    ReadV2ResponseCallback.create(completionValue, response.ledgerId, response.entryId,
-                                                  status, response));
         }
+    }
+
+    private void readV2Responses(List<BookieProtocol.Response> responses) {
+        Map<ExecutorService, BatchedReadV2ResponseCallback> callBackMap = new HashMap<>();
+        for (BookieProtocol.Response r : responses) {
+            OperationType operationType = getOperationType(r.getOpCode());
+            StatusCode statusCode = getStatusCodeFromErrorCode(r.errorCode);
+            CompletionKey key = acquireV2Key(r.ledgerId, r.entryId, operationType);
+            CompletionValue completionValue = getCompletionValue(key);
+            key.release();
+
+            if (null == completionValue) {
+                // Unexpected response, so log it. The txnId should have been present.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
+                            + " and ledger:entry : " + r.ledgerId + ":" + r.entryId);
+                }
+                r.release();
+            } else {
+                callBackMap.computeIfAbsent(executor.chooseThread(r.ledgerId),
+                    k -> new BatchedReadV2ResponseCallback())
+                    .addCallback(ReadV2ResponseCallback.create(completionValue, r.ledgerId, r.entryId, statusCode, r));
+            }
+        }
+
+        callBackMap.forEach(Executor::execute);
     }
 
     private static class ReadV2ResponseCallback implements Runnable {
@@ -1420,6 +1446,26 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return new ReadV2ResponseCallback(handle);
             }
         };
+    }
+
+    private static class BatchedReadV2ResponseCallback implements Runnable {
+        List<ReadV2ResponseCallback> callbacks = new ArrayList<>();
+
+        BatchedReadV2ResponseCallback() {
+        }
+
+        @Override
+        public void run() {
+            callbacks.forEach(ReadV2ResponseCallback::run);
+        }
+
+        void addCallback(ReadV2ResponseCallback callback) {
+            callbacks.add(callback);
+        }
+
+        void recycle() {
+            callbacks.clear();
+        }
     }
 
     private static OperationType getOperationType(byte opCode) {
