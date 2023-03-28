@@ -959,7 +959,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <source>${javac.target}</source>
+          <source>8</source>
           <notimestamp>true</notimestamp>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <doclint>none</doclint>
