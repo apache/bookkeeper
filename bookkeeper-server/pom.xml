@@ -123,6 +123,14 @@
       <groupId>io.reactivex.rxjava3</groupId>
       <artifactId>rxjava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+    </dependency>
     <!-- testing dependencies -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
