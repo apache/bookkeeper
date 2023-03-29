@@ -267,19 +267,19 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 if (bookies.isEmpty()) {
                     // no missing fragments
                     callback.processResult(BKException.Code.OK, null, null);
-                    return;
+                } else {
+                    publishSuspectedLedgersAsync(bookies.stream().map(BookieId::toString).collect(Collectors.toList()),
+                            Sets.newHashSet(lh.getId())
+                    ).whenComplete((result, cause) -> {
+                        if (null != cause) {
+                            LOG.error("Auditor exception publishing suspected ledger {} with lost bookies {}",
+                                    lh.getId(), bookies, cause);
+                            callback.processResult(BKException.Code.ReplicationException, null, null);
+                        } else {
+                            callback.processResult(BKException.Code.OK, null, null);
+                        }
+                    });
                 }
-                publishSuspectedLedgersAsync(bookies.stream().map(BookieId::toString).collect(Collectors.toList()),
-                        Sets.newHashSet(lh.getId())
-                ).whenComplete((result, cause) -> {
-                    if (null != cause) {
-                        LOG.error("Auditor exception publishing suspected ledger {} with lost bookies {}",
-                                lh.getId(), bookies, cause);
-                        callback.processResult(BKException.Code.ReplicationException, null, null);
-                    } else {
-                        callback.processResult(BKException.Code.OK, null, null);
-                    }
-                });
             } else {
                 callback.processResult(rc, null, null);
             }
