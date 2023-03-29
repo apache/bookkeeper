@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>backward-compat</artifactId>
-    <version>4.16.0</version>
+    <version>4.16.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -28,8 +28,4 @@
   <artifactId>hierarchical-ledger-manager</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test compat between old version and new version of hierarchical ledger manager</name>
-
-  <scm>
-    <tag>v4.16.0-rc2</tag>
-  </scm>
 </project>
