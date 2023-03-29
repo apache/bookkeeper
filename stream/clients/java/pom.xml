@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-clients-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.16.0</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>stream-storage-java-client-parent</artifactId>
@@ -31,4 +31,8 @@
     <module>kv</module>
     <module>all</module>
   </modules>
+
+  <scm>
+    <tag>v4.16.0-rc2</tag>
+  </scm>
 </project>
