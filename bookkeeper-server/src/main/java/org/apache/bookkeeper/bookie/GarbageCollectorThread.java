@@ -759,7 +759,7 @@ public class GarbageCollectorThread implements Runnable {
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 LOG.warn("Premature exception when processing " + entryLogId
                          + " recovery will take care of the problem", e);
             }
