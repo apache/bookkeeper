@@ -132,6 +132,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
     // backpressure configuration
     protected static final String WAIT_TIMEOUT_ON_BACKPRESSURE = "waitTimeoutOnBackpressureMs";
+    protected static final String GROUP_READ_WRITE_RESPONSES = "groupReadWriteResponses";
 
     // Bookie health check settings
     protected static final String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
@@ -855,6 +856,30 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setWaitTimeoutOnBackpressureMillis(long value) {
         setProperty(WAIT_TIMEOUT_ON_BACKPRESSURE, value);
+        return this;
+    }
+
+    /**
+     * Get the group read/write response flage.
+     * Group the read/write responses before jumping to the executor will reduce the CPU usage,
+     * but it will increase small latency. In most cases, the latency impact will less than 1ms.
+     *
+     * @return The configured groupReadWriteResponses value
+     */
+    public boolean getGroupReadWriteResponses() {
+        return getBoolean(GROUP_READ_WRITE_RESPONSES, false);
+    }
+
+    /**
+     * Set group the read/write responses flag.
+     * Group the read/write responses before jumping to the executor will reduce the CPU usage,
+     * but it will increase small latency. In most cases, the latency impact will less than 1ms.
+     *
+     * @param groupReadWriteResponses
+     * @return
+     */
+    public ClientConfiguration setGroupReadWriteResponses(boolean groupReadWriteResponses) {
+        setProperty(GROUP_READ_WRITE_RESPONSES, groupReadWriteResponses);
         return this;
     }
 
