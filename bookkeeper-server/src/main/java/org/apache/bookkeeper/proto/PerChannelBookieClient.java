@@ -20,6 +20,7 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
+import com.carrotsearch.hppc.ObjectHashSet;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -28,6 +29,7 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -353,7 +355,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
     private long lastBookieUnavailableLogTimestamp = 0;
-    private ByteBuf pendingSendRequests = null;
+    private ByteBufList pendingSendRequests = null;
     private final Set<CompletionKey> pendingSendKeys = new HashSet<>();
     private int maxPendingRequestsSize = DEFAULT_PENDING_REQUEST_SIZE;
     private volatile Future<?> nextScheduledFlush = null;
@@ -1163,17 +1165,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         try {
             if (request instanceof ByteBuf || request instanceof ByteBufList) {
-                if (prepareSendRequests(channel, request, key)) {
+                if (prepareSendRequests(request, key)) {
                     flushPendingRequests();
                 }
 
                 if (nextScheduledFlush == null) {
-                    nextScheduledFlush = channel.eventLoop().scheduleWithFixedDelay(this::flushPendingRequests,
-                        1, 1, TimeUnit.MILLISECONDS);
+                    nextScheduledFlush = channel.eventLoop().submit(this::flushPendingRequests);
                 }
             } else {
                 final long startTime = MathUtils.nowInNano();
 
+                // promise complete trigger flush pending request.
                 ChannelPromise promise = channel.newPromise().addListener(future -> {
                     if (future.isSuccess()) {
                         nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -1193,18 +1195,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public synchronized boolean prepareSendRequests(Channel channel, Object request, CompletionKey key) {
+    public synchronized boolean prepareSendRequests(Object request, CompletionKey key) {
         if (pendingSendRequests == null) {
-            pendingSendRequests = channel.alloc().directBuffer(maxPendingRequestsSize);
+            if (request instanceof ByteBuf) {
+                pendingSendRequests = ByteBufList.get((ByteBuf) request);
+            } else if (request instanceof ByteBufList) {
+                pendingSendRequests = ByteBufList.get((ByteBufList) request);
+            }
+        } else {
+            BookieProtoEncoding.RequestEnDeCoderPreV3.serializeAddRequests(request, pendingSendRequests);
         }
-        BookieProtoEncoding.RequestEnDeCoderPreV3.serializeAddRequests(request, pendingSendRequests);
         pendingSendKeys.add(key);
         return pendingSendRequests.readableBytes() > MAX_PENDING_REQUEST_SIZE;
     }
 
     public synchronized void flushPendingRequests() {
         final long startTime = MathUtils.nowInNano();
-        Set<CompletionKey> keys = new HashSet<>(pendingSendKeys);
+        Set<CompletionKey> keys = new ObjectHashSet<>(pendingSendKeys);
         ChannelPromise promise = channel.newPromise().addListener(future -> {
             if (future.isSuccess()) {
                 nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -1234,6 +1241,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             pendingSendRequests = null;
             pendingSendKeys.clear();
         }
+        nextScheduledFlush = null;
     }
 
     void errorOut(final CompletionKey key) {

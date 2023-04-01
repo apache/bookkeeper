@@ -125,7 +125,6 @@ public class BookieWriteLedgerTest extends
     public void setUp() throws Exception {
         baseConf.setJournalWriteData(writeJournal);
         baseClientConf.setUseV2WireProtocol(useV2);
-
         super.setUp();
         rng = new Random(0); // Initialize the Random
         // Number Generator

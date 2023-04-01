@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -216,15 +217,11 @@ public class BookieProtoEncoding {
             return masterKey;
         }
 
-        public static void serializeAddRequests(Object request, ByteBuf buf) {
+        public static void serializeAddRequests(Object request, ByteBufList buf) {
             if (request instanceof ByteBuf) {
-                ByteBuf r = (ByteBuf) request;
-                buf.writeBytes(r);
-                r.release();
+                buf.add((ByteBuf) request);
             } else if (request instanceof ByteBufList) {
-                ByteBufList list = (ByteBufList) request;
-                list.writeTo(buf);
-                list.release();
+                buf.add((ByteBufList) request);
             }
         }
     }
