@@ -177,7 +177,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
 
-    private static final int MAX_PENDING_REQUEST_SIZE = 1024 * 1024;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieId bookieId;
@@ -1163,7 +1162,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         try {
             if (request instanceof ByteBuf || request instanceof ByteBufList) {
-                if (prepareSendRequests(request, key) || needFlush) {
+                if (checkFlushPendingRequests(request)) {
+                    flushPendingRequests();
+                }
+                prepareSendRequests(request, key);
+                if (needFlush) {
                     flushPendingRequests();
                 }
             } else {
@@ -1189,7 +1192,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public synchronized boolean prepareSendRequests(Object request, CompletionKey key) {
+    public synchronized void prepareSendRequests(Object request, CompletionKey key) {
         if (pendingSendRequests == null) {
             if (request instanceof ByteBuf) {
                 pendingSendRequests = ByteBufList.get((ByteBuf) request);
@@ -1200,7 +1203,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             BookieProtoEncoding.RequestEnDeCoderPreV3.serializeAddRequests(request, pendingSendRequests);
         }
         pendingSendKeys.add(key);
-        return pendingSendRequests.readableBytes() > MAX_PENDING_REQUEST_SIZE;
+    }
+
+    public synchronized boolean checkFlushPendingRequests(Object request) {
+        if (pendingSendRequests == null) {
+            return false;
+        }
+
+        int numBytes = request instanceof ByteBuf
+            ? ((ByteBuf) request).readableBytes() : ((ByteBufList) request).readableBytes();
+        return pendingSendRequests.readableBytes() + numBytes > maxFrameSize;
     }
 
     public synchronized void flushPendingRequests() {
