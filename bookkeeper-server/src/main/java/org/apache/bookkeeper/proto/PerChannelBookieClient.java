@@ -21,6 +21,8 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
 import com.carrotsearch.hppc.ObjectHashSet;
+import com.carrotsearch.hppc.ObjectSet;
+import com.carrotsearch.hppc.procedures.ObjectProcedure;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -29,7 +31,6 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -78,7 +79,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -176,7 +176,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
-    private static final int DEFAULT_PENDING_REQUEST_SIZE = 1024;
 
     private static final int MAX_PENDING_REQUEST_SIZE = 1024 * 1024;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
@@ -356,9 +355,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private volatile boolean isWritable = true;
     private long lastBookieUnavailableLogTimestamp = 0;
     private ByteBufList pendingSendRequests = null;
-    private final Set<CompletionKey> pendingSendKeys = new HashSet<>();
-    private int maxPendingRequestsSize = DEFAULT_PENDING_REQUEST_SIZE;
-    private volatile Future<?> nextScheduledFlush = null;
+    private final ObjectSet<CompletionKey> pendingSendKeys = new ObjectHashSet<>();
+    private volatile boolean needFlush = true;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -1165,12 +1163,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         try {
             if (request instanceof ByteBuf || request instanceof ByteBufList) {
-                if (prepareSendRequests(request, key)) {
+                if (prepareSendRequests(request, key) || needFlush) {
                     flushPendingRequests();
-                }
-
-                if (nextScheduledFlush == null) {
-                    nextScheduledFlush = channel.eventLoop().submit(this::flushPendingRequests);
                 }
             } else {
                 final long startTime = MathUtils.nowInNano();
@@ -1210,38 +1204,39 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     public synchronized void flushPendingRequests() {
+        if (pendingSendRequests == null) {
+            needFlush = true;
+            return;
+        }
+
         final long startTime = MathUtils.nowInNano();
-        Set<CompletionKey> keys = new ObjectHashSet<>(pendingSendKeys);
+        ObjectSet<CompletionKey> keys = new ObjectHashSet<>(pendingSendKeys);
         ChannelPromise promise = channel.newPromise().addListener(future -> {
             if (future.isSuccess()) {
                 nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                for (CompletionKey completionKey : keys) {
-                    CompletionValue completion = completionObjects.get(completionKey);
+                keys.forEach((ObjectProcedure<? super CompletionKey>) k -> {
+                    CompletionValue completion = completionObjects.get(k);
                     if (completion != null) {
                         completion.setOutstanding();
                     }
-                }
+                });
+
             } else {
                 nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
+            flushPendingRequests();
         });
 
-        if (pendingSendRequests != null) {
-            maxPendingRequestsSize = (int) Math.max(
-                maxPendingRequestsSize * 0.5 + pendingSendRequests.readableBytes() * 0.5,
-                DEFAULT_PENDING_REQUEST_SIZE);
-
-            if (channel != null && channel.isActive()) {
-                channel.writeAndFlush(pendingSendRequests, promise);
-            } else {
-                pendingSendRequests.release();
-                keys.forEach(key -> errorOut(key, BKException.Code.TooManyRequestsException));
-
-            }
-            pendingSendRequests = null;
-            pendingSendKeys.clear();
+        if (channel != null && channel.isActive()) {
+            channel.writeAndFlush(pendingSendRequests, promise);
+        } else {
+            pendingSendRequests.release();
+            pendingSendKeys.forEach((ObjectProcedure<? super CompletionKey>) key ->
+                errorOut(key, BKException.Code.TooManyRequestsException));
         }
-        nextScheduledFlush = null;
+        pendingSendRequests = null;
+        pendingSendKeys.clear();
+        needFlush = false;
     }
 
     void errorOut(final CompletionKey key) {
