@@ -53,6 +53,11 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
         if (HttpServer.Method.PUT.equals(request.getMethod())) {
             ReadOnlyState inState = JsonUtil.fromJson(request.getBody(), ReadOnlyState.class);
             if (stateManager.isReadOnly() && !inState.isReadOnly()) {
+                if (stateManager.isForceReadOnly()) {
+                    response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                    response.setBody("Bookie is in forceReadOnly mode, cannot transit to writable mode");
+                    return response;
+                }
                 stateManager.transitionToWritableMode().get();
             } else if (!stateManager.isReadOnly() && inState.isReadOnly()) {
                 stateManager.transitionToReadOnlyMode().get();
