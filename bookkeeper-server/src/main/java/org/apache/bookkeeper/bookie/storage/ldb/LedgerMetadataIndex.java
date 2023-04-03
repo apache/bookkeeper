@@ -295,41 +295,52 @@ public class LedgerMetadataIndex implements Closeable {
      * Flushes all pending changes.
      */
     public void flush() throws IOException {
+        if (pendingLedgersUpdates.isEmpty()) {
+            return;
+        }
+
         LongWrapper key = LongWrapper.get();
+        try {
+            int updatedLedgers = 0;
+            while (!pendingLedgersUpdates.isEmpty()) {
+                Entry<Long, LedgerData> entry = pendingLedgersUpdates.poll();
+                key.set(entry.getKey());
+                byte[] value = entry.getValue().toByteArray();
+                ledgersDb.put(key.array, value);
+                ++updatedLedgers;
+            }
 
-        int updatedLedgers = 0;
-        while (!pendingLedgersUpdates.isEmpty()) {
-            Entry<Long, LedgerData> entry = pendingLedgersUpdates.poll();
-            key.set(entry.getKey());
-            byte[] value = entry.getValue().toByteArray();
-            ledgersDb.put(key.array, value);
-            ++updatedLedgers;
+            if (log.isDebugEnabled()) {
+                log.debug("Persisting updates to {} ledgers", updatedLedgers);
+            }
+            ledgersDb.sync();
+        } finally {
+            key.recycle();
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Persisting updates to {} ledgers", updatedLedgers);
-        }
-
-        ledgersDb.sync();
-        key.recycle();
     }
 
     public void removeDeletedLedgers() throws IOException {
+        if (pendingDeletedLedgers.isEmpty()) {
+            return;
+        }
+
         LongWrapper key = LongWrapper.get();
+        try {
+            int deletedLedgers = 0;
+            while (!pendingDeletedLedgers.isEmpty()) {
+                long ledgerId = pendingDeletedLedgers.poll();
+                key.set(ledgerId);
+                ledgersDb.delete(key.array);
+                ++deletedLedgers;
+            }
 
-        int deletedLedgers = 0;
-        while (!pendingDeletedLedgers.isEmpty()) {
-            long ledgerId = pendingDeletedLedgers.poll();
-            key.set(ledgerId);
-            ledgersDb.delete(key.array);
+            if (log.isDebugEnabled()) {
+                log.debug("Persisting deletes of ledgers {}", deletedLedgers);
+            }
+            ledgersDb.sync();
+        } finally {
+            key.recycle();
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Persisting deletes of ledgers {}", deletedLedgers);
-        }
-
-        ledgersDb.sync();
-        key.recycle();
     }
 
     private ReentrantLock lockForLedger(long ledgerId) {
