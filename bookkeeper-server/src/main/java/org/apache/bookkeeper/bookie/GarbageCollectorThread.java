@@ -756,7 +756,7 @@ public class GarbageCollectorThread implements Runnable {
                     // We can remove this entry log file now.
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
                     removeEntryLog(entryLogId);
-                    gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
