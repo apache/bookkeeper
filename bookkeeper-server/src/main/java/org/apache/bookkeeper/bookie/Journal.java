@@ -555,18 +555,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    private static class CbThreadFactory implements ThreadFactory {
-        private int counter = 0;
-        private String threadBaseName = "bookie-journal-callback";
-
-        public Thread newThread(Runnable r) {
-            int threadOrdinal = counter++;
-            Thread t = new Thread(r, threadBaseName + "-" + threadOrdinal);
-            ThreadRegistry.register(threadBaseName, threadOrdinal, t.getId());
-            return t;
-        }
-    }
-
     static final int PADDING_MASK = -0x100;
 
     static void writePaddingBytes(JournalChannel jc, ByteBuf paddingBuffer, int journalAlignSize)
