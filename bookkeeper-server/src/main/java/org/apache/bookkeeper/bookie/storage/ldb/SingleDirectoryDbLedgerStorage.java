@@ -646,21 +646,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             ledgerIndex.flush();
 
-            cleanupExecutor.execute(() -> {
-                // There can only be one single cleanup task running because the cleanupExecutor
-                // is single-threaded
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Removing deleted ledgers from db indexes");
-                    }
-
-                    entryLocationIndex.removeOffsetFromDeletedLedgers();
-                    ledgerIndex.removeDeletedLedgers();
-                } catch (Throwable t) {
-                    log.warn("Failed to cleanup db indexes", t);
-                }
-            });
-
             lastCheckpoint = thisCheckpoint;
 
             // Discard all the entry from the write cache, since they're now persisted
@@ -682,6 +667,20 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             // Wrap unchecked exceptions
             throw new IOException(e);
         } finally {
+            cleanupExecutor.execute(() -> {
+                // There can only be one single cleanup task running because the cleanupExecutor
+                // is single-threaded
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Removing deleted ledgers from db indexes");
+                    }
+
+                    entryLocationIndex.removeOffsetFromDeletedLedgers();
+                    ledgerIndex.removeDeletedLedgers();
+                } catch (Throwable t) {
+                    log.warn("Failed to cleanup db indexes", t);
+                }
+            });
             try {
                 isFlushOngoing.set(false);
             } finally {
