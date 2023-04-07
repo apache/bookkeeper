@@ -75,7 +75,7 @@ public class DbLedgerStorageReadCacheTest {
             assertFalse(sdb.chargeReadAheadCache(currentReadAheadCount, currentReadAheadBytes));
 
             /**
-             * case2: currentReadAheadCount < readAheadCacheBatchSize
+             * case3: currentReadAheadCount < readAheadCacheBatchSize
              *        currentReadAheadBytes > maxReadAheadBytesSize
              * result: false
              */
