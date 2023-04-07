@@ -843,21 +843,22 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             // Leave IOExecption as it is
             throw e;
         } finally {
-            cleanupExecutor.execute(() -> {
-                // There can only be one single cleanup task running because the cleanupExecutor
-                // is single-threaded
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Removing deleted ledgers from db indexes");
-                    }
-
-                    entryLocationIndex.removeOffsetFromDeletedLedgers();
-                    ledgerIndex.removeDeletedLedgers();
-                } catch (Throwable t) {
-                    log.warn("Failed to cleanup db indexes", t);
-                }
-            });
             try {
+                cleanupExecutor.execute(() -> {
+                    // There can only be one single cleanup task running because the cleanupExecutor
+                    // is single-threaded
+                    try {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Removing deleted ledgers from db indexes");
+                        }
+
+                        entryLocationIndex.removeOffsetFromDeletedLedgers();
+                        ledgerIndex.removeDeletedLedgers();
+                    } catch (Throwable t) {
+                        log.warn("Failed to cleanup db indexes", t);
+                    }
+                });
+
                 isFlushOngoing.set(false);
             } finally {
                 flushMutex.unlock();
