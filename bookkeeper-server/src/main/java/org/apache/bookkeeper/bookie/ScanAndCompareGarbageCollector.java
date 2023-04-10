@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
@@ -301,7 +302,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             throws BookieException {
         try {
             String metadataServiceUriStr = conf.getMetadataServiceUri();
-            MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
+            MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(ServiceURI.create(metadataServiceUriStr).getUri());
             driver.initialize(
                     conf,
                     statsLogger);

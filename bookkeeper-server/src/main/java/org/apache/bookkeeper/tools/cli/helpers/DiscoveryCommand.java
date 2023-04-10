@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BookKeeper;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
@@ -48,7 +49,7 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     protected boolean apply(ClientConfiguration clientConf, DiscoveryFlagsT cmdFlags) {
         try {
-            URI metadataServiceUri = URI.create(clientConf.getMetadataServiceUri());
+            URI metadataServiceUri = ServiceURI.create(clientConf.getMetadataServiceUri()).getUri();
             @Cleanup("shutdown") ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
             try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(metadataServiceUri)) {
                 driver.initialize(

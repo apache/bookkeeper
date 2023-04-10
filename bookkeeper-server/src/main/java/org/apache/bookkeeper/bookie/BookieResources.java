@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
@@ -54,7 +55,7 @@ public class BookieResources {
             }
 
             MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-                URI.create(metadataServiceUriStr));
+                ServiceURI.create(metadataServiceUriStr).getUri());
             driver.initialize(conf, statsLogger.scope(BOOKIE_SCOPE));
             return driver;
         } catch (MetadataException me) {

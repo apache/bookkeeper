@@ -139,7 +139,7 @@ public class StreamCluster
         String metadataServers = StringUtils.join(serviceHosts, ',');
 
         new ZkClusterInitializer(metadataServers).initializeCluster(
-            metadataServiceUri.getUri(),
+            metadataServiceUri,
             spec.numServers() * 2);
 
         // format the bookkeeper cluster

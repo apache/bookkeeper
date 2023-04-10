@@ -25,6 +25,7 @@ import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterInitializer;
@@ -52,7 +53,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
     }
 
     @Override
-    public boolean initializeCluster(URI metadataServiceUri, int numStorageContainers) {
+    public boolean initializeCluster(ServiceURI metadataServiceUri, int numStorageContainers) {
         String zkInternalConnectString = ZKMetadataDriverBase.getZKServersFromServiceUri(metadataServiceUri);
         // 1) `zkExternalConnectString` are the public endpoints, where the tool can interact with.
         //    It allows the tools running outside of the cluster. It is useful for being used in dockerized environment.
@@ -75,7 +76,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
             } catch (StorageRuntimeException sre) {
                 if (sre.getCause() instanceof KeeperException.NoNodeException) {
 
-                    String ledgersPath = metadataServiceUri.getPath();
+                    String ledgersPath = metadataServiceUri.getServicePath()
                     Optional<String> segmentStorePath;
                     if (Strings.isNullOrEmpty(ledgersPath) || "/" == ledgersPath) {
                         segmentStorePath = Optional.empty();

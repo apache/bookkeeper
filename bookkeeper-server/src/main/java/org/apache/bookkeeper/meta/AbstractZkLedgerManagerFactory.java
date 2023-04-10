@@ -25,6 +25,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
@@ -155,7 +156,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             }
             ledgerRootPath = conf.getZkLedgersRootPath();
         } else {
-            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            URI metadataServiceUri = ServiceURI.create(metadataServiceUriStr).getUri();
             factoryClass = ZKMetadataDriverBase.resolveLedgerManagerFactory(metadataServiceUri);
             ledgerRootPath = metadataServiceUri.getPath();
         }

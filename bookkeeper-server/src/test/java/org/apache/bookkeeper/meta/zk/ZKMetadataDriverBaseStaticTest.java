@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta.zk;
 import static org.junit.Assert.assertEquals;
 
 import java.net.URI;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class ZKMetadataDriverBaseStaticTest {
     @Test
     public void testGetZKServersFromServiceUri() {
         String uriStr = "zk://server1;server2;server3/ledgers";
-        URI uri = URI.create(uriStr);
+        ServiceURI uri = ServiceURI.create(uriStr);
 
         String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(uri);
         assertEquals(
@@ -41,11 +42,29 @@ public class ZKMetadataDriverBaseStaticTest {
             zkServers);
 
         uriStr = "zk://server1,server2,server3/ledgers";
-        uri = URI.create(uriStr);
+        uri = ServiceURI.create(uriStr);
         zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(uri);
         assertEquals(
             "server1,server2,server3",
             zkServers);
+    }
+
+    @Test
+    public void testGetZKServersFromServiceUriWithV6AndPort() {
+        String uriStr = "zk://[:::1]:2181;[:::2]:2181;[:::3]:2181/ledgers";
+        ServiceURI uri = ServiceURI.create(uriStr);
+
+        String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(uri);
+        assertEquals(
+                "[:::1]:2181,[:::2]:2181,[:::3]:2181",
+                zkServers);
+
+        uriStr = "zk://[:::1]:2181,[:::2]:2181,[:::3]:2181/ledgers";
+        uri = ServiceURI.create(uriStr);
+        zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(uri);
+        assertEquals(
+                "[:::1]:2181,[:::2]:2181,[:::3]:2181",
+                zkServers);
     }
 
     @Test(expected = NullPointerException.class)

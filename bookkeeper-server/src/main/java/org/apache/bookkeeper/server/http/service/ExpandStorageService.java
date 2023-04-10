@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpServer;
@@ -84,7 +85,7 @@ public class ExpandStorageService implements HttpEndpointService {
             }
 
             try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-                         URI.create(conf.getMetadataServiceUri()))) {
+                         ServiceURI.create(conf.getMetadataServiceUri()).getUri())) {
                 driver.initialize(conf, NullStatsLogger.INSTANCE);
 
                 try (RegistrationManager registrationManager = driver.createRegistrationManager()) {

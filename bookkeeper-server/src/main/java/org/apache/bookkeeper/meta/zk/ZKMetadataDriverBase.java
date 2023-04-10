@@ -34,6 +34,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
@@ -65,12 +66,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
 
-    public static String getZKServersFromServiceUri(URI uri) {
-        String authority = uri.getAuthority();
-        if (authority == null) {
-            throw new IllegalArgumentException("Invalid metadata service URI format: " + uri);
-        }
-        return authority.replace(";", ",");
+    public static String getZKServersFromServiceUri(ServiceURI serviceURI) {
+        String[] serviceHosts = serviceURI.getServiceHosts();
+        return StringUtils.join(serviceHosts, ",");
     }
 
     @SuppressWarnings("deprecation")
@@ -79,7 +77,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         if (null == metadataServiceUriStr) {
             return conf.getZkServers();
         }
-        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        ServiceURI metadataServiceUri = ServiceURI.create(metadataServiceUriStr);
         return getZKServersFromServiceUri(metadataServiceUri);
     }
 
@@ -89,7 +87,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         if (null == metadataServiceUriStr) {
             return conf.getZkLedgersRootPath();
         }
-        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        URI metadataServiceUri = ServiceURI.create(metadataServiceUriStr).getUri();
         return metadataServiceUri.getPath();
     }
 
@@ -188,16 +186,16 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     Code.INVALID_METADATA_SERVICE_URI, e);
             }
 
-            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            ServiceURI serviceURI = ServiceURI.create(metadataServiceUriStr);
             // get the initialize root path
-            this.ledgersRootPath = metadataServiceUri.getPath();
+            this.ledgersRootPath = serviceURI.getServicePath();
             final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
             final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
 
             // construct the zookeeper
             final String zkServers;
             try {
-                zkServers = getZKServersFromServiceUri(metadataServiceUri);
+                zkServers = getZKServersFromServiceUri(serviceURI);
             } catch (IllegalArgumentException ex) {
                 throw new MetadataException(
                         Code.INVALID_METADATA_SERVICE_URI, ex);

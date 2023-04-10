@@ -64,6 +64,7 @@ import org.apache.bookkeeper.client.api.ListLedgersResultBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
@@ -442,7 +443,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         try {
             String metadataServiceUriStr = conf.getMetadataServiceUri();
             if (null != metadataServiceUriStr) {
-                this.metadataDriver = MetadataDrivers.getClientDriver(URI.create(metadataServiceUriStr));
+                this.metadataDriver = MetadataDrivers.getClientDriver(ServiceURI.create(metadataServiceUriStr).getUri());
             } else {
                 checkNotNull(zkc, "No external zookeeper provided when no metadata service uri is found");
                 this.metadataDriver = MetadataDrivers.getClientDriver("zk");

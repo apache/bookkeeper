@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.storage.api.cluster;
 
 import java.net.URI;
+import org.apache.bookkeeper.common.net.ServiceURI;
 
 /**
  * Initializing cluster metadata.
@@ -43,6 +44,6 @@ public interface ClusterInitializer {
      * @param numStorageContainers number storage containers
      * @return true if successfully initialized cluster; otherwise false.
      */
-    boolean initializeCluster(URI metadataServiceUri, int numStorageContainers);
+    boolean initializeCluster(ServiceURI metadataServiceUri, int numStorageContainers);
 
 }

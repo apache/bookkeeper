@@ -39,6 +39,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -320,7 +321,7 @@ public final class MetadataDrivers {
                                                             ScheduledExecutorService executorService)
             throws MetadataException, ExecutionException {
         try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(
-            URI.create(conf.getMetadataServiceUri())
+            ServiceURI.create(conf.getMetadataServiceUri()).getUri()
         )) {
             driver.initialize(conf, executorService, NullStatsLogger.INSTANCE, Optional.empty());
             try {
@@ -351,7 +352,7 @@ public final class MetadataDrivers {
                                                             Function<MetadataBookieDriver, T> function)
             throws MetadataException, ExecutionException {
         try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-            URI.create(conf.getMetadataServiceUri())
+            ServiceURI.create(conf.getMetadataServiceUri()).getUri()
         )) {
             driver.initialize(conf, NullStatsLogger.INSTANCE);
             try {

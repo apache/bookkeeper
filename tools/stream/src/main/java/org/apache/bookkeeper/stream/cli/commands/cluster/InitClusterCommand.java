@@ -249,7 +249,7 @@ public class InitClusterCommand extends BKCommand<Flags> {
                                            String ledgersUri,
                                            int numStorageContainers) {
         ZkClusterInitializer initializer = new ZkClusterInitializer(metadataServiceHosts);
-        if (initializer.initializeCluster(URI.create(ledgersUri), numStorageContainers)) {
+        if (initializer.initializeCluster(ServiceURI.create(ledgersUri), numStorageContainers)) {
             log.info("Successfully initialized stream storage metadata at {}:{}",
                 metadataServiceHosts,
                 StorageConstants.ZK_METADATA_ROOT_PATH);
