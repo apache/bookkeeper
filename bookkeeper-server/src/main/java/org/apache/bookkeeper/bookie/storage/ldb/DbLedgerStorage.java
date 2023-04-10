@@ -102,7 +102,10 @@ public class DbLedgerStorage implements LedgerStorage {
         (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
+    static final String READ_AHEAD_CACHE_BATCH_BYTES_SIZE = "dbStorage_readAheadCacheBatchBytesSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
+    // the default value is -1. this feature(limit of read ahead bytes) is disabled
+    private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_BYTES_SIZE = -1;
 
     private static final long DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB =
         (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
@@ -171,6 +174,8 @@ public class DbLedgerStorage implements LedgerStorage {
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
         int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
+        long readAheadCacheBatchBytesSize = conf.getInt(READ_AHEAD_CACHE_BATCH_BYTES_SIZE,
+                DEFAULT_READ_AHEAD_CACHE_BATCH_BYTES_SIZE);
 
         ledgerStorageList = Lists.newArrayList();
         for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
@@ -237,7 +242,7 @@ public class DbLedgerStorage implements LedgerStorage {
                 idm, entrylogger,
                 statsLogger, perDirectoryWriteCacheSize,
                 perDirectoryReadCacheSize,
-                readAheadCacheBatchSize));
+                readAheadCacheBatchSize, readAheadCacheBatchBytesSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
             if (!lDirs[0].getPath().equals(iDirs[0].getPath())) {
                 idm.getListeners().forEach(indexDirsManager::addLedgerDirsListener);
@@ -276,11 +281,11 @@ public class DbLedgerStorage implements LedgerStorage {
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
             EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize)
+            int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
                                                   statsLogger, allocator, writeCacheSize, readCacheSize,
-                                                  readAheadCacheBatchSize);
+                                                  readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
     }
 
     @Override
