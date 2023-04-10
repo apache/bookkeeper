@@ -55,6 +55,7 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -211,6 +212,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     .requestRateLimit(conf.getZkRequestRateLimit())
                     .statsLogger(statsLogger)
                     .build();
+
+                this.zk.getClientConfig().setProperty(ZKClientConfig.ZOOKEEPER_SERVER_PRINCIPAL, "zookeeper/" + zkServers);
 
                 if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {
                     try {
