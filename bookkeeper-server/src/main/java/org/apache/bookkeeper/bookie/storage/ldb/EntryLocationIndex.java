@@ -208,14 +208,14 @@ public class EntryLocationIndex implements Closeable {
     }
 
     public void removeOffsetFromDeletedLedgers() throws IOException {
-        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
-        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
-
         Set<Long> ledgersToDelete = deletedLedgers.items();
 
         if (ledgersToDelete.isEmpty()) {
             return;
         }
+
+        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
+        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
 
         log.info("Deleting indexes for ledgers: {}", ledgersToDelete);
         long startTime = System.nanoTime();
