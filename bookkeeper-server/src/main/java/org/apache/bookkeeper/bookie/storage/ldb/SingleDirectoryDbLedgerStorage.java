@@ -132,6 +132,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final long writeCacheMaxSize;
     private final long readCacheMaxSize;
     private final int readAheadCacheBatchSize;
+    private final long readAheadCacheBatchBytesSize;
 
     private final long maxThrottleTimeNanos;
 
@@ -146,7 +147,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                                           EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
-                                          long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+                                          long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize,
+                                          long readAheadCacheBatchBytesSize)
             throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
@@ -173,6 +175,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         readCacheMaxSize = readCacheSize;
         this.readAheadCacheBatchSize = readAheadCacheBatchSize;
+        this.readAheadCacheBatchBytesSize = readAheadCacheBatchBytesSize;
 
         // Do not attempt to perform read-ahead more than half the total size of the cache
         maxReadAheadBytesSize = readCacheMaxSize / 2;
@@ -655,9 +658,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             long currentEntryLogId = firstEntryLogId;
             long currentEntryLocation = firstEntryLocation;
 
-            while (count < readAheadCacheBatchSize
-                    && size < maxReadAheadBytesSize
-                    && currentEntryLogId == firstEntryLogId) {
+            while (chargeReadAheadCache(count, size) && currentEntryLogId == firstEntryLogId) {
                 ByteBuf entry = entryLogger.readEntry(orginalLedgerId,
                         firstEntryId, currentEntryLocation);
 
@@ -693,6 +694,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             dbLedgerStorageStats.getReadAheadTime().addLatency(
                     MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         }
+    }
+
+    protected boolean chargeReadAheadCache(int currentReadAheadCount, long currentReadAheadBytes) {
+        // compatible with old logic
+        boolean chargeSizeCondition = currentReadAheadCount < readAheadCacheBatchSize
+                && currentReadAheadBytes < maxReadAheadBytesSize;
+        if (chargeSizeCondition && readAheadCacheBatchBytesSize > 0) {
+            // exact limits limit the size and count for each batch
+            chargeSizeCondition = currentReadAheadBytes < readAheadCacheBatchBytesSize;
+        }
+        return chargeSizeCondition;
     }
 
     public ByteBuf getLastEntry(long ledgerId) throws IOException, BookieException {
@@ -1246,5 +1258,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         curFlags, newFlags);
             }
         }
+    }
+
+    @VisibleForTesting
+    DbLedgerStorageStats getDbLedgerStorageStats() {
+        return dbLedgerStorageStats;
     }
 }
