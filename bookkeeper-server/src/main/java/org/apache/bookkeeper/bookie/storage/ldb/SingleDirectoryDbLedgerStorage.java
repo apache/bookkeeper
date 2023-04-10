@@ -700,11 +700,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // compatible with old logic
         boolean chargeSizeCondition = currentReadAheadCount < readAheadCacheBatchSize
                 && currentReadAheadBytes < maxReadAheadBytesSize;
-        if (readAheadCacheBatchBytesSize > 0) {
+        if (chargeSizeCondition && readAheadCacheBatchBytesSize > 0) {
             // exact limits limit the size and count for each batch
-            chargeSizeCondition = currentReadAheadCount < readAheadCacheBatchSize
-                    && currentReadAheadBytes < readAheadCacheBatchBytesSize
-                    && currentReadAheadBytes < readCacheMaxSize;
+            chargeSizeCondition = currentReadAheadBytes < readAheadCacheBatchBytesSize;
         }
         return chargeSizeCondition;
     }
