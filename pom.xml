@@ -119,7 +119,7 @@
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.2</commons-cli.version>
     <commons-collections4.version>4.1</commons-collections4.version>
-    <commons-codec.version>1.6</commons-codec.version>
+    <commons-codec.version>1.13</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-compress.version>1.21</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
