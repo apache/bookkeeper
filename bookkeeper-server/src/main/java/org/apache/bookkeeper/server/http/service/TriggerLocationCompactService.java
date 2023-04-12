@@ -83,9 +83,17 @@ public class TriggerLocationCompactService implements HttpEndpointService {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                Boolean isEntryLocationCompact = (Boolean) configMap
-                        .getOrDefault("entryLocationRocksDBCompact", false);
-                String entryLocations = (String) configMap.getOrDefault("entryLocations", "");
+                Object isEntryLocationCompactObj = configMap
+                        .get("entryLocationRocksDBCompact");
+                boolean isEntryLocationCompact = false;
+                if (isEntryLocationCompactObj instanceof Boolean) {
+                    isEntryLocationCompact = (Boolean) isEntryLocationCompactObj;
+                }
+                Object entryLocationsObj = configMap.get("entryLocations");
+                String entryLocations = "";
+                if (entryLocationsObj instanceof String) {
+                    entryLocations = (String) entryLocationsObj;
+                }
 
                 if (!isEntryLocationCompact) {
                     // If entryLocationRocksDBCompact is false, doing nothing.

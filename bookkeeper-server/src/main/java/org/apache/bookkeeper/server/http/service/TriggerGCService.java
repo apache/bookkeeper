@@ -69,8 +69,15 @@ public class TriggerGCService implements HttpEndpointService {
             } else {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                Boolean forceMajor = (Boolean) configMap.getOrDefault("forceMajor", null);
-                Boolean forceMinor = (Boolean) configMap.getOrDefault("forceMinor", null);
+                Object forceMajorObj = configMap.getOrDefault("forceMajor", null);
+                Object forceMinorObj = configMap.getOrDefault("forceMinor", null);
+                boolean forceMajor = false, forceMinor = false;
+                if (forceMajorObj instanceof Boolean) {
+                    forceMajor = (Boolean) forceMajorObj;
+                }
+                if (forceMinorObj instanceof Boolean) {
+                    forceMinor = (Boolean) forceMinorObj;
+                }
                 bookieServer.getBookie().getLedgerStorage().forceGC(forceMajor, forceMinor);
             }
 

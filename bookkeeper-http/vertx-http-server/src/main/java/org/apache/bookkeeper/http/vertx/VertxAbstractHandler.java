@@ -33,11 +33,15 @@ import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Http Handler for Vertx based Http Server.
  */
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(VertxAbstractHandler.class);
 
     /**
      * Process the request using the given httpEndpointService.
@@ -53,6 +57,7 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
         try {
             response = httpEndpointService.handle(request);
         } catch (Exception e) {
+            LOG.error("Failed to execute http request:", e);
             response = new ErrorHttpService().handle(request);
         }
         httpResponse.setStatusCode(response.getStatusCode());

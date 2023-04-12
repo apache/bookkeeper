@@ -53,18 +53,25 @@ public class ResumeCompactionService implements HttpEndpointService {
             } else {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                Boolean resumeMajor = (Boolean) configMap.get("resumeMajor");
-                Boolean resumeMinor = (Boolean) configMap.get("resumeMinor");
-                if (resumeMajor == null && resumeMinor == null) {
+                Object resumeMajorObj = configMap.get("resumeMajor");
+                Object resumeMinorObj = configMap.get("resumeMinor");
+                boolean resumeMajor = false, resumeMinor = false;
+                if (resumeMajorObj instanceof Boolean) {
+                    resumeMajor = (Boolean) resumeMajorObj;
+                }
+                if (resumeMinorObj instanceof Boolean) {
+                    resumeMinor = (Boolean) resumeMinorObj;
+                }
+                if (!resumeMajor && !resumeMinor) {
                     return new HttpServiceResponse("No resumeMajor or resumeMinor params found",
                             HttpServer.StatusCode.BAD_REQUEST);
                 }
                 String output = "";
-                if (resumeMajor != null  && resumeMajor) {
+                if (resumeMajor) {
                     output = "Resume majorGC on BookieServer: " + bookieServer.toString();
                     bookieServer.getBookie().getLedgerStorage().resumeMajorGC();
                 }
-                if (resumeMinor != null && resumeMinor) {
+                if (resumeMinor) {
                     output += ", Resume minorGC on BookieServer: " + bookieServer.toString();
                     bookieServer.getBookie().getLedgerStorage().resumeMinorGC();
                 }

@@ -53,18 +53,26 @@ public class SuspendCompactionService implements HttpEndpointService {
             } else {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                Boolean suspendMajor = (Boolean) configMap.get("suspendMajor");
-                Boolean suspendMinor = (Boolean) configMap.get("suspendMinor");
-                if (suspendMajor == null && suspendMinor == null) {
+                Object suspendMajorObj = configMap.get("suspendMajor");
+                Object suspendMinorObj = configMap.get("suspendMinor");
+                boolean suspendMajor = false, suspendMinor = false;
+                if (suspendMajorObj instanceof Boolean) {
+                    suspendMajor = (Boolean) suspendMajorObj;
+                }
+                if (suspendMinorObj instanceof Boolean) {
+                    suspendMinor = (Boolean) suspendMinorObj;
+                }
+
+                if (!suspendMajor && !suspendMinor) {
                     return new HttpServiceResponse("No suspendMajor or suspendMinor params found",
                             HttpServer.StatusCode.BAD_REQUEST);
                 }
                 String output = "";
-                if (suspendMajor != null  && suspendMajor) {
+                if (suspendMajor) {
                     output = "Suspend majorGC on BookieServer: " + bookieServer.toString();
                     bookieServer.getBookie().getLedgerStorage().suspendMajorGC();
                 }
-                if (suspendMinor != null && suspendMinor) {
+                if (suspendMinor) {
                     output += ", Suspend minorGC on BookieServer: " + bookieServer.toString();
                     bookieServer.getBookie().getLedgerStorage().suspendMinorGC();
                 }
