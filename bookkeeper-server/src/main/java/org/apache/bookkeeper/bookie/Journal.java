@@ -41,7 +41,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
@@ -552,18 +551,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             running = false;
             this.interrupt();
             this.join();
-        }
-    }
-
-    private static class CbThreadFactory implements ThreadFactory {
-        private int counter = 0;
-        private String threadBaseName = "bookie-journal-callback";
-
-        public Thread newThread(Runnable r) {
-            int threadOrdinal = counter++;
-            Thread t = new Thread(r, threadBaseName + "-" + threadOrdinal);
-            ThreadRegistry.register(threadBaseName, threadOrdinal, t.getId());
-            return t;
         }
     }
 
