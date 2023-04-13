@@ -63,8 +63,8 @@
           <artifactId>avro</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>hadoop-auth</artifactId>
+          <groupId>net.minidev</groupId>
+          <artifactId>json-smart</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.github.pjfanning</groupId>
