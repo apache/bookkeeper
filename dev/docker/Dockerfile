@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM maven:3.8.6-eclipse-temurin-11
+FROM maven:3.9.0-eclipse-temurin-11
 
 RUN apt-get update
 RUN apt-get install -y g++ cmake
