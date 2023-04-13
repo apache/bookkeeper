@@ -1468,7 +1468,7 @@ public class BookieWriteLedgerTest extends
     }
 
     @Test
-    public void testReadLacNotSameWithMetadata() throws Exception {
+    public void testReadLacNotSameWithMetadataLedgerReplication() throws Exception {
        lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
         for (int i = 0; i < 10; ++i) {
             ByteBuffer entry = ByteBuffer.allocate(4);
@@ -1481,11 +1481,10 @@ public class BookieWriteLedgerTest extends
         assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
         killBookie(ensemble.get(1));
 
-
         try {
             lh.ensembleChangeLoop(ensemble, Collections.singletonMap(1, ensemble.get(1)));
         } catch (Exception e) {
-            //
+            fail();
         }
 
         LedgerHandle lh1 = bkc.openLedgerNoRecovery(lh.ledgerId, digestType, ledgerPassword);
