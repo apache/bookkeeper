@@ -378,7 +378,6 @@ public class LedgerChecker {
                             long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new LinkedHashSet<>();
-        long lastLac = lh.lastAddConfirmed;
 
         Long curEntryId = null;
         List<BookieId> curEnsemble = null;
@@ -389,10 +388,8 @@ public class LedgerChecker {
                 for (int i = 0; i < curEnsemble.size(); i++) {
                     bookieIndexes.add(i);
                 }
-                //long lastKnownEntryId = e.getKey() - 1;
-                long lastKnownEntryId = Math.min(e.getKey() - 1, lastLac);
                 fragments.add(new LedgerFragment(lh, curEntryId,
-                        lastKnownEntryId, bookieIndexes));
+                        e.getKey() - 1, bookieIndexes));
             }
             curEntryId = e.getKey();
             curEnsemble = e.getValue();
