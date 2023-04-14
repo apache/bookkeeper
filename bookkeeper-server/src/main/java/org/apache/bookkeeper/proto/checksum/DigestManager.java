@@ -159,7 +159,7 @@ public abstract class DigestManager {
         buf.readerIndex(0);
 
         if (isSmallEntry) {
-            buf.writeBytes(unwrapped);
+            buf.writeBytes(unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
             unwrapped.release();
             return buf;
         } else {
