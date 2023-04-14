@@ -305,7 +305,11 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
     private void setTargetChannelState(BookKeeper bkc, BookieId address,
                                        long key, boolean writable) throws Exception {
         ((BookieClientImpl) bkc.getBookieClient()).lookupClient(address).obtain((rc, pcbc) -> {
-            pcbc.setWritable(writable);
+            if (writable) {
+                pcbc.makeWritable();
+            } else {
+                pcbc.makeUnWritable();
+            }
         }, key);
     }
 

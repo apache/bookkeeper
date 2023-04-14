@@ -483,7 +483,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             public void disconnect() {
                 Channel c = channel;
                 if (c != null) {
-                    c.close().addListener(x -> makeWritable());
+                    c.close().addListener(x -> makeUnWritable());
                 }
                 LOG.info("authplugin disconnected channel {}", channel);
             }
@@ -631,13 +631,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public boolean isWritable() {
         return isWritable;
     }
-
-    public void setWritable(boolean val) {
-        isWritable = val;
+    
+    public void makeWritable() {
+        this.isWritable = true;
     }
-
-    private void makeWritable() {
-        setWritable(true);
+    
+    public void makeUnWritable() {
+        this.isWritable = false;
     }
 
     void connectIfNeededAndDoOp(GenericCallback<PerChannelBookieClient> op) {
@@ -1097,7 +1097,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
             toClose = channel;
             channel = null;
-            makeWritable();
+            makeUnWritable();
         }
         if (toClose != null) {
             ChannelFuture cf = closeChannel(toClose);
@@ -1111,7 +1111,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Closing channel {}", c);
         }
-        return c.close().addListener(x -> makeWritable());
+        return c.close().addListener(x -> makeUnWritable());
     }
 
     @Override
