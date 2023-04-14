@@ -631,11 +631,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public boolean isWritable() {
         return isWritable;
     }
-    
+
     public void makeWritable() {
         this.isWritable = true;
     }
-    
+
     public void makeUnWritable() {
         this.isWritable = false;
     }
