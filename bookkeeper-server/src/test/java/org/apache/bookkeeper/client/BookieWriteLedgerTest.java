@@ -1507,6 +1507,8 @@ public class BookieWriteLedgerTest extends
         // initialize urReplicationManager
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30));
+
 
         ReplicationWorker replicationWorker = new ReplicationWorker(baseConf);
         replicationWorker.start();
