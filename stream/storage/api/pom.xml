@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-service-parent</artifactId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>stream-storage-service-api</artifactId>
@@ -55,8 +55,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>

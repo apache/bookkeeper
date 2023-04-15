@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-tools-parent</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-tools-framework</artifactId>
   <name>Apache BookKeeper :: Tools :: Framework</name>
@@ -41,8 +41,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>

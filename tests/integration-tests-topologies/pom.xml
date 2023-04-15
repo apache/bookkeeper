@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>tests-parent</artifactId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
   </parent>
 
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -45,8 +45,4 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>

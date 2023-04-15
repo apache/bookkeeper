@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-stats-providers</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>prometheus-metrics-provider</artifactId>
@@ -72,8 +72,4 @@
     </dependency>
 
   </dependencies>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>

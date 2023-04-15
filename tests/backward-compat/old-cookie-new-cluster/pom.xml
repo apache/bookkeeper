@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>backward-compat</artifactId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -28,8 +28,4 @@
   <artifactId>old-cookie-new-cluster</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test upgrade 4.1.0 to current in cluster with cookies</name>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>

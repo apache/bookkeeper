@@ -20,7 +20,7 @@
   <parent>
     <artifactId>distributedlog</artifactId>
     <groupId>org.apache.distributedlog</groupId>
-    <version>4.16.1</version>
+    <version>4.16.1-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
@@ -88,8 +88,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>v4.16.1-rc0</tag>
-  </scm>
 </project>
