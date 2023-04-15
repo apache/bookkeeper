@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>docker-images</artifactId>
-    <version>4.16.1-SNAPSHOT</version>
+    <version>4.16.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -68,4 +68,8 @@
       </build>
     </profile>
   </profiles>
+
+  <scm>
+    <tag>v4.16.1-rc0</tag>
+  </scm>
 </project>

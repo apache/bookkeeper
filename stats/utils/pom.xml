@@ -22,7 +22,7 @@
   <parent>
     <artifactId>bookkeeper-stats-parent</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.1-SNAPSHOT</version>
+    <version>4.16.1</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-utils</artifactId>
@@ -50,4 +50,8 @@
       <artifactId>jackson-annotations</artifactId>
     </dependency>
   </dependencies>
+
+  <scm>
+    <tag>v4.16.1-rc0</tag>
+  </scm>
 </project>

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>integration-tests-base</artifactId>
-    <version>4.16.1-SNAPSHOT</version>
+    <version>4.16.1</version>
     <relativePath>../integration-tests-base</relativePath>
   </parent>
 
@@ -109,4 +109,8 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <scm>
+    <tag>v4.16.1-rc0</tag>
+  </scm>
 </project>
