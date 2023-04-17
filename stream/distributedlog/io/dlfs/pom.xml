@@ -58,6 +58,18 @@
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.minidev</groupId>
+          <artifactId>json-smart</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.pjfanning</groupId>
+          <artifactId>jersey-json</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
