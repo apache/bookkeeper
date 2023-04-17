@@ -33,8 +33,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
@@ -98,7 +96,7 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
                         entryEnumeration, null);
                 return null;
             }
-        }).when(lh).asyncReadEntries(anyLong(), anyLong(),any(ReadCallback.class), any());
+        }).when(lh).asyncReadEntries(anyLong(), anyLong(), any(ReadCallback.class), any());
         doAnswer(new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) {
                 ((AddCallback) invocation.getArguments()[1]).addComplete(BKException.Code.OK, lh,

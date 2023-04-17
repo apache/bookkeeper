@@ -20,11 +20,14 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.beust.jcommander.Parameter;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -39,12 +42,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.beust.jcommander.Parameter;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-
-import lombok.Setter;
-import lombok.experimental.Accessors;
 
 /**
  * A bookie command to sanity test for local bookie.
