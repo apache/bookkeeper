@@ -173,7 +173,7 @@ public class BookieStateManager implements StateManager {
         };
         statsLogger.registerGauge(SERVER_SANITY, serverSanityGauge);
         stateService.scheduleAtFixedRate(() -> {
-            if (forceReadOnly.get()) {
+            if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
                 sanityPassed.set(1);
                 return;
             }
