@@ -65,16 +65,16 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
 
     @Override
     public void registerFailedEvent(long eventLatency, TimeUnit unit) {
-        double valueMillis = unit.toMicros(eventLatency) / 1000.0;
+        double valueMicros = unit.toMicros(eventLatency) / 1000.0;
 
         failCountAdder.increment();
-        failSumAdder.add((long) valueMillis);
+        failSumAdder.add((long) valueMicros);
 
         LocalData localData = current.localData.get();
 
         long stamp = localData.lock.readLock();
         try {
-            localData.failSketch.update(valueMillis);
+            localData.failSketch.update(valueMicros);
         } finally {
             localData.lock.unlockRead(stamp);
         }
@@ -82,16 +82,16 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
 
     @Override
     public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
-        double valueMillis = unit.toMicros(eventLatency) / 1000.0;
+        double valueMicros = unit.toMicros(eventLatency) / 1000.0;
 
         successCountAdder.increment();
-        successSumAdder.add((long) valueMillis);
+        successSumAdder.add((long) valueMicros);
 
         LocalData localData = current.localData.get();
 
         long stamp = localData.lock.readLock();
         try {
-            localData.successSketch.update(valueMillis);
+            localData.successSketch.update(valueMicros);
         } finally {
             localData.lock.unlockRead(stamp);
         }
