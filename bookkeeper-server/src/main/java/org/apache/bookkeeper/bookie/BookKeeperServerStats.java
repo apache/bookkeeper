@@ -31,6 +31,7 @@ public interface BookKeeperServerStats {
     String BOOKIE_SCOPE = "bookie";
 
     String SERVER_STATUS = "SERVER_STATUS";
+    String SERVER_SANITY = "SERVER_SANITY";
 
     //
     // Network Stats (scoped under SERVER_SCOPE)
