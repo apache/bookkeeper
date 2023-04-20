@@ -251,6 +251,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Statistics Parameters
     protected static final String ENABLE_STATISTICS = "enableStatistics";
     protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
+    protected static final String SANITY_CHECK_METRICS_ENABLED = "sanityCheckMetricsEnabled";
 
 
     // Rx adaptive ByteBuf allocator parameters
@@ -3140,6 +3141,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setStatsProviderClass(Class<? extends StatsProvider> providerClass) {
         setProperty(STATS_PROVIDER_CLASS, providerClass.getName());
+        return this;
+    }
+
+
+    /**
+     * Flag to enable sanity check metrics in bookie stats. Defaults to false/disabled.
+     *
+     * @return true, if bookie collects sanity check metrics in stats
+     */
+    public boolean isSanityCheckMetricsEnabled() {
+        return getBoolean(SANITY_CHECK_METRICS_ENABLED, false);
+    }
+
+    /**
+     * Enable sanity check metrics in bookie stats.
+     *
+     * @param sanityCheckMetricsEnabled
+     *          flag to enable sanity check metrics
+     * @return server configuration
+     */
+    public ServerConfiguration setSanityCheckMetricsEnabled(boolean sanityCheckMetricsEnabled) {
+        setProperty(SANITY_CHECK_METRICS_ENABLED, sanityCheckMetricsEnabled);
         return this;
     }
 

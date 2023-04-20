@@ -23,6 +23,7 @@ Two stats-related [configuration parameters](../reference/config/) are available
 Parameter | Description | Default
 :---------|:------------|:-------
 `enableStatistics` | Whether statistics are enabled for the bookie | `false`
+`sanityCheckMetricsEnabled` | Flag to enable sanity check metrics in bookie stats | `false`
 `statsProviderClass` | The stats provider class used by the bookie | `org.apache.bookkeeper.stats.CodahaleMetricsProvider`
 
 
