@@ -177,7 +177,7 @@ public class TestPrometheusFormatter {
     }
 
     @Test
-    public void testWriteMetricsCollectedByPrometheusClient() throws Exception {
+    public void testWriteMetricsCollectedByPrometheusClient() {
         CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         registry.register(new StandardExports());
         registry.register(new MemoryPoolsExports());
