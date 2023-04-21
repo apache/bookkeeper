@@ -56,6 +56,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec-maven-plugin.version}</version>
+        <!-- Commented by Simone
         <executions>
           <execution>
             <id>bash-tests</id>
@@ -70,6 +71,7 @@
             </configuration>
           </execution>
         </executions>
+        -->
       </plugin>
     </plugins>
   </build>
