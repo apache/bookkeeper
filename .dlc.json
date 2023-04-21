@@ -1,0 +1,77 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://kubernetes.io/docs/resources-reference/v1.6/"
+    },
+    {
+      "pattern": "^https://zookeeper.apache.org/doc/"
+    },
+    {
+      "pattern": "^http://zookeeper.apache.org/doc/current/api/"
+    },
+    {
+      "pattern": "^https://github.com/apache/bookkeeper/"
+    },
+    {
+      "pattern": "^https://github.com/sijie/bookkeeper/tree/bookie_shell_refactor"
+    },
+    {
+      "pattern": "^http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage"
+    },
+    {
+      "pattern": "^https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/"
+    },
+    {
+      "pattern": "^http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage"
+    },
+    {
+      "pattern": "^https://bookkeeper.apache.org/docs/api/javadoc/"
+    },
+    {
+      "pattern": "^http://hbtc2012.hadooper.cn/subject/track1maheswara2.pdf"
+    },
+    {
+      "pattern": "^https://developer.yahoo.com/blogs/ydn/bookkeeper-durability-scale-54048.html"
+    },
+    {
+      "pattern": "^http://apache.claz.org/bookkeeper"
+    },
+    {
+      "pattern": "^https://dcos.io/"
+    },
+    {
+      "pattern": "^ https://docs.mesosphere.com"
+    },
+    {
+      "pattern": "^http://master.dcos/exhibitor"
+    },
+    {
+      "pattern": "^https://docs.mesosphere.com/"
+    },
+    {
+      "pattern": "^https://distributedlog.io"
+    },
+    {
+      "pattern": "^https://www.opengroup.org/membership/forums/platform/unix"
+    },
+    {
+      "pattern": "^https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html"
+    },
+    {
+      "pattern": "^http://daxue.qq.com/content/content/id/2492"
+    }
+  ],
+  "timeout": "10s",
+  "retryOn429": true,
+  "retryCount": 10,
+  "fallbackRetryDelay": "1000s",
+  "aliveStatusCodes": [
+    200,
+    400,
+    401,
+    403
+  ]
+}

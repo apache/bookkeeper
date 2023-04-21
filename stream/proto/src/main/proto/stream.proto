@@ -1,0 +1,216 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+package bookkeeper.proto.stream;
+
+option java_multiple_files = true;
+option java_package = "org.apache.bookkeeper.stream.proto";
+
+//
+// Range
+//
+
+enum RangeState {
+    RANGE_ACTIVE = 0;
+    RANGE_FENCING = 1;
+    RANGE_FENCED = 2;
+}
+
+message RangeId {
+    int64 sc_id     = 1;
+    int64 stream_id = 2;
+    int64 range_id  = 3;
+}
+
+message KeyRange {
+    int64 start_hash_key = 1;
+    int64 end_hash_key   = 2;
+}
+
+message RangeProperties {
+    int64 start_hash_key        = 1;
+    int64 end_hash_key          = 2;
+    int64 range_id              = 3;
+    int64 storage_container_id  = 4;
+}
+
+enum RangeKeyType {
+    NULL        = 0;
+    HASH        = 1;
+    RAW         = 2; // reserved, not implemented yet
+}
+
+message RangeMetadata {
+    RangeProperties props       = 1; 
+    int64 revision              = 2;
+    RangeState state            = 3;
+
+    // time
+    int64 create_time           = 10;
+    int64 fence_time            = 11;
+
+    // children and parents
+    repeated int64 children     = 20;
+    repeated int64 parents      = 21;
+}
+
+message ParentRanges {
+    int64 range_id                      = 1;
+    repeated int64 parent_range_ids     = 2;
+}
+
+message ParentRangesList {
+    repeated ParentRanges child_ranges   = 1;
+}
+
+//
+// Stream
+//
+
+// since stream and table are similar and exchangable,
+// from the beginning, we shared the metadata management
+// between streams and tables and distinguish them using
+// a flag that recorded in metadata.
+enum StorageType {
+    STREAM      = 0;
+    TABLE       = 1;
+}
+
+enum SplitPolicyType {
+    FIXED       = 0;
+    BANDWIDTH   = 1;
+}
+
+message FixedRangeSplitPolicy {
+    int32 num_ranges    = 1;
+}
+
+message BandwidthBasedSplitPolicy {
+    int32 max_rate_in_bytes     = 1;
+    int32 min_rate_in_bytes     = 2;
+    int32 max_rate_in_records   = 3;
+    int32 min_rate_in_records   = 4;
+    int32 max_split_factor      = 5;
+}
+
+message SplitPolicy {
+    SplitPolicyType type        = 1;
+
+    oneof policy {
+        FixedRangeSplitPolicy fixed_range_policy = 2;
+        BandwidthBasedSplitPolicy bandwidth_policy = 3;
+    }
+}
+
+message SizeBasedSegmentRollingPolicy {
+    int64 max_segment_size      = 1;
+}
+
+message TimeBasedSegmentRollingPolicy {
+    int64 interval_seconds      = 1;
+}
+
+message SegmentRollingPolicy {
+    SizeBasedSegmentRollingPolicy size_policy = 1;
+    TimeBasedSegmentRollingPolicy time_policy = 2;
+}
+
+message TimeBasedRetentionPolicy {
+    int64 retention_minutes     = 1;
+}
+
+message RetentionPolicy {
+    TimeBasedRetentionPolicy time_policy = 1;
+}
+
+message StreamConfiguration {
+    RangeKeyType key_type               = 1;
+    int32 min_num_ranges                = 2;
+    int32 initial_num_ranges            = 3;
+    SplitPolicy split_policy            = 4;
+    SegmentRollingPolicy rolling_policy = 5;
+    RetentionPolicy retention_policy    = 6;
+    StorageType storage_type            = 7;
+    int32 ttl_seconds                   = 8;
+}
+
+message StreamProperties {
+    int64 stream_id                     = 1;
+    int64 storage_container_id          = 2;
+    string stream_name                  = 3;
+    StreamConfiguration stream_conf     = 4;
+}
+
+message StreamName {
+    string namespace_name     = 1;
+    string stream_name  = 2;
+}
+
+message StreamMetadata {
+
+    enum LifecycleState {
+        UNINIT          = 0;
+        CREATING        = 1;
+        CREATED         = 2;
+        FENCING         = 3;
+        FENCED          = 4;
+    }
+
+    enum ServingState {
+        WRITABLE        = 0;
+        READONLY        = 1;
+    }
+
+    // stream properties
+    StreamProperties props              = 1;
+    // stream lifecycle state
+    LifecycleState lifecycle_state      = 2;
+    // stream serving state
+    ServingState serving_state          = 3;
+    // time
+    uint64 c_time                       = 4;
+    uint64 m_time                       = 5;
+
+    // ranges
+    uint64 next_range_id                = 100;
+
+    // current active ranges
+    repeated uint64 current_ranges      = 101;
+}
+
+//
+// Namespace
+//
+
+// user requested 
+message NamespaceConfiguration {
+    StreamConfiguration default_stream_conf     = 1;
+}
+
+// public metadata for a namespace
+message NamespaceProperties {
+    int64 namespace_id                         = 1;
+    string namespace_name                      = 2;
+    StreamConfiguration default_stream_conf     = 3;
+}
+
+// the whole metadata for a namespace (including both public and private)
+message NamespaceMetadata {
+    NamespaceProperties props  = 1;
+}

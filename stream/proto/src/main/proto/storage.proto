@@ -1,0 +1,225 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+import "common.proto";
+import "stream.proto";
+
+package bookkeeper.proto.storage;
+
+option java_multiple_files = true;
+option java_package = "org.apache.bookkeeper.stream.proto.storage";
+
+//
+// Requests
+//
+
+enum StatusCode {
+    SUCCESS                     = 0;
+    FAILURE                     = 1;
+
+    // 4xx: client errors
+    BAD_REQUEST                 = 400;
+    ILLEGAL_OP                  = 403;
+
+    // 5xx: server errors
+    INTERNAL_SERVER_ERROR       = 500;
+    NOT_IMPLEMENTED             = 501;
+
+    // 6xx: unexpected
+    UNEXPECTED                  = 600;
+
+    // 9xx: revisions, versions 
+    BAD_VERSION                 = 900;
+    BAD_REVISION                = 901;
+
+    // ROOT and META RANGE related
+
+    // 20xx: Namespace Related
+    INVALID_NAMESPACE_NAME     = 2000;
+    NAMESPACE_EXISTS           = 2001;
+    NAMESPACE_NOT_FOUND        = 2002;
+
+    // 21xx: Stream Related
+    INVALID_STREAM_NAME         = 2100;
+    STREAM_EXISTS               = 2101;
+    STREAM_NOT_FOUND            = 2102;
+    INVALID_STREAMSNAPSHOT_NAME = 2103;
+    STREAMSNAPSHOT_EXISTS       = 2104;
+    STREAMSNAPSHOT_NOT_FOUND    = 2105;
+
+    // 3xxx: GROUP related
+    WRONG_GROUP_LOCATION        = 3000;
+    INVALID_GROUP_ID            = 3001;
+    GROUP_EXISTS                = 3002;
+    GROUP_NOT_FOUND             = 3003;
+    STALE_GROUP_INFO            = 3004;
+
+    // 6xxx: Table related
+    INVALID_KEY                 = 6000;
+    KEY_EXISTS                  = 6001;
+    KEY_NOT_FOUND               = 6002;
+}
+
+//
+// Meta Range Service
+//
+
+message GetActiveRangesRequest {
+    int64 stream_id     = 1;
+    // create stream if not exists
+    stream.StreamProperties stream_props = 2;
+}
+
+message GetActiveRangesResponse {
+    StatusCode code                     = 1;
+    repeated RelatedRanges ranges       = 2;
+}
+
+enum RelationType {
+    CHILDREN                = 0;
+    PARENTS                 = 1;
+    CHILDREN_PARENTS        = 2;
+}
+
+message RelatedRanges {
+    stream.RangeProperties props        = 1;
+    RelationType type                   = 2;
+    repeated int64 related_ranges       = 3;
+}
+
+// public service for other operations in range server
+service MetaRangeService {
+    rpc GetActiveRanges(GetActiveRangesRequest)        returns (GetActiveRangesResponse);
+}
+
+//
+// Root Range Services
+//
+
+message CreateNamespaceRequest {
+    string name                             = 1;
+    stream.NamespaceConfiguration ns_conf   = 2;
+}
+
+message CreateNamespaceResponse {
+    StatusCode code                         = 1;
+    stream.NamespaceProperties ns_props     = 2;
+}
+
+message DeleteNamespaceRequest {
+    string name = 1;
+}
+
+message DeleteNamespaceResponse {
+    StatusCode code = 1;
+}
+
+message GetNamespaceRequest {
+    string name = 1;
+}
+
+message GetNamespaceResponse {
+    StatusCode code = 1;
+    stream.NamespaceProperties ns_props = 2;
+}
+
+message CreateStreamRequest {
+    string ns_name                         = 1;
+    string name                            = 2;
+    stream.StreamConfiguration stream_conf = 3;
+}
+
+message CreateStreamResponse {
+    StatusCode code                      = 1;
+    stream.StreamProperties stream_props = 2;
+}
+
+message DeleteStreamRequest {
+    string ns_name                       = 1;
+    string name                          = 2;
+}
+
+message DeleteStreamResponse {
+    StatusCode code                      = 1;
+}
+
+message GetStreamRequest {
+    oneof id {
+        stream.StreamName stream_name   = 1;
+        int64 stream_id                 = 2;
+    }
+}
+
+message GetStreamResponse {
+    StatusCode code                      = 1;
+    stream.StreamProperties stream_props = 2;
+}
+
+// public service for metadata services
+service RootRangeService {
+    //
+    // Namespace Methods
+    //
+    rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
+    rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse);
+    rpc GetNamespace(GetNamespaceRequest) returns (GetNamespaceResponse);
+
+    //
+    // Stream Methods
+    //
+    rpc CreateStream(CreateStreamRequest) returns (CreateStreamResponse);
+    rpc DeleteStream(DeleteStreamRequest) returns (DeleteStreamResponse);
+    rpc GetStream(GetStreamRequest) returns (GetStreamResponse);
+}
+
+//
+// StorageContainerService
+//
+
+message StorageContainerEndpoint {
+    int64 storage_container_id                 = 1;
+    int64 revision                       = 2;
+    common.Endpoint rw_endpoint          = 3;
+    repeated common.Endpoint ro_endpoint = 4;
+}
+
+message OneStorageContainerEndpointRequest {
+    int64 storage_container   = 1;
+    int64 revision      = 2;
+}
+
+message GetStorageContainerEndpointRequest {
+    repeated OneStorageContainerEndpointRequest requests = 1;
+}
+
+message OneStorageContainerEndpointResponse {
+    StatusCode status_code      = 1;
+    StorageContainerEndpoint endpoint = 2;
+}
+
+message GetStorageContainerEndpointResponse {
+    StatusCode status_code                           = 1;
+    repeated OneStorageContainerEndpointResponse responses = 2;
+}
+
+// A general range server service
+service StorageContainerService {
+    // Get the storage container endpoints
+    rpc GetStorageContainerEndpoint(GetStorageContainerEndpointRequest) returns (GetStorageContainerEndpointResponse);
+}

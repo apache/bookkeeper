@@ -1,0 +1,106 @@
+#
+#   Licensed to the Apache Software Foundation (ASF) under one or more
+#   contributor license agreements.  See the NOTICE file distributed with
+#   this work for additional information regarding copyright ownership.
+#   The ASF licenses this file to You under the Apache License, Version 2.0
+#   (the "License"); you may not use this file except in compliance with
+#   the License.  You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+# on macbook pro, for 64KB entry
+# Run complete. Total time: 00:21:26
+
+Benchmark                                                                     (bufferType)  (digest)   Mode  Cnt      Score      Error   Units
+DigestTypeBenchmark.digestManager                                             ARRAY_BACKED       MAC  thrpt    5      8.586 ±    0.556  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                              ARRAY_BACKED       MAC  thrpt    5      0.692 ±    0.045  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                         ARRAY_BACKED       MAC  thrpt    5     88.010 ±    0.002    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                     ARRAY_BACKED       MAC  thrpt    5      1.615 ±    8.515  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm                ARRAY_BACKED       MAC  thrpt    5    203.670 ± 1073.904    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Survivor_Space                 ARRAY_BACKED       MAC  thrpt    5      0.096 ±    0.826  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Survivor_Space.norm            ARRAY_BACKED       MAC  thrpt    5     12.176 ±  104.841    B/op
+DigestTypeBenchmark.digestManager:·gc.count                                   ARRAY_BACKED       MAC  thrpt    5      2.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                    ARRAY_BACKED       MAC  thrpt    5     16.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                      ARRAY_BACKED       MAC  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                             ARRAY_BACKED     CRC32  thrpt    5    445.869 ±    8.161  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                              ARRAY_BACKED     CRC32  thrpt    5     ≈ 10⁻⁴             MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                         ARRAY_BACKED     CRC32  thrpt    5     ≈ 10⁻⁴               B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                     ARRAY_BACKED     CRC32  thrpt    5      0.815 ±    7.022  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm                ARRAY_BACKED     CRC32  thrpt    5      1.997 ±   17.191    B/op
+DigestTypeBenchmark.digestManager:·gc.count                                   ARRAY_BACKED     CRC32  thrpt    5      1.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                    ARRAY_BACKED     CRC32  thrpt    5      8.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                      ARRAY_BACKED     CRC32  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                             ARRAY_BACKED   CRC32_C  thrpt    5    832.499 ±   56.604  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                              ARRAY_BACKED   CRC32_C  thrpt    5     ≈ 10⁻⁴             MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                         ARRAY_BACKED   CRC32_C  thrpt    5     ≈ 10⁻⁴               B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                     ARRAY_BACKED   CRC32_C  thrpt    5      0.816 ±    7.023  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm                ARRAY_BACKED   CRC32_C  thrpt    5      1.064 ±    9.158    B/op
+DigestTypeBenchmark.digestManager:·gc.count                                   ARRAY_BACKED   CRC32_C  thrpt    5      1.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                    ARRAY_BACKED   CRC32_C  thrpt    5      8.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                      ARRAY_BACKED   CRC32_C  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                         NOT_ARRAY_BACKED       MAC  thrpt    5      8.367 ±    0.045  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                          NOT_ARRAY_BACKED       MAC  thrpt    5    502.288 ±    2.868  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                     NOT_ARRAY_BACKED       MAC  thrpt    5  65593.694 ±   12.966    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                 NOT_ARRAY_BACKED       MAC  thrpt    5    539.102 ±    0.215  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm            NOT_ARRAY_BACKED       MAC  thrpt    5  70401.331 ±  403.899    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen                    NOT_ARRAY_BACKED       MAC  thrpt    5      0.006 ±    0.015  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen.norm               NOT_ARRAY_BACKED       MAC  thrpt    5      0.784 ±    1.962    B/op
+DigestTypeBenchmark.digestManager:·gc.count                               NOT_ARRAY_BACKED       MAC  thrpt    5     55.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                NOT_ARRAY_BACKED       MAC  thrpt    5    200.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                  NOT_ARRAY_BACKED       MAC  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                         NOT_ARRAY_BACKED     CRC32  thrpt    5    119.933 ±    7.129  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                          NOT_ARRAY_BACKED     CRC32  thrpt    5   7206.443 ±  430.557  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                     NOT_ARRAY_BACKED     CRC32  thrpt    5  65648.001 ±    0.001    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                 NOT_ARRAY_BACKED     CRC32  thrpt    5   7684.923 ±  509.880  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm            NOT_ARRAY_BACKED     CRC32  thrpt    5  70005.330 ±  532.187    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen                    NOT_ARRAY_BACKED     CRC32  thrpt    5      0.158 ±    0.078  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen.norm               NOT_ARRAY_BACKED     CRC32  thrpt    5      1.439 ±    0.769    B/op
+DigestTypeBenchmark.digestManager:·gc.count                               NOT_ARRAY_BACKED     CRC32  thrpt    5    784.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                NOT_ARRAY_BACKED     CRC32  thrpt    5   2949.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                  NOT_ARRAY_BACKED     CRC32  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                         NOT_ARRAY_BACKED   CRC32_C  thrpt    5    130.444 ±    3.441  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                          NOT_ARRAY_BACKED   CRC32_C  thrpt    5   7824.727 ±  212.028  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm                     NOT_ARRAY_BACKED   CRC32_C  thrpt    5  65552.001 ±    0.001    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space                 NOT_ARRAY_BACKED   CRC32_C  thrpt    5   8349.266 ±  177.504  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm            NOT_ARRAY_BACKED   CRC32_C  thrpt    5  69947.075 ±  707.700    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen                    NOT_ARRAY_BACKED   CRC32_C  thrpt    5      0.129 ±    0.083  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen.norm               NOT_ARRAY_BACKED   CRC32_C  thrpt    5      1.079 ±    0.691    B/op
+DigestTypeBenchmark.digestManager:·gc.count                               NOT_ARRAY_BACKED   CRC32_C  thrpt    5    852.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                                NOT_ARRAY_BACKED   CRC32_C  thrpt    5   3229.000                 ms
+DigestTypeBenchmark.digestManager:·stack                                  NOT_ARRAY_BACKED   CRC32_C  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                   BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      8.642 ±    0.132  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                    BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      1.329 ±    0.021  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm               BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5    168.010 ±    0.002    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space           BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      0.799 ±    6.880  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm      BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5    101.377 ±  872.889    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Survivor_Space       BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      0.096 ±    0.826  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Survivor_Space.norm  BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5     12.165 ±  104.747    B/op
+DigestTypeBenchmark.digestManager:·gc.count                         BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      1.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                          BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt    5      8.000                 ms
+DigestTypeBenchmark.digestManager:·stack                            BYTE_BUF_DEFAULT_ALLOC       MAC  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                   BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5    445.372 ±   14.813  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                    BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5     26.083 ±    0.883  MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm               BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5     64.000 ±    0.001    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space           BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5     24.437 ±   93.861  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm      BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5     60.215 ±  231.193    B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen              BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5      0.002 ±    0.017  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Old_Gen.norm         BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5      0.005 ±    0.042    B/op
+DigestTypeBenchmark.digestManager:·gc.count                         BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5      3.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                          BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt    5     18.000                 ms
+DigestTypeBenchmark.digestManager:·stack                            BYTE_BUF_DEFAULT_ALLOC     CRC32  thrpt             NaN                ---
+DigestTypeBenchmark.digestManager                                   BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5    868.398 ±    9.782  ops/ms
+DigestTypeBenchmark.digestManager:·gc.alloc.rate                    BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5     ≈ 10⁻⁴             MB/sec
+DigestTypeBenchmark.digestManager:·gc.alloc.rate.norm               BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5     ≈ 10⁻⁴               B/op
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space           BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5      0.815 ±    7.018  MB/sec
+DigestTypeBenchmark.digestManager:·gc.churn.G1_Eden_Space.norm      BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5      1.023 ±    8.808    B/op
+DigestTypeBenchmark.digestManager:·gc.count                         BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5      1.000             counts
+DigestTypeBenchmark.digestManager:·gc.time                          BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt    5      7.000                 ms
+DigestTypeBenchmark.digestManager:·stack                            BYTE_BUF_DEFAULT_ALLOC   CRC32_C  thrpt             NaN                ---
+

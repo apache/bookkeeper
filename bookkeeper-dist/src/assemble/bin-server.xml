@@ -1,0 +1,104 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>bin</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+        <include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../../conf</directory>
+      <outputDirectory>conf</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>../../bin</directory>
+      <fileMode>755</fileMode>
+      <outputDirectory>bin</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <fileMode>644</fileMode>
+      <includes>
+        <include>${basedir}/*.txt</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../src/main/resources/deps</directory>
+      <outputDirectory>deps</outputDirectory>
+      <includes>
+        <include>checker-qual-3.5.0/LICENSE</include>
+        <include>google-auth-library-credentials-0.20.0/LICENSE</include>
+        <include>javax.servlet-api-4.0.0/CDDL+GPL-1.1</include>
+        <include>netty-4.1.89.Final/*</include>
+        <include>bouncycastle-1.0.2.3/LICENSE.html</include>
+        <include>protobuf-3.14.0/LICENSE</include>
+        <include>protobuf-3.12.0/LICENSE</include>
+        <include>reactivestreams-1.0.3/LICENSE</include>
+        <include>slf4j-1.7.32/LICENSE.txt</include>
+      </includes>
+      <fileMode>644</fileMode>
+    </fileSet>
+  </fileSets>
+  <files>
+    <file>
+      <source>../../README.md</source>
+      <outputDirectory></outputDirectory>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources/LICENSE-server.bin.txt</source>
+      <outputDirectory></outputDirectory>
+      <destName>LICENSE</destName>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources/NOTICE-server.bin.txt</source>
+      <outputDirectory></outputDirectory>
+      <destName>NOTICE</destName>
+      <fileMode>644</fileMode>
+    </file>
+  </files>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <useProjectArtifact>false</useProjectArtifact>
+      <!-- Include 'groupId' in the dependencies Jar names to better identify the provenance of the jar -->
+      <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
+      <excludes>
+        <exclude>com.google.code.findbugs:jsr305</exclude>
+        <!-- All these dependencies are already included in stream-storage-java-client -->
+        <exclude>org.apache.bookkeeper:stream-storage-common</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-java-kv-client</exclude>
+        <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
+</assembly>

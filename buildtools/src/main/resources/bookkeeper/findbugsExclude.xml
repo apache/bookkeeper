@@ -1,0 +1,335 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+//-->
+<FindBugsFilter>
+  <!--Global rules suppressions-->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Bug pattern="MS_EXPOSE_REP"/>
+  </Match>
+  <!-- circe-checksum -->
+  <Match>
+    <!-- imported code -->
+    <Class name="~com\.scurrilous\.circe.*" />
+  </Match>
+  <!-- bookkeeper-common -->
+  <Match>
+    <Class name="org.apache.bookkeeper.common.util.OrderedScheduler"/>
+    <Method name="submit" />
+    <Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
+  </Match>
+  <!-- bookkeeper-proto -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
+  </Match>
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
+  </Match>
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.bookie\.storage\.ldb\.DbLedgerStorageDataFormats.*" />
+  </Match>
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.tests\.generated.*" />
+  </Match>
+  <Match>
+    <!-- generated code -->
+    <Class name="~org\.apache\.bookkeeper\.client\.generated.*"/>
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. since we are using
+         bytes from a slab. //-->
+    <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. since we are using
+         bytes from a slab. //-->
+    <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
+    <Method name="getBuffer" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <!-- https://github.com/spotbugs/spotbugs/issues/259 -->
+    <Class name="org.apache.bookkeeper.bookie.InterleavedLedgerStorage" />
+    <Method name="getLastAddConfirmed" />
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.auth.AuthToken" />
+    <Method name="getData" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.LedgerEntry" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.LedgerMetadata" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.BookKeeper" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
+    <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils$1"/>
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
+    <Method name="Void" />
+    <Bug pattern="NM_METHOD_NAMING_CONVENTION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.util.MathUtils"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.util.SafeRunnable"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <And>
+    <Bug category="MT_CORRECTNESS"/>
+    <Class name="~org.apache.bookkeeper.util.collections\.[^.]+"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException$Code" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+  </And>
+
+  <!-- microbenchmarks -->
+  <!-- jmh generated code -->
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.stats\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.stats\.codahale\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.common\.generated.*" />
+  </Match>
+
+  <!-- modules under stream/ -->
+
+  <!-- common -->
+  <Match>
+    <Class name="org.apache.bookkeeper.common.hash.MurmurHash" />
+    <Method name="hash64"/>
+    <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
+  </Match>
+
+  <!-- proto -->
+  <Match>
+    <Class name="~org.apache.bookkeeper.stream.coder.protobuf.test.*" />
+  </Match>
+  <Match>
+    <Class name="~org.apache.bookkeeper.stream.proto.*" />
+  </Match>
+
+  <!-- statelib -->
+  <Match>
+    <Class name="~org.apache.bookkeeper.proto.statestore.*" />
+  </Match>
+
+  <!-- Java array itself can be made const but contents for it can always be modified -->
+  <Match>
+    <Class name="org.apache.bookkeeper.statelib.impl.Constants" />
+    <Bug pattern="MS_MUTABLE_ARRAY"/>
+  </Match>
+
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.distributedlog\.tests\.generated.*" />
+  </Match>
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.distributedlog\.thrift.*" />
+  </Match>
+  <!-- distributedlog-benchmark -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.distributedlog\.benchmark\.thrift.*" />
+  </Match>
+  <!-- distributedlog-common -->
+  <Match>
+    <Class name="org.apache.distributedlog.util.OrderedScheduler"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
+  </Match>
+  <!-- distributedlog-core -->
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.Entry$Builder" />
+    <Method name="setData" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.Entry" />
+    <Method name="getRawData" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.BKAsyncLogReader" />
+    <Method name="run" />
+    <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.BKLogReadHandler$1" />
+    <Method name="onSuccess" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.BookKeeperClient$2" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.ReadUtils" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.ReadUtils$2" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.auditor.DLAuditor$2" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.auditor.DLAuditor$8" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$4" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$4$1" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$5" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControl$4" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControlManager$1" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControlManager$1$1" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore$1$1" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.lock.ZKSessionLock" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.lock.ZKSessionLock$12" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.lock.ZKSessionLock$13$1" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.util.Utils" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.distributedlog.util.Utils$6" />
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <!-- distributedlog-protocol -->
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.LogRecord" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.LogRecord" />
+    <Method name="getPayload" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <!-- distributedlog-proxy-server -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.distributedlog\.service\.placement\.thrift.*" />
+  </Match>
+  <Match>
+    <!-- it is safe to cast exception here. //-->
+    <Class name="org.apache.distributedlog.service.DistributedLogServiceImpl$Stream$2" />
+    <Method name="onFailure" />
+    <Bug pattern="BC_UNCONFIRMED_CAST" />
+  </Match>
+  <Match>
+    <!-- it is safe to cast exception here. //-->
+    <Class name="org.apache.distributedlog.service.stream.BulkWriteOp" />
+    <Method name="isDefiniteFailure" />
+    <Bug pattern="BC_IMPOSSIBLE_INSTANCEOF" />
+  </Match>
+  <!-- distributedlog-messaging -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~.*\.TransformedRecord" />
+  </Match>
+  <!-- micro-benchmarks -->
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.bookie\.generated.*" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.messaging.PartitionedMultiWriter" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. //-->
+    <Class name="org.apache.distributedlog.messaging.RRMultiWriter" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+</FindBugsFilter>

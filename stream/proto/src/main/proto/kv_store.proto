@@ -1,0 +1,77 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+import "kv_rpc.proto";
+
+package bookkeeper.proto.kv.store;
+
+option java_multiple_files = true;
+option java_package = "org.apache.bookkeeper.stream.proto.kv.store";
+
+enum ValueType {
+    BYTES   = 0;
+    NUMBER  = 1; // this is to support increment
+}
+
+// KeyRecord holds mvcc metadata for a given key
+message KeyMeta {
+
+    // create_revision is the revision of the last creation on the key
+    int64 create_revision       = 1;
+    // mod_revision is the revision of the last modification on the key
+    int64 mod_revision          = 2;
+    // version is the version of the most recent value
+    int64 version               = 3;
+    // value type
+    ValueType value_type        = 4;
+    // time in milliseconds when the record expires (0 for none)
+    int64 expireTime           = 5;
+
+}
+
+message NopRequest {}
+
+message Command {
+    oneof req {
+        NopRequest nop_req = 1;
+        rpc.PutRequest put_req = 2;
+        rpc.DeleteRangeRequest delete_req = 3;
+        rpc.TxnRequest txn_req = 4;
+        rpc.IncrementRequest incr_req = 5;
+    }
+}
+
+//
+// Checkpoint related
+//
+
+message FileInfo {
+    string name = 1;
+    string checksum = 2;
+}
+
+message CheckpointMetadata {
+
+    repeated string files = 1;
+    bytes txid = 2;
+    uint64 created_at = 3;
+
+    repeated FileInfo fileInfos = 4;
+}
+

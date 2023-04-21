@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Script to check licenses on a binary tarball.
+# It extracts the list of bundled jars, the NOTICE, and the LICENSE
+# files. It checked that every non-bk jar bundled is mentioned in the
+# LICENSE file. It checked that all jar files mentioned in NOTICE and
+# LICENSE are actually bundled.
+
+# all error fatal
+set -e
+
+TARBALL="$1"
+if [ -z $TARBALL ]; then
+    echo "Usage: $0 <binary-tarball>"
+    exit -1
+fi
+
+TAR='tar'
+unamestr=`uname`
+if [[ "$unamestr" == 'Linux' ]]; then
+   TAR='tar --wildcards'
+fi
+
+JARS=$(${TAR} -tf $TARBALL '*.jar' | sed 's!.*/!!' | sort)
+
+LICENSEPATH=$(${TAR} -tf $TARBALL  | awk '/^[^\/]*\/LICENSE/')
+LICENSE=$(${TAR} -O -xf $TARBALL "$LICENSEPATH")
+NOTICEPATH=$(${TAR} -tf $TARBALL  | awk '/^[^\/]*\/NOTICE/')
+NOTICE=$(${TAR} -O -xf $TARBALL $NOTICEPATH)
+LICENSEJARS=$(echo "$LICENSE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
+NOTICEJARS=$(echo "$NOTICE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
+
+LINKEDINLICENSE=$(echo "$LICENSE" | sed -nE 's!.*(deps/[[:graph:]]*).*!\1!gp' | sed 's!\.$!!')
+
+# errors not fatal
+set +e
+
+# this can error if there's no deps directory in tarball, we still want to continue with checks
+BUNDLEDLICENSES=$(${TAR} -tf $TARBALL '*/deps/*' | sed 's!^[^/]*/!!' | grep -v /$)
+
+EXIT=0
+
+
+# Check all bundled jars are mentioned in LICENSE
+for J in $JARS; do
+    echo $J | grep -q "org.apache.bookkeeper"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "org.apache.distributedlog"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-server"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-all"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo $J | grep -q "bookkeeper-dist-bkctl"
+    if [ $? == 0 ]; then
+        continue
+    fi
+
+    echo "$LICENSE" | grep -q $J
+    if [ $? != 0 ]; then
+        echo $J unaccounted for in LICENSE
+        EXIT=1
+    fi
+done
+
+# Check all jars mentioned in LICENSE are bundled
+for J in $LICENSEJARS; do
+    echo "$JARS" | grep -q $J
+    if [ $? != 0 ]; then
+        echo $J mentioned in LICENSE, but not bundled
+        EXIT=2
+    fi
+done
+
+# Check all jars mentioned in NOTICE are bundled
+for J in $NOTICEJARS; do
+    echo "$JARS" | grep -q $J
+    if [ $? != 0 ]; then
+        echo $J mentioned in NOTICE, but not bundled
+        EXIT=3
+    fi
+done
+
+# Check all linked LICENSE files are in tarball
+for L in $LINKEDINLICENSE; do
+    echo "$BUNDLEDLICENSES" | grep -q $L
+    if [ $? != 0 ]; then
+        echo $L linked from LICENSE, but not found in tarball
+        EXIT=4
+    fi
+done
+
+# Check all LICENSE files bundled are linked from LICENSE
+for L in $BUNDLEDLICENSES; do
+    echo "$LINKEDINLICENSE" | grep -q $L
+    if [ $? != 0 ]; then
+        echo $L bundled, but not linked from LICENSE
+        EXIT=5
+    fi
+done
+
+if [ $EXIT != 0 ]; then
+    echo
+    echo It looks like there are issues with the LICENSE/NOTICE in $TARBALL.
+    echo See http://bookkeeper.apache.org/community/licensing for details on how to fix.
+fi
+
+exit $EXIT
+
