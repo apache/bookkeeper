@@ -763,10 +763,12 @@ public class GarbageCollectorThread extends SafeRunnable {
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
-                    entryLogger.removeEntryLog(entryLogId);
-                    // remove it from entrylogmetadata-map if it is present in
-                    // the map
-                    entryLogMetaMap.remove(entryLogId);
+                    // This means the entry log is not associated with any active
+                    // ledgers anymore.
+                    // We can remove this entry log file now.
+                    LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
+                    removeEntryLog(entryLogId);
+                    gcStats.getReclaimedSpaceViaDeletes().add(entryLogMeta.getTotalSize());
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
