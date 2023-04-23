@@ -1,6 +1,22 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.16.1
+
+Release 4.16.1 includes one critical bug fix.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.1.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* DigestManager should not advance readerIndex [PR #3919](https://github.com/apache/bookkeeper/pull/3919)
+
+### Details
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.1+is%3Aclosed
+
+
 ## 4.15.4
 
 Release 4.15.4 includes multiple bug fixes and some dependencies CVE fixes.
