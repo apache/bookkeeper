@@ -29,8 +29,6 @@ cd site3/website
 sidebar_file="sidebars.json"
 docs_dir="docs"
 
-cd site3/website
-
 # create versioned sidebar file
 cp $sidebar_file versioned_sidebars/version-${NEW_RELEASE}-sidebars.json
 # add unique id for each item in the sidebar
