@@ -34,7 +34,6 @@ The technical details of this release are summarized below.
 * Auto Recovery support repaire not adhering placement policy ledgers [PR #3359](https://github.com/apache/bookkeeper/pull/3359)
 * Support setting seperate ledger index directories instead of keep the same directory with ledger data [Issue #3419](https://github.com/apache/bookkeeper/issues/3419)
 
-
 ### Improvement
 * Allow to use IO uring instead of epoll [PR #3595](https://github.com/apache/bookkeeper/pull/3595)
 * Fixed the pivot selection in the group quick-sort [PR #3800](https://github.com/apache/bookkeeper/pull/3800)
@@ -66,7 +65,7 @@ The technical details of this release are summarized below.
 * Add trigger entry location index rocksDB compact REST API  [PR #3802](https://github.com/apache/bookkeeper/pull/3802)
 * Add Http-service to check bookie sanity state [PR #3630](https://github.com/apache/bookkeeper/pull/3630)
 
-
+### Notable fixes
 
 #### Bookie
 * Fix memory leak issue of reading small entries [PR #3844](https://github.com/apache/bookkeeper/pull/3844)
