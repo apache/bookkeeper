@@ -123,8 +123,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 @Override
                 public Void answer(InvocationOnMock invocation) {
                     ((BookkeeperInternalCallbacks.ReadEntryCallback) invocation.getArguments()[3])
-                            .readEntryComplete(BKException.Code.OK,
-                                    entry.getLedgerId(), entry.getEntryId(), Unpooled.wrappedBuffer("abc".getBytes()), null);
+                            .readEntryComplete(BKException.Code.OK, entry.getLedgerId(), entry.getEntryId(),
+                                    Unpooled.wrappedBuffer("abc".getBytes()), null);
                     return null;
                 }
             }).when(bkC).readEntry(any(BookieId.class), anyLong(), anyLong(), any(
@@ -191,8 +191,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                         "-ef", "hex"}));
 
         Assert.assertEquals(1, getMockedConstruction(HexDumpEntryFormatter.class).constructed().size());
-        verify(getMockedConstruction(HexDumpEntryFormatter.class).constructed().get(0), times(1))
-                .formatEntry(any(byte[].class));
+        verify(getMockedConstruction(HexDumpEntryFormatter.class).constructed().get(0),
+                times(1)).formatEntry(any(byte[].class));
     }
 
 }
