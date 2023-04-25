@@ -20,12 +20,14 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.base.Objects;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
+import java.util.Arrays;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 
 /**
@@ -320,6 +322,28 @@ public interface BookieProtocol {
             read.flags = flags;
             read.masterKey = masterKey;
             return read;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ReadRequest)) {
+                return false;
+            }
+            ReadRequest that = (ReadRequest) o;
+            return protocolVersion == that.protocolVersion
+                    && opCode == that.opCode
+                    && ledgerId == that.ledgerId
+                    && entryId == that.entryId
+                    && flags == that.flags
+                    && Arrays.equals(masterKey, that.masterKey);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(protocolVersion, opCode, ledgerId, entryId, flags, Arrays.hashCode(masterKey));
         }
 
         boolean isFencing() {

@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +33,7 @@ import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,6 +92,12 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             }
             if (fenceResult != null) {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
+                List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
+                if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
+                    for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
+                        readEntryProcessor.handleReadResultForFenceRead(fenceResult, data.retain(), startTimeNanos);
+                    }
+                }
                 return;
             }
         } catch (Bookie.NoLedgerException e) {
@@ -123,6 +131,17 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
         sendResponse(data, errorCode, startTimeNanos);
+        if (request.isFencing()) {
+            List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
+            if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
+                for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
+                    if (data != null) {
+                        data.retain();
+                    }
+                    readEntryProcessor.sendResponse(data, errorCode, startTimeNanos);
+                }
+            }
+        }
     }
 
     private void sendResponse(ByteBuf data, int errorCode, long startTimeNanos) {

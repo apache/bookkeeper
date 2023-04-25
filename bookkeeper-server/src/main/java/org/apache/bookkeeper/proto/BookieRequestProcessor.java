@@ -35,11 +35,17 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -105,6 +111,9 @@ public class BookieRequestProcessor implements RequestProcessor {
      */
     private final OrderedExecutor highPriorityThreadPool;
 
+
+    private final Map<BookieProtocol.ReadRequest, List<ReadEntryProcessor>> pendingFencing;
+
     /**
      * The Timer used to time out requests for long polling.
      */
@@ -165,6 +174,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 this.serverCfg.getNumHighPriorityWorkerThreads(),
                 "BookieHighPriorityThread",
                 OrderedExecutor.NO_TASK_LIMIT, statsLogger);
+        this.pendingFencing = new ConcurrentHashMap<>();
         this.shFactory = shFactory;
         if (shFactory != null) {
             shFactory.init(NodeType.Server, serverCfg, allocator);
@@ -668,6 +678,25 @@ public class BookieRequestProcessor implements RequestProcessor {
                 null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(requestHandler.ctx());
         ReadEntryProcessor read = ReadEntryProcessor.create(r, requestHandler,
                 this, fenceThreadPool, throttleReadResponses);
+        if (r.isFencing()) {
+            AtomicBoolean pending = new AtomicBoolean(false);
+            pendingFencing.compute(r, (request, fencingReadList) -> {
+                if (fencingReadList == null) {
+                    return new ArrayList<>();
+                } else {
+                    fencingReadList.add(read);
+                    pending.set(true);
+                    return fencingReadList;
+                }
+            });
+            if (pending.get()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Pending the ledgerId {} fence readRequest for channel: {}",
+                            r.getLedgerId(), requestHandler.ctx().channel());
+                }
+                return;
+            }
+        }
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
