@@ -719,13 +719,15 @@ public class BookieRequestProcessor implements RequestProcessor {
                             r.entryId);
                 }
                 getRequestStats().getReadEntryRejectedCounter().inc();
+
+                boolean isFencing = r.isFencing();
+                List<ReadEntryProcessor> pendingFenceRead = pendingFencing.remove(r);
                 read.sendResponse(
                     BookieProtocol.ETOOMANYREQUESTS,
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getReadRequestStats());
                 onReadRequestFinish();
-                if (r.isFencing()) {
-                    List<ReadEntryProcessor> pendingFenceRead = pendingFencing.remove(r);
+                if (isFencing) {
                     if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
                         for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
                             readEntryProcessor.sendResponse(
