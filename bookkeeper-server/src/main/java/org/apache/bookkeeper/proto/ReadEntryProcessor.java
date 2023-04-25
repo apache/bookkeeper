@@ -72,9 +72,10 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         int errorCode = BookieProtocol.EOK;
         long startTimeNanos = MathUtils.nowInNano();
         ByteBuf data = null;
+        boolean isFencing = request.isFencing();
         try {
             CompletableFuture<Boolean> fenceResult = null;
-            if (request.isFencing()) {
+            if (isFencing) {
                 LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(),
                         requestHandler.ctx().channel().remoteAddress());
 
@@ -91,8 +92,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 LOG.debug("##### Read entry ##### {} -- ref-count: {}", data.readableBytes(), data.refCnt());
             }
             if (fenceResult != null) {
-                handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
+                handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
                     for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
                         readEntryProcessor.handleReadResultForFenceRead(fenceResult, data.retain(), startTimeNanos);
@@ -131,7 +132,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
         sendResponse(data, errorCode, startTimeNanos);
-        if (request.isFencing()) {
+        if (isFencing) {
             List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
             if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
                 for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
