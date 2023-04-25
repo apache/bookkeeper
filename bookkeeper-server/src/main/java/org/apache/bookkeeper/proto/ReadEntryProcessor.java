@@ -131,9 +131,9 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
+        List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
         sendResponse(data, errorCode, startTimeNanos);
         if (isFencing) {
-            List<ReadEntryProcessor> pendingFenceRead = requestProcessor.getPendingFencing().remove(request);
             if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
                 for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
                     if (data != null) {

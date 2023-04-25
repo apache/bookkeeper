@@ -678,7 +678,8 @@ public class BookieRequestProcessor implements RequestProcessor {
                 null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(requestHandler.ctx());
         ReadEntryProcessor read = ReadEntryProcessor.create(r, requestHandler,
                 this, fenceThreadPool, throttleReadResponses);
-        if (r.isFencing()) {
+        boolean isFencing = r.isFencing();
+        if (isFencing) {
             AtomicBoolean pending = new AtomicBoolean(false);
             pendingFencing.compute(r, (request, fencingReadList) -> {
                 if (fencingReadList == null) {
@@ -720,7 +721,6 @@ public class BookieRequestProcessor implements RequestProcessor {
                 }
                 getRequestStats().getReadEntryRejectedCounter().inc();
 
-                boolean isFencing = r.isFencing();
                 List<ReadEntryProcessor> pendingFenceRead = pendingFencing.remove(r);
                 read.sendResponse(
                     BookieProtocol.ETOOMANYREQUESTS,
