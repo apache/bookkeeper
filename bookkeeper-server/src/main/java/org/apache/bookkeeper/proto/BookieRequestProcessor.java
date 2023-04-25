@@ -59,6 +59,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -723,6 +724,18 @@ public class BookieRequestProcessor implements RequestProcessor {
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getReadRequestStats());
                 onReadRequestFinish();
+                if (r.isFencing()) {
+                    List<ReadEntryProcessor> pendingFenceRead = pendingFencing.remove(r);
+                    if (CollectionUtils.isNotEmpty(pendingFenceRead)) {
+                        for (ReadEntryProcessor readEntryProcessor : pendingFenceRead) {
+                            readEntryProcessor.sendResponse(
+                                    BookieProtocol.ETOOMANYREQUESTS,
+                                    ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
+                                    requestStats.getReadRequestStats());
+                            onReadRequestFinish();
+                        }
+                    }
+                }
             }
         }
     }
