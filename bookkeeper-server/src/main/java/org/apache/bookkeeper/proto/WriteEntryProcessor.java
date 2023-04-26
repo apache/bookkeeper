@@ -68,6 +68,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.release();
             request.recycle();
+            recycle();
             return;
         }
 
@@ -111,6 +112,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.recycle();
+            recycle();
         }
     }
 
