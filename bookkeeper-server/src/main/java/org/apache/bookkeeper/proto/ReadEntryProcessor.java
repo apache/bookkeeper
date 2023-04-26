@@ -70,6 +70,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 LOG.debug("Dropping read request for closed channel: {}", channel);
             }
             requestProcessor.onReadRequestFinish();
+            recycle();
             return;
         }
         int errorCode = BookieProtocol.EOK;
