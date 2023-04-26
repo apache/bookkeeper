@@ -102,6 +102,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         try {
             if (!isLedgerReplicationEnabled()) {
                 LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                checkSuccess = true;
                 return;
             }
 
