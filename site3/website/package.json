@@ -39,9 +39,5 @@
   },
   "devDependencies": {
     "replace-in-file": "^6.3.2"
-  },
-  "engines": {
-    "node": ">=16.14",
-    "npm": "8.x"
   }
 }
