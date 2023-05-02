@@ -34,8 +34,8 @@ The technical details of this release are summarized below.
 ### Features
 * Add Direct IO support for ledger, BP-47 ([PR #3189](https://github.com/apache/bookkeeper/pull/3189), [PR #3910](https://github.com/apache/bookkeeper/pull/3190), [PR #3917](https://github.com/apache/bookkeeper/pull/3197), [PR #3253](https://github.com/apache/bookkeeper/pull/3253), [PR #3256](https://github.com/apache/bookkeeper/pull/3256), [PR #3263](https://github.com/apache/bookkeeper/pull/3263), [PR #3366](https://github.com/apache/bookkeeper/pull/3366))
 * Support Intel PMem disk as journal [PR #3194](https://github.com/apache/bookkeeper/pull/3194)
-* Auto Recovery support repaire not adhering placement policy ledgers [PR #3359](https://github.com/apache/bookkeeper/pull/3359)
-* Support setting seperate ledger index directories instead of keep the same directory with ledger data [Issue #3419](https://github.com/apache/bookkeeper/issues/3419)
+* Auto Recovery support repair not adhering placement policy ledgers [PR #3359](https://github.com/apache/bookkeeper/pull/3359)
+* Support setting separate ledger index directories instead of keep the same directory with ledger data [Issue #3419](https://github.com/apache/bookkeeper/issues/3419)
 
 ### Improvement
 * Allow to use IO uring instead of epoll [PR #3595](https://github.com/apache/bookkeeper/pull/3595)
@@ -104,14 +104,14 @@ The technical details of this release are summarized below.
 * Fix issue where checkAllLedgers could get stuck when read throttling is enabled [PR #3655](https://github.com/apache/bookkeeper/pull/3655)
 * Shut down ReplicationWorker and Auditor on non-recoverable ZK error [PR #3374](https://github.com/apache/bookkeeper/pull/3374)
 * Fix autoRecovery memory leak. [PR #3361](https://github.com/apache/bookkeeper/pull/3361)
-* Fix autorecovery does not process underreplicated empty ledgers [PR #3239](https://github.com/apache/bookkeeper/pull/3239)
+* Fix autoRecovery does not process under-replicated empty ledgers [PR #3239](https://github.com/apache/bookkeeper/pull/3239)
 * Fix bug where checkAllLedgers gets stuck when read throttling is enabled [PR #3214](https://github.com/apache/bookkeeper/pull/3214)
 
 #### Others
-* Support build in the aarch64 linux platform [PR #3828](https://github.com/apache/bookkeeper/pull/3828)
+* Support build in the arch64 linux platform [PR #3828](https://github.com/apache/bookkeeper/pull/3828)
 * Support update ledger metadata option bk-cli [PR #3821](https://github.com/apache/bookkeeper/pull/3821)
 * Make `jvm_memory_direct_bytes_used` metrics compatible with jdk8. [PR #3677](https://github.com/apache/bookkeeper/pull/3677)
-* Speed up the rebuildinding of RocksDB index [PR #3458](https://github.com/apache/bookkeeper/pull/3458)
+* Speed up the rebuilding of RocksDB index [PR #3458](https://github.com/apache/bookkeeper/pull/3458)
 * Allow run LocalBookkeeper directly in `bookkeeper-server` module or on IDE [PR #3255](https://github.com/apache/bookkeeper/pull/3255)
 
 
