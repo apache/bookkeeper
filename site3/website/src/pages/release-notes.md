@@ -27,6 +27,9 @@ The technical details of this release are summarized below.
 
 ### Breaking Changes
 * Change the API for org.apache.bookkeeper.stats.Counter [PR #3501](https://github.com/apache/bookkeeper/pull/3501)
+  - Change name : Counter.add --> Counter.addCount
+  - Add new method Counter.addLatency to count the time and convert the time to milliseconds
+* When using V2 protocol, the bookkeeper_server_ADD_ENTRY_REQUEST and bookkeeper_server_READ_ENTRY_REQUEST stats do not work, and you can use bookkeeper_server_ADD_ENTRY and bookkeeper_server_READ_ENTRY instead. [PR #3837](https://github.com/apache/bookkeeper/pull/3837)
 
 ### Features
 * Add Direct IO support for ledger, BP-47 ([PR #3189](https://github.com/apache/bookkeeper/pull/3189), [PR #3910](https://github.com/apache/bookkeeper/pull/3190), [PR #3917](https://github.com/apache/bookkeeper/pull/3197), [PR #3253](https://github.com/apache/bookkeeper/pull/3253), [PR #3256](https://github.com/apache/bookkeeper/pull/3256), [PR #3263](https://github.com/apache/bookkeeper/pull/3263), [PR #3366](https://github.com/apache/bookkeeper/pull/3366))
