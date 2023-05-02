@@ -16,6 +16,122 @@ The technical details of this release are summarized below.
 ### Details
 https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.1+is%3Aclosed
 
+## 4.16.0
+
+Release 4.16.0 includes multiple important features, improvements, bug fixes and some dependencies CVE fixes.
+
+Due to this version has one critical regression in the BookKeeper client, Apache BookKeeper users are encouraged 
+to skip this version and upgrade to 4.16.1.
+
+The technical details of this release are summarized below.
+
+### Breaking Changes
+* Change the API for org.apache.bookkeeper.stats.Counter [PR #3501](https://github.com/apache/bookkeeper/pull/3501)
+  - Change name : Counter.add --> Counter.addCount
+  - Add new method Counter.addLatency to count the time and convert the time to milliseconds
+* When using V2 protocol, the bookkeeper_server_ADD_ENTRY_REQUEST and bookkeeper_server_READ_ENTRY_REQUEST stats do not work, and you can use bookkeeper_server_ADD_ENTRY and bookkeeper_server_READ_ENTRY instead. [PR #3837](https://github.com/apache/bookkeeper/pull/3837)
+
+### Features
+* Add Direct IO support for ledger, BP-47 ([PR #3189](https://github.com/apache/bookkeeper/pull/3189), [PR #3910](https://github.com/apache/bookkeeper/pull/3190), [PR #3917](https://github.com/apache/bookkeeper/pull/3197), [PR #3253](https://github.com/apache/bookkeeper/pull/3253), [PR #3256](https://github.com/apache/bookkeeper/pull/3256), [PR #3263](https://github.com/apache/bookkeeper/pull/3263), [PR #3366](https://github.com/apache/bookkeeper/pull/3366))
+* Support Intel PMem disk as journal [PR #3194](https://github.com/apache/bookkeeper/pull/3194)
+* Auto Recovery support repair not adhering placement policy ledgers [PR #3359](https://github.com/apache/bookkeeper/pull/3359)
+* Support setting separate ledger index directories instead of keep the same directory with ledger data [Issue #3419](https://github.com/apache/bookkeeper/issues/3419)
+
+### Improvement
+* Allow to use IO uring instead of epoll [PR #3595](https://github.com/apache/bookkeeper/pull/3595)
+* Fixed the pivot selection in the group quick-sort [PR #3800](https://github.com/apache/bookkeeper/pull/3800)
+* Improvements in ArrayGroupSort [PR #3807](https://github.com/apache/bookkeeper/pull/3807)
+* Added BatchedArrayBlockingQueue [PR #3838](https://github.com/apache/bookkeeper/pull/3838)
+* Group and flush add-responses after journal sync [PR #3837](https://github.com/apache/bookkeeper/pull/3837)
+* Use JNI directly for posix_fadvise [PR #3824](https://github.com/apache/bookkeeper/pull/3824)
+* Improved efficiency in DigestManager.verify() [PR #3810](https://github.com/apache/bookkeeper/pull/3810)
+* Made PendingAddOp thread safe [PR #3784](https://github.com/apache/bookkeeper/pull/3784)
+* Single buffer for small add requests [PR #3783](https://github.com/apache/bookkeeper/pull/3783)
+* Optimize ReadResponse for small entry sizes [PR #3597](https://github.com/apache/bookkeeper/pull/3597)
+* Avoid extra buffer to prepend frame size [PR #3560](https://github.com/apache/bookkeeper/pull/3560)
+* Bring back deleteRange for RocksDB to improve location delete performance [PR #3653](https://github.com/apache/bookkeeper/pull/3653)
+* Avoid thread-local state when computing CRCs [PR #3811](https://github.com/apache/bookkeeper/pull/3811)
+* Make read entry request recyclable [PR #3842](https://github.com/apache/bookkeeper/pull/3842)
+* Use SingleThreadExecutor for OrderedExecutor and drainTo() tasks into local array [PR #3546](https://github.com/apache/bookkeeper/pull/3546)
+* Consolidate Netty channel flushes to mitigate syscall overhead [PR #3383](https://github.com/apache/bookkeeper/pull/3383)
+* Refactor Auditor to simplify the readability [PR #3637](https://github.com/apache/bookkeeper/pull/3637)
+* Reduce unnecessary loop in removeIf if map is empty [PR #3512](https://github.com/apache/bookkeeper/pull/3512)
+* Change order of doGcLedgers and extractMetaFromEntryLogs [PR #3869](https://github.com/apache/bookkeeper/pull/3869)
+* Upgrade RocksDB version to 7.9.2 [PR #3795](https://github.com/apache/bookkeeper/pull/3795)
+* Prioritize compaction of entry logs with the lowest amount of remaining usable data [PR #3390](https://github.com/apache/bookkeeper/pull/3390)
+* Added flag to control whether to transition to read-only mode when any disks full [PR #3212](https://github.com/apache/bookkeeper/pull/3212)
+* Ledger replicate supports throttle [PR #2778](https://github.com/apache/bookkeeper/pull/2778)
+* Apply the backpressure changes on the V2 requests [PR #3324](https://github.com/apache/bookkeeper/pull/3324)
+* Add small files check in garbage collection [PR #3631](https://github.com/apache/bookkeeper/pull/3631)
+* Add get cluster_info REST API [PR #3710](https://github.com/apache/bookkeeper/pull/3710)
+* Add new api resumeCompaction and suspendCompaction [PR #3509](https://github.com/apache/bookkeeper/pull/3509)
+* Add trigger entry location index rocksDB compact REST API  [PR #3802](https://github.com/apache/bookkeeper/pull/3802)
+* Add Http-service to check bookie sanity state [PR #3630](https://github.com/apache/bookkeeper/pull/3630)
+
+### Notable fixes
+
+#### Bookie
+* Fix memory leak issue of reading small entries [PR #3844](https://github.com/apache/bookkeeper/pull/3844)
+* Fix memory leak when the Bookie is in read only mode [PR #3746](https://github.com/apache/bookkeeper/pull/3746)
+* Fix memory leak when closeRecovered,failed on clearing newEnsemblesFromRecovery [PR #3672](https://github.com/apache/bookkeeper/pull/3672)
+* Fix memory leak when operating ledger metadata [PR #3662](https://github.com/apache/bookkeeper/pull/3662)
+* Fix ByteBuf memory leak problem when setExplicitLac [PR #3577](https://github.com/apache/bookkeeper/pull/3577)
+* Fix memory leak when reading entry but the connection disconnected. [PR #3528](https://github.com/apache/bookkeeper/pull/3528)
+* Fix the readResponse byteBuf potential memory leak problem. [PR #3525](https://github.com/apache/bookkeeper/pull/3525)
+* Modify incorrect rocksDB config level_compaction_dynamic_level_bytes to CFOptions [PR #3860](https://github.com/apache/bookkeeper/pull/3860)
+* Optimize masterKeyCache StorageNotificationListener [PR #3736](https://github.com/apache/bookkeeper/pull/3736)
+* Fix RegionAwareEnsemblePlacementPolicy.newEnsemble sometimes failed problem. [PR #3725](https://github.com/apache/bookkeeper/pull/3725)
+* New ensemble choose different rack first. [PR #3721](https://github.com/apache/bookkeeper/pull/3721)
+* Fix RegionAwareEnsemblePlacementPolicy#onBookieRackChange didn't update perRegionPlacement. [PR #3666](https://github.com/apache/bookkeeper/pull/3666)
+* When call openLedgerOp, make the timeout ex is a separate error code [PR #3562](https://github.com/apache/bookkeeper/pull/3562)
+* Using a separate thread pool to execute openWithMetadata [PR #3548](https://github.com/apache/bookkeeper/pull/3548)
+* Change masterKeyCache to dynamic size [PR #3522](https://github.com/apache/bookkeeper/pull/3522)
+* Fix group ForceWrite not take effect with forceWriteMarkerSent in while loop of ForceWriteThread [PR #3454](https://github.com/apache/bookkeeper/pull/3454)
+* WriteLacResponse should be processed in the same thread as other requests [PR #3452](https://github.com/apache/bookkeeper/pull/3452)
+* Update default value of allocatorPoolingConcurrency [PR #3001](https://github.com/apache/bookkeeper/pull/3001)
+* Fix the infinite waiting for shutdown due to throttler limit [PR #2942](https://github.com/apache/bookkeeper/pull/2942)
+
+#### Client
+* LedgerHandle: do not complete metadata operation on the ZookKeeper/Metadata callback thread [PR #3516](https://github.com/apache/bookkeeper/pull/3516)
+* LedgerOpenOp: Do not call blocking close() in the callback [PR #3513](https://github.com/apache/bookkeeper/pull/3513)
+* Rename success with writableResult and update final writableResult about wait writeSet [PR #3505](https://github.com/apache/bookkeeper/pull/3505)
+* Fix the V2 AddRequest object leak issue [PR #3323](https://github.com/apache/bookkeeper/pull/3323)
+* Fix the PendingAddOp is not recycled when LedgerHandler closed [PR #3321](https://github.com/apache/bookkeeper/pull/3321)
+* Make sure the LedgerHandle close callback can be completed when encounter exception [PR #2913](https://github.com/apache/bookkeeper/pull/2913)
+* Change PCBC limitStatsLogging default value to true [PR #3719](https://github.com/apache/bookkeeper/pull/3719)
+
+#### AutoRecovery
+* Fix issue where checkAllLedgers could get stuck when read throttling is enabled [PR #3655](https://github.com/apache/bookkeeper/pull/3655)
+* Shut down ReplicationWorker and Auditor on non-recoverable ZK error [PR #3374](https://github.com/apache/bookkeeper/pull/3374)
+* Fix autoRecovery memory leak. [PR #3361](https://github.com/apache/bookkeeper/pull/3361)
+* Fix autoRecovery does not process under-replicated empty ledgers [PR #3239](https://github.com/apache/bookkeeper/pull/3239)
+* Fix bug where checkAllLedgers gets stuck when read throttling is enabled [PR #3214](https://github.com/apache/bookkeeper/pull/3214)
+
+#### Others
+* Support build in the arch64 linux platform [PR #3828](https://github.com/apache/bookkeeper/pull/3828)
+* Support update ledger metadata option bk-cli [PR #3821](https://github.com/apache/bookkeeper/pull/3821)
+* Make `jvm_memory_direct_bytes_used` metrics compatible with jdk8. [PR #3677](https://github.com/apache/bookkeeper/pull/3677)
+* Speed up the rebuilding of RocksDB index [PR #3458](https://github.com/apache/bookkeeper/pull/3458)
+* Allow run LocalBookkeeper directly in `bookkeeper-server` module or on IDE [PR #3255](https://github.com/apache/bookkeeper/pull/3255)
+
+
+### Dependency changes
+Upgraded notable dependencies and address CVEs, including:
+* netty
+* RocksDB
+* snakeyaml
+* zookeeper
+* Docker base image
+* jackson
+* protobuf
+* hadoop
+* vertx
+* log4j2
+* Jetty
+* groovy
+
+### Details
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+milestone%3A4.16.0+is%3Aclosed
 
 ## 4.15.4
 
