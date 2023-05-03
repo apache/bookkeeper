@@ -215,6 +215,14 @@ public class BookieProtoEncoding {
 
             return masterKey;
         }
+
+        public static void serializeAddRequests(Object request, ByteBufList buf) {
+            if (request instanceof ByteBuf) {
+                buf.add((ByteBuf) request);
+            } else if (request instanceof ByteBufList) {
+                buf.add((ByteBufList) request);
+            }
+        }
     }
 
     /**

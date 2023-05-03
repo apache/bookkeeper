@@ -111,6 +111,15 @@ public class ByteBufList extends AbstractReferenceCounted {
         return buf;
     }
 
+    public static ByteBufList get(ByteBufList b1) {
+        ByteBufList buf = get();
+        for (int i = 0; i < b1.buffers.size(); ++i) {
+            buf.add(b1.buffers.get(i));
+        }
+        return buf;
+    }
+
+
     /**
      * Get a new {@link ByteBufList} instance from the pool that is the clone of an already existing instance.
      */
@@ -147,6 +156,10 @@ public class ByteBufList extends AbstractReferenceCounted {
         } else {
             buffers.add(unwrapped);
         }
+    }
+
+    public void add(ByteBufList b1) {
+        buffers.addAll(b1.buffers);
     }
 
     /**
@@ -274,6 +287,13 @@ public class ByteBufList extends AbstractReferenceCounted {
         }
 
         return res;
+    }
+
+    public void writeTo(ByteBuf buf) {
+        for (int i = 0; i < buffers.size(); ++i) {
+            ByteBuf b = buffers.get(i);
+            buf.writeBytes(b, b.readerIndex(), b.readableBytes());
+        }
     }
 
     @Override
