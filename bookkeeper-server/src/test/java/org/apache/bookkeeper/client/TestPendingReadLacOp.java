@@ -140,7 +140,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
                 for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
                     final int index = i;
                     BookieClientImpl bookieClientImpl = ((BookieClientImpl) bookieClient);
-                    final PerChannelBookieClientPool client = bookieClientImpl.lookupClient(lh.getCurrentEnsemble().get(i));
+                    PerChannelBookieClientPool client = bookieClientImpl.lookupClient(lh.getCurrentEnsemble().get(i));
                     client.obtain(
                             (rc, pcbc) -> pcbc.readLac(lh.getId(), this, index),
                             lh.getId(),
