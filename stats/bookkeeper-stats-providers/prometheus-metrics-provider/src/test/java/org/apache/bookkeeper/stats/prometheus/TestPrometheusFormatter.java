@@ -19,11 +19,19 @@ package org.apache.bookkeeper.stats.prometheus;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.hotspot.GarbageCollectorExports;
+import io.prometheus.client.hotspot.MemoryPoolsExports;
+import io.prometheus.client.hotspot.StandardExports;
+import io.prometheus.client.hotspot.ThreadExports;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -167,6 +175,54 @@ public class TestPrometheusFormatter {
 
         assertTrue(found);
     }
+
+    @Test
+    public void testWriteMetricsCollectedByPrometheusClient() {
+        CollectorRegistry registry = CollectorRegistry.defaultRegistry;
+        registry.register(new StandardExports());
+        registry.register(new MemoryPoolsExports());
+        registry.register(new GarbageCollectorExports());
+        registry.register(new ThreadExports());
+        registry.register(Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Gauge.Child() {
+            @Override
+            public double get() {
+                return 1.0;
+            }
+        }));
+        registry.register(Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Gauge.Child() {
+            @Override
+            public double get() {
+                return 100.0;
+            }
+        }));
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider(registry);
+        StringWriter writer = new StringWriter();
+        try {
+            provider.rotateLatencyCollection();
+            provider.writeAllMetrics(writer);
+            String output = writer.toString();
+            parseMetrics(output);
+            assertTrue(output.contains("# TYPE jvm_memory_direct_bytes_max gauge"));
+            assertTrue(output.contains("# TYPE jvm_memory_direct_bytes_used gauge"));
+            assertTrue(output.contains("# TYPE jvm_gc_collection_seconds summary"));
+            assertTrue(output.contains("# TYPE jvm_memory_pool_bytes_committed gauge"));
+            assertTrue(output.contains("# TYPE process_cpu_seconds counter"));
+        } catch (Exception e) {
+            fail();
+        }
+
+    }
+
+    @Test
+    public void testPrometheusTypeDuplicate() throws IOException {
+        PrometheusTextFormat prometheusTextFormat = new PrometheusTextFormat();
+        StringWriter writer = new StringWriter();
+        prometheusTextFormat.writeType(writer, "counter", "gauge");
+        prometheusTextFormat.writeType(writer, "counter", "gauge");
+        String string = writer.toString();
+        assertEquals("# TYPE counter gauge\n", string);
+    }
+
 
     /**
      * Hacky parsing of Prometheus text format. Sould be good enough for unit tests
