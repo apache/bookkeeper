@@ -178,6 +178,9 @@ public class PrometheusTextFormat {
         Enumeration<MetricFamilySamples> metricFamilySamples = registry.metricFamilySamples();
         while (metricFamilySamples.hasMoreElements()) {
             MetricFamilySamples metricFamily = metricFamilySamples.nextElement();
+            // Write type of metric
+            w.append("# TYPE ").append(metricFamily.name).append(getTypeNameSuffix(metricFamily.type)).append(' ')
+                    .append(getTypeStr(metricFamily.type)).write('\n');
 
             for (int i = 0; i < metricFamily.samples.size(); i++) {
                 Sample sample = metricFamily.samples.get(i);
@@ -197,6 +200,30 @@ public class PrometheusTextFormat {
                 w.write(Collector.doubleToGoString(sample.value));
                 w.write('\n');
             }
+        }
+    }
+
+    static String getTypeNameSuffix(Collector.Type type) {
+        if (type.equals(Collector.Type.INFO)) {
+            return "_info";
+        }
+        return "";
+    }
+
+    static String getTypeStr(Collector.Type type) {
+        switch (type) {
+            case COUNTER:
+                return "counter";
+            case GAUGE:
+            case INFO:
+                return "gauge";
+            case SUMMARY:
+                return "summary";
+            case HISTOGRAM:
+                return "histogram";
+            case UNKNOWN:
+            default:
+                return "unknown";
         }
     }
 
