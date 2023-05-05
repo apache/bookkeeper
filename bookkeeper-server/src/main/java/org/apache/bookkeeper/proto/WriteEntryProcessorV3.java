@@ -107,7 +107,6 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         .setAddResponse(addResponse);
                 Response resp = response.build();
                 sendResponse(status, resp, requestProcessor.getRequestStats().getAddRequestStats());
-                recycle();
             }
         };
         final EnumSet<WriteFlag> writeFlags;
@@ -179,7 +178,6 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             Response resp = response.build();
             sendResponse(addResponse.getStatus(), resp,
                          requestProcessor.getRequestStats().getAddRequestStats());
-            recycle();
         }
     }
 
@@ -187,6 +185,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
         super.sendResponse(code, response, statsLogger);
         requestProcessor.onAddRequestFinish();
+        recycle();
     }
 
     /**
