@@ -75,6 +75,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
     protected void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic placement policy check task");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
 

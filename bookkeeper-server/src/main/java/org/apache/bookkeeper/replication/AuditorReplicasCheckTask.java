@@ -84,6 +84,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     protected void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic replicas check task");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
 
