@@ -39,10 +39,10 @@ import org.apache.bookkeeper.util.StringUtils;
 @Slf4j
 public abstract class PacketProcessorBaseV3 implements Runnable {
 
-    final Request request;
-    final BookieRequestHandler requestHandler;
-    final BookieRequestProcessor requestProcessor;
-    final long enqueueNanos;
+    Request request;
+    BookieRequestHandler requestHandler;
+    BookieRequestProcessor requestProcessor;
+    long enqueueNanos;
 
     public PacketProcessorBaseV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
@@ -50,6 +50,25 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         this.requestHandler = requestHandler;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    public PacketProcessorBaseV3() {
+
+    }
+
+    protected void init(Request request, BookieRequestHandler requestHandler,
+                                 BookieRequestProcessor requestProcessor) {
+        this.request = request;
+        this.requestHandler = requestHandler;
+        this.requestProcessor = requestProcessor;
+        this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    protected void reset() {
+        this.request = null;
+        this.requestHandler = null;
+        this.requestProcessor = null;
+        this.enqueueNanos = -1;
     }
 
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {

@@ -20,8 +20,10 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.Recycler;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -42,10 +44,12 @@ import org.slf4j.LoggerFactory;
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     private static final Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
-    public WriteEntryProcessorV3(Request request, BookieRequestHandler requestHandler,
+    public static WriteEntryProcessorV3 create(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
-        super(request, requestHandler, requestProcessor);
+        WriteEntryProcessorV3 wepv3 = RECYCLER.get();
+        wepv3.init(request, requestHandler, requestProcessor);
         requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
+        return wepv3;
     }
 
     // Returns null if there is no exception thrown
@@ -103,6 +107,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         .setAddResponse(addResponse);
                 Response resp = response.build();
                 sendResponse(status, resp, requestProcessor.getRequestStats().getAddRequestStats());
+                recycle();
             }
         };
         final EnumSet<WriteFlag> writeFlags;
@@ -174,6 +179,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             Response resp = response.build();
             sendResponse(addResponse.getStatus(), resp,
                          requestProcessor.getRequestStats().getAddRequestStats());
+            recycle();
         }
     }
 
@@ -192,4 +198,23 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     public String toString() {
         return RequestUtils.toSafeString(request);
     }
+
+    @VisibleForTesting
+    void recycle() {
+        reset();
+        recyclerHandle.recycle(this);
+    }
+
+    private final Recycler.Handle<WriteEntryProcessorV3> recyclerHandle;
+
+    private WriteEntryProcessorV3(Recycler.Handle<WriteEntryProcessorV3> recyclerHandle) {
+        this.recyclerHandle = recyclerHandle;
+    }
+
+    private static final Recycler<WriteEntryProcessorV3> RECYCLER = new Recycler<WriteEntryProcessorV3>() {
+        @Override
+        protected WriteEntryProcessorV3 newObject(Recycler.Handle<WriteEntryProcessorV3> handle) {
+            return new WriteEntryProcessorV3(handle);
+        }
+    };
 }

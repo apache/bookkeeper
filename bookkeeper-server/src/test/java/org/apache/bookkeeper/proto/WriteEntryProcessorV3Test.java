@@ -48,6 +48,7 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -93,7 +94,7 @@ public class WriteEntryProcessorV3Test {
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
         when(channel.isActive()).thenReturn(true);
-        processor = new WriteEntryProcessorV3(
+        processor = WriteEntryProcessorV3.create(
             request,
             requestHandler,
             requestProcessor);
@@ -106,7 +107,7 @@ public class WriteEntryProcessorV3Test {
                 .build())
             .build();
 
-        processor = new WriteEntryProcessorV3(
+        processor = WriteEntryProcessorV3.create(
             request,
             requestHandler,
             requestProcessor);
