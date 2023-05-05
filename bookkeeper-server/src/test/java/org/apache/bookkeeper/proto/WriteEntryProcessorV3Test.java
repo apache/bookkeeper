@@ -48,7 +48,6 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
