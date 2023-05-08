@@ -214,6 +214,15 @@ public class Auditor implements AutoCloseable {
                         + "lostBookieRecoveryDelay zNode as part of Auditor initialization ");
             }
             lostBookieRecoveryDelayBeforeChange = this.ledgerUnderreplicationManager.getLostBookieRecoveryDelay();
+
+            if (this.ledgerUnderreplicationManager
+                    .initializeInFlightReadEntryNumInLedgerChecker(conf.getInFlightReadEntryNumInLedgerChecker())) {
+                LOG.info("Initializing inFlightReadEntryNumInLedgerChecker zNode to the conf value: {}",
+                        conf.getInFlightReadEntryNumInLedgerChecker());
+            } else {
+                LOG.info("Valid inFlightReadEntryNumInLedgerChecker zNode is available, so not creating "
+                        + "inFlightReadEntryNumInLedgerChecker zNode as part of Auditor initialization ");
+            }
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);

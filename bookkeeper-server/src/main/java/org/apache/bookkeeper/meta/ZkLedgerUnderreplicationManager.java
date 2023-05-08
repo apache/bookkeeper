@@ -122,6 +122,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String checkAllLedgersCtimeZnode;
     private final String placementPolicyCheckCtimeZnode;
     private final String replicasCheckCtimeZnode;
+    private final String inFlightReadEntryNumInLedgerCheckerZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -138,6 +139,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         checkAllLedgersCtimeZnode = basePath + '/' + BookKeeperConstants.CHECK_ALL_LEDGERS_CTIME;
         placementPolicyCheckCtimeZnode = basePath + '/' + BookKeeperConstants.PLACEMENT_POLICY_CHECK_CTIME;
         replicasCheckCtimeZnode = basePath + '/' + BookKeeperConstants.REPLICAS_CHECK_CTIME;
+        inFlightReadEntryNumInLedgerCheckerZnode = basePath + '/'
+                + BookKeeperConstants.IN_FLIGHT_READ_ENTRY_NUM_IN_LEDGER_CHECKER;
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -868,6 +871,72 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return Integer.parseInt(new String(data, UTF_8));
         } catch (KeeperException ke) {
             LOG.error("Error while getting LostBookieRecoveryDelay ", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public boolean initializeInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNum) throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("initializeInFlightReadEntryNumInLedgerChecker()");
+        }
+        try {
+            zkc.create(inFlightReadEntryNumInLedgerCheckerZnode, Integer.toString(inFlightReadEntryNum).getBytes(UTF_8),
+                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        } catch (KeeperException.NodeExistsException ke) {
+            LOG.info("InFlightReadEntryNumInLedgerChecker Znode is already present, so using "
+                    + "existing InFlightReadEntryNumInLedgerChecker Znode value");
+            return false;
+        } catch (KeeperException.NoNodeException nne) {
+            LOG.error("InFlightReadEntryNumInLedgerChecker Znode not found. " +
+                    "Please verify if Auditor has been initialized.", nne);
+            return false;
+        } catch (KeeperException ke) {
+            LOG.error("Error while initializing InFlightReadEntryNumInLedgerChecker", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+        return true;
+    }
+
+    @Override
+    public void setInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNum) throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setInFlightReadEntryNumInLedgerChecker()");
+        }
+        try {
+            if (zkc.exists(inFlightReadEntryNumInLedgerCheckerZnode, false) != null) {
+                zkc.setData(inFlightReadEntryNumInLedgerCheckerZnode,
+                        Integer.toString(inFlightReadEntryNum).getBytes(UTF_8), -1);
+            } else {
+                zkc.create(inFlightReadEntryNumInLedgerCheckerZnode,
+                        Integer.toString(inFlightReadEntryNum).getBytes(UTF_8),
+                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Error while setting InFlightReadEntryNumInLedgerChecker ", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public int getInFlightReadEntryNumInLedgerChecker() throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getInFlightReadEntryNumInLedgerChecker()");
+        }
+        try {
+            byte[] data = zkc.getData(inFlightReadEntryNumInLedgerCheckerZnode, false, null);
+            return Integer.parseInt(new String(data, UTF_8));
+        } catch (KeeperException ke) {
+            LOG.error("Error while getting InFlightReadEntryNumInLedgerChecker ", ke);
             throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();

@@ -154,11 +154,12 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
-    void checkAllLedgers() throws BKException, IOException, InterruptedException {
+    void checkAllLedgers() throws BKException, IOException, InterruptedException, UnavailableException {
         final BookKeeper localClient = getBookKeeper(conf);
         final BookKeeperAdmin localAdmin = getBookKeeperAdmin(localClient);
         try {
-            final LedgerChecker checker = new LedgerChecker(localClient, conf.getInFlightReadEntryNumInLedgerChecker());
+            final LedgerChecker checker = new LedgerChecker(localClient,
+                    ledgerUnderreplicationManager.getInFlightReadEntryNumInLedgerChecker());
 
             final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 

@@ -46,6 +46,7 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.InFlightReadEntryNumInLedgerCheckerCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.QueryAutoRecoveryStatusCommand;
@@ -152,6 +153,7 @@ public class BookieShell implements Tool {
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
+    static final String CMD_INFLIGHTREADENTRYNUMINLEDGERCHECKER = "inflightreadentrynuminledgerchecker";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
     static final String CMD_FORCEAUDITCHECKS = "forceauditchecks";
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
@@ -1436,6 +1438,49 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Setter and Getter for InFlightReadEntryNumInLedgerChecker value in metadata store.
+     */
+    class InFlightReadEntryNumInLedgerCheckerCmd extends MyCommand {
+
+        public InFlightReadEntryNumInLedgerCheckerCmd() {
+            super(CMD_INFLIGHTREADENTRYNUMINLEDGERCHECKER);
+            opts.addOption("g", "get", false, "Get InFlightReadEntryNumInLedgerChecker value");
+            opts.addOption("s", "set", true, "Set InFlightReadEntryNumInLedgerChecker value");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Setter and Getter for InFlightReadEntryNumInLedgerChecker value in metadata store.";
+        }
+
+        @Override
+        String getUsage() {
+            return "inflightreadentrynuminledgerchecker [-get|-set <value>]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean getter = cmdLine.hasOption("g");
+            boolean setter = cmdLine.hasOption("s");
+            int set = -1;
+            if (setter) {
+                set = Integer.parseInt(cmdLine.getOptionValue("set"));
+            }
+
+            InFlightReadEntryNumInLedgerCheckerCommand.IFRENFlags flags =
+                    new InFlightReadEntryNumInLedgerCheckerCommand.IFRENFlags().get(getter).set(set);
+            InFlightReadEntryNumInLedgerCheckerCommand cmd = new InFlightReadEntryNumInLedgerCheckerCommand();
+            boolean result = cmd.apply(bkConf, flags);
+            return result ? 0 : 1;
+        }
+    }
+
+    /**
      * Print which node has the auditor lock.
      */
     class WhoIsAuditorCmd extends MyCommand {
@@ -2282,6 +2327,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE, new RegenerateInterleavedStorageIndexFile());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
+        commands.put(CMD_INFLIGHTREADENTRYNUMINLEDGERCHECKER, new InFlightReadEntryNumInLedgerCheckerCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
         commands.put(CMD_FORCEAUDITCHECKS, new ForceAuditorChecksCmd());
         // cookie related commands

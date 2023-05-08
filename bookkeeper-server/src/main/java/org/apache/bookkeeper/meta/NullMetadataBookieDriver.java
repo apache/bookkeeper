@@ -387,6 +387,16 @@ public class NullMetadataBookieDriver implements MetadataBookieDriver {
             return Long.MAX_VALUE;
         }
         @Override
+        public boolean initializeInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNumInLedgerChecker) {
+            return false;
+        }
+        @Override
+        public void setInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNumInLedgerChecker) {}
+        @Override
+        public int getInFlightReadEntryNumInLedgerChecker() {
+            return -1;
+        }
+        @Override
         public void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb) {}
         @Override
         public String getReplicationWorkerIdRereplicatingLedger(long ledgerId)
