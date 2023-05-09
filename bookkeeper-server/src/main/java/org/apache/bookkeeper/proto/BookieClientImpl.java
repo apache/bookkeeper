@@ -22,6 +22,10 @@ package org.apache.bookkeeper.proto;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
@@ -38,7 +42,6 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,8 +87,8 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
     private final EventLoopGroup eventLoopGroup;
     private final ByteBufAllocator allocator;
-    final ConcurrentHashMap<BookieId, PerChannelBookieClientPool> channels =
-            new ConcurrentHashMap<BookieId, PerChannelBookieClientPool>();
+
+    final Cache<BookieId, PerChannelBookieClientPool> channels;
 
     private final ClientAuthProvider.Factory authProviderFactory;
     private final ExtensionRegistry registry;
@@ -122,6 +125,26 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         this.numConnectionsPerBookie = conf.getNumChannelsPerBookie();
         this.bookieErrorThresholdPerInterval = conf.getBookieErrorThresholdPerInterval();
 
+        long clientMaxIdleConnectionsMinutes = conf.getClientMaxIdleConnectionsMinutes();
+
+        if (clientMaxIdleConnectionsMinutes >= 0) {
+            channels = CacheBuilder.newBuilder()
+                    .expireAfterAccess(clientMaxIdleConnectionsMinutes, TimeUnit.MINUTES)
+                    .removalListener(new RemovalListener<BookieId, PerChannelBookieClientPool>() {
+                        @Override
+                        public void onRemoval(
+                                RemovalNotification<BookieId, PerChannelBookieClientPool> removalNotification) {
+                            LOG.info("Closing idle connections for bookieId {}, "
+                                            + "because there are no any read-write operations happened more than "
+                                            + "{} minutes.", removalNotification.getKey(),
+                                    clientMaxIdleConnectionsMinutes);
+                            removalNotification.getValue().close(false);
+                        }
+                    }).build();
+        } else {
+            channels = CacheBuilder.newBuilder().build();
+        }
+
         this.scheduler = scheduler;
         if (conf.getAddEntryTimeout() > 0 || conf.getReadEntryTimeout() > 0) {
             this.timeoutFuture = this.scheduler.scheduleAtFixedRate(
@@ -149,7 +172,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     @Override
     public List<BookieId> getFaultyBookies() {
         List<BookieId> faultyBookies = Lists.newArrayList();
-        for (PerChannelBookieClientPool channelPool : channels.values()) {
+        for (PerChannelBookieClientPool channelPool : channels.asMap().values()) {
             if (channelPool instanceof DefaultPerChannelBookieClientPool) {
                 DefaultPerChannelBookieClientPool pool = (DefaultPerChannelBookieClientPool) channelPool;
                 if (pool.errorCounter.getAndSet(0) >= bookieErrorThresholdPerInterval) {
@@ -196,7 +219,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     public PerChannelBookieClientPool lookupClient(BookieId addr) {
-        PerChannelBookieClientPool clientPool = channels.get(addr);
+        PerChannelBookieClientPool clientPool = channels.getIfPresent(addr);
         if (null == clientPool) {
             closeLock.readLock().lock();
             try {
@@ -205,7 +228,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 }
                 PerChannelBookieClientPool newClientPool =
                     new DefaultPerChannelBookieClientPool(conf, this, addr, numConnectionsPerBookie);
-                PerChannelBookieClientPool oldClientPool = channels.putIfAbsent(addr, newClientPool);
+                PerChannelBookieClientPool oldClientPool = channels.asMap().putIfAbsent(addr, newClientPool);
                 if (null == oldClientPool) {
                     clientPool = newClientPool;
                     // initialize the pool only after we put the pool into the map
@@ -540,7 +563,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     }
 
     private void monitorPendingOperations() {
-        for (PerChannelBookieClientPool clientPool : channels.values()) {
+        for (PerChannelBookieClientPool clientPool : channels.asMap().values()) {
             clientPool.checkTimeoutOnPendingOperations();
         }
     }
@@ -555,10 +578,10 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         closeLock.writeLock().lock();
         try {
             closed = true;
-            for (PerChannelBookieClientPool pool : channels.values()) {
+            for (PerChannelBookieClientPool pool : channels.asMap().values()) {
                 pool.close(true);
             }
-            channels.clear();
+            channels.cleanUp();
             authProviderFactory.close();
 
             if (timeoutFuture != null) {
