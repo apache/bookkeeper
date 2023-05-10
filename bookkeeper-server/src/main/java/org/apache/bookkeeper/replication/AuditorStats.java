@@ -32,6 +32,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAV
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS_GUAGE;
@@ -171,6 +172,11 @@ public class AuditorStats {
             help = "Gauge for num of underreplicated ledgers"
     )
     private final Gauge<Integer> numUnderReplicatedLedgers;
+    @StatsDoc(
+            name = NUM_SKIPPING_CHECK_TASK_TIMES,
+            help = "the times of auditor check task skipped"
+    )
+    private final Counter numSkippingCheckTaskTimes;
 
     public AuditorStats(StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
@@ -198,6 +204,7 @@ public class AuditorStats {
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
         numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
+        numSkippingCheckTaskTimes = this.statsLogger.getCounter(NUM_SKIPPING_CHECK_TASK_TIMES);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
