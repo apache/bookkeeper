@@ -391,27 +391,18 @@ public class Auditor implements AutoCloseable {
             try {
                 watchBookieChanges();
                 knownBookies = getAvailableBookies();
+                this.ledgerUnderreplicationManager
+                        .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
+                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
+                        new UnderReplicatedLedgersChangedCb());
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, so exiting", bke);
                 submitShutdownTask();
-            }
-
-            try {
-                this.ledgerUnderreplicationManager
-                        .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
+                return;
             } catch (UnavailableException ue) {
-                LOG.error("Exception while registering for LostBookieRecoveryDelay change notification, so exiting",
-                        ue);
+                LOG.error("Exception while registering for change notification, so exiting", ue);
                 submitShutdownTask();
-            }
-
-            try {
-                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
-                        new UnderReplicatedLedgersChangedCb());
-            } catch (UnavailableException ue) {
-                LOG.error("Exception while registering for under-replicated ledgers change notification, so exiting",
-                        ue);
-                submitShutdownTask();
+                return;
             }
 
             scheduleBookieCheckTask();
