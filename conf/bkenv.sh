@@ -43,9 +43,6 @@
 # Wait time before forcefully kill the Bookie server instance, if the stop is not successful
 # BOOKIE_STOP_TIMEOUT=
 
-# Entry formatter class to format entries.
-# ENTRY_FORMATTER_CLASS=
-
 # this default config dir should match the 'localBookiesConfigDirectory' config value in the conf file of LocalBookKeeper
 # LOCALBOOKIES_CONFIG_DIR=/tmp/localbookies-config
 

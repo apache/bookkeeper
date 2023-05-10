@@ -87,7 +87,6 @@ Environment variables:
    BOOKIE_ZK_CONF         Configuration file for zookeeper (default: $DEFAULT_ZK_CONF)
    BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
    BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
-   ENTRY_FORMATTER_CLASS  Entry formatter class to format entries.
    BOOKIE_PID_DIR         Folder where the Bookie server PID file should be stored
    BOOKIE_STOP_TIMEOUT    Wait time before forcefully kill the Bookie server instance, if the stop is not successful
 
@@ -173,8 +172,7 @@ elif [ $COMMAND == "zookeeper" ]; then
     BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"zookeeper.log"}
     exec "${JAVA}" $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
 elif [ ${COMMAND} == "shell" ]; then
-  ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
-  exec "${JAVA}" ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
+  exec "${JAVA}" ${OPTS} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "help" ]; then
   bookkeeper_help;
 else
