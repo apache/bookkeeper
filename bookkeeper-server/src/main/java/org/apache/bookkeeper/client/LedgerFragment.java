@@ -229,9 +229,9 @@ public class LedgerFragment {
     @Override
     public String toString() {
         return String.format("Fragment(LedgerID: %d, FirstEntryID: %d[%d], "
-                + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s)", ledgerId, firstEntryId,
+                        + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s, Type: %s)", ledgerId, firstEntryId,
                 getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
-                getAddresses(), isLedgerClosed);
+                getAddresses(), isLedgerClosed, replicateType);
     }
 
     /**
