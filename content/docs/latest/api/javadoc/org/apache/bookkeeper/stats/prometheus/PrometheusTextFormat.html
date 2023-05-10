@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10};
+var data = {"i0":9,"i1":9,"i2":10,"i3":10,"i4":9,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -200,33 +200,43 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>(package private) static java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTypeNameSuffix(io.prometheus.client.Collector.Type)">getTypeNameSuffix</a></span>&#8203;(io.prometheus.client.Collector.Type&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>(package private) static java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTypeStr(io.prometheus.client.Collector.Type)">getTypeStr</a></span>&#8203;(io.prometheus.client.Collector.Type&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeCounter(java.io.Writer,java.lang.String,org.apache.bookkeeper.stats.prometheus.LongAdderCounter)">writeCounter</a></span>&#8203;(java.io.Writer&nbsp;w,
             java.lang.String&nbsp;name,
             <a href="LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a>&nbsp;counter)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeGauge(java.io.Writer,java.lang.String,org.apache.bookkeeper.stats.prometheus.SimpleGauge)">writeGauge</a></span>&#8203;(java.io.Writer&nbsp;w,
           java.lang.String&nbsp;name,
           <a href="SimpleGauge.html" title="class in org.apache.bookkeeper.stats.prometheus">SimpleGauge</a>&lt;? extends java.lang.Number&gt;&nbsp;gauge)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeMetricsCollectedByPrometheusClient(java.io.Writer,io.prometheus.client.CollectorRegistry)">writeMetricsCollectedByPrometheusClient</a></span>&#8203;(java.io.Writer&nbsp;w,
                                        io.prometheus.client.CollectorRegistry&nbsp;registry)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeOpStat(java.io.Writer,java.lang.String,org.apache.bookkeeper.stats.prometheus.DataSketchesOpStatsLogger)">writeOpStat</a></span>&#8203;(java.io.Writer&nbsp;w,
            java.lang.String&nbsp;name,
            <a href="DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a>&nbsp;opStat)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeType(java.io.Writer,java.lang.String,java.lang.String)">writeType</a></span>&#8203;(java.io.Writer&nbsp;w,
          java.lang.String&nbsp;name,
@@ -341,6 +351,24 @@ extends java.lang.Object</pre>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
 </dl>
+</li>
+</ul>
+<a id="getTypeNameSuffix(io.prometheus.client.Collector.Type)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getTypeNameSuffix</h4>
+<pre class="methodSignature">static&nbsp;java.lang.String&nbsp;getTypeNameSuffix&#8203;(io.prometheus.client.Collector.Type&nbsp;type)</pre>
+</li>
+</ul>
+<a id="getTypeStr(io.prometheus.client.Collector.Type)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getTypeStr</h4>
+<pre class="methodSignature">static&nbsp;java.lang.String&nbsp;getTypeStr&#8203;(io.prometheus.client.Collector.Type&nbsp;type)</pre>
 </li>
 </ul>
 <a id="writeType(java.io.Writer,java.lang.String,java.lang.String)">
