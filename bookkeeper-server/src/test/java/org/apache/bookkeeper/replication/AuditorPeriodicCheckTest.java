@@ -729,6 +729,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         TestOpStatsLogger underReplicatedLedgerTotalSizeStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
 
         servConf.setAuditorPeriodicCheckInterval(1);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
@@ -749,6 +751,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         Awaitility.await().untilAsserted(() -> assertEquals(1, (long) numBookieAuditsDelayed.get()));
         final Future<?> auditTask = auditor.auditTask;
         assertTrue(auditTask != null && !auditTask.isDone());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
 
         canRun.set(true);
 
@@ -759,6 +762,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         assertEquals("UNDER_REPLICATED_LEDGERS_TOTAL_SIZE",
                 0,
                 underReplicatedLedgerTotalSizeStatsLogger.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
 
         auditor.close();
     }
@@ -791,6 +795,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         TestOpStatsLogger placementPolicyCheckTime = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
 
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1);
@@ -812,6 +818,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final Future<?> auditTask = auditor.auditTask;
         assertTrue(auditTask != null && !auditTask.isDone());
         assertEquals("PLACEMENT_POLICY_CHECK_TIME", 0, placementPolicyCheckTime.getSuccessCount());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
 
         canRun.set(true);
 
@@ -820,6 +827,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 && auditor.auditTask != null && !auditor.auditTask.isDone());
         // wrong successCount is > 0, right successCount is = 0
         assertEquals("PLACEMENT_POLICY_CHECK_TIME", 0, placementPolicyCheckTime.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
 
         auditor.close();
     }
@@ -852,6 +860,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         TestOpStatsLogger replicasCheckTime = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.REPLICAS_CHECK_TIME);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
 
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
@@ -874,6 +884,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final Future<?> auditTask = auditor.auditTask;
         assertTrue(auditTask != null && !auditTask.isDone());
         assertEquals("REPLICAS_CHECK_TIME", 0, replicasCheckTime.getSuccessCount());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
 
         canRun.set(true);
 
@@ -882,6 +893,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 && auditor.auditTask != null && !auditor.auditTask.isDone());
         // wrong successCount is > 0, right successCount is = 0
         assertEquals("REPLICAS_CHECK_TIME", 0, replicasCheckTime.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
 
         auditor.close();
     }

@@ -68,6 +68,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             // went ahead, we'll report under replication and the user
             // wanted to avoid that(with lostBookieRecoveryDelay option)
             LOG.info("Audit already scheduled; skipping periodic bookie check");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
         }
     }
 
