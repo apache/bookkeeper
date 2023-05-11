@@ -1036,9 +1036,9 @@ public class DefaultEntryLogger implements EntryLogger {
         // entry log
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
-        } catch (FileNotFoundException ex) {
-            LOG.warn("Cannot find entry log file {}.log", entryLogId);
-            throw new IOException(ex);
+        } catch (FileNotFoundException fne) {
+            LOG.warn("Cannot find entry log file {}.log : {}", entryLogId, e.getMessage());
+            throw fne;
         } catch (Exception e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 
