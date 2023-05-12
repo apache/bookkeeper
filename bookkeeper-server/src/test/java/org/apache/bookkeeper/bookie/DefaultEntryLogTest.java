@@ -26,6 +26,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
@@ -1432,6 +1438,21 @@ public class DefaultEntryLogTest {
             BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
             Assert.assertEquals("unpersistedBytes should be 0", 0L, logChannel.getUnpersistedBytes());
         }
+    }
+
+    @Test
+    public void testSingleEntryLogCreateNewLog() throws Exception {
+        Assert.assertTrue(entryLogger.getEntryLogManager() instanceof EntryLogManagerForSingleEntryLog);
+        EntryLogManagerForSingleEntryLog singleEntryLog =
+                (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
+        EntryLogManagerForSingleEntryLog mockSingleEntryLog = spy(singleEntryLog);
+        BufferedLogChannel activeLogChannel = mockSingleEntryLog.getCurrentLogForLedgerForAddEntry(1, 1024, true);
+        Assert.assertTrue(activeLogChannel != null);
+
+        verify(mockSingleEntryLog, times(1)).createNewLog(anyLong(), anyString());
+        // `readEntryLogHardLimit` and `reachEntryLogLimit` should not call if new create log
+        verify(mockSingleEntryLog, times(0)).reachEntryLogLimit(any(), anyLong());
+        verify(mockSingleEntryLog, times(0)).readEntryLogHardLimit(any(), anyLong());
     }
 
     /*
