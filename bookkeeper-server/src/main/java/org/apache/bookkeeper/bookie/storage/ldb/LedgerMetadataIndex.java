@@ -300,6 +300,9 @@ public class LedgerMetadataIndex implements Closeable {
         int updatedLedgers = 0;
         while (!pendingLedgersUpdates.isEmpty()) {
             Entry<Long, LedgerData> entry = pendingLedgersUpdates.poll();
+            if (entry == null) {
+                break;
+            }
             key.set(entry.getKey());
             byte[] value = entry.getValue().toByteArray();
             ledgersDb.put(key.array, value);
@@ -319,7 +322,10 @@ public class LedgerMetadataIndex implements Closeable {
 
         int deletedLedgers = 0;
         while (!pendingDeletedLedgers.isEmpty()) {
-            long ledgerId = pendingDeletedLedgers.poll();
+            Long ledgerId = pendingDeletedLedgers.poll();
+            if (ledgerId == null) {
+                break;
+            }
             key.set(ledgerId);
             ledgersDb.delete(key.array);
         }
