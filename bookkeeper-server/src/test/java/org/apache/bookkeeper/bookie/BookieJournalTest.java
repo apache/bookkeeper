@@ -299,7 +299,8 @@ public class BookieJournalTest {
         return jc;
     }
 
-    private JournalChannel writeV4JournalWithInvalidRecord(File journalDir, int numEntries, byte[] masterKey) throws Exception {
+    private JournalChannel writeV4JournalWithInvalidRecord(File journalDir,
+                                                           int numEntries, byte[] masterKey) throws Exception {
         long logId = System.currentTimeMillis();
         JournalChannel jc = new JournalChannel(journalDir, logId);
 

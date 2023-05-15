@@ -849,8 +849,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         }
                     } catch (IOException e) {
                         if (skipInvalidRecord) {
-                            LOG.warn("Invalid record found with negative length: {},because of " +
-                                "skipInvalidRecord is true,we skip the next data", len);
+                            LOG.warn("Invalid record found with negative length: {}, because of "
+                                + "skipInvalidRecord is true,we skip the next data", len);
                             break;
                         } else {
                             throw e;

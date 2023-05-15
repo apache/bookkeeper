@@ -4014,7 +4014,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
 
     /**
-     * When this config is set to true,if we replay journal failed, we will skip
+     * When this config is set to true,if we replay journal failed, we will skip.
      * @param skipReplayJournalInvalidRecord
      * @return
      */
@@ -4025,7 +4025,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * @see #isSkipReplayJournalInvalidRecord
+     * @see #isSkipReplayJournalInvalidRecord .
      */
     public boolean isSkipReplayJournalInvalidRecord() {
         return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
