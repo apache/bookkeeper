@@ -943,8 +943,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
-        // Trigger a flush to have all the entries being compacted in the db storage
-        flush();
+        // If there is a pending flush, wait for it to be completed, in order to have all the
+        // entries being compacted in the db storage
+
+        flushMutex.lock();
+        flushMutex.unlock();
 
         entryLocationIndex.updateLocations(locations);
     }
