@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -44,6 +45,7 @@ public class DecommissionService implements HttpEndpointService {
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
     protected ExecutorService executor;
+    protected volatile Future<?> decommissionTask;
 
 
     public DecommissionService(ServerConfiguration conf, BookKeeperAdmin bka, ExecutorService executor) {
@@ -75,18 +77,26 @@ public class DecommissionService implements HttpEndpointService {
                 try {
                     BookieId bookieSrc = BookieId.parse(configMap.get("bookie_src"));
 
-                    executor.execute(() -> {
-                        try {
-                            LOG.info("Start decommissioning bookie.");
-                            bka.decommissionBookie(bookieSrc);
-                            LOG.info("Complete decommissioning bookie.");
-                        } catch (Exception e) {
-                            LOG.error("Error handling decommissionBookie: {}.", bookieSrc, e);
-                        }
-                    });
+                    if (decommissionTask == null || decommissionTask.isDone()) {
+                        decommissionTask = executor.submit(() -> {
+                            try {
+                                LOG.info("Start decommissioning bookie.");
+                                bka.decommissionBookie(bookieSrc);
+                                LOG.info("Complete decommissioning bookie.");
+                            } catch (Exception e) {
+                                LOG.error("Error handling decommissionBookie: {}.", bookieSrc, e);
+                            } finally {
+                                decommissionTask = null;
+                            }
+                        });
 
-                    response.setCode(HttpServer.StatusCode.OK);
-                    response.setBody("Success send decommission Bookie command " + bookieSrc);
+                        response.setCode(HttpServer.StatusCode.OK);
+                        response.setBody("Success send decommission Bookie command " + bookieSrc);
+                    } else {
+                        response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                        response.setBody("There is an already Decommission task running, ignoring this request.");
+                    }
+
                     return response;
                 } catch (Exception e) {
                     LOG.error("Exception occurred while decommissioning bookie: ", e);
@@ -99,6 +109,16 @@ public class DecommissionService implements HttpEndpointService {
                 response.setBody("Request body not contains bookie_src.");
                 return response;
             }
+        } else if (HttpServer.Method.GET == request.getMethod()) {
+            if (decommissionTask == null || decommissionTask.isDone()) {
+                response.setCode(HttpServer.StatusCode.OK);
+                response.setBody("There is not a Decommission task currently running.");
+            } else {
+                response.setCode(HttpServer.StatusCode.OK);
+                response.setBody("There is a Decommission task currently running.");
+            }
+
+            return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
             response.setBody("Not found method. Should be PUT method");
