@@ -224,6 +224,7 @@ public class DbLedgerStorageTest {
         entry3.writeLong(3); // entry id
         entry3.writeBytes("entry-3".getBytes());
         storage.addEntry(entry3);
+        storage.flush();
 
         // Simulate bookie compaction
         SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
