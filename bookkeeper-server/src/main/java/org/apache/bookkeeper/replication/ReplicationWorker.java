@@ -265,12 +265,12 @@ public class ReplicationWorker implements Runnable {
             } catch (UnavailableException e) {
                 LOG.error("UnavailableException "
                         + "while replicating fragments", e);
-                waitBackOffTime(rwRereplicateBackoffMs);
                 if (Thread.currentThread().isInterrupted()) {
                     LOG.error("Interrupted  while replicating fragments");
                     shutdown();
                     return;
                 }
+                waitBackOffTime(rwRereplicateBackoffMs);
             }
         }
         LOG.info("ReplicationWorker exited loop!");
