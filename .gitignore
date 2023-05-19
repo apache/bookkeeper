@@ -46,3 +46,7 @@ build/
 .gradle/
 *.log
 *.dat
+
+# Projecct
+*.jks
+tests/**/bin
