@@ -58,7 +58,8 @@ public class HttpService extends ServerLifecycleComponent {
         ServerConfiguration serverConf = conf.getServerConf();
         HttpServerConfiguration tlsOption = new HttpServerConfiguration(serverConf.isHttpServerTlsEnable(),
                 serverConf.getHttpServerKeystorePath(), serverConf.getHttpServerKeystorePassword(),
-                serverConf.getHttpServerTrustStorePath(), serverConf.getHttpServerTrustStorePassword());
+                serverConf.getHttpServerTrustStorePath(), serverConf.getHttpServerTrustRollbackKeyStorePassword() ?
+                        serverConf.getHttpServerKeystorePassword() : serverConf.getHttpServerTrustStorePassword());
         server.startServer(serverConf.getHttpServerPort(), serverConf.getHttpServerHost(), tlsOption);
     }
 

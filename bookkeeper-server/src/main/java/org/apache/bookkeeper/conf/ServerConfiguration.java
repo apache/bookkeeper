@@ -278,6 +278,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_KEY_STORE_PASSWORD = "httpServerKeyStorePassword";
     protected static final String HTTP_SERVER_TRUST_STORE_PATH = "httpServerTrustStorePath";
     protected static final String HTTP_SERVER_TRUST_STORE_PASSWORD = "httpServerTrustStorePassword";
+    protected static final String HTTP_SERVER_TRUST_ROLLBACK_KEY_STORE_PASSWORD =
+            "httpServerTrustRollbackKeyStorePassword";
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
@@ -3698,7 +3700,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return http server trustStore password
      */
     public String getHttpServerTrustStorePassword() {
-        return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
+        return getString(HTTP_SERVER_TRUST_STORE_PASSWORD);
     }
 
     /**
@@ -3710,6 +3712,37 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setHttpServerTrustStorePasswordPassword(String trustStorePassword) {
         setProperty(HTTP_SERVER_TRUST_STORE_PASSWORD, trustStorePassword);
+        return this;
+    }
+
+    /**
+     * Return the flag whether to rollback trust store password to key store password.
+     * This is a compatibility fix for the previous error of pointing
+     * HttpServerTrustStorePassword to HttpServerKeyStorePassword.
+     * This parameter is added for compatibility with historical usage.
+     *
+     * If you want to fix this problem, you can set this parameter to false.
+     *
+     * @return the flag whether to rollback trust store password to key store password.
+     * The default value is <tt>true</tt>.
+     */
+    public boolean getHttpServerTrustRollbackKeyStorePassword() {
+        return getBoolean(HTTP_SERVER_TRUST_ROLLBACK_KEY_STORE_PASSWORD, true);
+    }
+
+    /**
+     * Set the flag whether to rollback trust store password to key store password.
+     * This is a compatibility fix for the previous error of pointing
+     * HttpServerTrustStorePassword to HttpServerKeyStorePassword.
+     * This parameter is added for compatibility with historical usage.
+     *
+     * If you want to fix this problem, you can set this parameter to false.
+     *
+     * @param rollback flag to enable/disable rollback trust store password to key store password.
+     * @return server configuration.
+     */
+    public ServerConfiguration setHttpServerTrustRollbackKeyStorePassword(boolean rollback) {
+        setProperty(HTTP_SERVER_TRUST_ROLLBACK_KEY_STORE_PASSWORD, rollback);
         return this;
     }
 
