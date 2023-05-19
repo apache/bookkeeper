@@ -298,8 +298,8 @@ public class LedgerMetadataIndex implements Closeable {
         LongWrapper key = LongWrapper.get();
 
         int updatedLedgers = 0;
-        while (!pendingLedgersUpdates.isEmpty()) {
-            Entry<Long, LedgerData> entry = pendingLedgersUpdates.poll();
+        Entry<Long, LedgerData> entry;
+        while ((entry = pendingLedgersUpdates.poll()) != null) {
             key.set(entry.getKey());
             byte[] value = entry.getValue().toByteArray();
             ledgersDb.put(key.array, value);
@@ -318,8 +318,8 @@ public class LedgerMetadataIndex implements Closeable {
         LongWrapper key = LongWrapper.get();
 
         int deletedLedgers = 0;
-        while (!pendingDeletedLedgers.isEmpty()) {
-            long ledgerId = pendingDeletedLedgers.poll();
+        Long ledgerId;
+        while ((ledgerId = pendingDeletedLedgers.poll()) != null) {
             key.set(ledgerId);
             ledgersDb.delete(key.array);
         }
