@@ -2,7 +2,7 @@ name: Maven Clean Test
 
 on:
   push:
-    branches: [main]
+
 
 jobs:
   build:
