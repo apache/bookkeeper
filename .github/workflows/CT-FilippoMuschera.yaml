@@ -2,17 +2,18 @@ name: Maven Clean Test
 
 on:
   push:
-    branches: [main]
+
 
 jobs:
   build:
-    runs-on: docker://fedora:latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Java
       uses: actions/setup-java@v2
       with:
-        java-version: 1.8
+        java-version: 8
+        distribution: 'adopt'
     - name: Build and Test with Maven
       run: mvn clean test
