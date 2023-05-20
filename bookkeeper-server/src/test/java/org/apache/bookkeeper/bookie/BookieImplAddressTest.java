@@ -38,15 +38,6 @@ public class BookieImplAddressTest {
 
     }
 
-    @BeforeClass
-    public static void before() {
-        InetSocketAddress addr = new InetSocketAddress("192.168.56.102", 3010);
-        System.out.println("Before 1: " + addr.getAddress().isLoopbackAddress());
-
-        InetSocketAddress addr2 = new InetSocketAddress("filippo-VirtualBox", 3010);
-        System.out.println("Before 2: " + addr2.getAddress().isLoopbackAddress());
-    }
-
     @Parameterized.Parameters
     public static Collection<Object[]> getParams() {
         return Arrays.asList(new Object[][] {
