@@ -24,6 +24,8 @@ It is suitable for being used in following scenarios:
 
 Please visit the [Documentation](https://bookkeeper.apache.org/docs/overview/) from the project website for more information.
 
+## Get In Touch
+
 ### Report a Bug
 
 For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a Github issue](https://github.com/apache/bookkeeper/issues).
@@ -49,6 +51,3 @@ We feel that a welcoming open community is important and welcome contributions.
 3. Review our [coding style](https://bookkeeper.apache.org/community/coding-guide/) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn more about our conventions.
 
 4. Make your changes according to our [contributing guide](https://bookkeeper.apache.org/community/contributing/)
-
-
-TEST TEST TEST!
