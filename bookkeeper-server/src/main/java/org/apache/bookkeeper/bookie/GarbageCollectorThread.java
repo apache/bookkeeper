@@ -497,8 +497,9 @@ public class GarbageCollectorThread implements Runnable {
                     // ledgers anymore.
                     // We can remove this entry log file now.
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
-                    removeEntryLog(entryLogId);
-                    gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    if (removeEntryLog(entryLogId)) {
+                        gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    }
                 } else if (modified) {
                     // update entryLogMetaMap only when the meta modified.
                     entryLogMetaMap.put(meta.getEntryLogId(), meta);
@@ -689,12 +690,15 @@ public class GarbageCollectorThread implements Runnable {
      *          Entry Log File Id
      * @throws EntryLogMetadataMapException
      */
-    protected void removeEntryLog(long entryLogId) throws EntryLogMetadataMapException {
+    protected boolean removeEntryLog(long entryLogId) throws EntryLogMetadataMapException {
         // remove entry log file successfully
         if (entryLogger.removeEntryLog(entryLogId)) {
             LOG.info("Removing entry log metadata for {}", entryLogId);
             entryLogMetaMap.remove(entryLogId);
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -755,8 +759,9 @@ public class GarbageCollectorThread implements Runnable {
                     // ledgers anymore.
                     // We can remove this entry log file now.
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
-                    removeEntryLog(entryLogId);
-                    gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
+                    if (removeEntryLog(entryLogId)) {
+                        gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
+                    }
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }

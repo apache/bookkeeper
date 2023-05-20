@@ -528,6 +528,7 @@ public class DefaultEntryLogger implements EntryLogger {
         }
         if (!entryLogFile.delete()) {
             LOG.warn("Could not delete entry log file {}", entryLogFile);
+            return false;
         }
         return true;
     }
