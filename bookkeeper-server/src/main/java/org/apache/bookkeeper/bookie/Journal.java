@@ -829,32 +829,22 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
                 boolean isPaddingRecord = false;
                 if (len < 0) {
-                    try {
-                        if (len == PADDING_MASK && journalVersion >= JournalChannel.V5) {
-                            // skip padding bytes
-                            lenBuff.clear();
-                            fullRead(recLog, lenBuff);
-                            if (lenBuff.remaining() != 0) {
-                                break;
-                            }
-                            lenBuff.flip();
-                            len = lenBuff.getInt();
-                            if (len == 0) {
-                                continue;
-                            }
-                            isPaddingRecord = true;
-                        } else {
-                            LOG.error("Invalid record found with negative length: {}", len);
-                            throw new IOException("Invalid record found with negative length " + len);
-                        }
-                    } catch (IOException e) {
-                        if (skipInvalidRecord) {
-                            LOG.warn("Invalid record found with negative length: {}, because of "
-                                + "skipInvalidRecord is true,we skip the next data", len);
+                    if (len == PADDING_MASK && journalVersion >= JournalChannel.V5) {
+                        // skip padding bytes
+                        lenBuff.clear();
+                        fullRead(recLog, lenBuff);
+                        if (lenBuff.remaining() != 0) {
                             break;
-                        } else {
-                            throw e;
                         }
+                        lenBuff.flip();
+                        len = lenBuff.getInt();
+                        if (len == 0) {
+                            continue;
+                        }
+                        isPaddingRecord = true;
+                    } else {
+                        LOG.error("Invalid record found with negative length: {}", len);
+                        throw new IOException("Invalid record found with negative length " + len);
                     }
                 }
                 recBuff.clear();
@@ -872,10 +862,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
-            return recLog.fc.position();
+        } catch (IOException e) {
+            if (skipInvalidRecord) {
+                LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
+            } else {
+                throw e;
+            }
         } finally {
             recLog.close();
         }
+        return recLog.fc.position();
     }
 
     /**

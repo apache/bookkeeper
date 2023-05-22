@@ -4028,7 +4028,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @see #isSkipReplayJournalInvalidRecord .
      */
     public boolean isSkipReplayJournalInvalidRecord() {
-        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, true);
     }
 
     /**
