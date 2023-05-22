@@ -857,11 +857,12 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
                 stateManager.forceToShuttingDown();
 
-                // Shutdown Sync thread
-                syncThread.shutdown();
                 // turn bookie to read only during shutting down process
                 LOG.info("Turning bookie to read only during shut down");
                 stateManager.forceToReadOnly();
+
+                // Shutdown Sync thread
+                syncThread.shutdown();
 
                 // Shutdown journals
                 for (Journal journal : journals) {
