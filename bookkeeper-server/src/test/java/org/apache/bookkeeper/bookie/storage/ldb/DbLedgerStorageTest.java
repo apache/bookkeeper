@@ -222,6 +222,7 @@ public class DbLedgerStorageTest {
         entry3.writeBytes("entry-3".getBytes());
         storage.addEntry(entry3);
 
+
         // Simulate bookie compaction
         SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
         EntryLogger entryLogger = singleDirStorage.getEntryLogger();
@@ -232,6 +233,7 @@ public class DbLedgerStorageTest {
         newEntry3.writeBytes("new-entry-3".getBytes());
         long location = entryLogger.addEntry(4L, newEntry3, false);
 
+        storage.flush();
         List<EntryLocation> locations = Lists.newArrayList(new EntryLocation(4, 3, location));
         singleDirStorage.updateEntriesLocations(locations);
 
