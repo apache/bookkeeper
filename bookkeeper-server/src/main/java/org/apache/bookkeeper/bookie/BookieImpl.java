@@ -857,6 +857,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
                 stateManager.forceToShuttingDown();
 
+                // Shutdown Sync thread
+                syncThread.shutdown();
                 // turn bookie to read only during shutting down process
                 LOG.info("Turning bookie to read only during shut down");
                 stateManager.forceToReadOnly();
@@ -868,9 +870,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
-
-                // Shutdown Sync thread
-                syncThread.shutdown();
 
                 //Shutdown disk checker
                 dirsMonitor.shutdown();
