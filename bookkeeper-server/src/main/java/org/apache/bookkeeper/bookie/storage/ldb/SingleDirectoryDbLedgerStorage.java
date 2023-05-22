@@ -943,9 +943,30 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
-        // Trigger a flush to have all the entries being compacted in the db storage
-        flush();
+        // Before updating the DB with the new location for the compacted entries, we need to
+        // make sure that there is no ongoing flush() operation.
+        // If there were a flush, we could have the following situation, which is highly
+        // unlikely though possible:
+        // 1. Flush operation has written the write-cache content into entry-log files
+        // 2. The DB location index is not yet updated
+        // 3. Compaction is triggered and starts compacting some of the recent files
+        // 4. Compaction will write the "new location" into the DB
+        // 5. The pending flush() will overwrite the DB with the "old location", pointing
+        //    to a file that no longer exists
+        //
+        // To avoid this race condition, we need that all the entries that are potentially
+        // included in the compaction round to have all the indexes already flushed into
+        // the DB.
+        // The easiest lightweight way to achieve this is to wait for any pending
+        // flush operation to be completed before updating the index with the compacted
+        // entries, by blocking on the flushMutex.
+        flushMutex.lock();
+        flushMutex.unlock();
 
+        // We don't need to keep the flush mutex locked here while updating the DB.
+        // It's fine to have a concurrent flush operation at this point, because we
+        // know that none of the entries being flushed was included in the compaction
+        // round that we are dealing with.
         entryLocationIndex.updateLocations(locations);
     }
 
