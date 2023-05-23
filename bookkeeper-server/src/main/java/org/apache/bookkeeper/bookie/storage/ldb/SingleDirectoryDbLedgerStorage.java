@@ -156,7 +156,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
-        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())) {
+        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())
+                || ledgerBaseDir.equals(indexDirsManager.getAllLedgerDirs().get(0).getPath())) {
             log.info("indexDir is not specified, use default, creating single directory db ledger storage on {}",
                     indexBaseDir);
         } else {
