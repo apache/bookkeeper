@@ -773,11 +773,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     @Override
-    public void emitScheduleAuditorTasks()
+    public void emitRescheduleAuditorTasks()
             throws ReplicationException.UnavailableException {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("emitScheduleAuditorTasks()");
+            LOG.debug("emitRescheduleAuditorTasks()");
         }
         try {
             String znode = basePath + '/' + BookKeeperConstants.SCHEDULE_AUDITOR_NODE;
@@ -798,10 +798,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     @Override
-    public void finishedScheduleAuditorTasks()
+    public void finishedRescheduleAuditorTasks()
             throws ReplicationException.UnavailableException {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("finishedScheduleAuditorTasks()");
+            LOG.debug("finishedRescheduleAuditorTasks()");
         }
         try {
             zkc.delete(basePath + '/' + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, -1);
@@ -821,13 +821,13 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     @Override
-    public boolean isAuditorTasksReScheduleEmit()
+    public boolean isAuditorTasksRescheduleEmit()
             throws ReplicationException.UnavailableException {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("isAuditorTasksReScheduleEmit()");
+            LOG.debug("isAuditorTasksRescheduleEmit()");
         }
         try {
-            return null == zkc.exists(basePath + '/'
+            return null != zkc.exists(basePath + '/'
                     + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, false);
         } catch (KeeperException ke) {
             LOG.error("Error while checking the state of "
@@ -841,10 +841,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     @Override
-    public void notifyReScheduleAuditorTasksChanged(final GenericCallback<Void> cb)
+    public void notifyRescheduleAuditorTasksChanged(final GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("notifyReScheduleAuditorTasksChanged()");
+            LOG.debug("notifyRescheduleAuditorTasksChanged()");
         }
         Watcher w = new Watcher() {
             @Override
@@ -857,13 +857,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             }
         };
         try {
-            if (null == zkc.exists(basePath + '/'
-                    + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, w)) {
-                LOG.info("Schedule auditor tasks is emitted externally through Zookeeper, "
-                        + "since SCHEDULE_AUDITOR_NODE ZNode is created");
-                cb.operationComplete(0, null);
-                return;
-            }
+            zkc.addWatch(basePath + "/"
+                    + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, w, AddWatchMode.PERSISTENT);
         } catch (KeeperException ke) {
             LOG.error("Error while checking the state of "
                     + "schedule auditor tasks", ke);

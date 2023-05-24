@@ -21,6 +21,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDIT_BOOKIES_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.CHECK_ALL_LEDGERS_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIES_PER_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED;
@@ -177,6 +178,11 @@ public class AuditorStats {
             help = "the times of auditor check task skipped"
     )
     private final Counter numSkippingCheckTaskTimes;
+    @StatsDoc(
+            name = NUM_BOOKIE_AUDITS_DELAYED,
+            help = "the number of auditor check tasks reschedule emitted"
+    )
+    private final Counter numAuditorTasksRescheduleEmitted;
 
     public AuditorStats(StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
@@ -205,6 +211,7 @@ public class AuditorStats {
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
         numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
         numSkippingCheckTaskTimes = this.statsLogger.getCounter(NUM_SKIPPING_CHECK_TASK_TIMES);
+        numAuditorTasksRescheduleEmitted = this.statsLogger.getCounter(NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {

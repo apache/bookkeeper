@@ -898,6 +898,59 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         auditor.close();
     }
 
+    @Test
+    public void testRescheduleAuditorCheckTasks() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numAuditorTasksRescheduleEmitted =
+                statsLogger.getCounter(ReplicationStats.NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED);
+
+        urm.setLostBookieRecoveryDelay(Integer.MAX_VALUE);
+
+        AtomicBoolean canRun = new AtomicBoolean(true);
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc,
+                false, statsLogger, canRun);
+
+        auditor.start();
+
+        // verify before emit reschedule auditor tasks
+        assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 0, (long) numAuditorTasksRescheduleEmitted.get());
+        assertFalse(urm.isAuditorTasksRescheduleEmit());
+
+        // emit reschedule auditor check tasks
+        urm.emitRescheduleAuditorTasks();
+
+        Awaitility.await().untilAsserted( () -> {
+            assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 1,
+                    (long) numAuditorTasksRescheduleEmitted.get());
+        });
+
+        // check finishedRescheduleAuditorTasks
+        assertFalse(urm.isAuditorTasksRescheduleEmit());
+
+        // Verify multiple emit reschedule auditor check tasks
+        urm.emitRescheduleAuditorTasks();
+        Awaitility.await().untilAsserted( () -> {
+            assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 2,
+                    (long) numAuditorTasksRescheduleEmitted.get());
+        });
+
+        // check finishedRescheduleAuditorTasks
+        assertFalse(urm.isAuditorTasksRescheduleEmit());
+
+        auditor.close();
+    }
+
     static class TestAuditor extends Auditor {
 
         final AtomicReference<CountDownLatch> latchRef = new AtomicReference<CountDownLatch>(new CountDownLatch(1));

@@ -162,14 +162,14 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * Emit Auditor tasks re-schedule.
      *
      */
-    void emitScheduleAuditorTasks()
+    void emitRescheduleAuditorTasks()
             throws ReplicationException.UnavailableException;
 
     /**
      * Finishing Auditor tasks re-schedule.
      *
      */
-    void finishedScheduleAuditorTasks()
+    void finishedRescheduleAuditorTasks()
             throws ReplicationException.UnavailableException;
 
     /**
@@ -178,7 +178,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      *
      * @return - return true if it is emitted otherwise return false
      */
-    boolean isAuditorTasksReScheduleEmit()
+    boolean isAuditorTasksRescheduleEmit()
             throws ReplicationException.UnavailableException;
 
     /**
@@ -188,7 +188,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @param cb
      *            - callback implementation to receive the notification
      */
-    void notifyReScheduleAuditorTasksChanged(GenericCallback<Void> cb)
+    void notifyRescheduleAuditorTasksChanged(GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException;
 
     /**

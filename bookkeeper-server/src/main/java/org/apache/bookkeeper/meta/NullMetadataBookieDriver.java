@@ -359,15 +359,15 @@ public class NullMetadataBookieDriver implements MetadataBookieDriver {
         @Override
         public void notifyLedgerReplicationEnabled(GenericCallback<Void> cb) {}
         @Override
-        public void emitScheduleAuditorTasks() {}
+        public void emitRescheduleAuditorTasks() {}
         @Override
-        public void finishedScheduleAuditorTasks() {}
+        public void finishedRescheduleAuditorTasks() {}
         @Override
-        public boolean isAuditorTasksReScheduleEmit() {
+        public boolean isAuditorTasksRescheduleEmit() {
             return false;
         }
         @Override
-        public void notifyReScheduleAuditorTasksChanged(GenericCallback<Void> cb) {}
+        public void notifyRescheduleAuditorTasksChanged(GenericCallback<Void> cb) {}
         @Override
         public boolean initializeLostBookieRecoveryDelay(int lostBookieRecoveryDelay) {
             return false;

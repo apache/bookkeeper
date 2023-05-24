@@ -384,7 +384,7 @@ public class Auditor implements AutoCloseable {
         });
     }
 
-    synchronized Future<?> submitReScheduleAuditorTasksChangedEvent() {
+    synchronized Future<?> submitRescheduleAuditorTasksChangedEvent() {
         if (executor.isShutdown()) {
             SettableFuture<Void> f = SettableFuture.<Void>create();
             f.setException(new BKAuditException("Auditor shutting down"));
@@ -394,18 +394,24 @@ public class Auditor implements AutoCloseable {
             boolean reScheduleEmit = true;
             try {
                 waitIfLedgerReplicationDisabled();
-                reScheduleEmit = Auditor.this.ledgerUnderreplicationManager.isAuditorTasksReScheduleEmit();
+                reScheduleEmit = Auditor.this.ledgerUnderreplicationManager.isAuditorTasksRescheduleEmit();
                 if (reScheduleEmit) {
-                    if (auditorCheckAllLedgersTaskFuture != null) {
-                        LOG.info("ReScheduleAuditorTasks has been emitted so canceling the pending auditorCheckAllLedgersTask");
+                    if (auditorCheckAllLedgersTaskFuture != null
+                            && !auditorCheckAllLedgersTaskFuture.isCancelled()) {
+                        LOG.info("RescheduleAuditorTasks has been emitted "
+                                + "so canceling the pending auditorCheckAllLedgersTask");
                         auditorCheckAllLedgersTaskFuture.cancel(false);
                     }
-                    if (auditorPlacementPolicyCheckTaskFuture != null) {
-                        LOG.info("ReScheduleAuditorTasks has been emitted so canceling the pending auditorPlacementPolicyCheckTask");
+                    if (auditorPlacementPolicyCheckTaskFuture != null
+                            && !auditorPlacementPolicyCheckTaskFuture.isCancelled()) {
+                        LOG.info("RescheduleAuditorTasks has been emitted "
+                                + "so canceling the pending auditorPlacementPolicyCheckTask");
                         auditorPlacementPolicyCheckTaskFuture.cancel(false);
                     }
-                    if (auditorReplicasCheckTaskFuture != null) {
-                        LOG.info("ReScheduleAuditorTasks has been emitted so canceling the pending auditorReplicasCheckTask");
+                    if (auditorReplicasCheckTaskFuture != null
+                            && !auditorReplicasCheckTaskFuture.isCancelled()) {
+                        LOG.info("RescheduleAuditorTasks has been emitted "
+                                + "so canceling the pending auditorReplicasCheckTask");
                         auditorReplicasCheckTaskFuture.cancel(false);
                     }
 
@@ -423,8 +429,9 @@ public class Auditor implements AutoCloseable {
                 LOG.error("Exception while reading from ZK", ue);
             } finally {
                 if (reScheduleEmit) {
+                    auditorStats.getNumAuditorTasksRescheduleEmitted().inc();
                     try {
-                        Auditor.this.ledgerUnderreplicationManager.finishedScheduleAuditorTasks();
+                        Auditor.this.ledgerUnderreplicationManager.finishedRescheduleAuditorTasks();
                     } catch (UnavailableException e) {
                         if (e.getCause() != null && e.getCause() instanceof KeeperException.NoNodeException) {
                             if (LOG.isDebugEnabled()) {
@@ -457,7 +464,7 @@ public class Auditor implements AutoCloseable {
                 this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
                         new UnderReplicatedLedgersChangedCb());
                 this.ledgerUnderreplicationManager
-                        .notifyReScheduleAuditorTasksChanged(new ReScheduleAuditorTasksChangedCb());
+                        .notifyRescheduleAuditorTasksChanged(new RescheduleAuditorTasksChangedCb());
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, so exiting", bke);
                 submitShutdownTask();
@@ -651,19 +658,19 @@ public class Auditor implements AutoCloseable {
         }
     }
 
-    private class ReScheduleAuditorTasksChangedCb implements GenericCallback<Void> {
+    private class RescheduleAuditorTasksChangedCb implements GenericCallback<Void> {
         @Override
         public void operationComplete(int rc, Void result) {
             try {
                 Auditor.this.ledgerUnderreplicationManager
-                        .notifyReScheduleAuditorTasksChanged(ReScheduleAuditorTasksChangedCb.this);
+                        .notifyRescheduleAuditorTasksChanged(RescheduleAuditorTasksChangedCb.this);
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
                 LOG.error("Non Recoverable Exception while reading from ZK", nre);
                 submitShutdownTask();
             } catch (UnavailableException ae) {
-                LOG.error("Exception while registering for a ReScheduleAuditorTasks notification", ae);
+                LOG.error("Exception while registering for a RescheduleAuditorTasks notification", ae);
             }
-            Auditor.this.submitReScheduleAuditorTasksChangedEvent();
+            Auditor.this.submitRescheduleAuditorTasksChangedEvent();
         }
     }
 

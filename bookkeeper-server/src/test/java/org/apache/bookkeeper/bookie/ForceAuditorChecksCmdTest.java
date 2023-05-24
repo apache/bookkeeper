@@ -47,7 +47,7 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void verifyAuditCTimeReset() throws Exception {
-        String[] argv = new String[] { "forceauditchecks", "-calc", "-ppc", "-rc" };
+        String[] argv = new String[] { "forceauditchecks", "-calc", "-ppc", "-rc", "-f" };
         long curTime = System.currentTimeMillis();
 
         final ServerConfiguration conf = confByIndex(0);
@@ -61,6 +61,9 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
                 urM.setCheckAllLedgersCTime(curTime);
                 urM.setPlacementPolicyCheckCTime(curTime);
                 urM.setReplicasCheckCTime(curTime);
+
+                // check current not reschedule auditor task
+                Assert.assertFalse(urM.isAuditorTasksRescheduleEmit());
             } catch (InterruptedException | ReplicationException e) {
                 throw new UncheckedExecutionException(e);
             }
@@ -85,6 +88,9 @@ public class ForceAuditorChecksCmdTest extends BookKeeperClusterTestCase {
                 long replicasCheckCTime = urm.getReplicasCheckCTime();
                 if (replicasCheckCTime > (curTime - (20 * 24 * 60 * 60 * 1000))) {
                     Assert.fail("The replicasCheckCTime should have been reset to atleast 20 days old");
+                }
+                if (!urm.isAuditorTasksRescheduleEmit()) {
+                    Assert.fail("The rescheduleTasks should have been emitted.");
                 }
             } catch (InterruptedException | ReplicationException e) {
                 throw new UncheckedExecutionException(e);
