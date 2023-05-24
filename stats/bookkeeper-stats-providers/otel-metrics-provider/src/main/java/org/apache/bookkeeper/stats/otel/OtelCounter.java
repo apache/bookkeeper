@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.stats.otel;
 
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.LongUpDownCounter;
 import io.opentelemetry.api.metrics.Meter;
 import java.util.concurrent.TimeUnit;

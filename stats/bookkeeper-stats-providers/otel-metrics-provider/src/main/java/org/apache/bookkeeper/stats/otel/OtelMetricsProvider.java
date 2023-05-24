@@ -16,6 +16,7 @@
  */
 package org.apache.bookkeeper.stats.otel;
 
+// CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -45,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
+// CHECKSTYLE.ON: IllegalImport
 
 @Slf4j
 public class OtelMetricsProvider implements StatsProvider {
@@ -100,10 +102,10 @@ public class OtelMetricsProvider implements StatsProvider {
             Threads.registerObservers(openTelemetry);
             GarbageCollector.registerObservers(openTelemetry);
 
-            meter.gaugeBuilder("process.runtime.jvm_memory_direct_bytes_used")
+            meter.gaugeBuilder("process.runtime.jvm.memory.direct_bytes_used")
                     .buildWithCallback(odm -> odm.record(getDirectMemoryUsage.get()));
 
-            meter.gaugeBuilder("process_runtime_jvm_memory_direct_bytes_max")
+            meter.gaugeBuilder("process.runtime.jvm.memory.direct_bytes_max")
                     .buildWithCallback(odm -> odm.record(PlatformDependent.estimateMaxDirectMemory()));
         }
     }

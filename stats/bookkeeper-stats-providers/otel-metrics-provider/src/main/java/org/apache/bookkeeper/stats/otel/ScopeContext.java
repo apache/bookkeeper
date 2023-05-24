@@ -18,8 +18,6 @@
 package org.apache.bookkeeper.stats.otel;
 
 import io.opentelemetry.api.common.Attributes;
-import java.util.Map;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

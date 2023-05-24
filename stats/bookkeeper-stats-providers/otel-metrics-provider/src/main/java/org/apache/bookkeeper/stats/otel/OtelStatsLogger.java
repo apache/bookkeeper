@@ -17,14 +17,7 @@
 package org.apache.bookkeeper.stats.otel;
 
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.metrics.ObservableDoubleGauge;
-import io.opentelemetry.api.metrics.ObservableDoubleMeasurement;
-import java.util.Map;
 import java.util.StringJoiner;
-import java.util.TreeMap;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -100,17 +93,10 @@ public class OtelStatsLogger implements StatsLogger {
     }
 
     private String completeName(String name) {
-        String metricName = scope.isEmpty() ?
-                name
+        String metricName = scope.isEmpty()
+                ? name
                 : new StringJoiner(".").add(scope).add(name).toString();
 
         return metricName;
-//        return SANITIZE_BODY_PATTERN.matcher(
-//                SANITIZE_PREFIX_PATTERN.matcher(metricName)
-//                        .replaceFirst("_")
-//        ).replaceAll("_");
     }
-
-    private static final Pattern SANITIZE_PREFIX_PATTERN = Pattern.compile("^[^a-zA-Z_:]");
-    private static final Pattern SANITIZE_BODY_PATTERN = Pattern.compile("[^a-zA-Z0-9_:]");
 }
