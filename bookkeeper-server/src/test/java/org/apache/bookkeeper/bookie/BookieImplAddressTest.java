@@ -44,10 +44,10 @@ public class BookieImplAddressTest {
                 //address    //port    //interface      //hostNameAsBookie    //shortName    //allowLoopBack    //expectedValue
                 {"",           1,       null,            false,                false,         true,            ExpectedValue.PASSED},
                 {"",           1,     "notAnInterface",  false,                false,         true,            ExpectedValue.UH_EXCEPTION},
-                {"",           0,     "enp0s9",           true,                false,         true,            ExpectedValue.PASSED},
+                {"",           0,     "enp0s9",           true,                true,         true,            ExpectedValue.PASSED},
                 {"",           0,     "enp0s9",          false,                false,         false,           ExpectedValue.UH_EXCEPTION},
                 {"",           1,     "",                false,                false,         true,            ExpectedValue.UH_EXCEPTION},
-         {"192.168.56.102",    1,     "enp0s9",          true,                 true,          true,            ExpectedValue.PASSED },
+         {"192.168.56.102",    1,     "enp0s9",          false,                 false,          true,            ExpectedValue.PASSED },
          {"192.168.56.102",    1,     "enp0s9",          true,                 true,          false,           ExpectedValue.PASSED},
                 {null,         1,     "enp0s9",          false,                false,         true,            ExpectedValue.PASSED},
                 {"",           -1,    "enp0s9",          true,                 false,         true,            ExpectedValue.IA_EXCEPTION},

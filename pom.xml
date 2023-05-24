@@ -71,6 +71,7 @@
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
+    <module>jacoco-report</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -211,6 +212,8 @@
     <rxjava.version>3.0.1</rxjava.version>
     <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
     <awaitility.version>4.0.3</awaitility.version>
+    <argLine>-Xmx2G -Djwava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
+
   </properties>
 
   <!-- dependency definitions -->
@@ -872,6 +875,7 @@
     </extensions>
     <pluginManagement>
       <plugins>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
@@ -932,7 +936,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <forkCount>${forkCount.variable}</forkCount>
           <reuseForks>false</reuseForks>
@@ -1096,6 +1099,33 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec-maven-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.8</version>
+        <executions>
+          <execution>
+            <id>jacoco-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-site</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>report-aggregate</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
