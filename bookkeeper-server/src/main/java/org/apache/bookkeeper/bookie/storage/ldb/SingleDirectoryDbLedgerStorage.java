@@ -163,7 +163,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         } else {
             // if indexDir is specified, set new value
             indexBaseDir = indexDirsManager.getAllLedgerDirs().get(0).getPath();
-            log.info("indexDir is specified a separate dir, creating another directory db ledger storage on {}",
+            log.info("indexDir is specified a separate dir, creating single directory db ledger storage on {}",
                     indexBaseDir);
         }
 
