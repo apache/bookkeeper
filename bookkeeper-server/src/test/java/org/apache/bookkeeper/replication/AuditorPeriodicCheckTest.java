@@ -930,7 +930,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // emit reschedule auditor check tasks
         urm.emitRescheduleAuditorTasks();
 
-        Awaitility.await().untilAsserted( () -> {
+        Awaitility.await().untilAsserted(() -> {
             assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 1,
                     (long) numAuditorTasksRescheduleEmitted.get());
         });
@@ -940,7 +940,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         // Verify multiple emit reschedule auditor check tasks
         urm.emitRescheduleAuditorTasks();
-        Awaitility.await().untilAsserted( () -> {
+        Awaitility.await().untilAsserted(() -> {
             assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 2,
                     (long) numAuditorTasksRescheduleEmitted.get());
         });
