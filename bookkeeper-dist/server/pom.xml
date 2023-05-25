@@ -49,6 +49,11 @@
       <artifactId>prometheus-metrics-provider</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper.stats</groupId>
+      <artifactId>otel-metrics-provider</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- bookkeeper.http -->
     <dependency>

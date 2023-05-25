@@ -71,6 +71,7 @@
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
+    <module>stats/bookkeeper-stats-providers/otel-metrics-provider</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -211,6 +212,7 @@
     <rxjava.version>3.0.1</rxjava.version>
     <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
     <awaitility.version>4.0.3</awaitility.version>
+    <otel.version>1.26.0</otel.version>
   </properties>
 
   <!-- dependency definitions -->
