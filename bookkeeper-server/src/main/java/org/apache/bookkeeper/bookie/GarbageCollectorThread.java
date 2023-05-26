@@ -499,6 +499,8 @@ public class GarbageCollectorThread implements Runnable {
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
                     if (removeEntryLog(entryLogId)) {
                         gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    } else {
+                        gcStats.getReclaimFailedToDelete().inc();
                     }
                 } else if (modified) {
                     // update entryLogMetaMap only when the meta modified.
@@ -761,6 +763,8 @@ public class GarbageCollectorThread implements Runnable {
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
                     if (removeEntryLog(entryLogId)) {
                         gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
+                    } else {
+                        gcStats.getReclaimFailedToDelete().inc();
                     }
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
