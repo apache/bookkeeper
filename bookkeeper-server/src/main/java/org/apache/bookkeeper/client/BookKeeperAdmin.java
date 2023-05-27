@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -1631,12 +1632,18 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieId thisBookieAddress,
             LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
+        long startTime = System.currentTimeMillis();
         int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
         int sleepTimePerLedger = 10 * 1000; // 10 secs
         Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
                 thisBookieAddress, ledgerManager);
         while (!ledgers.isEmpty()) {
             LOG.info("Count of Ledgers which need to be rereplicated: {}", ledgers.size());
+            if (System.currentTimeMillis() - startTime > 3600 * 1000) {
+                // The type-conversion of "ledgers" is done to avoid the method toString was overridden.
+                LOG.warn("Decommission is taking more than 1 hours to complete. Waiting for ledger: {}",
+                        ledgers.stream().collect(Collectors.toList()).toString());
+            }
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
             Thread.sleep(sleepTimeForThisCheck);
