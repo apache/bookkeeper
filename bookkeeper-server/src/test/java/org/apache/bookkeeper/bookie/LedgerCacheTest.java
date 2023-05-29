@@ -89,7 +89,8 @@ public class LedgerCacheTest {
         bookie = new TestBookieImpl(conf);
 
         activeLedgers = new SnapshotMap<Long, Boolean>();
-        ledgerCache = ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage()).ledgerCache;
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
+        ledgerCache = ils.get(0).ledgerCache;
     }
 
     @After
@@ -116,8 +117,8 @@ public class LedgerCacheTest {
         if (ledgerCache != null) {
             ledgerCache.close();
         }
-        ledgerCache = ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage())
-            .ledgerCache = new LedgerCacheImpl(conf, activeLedgers, bookie.getIndexDirsManager());
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
+        ledgerCache = ils.get(0).ledgerCache = new LedgerCacheImpl(conf, activeLedgers, bookie.getIndexDirsManager());
         flushThread = new Thread() {
                 public void run() {
                     while (true) {
@@ -275,8 +276,8 @@ public class LedgerCacheTest {
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
         BookieImpl bookie = new TestBookieImpl(conf);
-        InterleavedLedgerStorage ledgerStorage =
-            ((InterleavedLedgerStorage) bookie.getLedgerStorage().getUnderlyingLedgerStorage());
+        List<InterleavedLedgerStorage> ils = bookie.getLedgerStorage().getUnderlyingInterleavedLedgerStorage();
+        InterleavedLedgerStorage ledgerStorage = ils.get(0);
         LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
         // Create ledger index file
         ledgerStorage.setMasterKey(1, "key".getBytes());
@@ -707,15 +708,16 @@ public class LedgerCacheTest {
         public void onSizeLimitReached(final CheckpointSource.Checkpoint cp) throws IOException {
             LOG.info("Reached size {}", cp);
             // use synchronous way
-            try {
-                LOG.info("Started flushing mem table.");
-                memTable.flush(FlushTestSortedLedgerStorage.this);
-            } catch (IOException e) {
-                getStateManager().doTransitionToReadOnlyMode();
-                LOG.error("Exception thrown while flushing skip list cache.", e);
-         }
-         }
-
+            for (InterleavedLedgerStorage s : this.interleavedLedgerStorageList) {
+                try {
+                    LOG.info("Started flushing mem table.");
+                    memTable.flush(FlushTestSortedLedgerStorage.this);
+                } catch (IOException e) {
+                    s.getStateManager().transitionToReadOnlyMode();
+                    LOG.error("Exception thrown while flushing skip list cache.", e);
+                }
+            }
+        }
     }
 
     @Test
