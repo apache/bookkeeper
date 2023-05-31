@@ -1396,6 +1396,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         restartBookies(c -> {
             c.setIsThrottleByBytes(true);
             c.setCompactionRateByBytes(ENTRY_SIZE / 1000);
+            c.setCompactionReadRateByBytes(ENTRY_SIZE / 1000);
             c.setMinorCompactionThreshold(0.2f);
             c.setMajorCompactionThreshold(0.5f);
             return c;

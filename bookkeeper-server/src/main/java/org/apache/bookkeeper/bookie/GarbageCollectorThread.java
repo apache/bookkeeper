@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.METADATA_CACHE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.util.concurrent.RateLimiter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
@@ -123,6 +124,7 @@ public class GarbageCollectorThread implements Runnable {
 
     private static final AtomicLong threadNum = new AtomicLong(0);
     final AbstractLogCompactor.Throttler throttler;
+    private final RateLimiter compactionReadByteRateLimiter;
 
     /**
      * Create a garbage collector thread.
@@ -266,6 +268,7 @@ public class GarbageCollectorThread implements Runnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = System.currentTimeMillis();
+        compactionReadByteRateLimiter = RateLimiter.create(conf.getCompactionReadRateByBytes());
     }
 
     private EntryLogMetadataMap createEntryLogMetadataMap() throws IOException {
@@ -619,9 +622,10 @@ public class GarbageCollectorThread implements Runnable {
                                 meta.getEntryLogId(), meta.getUsage(), threshold);
                     }
 
-                    long priorRemainingSize = meta.getRemainingSize();
+                    long compactSize = meta.getTotalSize() - meta.getRemainingSize();
+                    compactionReadByteRateLimiter.acquire((int) (compactSize));
                     compactEntryLog(meta);
-                    gcStats.getReclaimedSpaceViaCompaction().addCount(meta.getTotalSize() - priorRemainingSize);
+                    gcStats.getReclaimedSpaceViaCompaction().addCount(compactSize);
                     compactedBuckets[bucketIndex]++;
                 });
             }

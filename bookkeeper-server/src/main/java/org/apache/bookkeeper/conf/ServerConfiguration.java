@@ -105,6 +105,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String COMPACTION_READ_RATE_BY_BYTES = "compactionReadRateByBytes";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -2963,6 +2964,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setCompactionRateByBytes(int rate) {
         setProperty(COMPACTION_RATE_BY_BYTES, rate);
         return this;
+    }
+
+    /**
+     * Set the read rate of compaction.
+     *
+     * @param rate read rate of compaction (read bytes per second)
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setCompactionReadRateByBytes(int rate) {
+        setProperty(COMPACTION_READ_RATE_BY_BYTES, rate);
+        return this;
+    }
+
+    /**
+     * Get the read rate of compaction. Default is Integer.MAX_VALUE.
+     *
+     * @return read rate of compaction (read bytes per second)
+     */
+    public int getCompactionReadRateByBytes() {
+        return getInt(COMPACTION_READ_RATE_BY_BYTES, Integer.MAX_VALUE);
     }
 
     /**
