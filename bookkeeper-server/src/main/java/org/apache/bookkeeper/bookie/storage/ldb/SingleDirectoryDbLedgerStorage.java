@@ -156,13 +156,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
-        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())) {
-            log.info("indexDir is not specified, use default, creating single directory db ledger storage on {}",
+        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())
+                || ledgerBaseDir.equals(indexDirsManager.getAllLedgerDirs().get(0).getPath())) {
+            log.info("indexDir is equals ledgerBaseDir, creating single directory db ledger storage on {}",
                     indexBaseDir);
         } else {
             // if indexDir is specified, set new value
             indexBaseDir = indexDirsManager.getAllLedgerDirs().get(0).getPath();
-            log.info("indexDir is specified, creating single directory db ledger storage on {}", indexBaseDir);
+            log.info("indexDir is specified a separate dir, creating single directory db ledger storage on {}",
+                    indexBaseDir);
         }
 
         StatsLogger ledgerIndexDirStatsLogger = statsLogger
