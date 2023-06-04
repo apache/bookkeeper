@@ -3,17 +3,40 @@ package org.apache.bookkeeper.common.component;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+
 import static org.mockito.Mockito.*;
 
+//This is the first step of the top-down strategy of the integration test.
+//Therefore, I have tested LifecycleComponentStack only using mocks.
+
+//@RunWith(value= Parameterized.class)
 public class LifecycleComponentStackTest {
 
-    private LifecycleComponentStack lifecycleComponentStack;
+    private LifecycleComponentStack lifecycleComponentStack;    // tested object
     LifecycleComponent component1;
     LifecycleComponent component2;
-    Lifecycle.State state;
+
+    /*@Parameterized.Parameters
+    public static Collection<Object[]> getParameters(){
+
+        return Arrays.asList(new Object[][]{
+                {2, 1, 1}, // expected, valueOne, valueTwo
+                {3, 2, 1}, // expected, valueOne, valueTwo
+                {4, 3, 1}, // expected, valueOne, valueTwo
+        });
+    }
+
+    public LifecycleComponentStackTest(LifecycleComponentStack componentStack) {
+
+    }*/
 
     @Before
     public void setUp() {
