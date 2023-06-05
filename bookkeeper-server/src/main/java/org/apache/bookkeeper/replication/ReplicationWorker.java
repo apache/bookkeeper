@@ -388,9 +388,6 @@ public class ReplicationWorker implements Runnable {
                 LedgerMetadata metadata = metadataVer.getValue();
                 int writeQuorumSize = metadata.getWriteQuorumSize();
                 int ackQuorumSize = metadata.getAckQuorumSize();
-                if (!metadata.isClosed()) {
-                    return;
-                }
                 Long curEntryId = null;
                 EnsemblePlacementPolicy.PlacementPolicyAdherence previousSegmentAdheringToPlacementPolicy = null;
 

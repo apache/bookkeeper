@@ -1239,11 +1239,21 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         //This ledger not adhering placement policy, the combine(0,1,2) rack is 1.
         LedgerHandle lh = bkc.createLedger(3, 3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
 
+        //This ledger not adhering placement policy, the combine(0,1,2) rack is 1 and this ledger is not closed.
+        LedgerHandle lh2 = bkc.createLedger(3, 3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
+
         int entrySize = 10;
         for (int i = 0; i < entrySize; i++) {
             lh.addEntry(data);
+            lh2.addEntry(data);
         }
         lh.close();
+
+        LedgerMetadata metadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
+        LedgerMetadata metadata2 = bkc.getLedgerManager().readLedgerMetadata(lh2.getId()).get().getValue();
+
+        assertTrue(metadata.isClosed());
+        assertFalse(metadata2.isClosed());
 
         int minNumRacksPerWriteQuorumConfValue = 2;
 
@@ -1259,7 +1269,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
-                    1, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+                    2, ledgersNotAdheringToPlacementPolicyGuage.getSample());
             Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
@@ -1276,6 +1286,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         assertNotNull(stat);
 
         baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(true);
+        baseConf.setOpenLedgerRereplicationGracePeriod("1000");
         BookKeeper bookKeeper = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -1310,9 +1321,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         }
 
         Awaitility.await().untilAsserted(() -> {
-            LedgerMetadata metadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
-            List<BookieId> newBookies = metadata.getAllEnsembles().get(0L);
+            LedgerMetadata lhMetadata = bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
+            List<BookieId> newBookies = lhMetadata.getAllEnsembles().get(0L);
             assertTrue(newBookies.contains(newBookieId));
+            assertTrue(lhMetadata.isClosed());
+
+            LedgerMetadata lh2Metadata = bkc.getLedgerManager().readLedgerMetadata(lh2.getId()).get().getValue();
+            List<BookieId> newBookies2 = lh2Metadata.getAllEnsembles().get(0L);
+            assertTrue(newBookies2.contains(newBookieId));
+            assertTrue(lh2Metadata.isClosed());
         });
 
         Awaitility.await().untilAsserted(() -> {
