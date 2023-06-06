@@ -40,10 +40,7 @@ public class AvailabilityOfEntriesOfLedgerTest {
     public void testIsEntryAvailable() {
         boolean actual = this.availabilityOfEntriesOfLedger.isEntryAvailable(this.entryId);
         Assert.assertEquals(this.expectedResult, actual);
-    }
 
-    @Test
-    public void testGetTotalNumOfAvailableEntries() {
-
+        //Non viene testata la parte in cui viene lanciata l'eccezione: come faccio a creare un oggetto non chiuso?
     }
 }
