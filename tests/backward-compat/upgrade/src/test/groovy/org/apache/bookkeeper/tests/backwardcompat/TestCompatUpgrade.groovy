@@ -43,7 +43,8 @@ class TestCompatUpgrade {
     @ArquillianResource
     DockerClient docker
 
-    private void testUpgrade(String currentlyRunning, String upgradeTo, boolean clientCompatBroken = false,
+    private void testUpgrade(String currentlyRunning, String upgradeTo, String digestType = "CRC32",
+                             boolean clientCompatBroken = false,
                              boolean currentlyRunningShutsdownBadly = false) {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
         LOG.info("Upgrading from {} to {}", currentlyRunning, upgradeTo)
@@ -55,7 +56,7 @@ class TestCompatUpgrade {
 
         try {
             def ledger0 = currentRunningBK.createLedger(2, 2,
-                    currentRunningCL.digestType("CRC32"),
+                    currentRunningCL.digestType(digestType),
                     PASSWD)
             for (int i = 0; i < numEntries; i++) {
                 ledger0.addEntry(("foobar" + i).getBytes())
@@ -63,7 +64,7 @@ class TestCompatUpgrade {
             ledger0.close()
 
             // Check whether current client can read from old server
-            def ledger0ro = upgradedBK.openLedger(ledger0.getId(), upgradedCL.digestType("CRC32"), PASSWD)
+            def ledger0ro = upgradedBK.openLedger(ledger0.getId(), upgradedCL.digestType(digestType), PASSWD)
             def entries0 = ledger0ro.readEntries(0, numEntries - 1)
             int jj = 0
             while (entries0.hasMoreElements()) {
@@ -75,7 +76,7 @@ class TestCompatUpgrade {
             ledger0ro.close()
 
             // Check whether current client can write to old server
-            def ledger1 = upgradedBK.createLedger(2, 2, upgradedCL.digestType("CRC32"), PASSWD)
+            def ledger1 = upgradedBK.createLedger(2, 2, upgradedCL.digestType(digestType), PASSWD)
             try {
                 ledger1.addEntry("foobar".getBytes())
 
@@ -103,7 +104,7 @@ class TestCompatUpgrade {
             Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, upgradeTo))
 
             // check that old client can read its old ledgers on new server
-            def ledger2 = currentRunningBK.openLedger(ledger0.getId(), currentRunningCL.digestType("CRC32"),
+            def ledger2 = currentRunningBK.openLedger(ledger0.getId(), currentRunningCL.digestType(digestType),
                                                       PASSWD)
             Assert.assertEquals(numEntries, ledger2.getLastAddConfirmed() + 1 /* counts from 0 */)
             def entries = ledger2.readEntries(0, ledger2.getLastAddConfirmed())
@@ -164,8 +165,18 @@ class TestCompatUpgrade {
     }
 
     @Test
+    public void test_007_4147to4154_crc32c() throws Exception {
+        testUpgrade("4.14.7", "4.15.4", "CRC32C")
+    }
+
+    @Test
     public void test_008_4154to4161() throws Exception {
         testUpgrade("4.15.4", "4.16.1")
+    }
+
+    @Test
+    public void test_008_4154to4161_crc32c() throws Exception {
+        testUpgrade("4.15.4", "4.16.1", "CRC32C")
     }
 
     @Test
@@ -173,16 +184,22 @@ class TestCompatUpgrade {
         testUpgrade("4.16.1", BookKeeperClusterUtils.CURRENT_VERSION)
     }
 
+    @Test
+    public void test_009_4161toCurrentMaster_crc32c() throws Exception {
+        testUpgrade("4.16.1", BookKeeperClusterUtils.CURRENT_VERSION, "CRC32C")
+    }
+
+    // old version pulsar upgrade tests
     // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4147() throws Exception {
-        testUpgrade("4.10.0", "4.14.7")
+    public void test_010_4100to4147_crc32c() throws Exception {
+        testUpgrade("4.10.0", "4.14.7", "CRC32C")
     }
 
     // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4161() throws Exception {
-        testUpgrade("4.10.0", "4.16.1")
+    public void test_010_4100to4161_crc32c() throws Exception {
+        testUpgrade("4.10.0", "4.16.1", "CRC32C")
     }
 
 }
