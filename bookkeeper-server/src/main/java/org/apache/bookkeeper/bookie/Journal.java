@@ -421,6 +421,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         private void recycle() {
             logFile = null;
+            flushed = false;
             if (forceWriteWaiters != null) {
                 forceWriteWaiters.recycle();
                 forceWriteWaiters = null;
