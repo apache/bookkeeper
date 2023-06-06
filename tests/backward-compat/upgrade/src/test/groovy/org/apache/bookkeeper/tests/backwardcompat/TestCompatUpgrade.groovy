@@ -55,12 +55,24 @@ class TestCompatUpgrade {
 
         try {
             def ledger0 = currentRunningBK.createLedger(2, 2,
-                                                        currentRunningCL.digestType("CRC32"),
-                                                        PASSWD)
+                    currentRunningCL.digestType("CRC32"),
+                    PASSWD)
             for (int i = 0; i < numEntries; i++) {
                 ledger0.addEntry(("foobar" + i).getBytes())
             }
             ledger0.close()
+
+            // Check whether current client can read from old server
+            def ledger0ro = upgradedBK.openLedger(ledger0.getId(), upgradedCL.digestType("CRC32"), PASSWD)
+            def entries0 = ledger0ro.readEntries(0, numEntries - 1)
+            int jj = 0
+            while (entries0.hasMoreElements()) {
+                def e = entries0.nextElement()
+                Assert.assertEquals(new String(e.getEntry()), "foobar" + jj)
+                jj++
+            }
+            Assert.assertEquals(jj, numEntries)
+            ledger0ro.close()
 
             // Check whether current client can write to old server
             def ledger1 = upgradedBK.createLedger(2, 2, upgradedCL.digestType("CRC32"), PASSWD)
@@ -142,12 +154,35 @@ class TestCompatUpgrade {
     }
 
     @Test
-    public void test_006_4130to4143() throws Exception {
-        testUpgrade("4.13.0", "4.14.4")
+    public void test_006_4130to4147() throws Exception {
+        testUpgrade("4.13.0", "4.14.7")
     }
 
     @Test
-    public void test_007_4143toCurrentMaster() throws Exception {
-        testUpgrade("4.14.4", BookKeeperClusterUtils.CURRENT_VERSION)
+    public void test_007_4147to4154() throws Exception {
+        testUpgrade("4.14.7", "4.15.4")
     }
+
+    @Test
+    public void test_008_4154to4161() throws Exception {
+        testUpgrade("4.15.4", "4.16.1")
+    }
+
+    @Test
+    public void test_009_4161toCurrentMaster() throws Exception {
+        testUpgrade("4.16.1", BookKeeperClusterUtils.CURRENT_VERSION)
+    }
+
+    // old version pulsar upgrade tests
+    @Test
+    public void test_010_4100to4147() throws Exception {
+        testUpgrade("4.10.0", "4.14.7")
+    }
+
+    // old version pulsar upgrade tests
+    @Test
+    public void test_010_4100to4161() throws Exception {
+        testUpgrade("4.10.0", "4.16.1")
+    }
+
 }
