@@ -28,6 +28,7 @@
   <modules>
     <module>codahale-metrics-provider</module>
     <module>prometheus-metrics-provider</module>
+    <module>otel-metrics-provider</module>
   </modules>
 
 </project>
