@@ -71,7 +71,6 @@
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
-    <module>stats/bookkeeper-stats-providers/otel-metrics-provider</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -656,6 +655,14 @@
         <groupId>com.yahoo.datasketches</groupId>
         <artifactId>sketches-core</artifactId>
         <version>${datasketches.version}</version>
+      </dependency>
+      <!-- opentelemetry -->
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${otel.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- http-client -->
