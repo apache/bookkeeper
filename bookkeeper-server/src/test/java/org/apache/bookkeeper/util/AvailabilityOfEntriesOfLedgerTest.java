@@ -18,10 +18,15 @@ public class AvailabilityOfEntriesOfLedgerTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data(){
 
+        long maxValue = 4L;
+
         return Arrays.asList(new Object[][]{
                 {-1L, false},
                 {0, false},
-                {1, true}
+                {1, true},
+                {maxValue - 1L, true},
+                {maxValue, true},
+                {maxValue + 1, false},
         });
     }
 
@@ -30,7 +35,7 @@ public class AvailabilityOfEntriesOfLedgerTest {
         this.entryId = entryId;
         this.expectedResult = expectedResult;
 
-        long[] content = {1, 7, 9}; //entries contained in the object
+        long[] content = {1, 3, 4}; //entries contained in the object
         PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(content).iterator();
         this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
 

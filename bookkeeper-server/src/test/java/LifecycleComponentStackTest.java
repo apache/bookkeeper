@@ -14,8 +14,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +25,6 @@ import static org.mockito.Mockito.mock;
 //This is the second step of the top-down strategy of the integration test.
 //Here I have used the implementations of the class LifecycleComponent, instead of using mocks.
 
-@Slf4j
 @RunWith(value= Parameterized.class)
 public class LifecycleComponentStackTest {
 
@@ -428,7 +425,65 @@ public class LifecycleComponentStackTest {
         }
     }
 
+    @Test
+    public void testLifecycle7() {
+        //This test try to start closed components
+        try {
+            setUp();
 
+            lifecycleComponentStack.close();
+            boolean condition = false;
+            try {
+                lifecycleComponentStack.start();
+            } catch (IllegalStateException e) {
+                condition = true;
+            }
+            if(!condition) Assert.fail();
+        } catch (Exception e) {
+            if(isExpectedException) {
+                Assert.assertTrue(true);
+                return;
+            }
+            Assert.fail();
+        }
+
+        if(isExpectedException && hasNullComponents()) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testLifecycle8() {
+        //This test cover the remained cases
+        try {
+            setUp();
+
+            //Starting started components
+            lifecycleComponentStack.start();
+
+            lifecycleComponentStack.start();
+
+            //Stopping stopped components
+            lifecycleComponentStack.stop();
+
+            lifecycleComponentStack.stop();
+
+            //Closing closed components
+            lifecycleComponentStack.close();
+
+            lifecycleComponentStack.close();
+        } catch (Exception e) {
+            if(isExpectedException) {
+                Assert.assertTrue(true);
+                return;
+            }
+            Assert.fail();
+        }
+
+        if(isExpectedException && hasNullComponents()) {
+            Assert.fail();
+        }
+    }
 
     @Test
     public void testPublishInfo() {
