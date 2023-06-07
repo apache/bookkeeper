@@ -3,53 +3,37 @@ package org.apache.bookkeeper.common.component;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
 //This is the first step of the top-down strategy of the integration test.
 //Therefore, I have tested LifecycleComponentStack only using mocks.
 
-//@RunWith(value= Parameterized.class)
 public class LifecycleComponentStackTest {
 
     private LifecycleComponentStack lifecycleComponentStack;    // tested object
-    LifecycleComponent component1;
-    LifecycleComponent component2;
-
-    /*@Parameterized.Parameters
-    public static Collection<Object[]> getParameters(){
-
-        return Arrays.asList(new Object[][]{
-                {2, 1, 1}, // expected, valueOne, valueTwo
-                {3, 2, 1}, // expected, valueOne, valueTwo
-                {4, 3, 1}, // expected, valueOne, valueTwo
-        });
-    }
-
-    public LifecycleComponentStackTest(LifecycleComponentStack componentStack) {
-
-    }*/
+    LifecycleListener listener;
 
     @Before
     public void setUp() {
         LifecycleComponentStack.Builder builder = LifecycleComponentStack.newBuilder();
 
-        component1 = mock(LifecycleComponent.class);
+        LifecycleComponent component1 = mock(LifecycleComponent.class);
         when(component1.lifecycleState()).thenReturn(Lifecycle.State.INITIALIZED);
-        component2 = mock(LifecycleComponent.class);
+        LifecycleComponent component2 = mock(LifecycleComponent.class);
         when(component2.lifecycleState()).thenReturn(Lifecycle.State.STARTED);
 
-        builder.withName("lifecycle").addComponent(component1).addComponent(component2);
+        ComponentInfoPublisher publisher = mock(ComponentInfoPublisher.class);
+
+        builder.withName("lifecycle").addComponent(component1).addComponent(component2).withComponentInfoPublisher(publisher);
 
         lifecycleComponentStack = builder.build();
+
+        listener = mock(LifecycleListener.class);
+
+        lifecycleComponentStack.addLifecycleListener(listener);
     }
 
     @Test
@@ -134,5 +118,37 @@ public class LifecycleComponentStackTest {
     @Test
     public void testLifecycleState() {
         Assert.assertEquals(Lifecycle.State.INITIALIZED, lifecycleComponentStack.lifecycleState());
+    }
+
+    @Test
+    public void testAddLifecycleListener() {
+        LifecycleListener newListener = mock(LifecycleListener.class);
+
+        lifecycleComponentStack.addLifecycleListener(newListener);
+
+        for(int i = 0; i < lifecycleComponentStack.getNumComponents(); i++) {
+            //Two invocations are expected because there is a first invocation in the @Before method
+            verify(lifecycleComponentStack.getComponent(i), times(2)).addLifecycleListener(any());
+        }
+    }
+
+    @Test
+    public void testSetExceptionHandler() {
+        Thread.UncaughtExceptionHandler handler = mock(Thread.UncaughtExceptionHandler.class);
+
+        lifecycleComponentStack.setExceptionHandler(handler);
+
+        for(int i = 0; i < lifecycleComponentStack.getNumComponents(); i++) {
+            verify(lifecycleComponentStack.getComponent(i), times(1)).setExceptionHandler(any());
+        }
+    }
+
+    @Test
+    public void testRemoveLifecycleListener() {
+        lifecycleComponentStack.removeLifecycleListener(listener);
+
+        for(int i = 0; i < lifecycleComponentStack.getNumComponents(); i++) {
+            verify(lifecycleComponentStack.getComponent(i), times(1)).removeLifecycleListener(any());
+        }
     }
 }
