@@ -181,6 +181,7 @@
     <jctools.version>2.1.2</jctools.version>
     <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
+    <pitest-maven-plugin.version>1.14.1</pitest-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
     <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
@@ -1319,11 +1320,6 @@
     <!-- JaCoCo profile -->
     <profile>
       <id>JaCoCo-coverage</id>
-      <activation>
-        <property>
-          <name>!skipCoverage</name>
-        </property>
-      </activation>
       <build>
         <plugins>
           <plugin>

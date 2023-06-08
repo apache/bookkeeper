@@ -150,7 +150,6 @@ public class LifecycleComponentStackTest {
     private void setUp() throws Exception {
         components = createComponentList(statsProviderComponents, dataIntegrityComponents, nullComponents, closedComponents, duplicatedComponents);
         lifecycleComponentStack = getLifecycleComponentStack(components);
-
     }
 
     @Test

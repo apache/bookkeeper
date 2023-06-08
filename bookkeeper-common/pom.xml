@@ -28,12 +28,12 @@
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>bookkeeper-stats-api</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>cpu-affinity</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -84,12 +84,12 @@
       <groupId>io.reactivex.rxjava3</groupId>
       <artifactId>rxjava</artifactId>
     </dependency>
-    <dependency>
+    <!--<dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
       <version>${project.parent.version}</version>
       <scope>test</scope>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
@@ -160,4 +160,33 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- PIT profile for mutation coverage -->
+    <profile>
+      <id>pitProfile</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.14.1</version>
+            <!--<configuration>
+              <targetClasses>
+                <param>org.apache.bookkeeper.client.Bookkeeper</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
+              </targetClasses>
+              <targetTests>
+                <param>org.apache.bookkeeper.client.BookkeeperCreateLedgerTest</param>
+                <param>org.apache.bookkeeper.client.BookkeeperDeleteLedgerTest</param>
+                <param>org.apache.bookkeeper.client.BookkeeperOpenLedgerTest</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCacheGetTest</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCachePutTest</param>
+              </targetTests>
+            </configuration>-->
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

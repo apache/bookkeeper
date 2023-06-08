@@ -43,7 +43,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>http-server</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
     </dependency>
   </dependencies>
 </project>

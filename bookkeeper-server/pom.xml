@@ -28,37 +28,37 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common-allocator</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-proto</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-slogger-slf4j</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-slogger-api</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-tools-framework</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>native-io</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.rocksdb</groupId>
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -90,12 +90,12 @@
     <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>http-server</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>circe-checksum</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
@@ -165,7 +165,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -208,13 +208,13 @@
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>prometheus-metrics-provider</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>vertx-http-server</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -358,6 +358,32 @@
             <configuration>
               <skipTests>true</skipTests>
             </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- PIT profile for mutation coverage -->
+    <profile>
+      <id>pitProfile</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>${pitest-maven-plugin.version}</version>
+            <!--<configuration>
+              <targetClasses>
+                <param>org.apache.bookkeeper.client.Bookkeeper</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
+              </targetClasses>
+              <targetTests>
+                <param>org.apache.bookkeeper.client.BookkeeperCreateLedgerTest</param>
+                <param>org.apache.bookkeeper.client.BookkeeperDeleteLedgerTest</param>
+                <param>org.apache.bookkeeper.client.BookkeeperOpenLedgerTest</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCacheGetTest</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCachePutTest</param>
+              </targetTests>
+            </configuration>-->
           </plugin>
         </plugins>
       </build>

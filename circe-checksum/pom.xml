@@ -50,12 +50,12 @@
       <artifactId>netty-buffer</artifactId>
     </dependency>
 
-    <dependency>
+    <!--<dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
       <version>${project.parent.version}</version>
       <scope>test</scope>
-    </dependency>
+    </dependency>-->
   </dependencies>
 
   <build>
