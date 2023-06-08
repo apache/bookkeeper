@@ -28,7 +28,7 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-protocol</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -41,7 +41,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>javax.annotation</groupId>
@@ -52,7 +52,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -63,14 +63,14 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

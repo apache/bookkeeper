@@ -38,7 +38,6 @@ public class AvailabilityOfEntriesOfLedgerTest {
         long[] content = {1, 3, 4}; //entries contained in the object
         PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(content).iterator();
         this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
-
     }
 
     @Test

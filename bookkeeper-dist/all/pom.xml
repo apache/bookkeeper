@@ -35,20 +35,20 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <!-- bookkeeper.stats -->
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>bookkeeper-stats-api</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>codahale-metrics-provider</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
       <exclusions>
         <exclusion>
           <artifactId>amqp-client</artifactId>
@@ -59,33 +59,33 @@
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>prometheus-metrics-provider</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <!-- bookkeeper.http -->
     <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>http-server</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>vertx-http-server</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <!-- bookkeeper.tools (new CLI) -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-tools</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <!-- dlog -->
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
 
@@ -93,20 +93,20 @@
     <dependency>
        <groupId>org.apache.bookkeeper</groupId>
        <artifactId>stream-storage-server</artifactId>
-       <version>${project.version}</version>
+       <version>${bookkeeper.version}</version>
     </dependency>
 
     <!-- bookkeeper benchmark -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-benchmark</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-perf</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
 
     <dependency>

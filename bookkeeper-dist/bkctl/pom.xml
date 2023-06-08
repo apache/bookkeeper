@@ -36,7 +36,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-tools</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.rocksdb</groupId>

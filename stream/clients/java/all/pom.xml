@@ -29,18 +29,18 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-kv-client</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-client-base</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

@@ -26,22 +26,22 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-tools-framework</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-client</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>prometheus-metrics-provider</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.hdrhistogram</groupId>

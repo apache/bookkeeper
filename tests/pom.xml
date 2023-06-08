@@ -41,12 +41,12 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>4.16.0-SNAPSHOT</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <!--<dependency>
       <groupId>org.apache.bookkeeper</groupId>

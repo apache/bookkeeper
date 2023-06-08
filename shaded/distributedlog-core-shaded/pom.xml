@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>

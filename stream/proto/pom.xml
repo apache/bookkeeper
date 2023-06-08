@@ -31,7 +31,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -50,13 +50,13 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>stream-storage-tests-common</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

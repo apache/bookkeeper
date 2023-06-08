@@ -160,33 +160,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <!-- PIT profile for mutation coverage -->
-    <profile>
-      <id>pitProfile</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.pitest</groupId>
-            <artifactId>pitest-maven</artifactId>
-            <version>1.14.1</version>
-            <!--<configuration>
-              <targetClasses>
-                <param>org.apache.bookkeeper.client.Bookkeeper</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
-              </targetClasses>
-              <targetTests>
-                <param>org.apache.bookkeeper.client.BookkeeperCreateLedgerTest</param>
-                <param>org.apache.bookkeeper.client.BookkeeperDeleteLedgerTest</param>
-                <param>org.apache.bookkeeper.client.BookkeeperOpenLedgerTest</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCacheGetTest</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCachePutTest</param>
-              </targetTests>
-            </configuration>-->
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

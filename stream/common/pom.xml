@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
@@ -63,14 +63,14 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>stream-storage-tests-common</artifactId>
-      <version>${project.version}</version>
+      <version>4.16.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

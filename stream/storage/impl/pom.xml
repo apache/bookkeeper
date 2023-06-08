@@ -30,17 +30,17 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-service-api</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-client-base</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>statelib</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.curator</groupId>
@@ -49,32 +49,32 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>stream-storage-tests-common</artifactId>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-client-base</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${bookkeeper.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

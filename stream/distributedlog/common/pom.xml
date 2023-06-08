@@ -28,7 +28,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>bookkeeper-stats-api</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -39,7 +39,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>${project.parent.version}</version>
+      <version>4.16.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

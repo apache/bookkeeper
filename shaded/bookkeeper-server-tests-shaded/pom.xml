@@ -33,7 +33,7 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <type>test-jar</type>
-      <version>${project.version}</version>
+      <version>${bookkeeper.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
