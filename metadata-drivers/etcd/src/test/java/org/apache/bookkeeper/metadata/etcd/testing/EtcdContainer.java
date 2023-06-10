@@ -27,10 +27,10 @@ import com.github.dockerjava.api.model.Frame;
 import io.grpc.netty.GrpcSslContexts;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslProvider;
-import java.security.Security;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.net.ssl.SSLException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.DockerClientFactory;
@@ -38,10 +38,8 @@ import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.WaitingConsumer;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
-import org.testcontainers.shaded.org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.testcontainers.utility.LogUtils;
 import org.testcontainers.utility.MountableFile;
-import javax.net.ssl.SSLException;
 
 /**
  * Etcd test container.
