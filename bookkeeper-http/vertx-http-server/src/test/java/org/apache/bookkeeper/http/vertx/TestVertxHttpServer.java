@@ -123,10 +123,10 @@ public class TestVertxHttpServer {
         httpServer.initialize(httpServiceProvider);
         assertTrue(httpServer.startServer(0));
         int port = httpServer.getListeningPort();
-        File file = new File(System.currentTimeMillis() + ".txt");
-        Files.asCharSink(file, StandardCharsets.UTF_8).write(TestVertxHttpServer.class.getName());
+        File tempFile = File.createTempFile("test-" + System.currentTimeMillis(), null);
+        Files.asCharSink(tempFile, StandardCharsets.UTF_8).write(TestVertxHttpServer.class.getName());
         String[] filenamesBeforeUploadRequest = listFiles(BodyHandler.DEFAULT_UPLOADS_DIRECTORY);
-        HttpResponse httpResponse = sendFile(getUrl(port, HttpRouter.BOOKIE_INFO), file);
+        HttpResponse httpResponse = sendFile(getUrl(port, HttpRouter.BOOKIE_INFO), tempFile);
         assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
         assertArrayEquals(filenamesBeforeUploadRequest, listFiles(BodyHandler.DEFAULT_UPLOADS_DIRECTORY));
         httpServer.stopServer();
