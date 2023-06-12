@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.common.allocator.impl;
 
 import io.netty.buffer.ByteBufAllocator;
+
 import java.util.function.Consumer;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
@@ -37,11 +38,12 @@ public class ByteBufAllocatorBuilderImpl implements ByteBufAllocatorBuilder {
     OutOfMemoryPolicy outOfMemoryPolicy = OutOfMemoryPolicy.FallbackToHeap;
     Consumer<OutOfMemoryError> outOfMemoryListener = null;
     LeakDetectionPolicy leakDetectionPolicy = LeakDetectionPolicy.Disabled;
+    boolean exitOnOutOfMemory = false;
 
     @Override
     public ByteBufAllocatorWithOomHandler build() {
         return new ByteBufAllocatorImpl(pooledAllocator, unpooledAllocator, poolingPolicy, poolingConcurrency,
-                outOfMemoryPolicy, outOfMemoryListener, leakDetectionPolicy);
+                outOfMemoryPolicy, outOfMemoryListener, leakDetectionPolicy, exitOnOutOfMemory);
     }
 
     @Override
@@ -83,6 +85,12 @@ public class ByteBufAllocatorBuilderImpl implements ByteBufAllocatorBuilder {
     @Override
     public ByteBufAllocatorBuilder leakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
         this.leakDetectionPolicy = leakDetectionPolicy;
+        return this;
+    }
+
+    @Override
+    public ByteBufAllocatorBuilder exitOnOutOfMemory(boolean exitOnOutOfMemory) {
+        this.exitOnOutOfMemory = exitOnOutOfMemory;
         return this;
     }
 

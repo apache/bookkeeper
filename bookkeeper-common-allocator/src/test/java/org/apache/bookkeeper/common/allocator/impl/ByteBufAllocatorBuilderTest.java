@@ -86,6 +86,21 @@ public class ByteBufAllocatorBuilderTest {
         // Ensure the notification was triggered even when exception is thrown
         assertEquals(outOfDirectMemException, receivedException.get());
     }
+    
+    @Test
+    public void testOomExit() {
+        ByteBufAllocator baseAlloc = mock(ByteBufAllocator.class);
+        when(baseAlloc.directBuffer(anyInt(), anyInt())).thenThrow(outOfDirectMemException);
+
+        ByteBufAllocator alloc = ByteBufAllocatorBuilder.create()
+                .pooledAllocator(baseAlloc)
+                .outOfMemoryPolicy(OutOfMemoryPolicy.ThrowException)
+                .exitOnOutOfMemory(true)
+                .build();
+
+        alloc.buffer();
+        fail("JVM should exit, shouldn't be there.");
+    }
 
     @Test
     public void testOomWithFallback() {

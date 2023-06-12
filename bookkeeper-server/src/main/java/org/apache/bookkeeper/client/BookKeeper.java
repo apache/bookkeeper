@@ -478,6 +478,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
                     .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
                     .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+                    .exitOnOutOfMemory(conf.exitOnOutOfMemory())
                     .build();
         }
 
