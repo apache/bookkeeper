@@ -24,6 +24,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -35,11 +38,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
+import org.apache.bookkeeper.common.util.ShutdownUtil;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Tests for {@link ByteBufAllocatorBuilderImpl}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(ShutdownUtil.class)
 public class ByteBufAllocatorBuilderTest {
 
     private static final OutOfMemoryError outOfDirectMemException;
@@ -87,7 +96,7 @@ public class ByteBufAllocatorBuilderTest {
         assertEquals(outOfDirectMemException, receivedException.get());
     }
 
-    @Test
+    @Test()
     public void testOomExit() {
         ByteBufAllocator baseAlloc = mock(ByteBufAllocator.class);
         when(baseAlloc.directBuffer(anyInt(), anyInt())).thenThrow(outOfDirectMemException);
@@ -98,8 +107,20 @@ public class ByteBufAllocatorBuilderTest {
                 .exitOnOutOfMemory(true)
                 .build();
 
-        alloc.buffer();
-        fail("JVM should exit, shouldn't be there.");
+        mockStatic(ShutdownUtil.class);
+        doNothing().when(ShutdownUtil.class);
+        ShutdownUtil.triggerImmediateForcefulShutdown();
+
+        try {
+            alloc.buffer();
+            fail("Should have thrown exception");
+        } catch (OutOfMemoryError e) {
+            // Expected
+            assertEquals(outOfDirectMemException, e);
+        }
+        
+        verifyStatic(ShutdownUtil.class);
+        ShutdownUtil.triggerImmediateForcefulShutdown();
     }
 
     @Test

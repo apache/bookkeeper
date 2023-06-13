@@ -168,7 +168,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
                     try {
                         return unpooledAllocator.heapBuffer(initialCapacity, maxCapacity);
                     } catch (OutOfMemoryError e2) {
-                        consumeOOMError(e);
+                        consumeOOMError(e2);
                         throw e2;
                     }
                 } else {
