@@ -118,7 +118,7 @@ public class ByteBufAllocatorBuilderTest {
             // Expected
             assertEquals(outOfDirectMemException, e);
         }
-        
+
         verifyStatic(ShutdownUtil.class);
         ShutdownUtil.triggerImmediateForcefulShutdown();
     }
