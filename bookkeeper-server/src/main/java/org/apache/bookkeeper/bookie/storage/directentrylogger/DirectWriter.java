@@ -233,10 +233,11 @@ class DirectWriter implements LogWriter {
             throw new IOException(exMsg(ne.getMessage())
                                   .kv("file", filename)
                                   .kv("errno", ne.getErrno()).toString());
-        }
-        synchronized (bufferLock) {
-            bufferPool.release(nativeBuffer);
-            nativeBuffer = null;
+        } finally {
+            synchronized (bufferLock) {
+                bufferPool.release(nativeBuffer);
+                nativeBuffer = null;
+            }
         }
     }
 
