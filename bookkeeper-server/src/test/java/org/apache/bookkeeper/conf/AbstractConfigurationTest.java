@@ -181,12 +181,12 @@ public class AbstractConfigurationTest {
             System.getProperties().put(nettyLevelKey, nettyLevelStr);
         }
     }
-    
+
     @Test
     public void testExitOnOutOfMemory() {
         assertFalse(conf.exitOnOutOfMemory());
         conf.setExitOnOutOfMemory(true);
         assertTrue(conf.exitOnOutOfMemory());
     }
-    
+
 }

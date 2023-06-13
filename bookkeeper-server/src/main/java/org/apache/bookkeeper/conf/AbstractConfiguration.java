@@ -1156,12 +1156,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());
         return getThis();
     }
-    
+
     public T setExitOnOutOfMemory(boolean exitOnOutOfMemory) {
         this.setProperty(ALLOCATOR_EXIT_ON_OUT_OF_MEMORY, exitOnOutOfMemory);
         return getThis();
     }
-    
+
     public boolean exitOnOutOfMemory() {
         return getBoolean(ALLOCATOR_EXIT_ON_OUT_OF_MEMORY, false);
     }
