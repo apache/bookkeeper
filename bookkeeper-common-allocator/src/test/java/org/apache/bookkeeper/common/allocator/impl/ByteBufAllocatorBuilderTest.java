@@ -86,7 +86,7 @@ public class ByteBufAllocatorBuilderTest {
         // Ensure the notification was triggered even when exception is thrown
         assertEquals(outOfDirectMemException, receivedException.get());
     }
-    
+
     @Test
     public void testOomExit() {
         ByteBufAllocator baseAlloc = mock(ByteBufAllocator.class);
