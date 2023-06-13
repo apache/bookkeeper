@@ -18,10 +18,9 @@
 
 package org.apache.bookkeeper.common.util;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Forked from <a href="https://github.com/apache/pulsar">Pulsar</a>.

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.common.allocator.impl;
 
 import io.netty.buffer.ByteBufAllocator;
-
 import java.util.function.Consumer;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
