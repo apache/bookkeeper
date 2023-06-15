@@ -197,7 +197,7 @@
 
   <profiles>
     <profile>
-      <id>JaCoCo-coverage</id>
+      <id>Jacoco</id>
       <build>
         <plugins>
           <plugin>

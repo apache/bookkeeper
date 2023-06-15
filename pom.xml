@@ -1320,7 +1320,7 @@
 
     <!-- JaCoCo profile -->
     <profile>
-      <id>JaCoCo-coverage</id>
+      <id>Jacoco</id>
       <build>
         <plugins>
           <plugin>
@@ -1340,7 +1340,7 @@
     </profile>
     <!-- PIT profile for mutation coverage -->
     <profile>
-      <id>pitProfile</id>
+      <id>Pit</id>
       <!--<modules>
         <module>bookkeeper-common</module>
         <module>bookkeeper-server</module>

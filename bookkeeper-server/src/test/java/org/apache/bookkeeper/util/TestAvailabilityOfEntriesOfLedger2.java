@@ -81,7 +81,7 @@ public class TestAvailabilityOfEntriesOfLedger2 {
                 {lastBookieEntry, lastBookieEntry-1, validBitSet, bookieEntries1, new ArrayList<>()},
 
                 //JACOCO
-                {0, lastBookieEntry, validBitSet, bookieEntries2, unavailableEntries3}
+                {0, lastBookieEntry, validBitSet, bookieEntries2, unavailableEntries3},
             }
         );
     }
@@ -97,17 +97,6 @@ public class TestAvailabilityOfEntriesOfLedger2 {
 
         PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(bookieEntries).iterator();
         this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
-
-    }
-
-    private static List<Long> entryBetween(List<Long> unavailable, long startEntryId, long lastEntryId){
-        ArrayList<Long> filter = new ArrayList<>();
-
-        for(Long l: unavailable){
-            if(l>=startEntryId || l<=lastEntryId)
-                filter.add(l);
-        }
-        return filter;
 
     }
 

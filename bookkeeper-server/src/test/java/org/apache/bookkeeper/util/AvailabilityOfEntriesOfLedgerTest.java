@@ -14,37 +14,40 @@ public class AvailabilityOfEntriesOfLedgerTest {
     private AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger; // tested object
     private long entryId;
     private boolean expectedResult;
+    private long[] bookieContent;
 
     @Parameterized.Parameters
     public static Collection<Object[]> data(){
 
         long maxValue = 4L;
+        long[] bookieContent = new long[]{1L, 3L, 4L};
+        long[] bookieContent2 = new long[]{1L, 3L, 5L, 7L, 9L};
 
         return Arrays.asList(new Object[][]{
-                {-1L, false},
-                {0, false},
-                {1, true},
-                {maxValue - 1L, true},
-                {maxValue, true},
-                {maxValue + 1, false},
+                {-1L, bookieContent, false},
+                {0, bookieContent, false},
+                {1, bookieContent, true},
+                {maxValue, bookieContent, true},
+                {maxValue + 1, bookieContent, false},
+
+                //JACOCO
+                {9, bookieContent2, true},
         });
     }
 
-    public AvailabilityOfEntriesOfLedgerTest(long entryId, boolean expectedResult){
+    public AvailabilityOfEntriesOfLedgerTest(long entryId, long[] bookieContent, boolean expectedResult){
 
         this.entryId = entryId;
+        this.bookieContent = bookieContent;
         this.expectedResult = expectedResult;
 
-        long[] content = {1, 3, 4}; //entries contained in the object
-        PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(content).iterator();
+        PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(this.bookieContent).iterator();
         this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
     }
 
     @Test
     public void testIsEntryAvailable() {
-        boolean actual = this.availabilityOfEntriesOfLedger.isEntryAvailable(this.entryId);
-        Assert.assertEquals(this.expectedResult, actual);
-
-        //Non viene testata la parte in cui viene lanciata l'eccezione: come faccio a creare un oggetto non chiuso?
+        boolean result = this.availabilityOfEntriesOfLedger.isEntryAvailable(this.entryId);
+        Assert.assertEquals(this.expectedResult, result);
     }
 }

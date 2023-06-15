@@ -81,8 +81,8 @@ public class LifecycleComponentStackTest {
 
         for(int i = 0; i < lifecycleComponentStack.getNumComponents(); i++) {
             verify(lifecycleComponentStack.getComponent(i), times(1)).start();
-//            verify(lifecycleComponentStack.getComponent(i), times(1)).publishInfo(any());
-//            verify(publisher, times(1)).startupFinished();
+            verify(lifecycleComponentStack.getComponent(i), times(1)).publishInfo(any());
+            verify(publisher, times(1)).startupFinished();
             Assert.assertEquals(Lifecycle.State.STARTED, lifecycleComponentStack.getComponent(i).lifecycleState());
         }
     }

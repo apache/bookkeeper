@@ -1,6 +1,4 @@
-/*
 package org.apache.bookkeeper.util;
-
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -9,122 +7,96 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.PrimitiveIterator;
+import java.util.*;
 
 @RunWith(Parameterized.class)
 public class AvailabilityOfEntriesOfLedgerConstructorsTest {
 
     private AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger; // tested object
-    private long entryId;
-    private boolean expectedResult;
+    private final long[] bookieContent;
 
     @Parameterized.Parameters
     public static Collection<Object[]> data(){
 
-        long maxValue = 4L;
+        long[] bookieContent = new long[]{1L, 3L, 4L};
+        long[] bookieContentWithSequencePeriod = new long[]{1L, 3L, 5L, 7L};
+        long[] bookieContent3 = {3, 4, 5, 5, 10, 11, 12, 13, 6, 7, 8};
+
 
         return Arrays.asList(new Object[][]{
-                {-1L, false},
-                {0, false},
-                {1, true},
-                {maxValue - 1L, true},
-                {maxValue, true},
-                {maxValue + 1, false},
+                {bookieContent},
+                {new long[]{}},
+                {null},
+
+                //JACOCO
+                {bookieContentWithSequencePeriod},
+                {bookieContent3}
         });
     }
 
-    public AvailabilityOfEntriesOfLedgerConstructorsTest(long entryId, boolean expectedResult){
-
-        this.entryId = entryId;
-        this.expectedResult = expectedResult;
-
-        long[] content = {1, 3, 4}; //entries contained in the object
-        PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(content).iterator();
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
+    public AvailabilityOfEntriesOfLedgerConstructorsTest(long[] bookieContent){
+        this.bookieContent = bookieContent;
     }
 
     @Test
     public void testConstructor1() {
-        long[] content = {1, 3, 4}; //entries contained in the object
-        PrimitiveIterator.OfLong primitiveIterator = Arrays.stream(content).iterator();
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(primitiveIterator);
+        try {
+            this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(this.bookieContent);
 
-        Assert.assertEquals(this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries(), 3);
+            Assert.assertEquals(Arrays.stream(bookieContent).distinct().count(), this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
 
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(1));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(3));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(4));
-        Assert.assertFalse(this.availabilityOfEntriesOfLedger.isEntryAvailable(7));
-
+            for (long entryId : this.bookieContent) {
+                Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(entryId));
+            }
+        } catch (Exception e) {
+            if(this.bookieContent == null) return;
+            Assert.fail();
+        }
     }
 
     @Test
     public void testConstructor2() {
-        long[] content = {1, 3, 4}; //entries contained in the object
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(content);
+        try {
+            this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(this.bookieContent);
 
-        Assert.assertEquals(this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries(), 3);
+            Assert.assertEquals(Arrays.stream(bookieContent).distinct().count(), this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
 
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(1));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(3));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(4));
-        Assert.assertFalse(this.availabilityOfEntriesOfLedger.isEntryAvailable(7));
+            for (long entryId : this.bookieContent) {
+                Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(entryId));
+            }
 
+            byte[] serializedState = availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger();
+
+            this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(serializedState);
+
+            Assert.assertEquals(Arrays.stream(bookieContent).distinct().count(), this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+
+            for (long entryId : this.bookieContent) {
+                Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(entryId));
+            }
+        }  catch (Exception e) {
+            if(this.bookieContent == null) return;
+            Assert.fail();
+        }
     }
 
     @Test
     public void testConstructor3() {
-        long[] content = {1, 3, 4}; //entries contained in the object
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(content);
-
-        Assert.assertEquals(this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries(), 3);
-
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(1));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(3));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(4));
-        Assert.assertFalse(this.availabilityOfEntriesOfLedger.isEntryAvailable(7));
-
-        byte[] serializedState = availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger();
-
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(serializedState);
-
-
-        Assert.assertEquals(this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries(), 3);
-
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(1));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(3));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(4));
-        Assert.assertFalse(this.availabilityOfEntriesOfLedger.isEntryAvailable(7));
-    }
-
-    @Test
-    public void testConstructor4() {
         try {
-            ByteBuf byteBuf = Unpooled.EMPTY_BUFFER;
+            this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(this.bookieContent);
+
+            ByteBuf byteBuf = Unpooled.buffer();
+            byteBuf.writeBytes(availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger());
             this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(byteBuf);
-        } catch (Exception e) {
-            return;
+
+            Assert.assertEquals(Arrays.stream(bookieContent).distinct().count(), this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries());
+
+            for (long entryId : this.bookieContent) {
+                Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(entryId));
+            }
+        }  catch (Exception e) {
+            if(this.bookieContent == null) return;
+            Assert.fail();
         }
-        Assert.fail();
     }
-
-    @Test
-    public void testConstructor5() {
-        long[] content = {1, 3, 4}; //entries contained in the object
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(content);
-
-        ByteBuf byteBuf = Unpooled.buffer();
-        byteBuf.writeBytes(availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger());
-        this.availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(byteBuf);
-
-        Assert.assertEquals(this.availabilityOfEntriesOfLedger.getTotalNumOfAvailableEntries(), 3);
-
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(1));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(3));
-        Assert.assertTrue(this.availabilityOfEntriesOfLedger.isEntryAvailable(4));
-        Assert.assertFalse(this.availabilityOfEntriesOfLedger.isEntryAvailable(7));
-
-    }
-}*/
+}
