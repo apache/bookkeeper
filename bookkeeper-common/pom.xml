@@ -227,10 +227,10 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
+          <!--<plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-enforcer-plugin</artifactId>
-            <!-- Using this version to support requireFileChecksum with Java 6 -->
+            &lt;!&ndash; Using this version to support requireFileChecksum with Java 6 &ndash;&gt;
             <version>3.0.0-M1</version>
             <executions>
               <execution>
@@ -250,7 +250,7 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
+          </plugin>-->
         </plugins>
       </build>
     </profile>

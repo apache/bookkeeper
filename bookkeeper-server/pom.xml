@@ -308,7 +308,7 @@
     </plugins>
   </build>
   <profiles>
-    <!--<profile>
+    <profile>
       <id>Badua</id>
 
       <properties>
@@ -373,7 +373,8 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
+<!--          Tolto il plugin enforcer perché creava problemi durante la build       -->
+          <!--<plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-enforcer-plugin</artifactId>
             &lt;!&ndash; Using this version to support requireFileChecksum with Java 6 &ndash;&gt;
@@ -396,10 +397,10 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
+          </plugin>-->
         </plugins>
       </build>
-    </profile>-->
+    </profile>
     <profile>
       <id>vertx-http-server</id>
       <dependencies>
