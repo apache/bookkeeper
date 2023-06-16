@@ -23,8 +23,13 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorPool;
@@ -89,6 +94,49 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
         writer.write(DLMTestUtil.getLogRecordInstance(1L));
         Utils.close(writer);
+    }
+
+    @Test
+    public void testLedgerNumber() throws Exception {
+        URI uri = createDLMURI("/" + runtime.getMethodName());
+        ensureURICreated(zkc, uri);
+
+        DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
+        confLocal.addConfiguration(conf);
+        confLocal.setOutputBufferSize(0);
+
+        BKDistributedLogNamespace namespace = (BKDistributedLogNamespace)
+            NamespaceBuilder.newBuilder()
+                .conf(confLocal)
+                .uri(uri)
+                .build();
+        DistributedLogManager dlm = namespace.openLog("test-log");
+        BookKeeperAdmin admin = new BookKeeperAdmin(zkServers);
+
+        Set<Long> s1 = getLedgers(admin);
+        LOG.info("Ledgers after init: " + s1);
+
+        LogWriter writer = dlm.openLogWriter();
+        writer.write(new LogRecord(1, "test-data".getBytes(StandardCharsets.UTF_8)));
+        writer.close();
+
+        Set<Long> s2 = getLedgers(admin);
+        LOG.info("Ledgers after write: " + s2);
+        dlm.delete();
+        assertEquals(1, s2.size() - s1.size()); // exact 1 ledger created only
+
+        Set<Long> s3 = getLedgers(admin);
+        LOG.info("Ledgers after delete: " + s3);
+
+        assertEquals(s1.size(), s3.size());
+
+    }
+
+    // Get all ledgers from BK admin
+    private Set<Long> getLedgers(BookKeeperAdmin bkAdmin) throws IOException {
+        Set<Long> res = new HashSet<>();
+        bkAdmin.listLedgers().forEach(res::add);
+        return res;
     }
 
 }
