@@ -257,16 +257,19 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
         LedgerMetadata metadata = metadataVer.getValue();
         int writeQuorumSize = metadata.getWriteQuorumSize();
         int ackQuorumSize = metadata.getAckQuorumSize();
-        if (!metadata.isClosed()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger: {} is not yet closed, but do not skipping the placementPolicy"
-                        + "check analysis for now", ledgerId);
-            }
-        }
         boolean foundSegmentNotAdheringToPlacementPolicy = false;
         boolean foundSegmentSoftlyAdheringToPlacementPolicy = false;
+        int ensembleIndex = 0;
+        int ensembleSize = metadata.getAllEnsembles().size();
         for (Map.Entry<Long, ? extends List<BookieId>> ensemble : metadata
                 .getAllEnsembles().entrySet()) {
+            if (++ensembleIndex == ensembleSize && !metadata.isClosed()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger: {} last ensemble is not yet closed, so skipping the placementPolicy"
+                            + "check analysis for now", ledgerId);
+                }
+                break;
+            }
             long startEntryIdOfSegment = ensemble.getKey();
             List<BookieId> ensembleOfSegment = ensemble.getValue();
             EnsemblePlacementPolicy.PlacementPolicyAdherence segmentAdheringToPlacementPolicy = admin

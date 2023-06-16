@@ -1269,7 +1269,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             Gauge<? extends Number> ledgersNotAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY guage value",
-                    2, ledgersNotAdheringToPlacementPolicyGuage.getSample());
+                    1, ledgersNotAdheringToPlacementPolicyGuage.getSample());
             Gauge<? extends Number> ledgersSoftlyAdheringToPlacementPolicyGuage = statsLogger
                     .getGauge(ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY);
             assertEquals("NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY guage value",
@@ -1328,8 +1328,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
             LedgerMetadata lh2Metadata = bkc.getLedgerManager().readLedgerMetadata(lh2.getId()).get().getValue();
             List<BookieId> newBookies2 = lh2Metadata.getAllEnsembles().get(0L);
-            assertTrue(newBookies2.contains(newBookieId));
-            assertTrue(lh2Metadata.isClosed());
+            assertTrue(!newBookies2.contains(newBookieId));
+            assertTrue(!lh2Metadata.isClosed());
         });
 
         Awaitility.await().untilAsserted(() -> {

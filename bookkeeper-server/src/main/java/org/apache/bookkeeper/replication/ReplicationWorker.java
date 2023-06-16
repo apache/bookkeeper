@@ -406,7 +406,7 @@ public class ReplicationWorker implements Runnable {
                                     writeQuorumSize, ackQuorumSize);
                     curEntryId = entry.getKey();
                 }
-                if (curEntryId != null) {
+                if (curEntryId != null && metadata.isClosed()) {
                     if (EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL
                             == previousSegmentAdheringToPlacementPolicy) {
                         long lastEntry = lh.getLedgerMetadata().getLastEntryId();
