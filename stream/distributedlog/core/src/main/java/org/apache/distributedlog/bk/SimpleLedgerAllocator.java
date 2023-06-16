@@ -310,7 +310,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 tryObtainTxn = null;
                 tryObtainListener = null;
                 // mark flag to issue an allocation request
-                shouldAllocate = true;
+                if (lhToNotify == null) {
+                    shouldAllocate = true;
+                }
             }
         }
         if (null != listenerToNotify && null != lhToNotify) {
