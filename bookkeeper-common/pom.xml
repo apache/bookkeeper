@@ -162,7 +162,7 @@
   </build>
 
   <profiles>
-    <profile>
+    <!--<profile>
       <id>Badua</id>
 
       <properties>
@@ -227,7 +227,7 @@
               </execution>
             </executions>
           </plugin>
-          <!--<plugin>
+          &lt;!&ndash;<plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-enforcer-plugin</artifactId>
             &lt;!&ndash; Using this version to support requireFileChecksum with Java 6 &ndash;&gt;
@@ -250,9 +250,9 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>-->
+          </plugin>&ndash;&gt;
         </plugins>
       </build>
-    </profile>
+    </profile>-->
   </profiles>
 </project>

@@ -32,11 +32,9 @@ public class TestAvailabilityOfEntriesOfLedger2 {
         bookieEntriesList1.add(5L);
         bookieEntriesList1.add(6L);
 
-
         for(int i = 1; i < lastBookieEntry; i = i + 2){                          // validBitSet = [1,3,5,7,9,11,13]
             validBitSet.set(i);
         }
-
 
         List<Long> unavailableEntries1 = new ArrayList<>();
         unavailableEntries1.add(1L);
