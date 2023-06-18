@@ -11,8 +11,10 @@ import org.apache.bookkeeper.server.service.StatsProviderService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -95,6 +97,68 @@ public class ITLifecycleComponentStack {
         lifecycleComponentStack.addLifecycleListener(listener);
     }
 
+    private void failSetUp() throws Exception {
+        StatsLogger statsLogger = NullStatsLogger.INSTANCE; //It is a dummy stats logger originally present used for testing
+
+        BookieConfiguration conf = new BookieConfiguration(new ServerConfiguration());
+        DataIntegrityCheck check = mock(DataIntegrityCheck.class);  //The implementation require to instantiate a bookie
+        LifecycleComponent component1 = getLimitedDataIntegrityService(conf, statsLogger, check);
+        LifecycleComponent component2 = new StatsProviderService(conf);
+
+        LifecycleComponent component3 = new DataIntegrityService(conf, statsLogger, check) {
+            @Override
+            public int interval() {
+                return 500; //half second
+            }
+            @Override
+            public TimeUnit intervalUnit() {
+                return TimeUnit.MILLISECONDS;
+            }
+            @Override
+            public void doStart() {
+                throw new RuntimeException();
+            }
+        };
+
+        List<LifecycleComponent> components = List.of(component1, component2, component3);
+
+        lifecycleComponentStack = getLifecycleComponentStack(components);
+
+        listener = new LifecycleListenerTestImpl();
+        lifecycleComponentStack.addLifecycleListener(listener);
+    }
+
+    private void failSetUp2() throws Exception {
+        StatsLogger statsLogger = NullStatsLogger.INSTANCE; //It is a dummy stats logger originally present used for testing
+
+        BookieConfiguration conf = new BookieConfiguration(new ServerConfiguration());
+        DataIntegrityCheck check = mock(DataIntegrityCheck.class);  //The implementation require to instantiate a bookie
+        LifecycleComponent component1 = getLimitedDataIntegrityService(conf, statsLogger, check);
+        LifecycleComponent component2 = new StatsProviderService(conf);
+
+        LifecycleComponent component3 = new DataIntegrityService(conf, statsLogger, check) {
+            @Override
+            public int interval() {
+                return 500; //half second
+            }
+            @Override
+            public TimeUnit intervalUnit() {
+                return TimeUnit.MILLISECONDS;
+            }
+            @Override
+            public void doStop() {
+                close();
+            }
+        };
+
+        List<LifecycleComponent> components = List.of(component1, component2, component3);
+
+        lifecycleComponentStack = getLifecycleComponentStack(components);
+
+        listener = new LifecycleListenerTestImpl();
+        lifecycleComponentStack.addLifecycleListener(listener);
+    }
+
     @Test
     public void testStartAndStop() throws Exception {
 
@@ -120,7 +184,7 @@ public class ITLifecycleComponentStack {
 
         lifecycleComponentStack.start();    //If the components are not in the STARTED state, they cannot be stopped.
 
-        Thread.sleep(1500);
+        Thread.sleep(1200);
 
         lifecycleComponentStack.stop();
 
@@ -138,7 +202,7 @@ public class ITLifecycleComponentStack {
 
         lifecycleComponentStack.start();    //If the components are not in the STARTED state, they cannot be stopped.
 
-        Thread.sleep(1500);
+        Thread.sleep(1200);
 
         lifecycleComponentStack.stop();
 
@@ -147,7 +211,6 @@ public class ITLifecycleComponentStack {
         }
 
     }
-
 
     @Test
     public void testClose() throws Exception {
@@ -160,6 +223,9 @@ public class ITLifecycleComponentStack {
             Assert.assertEquals(Lifecycle.State.CLOSED, lifecycleComponentStack.getComponent(i).lifecycleState());
         }
 
+        Assert.assertEquals(
+                "Before Close\nAfter Close\n" +
+                "Before Close\nAfter Close\n", listener.getLog());
     }
 
     @Test
@@ -173,12 +239,15 @@ public class ITLifecycleComponentStack {
             Assert.assertEquals(Lifecycle.State.STARTED, lifecycleComponentStack.getComponent(i).lifecycleState());
         }
 
+        Assert.assertEquals(
+                "Before Start\nAfter Start\n" +
+                "Before Start\nAfter Start\n", listener.getLog());
     }
 
     //This test simulate an exception in a component and how the stack react. An ExceptionHandler is also configured, so the test verify
     // also that the handler is right configured in the components.
     @Test
-    public void testLFail1() throws Exception {
+    public void testFail1() throws Exception {
 
         failSetUp();
 
@@ -215,7 +284,7 @@ public class ITLifecycleComponentStack {
     //This test simulate an exception in a component and how the stack react. No ExceptionHandler are configured, so the test start() method must
     // throw an exception.
     @Test
-    public void testLFail2() throws Exception {
+    public void testFail2() throws Exception {
 
         failSetUp();
         try {
@@ -228,37 +297,6 @@ public class ITLifecycleComponentStack {
         Assert.assertEquals("Before Start\nAfter Start\n" +
                 "Before Start\nAfter Start\n" +
                 "Before Start\n", listener.getLog());
-    }
-
-    private void failSetUp() throws Exception {
-        StatsLogger statsLogger = NullStatsLogger.INSTANCE; //It is a dummy stats logger originally present used for testing
-
-        BookieConfiguration conf = new BookieConfiguration(new ServerConfiguration());
-        DataIntegrityCheck check = mock(DataIntegrityCheck.class);  //The implementation require to instantiate a bookie
-        LifecycleComponent component1 = getLimitedDataIntegrityService(conf, statsLogger, check);
-        LifecycleComponent component2 = new StatsProviderService(conf);
-
-        LifecycleComponent component3 = new DataIntegrityService(conf, statsLogger, check) {
-            @Override
-            public int interval() {
-                return 500; //half second
-            }
-            @Override
-            public TimeUnit intervalUnit() {
-                return TimeUnit.MILLISECONDS;
-            }
-            @Override
-            public void doStart() {
-                throw new RuntimeException();
-            }
-        };
-
-        List<LifecycleComponent> components = List.of(component1, component2, component3);
-
-        lifecycleComponentStack = getLifecycleComponentStack(components);
-
-        listener = new LifecycleListenerTestImpl();
-        lifecycleComponentStack.addLifecycleListener(listener);
     }
 
     @Test
@@ -395,27 +433,8 @@ public class ITLifecycleComponentStack {
         lifecycleComponentStack.stop();
 
         //Verifying if all the listener operation (before and after each operation in each component) have been executed.
-        Assert.assertEquals("", listener.getLog());
-    }
-
-    @Test
-    public void testLifecycle7() throws Exception {
-        //This test try to start closed components
-
-        validSetUp();
-
-        lifecycleComponentStack.close();
-        boolean condition = false;
-        try {
-            lifecycleComponentStack.start();
-        } catch (IllegalStateException e) {
-            condition = true;
-        }
-        Assert.assertTrue(condition);
-
-        Assert.assertEquals("" +
-                "Before Close\nAfter Close\n" +
-                "Before Close\nAfter Close\n", listener.getLog());
+        Assert.assertEquals("Before Stop\nAfter Stop\n" +
+                "Before Stop\nAfter Stop\n", listener.getLog());
     }
 
     @Test
@@ -445,6 +464,36 @@ public class ITLifecycleComponentStack {
                 "Before Stop\nAfter Stop\n" +
                 "Before Close\nAfter Close\n" +
                 "Before Close\nAfter Close\n", listener.getLog());
+
+    }
+
+    @Test
+    public void testLifecycle9() throws Exception {
+        //This test cover the case in which one of the component is going to have a bad behaviour. One of the component, instead to go
+        // in the STOPPED state, goes in the CLOSED state. Hence, when the stack asks to restart, there will be a failure.
+
+        failSetUp2();
+
+        lifecycleComponentStack.start();
+
+        lifecycleComponentStack.stop();
+
+        try {
+            lifecycleComponentStack.start();
+        } catch (Exception e) {
+            //Exception caught
+        }
+
+        Assert.assertEquals("Before Start\nAfter Start\n" +
+                "Before Start\nAfter Start\n" +
+                "Before Start\nAfter Start\n" +
+                "Before Stop\n" +
+                "Before Close\nAfter Close\n" +
+                "After Stop\n" +
+                "Before Stop\nAfter Stop\n" +
+                "Before Stop\nAfter Stop\n" +
+                "Before Start\nAfter Start\n" +
+                "Before Start\nAfter Start\n", listener.getLog());
 
     }
 
