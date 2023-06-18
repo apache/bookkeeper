@@ -99,7 +99,7 @@ public class TestAvailabilityOfEntriesOfLedger2 {
     }
 
     @Test
-    public void testAvailabilityOfEntries(){
+    public void testUnavailableEntries(){
         List<Long> result;
         try {
             result = this.availabilityOfEntriesOfLedger.getUnavailableEntries(this.startEntry, this.lastEntry, this.bookieEntries);

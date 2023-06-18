@@ -6,6 +6,9 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.mockito.Mockito.*;
 
 //This is the first step of the top-down strategy of the integration test.
@@ -26,10 +29,12 @@ public class LifecycleComponentStackTest {
         when(component1.lifecycleState()).thenReturn(Lifecycle.State.INITIALIZED);
         LifecycleComponent component2 = mock(LifecycleComponent.class);
         when(component2.lifecycleState()).thenReturn(Lifecycle.State.INITIALIZED);
+        LifecycleComponent component3 = mock(LifecycleComponent.class);
+        when(component3.lifecycleState()).thenReturn(Lifecycle.State.INITIALIZED);
 
         publisher = mock(ComponentInfoPublisher.class);
 
-        builder.withName(name).addComponent(component1).withComponentInfoPublisher(publisher).addComponent(component2);
+        builder.withName(name).addComponent(component1).withComponentInfoPublisher(publisher).addComponent(component2).addComponent(component3);
 
         lifecycleComponentStack = builder.build();
 
@@ -38,9 +43,34 @@ public class LifecycleComponentStackTest {
         lifecycleComponentStack.addLifecycleListener(listener);
     }
 
-    //Test per la costruzione di un LifecycleComponentStack vuoto
+    //Test per la costruzione di un LifecycleComponentStack valido
     @Test
     public void testBuild1() {
+        LifecycleComponentStack.Builder builder = LifecycleComponentStack.newBuilder();
+        List<LifecycleComponent> componentList = new ArrayList<>();
+
+        for(int i = 0; i < 3; i++) {
+            LifecycleComponent component = mock(LifecycleComponent.class);
+            when(component.lifecycleState()).thenReturn(Lifecycle.State.INITIALIZED);
+            builder.addComponent(component);
+            componentList.add(component);
+        }
+
+
+        LifecycleComponentStack stack = builder.withName(name).build();
+
+        Assert.assertEquals(3, stack.getNumComponents());
+
+        for(int i = 0; i < 3; i++) {
+            if(stack.getComponent(i) != componentList.get(i)) {
+                Assert.fail();
+            }
+        }
+    }
+
+    //Test per la costruzione di un LifecycleComponentStack vuoto
+    @Test
+    public void testBuild2() {
         LifecycleComponentStack.Builder builder = LifecycleComponentStack.newBuilder();
 
         try {
@@ -52,11 +82,25 @@ public class LifecycleComponentStackTest {
         Assert.fail();
     }
 
+    //Test per la costruzione di un LifecycleComponentStack con nome null
     @Test
-    public void testBuild2() {
+    public void testBuild3() {
         LifecycleComponentStack.Builder builder = LifecycleComponentStack.newBuilder();
         try {
             builder.withName(null).build();
+        } catch (NullPointerException e) {
+            Assert.assertTrue(true);
+            return;
+        }
+        Assert.fail();
+    }
+
+    //Test per la costruzione di un LifecycleComponentStack con componente null
+    @Test
+    public void testBuild4() {
+        LifecycleComponentStack.Builder builder = LifecycleComponentStack.newBuilder();
+        try {
+            builder.withName(name).addComponent(null).build();
         } catch (NullPointerException e) {
             Assert.assertTrue(true);
             return;
@@ -81,8 +125,8 @@ public class LifecycleComponentStackTest {
 
         for(int i = 0; i < lifecycleComponentStack.getNumComponents(); i++) {
             verify(lifecycleComponentStack.getComponent(i), times(1)).start();
-            verify(lifecycleComponentStack.getComponent(i), times(1)).publishInfo(any());
-            verify(publisher, times(1)).startupFinished();
+            verify(lifecycleComponentStack.getComponent(i), times(1)).publishInfo(any());             //added after PIT
+            verify(publisher, times(1)).startupFinished();                                            //added after PIT
             Assert.assertEquals(Lifecycle.State.STARTED, lifecycleComponentStack.getComponent(i).lifecycleState());
         }
     }
@@ -147,7 +191,7 @@ public class LifecycleComponentStackTest {
 
     @Test
     public void testGetNumComponents() {
-        Assert.assertEquals(lifecycleComponentStack.getNumComponents(), 2);
+        Assert.assertEquals(lifecycleComponentStack.getNumComponents(), 3);
     }
 
     @Test

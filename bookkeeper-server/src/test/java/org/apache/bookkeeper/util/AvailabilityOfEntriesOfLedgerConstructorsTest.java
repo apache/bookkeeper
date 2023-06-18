@@ -22,6 +22,7 @@ public class AvailabilityOfEntriesOfLedgerConstructorsTest {
         long[] bookieContent = new long[]{1L, 3L, 4L};
         long[] bookieContentWithSequencePeriod = new long[]{1L, 3L, 5L, 7L};
         long[] bookieContent3 = {3, 4, 5, 5, 10, 11, 12, 13, 6, 7, 8};
+        long[] bookieContent4 = {3, 4, 5, -1, 0, 1, 6, 7, 8};
 
         long[] invalidBookieContent = {-1, 0, 1, 2, 3};
 
@@ -34,7 +35,8 @@ public class AvailabilityOfEntriesOfLedgerConstructorsTest {
 
                 //JACOCO
                 {bookieContentWithSequencePeriod, false},
-                {bookieContent3, false}
+                {bookieContent3, false},
+                {bookieContent4, false}
         });
     }
 
@@ -43,7 +45,7 @@ public class AvailabilityOfEntriesOfLedgerConstructorsTest {
         this.isExpectedAnException = isExpectedAnException;
     }
 
-    private int countElem(long[] content) {
+    public static int countElem(long[] content) {
         List<Long> longList = new ArrayList<>();
         PrimitiveIterator.OfLong iterator = Arrays.stream(content).iterator();
 

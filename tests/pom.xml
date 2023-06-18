@@ -197,7 +197,7 @@
 
   <profiles>
     <profile>
-      <id>Jacoco</id>
+      <id>jacoco</id>
       <build>
         <plugins>
           <plugin>

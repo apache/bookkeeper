@@ -24,7 +24,20 @@
   </parent>
   <artifactId>bookkeeper-server</artifactId>
   <name>Apache BookKeeper :: Server</name>
+
+  <properties>
+    <log4j.version>2.14.0</log4j.version>
+  </properties>
+
   <dependencies>
+<!--    Added log4j dependencies for testing-->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+
+
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
@@ -305,11 +318,19 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>9</source>
+                <target>9</target>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
   <profiles>
     <profile>
-      <id>Badua</id>
+      <id>badua</id>
 
       <properties>
         <ba-dua.version>0.8.1-SNAPSHOT</ba-dua.version>
