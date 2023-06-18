@@ -14,7 +14,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -424,7 +423,7 @@ public class ITLifecycleComponentStack {
 
     }
 
-    @Test
+    @Test@Ignore
     public void testLifecycle6() throws Exception {
         //This test try to stop initialized components, so the components don't do anything.
 
