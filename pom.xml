@@ -1350,29 +1350,21 @@
     <!-- PIT profile for mutation coverage -->
     <profile>
       <id>pit</id>
-      <!--<modules>
-        <module>bookkeeper-common</module>
-        <module>bookkeeper-server</module>
-      </modules>-->
       <build>
         <plugins>
           <plugin>
             <groupId>org.pitest</groupId>
             <artifactId>pitest-maven</artifactId>
             <version>${pitest-maven-plugin.version}</version>
-            <!--<configuration>
-              <targetClasses>
-                <param>org.apache.bookkeeper.client.Bookkeeper</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
-              </targetClasses>
-              <targetTests>
-                <param>org.apache.bookkeeper.client.BookkeeperCreateLedgerTest</param>
-                <param>org.apache.bookkeeper.client.BookkeeperDeleteLedgerTest</param>
-                <param>org.apache.bookkeeper.client.BookkeeperOpenLedgerTest</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCacheGetTest</param>
-                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCachePutTest</param>
-              </targetTests>
-            </configuration>-->
+            <executions>
+              <execution>
+                <id>PIT Report Generation</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
