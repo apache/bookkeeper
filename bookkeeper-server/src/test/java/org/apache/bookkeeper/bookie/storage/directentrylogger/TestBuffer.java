@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 // CHECKSTYLE.OFF: IllegalImport
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import java.io.IOException;
@@ -70,13 +71,13 @@ public class TestBuffer {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateUnaligned() throws Exception {
-        new Buffer(new NativeIOImpl(), 1234);
+        new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1234);
     }
 
     @Test
     public void testWriteInt() throws Exception {
         int bufferSize = 1 << 20;
-        Buffer b = new Buffer(new NativeIOImpl(), bufferSize);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, bufferSize);
         assertTrue(b.hasSpace(bufferSize));
         assertEquals(0, b.position());
         b.writeInt(0xdeadbeef);
@@ -111,7 +112,7 @@ public class TestBuffer {
         ByteBuf bb = Unpooled.buffer(1021);
         fillByteBuf(bb, 0xdeadbeef);
         int bufferSize = 1 << 20;
-        Buffer b = new Buffer(new NativeIOImpl(), bufferSize);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, bufferSize);
         assertEquals(0, b.position());
         b.writeByteBuf(bb);
         assertEquals(1021, b.position());
@@ -138,7 +139,7 @@ public class TestBuffer {
     public void testPartialRead() throws Exception {
         ByteBuf bb = Unpooled.buffer(5000);
 
-        Buffer b = new Buffer(new NativeIOImpl(), 4096);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 4096);
         for (int i = 0; i < 4096 / Integer.BYTES; i++) {
             b.writeInt(0xdeadbeef);
         }
@@ -149,7 +150,7 @@ public class TestBuffer {
 
     @Test(expected = IOException.class)
     public void testReadIntAtBoundary() throws Exception {
-        Buffer b = new Buffer(new NativeIOImpl(), 4096);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 4096);
 
         for (int i = 0; i < 4096 / Integer.BYTES; i++) {
             b.writeInt(0xdeadbeef);
@@ -163,7 +164,7 @@ public class TestBuffer {
 
     @Test(expected = IOException.class)
     public void testReadLongAtBoundary() throws Exception {
-        Buffer b = new Buffer(new NativeIOImpl(), 4096);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 4096);
 
         for (int i = 0; i < 4096 / Integer.BYTES; i++) {
             b.writeInt(0xdeadbeef);
@@ -177,7 +178,7 @@ public class TestBuffer {
 
     @Test
     public void testPadToAlignment() throws Exception {
-        Buffer b = new Buffer(new NativeIOImpl(), 1 << 23);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 23);
 
         for (int i = 0; i < 1025; i++) {
             b.writeInt(0xdededede);
@@ -194,7 +195,7 @@ public class TestBuffer {
 
     @Test
     public void testFree() throws Exception {
-        Buffer b = new Buffer(new NativeIOImpl(), 1 << 23);
+        Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 23);
         b.free(); // success if process doesn't explode
         b.free();
     }

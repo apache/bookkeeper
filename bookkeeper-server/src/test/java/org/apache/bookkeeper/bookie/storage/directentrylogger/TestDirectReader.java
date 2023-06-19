@@ -189,7 +189,7 @@ public class TestDirectReader {
         File ledgerDir = tmpDirs.createNew("readBuffer", "logs");
 
         writeFileWithPattern(ledgerDir, 1234, 0xbeefcafe, 1, 1 << 20);
-        BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 4, 8);
+        BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 4, 8);
 
         try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
                                                  ByteBufAllocator.DEFAULT,
@@ -268,7 +268,7 @@ public class TestDirectReader {
 
         int entrySize = Buffer.ALIGNMENT / 4 + 100;
         Map<Integer, Integer> offset2Pattern = new HashMap<>();
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -315,7 +315,7 @@ public class TestDirectReader {
                     return 0;
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE);
@@ -353,7 +353,7 @@ public class TestDirectReader {
 
         int entrySize = Buffer.ALIGNMENT / 2 + 8;
 
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE);
@@ -403,7 +403,8 @@ public class TestDirectReader {
                     return 0; // don't preallocate
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 10, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(),
+            ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 10, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -452,7 +453,7 @@ public class TestDirectReader {
         int entrySize = Buffer.ALIGNMENT * 4;
 
         int offset1, offset2;
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 8, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 8, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(), buffers, new NativeIOImpl(),
                                                  Slogger.CONSOLE)) {
@@ -496,7 +497,7 @@ public class TestDirectReader {
 
     private static void writeFileWithPattern(File directory, int logId,
                                              int pattern, int blockIncrement, int fileSize) throws Exception {
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(logId, logFilename(directory, logId),
                                                  fileSize, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
