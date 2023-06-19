@@ -67,10 +67,10 @@ class Buffer {
         checkArgument(isAligned(bufferSize),
                       "Buffer size not aligned %d", bufferSize);
 
+        this.allocator = allocator;
         this.buffer = allocateAligned(ALIGNMENT, bufferSize);
         this.nativeIO = nativeIO;
         this.bufferSize = bufferSize;
-        this.allocator = allocator;
         byteBuffer = buffer.nioBuffer(0, bufferSize);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
     }
