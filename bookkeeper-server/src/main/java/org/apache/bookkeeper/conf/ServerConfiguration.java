@@ -309,6 +309,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String AUTHORIZED_ROLES = "authorizedRoles";
     protected static final String ROCKSDB_DELETE_ENTRIES_BATCH_SIZE = "rocksDBDeleteEntriesBatchSize";
 
+    protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
+
     /**
      * Construct a default configuration object.
      */
@@ -3617,7 +3619,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get entry log location index delete entries batch size from RocksDB.
+     * When this config is set to true,if we replay journal failed, we will skip.
+     * @param skipReplayJournalInvalidRecord
+     * @return
+     */
+    public ServerConfiguration setSkipReplayJournalInvalidRecord(boolean skipReplayJournalInvalidRecord) {
+        this.setProperty(SKIP_REPLAY_JOURNAL_INVALID_RECORD,
+                Boolean.toString(skipReplayJournalInvalidRecord));
+        return this;
+    }
+
+    /**
+     * @see #isSkipReplayJournalInvalidRecord .
+     */
+    public boolean isSkipReplayJournalInvalidRecord() {
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
+    }
+
+    /**
      *
      * @return Int rocksDB delete entries batch size configured in Service configuration.
      */
