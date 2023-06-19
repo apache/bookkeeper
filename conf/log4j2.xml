@@ -59,7 +59,7 @@
             <AppenderRef ref="${sys:bookkeeper.log.root.appender}"/>
         </Root>
         <Logger name="org.apache.bookkeeper.bookie.storage.directentrylogger" level="INFO">
-                <AppenderRef ref="CONSOLEMDC"/>
+                <AppenderRef ref="${sys:bookkeeper.log.root.appender}MDC"/>
         </Logger>
     </Loggers>
 </Configuration>
