@@ -222,7 +222,7 @@ public class LedgersIndexRebuildOp {
                     LOG.info("Found ledger {} in journal", ledgerId);
                 }
             }
-        });
+        }, false);
     }
 
     private void delete(Path path) {

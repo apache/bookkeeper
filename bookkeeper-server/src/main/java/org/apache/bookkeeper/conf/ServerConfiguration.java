@@ -339,6 +339,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
+    protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
+
     /**
      * Construct a default configuration object.
      */
@@ -4008,6 +4010,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public boolean isDataIntegrityStampMissingCookiesEnabled() {
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
+    }
+
+
+    /**
+     * When this config is set to true,if we replay journal failed, we will skip.
+     * @param skipReplayJournalInvalidRecord
+     * @return
+     */
+    public ServerConfiguration setSkipReplayJournalInvalidRecord(boolean skipReplayJournalInvalidRecord) {
+        this.setProperty(SKIP_REPLAY_JOURNAL_INVALID_RECORD,
+                Boolean.toString(skipReplayJournalInvalidRecord));
+        return this;
+    }
+
+    /**
+     * @see #isSkipReplayJournalInvalidRecord .
+     */
+    public boolean isSkipReplayJournalInvalidRecord() {
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
     }
 
     /**
