@@ -586,8 +586,8 @@ public class Auditor implements AutoCloseable {
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             LOG.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
