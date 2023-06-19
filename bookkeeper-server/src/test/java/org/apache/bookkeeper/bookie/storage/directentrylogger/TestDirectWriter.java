@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileInputStream;
@@ -61,7 +62,7 @@ public class TestDirectWriter {
     @Test(expected = IllegalArgumentException.class)
     public void testWriteAtAlignment() throws Exception {
         File ledgerDir = tmpDirs.createNew("writeAlignment", "logs");
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678),
                                                  1 << 24, writeExecutor,
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -75,7 +76,7 @@ public class TestDirectWriter {
     @Test(expected = IllegalArgumentException.class)
     public void testWriteAlignmentSize() throws Exception {
         File ledgerDir = tmpDirs.createNew("writeAlignment", "logs");
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
             ByteBuf bb = Unpooled.buffer(123);
@@ -88,7 +89,7 @@ public class TestDirectWriter {
     @Test
     public void testWriteAlignedNotAtStart() throws Exception {
         File ledgerDir = tmpDirs.createNew("writeAlignment", "logs");
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
@@ -102,7 +103,7 @@ public class TestDirectWriter {
     @Test(timeout = 10000)
     public void testFlushingWillWaitForBuffer() throws Exception {
         File ledgerDir = tmpDirs.createNew("writeFailFailsFlush", "logs");
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(),
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT,
                 Buffer.ALIGNMENT, 1); // only one buffer available, so we can't flush in bg
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -129,7 +130,7 @@ public class TestDirectWriter {
                     return super.pwrite(fd, pointer, count, offset);
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, io, Slogger.CONSOLE)) {
             for (int i = 0; i < 10; i++) {
@@ -158,7 +159,7 @@ public class TestDirectWriter {
                 }
             };
 
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, io, Slogger.CONSOLE)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
@@ -171,7 +172,7 @@ public class TestDirectWriter {
     @Test
     public void testWriteWithPadding() throws Exception {
         File ledgerDir = tmpDirs.createNew("paddingWrite", "logs");
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
@@ -199,7 +200,7 @@ public class TestDirectWriter {
         ExecutorService flushExecutor = Executors.newSingleThreadExecutor();
         try {
             File ledgerDir = tmpDirs.createNew("blockWrite", "logs");
-            try (BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+            try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
                  LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                      1 << 24, writeExecutor,
                                                      buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -239,7 +240,7 @@ public class TestDirectWriter {
         File ledgerDir = tmpDirs.createNew("failOpen", "logs");
         ledgerDir.delete();
 
-        BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+        BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
         try {
             new DirectWriter(1234, logFilename(ledgerDir, 1234),
                     1 << 30, MoreExecutors.newDirectExecutorService(),
@@ -259,7 +260,7 @@ public class TestDirectWriter {
                     throw new NativeIOException("pretending I'm a mac");
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(3456, logFilename(ledgerDir, 3456),
                                                  1 << 24, writeExecutor,
                                                  buffers, nativeIO, Slogger.CONSOLE)) {
@@ -282,7 +283,7 @@ public class TestDirectWriter {
     public void testWriteAtIntLimit() throws Exception {
         File ledgerDir = tmpDirs.createNew("intLimit", "logs");
 
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), 1 << 14, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(3456, logFilename(ledgerDir, 3456),
                                                  (long) Integer.MAX_VALUE + (Buffer.ALIGNMENT * 100),
                                                  writeExecutor,

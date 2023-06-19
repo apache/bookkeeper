@@ -69,7 +69,7 @@ class DirectReader implements LogReader {
                                   .kv("errno", ne.getErrno()).toString());
         }
         refreshMaxOffset();
-        nativeBuffer = new Buffer(nativeIO, bufferSize);
+        nativeBuffer = new Buffer(nativeIO, allocator, bufferSize);
     }
 
     @Override

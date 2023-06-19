@@ -207,7 +207,7 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
         public void scan(EntryLogScanner scanner) throws IOException {
             try (LogReader reader = new DirectReader(dstLogId, compactedFile.toString(), allocator, nativeIO,
                                                      readBufferSize, maxSaneEntrySize, readBlockStats)) {
-                LogReaderScan.scan(reader, scanner);
+                LogReaderScan.scan(allocator, reader, scanner);
             }
         }
     }

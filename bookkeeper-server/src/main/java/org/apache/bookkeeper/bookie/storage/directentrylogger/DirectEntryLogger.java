@@ -119,7 +119,7 @@ public class DirectEntryLogger implements EntryLogger {
         this.allocator = allocator;
 
         int singleWriteBufferSize = Buffer.nextAlignment((int) (totalWriteBufferSize / NUMBER_OF_WRITE_BUFFERS));
-        this.writeBuffers = new BufferPool(nativeIO, singleWriteBufferSize, NUMBER_OF_WRITE_BUFFERS);
+        this.writeBuffers = new BufferPool(nativeIO, allocator, singleWriteBufferSize, NUMBER_OF_WRITE_BUFFERS);
 
         // The total read buffer memory needs to get split across all the read threads, since the caches
         // are thread-specific and we want to ensure we don't pass the total memory limit.
@@ -385,7 +385,7 @@ public class DirectEntryLogger implements EntryLogger {
     public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
         checkArgument(entryLogId < Integer.MAX_VALUE, "Entry log id must be an int [%d]", entryLogId);
         try (LogReader reader = newDirectReader((int) entryLogId)) {
-            LogReaderScan.scan(reader, scanner);
+            LogReaderScan.scan(allocator, reader, scanner);
         }
     }
 
