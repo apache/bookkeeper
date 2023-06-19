@@ -862,16 +862,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     scanner.process(journalVersion, offset, recBuff);
                 }
             }
+            return recLog.fc.position();
         } catch (IOException e) {
             if (skipInvalidRecord) {
                 LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
             } else {
                 throw e;
             }
+            return recLog.fc.position();
         } finally {
             recLog.close();
         }
-        return recLog.fc.position();
     }
 
     /**

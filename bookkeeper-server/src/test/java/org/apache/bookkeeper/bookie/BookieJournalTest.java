@@ -911,10 +911,16 @@ public class BookieJournalTest {
         File ledgerDir = createTempDir("bookie", "ledger");
         BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
 
-        writeV4JournalWithInvalidRecord(BookieImpl.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
+        try {
+            writeV4JournalWithInvalidRecord(BookieImpl.getCurrentDirectory(journalDir),
+                100, "testPasswd".getBytes());
+        } catch (Exception e) {
+            fail();
+        }
 
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        // Disabled skip broken journal files by default
         conf.setJournalDirName(journalDir.getPath())
                 .setLedgerDirNames(new String[] { ledgerDir.getPath() })
                 .setMetadataServiceUri(null)
@@ -925,14 +931,35 @@ public class BookieJournalTest {
         BookieImpl b = new TestBookieImpl(conf);
 
         for (Journal journal : b.journals) {
-            List<Long> journalIds = journal.listJournalIds(journal.getJournalDirectory(), null);
-
+            List<Long> journalIds = Journal.listJournalIds(journal.getJournalDirectory(), null);
             assertEquals(journalIds.size(), 1);
-
             try {
                 journal.scanJournal(journalIds.get(0), 0, journalScanner, conf.isSkipReplayJournalInvalidRecord());
             } catch (Exception e) {
-                fail("Should have been able to scan the journal,because of skip flag");
+                fail("Should pass the journal scanning because we enabled skip flag by default.");
+            }
+        }
+
+        b.shutdown();
+
+        // Disabled skip broken journal files by default
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+                .setMetadataServiceUri(null);
+
+        journalScanner = new DummyJournalScan();
+
+        b = new TestBookieImpl(conf);
+
+        for (Journal journal : b.journals) {
+            List<Long> journalIds = Journal.listJournalIds(journal.getJournalDirectory(), null);
+            assertEquals(journalIds.size(), 1);
+            try {
+                journal.scanJournal(journalIds.get(0), 0, journalScanner, conf.isSkipReplayJournalInvalidRecord());
+                fail("Should fail the journal scanning because of disabled skip flag");
+            } catch (Exception e) {
+                // expected.
             }
         }
 
@@ -940,7 +967,7 @@ public class BookieJournalTest {
     }
 
 
-    private class DummyJournalScan implements Journal.JournalScanner {
+    static class DummyJournalScan implements Journal.JournalScanner {
 
         @Override
         public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
