@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -63,7 +65,7 @@ public class LedgerMetadataIndex implements Closeable {
     private final ConcurrentLinkedQueue<Entry<Long, LedgerData>> pendingLedgersUpdates;
 
     // Holds ledger ids that were delete from memory map, and pending to be flushed on db
-    private final ConcurrentLinkedQueue<Long> pendingDeletedLedgers;
+    private final Set<Long> pendingDeletedLedgers;
     private final ReentrantLock[] locks = new ReentrantLock[16];
 
     public LedgerMetadataIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
@@ -90,7 +92,7 @@ public class LedgerMetadataIndex implements Closeable {
         }
 
         this.pendingLedgersUpdates = new ConcurrentLinkedQueue<Entry<Long, LedgerData>>();
-        this.pendingDeletedLedgers = new ConcurrentLinkedQueue<Long>();
+        this.pendingDeletedLedgers = Sets.newConcurrentHashSet();
 
         this.stats = new LedgerMetadataIndexStats(
             stats,
@@ -318,8 +320,7 @@ public class LedgerMetadataIndex implements Closeable {
         LongWrapper key = LongWrapper.get();
 
         int deletedLedgers = 0;
-        Long ledgerId;
-        while ((ledgerId = pendingDeletedLedgers.poll()) != null) {
+        for (Long ledgerId : pendingDeletedLedgers) {
             key.set(ledgerId);
             ledgersDb.delete(key.array);
         }
