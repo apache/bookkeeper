@@ -211,6 +211,6 @@ public class ReadJournalCommand extends BookieCommand<ReadJournalCommand.ReadJou
     }
 
     private void scanJournal(Journal journal, long journalId, Journal.JournalScanner scanner) throws IOException {
-        journal.scanJournal(journalId, 0L, scanner);
+        journal.scanJournal(journalId, 0L, scanner, false);
     }
 }
