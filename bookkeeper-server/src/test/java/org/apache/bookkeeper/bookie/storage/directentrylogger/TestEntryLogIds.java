@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.bookie.storage;
+package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.logIdFromLocation;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
@@ -33,8 +33,8 @@ import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.File;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectCompactionEntryLog;
-import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogIds;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.commons.lang3.tuple.Pair;
