@@ -250,26 +250,26 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-3.8.1-tests.jar [20]
 - lib/com.beust-jcommander-1.82.jar [23]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [25]
-- lib/com.google.api.grpc-proto-google-common-protos-2.0.1.jar [27]
-- lib/com.google.code.gson-gson-2.9.0.jar [28]
+- lib/com.google.api.grpc-proto-google-common-protos-2.17.0.jar [27]
+- lib/com.google.code.gson-gson-2.10.1.jar [28]
 - lib/io.opencensus-opencensus-api-0.28.0.jar [29]
 - lib/io.opencensus-opencensus-contrib-http-util-0.28.0.jar [29]
 - lib/io.opencensus-opencensus-proto-0.2.0.jar [29]
-- lib/io.grpc-grpc-all-1.47.0.jar [32]
-- lib/io.grpc-grpc-alts-1.47.0.jar [32]
-- lib/io.grpc-grpc-api-1.47.0.jar [32]
-- lib/io.grpc-grpc-auth-1.47.0.jar [32]
-- lib/io.grpc-grpc-context-1.47.0.jar [32]
-- lib/io.grpc-grpc-core-1.47.0.jar [32]
-- lib/io.grpc-grpc-grpclb-1.47.0.jar [32]
-- lib/io.grpc-grpc-netty-1.47.0.jar [32]
-- lib/io.grpc-grpc-protobuf-1.47.0.jar [32]
-- lib/io.grpc-grpc-protobuf-lite-1.47.0.jar [32]
-- lib/io.grpc-grpc-services-1.47.0.jar [32]
-- lib/io.grpc-grpc-stub-1.47.0.jar [32]
-- lib/io.grpc-grpc-testing-1.47.0.jar [32]
-- lib/io.grpc-grpc-xds-1.47.0.jar [32]
-- lib/io.grpc-grpc-rls-1.47.0.jar[32]
+- lib/io.grpc-grpc-all-1.56.0.jar [32]
+- lib/io.grpc-grpc-alts-1.56.0.jar [32]
+- lib/io.grpc-grpc-api-1.56.0.jar [32]
+- lib/io.grpc-grpc-auth-1.56.0.jar [32]
+- lib/io.grpc-grpc-context-1.56.0.jar [32]
+- lib/io.grpc-grpc-core-1.56.0.jar [32]
+- lib/io.grpc-grpc-grpclb-1.56.0.jar [32]
+- lib/io.grpc-grpc-netty-1.56.0.jar [32]
+- lib/io.grpc-grpc-protobuf-1.56.0.jar [32]
+- lib/io.grpc-grpc-protobuf-lite-1.56.0.jar [32]
+- lib/io.grpc-grpc-services-1.56.0.jar [32]
+- lib/io.grpc-grpc-stub-1.56.0.jar [32]
+- lib/io.grpc-grpc-testing-1.56.0.jar [32]
+- lib/io.grpc-grpc-xds-1.56.0.jar [32]
+- lib/io.grpc-grpc-rls-1.56.0.jar[32]
 - lib/org.apache.curator-curator-client-5.1.0.jar [33]
 - lib/org.apache.curator-curator-framework-5.1.0.jar [33]
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
@@ -281,14 +281,14 @@ Apache Software License, Version 2.
 - lib/org.apache.httpcomponents-httpcore-4.4.15.jar [39]
 - lib/org.apache.thrift-libthrift-0.14.2.jar [40]
 - lib/com.google.android-annotations-4.1.1.4.jar [41]
-- lib/com.google.auto.value-auto-value-annotations-1.9.jar [42]
+- lib/com.google.auto.value-auto-value-annotations-1.10.1.jar [42]
 - lib/com.google.http-client-google-http-client-1.41.0.jar [43]
 - lib/com.google.http-client-google-http-client-gson-1.41.0.jar [43]
 - lib/com.google.j2objc-j2objc-annotations-1.3.jar [44]
-- lib/com.google.re2j-re2j-1.5.jar [45]
+- lib/com.google.re2j-re2j-1.7.jar [45]
 - lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar [46]
-- lib/io.perfmark-perfmark-api-0.25.0.jar [47]
-- lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
+- lib/io.perfmark-perfmark-api-0.26.0.jar [47]
+- lib/org.conscrypt-conscrypt-openjdk-uber-2.5.2.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.10.1.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/com.carrotsearch-hppc-0.9.1.jar [52]
@@ -310,10 +310,10 @@ Apache Software License, Version 2.
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
 [23] Source available at https://github.com/cbeust/jcommander/tree/1.82
 [25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[27] Source available at https://github.com/googleapis/java-common-protos/tree/v2.0.1
-[28] Source available at https://github.com/google/gson/tree/gson-parent-2.9.0
+[27] Source available at https://github.com/googleapis/java-common-protos/tree/v2.17.0
+[28] Source available at https://github.com/google/gson/tree/gson-parent-2.10.1
 [29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.28.0
-[32] Source available at https://github.com/grpc/grpc-java/tree/v1.47.0
+[32] Source available at https://github.com/grpc/grpc-java/tree/v1.56.0
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.1.0
 [34] Source available at https://github.com/inferred/FreeBuilder/tree/v2.7.0
 [35] Source available at https://github.com/google/error-prone/tree/v2.9.0
@@ -323,13 +323,13 @@ Apache Software License, Version 2.
 [39] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.15
 [40] Source available at https://github.com/apache/thrift/tree/0.14.2
 [41] Source available at https://source.android.com/
-[42] Source available at https://github.com/google/auto/releases/tag/auto-value-1.9
+[42] Source available at https://github.com/google/auto/releases/tag/auto-value-1.10.1
 [43] Source available at https://github.com/googleapis/google-http-java-client/releases/tag/v1.41.0
 [44] Source available at https://github.com/google/j2objc/releases/tag/1.3
-[45] Source available at https://github.com/google/re2j/releases/tag/re2j-1.5
+[45] Source available at https://github.com/google/re2j/releases/tag/re2j-1.7
 [46] Source available at https://github.com/dropwizard/metrics/releases/tag/v4.1.12.1
-[47] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.25.0
-[49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
+[47] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.26.0
+[49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.2
 [50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.1
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
@@ -566,13 +566,13 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.19.6.jar
-Source available at https://github.com/google/protobuf/tree/v3.19.6
+  - lib/com.google.protobuf-protobuf-java-3.22.3.jar
+Source available at https://github.com/google/protobuf/tree/v3.22.3
 For details, see deps/protobuf-3.14.0/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.19.6.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.19.6
+  - lib/com.google.protobuf-protobuf-java-util-3.22.3.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.22.3
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a

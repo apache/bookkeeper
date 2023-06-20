@@ -116,15 +116,15 @@ granted provided that the copyright notice appears in all copies.
 Copyright 2010 Cedric Beust cedric@beust.com
 
 ------------------------------------------------------------------------------------
-- lib/io.grpc-grpc-all-1.47.0.jar
-- lib/io.grpc-grpc-auth-1.47.0.jar
-- lib/io.grpc-grpc-context-1.47.0.jar
-- lib/io.grpc-grpc-core-1.47.0.jar
-- lib/io.grpc-grpc-netty-1.47.0.jar
-- lib/io.grpc-grpc-protobuf-1.47.0.jar
-- lib/io.grpc-grpc-protobuf-lite-1.47.0.jar
-- lib/io.grpc-grpc-stub-1.47.0.jar
-- lib/io.grpc-grpc-testing-1.47.0.jar
+- lib/io.grpc-grpc-all-1.56.0.jar
+- lib/io.grpc-grpc-auth-1.56.0.jar
+- lib/io.grpc-grpc-context-1.56.0.jar
+- lib/io.grpc-grpc-core-1.56.0.jar
+- lib/io.grpc-grpc-netty-1.56.0.jar
+- lib/io.grpc-grpc-protobuf-1.56.0.jar
+- lib/io.grpc-grpc-protobuf-lite-1.56.0.jar
+- lib/io.grpc-grpc-stub-1.56.0.jar
+- lib/io.grpc-grpc-testing-1.56.0.jar
 
 Copyright 2014, gRPC Authors All rights reserved.
 
