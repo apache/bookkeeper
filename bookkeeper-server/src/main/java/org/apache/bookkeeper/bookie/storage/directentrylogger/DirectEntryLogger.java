@@ -53,7 +53,6 @@ import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
-import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
@@ -112,7 +111,7 @@ public class DirectEntryLogger implements EntryLogger {
         this.maxSaneEntrySize = maxSaneEntrySize;
         this.readBufferSize = Buffer.nextAlignment(readBufferSize);
         this.ids = ids;
-        this.slog = slogParent.kv("directory", ledgerDir).ctx();
+        this.slog = slogParent.kv("directory", ledgerDir).ctx(DirectEntryLogger.class);
 
         this.stats = new DirectEntryLoggerStats(stats);
 

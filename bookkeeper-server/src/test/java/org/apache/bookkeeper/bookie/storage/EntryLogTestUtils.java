@@ -32,6 +32,7 @@ import java.util.Arrays;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.EntryLogIdsImpl;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.slogger.Slogger;
