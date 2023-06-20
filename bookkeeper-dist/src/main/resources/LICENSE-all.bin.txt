@@ -317,7 +317,7 @@ Apache Software License, Version 2.
 - lib/io.dropwizard.metrics-metrics-jvm-4.1.12.1.jar [47]
 - lib/io.perfmark-perfmark-api-0.25.0.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
-- lib/org.xerial.snappy-snappy-java-1.1.7.7.jar [50]
+- lib/org.xerial.snappy-snappy-java-1.1.10.1.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/org.hdrhistogram-HdrHistogram-2.1.10.jar [52]
 - lib/com.carrotsearch-hppc-0.9.1.jar [53]
@@ -395,7 +395,7 @@ Apache Software License, Version 2.
 [47] Source available at https://github.com/dropwizard/metrics/releases/tag/v4.1.12.1
 [48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.25.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.1
-[50] Source available at https://github.com/google/snappy/releases/tag/1.1.7.7
+[50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.1
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/HdrHistogram/HdrHistogram/tree/HdrHistogram-2.1.10
 [53] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
