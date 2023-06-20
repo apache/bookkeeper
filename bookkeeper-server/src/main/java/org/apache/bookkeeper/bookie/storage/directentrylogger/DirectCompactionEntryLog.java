@@ -87,7 +87,7 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
         this.srcLogId = srcLogId;
         this.dstLogId = dstLogId;
 
-        this.slog = slog.kv("dstLogId", dstLogId).kv("srcLogId", srcLogId).ctx();
+        this.slog = slog.kv("dstLogId", dstLogId).kv("srcLogId", srcLogId).ctx(DirectCompactionEntryLog.class);
     }
 
     @Override

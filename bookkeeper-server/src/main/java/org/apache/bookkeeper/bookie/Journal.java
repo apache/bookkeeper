@@ -792,13 +792,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Scan the journal.
      *
-     * @param journalId Journal Log Id
-     * @param journalPos Offset to start scanning
-     * @param scanner Scanner to handle entries
+     * @param journalId         Journal Log Id
+     * @param journalPos        Offset to start scanning
+     * @param scanner           Scanner to handle entries
+     * @param skipInvalidRecord when invalid record,should we skip it or not
      * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner, boolean skipInvalidRecord)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -860,6 +861,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (!isPaddingRecord) {
                     scanner.process(journalVersion, offset, recBuff);
                 }
+            }
+            return recLog.fc.position();
+        } catch (IOException e) {
+            if (skipInvalidRecord) {
+                LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
+            } else {
+                throw e;
             }
             return recLog.fc.position();
         } finally {
