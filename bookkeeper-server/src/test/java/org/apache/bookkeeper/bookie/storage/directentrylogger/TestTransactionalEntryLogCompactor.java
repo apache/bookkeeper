@@ -49,7 +49,6 @@ import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.MockLedgerStorage;
 import org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
-import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
