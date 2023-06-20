@@ -174,7 +174,7 @@
     <testcontainers.version>1.17.6</testcontainers.version>
     <vertx.version>4.3.8</vertx.version>
     <zookeeper.version>3.8.1</zookeeper.version>
-    <snappy.version>1.1.7.7</snappy.version>
+    <snappy.version>1.1.10.1</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
