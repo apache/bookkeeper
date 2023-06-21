@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-stats-providers</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.2</version>
+    <version>4.16.2-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>codahale-metrics-provider</artifactId>
@@ -53,8 +53,4 @@
       <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>v4.16.2-rc0</tag>
-  </scm>
 </project>
