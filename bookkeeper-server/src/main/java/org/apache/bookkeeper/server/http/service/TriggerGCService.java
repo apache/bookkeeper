@@ -29,6 +29,7 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,40 +62,46 @@ public class TriggerGCService implements HttpEndpointService {
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
+        try {
+            if (HttpServer.Method.PUT == request.getMethod()) {
+                String requestBody = request.getBody();
+                if (StringUtils.isBlank(requestBody)) {
+                    bookieServer.getBookie().getLedgerStorage().forceGC();
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
+                    Boolean forceMajor = (Boolean) configMap.getOrDefault("forceMajor", null);
+                    Boolean forceMinor = (Boolean) configMap.getOrDefault("forceMinor", null);
+                    bookieServer.getBookie().getLedgerStorage().forceGC(forceMajor, forceMinor);
+                }
 
-        if (HttpServer.Method.PUT == request.getMethod()) {
-            String requestBody = request.getBody();
-            if (null == requestBody) {
-                bookieServer.getBookie().getLedgerStorage().forceGC();
+                String output = "Triggered GC on BookieServer: " + bookieServer.getBookieId();
+                String jsonResponse = JsonUtil.toJson(output);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("output body:" + jsonResponse);
+                }
+                response.setBody(jsonResponse);
+                response.setCode(HttpServer.StatusCode.OK);
+                return response;
+            } else if (HttpServer.Method.GET == request.getMethod()) {
+                Boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
+                Pair<String, String> output = Pair.of("is_in_force_gc", isInForceGC.toString());
+                String jsonResponse = JsonUtil.toJson(output);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("output body:" + jsonResponse);
+                }
+                response.setBody(jsonResponse);
+                response.setCode(HttpServer.StatusCode.OK);
+                return response;
             } else {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                Boolean forceMajor = (Boolean) configMap.getOrDefault("forceMajor", null);
-                Boolean forceMinor = (Boolean) configMap.getOrDefault("forceMinor", null);
-                bookieServer.getBookie().getLedgerStorage().forceGC(forceMajor, forceMinor);
+                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setBody("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.");
+                return response;
             }
-
-            String output = "Triggered GC on BookieServer: " + bookieServer.toString();
-            String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
-            response.setBody(jsonResponse);
-            response.setCode(HttpServer.StatusCode.OK);
-            return response;
-        } else if (HttpServer.Method.GET == request.getMethod()) {
-            Boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
-            Pair<String, String> output = Pair.of("is_in_force_gc", isInForceGC.toString());
-            String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
-            response.setBody(jsonResponse);
-            response.setCode(HttpServer.StatusCode.OK);
-            return response;
-        } else {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.");
+        } catch (Exception e) {
+            LOG.error("Failed to handle the request, method: {}, body: {} ", request.getMethod(), request.getBody(), e);
+            response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
+            response.setBody("Failed to handle the request, exception: " + e.getMessage());
             return response;
         }
     }
