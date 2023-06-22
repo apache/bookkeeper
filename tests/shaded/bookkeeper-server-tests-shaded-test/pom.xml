@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests.shaded</groupId>
     <artifactId>shaded-tests-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>bookkeeper-server-tests-shaded-test</artifactId>

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-java-client-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-java-kv-client</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Clients :: Java Client :: KV</name>

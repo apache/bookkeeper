@@ -22,7 +22,7 @@
   <parent>
     <artifactId>bookkeeper-tools-parent</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-tools</artifactId>
   <name>Apache BookKeeper :: Tools</name>
