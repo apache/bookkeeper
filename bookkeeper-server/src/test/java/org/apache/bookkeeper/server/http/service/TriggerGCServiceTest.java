@@ -53,6 +53,8 @@ public class TriggerGCServiceTest {
         this.mockLedgerStorage = mock(DbLedgerStorage.class);
         when(mockBookieServer.getBookie().getLedgerStorage()).thenReturn(mockLedgerStorage);
         when(mockLedgerStorage.isInForceGC()).thenReturn(false);
+        when(mockLedgerStorage.isMajorGcSuspended()).thenReturn(false);
+        when(mockLedgerStorage.isMinorGcSuspended()).thenReturn(false);
         this.service = new TriggerGCService(new ServerConfiguration(), mockBookieServer);
     }
 
@@ -72,7 +74,7 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("test");
         resp = service.handle(request);
-        assertEquals(HttpServer.StatusCode.INTERNAL_ERROR.getValue(), resp.getStatusCode());
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), resp.getStatusCode());
         assertEquals("Failed to handle the request, exception: Failed to deserialize Object from Json string",
             resp.getBody());
 
@@ -81,7 +83,7 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("{\"test\":1}");
         resp = service.handle(request);
-        verify(mockLedgerStorage, times(1)).forceGC(null, null);
+        verify(mockLedgerStorage, times(1)).forceGC(eq(true), eq(true));
         assertEquals(HttpServer.StatusCode.OK.getValue(), resp.getStatusCode());
         assertEquals("\"Triggered GC on BookieServer: " + mockBookieServer.getBookieId() + "\"",
             resp.getBody());
@@ -91,7 +93,7 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("{\"test\":1,\"forceMajor\":true}");
         resp = service.handle(request);
-        verify(mockLedgerStorage, times(1)).forceGC(eq(true), eq(null));
+        verify(mockLedgerStorage, times(2)).forceGC(eq(true), eq(true));
         assertEquals(HttpServer.StatusCode.OK.getValue(), resp.getStatusCode());
         assertEquals("\"Triggered GC on BookieServer: " + mockBookieServer.getBookieId() + "\"",
             resp.getBody());
@@ -101,11 +103,9 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("{\"test\":1,\"forceMajor\":\"true\"}");
         resp = service.handle(request);
-        //verify(mockLedgerStorage, times(1)).forceGC(true, null);
-        assertEquals(HttpServer.StatusCode.INTERNAL_ERROR.getValue(), resp.getStatusCode());
-        assertEquals("Failed to handle the request, exception: class java.lang.String cannot be cast to "
-                + "class java.lang.Boolean (java.lang.String and java.lang.Boolean "
-                + "are in module java.base of loader 'bootstrap')",
+        verify(mockLedgerStorage, times(3)).forceGC(eq(true), eq(true));
+        assertEquals(HttpServer.StatusCode.OK.getValue(), resp.getStatusCode());
+        assertEquals("\"Triggered GC on BookieServer: " + mockBookieServer.getBookieId() + "\"",
             resp.getBody());
 
         // test forceMajor set to false, and forMinor not set
@@ -113,7 +113,7 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("{\"test\":1,\"forceMajor\":false}");
         resp = service.handle(request);
-        verify(mockLedgerStorage, times(1)).forceGC(eq(false), eq(null));
+        verify(mockLedgerStorage, times(1)).forceGC(eq(false), eq(true));
         assertEquals(HttpServer.StatusCode.OK.getValue(), resp.getStatusCode());
         assertEquals("\"Triggered GC on BookieServer: " + mockBookieServer.getBookieId() + "\"",
             resp.getBody());
@@ -123,7 +123,7 @@ public class TriggerGCServiceTest {
         request.setMethod(HttpServer.Method.PUT);
         request.setBody("{\"test\":1,\"forceMinor\":true}");
         resp = service.handle(request);
-        verify(mockLedgerStorage, times(1)).forceGC(eq(null), eq(true));
+        verify(mockLedgerStorage, times(4)).forceGC(eq(true), eq(true));
         assertEquals(HttpServer.StatusCode.OK.getValue(), resp.getStatusCode());
         assertEquals("\"Triggered GC on BookieServer: " + mockBookieServer.getBookieId() + "\"",
             resp.getBody());
@@ -139,8 +139,8 @@ public class TriggerGCServiceTest {
         request = new HttpServiceRequest();
         request.setMethod(HttpServer.Method.POST);
         resp = service.handle(request);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), resp.getStatusCode());
-        assertEquals("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.",
+        assertEquals(HttpServer.StatusCode.METHOD_NOT_ALLOWED.getValue(), resp.getStatusCode());
+        assertEquals("Not allowed method. Should be PUT to trigger GC, Or GET to get Force GC state.",
             resp.getBody());
     }
 

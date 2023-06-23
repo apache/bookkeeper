@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -70,9 +71,13 @@ public class TriggerGCService implements HttpEndpointService {
                 } else {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-                    Boolean forceMajor = (Boolean) configMap.getOrDefault("forceMajor", null);
-                    Boolean forceMinor = (Boolean) configMap.getOrDefault("forceMinor", null);
-                    bookieServer.getBookie().getLedgerStorage().forceGC(forceMajor, forceMinor);
+                    LedgerStorage ledgerStorage = bookieServer.getBookie().getLedgerStorage();
+                    boolean forceMajor = !ledgerStorage.isMajorGcSuspended();
+                    boolean forceMinor = !ledgerStorage.isMinorGcSuspended();
+
+                    forceMajor = Boolean.parseBoolean(configMap.getOrDefault("forceMajor", forceMajor).toString());
+                    forceMinor = Boolean.parseBoolean(configMap.getOrDefault("forceMinor", forceMinor).toString());
+                    ledgerStorage.forceGC(forceMajor, forceMinor);
                 }
 
                 String output = "Triggered GC on BookieServer: " + bookieServer.getBookieId();
@@ -94,13 +99,13 @@ public class TriggerGCService implements HttpEndpointService {
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
             } else {
-                response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                response.setBody("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.");
+                response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
+                response.setBody("Not allowed method. Should be PUT to trigger GC, Or GET to get Force GC state.");
                 return response;
             }
         } catch (Exception e) {
             LOG.error("Failed to handle the request, method: {}, body: {} ", request.getMethod(), request.getBody(), e);
-            response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
+            response.setCode(HttpServer.StatusCode.BAD_REQUEST);
             response.setBody("Failed to handle the request, exception: " + e.getMessage());
             return response;
         }
