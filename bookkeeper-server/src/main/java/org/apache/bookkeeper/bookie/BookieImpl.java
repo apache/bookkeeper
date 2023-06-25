@@ -1246,4 +1246,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             }
         }
     }
+
+    @VisibleForTesting
+    public List<Journal> getJournals() {
+        return this.journals;
+    }
 }
