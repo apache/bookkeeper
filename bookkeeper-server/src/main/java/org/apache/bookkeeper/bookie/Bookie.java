@@ -1714,4 +1714,9 @@ public class Bookie extends BookieCriticalThread {
             }
         }
     }
+
+    @VisibleForTesting
+    public List<Journal> getJournals() {
+        return this.journals;
+    }
 }
