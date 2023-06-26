@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
-    <version>4.16.2-SNAPSHOT</version>
+    <version>4.16.2</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>bookkeeper-server-shaded</artifactId>
@@ -126,4 +126,8 @@
       </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>v4.16.2-rc1</tag>
+  </scm>
 </project>

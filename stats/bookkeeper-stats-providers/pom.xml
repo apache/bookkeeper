@@ -19,7 +19,7 @@
   <parent>
     <artifactId>bookkeeper-stats-parent</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.2-SNAPSHOT</version>
+    <version>4.16.2</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>bookkeeper-stats-providers</artifactId>
@@ -29,4 +29,8 @@
     <module>codahale-metrics-provider</module>
     <module>prometheus-metrics-provider</module>
   </modules>
+
+  <scm>
+    <tag>v4.16.2-rc1</tag>
+  </scm>
 </project>
