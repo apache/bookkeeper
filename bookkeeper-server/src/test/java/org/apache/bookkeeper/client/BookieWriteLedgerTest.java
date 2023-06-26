@@ -1500,7 +1500,6 @@ public class BookieWriteLedgerTest extends
         }
     }
 
-    @Test
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {
         ls = lh.readEntries(0, numEntriesToWrite - 1);
         int index = 0;
