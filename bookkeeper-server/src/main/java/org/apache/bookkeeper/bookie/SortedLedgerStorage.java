@@ -367,7 +367,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         interleavedLedgerStorage.forceGC(forceMajor, forceMinor);
     }
 
