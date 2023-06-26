@@ -296,12 +296,11 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
     }
 
-    public void enableForceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void enableForceGC(boolean forceMajor, boolean forceMinor) {
         if (forceGarbageCollection.compareAndSet(false, true)) {
             LOG.info("Forced garbage collection triggered by thread: {}, forceMajor: {}, forceMinor: {}",
                 Thread.currentThread().getName(), forceMajor, forceMinor);
-            triggerGC(true, forceMajor == null ? suspendMajorCompaction.get() : !forceMajor,
-                forceMinor == null ? suspendMinorCompaction.get() : !forceMinor);
+            triggerGC(true, !forceMajor, !forceMinor);
         }
     }
 
