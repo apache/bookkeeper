@@ -232,7 +232,7 @@ public interface LedgerStorage {
     /**
      * Force trigger Garbage Collection with forceMajor or forceMinor parameter.
      */
-    default void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    default void forceGC(boolean forceMajor, boolean forceMinor) {
         return;
     }
 
