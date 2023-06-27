@@ -50,6 +50,14 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
     private final OutOfMemoryPolicy outOfMemoryPolicy;
     private Consumer<OutOfMemoryError> outOfMemoryListener;
     private final boolean exitOnOutOfMemory;
+    
+    ByteBufAllocatorImpl(ByteBufAllocator pooledAllocator, ByteBufAllocator unpooledAllocator,
+            PoolingPolicy poolingPolicy, int poolingConcurrency, OutOfMemoryPolicy outOfMemoryPolicy,
+            Consumer<OutOfMemoryError> outOfMemoryListener,
+            LeakDetectionPolicy leakDetectionPolicy) {
+        this(pooledAllocator, unpooledAllocator, poolingPolicy, poolingConcurrency, outOfMemoryPolicy,
+                outOfMemoryListener, leakDetectionPolicy, false);
+    }
 
     ByteBufAllocatorImpl(ByteBufAllocator pooledAllocator, ByteBufAllocator unpooledAllocator,
             PoolingPolicy poolingPolicy, int poolingConcurrency, OutOfMemoryPolicy outOfMemoryPolicy,
