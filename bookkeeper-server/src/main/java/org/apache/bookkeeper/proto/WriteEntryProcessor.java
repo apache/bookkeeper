@@ -128,6 +128,13 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         requestHandler.prepareSendResponseV2(rc, request);
         requestProcessor.onAddRequestFinish();
 
+        if (BookieProtocol.EOK == rc) {
+            requestProcessor.getRequestStats().getAddRequestStats().registerSuccessfulEvent(
+                    MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        } else {
+            requestProcessor.getRequestStats().getAddRequestStats().registerFailedEvent(
+                    MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        }
         request.recycle();
         recycle();
     }
