@@ -160,7 +160,7 @@ public class LedgerMetadataIndex implements Closeable {
 
     public Iterable<Long> getActiveLedgersInRange(final long firstLedgerId, final long lastLedgerId)
             throws IOException {
-        if (firstLedgerId <=0 && lastLedgerId == Long.MAX_VALUE) {
+        if (firstLedgerId <= 0 && lastLedgerId == Long.MAX_VALUE) {
             return ledgers.keys();
         }
         return Iterables.filter(ledgers.keys(), new Predicate<Long>() {
