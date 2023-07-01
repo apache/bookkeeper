@@ -1084,7 +1084,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             BookieId bookie = ensemble.get(bookieIndex);
             bookiesToExclude.add(bookie);
         }
-        List<BookieId> newEnsemble = new ArrayList<>(ensemble) ;
+        List<BookieId> newEnsemble = new ArrayList<>(ensemble);
         // allocate bookies
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
             BookieId oldBookie = newEnsemble.get(bookieIndex);
