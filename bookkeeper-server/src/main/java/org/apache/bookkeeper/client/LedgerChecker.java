@@ -299,7 +299,8 @@ public class LedgerChecker {
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
                 acquirePermit();
-                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, bookie, BookieProtocol.FLAG_NONE);
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, bookie,
+                        BookieProtocol.FLAG_NONE);
             }
         }
     }
