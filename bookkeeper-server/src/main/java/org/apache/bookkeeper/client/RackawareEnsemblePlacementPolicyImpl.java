@@ -462,6 +462,14 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
+        return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
+                bookieToReplace, excludeBookies, false);
+    }
+    
+    @Override
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
+            Set<BookieId> excludeBookies, boolean downgradeToSelf) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
             excludeBookies = addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
@@ -470,28 +478,41 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             if (null == bn) {
                 bn = createBookieNode(bookieToReplace);
             }
-
+        
             Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
-
+        
             excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);
             ensembleNodes.remove(bn);
-
+        
             Set<String> networkLocationsToBeExcluded = getNetworkLocations(ensembleNodes);
-
+        
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
-                    bookieToReplace, ensembleNodes, excludeNodes);
+                        bookieToReplace, ensembleNodes, excludeNodes);
             }
             // pick a candidate from same rack to replace
-            BookieNode candidate = selectFromNetworkLocation(
-                    bn.getNetworkLocation(),
-                    networkLocationsToBeExcluded,
-                    excludeNodes,
-                    TruePredicate.INSTANCE,
-                    EnsembleForReplacementWithNoConstraints.INSTANCE,
-                    !enforceMinNumRacksPerWriteQuorum);
+            BookieNode candidate;
+            try {
+                candidate = selectFromNetworkLocation(
+                        bn.getNetworkLocation(),
+                        networkLocationsToBeExcluded,
+                        excludeNodes,
+                        TruePredicate.INSTANCE,
+                        EnsembleForReplacementWithNoConstraints.INSTANCE,
+                        !enforceMinNumRacksPerWriteQuorum);
+            } catch (BKNotEnoughBookiesException e) {
+                if (downgradeToSelf) {
+                    candidate = knownBookies.get(bookieToReplace);
+                    if (candidate == null) {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
+
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bn);
             }
@@ -512,7 +533,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             rwLock.readLock().unlock();
         }
     }
-
+    
     @Override
     public BookieNode selectFromNetworkLocation(
             String networkLoc,

@@ -86,9 +86,17 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
             java.util.Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
+        return this.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
+                bookieToReplace, excludeBookies, false);
+    }
+    
+    @Override
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
+            Set<BookieId> excludeBookies, boolean downgradeToSelf) throws BKNotEnoughBookiesException {
         throw new BKNotEnoughBookiesException();
     }
-
+    
     @Override
     public void registerSlowBookie(BookieId bookieSocketAddress, long entryId) {
         return;
