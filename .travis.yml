@@ -1,0 +1,8 @@
+language: java
+addons:
+  sonarcloud:
+    organization: tizianotaglienti
+    token:
+      secure:  "IJrggC9WAXA0cw5GSVQtmZ1H9piavVSkQ4N6x92371ERDislbmvJe0ZfAg4p1RGHj4pZYs1UIYLk5uizmn5YhaF/zeYf62oIEMH/ADyaVPPt4oJbzp7bfleHoDhd/xW3HAhlp649SXZD2H8At2X9e7R3lsMl44JQx7/gajDEIZT+/FkAOvwDCQJNyGai+8nHPZ0XSDVj5+elptmbQuSm3rW0UsX0G32wM3zkSlkjKjPNyApXkzW3dfHvdl3tMrDscaIUNNH2LX/PoHHFvSyK2Qd9BwAO/1+Defk30bJziU/lWAoGZpc/gRWietm/SYYFpKrovpTLZ5GP9nN+mOEPrUL4eZJqnBE/uQY1a4dDNhH3sskicFsCA/MYUjj26gChT5/U7qoI1wV1PGr0L8Vbrrr/GbDy9BcpEKao0Xodvk6Elc4fflAlQs1pETCcZaa9/Jl1lWyNFy4X8Eoon0zvj1LCziA/RUvVfhHWkxV/OAQSQ4rQkZ5psTjKTNELzBr62Ga/Vk/1b95IvNPAOPgosZ2mwZoXtIl/13H/nyLujA66nBy1om0M669mzQ00hkmi6zDSK9iiHdCdX47lR7PMFDCpOs0fliHskbLe4cYRcZLzZq8hfU18XluyDm/qeRpxmV9bNTtN+rJL8hbHPTbJmbMy6qWf3YE4728a/AZRYT8="
+script:
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.projectKey=tizianotaglienti_bookkeeper2
