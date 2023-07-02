@@ -7,4 +7,5 @@ org.apache.bookkeeper.feature
 org.apache.bookkeeper.stats
 org.apache.bookkeeper.stats.annotations
 org.apache.bookkeeper.stats.codahale
+org.apache.bookkeeper.stats.otel
 org.apache.bookkeeper.stats.prometheus
