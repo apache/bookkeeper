@@ -126,21 +126,36 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
         return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
                 bookieToReplace, excludeBookies, false);
     }
-    
+
     @Override
     public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
             Set<BookieId> excludeBookies, boolean downgradeToSelf) throws BKNotEnoughBookiesException {
         excludeBookies.addAll(currentEnsemble);
-        List<BookieId> addresses = newEnsemble(1, 1, 1, customMetadata, excludeBookies).getResult();
-        
-        BookieId candidateAddr = addresses.get(0);
         List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
-        newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
+        BookieId candidateAddr;
+        try {
+            List<BookieId> addresses = newEnsemble(1, 1, 1, customMetadata, excludeBookies).getResult();
+            candidateAddr = addresses.get(0);
+            newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
+        } catch (BKNotEnoughBookiesException e) {
+            if (downgradeToSelf) {
+                if (!knownBookies.contains(bookieToReplace)) {
+                    throw e;
+                }
+                candidateAddr = bookieToReplace;
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("There is no more available bookies to replace, and the waiting to be replaced: "
+                            + "{} bookie is alive. Replace the bookie with itself.", bookieToReplace);
+                }
+            } else {
+                throw e;
+            }
+        }
         return PlacementResult.of(candidateAddr,
                 isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
     }
-    
+
     @Override
     public Set<BookieId> onClusterChanged(Set<BookieId> writableBookies,
             Set<BookieId> readOnlyBookies) {

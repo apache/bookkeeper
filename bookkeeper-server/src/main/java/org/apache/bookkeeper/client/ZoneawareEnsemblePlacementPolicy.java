@@ -100,15 +100,24 @@ public class ZoneawareEnsemblePlacementPolicy extends ZoneawareEnsemblePlacement
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
-       try {
+        return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
+                bookieToReplace, excludeBookies, false);
+    }
+
+    @Override
+    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies, boolean downgradeToSelf)
+            throws BKException.BKNotEnoughBookiesException {
+        try {
             return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                    currentEnsemble, bookieToReplace, excludeBookies);
+                    currentEnsemble, bookieToReplace, excludeBookies, downgradeToSelf);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
             if (slave == null) {
                 throw bnebe;
             } else {
                 return slave.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                        currentEnsemble, bookieToReplace, excludeBookies);
+                        currentEnsemble, bookieToReplace, excludeBookies, downgradeToSelf);
             }
         }
     }

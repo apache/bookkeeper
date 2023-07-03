@@ -419,6 +419,48 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testReplaceBookieWithNoMoreBookie() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r3");
+    
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+    
+        List<BookieId> ensemble = new ArrayList<>();
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+    
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        try {
+            repp.replaceBookie(1, 1, 1, null, ensemble, addr2.toBookieId(), new HashSet<>());
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKNotEnoughBookiesException ignore) {
+        }
+    
+        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = repp.replaceBookie(1, 1, 1,
+                null, ensemble, addr2.toBookieId(), new HashSet<>(), true);
+        BookieId replacedBookie = replaceBookieResponse.getResult();
+        assertEquals(addr2.toBookieId(), replacedBookie);
+    
+        addrs.remove(addr2.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        try {
+            repp.replaceBookie(1, 1, 1, null, ensemble, addr2.toBookieId(), new HashSet<>(), true);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKNotEnoughBookiesException ignore) {
+        }
+    }
+
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRegion() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);

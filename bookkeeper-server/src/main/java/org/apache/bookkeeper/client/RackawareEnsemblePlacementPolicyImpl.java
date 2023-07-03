@@ -465,7 +465,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
                 bookieToReplace, excludeBookies, false);
     }
-    
+
     @Override
     public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
@@ -478,14 +478,14 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             if (null == bn) {
                 bn = createBookieNode(bookieToReplace);
             }
-        
+
             Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
-        
+
             excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);
             ensembleNodes.remove(bn);
-        
+
             Set<String> networkLocationsToBeExcluded = getNetworkLocations(ensembleNodes);
         
             if (LOG.isDebugEnabled()) {
@@ -507,6 +507,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     candidate = knownBookies.get(bookieToReplace);
                     if (candidate == null) {
                         throw e;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("There is no more available bookies to replace, and the waiting to be "
+                                + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
                     }
                 } else {
                     throw e;
@@ -533,7 +537,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             rwLock.readLock().unlock();
         }
     }
-    
+
     @Override
     public BookieNode selectFromNetworkLocation(
             String networkLoc,

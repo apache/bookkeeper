@@ -858,6 +858,66 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testReplaceBookieWithNoMoreBookie() throws Exception {
+        zepp.uninitalize();
+        updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        // Update cluster
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.6", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/zone1/ud1");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/zone1/ud2");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/zone2/ud1");
+        
+        ClientConfiguration newConf = new ClientConfiguration(conf);
+        newConf.addConfiguration(conf);
+        newConf.setDiskWeightBasedPlacementEnabled(true);
+        /*
+         * since BookieMaxWeightMultipleForWeightBasedPlacement is set to -1,
+         * there is no max cap on weight.
+         */
+        newConf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1);
+        newConf.setMinNumZonesPerWriteQuorum(0);
+        zepp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        zepp.withDefaultFaultDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+
+        List<BookieId> ensemble = new ArrayList<>();
+        ensemble.add(addr5.toBookieId());
+        ensemble.add(addr6.toBookieId());
+        ensemble.add(addr7.toBookieId());
+
+        zepp.onClusterChanged(addrs, new HashSet<BookieId>());
+        try {
+            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>());
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKException.BKNotEnoughBookiesException ignore) {
+        }
+
+        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = zepp.replaceBookie(1, 1, 1,
+                null, ensemble, addr6.toBookieId(), new HashSet<>(), true);
+        BookieId replacedBookie = replaceBookieResponse.getResult();
+        assertEquals(addr6.toBookieId(), replacedBookie);
+
+        addrs.remove(addr6.toBookieId());
+        zepp.onClusterChanged(addrs, new HashSet<BookieId>());
+        try {
+            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>(), true);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKException.BKNotEnoughBookiesException ignore) {
+        }
+    }
+
+    @Test
     public void testAreAckedBookiesAdheringToPlacementPolicy() throws Exception {
         zepp.uninitalize();
         updateMyUpgradeDomain(NetworkTopology.DEFAULT_ZONE_AND_UPGRADEDOMAIN);
