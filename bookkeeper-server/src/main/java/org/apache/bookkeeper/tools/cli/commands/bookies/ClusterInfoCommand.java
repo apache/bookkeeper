@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
