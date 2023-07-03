@@ -1090,13 +1090,13 @@ public class BookKeeperAdmin implements AutoCloseable {
                 orderedBookieIndexesToRereplicate.add(0, index);
             }
         }
-        
+
         // excluding bookies that need to be replicated
         for (Integer bookieIndex : orderedBookieIndexesToRereplicate) {
             BookieId bookie = ensemble.get(bookieIndex);
             bookiesToExclude.add(bookie);
         }
-        List<BookieId> newEnsemble = new ArrayList<>(ensemble) ;
+        List<BookieId> newEnsemble = new ArrayList<>(ensemble);
         // allocate bookies
         for (Integer bookieIndex : orderedBookieIndexesToRereplicate) {
             BookieId oldBookie = newEnsemble.get(bookieIndex);

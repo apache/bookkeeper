@@ -871,7 +871,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/zone1/ud1");
         StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/zone1/ud2");
         StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/zone2/ud1");
-        
+
         ClientConfiguration newConf = new ClientConfiguration(conf);
         newConf.addConfiguration(conf);
         newConf.setDiskWeightBasedPlacementEnabled(true);

@@ -721,25 +721,24 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr1.toBookieId());
         addrs.add(addr2.toBookieId());
         addrs.add(addr3.toBookieId());
-    
+
         List<BookieId> ensemble = new ArrayList<>();
         ensemble.add(addr1.toBookieId());
         ensemble.add(addr2.toBookieId());
         ensemble.add(addr3.toBookieId());
-        
-        
+
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
             repp.replaceBookie(1, 1, 1, null, ensemble, addr2.toBookieId(), new HashSet<>());
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKNotEnoughBookiesException ignore) {
         }
-    
+
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = repp.replaceBookie(1, 1, 1,
                 null, ensemble, addr2.toBookieId(), new HashSet<>(), true);
         BookieId replacedBookie = replaceBookieResponse.getResult();
         assertEquals(addr2.toBookieId(), replacedBookie);
-    
+
         addrs.remove(addr2.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {

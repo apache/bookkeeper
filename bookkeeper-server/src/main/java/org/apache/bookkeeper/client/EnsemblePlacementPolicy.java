@@ -303,7 +303,7 @@ public interface EnsemblePlacementPolicy {
                                                        BookieId bookieToReplace,
                                                        Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException;
-    
+
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
      * {@link BKNotEnoughBookiesException} is thrown.

@@ -487,7 +487,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             ensembleNodes.remove(bn);
 
             Set<String> networkLocationsToBeExcluded = getNetworkLocations(ensembleNodes);
-        
+
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
                         bookieToReplace, ensembleNodes, excludeNodes);

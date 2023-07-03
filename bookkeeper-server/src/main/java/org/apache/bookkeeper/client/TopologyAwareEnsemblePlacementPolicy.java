@@ -846,7 +846,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
         return bn;
     }
-    
+
     public boolean isAlive(BookieId bookieId) {
         return knownBookies.containsKey(bookieId);
     }
