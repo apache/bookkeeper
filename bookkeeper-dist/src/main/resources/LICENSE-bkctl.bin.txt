@@ -208,7 +208,7 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-annotations-2.13.4.jar [1]
 - lib/com.fasterxml.jackson.core-jackson-core-2.13.4.jar [2]
 - lib/com.fasterxml.jackson.core-jackson-databind-2.13.4.2.jar [3]
-- lib/com.google.guava-guava-31.0.1-jre.jar [4]
+- lib/com.google.guava-guava-32.0.1-jre.jar [4]
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
 - lib/commons-cli-commons-cli-1.2.jar [5]
@@ -284,7 +284,7 @@ Apache Software License, Version 2.
 - lib/com.google.auto.value-auto-value-annotations-1.10.1.jar [42]
 - lib/com.google.http-client-google-http-client-1.41.0.jar [43]
 - lib/com.google.http-client-google-http-client-gson-1.41.0.jar [43]
-- lib/com.google.j2objc-j2objc-annotations-1.3.jar [44]
+- lib/com.google.j2objc-j2objc-annotations-2.8.jar [44]
 - lib/com.google.re2j-re2j-1.7.jar [45]
 - lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar [46]
 - lib/io.perfmark-perfmark-api-0.26.0.jar [47]
@@ -296,7 +296,7 @@ Apache Software License, Version 2.
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.13.4
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.13.4
 [3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.13.4.2
-[4] Source available at https://github.com/google/guava/tree/v31.0.1
+[4] Source available at https://github.com/google/guava/tree/v32.0.1
 [5] Source available at https://github.com/apache/commons-cli/tree/cli-1.2
 [6] Source available at https://github.com/apache/commons-codec/tree/commons-codec-1.6-RC2
 [7] Source available at https://github.com/apache/commons-configuration/tree/CONFIGURATION_1_10
@@ -601,7 +601,7 @@ This product uses the annotations from The Checker Framework, which are licensed
 MIT License. For details, see deps/checker-qual-3.5.0/LICENSE
 
 Bundles as
-  - lib/org.checkerframework-checker-qual-3.12.0.jar
+  - lib/org.checkerframework-checker-qual-3.33.0.jar
 ------------------------------------------------------------------------------------
 This product bundles the Reactive Streams library, which is licensed under
 Public Domain (CC0). For details, see deps/reactivestreams-1.0.3/LICENSE
