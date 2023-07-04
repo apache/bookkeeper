@@ -322,7 +322,7 @@ public interface EnsemblePlacementPolicy {
      * @param bookieToReplace bookie to replace
      * @param excludeBookies bookies that should not be considered as candidate.
      * @param downgradeToSelf When there are no more bookie nodes and the node to be replaced is still alive,
-     *                        choose to downgrade the node being replaced.
+     *                        downgrade to choose the node being replaced itself.
      * @throws BKNotEnoughBookiesException
      * @return a placement result containing the new bookie address.
      */
