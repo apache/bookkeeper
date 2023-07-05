@@ -29,6 +29,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTIO
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIM_FAILED_TO_DELETE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 
 import java.util.function.Supplier;
@@ -72,6 +73,11 @@ public class GarbageCollectorStats {
     )
     private final Counter reclaimedSpaceViaCompaction;
     @StatsDoc(
+            name = RECLAIM_FAILED_TO_DELETE,
+            help = "Number of reclaim failed counts when deleting entry log files"
+    )
+    private final Counter reclaimFailedToDelete;
+    @StatsDoc(
         name = DELETED_LEDGER_COUNT,
         help = "Number of ledgers deleted by garbage collection"
     )
@@ -107,6 +113,7 @@ public class GarbageCollectorStats {
         this.majorCompactionCounter = statsLogger.getCounter(MAJOR_COMPACTION_COUNT);
         this.reclaimedSpaceViaCompaction = statsLogger.getCounter(RECLAIMED_COMPACTION_SPACE_BYTES);
         this.reclaimedSpaceViaDeletes = statsLogger.getCounter(RECLAIMED_DELETION_SPACE_BYTES);
+        this.reclaimFailedToDelete = statsLogger.getCounter(RECLAIM_FAILED_TO_DELETE);
         this.gcThreadRuntime = statsLogger.getOpStatsLogger(THREAD_RUNTIME);
         this.deletedLedgerCounter = statsLogger.getCounter(DELETED_LEDGER_COUNT);
 

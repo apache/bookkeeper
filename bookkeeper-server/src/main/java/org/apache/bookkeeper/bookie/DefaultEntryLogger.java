@@ -524,10 +524,11 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (FileNotFoundException e) {
             LOG.error("Trying to delete an entryLog file that could not be found: "
                     + entryLogId + ".log");
-            return false;
+            return true;
         }
         if (!entryLogFile.delete()) {
             LOG.warn("Could not delete entry log file {}", entryLogFile);
+            return false;
         }
         return true;
     }
