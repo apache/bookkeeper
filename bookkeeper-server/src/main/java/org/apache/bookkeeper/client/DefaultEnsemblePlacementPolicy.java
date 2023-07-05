@@ -120,17 +120,8 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
 
     @Override
     public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
-            BookieId bookieToReplace, Set<BookieId> excludeBookies)
-            throws BKNotEnoughBookiesException {
-        return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
-                bookieToReplace, excludeBookies, false);
-    }
-
-    @Override
-    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
-            Set<BookieId> excludeBookies, boolean downgradeToSelf) throws BKNotEnoughBookiesException {
+            Set<BookieId> excludeBookies) throws BKNotEnoughBookiesException {
         excludeBookies.addAll(currentEnsemble);
         List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
         BookieId candidateAddr;
@@ -139,17 +130,13 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
             candidateAddr = addresses.get(0);
             newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
         } catch (BKNotEnoughBookiesException e) {
-            if (downgradeToSelf) {
-                if (!knownBookies.contains(bookieToReplace)) {
-                    throw e;
-                }
-                candidateAddr = bookieToReplace;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("There is no more available bookies to replace, and the waiting to be replaced: "
-                            + "{} bookie is alive. Replace the bookie with itself.", bookieToReplace);
-                }
-            } else {
+            if (!knownBookies.contains(bookieToReplace)) {
                 throw e;
+            }
+            candidateAddr = bookieToReplace;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("There is no more available bookies to replace, and the waiting to be replaced: "
+                        + "{} bookie is alive. Replace the bookie with itself.", bookieToReplace);
             }
         }
         return PlacementResult.of(candidateAddr,

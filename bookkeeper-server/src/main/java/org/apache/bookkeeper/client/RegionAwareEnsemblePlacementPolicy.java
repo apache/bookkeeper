@@ -490,15 +490,6 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
-        return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
-                bookieToReplace, excludeBookies, false);
-    }
-
-    @Override
-    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
-            BookieId bookieToReplace, Set<BookieId> excludeBookies, boolean downgradeToSelf)
-            throws BKException.BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
             boolean enforceDurability = enforceDurabilityInReplace && !disableDurabilityFeature.isAvailable();
@@ -556,19 +547,15 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bookieNodeToReplace);
                 }
             } catch (BKException.BKNotEnoughBookiesException e) {
-                if (downgradeToSelf) {
-                    BookieNode bn = knownBookies.get(bookieToReplace);
-                    if (bn == null) {
-                        throw e;
-                    }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                                + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                    }
-                    candidateAddr = bn.getAddr();
-                } else {
+                BookieNode bn = knownBookies.get(bookieToReplace);
+                if (bn == null) {
                     throw e;
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("There is no more available bookies to replace, and the waiting to be "
+                            + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
+                }
+                candidateAddr = bn.getAddr();
             }
             List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
             if (currentEnsemble.isEmpty()) {

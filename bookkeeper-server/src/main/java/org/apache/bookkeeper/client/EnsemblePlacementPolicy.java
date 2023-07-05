@@ -305,37 +305,6 @@ public interface EnsemblePlacementPolicy {
             throws BKNotEnoughBookiesException;
 
     /**
-     * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
-     * {@link BKNotEnoughBookiesException} is thrown.
-     *
-     * <p>If 'enforceMinNumRacksPerWriteQuorum' config is enabled then the bookies belonging to default
-     * faultzone (rack) will be excluded while selecting bookies.
-     *
-     * @param ensembleSize
-     *          the value of ensembleSize
-     * @param writeQuorumSize
-     *          the value of writeQuorumSize
-     * @param ackQuorumSize the value of ackQuorumSize (added since 4.5)
-     * @param customMetadata the value of customMetadata. it is the same user defined metadata that user
-     *                       provides in {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[])}
-     * @param currentEnsemble the value of currentEnsemble
-     * @param bookieToReplace bookie to replace
-     * @param excludeBookies bookies that should not be considered as candidate.
-     * @param downgradeToSelf When there are no more bookie nodes and the node to be replaced is still alive,
-     *                        downgrade to choose the node being replaced itself.
-     * @throws BKNotEnoughBookiesException
-     * @return a placement result containing the new bookie address.
-     */
-    PlacementResult<BookieId> replaceBookie(int ensembleSize,
-            int writeQuorumSize,
-            int ackQuorumSize,
-            Map<String, byte[]> customMetadata,
-            List<BookieId> currentEnsemble,
-            BookieId bookieToReplace,
-            Set<BookieId> excludeBookies,
-            boolean downgradeToSelf)
-            throws BKNotEnoughBookiesException;
-    /**
      * Register a bookie as slow so that it is tried after available and read-only bookies.
      *
      * @param bookieSocketAddress

@@ -462,14 +462,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
-        return replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, currentEnsemble,
-                bookieToReplace, excludeBookies, false);
-    }
-
-    @Override
-    public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
-            Set<BookieId> excludeBookies, boolean downgradeToSelf) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
             excludeBookies = addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
@@ -503,17 +495,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         EnsembleForReplacementWithNoConstraints.INSTANCE,
                         !enforceMinNumRacksPerWriteQuorum);
             } catch (BKNotEnoughBookiesException e) {
-                if (downgradeToSelf) {
-                    candidate = knownBookies.get(bookieToReplace);
-                    if (candidate == null) {
-                        throw e;
-                    }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                                + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                    }
-                } else {
+                candidate = knownBookies.get(bookieToReplace);
+                if (candidate == null) {
                     throw e;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("There is no more available bookies to replace, and the waiting to be "
+                            + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
                 }
             }
 

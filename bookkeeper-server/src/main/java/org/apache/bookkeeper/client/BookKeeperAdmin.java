@@ -1061,15 +1061,14 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
         }
         return getReplacementBookiesByIndexes(
-                lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate), false);
+                lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate));
     }
 
     private Map<Integer, BookieId> getReplacementBookiesByIndexes(
                 LedgerHandle lh,
                 List<BookieId> ensemble,
                 Set<Integer> bookieIndexesToRereplicate,
-                Optional<Set<BookieId>> excludedBookies,
-                boolean downgradeToSelf)
+                Optional<Set<BookieId>> excludedBookies)
             throws BKException.BKNotEnoughBookiesException {
         // target bookies to replicate
         Map<Integer, BookieId> targetBookieAddresses =
@@ -1108,7 +1107,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             lh.getLedgerMetadata().getCustomMetadata(),
                             newEnsemble,
                             oldBookie,
-                            bookiesToExclude, downgradeToSelf);
+                            bookiesToExclude);
             BookieId newBookie = replaceBookieResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
@@ -1149,7 +1148,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (LedgerFragment.ReplicateType.DATA_LOSS == ledgerFragment.getReplicateType()) {
             Optional<Set<BookieId>> excludedBookies = Optional.empty();
             targetBookieAddresses = getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
-                    ledgerFragment.getBookiesIndexes(), excludedBookies, true);
+                    ledgerFragment.getBookiesIndexes(), excludedBookies);
         } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
             targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
                     lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());

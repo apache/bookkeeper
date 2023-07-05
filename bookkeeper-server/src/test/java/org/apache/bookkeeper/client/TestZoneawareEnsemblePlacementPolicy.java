@@ -897,21 +897,15 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr7.toBookieId());
 
         zepp.onClusterChanged(addrs, new HashSet<BookieId>());
-        try {
-            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>());
-            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
-        } catch (BKException.BKNotEnoughBookiesException ignore) {
-        }
-
         EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = zepp.replaceBookie(1, 1, 1,
-                null, ensemble, addr6.toBookieId(), new HashSet<>(), true);
+                null, ensemble, addr6.toBookieId(), new HashSet<>());
         BookieId replacedBookie = replaceBookieResponse.getResult();
         assertEquals(addr6.toBookieId(), replacedBookie);
 
         addrs.remove(addr6.toBookieId());
         zepp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
-            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>(), true);
+            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>());
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKException.BKNotEnoughBookiesException ignore) {
         }
