@@ -115,7 +115,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
             BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
-        try {
+       try {
             return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     currentEnsemble, bookieToReplace, excludeBookies);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
