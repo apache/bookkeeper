@@ -33,9 +33,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-Xdoclint:none</additionalparam>
-          <subpackages>org.apache.bookkeeper.stats</subpackages>
+          <source>13</source> <!-- Aggiungi la versione corretta del tuo JDK -->
           <groups>
             <group>
               <title>Bookkeeper Stats API</title>
@@ -43,6 +41,7 @@
             </group>
           </groups>
         </configuration>
+
         <executions>
           <execution>
             <id>attach-javadocs</id>
