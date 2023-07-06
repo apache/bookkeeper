@@ -121,6 +121,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
+    protected LedgerDirsManager ledgerDirsManager;
 
     public InterleavedLedgerStorage() {
         activeLedgers = new SnapshotMap<>();
@@ -184,6 +185,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = (DefaultEntryLogger) entryLogger;
         this.entryLogger.addListener(this);
+        this.ledgerDirsManager = ledgerDirsManager;
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
