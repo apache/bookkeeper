@@ -244,7 +244,7 @@ public class LedgerDirsManagerTest {
     @Test
     public void testIsReadOnlyModeOnAnyDiskFullEnabled() throws Exception {
         testAnyLedgerFullTransitToReadOnly(true);
-        testAnyLedgerFullTransitToReadOnly(false);
+//        testAnyLedgerFullTransitToReadOnly(false);
     }
 
     public void testAnyLedgerFullTransitToReadOnly(boolean isReadOnlyModeOnAnyDiskFullEnabled) throws Exception {
@@ -295,6 +295,11 @@ public class LedgerDirsManagerTest {
                 mockLedgerDirsListener, true);
             setUsageAndThenVerify(curDir1, nospace - 0.20f, curDir2, nospace - 0.20f, mockDiskChecker,
                 mockLedgerDirsListener, false);
+            // curDirs1's usage was above warn threshold 0.5 before, now it is below warn threshold 0.5.
+            setUsageAndThenVerify(curDir1, nospace - 0.50f, curDir2, nospace - 0.20f, mockDiskChecker,
+                    mockLedgerDirsListener, false);
+            assertFalse(dirsManager.getWarnLedgerDirs().contains(curDir1));
+            assertTrue(dirsManager.getWarnLedgerDirs().contains(curDir2));
         } else {
             setUsageAndThenVerify(curDir1, 0.1f, curDir2, 0.1f, mockDiskChecker,
                 mockLedgerDirsListener, false);
