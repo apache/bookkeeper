@@ -87,6 +87,9 @@ public class LedgerChecker {
                     cb.operationComplete(rc, fragment);
                 }
             } else if (!completed.getAndSet(true)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Read {}:{} from {} failed, the error code: {}", ledgerId, entryId, ctx, rc);
+                }
                 cb.operationComplete(rc, fragment);
             }
         }
@@ -254,7 +257,7 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
             bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
-                                   manycb, null, BookieProtocol.FLAG_NONE);
+                                   manycb, bookie, BookieProtocol.FLAG_NONE);
         } else {
             if (lastStored <= firstStored) {
                 cb.operationComplete(Code.IncorrectParameterException, null);
@@ -296,7 +299,8 @@ public class LedgerChecker {
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
                 acquirePermit();
-                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, bookie,
+                        BookieProtocol.FLAG_NONE);
             }
         }
     }
