@@ -72,6 +72,7 @@ public class LedgerDirsManager {
         }
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
+        this.warnDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();
         this.entryLogSize = conf.getEntryLogSizeLimit();
         this.minUsableSizeForIndexFileCreation = conf.getMinUsableSizeForIndexFileCreation();
