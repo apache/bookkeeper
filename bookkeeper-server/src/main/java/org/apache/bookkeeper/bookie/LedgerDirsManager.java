@@ -308,7 +308,7 @@ public class LedgerDirsManager {
             LOG.warn(dir + " usages is above warn threshold. Adding it to warn dirs list");
             List<File> updatedFilledDirs = new ArrayList<File>(warnDirs);
             updatedFilledDirs.add(dir);
-            filledDirs = updatedFilledDirs;
+            warnDirs = updatedFilledDirs;
             for (LedgerDirsListener listener : listeners) {
                 listener.diskAlmostFull(dir);
             }
@@ -324,7 +324,7 @@ public class LedgerDirsManager {
         if (warnDirs.contains(dir)) {
             LOG.warn(dir + " usages is under warn threshold. Remove from warn dirs list");
             List<File> newDirs = new ArrayList<File>(warnDirs);
-            newDirs.add(dir);
+            newDirs.remove(dir);
             warnDirs = newDirs;
             for (LedgerDirsListener listener : listeners) {
                 listener.diskUnderWarnThreshold(dir);
