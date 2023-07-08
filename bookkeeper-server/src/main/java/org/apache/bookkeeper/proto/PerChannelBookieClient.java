@@ -1043,6 +1043,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (timedOutOperations > 0) {
             LOG.info("Timed-out {} operations to channel {} for {}",
                      timedOutOperations, channel, bookieId);
+            // In scenarios with message tampering, communication timeout can lead to an unrecoverable state.
+            this.disconnect();
+            this.connect();
         }
     }
 
