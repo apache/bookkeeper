@@ -86,14 +86,25 @@ public class BufferedReadChannel extends BufferedChannelBase  {
                 // here we reached eof.
                 break;
             } else {
-                // We don't have it in the buffer, so put necessary data in the buffer
-                readBufferStartPosition = currentPosition;
                 int readBytes = 0;
-                if ((readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
-                        currentPosition)) <= 0) {
+                try {
+                    // We don't have it in the buffer, so put necessary data in the buffer
+                    readBufferStartPosition = pos;
+                    readBytes = validateAndGetFileChannel()
+                            .read(readBuffer.internalNioBuffer(0, readCapacity), readBufferStartPosition);
+
+                    readBuffer.writerIndex(readBytes);
+                } catch (Exception e) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
+                    throw e;
+                }
+
+                if (readBytes < 0) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
-                readBuffer.writerIndex(readBytes);
             }
         }
         return (int) (currentPosition - pos);

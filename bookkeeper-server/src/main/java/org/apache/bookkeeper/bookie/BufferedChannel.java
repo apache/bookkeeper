@@ -269,14 +269,25 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
                 length -= bytesToCopy;
                 // let's read it
             } else {
-                readBufferStartPosition = pos;
+                int readBytes = 0;
+                try {
+                    // We don't have it in the buffer, so put necessary data in the buffer
+                    readBufferStartPosition = pos;
+                    readBytes = validateAndGetFileChannel()
+                            .read(readBuffer.internalNioBuffer(0, readCapacity), readBufferStartPosition);
 
-                int readBytes = fileChannel.read(readBuffer.internalNioBuffer(0, readCapacity),
-                        readBufferStartPosition);
-                if (readBytes <= 0) {
+                    readBuffer.writerIndex(readBytes);
+                } catch (Exception e) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
+                    throw e;
+                }
+
+                if (readBytes < 0) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
-                readBuffer.writerIndex(readBytes);
             }
         }
         return (int) (pos - prevPos);

@@ -70,6 +70,66 @@ public class BufferedChannelTest {
         testBufferedChannel(5000, 30, 0, true, true);
     }
 
+    @Test
+    public void testReadBufferStartPositionWhenBufferedChannalThrowIOException() throws Exception {
+        File newLogFile = File.createTempFile("test", "log");
+        newLogFile.deleteOnExit();
+        FileChannel fileChannel = new RandomAccessFile(newLogFile, "rw").getChannel();
+
+        BufferedChannel logChannel = new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                INTERNAL_BUFFER_WRITE_CAPACITY, INTERNAL_BUFFER_READ_CAPACITY, 0);
+
+        ByteBuf data = Unpooled.buffer(1024, 1024);
+
+        int totalIntNumber = 1024 / 4;
+        for (int i = 0; i < totalIntNumber; i++) {
+            data.writeInt(i);
+        }
+
+        logChannel.write(data);
+
+        ByteBuf readDst = Unpooled.buffer(1024, 1024);
+        try {
+            logChannel.read(readDst, -1);
+        } catch (Exception e) {
+            // do nothing.
+        }
+
+        // should reset readBuffer when IOException throws
+        Assert.assertEquals(Long.MIN_VALUE, logChannel.readBufferStartPosition);
+        Assert.assertEquals(0, logChannel.readBuffer.readableBytes());
+
+        readDst.clear();
+
+        logChannel.read(readDst, 0);
+
+        for (int i = 0; i < totalIntNumber; i++) {
+            Assert.assertEquals(readDst.readInt(), i);
+        }
+
+        BufferedReadChannel logReadChannel = new BufferedReadChannel(fileChannel, INTERNAL_BUFFER_READ_CAPACITY);
+        readDst.clear();
+
+        try {
+            logReadChannel.read(readDst, -1);
+        } catch (Exception e) {
+            // do nothing.
+        }
+
+        // should reset readBuffer when IOException throws
+        Assert.assertEquals(Long.MIN_VALUE, logReadChannel.readBufferStartPosition);
+        Assert.assertEquals(0, logReadChannel.readBuffer.readableBytes());
+
+        readDst.clear();
+
+        logChannel.read(readDst, 0);
+
+        for (int i = 0; i < totalIntNumber; i++) {
+            Assert.assertEquals(readDst.readInt(), i);
+        }
+
+    }
+
     public void testBufferedChannel(int byteBufLength, int numOfWrites, int unpersistedBytesBound, boolean flush,
             boolean shouldForceWrite) throws Exception {
         File newLogFile = File.createTempFile("test", "log");
