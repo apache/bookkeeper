@@ -1027,6 +1027,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 pos += entrySize;
             }
         } finally {
+            ReferenceCountUtil.release(headerBuffer);
             ReferenceCountUtil.release(data);
         }
     }
