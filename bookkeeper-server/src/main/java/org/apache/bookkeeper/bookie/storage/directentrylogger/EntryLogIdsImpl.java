@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.bookie.storage;
+package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.storage.directentrylogger.Events;
+import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.commons.lang3.tuple.Pair;
 /**
@@ -48,7 +48,7 @@ public class EntryLogIdsImpl implements EntryLogIds {
     public EntryLogIdsImpl(LedgerDirsManager ledgerDirsManager,
                            Slogger slog) throws IOException {
         this.ledgerDirsManager = ledgerDirsManager;
-        this.slog = slog;
+        this.slog = slog.ctx(EntryLogIdsImpl.class);
         findLargestGap();
     }
 

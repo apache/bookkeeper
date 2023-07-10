@@ -20,7 +20,7 @@
   <parent>
     <artifactId>stream-storage-parent</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
@@ -51,6 +51,14 @@
         <exclusion>
           <groupId>io.grpc</groupId>
           <artifactId>grpc-okhttp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-servlet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-servlet-jakarta</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

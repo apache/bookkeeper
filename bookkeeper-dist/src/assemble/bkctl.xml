@@ -69,7 +69,7 @@
       <includes>
         <include>checker-qual-3.5.0/LICENSE</include>
         <include>google-auth-library-credentials-0.20.0/LICENSE</include>
-        <include>netty-4.1.89.Final/*</include>
+        <include>netty/*</include>
         <include>bouncycastle-1.0.2.3/LICENSE.html</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>

@@ -143,6 +143,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final long maxReadAheadBytesSize;
 
     private final Counter flushExecutorTime;
+    private final boolean singleLedgerDirs;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
@@ -156,13 +157,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
-        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())) {
-            log.info("indexDir is not specified, use default, creating single directory db ledger storage on {}",
+        if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())
+                || ledgerBaseDir.equals(indexDirsManager.getAllLedgerDirs().get(0).getPath())) {
+            log.info("indexDir is equals ledgerBaseDir, creating single directory db ledger storage on {}",
                     indexBaseDir);
         } else {
             // if indexDir is specified, set new value
             indexBaseDir = indexDirsManager.getAllLedgerDirs().get(0).getPath();
-            log.info("indexDir is specified, creating single directory db ledger storage on {}", indexBaseDir);
+            log.info("indexDir is specified a separate dir, creating single directory db ledger storage on {}",
+                    indexBaseDir);
         }
 
         StatsLogger ledgerIndexDirStatsLogger = statsLogger
@@ -172,6 +175,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         this.writeCacheMaxSize = writeCacheSize;
         this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
         this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2);
+        this.singleLedgerDirs = conf.getLedgerDirs().length == 1;
 
         readCacheMaxSize = readCacheSize;
         this.readAheadCacheBatchSize = readAheadCacheBatchSize;
@@ -268,7 +272,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         gcThread.enableForceGC(forceMajor, forceMinor);
     }
 
@@ -905,7 +909,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public void flush() throws IOException {
         Checkpoint cp = checkpointSource.newCheckpoint();
         checkpoint(cp);
-        checkpointSource.checkpointComplete(cp, true);
+        if (singleLedgerDirs) {
+            checkpointSource.checkpointComplete(cp, true);
+        }
     }
 
     @Override

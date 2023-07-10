@@ -620,8 +620,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!this.isLedgerReplicationEnabled()) {
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             this.notifyLedgerReplicationEnabled(cb);
             cb.await();
         }

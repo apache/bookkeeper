@@ -53,7 +53,6 @@ import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
-import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
@@ -112,14 +111,14 @@ public class DirectEntryLogger implements EntryLogger {
         this.maxSaneEntrySize = maxSaneEntrySize;
         this.readBufferSize = Buffer.nextAlignment(readBufferSize);
         this.ids = ids;
-        this.slog = slogParent.kv("directory", ledgerDir).ctx();
+        this.slog = slogParent.kv("directory", ledgerDir).ctx(DirectEntryLogger.class);
 
         this.stats = new DirectEntryLoggerStats(stats);
 
         this.allocator = allocator;
 
         int singleWriteBufferSize = Buffer.nextAlignment((int) (totalWriteBufferSize / NUMBER_OF_WRITE_BUFFERS));
-        this.writeBuffers = new BufferPool(nativeIO, singleWriteBufferSize, NUMBER_OF_WRITE_BUFFERS);
+        this.writeBuffers = new BufferPool(nativeIO, allocator, singleWriteBufferSize, NUMBER_OF_WRITE_BUFFERS);
 
         // The total read buffer memory needs to get split across all the read threads, since the caches
         // are thread-specific and we want to ensure we don't pass the total memory limit.
@@ -385,7 +384,7 @@ public class DirectEntryLogger implements EntryLogger {
     public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
         checkArgument(entryLogId < Integer.MAX_VALUE, "Entry log id must be an int [%d]", entryLogId);
         try (LogReader reader = newDirectReader((int) entryLogId)) {
-            LogReaderScan.scan(reader, scanner);
+            LogReaderScan.scan(allocator, reader, scanner);
         }
     }
 
