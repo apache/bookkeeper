@@ -921,10 +921,19 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc,
                 false, statsLogger, canRun);
 
+        // before auditor start we emit an old reschedule tasks.
+        urm.emitRescheduleAuditorTasks();
+        assertTrue(urm.isAuditorTasksRescheduleEmit());
         auditor.start();
 
-        // verify before emit reschedule auditor tasks
-        assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 0, (long) numAuditorTasksRescheduleEmitted.get());
+        // verify before emit reschedule auditor tasks can be ok finished.
+        Awaitility.await().untilAsserted(() -> {
+            assertFalse(urm.isAuditorTasksRescheduleEmit());
+        });
+
+        // verify before emit reschedule auditor tasks.
+        assertEquals("NUM_AUDITOR_TASKS_RESCHEDULE_EMITTED", 0,
+                (long) numAuditorTasksRescheduleEmitted.get());
         assertFalse(urm.isAuditorTasksRescheduleEmit());
 
         // emit reschedule auditor check tasks

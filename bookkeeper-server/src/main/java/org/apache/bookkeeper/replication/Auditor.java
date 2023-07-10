@@ -431,16 +431,10 @@ public class Auditor implements AutoCloseable {
                 if (reScheduleEmit) {
                     auditorStats.getNumAuditorTasksRescheduleEmitted().inc();
                     try {
-                        Auditor.this.ledgerUnderreplicationManager.finishedRescheduleAuditorTasks();
+                        okFinishedRescheduleAuditorTasks();
                     } catch (UnavailableException e) {
-                        if (e.getCause() != null && e.getCause() instanceof KeeperException.NoNodeException) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("NoNode is ok while finished schedule tasks.");
-                            }
-                        } else {
-                            LOG.error("Exception while finished schedule tasks ", e);
-                            submitShutdownTask();
-                        }
+                        LOG.error("Exception while finished schedule tasks ", e);
+                        submitShutdownTask();
                     }
                 }
             }
@@ -463,6 +457,9 @@ public class Auditor implements AutoCloseable {
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
                 this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
                         new UnderReplicatedLedgersChangedCb());
+                // We always finished earlier triggered Reschedule auditor tasks when Auditor starting.
+                // Because we can directly schedule tasks when the Auditor starts.
+                okFinishedRescheduleAuditorTasks();
                 this.ledgerUnderreplicationManager
                         .notifyRescheduleAuditorTasksChanged(new RescheduleAuditorTasksChangedCb());
             } catch (BKException bke) {
@@ -479,6 +476,20 @@ public class Auditor implements AutoCloseable {
             scheduleCheckAllLedgersTask();
             schedulePlacementPolicyCheckTask();
             scheduleReplicasCheckTask();
+        }
+    }
+
+    private void okFinishedRescheduleAuditorTasks() throws UnavailableException {
+        try {
+            Auditor.this.ledgerUnderreplicationManager.finishedRescheduleAuditorTasks();
+        } catch (UnavailableException e) {
+            if (e.getCause() != null && e.getCause() instanceof KeeperException.NoNodeException) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("NoNode is ok while finished schedule tasks.");
+                }
+            } else {
+                throw e;
+            }
         }
     }
 
