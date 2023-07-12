@@ -73,6 +73,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgersIndexComm
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -148,6 +149,7 @@ public class BookieShell implements Tool {
     static final String CMD_UPDATE_BOOKIE_IN_LEDGER = "updateBookieInLedger";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
+    static final String CMD_CLUSTERINFO = "clusterinfo";
     static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
@@ -2239,6 +2241,38 @@ public class BookieShell implements Tool {
         }
     }
 
+    /*
+     * Command to exposes the current info about the cluster of bookies.
+     */
+    class ClusterInfoCmd extends MyCommand {
+        ClusterInfoCmd() {
+            super(CMD_CLUSTERINFO);
+        }
+
+        @Override
+        String getDescription() {
+            return "Exposes the current info about the cluster of bookies.";
+        }
+
+        @Override
+        String getUsage() {
+            return "clusterinfo";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            ClusterInfoCommand cmd = new ClusterInfoCommand();
+            cmd.apply(bkConf, new CliFlags());
+            return 0;
+        }
+    }
+
+
     final Map<String, Command> commands = new HashMap<>();
 
     {
@@ -2272,6 +2306,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_UPDATE_BOOKIE_IN_LEDGER, new UpdateBookieInLedgerCmd());
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
+        commands.put(CMD_CLUSTERINFO, new ClusterInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
         commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
