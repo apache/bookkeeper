@@ -56,7 +56,7 @@ class MockReadHandle implements ReadHandle {
             return promise;
         }
 
-        bk.executor.execute(() -> {
+        bk.orderedExecutor.chooseThread().execute(() -> {
                 if (bk.getProgrammedFailStatus()) {
                     promise.completeExceptionally(BKException.create(bk.failReturnCode));
                     return;
