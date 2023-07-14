@@ -1262,7 +1262,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         ledgerMetadata.setComponent(component);
         ledgerMetadata.addCustomMetadata("custom", custom);
 
-        BKDistributedLogManager dlm = createNewDLM(conf, "distrlog-writemetadata");
+        BKDistributedLogManager dlm = createNewDLM(conf, "distrlog-writemetadata-sync");
 
         BKSyncLogWriter sync = dlm.openLogWriter(ledgerMetadata);
         sync.write(DLMTestUtil.getLogRecordInstance(1));
@@ -1283,7 +1283,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         confLocal.setOutputBufferSize(0);
         confLocal.setWriteLockEnabled(false);
 
-        BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata");
+        BKDistributedLogManager dlm = createNewDLM(confLocal, "distrlog-writemetadata-async");
 
         String application = "myapplication";
         String custom = "mycustommetadata";
