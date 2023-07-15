@@ -46,8 +46,6 @@ public class BufferedReadChannel extends BufferedChannelBase  {
 
     private boolean closed = false;
 
-    private boolean isFileChannelOwner = false;
-
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
         super(fileChannel);
         this.readCapacity = readCapacity;
@@ -107,14 +105,6 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         readBuffer.clear();
     }
 
-    /**
-     * If the subclass is FileChannel owner it should response for close fileChannel.
-     * @param isOwner
-     */
-    public void setFileChannelOwner(boolean isOwner) {
-        this.isFileChannelOwner = isOwner;
-    }
-
     public synchronized void close() throws IOException {
         if (closed) {
             return;
@@ -123,9 +113,7 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         readBufferStartPosition = Long.MIN_VALUE;
         readBuffer.release();
 
-        if (isFileChannelOwner) {
-            fileChannel.close();
-        }
+        // BufferedReadChannel is not response for fileChannel close.
 
         closed = true;
     }
