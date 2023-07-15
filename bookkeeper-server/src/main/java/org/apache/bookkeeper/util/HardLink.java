@@ -22,6 +22,7 @@ package org.apache.bookkeeper.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -407,6 +408,11 @@ public class HardLink {
    * Complexity is above.  User-visible functionality is below
    * ****************************************************
    */
+
+  @VisibleForTesting
+  static void enableJdkLinkApi(boolean enable) {
+    CREATE_LINK_SUPPORTED.set(enable);
+  }
 
   /**
    * Creates a hardlink.
