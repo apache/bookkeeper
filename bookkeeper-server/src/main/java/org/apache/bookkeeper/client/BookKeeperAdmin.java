@@ -1113,7 +1113,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                                 oldBookie,
                                 bookiesToExclude);
                 newBookie = replaceBookieResponse.getResult();
-                PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
+                PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy =
+                        replaceBookieResponse.getAdheringToPolicy();
                 if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
                     LOG.debug(
                             "replaceBookie for bookie: {} in ensemble: {} "
