@@ -33,7 +33,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
-
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -448,7 +447,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         BookKeeper bookKeeper = new BookKeeper();
-        BookKeeperAdmin admin = new BookKeeperAdmin(bookKeeper, NullStatsLogger.INSTANCE, new ClientConfiguration(conf));
+        BookKeeperAdmin admin = new BookKeeperAdmin(bookKeeper, NullStatsLogger.INSTANCE,
+                new ClientConfiguration(conf));
         Field field = BookKeeper.class.getDeclaredField("placementPolicy");
         field.setAccessible(true);
         field.set(bookKeeper, repp);
