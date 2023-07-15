@@ -899,6 +899,8 @@ public class DefaultEntryLogger implements EntryLogger {
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
         fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes());
+        fc.setFileChannelOwner(true);
+
         putInReadChannels(entryLogId, fc);
         return fc;
     }
