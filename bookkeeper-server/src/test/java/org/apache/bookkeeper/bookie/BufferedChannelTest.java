@@ -21,10 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Random;
@@ -128,6 +131,67 @@ public class BufferedChannelTest {
             Assert.assertEquals(readDst.readInt(), i);
         }
 
+    }
+
+    @Test
+    public void testBufferReadChannelCacheReadPosition() throws IOException {
+        File newLogFile = File.createTempFile("testLargeRead", "log");
+        newLogFile.deleteOnExit();
+        FileChannel fileChannel = new RandomAccessFile(newLogFile, "rw").getChannel();
+
+        BufferedChannel writeChannel = new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                INTERNAL_BUFFER_WRITE_CAPACITY, INTERNAL_BUFFER_READ_CAPACITY, 0);
+
+        BufferedReadChannel readChannel = new BufferedReadChannel(fileChannel, INTERNAL_BUFFER_READ_CAPACITY);
+
+        // fill 1MB data
+
+        ByteBuf buf = Unpooled.directBuffer(1024 * 1024);
+
+        int totalIntNumber = 1024 * 1024 / 4;
+
+        for (int i = 0; i < totalIntNumber; i++) {
+            buf.writeInt(i);
+        }
+
+        writeChannel.write(buf);
+
+        writeChannel.flushAndForceWrite(false);
+
+        buf.clear();
+
+        // test on BufferedReadChannel and BufferedChannel
+
+        ByteBuf internalReadCapacity = Unpooled.directBuffer(INTERNAL_BUFFER_READ_CAPACITY);
+
+        for (BufferedReadChannel channel : Lists.newArrayList(readChannel, writeChannel)) {
+            internalReadCapacity.clear();
+            buf.clear();
+
+            // trigger first read in `INTERNAL_BUFFER_READ_CAPACITY` bytes
+            channel.read(internalReadCapacity, 0);
+
+            // check if the readPosition is cached.
+            Assert.assertEquals(0, channel.readBufferStartPosition);
+
+            // try to a large read this should read some bytes from readBuffer and some read from fileChannel.
+            channel.read(buf, 0);
+
+            for (int i = 0; i < totalIntNumber; i++) {
+                Assert.assertEquals(buf.readInt(), i);
+            }
+
+            // check if the readPosition is update and cached.
+            Assert.assertEquals(1024 * 1024 - INTERNAL_BUFFER_READ_CAPACITY, channel.readBufferStartPosition);
+        }
+
+        buf.release();
+        internalReadCapacity.release();
+
+        writeChannel.clear();
+        readChannel.clear();
+
+        writeChannel.close();
     }
 
     public void testBufferedChannel(int byteBufLength, int numOfWrites, int unpersistedBytesBound, boolean flush,
