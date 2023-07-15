@@ -482,29 +482,16 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
-                        bookieToReplace, ensembleNodes, excludeNodes);
+                    bookieToReplace, ensembleNodes, excludeNodes);
             }
             // pick a candidate from same rack to replace
-            BookieNode candidate;
-            try {
-                candidate = selectFromNetworkLocation(
-                        bn.getNetworkLocation(),
-                        networkLocationsToBeExcluded,
-                        excludeNodes,
-                        TruePredicate.INSTANCE,
-                        EnsembleForReplacementWithNoConstraints.INSTANCE,
-                        !enforceMinNumRacksPerWriteQuorum);
-            } catch (BKNotEnoughBookiesException e) {
-                candidate = knownBookies.get(bookieToReplace);
-                if (candidate == null) {
-                    throw e;
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                            + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                }
-            }
-
+            BookieNode candidate = selectFromNetworkLocation(
+                    bn.getNetworkLocation(),
+                    networkLocationsToBeExcluded,
+                    excludeNodes,
+                    TruePredicate.INSTANCE,
+                    EnsembleForReplacementWithNoConstraints.INSTANCE,
+                    !enforceMinNumRacksPerWriteQuorum);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bn);
             }

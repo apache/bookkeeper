@@ -120,25 +120,15 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
 
     @Override
     public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
-            Set<BookieId> excludeBookies) throws BKNotEnoughBookiesException {
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies)
+            throws BKNotEnoughBookiesException {
         excludeBookies.addAll(currentEnsemble);
+        List<BookieId> addresses = newEnsemble(1, 1, 1, customMetadata, excludeBookies).getResult();
+
+        BookieId candidateAddr = addresses.get(0);
         List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
-        BookieId candidateAddr;
-        try {
-            List<BookieId> addresses = newEnsemble(1, 1, 1, customMetadata, excludeBookies).getResult();
-            candidateAddr = addresses.get(0);
-            newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
-        } catch (BKNotEnoughBookiesException e) {
-            if (!knownBookies.contains(bookieToReplace)) {
-                throw e;
-            }
-            candidateAddr = bookieToReplace;
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("There is no more available bookies to replace, and the waiting to be replaced: "
-                        + "{} bookie is alive. Replace the bookie with itself.", bookieToReplace);
-            }
-        }
+        newEnsemble.set(currentEnsemble.indexOf(bookieToReplace), candidateAddr);
         return PlacementResult.of(candidateAddr,
                 isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
     }

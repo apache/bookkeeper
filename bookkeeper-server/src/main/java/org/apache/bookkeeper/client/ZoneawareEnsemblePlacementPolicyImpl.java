@@ -413,8 +413,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     @Override
     public PlacementResult<BookieId> replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble, BookieId bookieToReplace,
-            Set<BookieId> excludeBookies)
+            Map<String, byte[]> customMetadata, List<BookieId> currentEnsemble,
+            BookieId bookieToReplace, Set<BookieId> excludeBookies)
             throws BKNotEnoughBookiesException {
         int bookieToReplaceIndex = currentEnsemble.indexOf(bookieToReplace);
         int desiredNumZonesPerWriteQuorumForThisEnsemble = (writeQuorumSize < desiredNumZonesPerWriteQuorum)
@@ -423,40 +423,14 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         rwLock.readLock().lock();
         try {
             if (!enforceStrictZoneawarePlacement) {
-                try {
-                    return selectBookieRandomly(newEnsemble, bookieToReplace, excludeBookies, writeQuorumSize,
-                            ackQuorumSize);
-                } catch (BKNotEnoughBookiesException e) {
-                    BookieNode bookieNode = knownBookies.get(bookieToReplace);
-                    if (bookieNode == null) {
-                        throw e;
-                    }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                                + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                    }
-                    return PlacementResult.of(bookieNode.getAddr(),
-                            isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
-                }
+                return selectBookieRandomly(newEnsemble, bookieToReplace, excludeBookies, writeQuorumSize,
+                        ackQuorumSize);
             }
             Set<BookieId> comprehensiveExclusionBookiesSet = addDefaultFaultDomainBookies(excludeBookies);
             comprehensiveExclusionBookiesSet.addAll(currentEnsemble);
-            BookieId candidateAddr;
-            try {
-                 candidateAddr = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, currentEnsemble,
-                        newEnsemble, bookieToReplaceIndex, desiredNumZonesPerWriteQuorumForThisEnsemble,
-                        comprehensiveExclusionBookiesSet);
-            } catch (BKNotEnoughBookiesException e) {
-                BookieNode bookieNode = knownBookies.get(bookieToReplace);
-                if (bookieNode == null) {
-                    throw e;
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                            + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                }
-                candidateAddr = bookieNode.getAddr();
-            }
+            BookieId candidateAddr = setBookieInTheEnsemble(ensembleSize, writeQuorumSize, currentEnsemble,
+                    newEnsemble, bookieToReplaceIndex, desiredNumZonesPerWriteQuorumForThisEnsemble,
+                    comprehensiveExclusionBookiesSet);
             return PlacementResult.of(candidateAddr,
                     isEnsembleAdheringToPlacementPolicy(newEnsemble, writeQuorumSize, ackQuorumSize));
         } finally {

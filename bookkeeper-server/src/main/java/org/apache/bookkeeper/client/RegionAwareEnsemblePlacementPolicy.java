@@ -498,11 +498,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     excludeBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             RRTopologyAwareCoverageEnsemble ensemble = new RRTopologyAwareCoverageEnsemble(ensembleSize,
-                    writeQuorumSize,
-                    ackQuorumSize,
-                    REGIONID_DISTANCE_FROM_LEAVES,
-                    effectiveMinRegionsForDurability > 0 ? new HashSet<String>(perRegionPlacement.keySet()) : null,
-                    effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
+                writeQuorumSize,
+                ackQuorumSize,
+                REGIONID_DISTANCE_FROM_LEAVES,
+                effectiveMinRegionsForDurability > 0 ? new HashSet<String>(perRegionPlacement.keySet()) : null,
+                effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
 
             BookieNode bookieNodeToReplace = knownBookies.get(bookieToReplace);
             if (null == bookieNodeToReplace) {
@@ -535,28 +535,15 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Try to choose a new bookie to replace {}, excluding {}.", bookieToReplace,
-                        excludeNodes);
+                    excludeNodes);
             }
             // pick a candidate from same rack to replace
-            BookieId candidateAddr;
-            try {
-                BookieNode candidate = replaceFromRack(bookieNodeToReplace, excludeNodes,
-                        ensemble, ensemble, enforceDurability);
-                 candidateAddr = candidate.getAddr();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bookieNodeToReplace);
-                }
-            } catch (BKException.BKNotEnoughBookiesException e) {
-                BookieNode bn = knownBookies.get(bookieToReplace);
-                if (bn == null) {
-                    throw e;
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("There is no more available bookies to replace, and the waiting to be "
-                            + "replaced bookie: {} is alive. Replace the bookie with itself.", bookieToReplace);
-                }
-                candidateAddr = bn.getAddr();
+            BookieNode candidate = replaceFromRack(bookieNodeToReplace, excludeNodes,
+                ensemble, ensemble, enforceDurability);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bookieNodeToReplace);
             }
+            BookieId candidateAddr = candidate.getAddr();
             List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
             if (currentEnsemble.isEmpty()) {
                 /*
