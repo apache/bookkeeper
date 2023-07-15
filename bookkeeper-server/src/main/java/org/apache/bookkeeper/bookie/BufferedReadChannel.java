@@ -89,7 +89,7 @@ public class BufferedReadChannel extends BufferedChannelBase  {
                 int readBytes = 0;
                 try {
                     // We don't have it in the buffer, so put necessary data in the buffer
-                    readBufferStartPosition = pos;
+                    readBufferStartPosition = currentPosition;
                     readBytes = validateAndGetFileChannel()
                             .read(readBuffer.internalNioBuffer(0, readCapacity), readBufferStartPosition);
 
