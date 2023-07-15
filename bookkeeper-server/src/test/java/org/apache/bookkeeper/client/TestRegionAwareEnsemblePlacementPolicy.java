@@ -589,7 +589,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         excludedAddrs.add(addr1.toBookieId());
         excludedAddrs.add(addr3.toBookieId());
         excludedAddrs.add(addr4.toBookieId());
-        repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs);
+        try {
+            repp.replaceBookie(1, 1, 1, null, new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKNotEnoughBookiesException bnebe) {
+            // should throw not enou
+        }
     }
 
     @Test
