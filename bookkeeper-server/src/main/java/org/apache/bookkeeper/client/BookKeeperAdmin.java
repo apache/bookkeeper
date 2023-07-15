@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -1064,11 +1065,12 @@ public class BookKeeperAdmin implements AutoCloseable {
                 lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate), false);
     }
 
-    private Map<Integer, BookieId> getReplacementBookiesByIndexes(
+    @VisibleForTesting
+    Map<Integer, BookieId> getReplacementBookiesByIndexes(
                 LedgerHandle lh,
                 List<BookieId> ensemble,
                 Set<Integer> bookieIndexesToRereplicate,
-                Optional<Set<BookieId>> excludedBookies, boolean downUpgradeToSelf)
+                Optional<Set<BookieId>> excludedBookies, boolean downgradeToSelf)
             throws BKException.BKNotEnoughBookiesException {
         // target bookies to replicate
         Map<Integer, BookieId> targetBookieAddresses =
@@ -1119,7 +1121,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             oldBookie, newEnsemble, newBookie);
                 }
             } catch (BKException.BKNotEnoughBookiesException e) {
-                if (downUpgradeToSelf && ((TopologyAwareEnsemblePlacementPolicy) bkc.getPlacementPolicy()).isAlive(
+                if (downgradeToSelf && ((TopologyAwareEnsemblePlacementPolicy) bkc.getPlacementPolicy()).isAlive(
                         oldBookie)) {
                     newBookie = oldBookie;
                 } else {

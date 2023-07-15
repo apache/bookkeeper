@@ -21,9 +21,14 @@ import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 import static org.junit.Assert.assertNotEquals;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
+
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +44,7 @@ import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementResult;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicyImpl.ZoneAwareNodeLocation;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -897,15 +903,40 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr7.toBookieId());
 
         zepp.onClusterChanged(addrs, new HashSet<BookieId>());
-        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = zepp.replaceBookie(1, 1, 1,
-                null, ensemble, addr6.toBookieId(), new HashSet<>());
-        BookieId replacedBookie = replaceBookieResponse.getResult();
-        assertEquals(addr6.toBookieId(), replacedBookie);
+
+        BookKeeper bookKeeper = new BookKeeper();
+        BookKeeperAdmin admin = new BookKeeperAdmin(bookKeeper, NullStatsLogger.INSTANCE, new ClientConfiguration(conf));
+        Field field = BookKeeper.class.getDeclaredField("placementPolicy");
+        field.setAccessible(true);
+        field.set(bookKeeper, zepp);
+        LedgerHandle mockHandle = mock(LedgerHandle.class);
+    
+        Map<Long, List<BookieId>> ensembles = new HashMap<>();
+        ensembles.put(0L, ensemble);
+        LedgerMetadataImpl ledgerMetadata = new LedgerMetadataImpl(0, 0, 3, 3, 2, LedgerMetadata.State.CLOSED,
+                Optional.of(1L), Optional.of(10L), ensembles, Optional.empty(), Optional.empty(), 0L, false, 0L,
+                Collections.emptyMap());
+        when(mockHandle.getLedgerMetadata()).thenReturn(ledgerMetadata);
+
+        //Not downgradeToSelf, can't find replaced bookie.
+        try {
+            admin.getReplacementBookiesByIndexes(mockHandle, ensemble, Sets.newHashSet(1), Optional.empty(), false);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKException.BKNotEnoughBookiesException ignore) {
+        }
+
+        //Use downgradeToSelf, find addr2 itself.
+        Map<Integer, BookieId> replaceResult = admin.getReplacementBookiesByIndexes(mockHandle, ensemble,
+                Sets.newHashSet(1), Optional.empty(), true);
+        assertFalse(replaceResult.isEmpty());
+        assertEquals(1, replaceResult.size());
+        assertEquals(addr6.toBookieId(), replaceResult.get(1));
 
         addrs.remove(addr6.toBookieId());
         zepp.onClusterChanged(addrs, new HashSet<BookieId>());
+        //Not downgradeToSelf, can't find replaced bookie.
         try {
-            zepp.replaceBookie(1, 1, 1, null, ensemble, addr6.toBookieId(), new HashSet<>());
+            admin.getReplacementBookiesByIndexes(mockHandle, ensemble, Sets.newHashSet(1), Optional.empty(), false);
             fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
         } catch (BKException.BKNotEnoughBookiesException ignore) {
         }
