@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.concurrent.ExecutionException;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
@@ -125,7 +126,7 @@ public class MarkLedgerReplicatedCommand extends BookieCommand<MarkLedgerReplica
                 Thread.currentThread().interrupt();
                 throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         });
     }
