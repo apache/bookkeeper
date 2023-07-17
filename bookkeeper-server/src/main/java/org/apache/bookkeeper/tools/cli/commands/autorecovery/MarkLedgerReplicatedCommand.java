@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
@@ -36,8 +38,6 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 
 public class MarkLedgerReplicatedCommand extends BookieCommand<MarkLedgerReplicatedCommand.MarkLedgerReplicatedFlags> {
 
