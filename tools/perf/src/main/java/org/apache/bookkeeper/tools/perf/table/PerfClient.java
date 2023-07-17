@@ -106,7 +106,7 @@ public class PerfClient implements Runnable {
                 "-nk", "--num-keys"
             },
             description = "Number of the keys to test")
-        public int numKeys = 1000000;
+        public long numKeys = 1000000L;
 
         @Parameter(
             names = {

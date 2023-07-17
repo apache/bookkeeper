@@ -66,24 +66,15 @@ public class StreamCluster
     /**
      * Build a stream cluster from the provided cluster {@code spec}.
      *
-     * @param spec the spec to build stream cluster.
+     * @param serverConf the conf to build stream cluster.
      * @return stream cluster spec.
      */
-    public static StreamCluster build(StreamClusterSpec spec) {
-        return new StreamCluster(spec);
+    public static StreamCluster build(ServerConfiguration serverConf) {
+        return new StreamCluster(serverConf);
     }
 
-    private static ServerConfiguration newBookieConfiguration(ServiceURI serviceURI) {
-        ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.setMetadataServiceUri(serviceURI.getUri().toString());
-        serverConf.setAllowLoopback(true);
-        serverConf.setGcWaitTime(300000);
-        serverConf.setDiskUsageWarnThreshold(0.9999f);
-        serverConf.setDiskUsageThreshold(0.999999f);
-        return serverConf;
-    }
+    private ServerConfiguration serverConf;
 
-    private final StreamClusterSpec spec;
     private final List<Endpoint> rpcEndpoints;
     private ServiceURI metadataServiceUri;
     private int zkPort;
@@ -92,16 +83,16 @@ public class StreamCluster
     private int nextBookiePort;
     private int nextGrpcPort;
 
-    private StreamCluster(StreamClusterSpec spec) {
+    private StreamCluster(ServerConfiguration serverConf) {
         super(
-            "stream-cluster",
-            new StorageConfiguration(spec.baseConf()),
-            NullStatsLogger.INSTANCE);
-        this.spec = spec;
-        this.servers = Lists.newArrayListWithExpectedSize(spec.numServers());
-        this.rpcEndpoints = Lists.newArrayListWithExpectedSize(spec.numServers());
-        this.nextBookiePort = spec.initialBookiePort();
-        this.nextGrpcPort = spec.initialGrpcPort();
+                "stream-cluster",
+                new StorageConfiguration(serverConf),
+                NullStatsLogger.INSTANCE);
+        this.serverConf = serverConf;
+        this.servers = Lists.newArrayListWithExpectedSize(serverConf.getNumBookies());
+        this.rpcEndpoints = Lists.newArrayListWithExpectedSize(serverConf.getNumBookies());
+        this.nextBookiePort = serverConf.getBookiePort();
+        this.nextGrpcPort = serverConf.getInitialBookieGrpcPort();
     }
 
     public List<Endpoint> getRpcEndpoints() {
@@ -109,20 +100,21 @@ public class StreamCluster
     }
 
     private void startZooKeeper() throws Exception {
-        if (!spec.shouldStartZooKeeper()) {
-            metadataServiceUri = checkNotNull(spec.metadataServiceUri,
+        if (!serverConf.getShouldStartZooKeeper()) {
+            metadataServiceUri = checkNotNull(ServiceURI.create(serverConf.getMetadataServiceUri()),
                 "No metadata service uri is configured while configuring not to start zookeeper");
             return;
         }
 
-        File zkDir = new File(spec.storageRootDir(), "zookeeper");
+        File zkDir = new File(serverConf.getStorageRangeStoreDirs(), "zookeeper");
         Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
-            LocalDLMEmulator.runZookeeperOnAnyPort(spec.zkPort(), zkDir);
+            LocalDLMEmulator.runZookeeperOnAnyPort(serverConf.getZKPort(), zkDir);
         zks = zkServerAndPort.getLeft();
         zkPort = zkServerAndPort.getRight();
-        log.info("Started zookeeper at port {}.", zkPort);
         metadataServiceUri = ServiceURI.create(
             "zk://127.0.0.1:" + zkPort + "/ledgers");
+        serverConf.setMetadataServiceUri(metadataServiceUri.getUri().toString());
+        log.info("Started zookeeper at port {} metadataServiceUri {}.", zkPort, metadataServiceUri.getUri());
     }
 
     private void stopZooKeeper() {
@@ -139,11 +131,10 @@ public class StreamCluster
         String metadataServers = StringUtils.join(serviceHosts, ',');
 
         new ZkClusterInitializer(metadataServers).initializeCluster(
-            metadataServiceUri.getUri(),
-            spec.numServers() * 2);
+            metadataServiceUri.getUri(), serverConf.getNumBookies() * 2);
 
         // format the bookkeeper cluster
-        MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(metadataServiceUri), driver -> {
+        MetadataDrivers.runFunctionWithMetadataBookieDriver(serverConf, driver -> {
                 try (RegistrationManager rm = driver.createRegistrationManager()) {
                     boolean initialized = rm.initNewCluster();
                     if (initialized) {
@@ -171,23 +162,23 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = newBookieConfiguration(metadataServiceUri);
-                serverConf.loadConf(spec.baseConf());
+                serverConf.setMetadataServiceUri(metadataServiceUri.getUri().toString());
+                serverConf.setAllowLoopback(true);
                 serverConf.setBookiePort(bookiePort);
-                File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
-                serverConf.setJournalDirName(bkDir.getPath());
-                serverConf.setLedgerDirNames(new String[]{bkDir.getPath()});
 
-                File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
+                File rangesStoreDir = new File(serverConf.getStorageRangeStoreDirs(), "ranges_" + grpcPort);
                 StorageConfiguration storageConf = new StorageConfiguration(serverConf);
                 storageConf.setRangeStoreDirNames(new String[]{rangesStoreDir.getPath()});
 
                 log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
-                        + " : bkDir = {}, rangesStoreDir = {}",
-                    bookiePort, grpcPort, bkDir, rangesStoreDir);
+                        + " : rangesStoreDir = {}",
+                    bookiePort, grpcPort, rangesStoreDir);
                 server = StorageServer.buildStorageServer(
-                    serverConf,
-                    grpcPort);
+                        serverConf,
+                        grpcPort,
+                        false,
+                        serverConf.getStartBookieAndStartProvider(),
+                        statsLogger);
                 server.start();
                 log.info("Started storage server at (bookie port = {}, grpc port = {})",
                     bookiePort, grpcPort);
@@ -212,17 +203,17 @@ public class StreamCluster
     }
 
     private void startServers() throws Exception {
-        log.info("Starting {} storage servers.", spec.numServers());
+        log.info("Starting {} storage servers.", serverConf.getNumBookies());
         ExecutorService executor = Executors.newCachedThreadPool();
         List<Future<LifecycleComponent>> startFutures = Lists.newArrayList();
-        for (int i = 0; i < spec.numServers(); i++) {
+        for (int i = 0; i < serverConf.getNumBookies(); i++) {
             Future<LifecycleComponent> future = executor.submit(() -> startServer());
             startFutures.add(future);
         }
         for (Future<LifecycleComponent> future : startFutures) {
             servers.add(future.get());
         }
-        log.info("Started {} storage servers.", spec.numServers());
+        log.info("Started {} storage servers.", serverConf.getNumBookies());
         executor.shutdown();
     }
 

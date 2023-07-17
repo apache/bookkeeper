@@ -279,6 +279,13 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_TRUST_STORE_PATH = "httpServerTrustStorePath";
     protected static final String HTTP_SERVER_TRUST_STORE_PASSWORD = "httpServerTrustStorePassword";
 
+    // Table Service parameters
+    protected static final String TABLE_NUM_BOOKIES = "tableNumBookies";
+    protected static final String TABLE_ZK_PORT = "tableZKPort";
+    protected static final String TABLE_START_BOOKIE_AND_START_PROVIDER = "startBookieAndStartProvider";
+    protected static final String TABLE_INITIAL_GRPC_PORT = "tableGrpcPort";
+    protected static final String TABLE_STORAGE_RANGE_STORE_DIRS = "storage.range.store.dirs";
+
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
     protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES =
@@ -4100,6 +4107,115 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
+        return this;
+    }
+
+    /**
+     * Returns the number of bookies to run in this cluster.
+     *
+     * @return the number of bookies to run in this cluster.
+     */
+    public int getNumBookies() {
+        return getInt(TABLE_NUM_BOOKIES, 1);
+    }
+
+    /**
+     * Set the number of bookies to run in this cluster.
+     *
+     * @param numBookies the number of bookies
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setNumBookies(int numBookies) {
+        setProperty(TABLE_NUM_BOOKIES, numBookies);
+        return this;
+    }
+
+    /**
+     * Returns if should start zookeeper.
+     *
+     * @return true if should start zookeeper, otherwise false.
+     */
+    public boolean getShouldStartZooKeeper() throws ConfigurationException {
+        return getMetadataServiceUri() == null;
+    }
+
+    /**
+     * Returns the zookeeper server port used in this cluster.
+     *
+     * @return the zookeeper server port used in this cluster.
+     */
+    public int getZKPort() {
+        return getInt(TABLE_ZK_PORT, 2181);
+    }
+
+    /**
+     * Set the zookeeper server port used in this cluster.
+     *
+     * @param zkPort zookeeper server port
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setZKPort(int zkPort) {
+        setProperty(TABLE_ZK_PORT, zkPort);
+        return this;
+    }
+
+    /**
+     * Returns the gRPC server port used in this cluster.
+     *
+     * @return the gRPC server port used in this cluster.
+     */
+    public int getInitialBookieGrpcPort() {
+        return getInt(TABLE_INITIAL_GRPC_PORT, 4181);
+    }
+
+    /**
+     * Set the gRPC server port used in this cluster.
+     *
+     * @param initialBookieGrpcPort gRPC server port
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setInitialBookieGrpcPort(int initialBookieGrpcPort) {
+        setProperty(TABLE_INITIAL_GRPC_PORT, initialBookieGrpcPort);
+        return this;
+    }
+
+    /**
+     * The local storage directories for storing table ranges data (e.g. rocksdb sst files).
+     *
+     * @return local storage directories for storing table ranges data.
+     */
+    public String getStorageRangeStoreDirs() {
+        return getString(TABLE_STORAGE_RANGE_STORE_DIRS, "data");
+    }
+
+    /**
+     * Set local storage directories for storing table ranges data.
+     *
+     * @param storageRangeStoreDirs local storage directories
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setStorageRangeStoreDirs(String storageRangeStoreDirs) {
+        setProperty(TABLE_STORAGE_RANGE_STORE_DIRS, storageRangeStoreDirs);
+        return this;
+    }
+
+    /**
+     * Returns if to enable bookie and provider service.
+     *
+     * @return true if should start bookie and provider service, otherwise false.
+     */
+    public boolean getStartBookieAndStartProvider() {
+        return getBoolean(TABLE_START_BOOKIE_AND_START_PROVIDER, false);
+    }
+
+    /**
+     * Set to enable bookie and provider service.
+     *
+     * @param startBookieAndStartProvider true if should start bookie and provider service, otherwise false
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setStartBookieAndStartProvider(boolean startBookieAndStartProvider) {
+        setProperty(TABLE_START_BOOKIE_AND_START_PROVIDER, startBookieAndStartProvider);
         return this;
     }
 }

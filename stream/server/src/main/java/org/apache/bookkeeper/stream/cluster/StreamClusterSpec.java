@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
@@ -46,6 +47,13 @@ public class StreamClusterSpec {
      * @return the configuration used by the servers across the cluster.
      */
     CompositeConfiguration baseConf;
+
+    /**
+     * Returns the configuration used by the servers across the cluster.
+     *
+     * @return the configuration used by the servers across the cluster.
+     */
+    ServerConfiguration serverConf;
 
     /**
      * Returns the metadata service uri that the servers will connect to.

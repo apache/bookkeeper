@@ -35,10 +35,10 @@ public class StreamStorageLifecycleComponent extends ServerLifecycleComponent {
             throws Exception {
         super("stream-storage", conf, statsLogger);
 
-        StorageServerConfiguration ssConf = StorageServerConfiguration.of(conf.getUnderlyingConf());
+        StorageServerConfiguration ssConf = StorageServerConfiguration.of(conf.getServerConf());
 
         this.streamStorage = StorageServer.buildStorageServer(
-            conf.getUnderlyingConf(),
+            conf.getServerConf(),
             ssConf.getGrpcPort(),
             ssConf.getGrpcUseHostname(),
             false,
