@@ -43,7 +43,7 @@ public class MarkLedgerReplicatedCommand extends BookieCommand<MarkLedgerReplica
 
     static final Logger LOG = LoggerFactory.getLogger(MarkLedgerReplicatedCommand.class);
     private static final String NAME = "markledgerreplicated";
-    private static final String DESC = "Mark the ledger replicated.";
+    private static final String DESC = "Mark a ledger replicated.";
     private static final String DEFAULT = "";
     private LedgerIdFormatter ledgerIdFormatter;
 
