@@ -20,6 +20,9 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.concurrent.ExecutionException;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -33,10 +36,6 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 
@@ -72,7 +71,8 @@ public class MarkLedgerReplicatedCommand extends BookieCommand<MarkLedgerReplica
         @Parameter(names = {"-l", "--ledgerid"}, description = "Ledger ID", required = true)
         private long ledgerId;
 
-        @Parameter(names = {"-f", "--force"}, description = "Whether to force mark the Ledger replicated without prompt..?")
+        @Parameter(names = {"-f",
+                "--force"}, description = "Whether to force mark the Ledger replicated without prompt..?")
         private boolean force;
 
         @Parameter(names = {"-lf", "--ledgeridformatter"}, description = "Set ledger id formatter")
@@ -98,7 +98,8 @@ public class MarkLedgerReplicatedCommand extends BookieCommand<MarkLedgerReplica
         }
     }
 
-    private boolean markLedgerReplicated(ServerConfiguration bkConf, MarkLedgerReplicatedCommand.MarkLedgerReplicatedFlags flags)
+    private boolean markLedgerReplicated(ServerConfiguration bkConf,
+            MarkLedgerReplicatedCommand.MarkLedgerReplicatedFlags flags)
             throws ExecutionException, MetadataException {
         return runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
             LedgerUnderreplicationManager underreplicationManager;
