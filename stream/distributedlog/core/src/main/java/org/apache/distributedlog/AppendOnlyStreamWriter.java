@@ -69,16 +69,16 @@ public class AppendOnlyStreamWriter implements Closeable {
     }
 
     public void sync(boolean isForced) throws IOException {
-      if (isForced) {
-        force(false);
-      } else {
-        try {
+      try {
+        if (isForced) {
           FutureUtils.result(logWriter.flush());
-        } catch (IOException ioe) {
-          throw ioe;
-        } catch (Exception ex) {
-          throw new UnexpectedException("unexpected exception in AppendOnlyStreamWriter.force", ex);
+        } else {
+          logWriter.flush();
         }
+      } catch (IOException ioe) {
+        throw ioe;
+      } catch (Exception ex) {
+        throw new UnexpectedException("unexpected exception in AppendOnlyStreamWriter.force", ex);
       }
     }
 
