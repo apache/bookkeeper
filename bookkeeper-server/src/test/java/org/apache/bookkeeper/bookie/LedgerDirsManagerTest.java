@@ -314,9 +314,10 @@ public class LedgerDirsManagerTest {
                 mockLedgerDirsListener, false);
             assertTrue("Disk Almost Full should have been  triggered", diskAlmostFull.getCount() == 0);
             // curDirs1's usage was above warn threshold 0.5 before, now it is below warn threshold 0.5.
-            setUsageAndThenVerify(curDir1, nospace - 0.50f, curDir2, nospace - 0.20f, mockDiskChecker,
-                    mockLedgerDirsListener, false);
-            assertTrue("Disk diskUnderWarnThreshold event should have been triggered", diskUnderWarnThreshold.getCount() == 0);
+            setUsageAndThenVerify(curDir1, nospace - 0.50f, curDir2,
+                    nospace - 0.20f, mockDiskChecker, mockLedgerDirsListener, false);
+            assertTrue("Disk diskUnderWarnThreshold event should have been triggered",
+                    diskUnderWarnThreshold.getCount() == 0);
             assertFalse(dirsManager.getWarnLedgerDirs().contains(curDir1));
             assertTrue(dirsManager.getWarnLedgerDirs().contains(curDir2));
         } else {
