@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -244,7 +245,7 @@ public class LedgerDirsManagerTest {
     @Test
     public void testIsReadOnlyModeOnAnyDiskFullEnabled() throws Exception {
         testAnyLedgerFullTransitToReadOnly(true);
-//        testAnyLedgerFullTransitToReadOnly(false);
+        testAnyLedgerFullTransitToReadOnly(false);
     }
 
     public void testAnyLedgerFullTransitToReadOnly(boolean isReadOnlyModeOnAnyDiskFullEnabled) throws Exception {
@@ -281,6 +282,22 @@ public class LedgerDirsManagerTest {
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
+        final CountDownLatch diskAlmostFull = new CountDownLatch(1);
+        final CountDownLatch diskUnderWarnThreshold = new CountDownLatch(1);
+        dirsManager.addLedgerDirsListener(new LedgerDirsListener() {
+
+            @Override
+            public void diskAlmostFull(File disk) {
+                diskAlmostFull.countDown();
+            }
+
+            @Override
+            public void diskUnderWarnThreshold(File disk) {
+                diskUnderWarnThreshold.countDown();
+            }
+
+        });
+
         Thread.sleep((diskCheckInterval * 2) + 100);
         assertFalse(mockLedgerDirsListener.readOnly);
 
@@ -295,9 +312,11 @@ public class LedgerDirsManagerTest {
                 mockLedgerDirsListener, true);
             setUsageAndThenVerify(curDir1, nospace - 0.20f, curDir2, nospace - 0.20f, mockDiskChecker,
                 mockLedgerDirsListener, false);
+            assertTrue("Disk Almost Full should have been  triggered", diskAlmostFull.getCount() == 0);
             // curDirs1's usage was above warn threshold 0.5 before, now it is below warn threshold 0.5.
             setUsageAndThenVerify(curDir1, nospace - 0.50f, curDir2, nospace - 0.20f, mockDiskChecker,
                     mockLedgerDirsListener, false);
+            assertTrue("Disk diskUnderWarnThreshold event should have been triggered", diskUnderWarnThreshold.getCount() == 0);
             assertFalse(dirsManager.getWarnLedgerDirs().contains(curDir1));
             assertTrue(dirsManager.getWarnLedgerDirs().contains(curDir2));
         } else {
