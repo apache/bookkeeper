@@ -83,7 +83,7 @@ public class MarkLedgerReplicatedCommandTest extends BookieCommandTestBase {
     @Test
     public void testCommandWithForce() throws InterruptedException, ReplicationException {
         MarkLedgerReplicatedCommand cmd = new MarkLedgerReplicatedCommand();
-        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
+        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1", "-f" }));
 
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(1)).markLedgerReplicated(1L);
