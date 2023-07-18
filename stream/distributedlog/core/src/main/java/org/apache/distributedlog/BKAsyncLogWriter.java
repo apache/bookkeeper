@@ -465,7 +465,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         if (null == writerFuture) {
             return FutureUtils.value(getLastTxId());
         }
-        return writerFuture.thenCompose(BKLogSegmentWriter::flushAndCommit);
+        return writerFuture.thenCompose(writer -> writer.flushAndCommit());
     }
 
   CompletableFuture<Long> flush() {

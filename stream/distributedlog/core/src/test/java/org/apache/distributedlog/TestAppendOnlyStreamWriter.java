@@ -154,6 +154,67 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
     }
 
     @Test(timeout = 60000)
+    public void testPositionUpdatesAndVisibilityWithFlush() throws Exception {
+      testPositionUpdatesAndVisibilityWithFlush(true);
+      testPositionUpdatesAndVisibilityWithFlush(false);
+    }
+
+    private void testPositionUpdatesAndVisibilityWithFlush(boolean waitForCompletion) throws Exception {
+      String name = testNames.getMethodName();
+      DistributedLogConfiguration conf = new DistributedLogConfiguration();
+      conf.setPeriodicFlushFrequencyMilliSeconds(10 * 1000);
+      conf.setImmediateFlushEnabled(false);
+
+      DistributedLogManager dlmwriter = createNewDLM(conf, name);
+      DistributedLogManager dlmreader = createNewDLM(conf, name);
+      byte[] byteStream = DLMTestUtil.repeatString("abc", 11).getBytes();
+      dlmwriter.delete();
+
+      // Can't reliably test the future is not completed until fsync is called, since writer.force may just
+      // happen very quickly. But we can test that the mechanics of the future write and api are basically
+      // correct.
+      AppendOnlyStreamWriter writer = dlmwriter.getAppendOnlyStreamWriter();
+      CompletableFuture<DLSN> dlsnFuture = writer.write(byteStream);
+      Thread.sleep(100);
+
+      // Write hasn't been persisted, position better not be updated.
+      assertFalse(dlsnFuture.isDone());
+      assertEquals(0, writer.position());
+
+      if (!waitForCompletion) {
+        // Write still not persisted, when we do not wait flush to complete.
+        writer.flush(false);
+        assertEquals(0, writer.position());
+        // Flush should be completed.
+        Thread.sleep(1000);
+      } else {
+        // Write is persisted, pos is updated.
+        writer.flush(true);
+      }
+      // Position guaranteed to be accurate after writer.force().
+      assertEquals(byteStream.length, writer.position());
+
+      // We cannot read the data immediately.
+      AppendOnlyStreamReader reader = dlmreader.getAppendOnlyStreamReader();
+      byte[] bytesIn = new byte[byteStream.length];
+      int read = reader.read(bytesIn, 0, byteStream.length);
+      assertEquals(0, read);
+      assertEquals(0, reader.position());
+
+      // But we must be able to read it after marking the end of stream.
+      writer.markEndOfStream();
+      read = reader.read(bytesIn, 0, byteStream.length);
+      assertEquals(byteStream.length, read);
+      assertEquals(byteStream.length, reader.position());
+      reader.close();
+      dlmreader.close();
+
+      // Close writer.
+      writer.close();
+      dlmwriter.close();
+    }
+
+    @Test(timeout = 60000)
     public void testPositionDoesntUpdateBeforeWriteCompletion() throws Exception {
         String name = testNames.getMethodName();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
