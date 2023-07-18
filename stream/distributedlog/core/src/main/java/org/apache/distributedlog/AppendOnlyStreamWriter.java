@@ -68,9 +68,9 @@ public class AppendOnlyStreamWriter implements Closeable {
         }
     }
 
-    public void sync(boolean isForced) throws IOException {
+    public void flush(boolean waitForCompletion) throws IOException {
       try {
-        if (isForced) {
+        if (waitForCompletion) {
           FutureUtils.result(logWriter.flush());
         } else {
           logWriter.flush();
