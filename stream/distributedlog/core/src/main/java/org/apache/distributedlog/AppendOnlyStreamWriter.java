@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
