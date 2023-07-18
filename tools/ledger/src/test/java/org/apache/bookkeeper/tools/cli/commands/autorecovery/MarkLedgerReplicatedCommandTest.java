@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -63,7 +64,7 @@ public class MarkLedgerReplicatedCommandTest extends BookieCommandTestBase {
         getMockedStatic(IOUtils.class).when(() -> IOUtils.confirmPrompt(anyString())).thenReturn(false);
 
         MarkLedgerReplicatedCommand cmd = new MarkLedgerReplicatedCommand();
-        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
+        assertFalse(cmd.apply(bkFlags, new String[] { "-l", "1" }));
 
         verify(factory, times(1)).newLedgerUnderreplicationManager();
         verify(underreplicationManager, times(0)).markLedgerReplicated(1L);
