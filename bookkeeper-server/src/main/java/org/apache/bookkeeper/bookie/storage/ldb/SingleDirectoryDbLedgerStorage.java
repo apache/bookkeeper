@@ -150,7 +150,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final Counter flushExecutorTime;
     private final boolean singleLedgerDirs;
     private final LedgerDirsManager ledgerDirsManager;
-    private final LedgerDirsManager indexDirsManager;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
@@ -232,7 +231,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         this.ledgerDirsManager = ledgerDirsManager;
-        this.indexDirsManager = indexDirsManager;
     }
 
     @Override
