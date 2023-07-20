@@ -21,9 +21,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
@@ -96,13 +98,6 @@ public class StandaloneStarter {
         boolean wipeData = false;
 
         @Parameter(
-                names = {
-                        "--start-bookie-and-start-provider"
-                },
-                description = "Enable bookie and provider service")
-        boolean startBookieAndStartProvider = true;
-
-        @Parameter(
             names = {
                 "-h", "--help"
             },
@@ -134,13 +129,19 @@ public class StandaloneStarter {
             return -1;
         }
 
-        ServerConfiguration conf = new ServerConfiguration();
+        StreamClusterSpec.StreamClusterSpecBuilder specBuilder = StreamClusterSpec.builder();
         if (starterArgs.metadataServiceUri == null) {
-            conf.setZKPort(starterArgs.zkPort);
+            specBuilder = specBuilder
+                .zkPort(starterArgs.zkPort)
+                .shouldStartZooKeeper(true);
         } else {
-            conf.setMetadataServiceUri(starterArgs.metadataServiceUri);
+            ServiceURI serviceURI = ServiceURI.create(starterArgs.metadataServiceUri);
+            specBuilder = specBuilder
+                .metadataServiceUri(serviceURI)
+                .shouldStartZooKeeper(false);
         }
 
+        CompositeConfiguration conf = new CompositeConfiguration();
         if (null != starterArgs.configFile) {
             PropertiesConfiguration propsConf = new PropertiesConfiguration(starterArgs.configFile);
             conf.addConfiguration(propsConf);
@@ -157,15 +158,17 @@ public class StandaloneStarter {
             conf.setProperty("dlog.bkcAckQuorumSize", starterArgs.numBookies - 1);
         }
 
-        conf.setNumBookies(starterArgs.numBookies);
-        conf.setBookiePort(starterArgs.initialBookiePort);
-        conf.setInitialBookieGrpcPort(starterArgs.initialBookieGrpcPort);
-        conf.setStorageRangeStoreDirs(starterArgs.dataDir);
-        conf.setStartBookieAndStartProvider(starterArgs.startBookieAndStartProvider);
+        StreamClusterSpec spec = specBuilder
+            .baseConf(conf)
+            .numServers(starterArgs.numBookies)
+            .initialBookiePort(starterArgs.initialBookiePort)
+            .initialGrpcPort(starterArgs.initialBookieGrpcPort)
+            .storageRootDir(new File(starterArgs.dataDir))
+            .build();
 
         CountDownLatch liveLatch = new CountDownLatch(1);
 
-        StreamCluster cluster = StreamCluster.build(conf);
+        StreamCluster cluster = StreamCluster.build(spec);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             cluster.stop();
             cluster.close();
