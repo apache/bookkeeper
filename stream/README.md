@@ -37,26 +37,26 @@ CLI is available at `bin/bkctl`
 The default namespace is `default`.
 
 ```
-bin/bkctl 127.0.0.1:4181 namespace create ns1
+bin/bkctl namespace create ns1
 
 ```
 
 #### Create Table
 
 ```
-bin/bkctl -n ns1 127.0.0.1:4181 tables create test_dist_counter
+bin/bkctl -n ns1 tables create test_dist_counter
 ```
 
 #### Listen on a key
 
 ```
-bin/bkctl -n ns1 127.0.0.1:4181 table get test_dist_counter counter-1
+bin/bkctl -n ns1 table get test_dist_counter counter-1
 ```
 
 #### Increment a counter
 
 ```
-bin/bkctl -n ns1 127.0.0.1:4181 table inc test_dist_counter counter-1 2
+bin/bkctl -n ns1 table inc test_dist_counter counter-1 2
 ```
 
 ### K/V Store
@@ -66,29 +66,29 @@ Use the table service as the normal k/v store for storing metadata
 #### Create Table
 
 ```
-bin/bkctl 127.0.0.1:4181 stream create --stream test_kv_store
+bin/bkctl stream create --stream test_kv_store
 ```
 
 #### Listen on a key
 
 ```
-bin/bkctl 127.0.0.1:4181 table get test_kv_store test-key
+bin/bkctl table get test_kv_store test-key
 ```
 
 #### Put Key/Value
 
 ```
-bin/bkctl 127.0.0.1:4181 table put test_kv_store test-key 1
+bin/bkctl table put test_kv_store test-key 1
 ```
 
 #### Increment
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table get -t test_kv_store -k "test-counter-key" --watch
+bin/streamstorage-cli -s table get -t test_kv_store -k "test-counter-key" --watch
 ```
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_kv_store -k "test-counter-key" -a 200
+bin/streamstorage-cli -s table incr -t test_kv_store -k "test-counter-key" -a 200
 ```
 
 ## Features
