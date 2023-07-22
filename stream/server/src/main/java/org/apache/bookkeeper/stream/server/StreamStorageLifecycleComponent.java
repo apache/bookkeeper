@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.stream.server;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -26,8 +28,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
 import org.apache.commons.lang3.StringUtils;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * This is a {@link ServerLifecycleComponent} to allow run stream storage component as part of bookie server.

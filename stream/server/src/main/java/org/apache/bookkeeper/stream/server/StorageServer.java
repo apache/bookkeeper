@@ -117,7 +117,8 @@ public class StorageServer {
         log.info("Loaded configuration file {}", confFile);
     }
 
-    public static Endpoint createLocalEndpoint(String advertisedAddress, int port, boolean useHostname) throws UnknownHostException {
+    public static Endpoint createLocalEndpoint(String advertisedAddress, int port, boolean useHostname)
+        throws UnknownHostException {
         String hostname;
         log.warn("Determining hostname for stream storage");
         if (useHostname) {
