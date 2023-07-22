@@ -57,7 +57,7 @@ public class TestGrpcServer {
         GrpcServer server = new GrpcServer(
             mock(StorageContainerStoreImpl.class),
             StorageServerConfiguration.of(compConf),
-            StorageServer.createLocalEndpoint(0, false),
+            StorageServer.createLocalEndpoint(null, 0, false),
             null,
             null,
             NullStatsLogger.INSTANCE);
