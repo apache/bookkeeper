@@ -243,6 +243,11 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     @Override
     public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
+        // protect negative position read
+        if (pos < 0) {
+            throw new IllegalArgumentException("Negative position pos:" + pos);
+        }
+
         long prevPos = pos;
         while (length > 0) {
             // check if it is in the write buffer

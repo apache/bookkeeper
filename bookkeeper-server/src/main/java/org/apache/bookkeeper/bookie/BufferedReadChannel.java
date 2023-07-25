@@ -72,6 +72,12 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         if (pos >= eof) {
             return -1;
         }
+
+        // protect negative position read
+        if (pos < 0) {
+            throw new IllegalArgumentException("Negative position pos:" + pos);
+        }
+
         while (length > 0) {
             // Check if the data is in the buffer, if so, copy it.
             if (readBufferStartPosition <= currentPosition
