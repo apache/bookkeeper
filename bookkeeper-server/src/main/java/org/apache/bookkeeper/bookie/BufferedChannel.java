@@ -104,7 +104,6 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
         super.close();
         writeBufferStartPosition.set(0);
-        writeBuffer.clear();
 
         ReferenceCountUtil.release(writeBuffer);
         fileChannel.close();
