@@ -43,6 +43,7 @@ public class BufferedReadChannel extends BufferedChannelBase  {
 
     long invocationCount = 0;
     long cacheHitCount = 0;
+    private long fileSize = -1;
 
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
         super(fileChannel);
@@ -64,10 +65,18 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         return read(dest, pos, dest.writableBytes());
     }
 
+    @Override
+    public long size() throws IOException {
+        if (fileSize == -1) {
+            fileSize = validateAndGetFileChannel().size();
+        }
+        return fileSize;
+    }
+
     public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
         invocationCount++;
         long currentPosition = pos;
-        long eof = validateAndGetFileChannel().size();
+        long eof = size();
         // return -1 if the given position is greater than or equal to the file's current size.
         if (pos >= eof) {
             return -1;
