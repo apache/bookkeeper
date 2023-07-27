@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -92,6 +93,7 @@ class EntryLoggerAllocator {
 
     //There may be a race condition, where the preallocation future may not have completed yet.
     // It doesn't matter because if a race condition occurs, the read performance will remain the same as before.
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     public long getCurrentWritingLogId() {
         return entryLogPreAllocationEnabled ? preallocatedLogId - 1 : preallocatedLogId;
     }
