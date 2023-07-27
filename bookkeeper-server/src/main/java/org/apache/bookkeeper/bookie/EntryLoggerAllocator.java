@@ -90,6 +90,8 @@ class EntryLoggerAllocator {
         return preallocatedLogId;
     }
 
+    //There may be a race condition, where the preallocation future may not have completed yet.
+    // It doesn't matter because if a race condition occurs, the read performance will remain the same as before.
     public long getCurrentWritingLogId() {
         return entryLogPreAllocationEnabled ? preallocatedLogId - 1 : preallocatedLogId;
     }
@@ -97,7 +99,7 @@ class EntryLoggerAllocator {
     BufferedLogChannel createNewLog(File dirForNextEntryLog) throws IOException {
         synchronized (createEntryLogLock) {
             BufferedLogChannel bc;
-            if (!entryLogPreAllocationEnabled){
+            if (!entryLogPreAllocationEnabled) {
                 // create a new log directly
                 bc = allocateNewLog(dirForNextEntryLog);
                 return bc;
@@ -119,7 +121,7 @@ class EntryLoggerAllocator {
                         throw new IOException("Task to allocate a new entry log is cancelled.", ce);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
+                        throw new IOException("Interrupted when waiting a new entry log to be allocated.", ie);
                     }
                 }
                 // preallocate a new log in background upon every call
