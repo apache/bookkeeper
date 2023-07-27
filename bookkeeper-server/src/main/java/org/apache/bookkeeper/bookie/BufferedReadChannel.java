@@ -30,7 +30,7 @@ import java.nio.channels.FileChannel;
 /**
  * A Buffered channel without a write buffer. Only reads are buffered.
  */
-public class BufferedReadChannel extends BufferedChannelBase  {
+public class BufferedReadChannel extends BufferedChannelBase {
 
     // The capacity of the read buffer.
     protected final int readCapacity;
@@ -44,9 +44,11 @@ public class BufferedReadChannel extends BufferedChannelBase  {
     long invocationCount = 0;
     long cacheHitCount = 0;
     private long fileSize = -1;
+    private final boolean sealed;
 
-    public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
+    public BufferedReadChannel(FileChannel fileChannel, int readCapacity, boolean sealed) {
         super(fileChannel);
+        this.sealed = sealed;
         this.readCapacity = readCapacity;
         this.readBuffer = Unpooled.buffer(readCapacity);
     }
@@ -67,10 +69,14 @@ public class BufferedReadChannel extends BufferedChannelBase  {
 
     @Override
     public long size() throws IOException {
-        if (fileSize == -1) {
-            fileSize = validateAndGetFileChannel().size();
+        if (sealed) {
+            if (fileSize == -1) {
+                fileSize = validateAndGetFileChannel().size();
+            }
+            return fileSize;
+        } else {
+            return validateAndGetFileChannel().size();
         }
-        return fileSize;
     }
 
     public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {

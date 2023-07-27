@@ -90,6 +90,10 @@ class EntryLoggerAllocator {
         return preallocatedLogId;
     }
 
+    public long getCurrentWritingLogId() {
+        return entryLogPreAllocationEnabled ? preallocatedLogId - 1 : preallocatedLogId;
+    }
+
     BufferedLogChannel createNewLog(File dirForNextEntryLog) throws IOException {
         synchronized (createEntryLogLock) {
             BufferedLogChannel bc;
