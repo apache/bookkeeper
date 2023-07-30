@@ -24,7 +24,6 @@ package org.apache.bookkeeper.bookie;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -64,6 +63,8 @@ class EntryLoggerAllocator {
     private final boolean entryLogPreAllocationEnabled;
     private final ByteBufAllocator byteBufAllocator;
     final ByteBuf logfileHeader = Unpooled.buffer(DefaultEntryLogger.LOGFILE_HEADER_SIZE);
+    private long writingLogId = -1;
+    private long writingCompactingLogId = -1;
 
     EntryLoggerAllocator(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
                          DefaultEntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, long logId,
@@ -91,11 +92,8 @@ class EntryLoggerAllocator {
         return preallocatedLogId;
     }
 
-    //There may be a race condition, where the preallocation future may not have completed yet.
-    // It doesn't matter because if a race condition occurs, the read performance will remain the same as before.
-    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
-    public long getCurrentWritingLogId() {
-        return entryLogPreAllocationEnabled ? preallocatedLogId - 1 : preallocatedLogId;
+    public boolean isSealed(long logId) {
+        return logId != writingLogId && logId != writingCompactingLogId;
     }
 
     BufferedLogChannel createNewLog(File dirForNextEntryLog) throws IOException {
@@ -104,15 +102,18 @@ class EntryLoggerAllocator {
             if (!entryLogPreAllocationEnabled) {
                 // create a new log directly
                 bc = allocateNewLog(dirForNextEntryLog);
+                writingLogId = bc.getLogId();
                 return bc;
             } else {
                 // allocate directly to response request
-                if (null == preallocation){
+                if (null == preallocation) {
                     bc = allocateNewLog(dirForNextEntryLog);
+                    writingLogId = bc.getLogId();
                 } else {
                     // has a preallocated entry log
                     try {
                         bc = preallocation.get();
+                        writingLogId = bc.getLogId();
                     } catch (ExecutionException ee) {
                         if (ee.getCause() instanceof IOException) {
                             throw (IOException) (ee.getCause());
@@ -135,8 +136,14 @@ class EntryLoggerAllocator {
 
     BufferedLogChannel createNewLogForCompaction(File dirForNextEntryLog) throws IOException {
         synchronized (createCompactionLogLock) {
-            return allocateNewLog(dirForNextEntryLog, COMPACTING_SUFFIX);
+            BufferedLogChannel bc = allocateNewLog(dirForNextEntryLog, COMPACTING_SUFFIX);
+            writingCompactingLogId = bc.getLogId();
+            return bc;
         }
+    }
+    
+    void clearCompactingLogId() {
+        writingCompactingLogId = -1;
     }
 
     private synchronized BufferedLogChannel allocateNewLog(File dirForNextEntryLog) throws IOException {

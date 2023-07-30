@@ -81,6 +81,8 @@ import org.slf4j.LoggerFactory;
 public class DefaultEntryLogger implements EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
 
+    public static final String NAME = "DEFAULT";
+
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
 
@@ -575,6 +577,10 @@ public class DefaultEntryLogger implements EntryLogger {
         }
     }
 
+    void clearCompactingLogId() {
+        entryLoggerAllocator.clearCompactingLogId();
+    }
+
     /**
      * Flushes all rotated log channels. After log channels are flushed,
      * move leastUnflushedLogId ptr to current logId.
@@ -582,6 +588,12 @@ public class DefaultEntryLogger implements EntryLogger {
     void checkpoint() throws IOException {
         entryLogManager.checkpoint();
     }
+
+    @Override
+    public String name() {
+        return NAME;
+    }
+    
 
     @Override
     public void flush() throws IOException {
@@ -898,8 +910,7 @@ public class DefaultEntryLogger implements EntryLogger {
         }
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
-        long writingLogId = entryLoggerAllocator.getCurrentWritingLogId();
-        fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), entryLogId < writingLogId);
+        fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), entryLoggerAllocator.isSealed(entryLogId));
         putInReadChannels(entryLogId, fc);
         return fc;
     }

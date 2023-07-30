@@ -30,6 +30,13 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  */
 public class ReadOnlyDefaultEntryLogger extends DefaultEntryLogger {
 
+    public static final String NAME = "READ_ONLY_DEFAULT";
+
+    @Override
+    public String name() {
+        return NAME;
+    }
+
     public ReadOnlyDefaultEntryLogger(ServerConfiguration conf) throws IOException {
         super(conf);
     }

@@ -129,4 +129,6 @@ public interface EntryLogger extends AutoCloseable {
      * @return false if the entrylog doesn't exist.
      */
     boolean removeEntryLog(long entryLogId);
+
+    String name();
 }
