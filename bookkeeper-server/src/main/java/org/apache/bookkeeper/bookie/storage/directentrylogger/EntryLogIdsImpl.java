@@ -26,19 +26,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.slogger.Slogger;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.commons.lang3.tuple.Pair;
 /**
  * EntryLogIdsImpl.
  */
 public class EntryLogIdsImpl implements EntryLogIds {
-    public static final Pattern FILE_PATTERN = Pattern.compile("^([0-9a-fA-F]+)\\.log$");
-    public static final Pattern COMPACTED_FILE_PATTERN =
-            Pattern.compile("^([0-9a-fA-F]+)\\.log\\.([0-9a-fA-F]+)\\.compacted$");
+
 
     private final LedgerDirsManager ledgerDirsManager;
     private final Slogger slog;
@@ -72,8 +69,8 @@ public class EntryLogIdsImpl implements EntryLogIds {
         List<Integer> currentIds = new ArrayList<Integer>();
 
         for (File ledgerDir : ledgerDirsManager.getAllLedgerDirs()) {
-            currentIds.addAll(logIdsInDirectory(ledgerDir));
-            currentIds.addAll(compactedLogIdsInDirectory(ledgerDir));
+            currentIds.addAll(LedgerDirUtil.logIdsInDirectory(ledgerDir));
+            currentIds.addAll(LedgerDirUtil.compactedLogIdsInDirectory(ledgerDir));
         }
 
         Pair<Integer, Integer> gap = findLargestGap(currentIds);
@@ -117,40 +114,5 @@ public class EntryLogIdsImpl implements EntryLogIds {
             }
         }
         return Pair.of(nextIdCandidate, maxIdCandidate);
-    }
-
-    public static List<Integer> logIdsInDirectory(File directory) {
-        List<Integer> ids = new ArrayList<>();
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null && files.length > 0) {
-                for (File f : files) {
-                    Matcher m = FILE_PATTERN.matcher(f.getName());
-                    if (m.matches()) {
-                        int logId = Integer.parseUnsignedInt(m.group(1), 16);
-                        ids.add(logId);
-                    }
-                }
-            }
-        }
-        return ids;
-    }
-
-    private static List<Integer> compactedLogIdsInDirectory(File directory) {
-        List<Integer> ids = new ArrayList<>();
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null && files.length > 0) {
-                for (File f : files) {
-                    Matcher m = COMPACTED_FILE_PATTERN.matcher(f.getName());
-                    if (m.matches()) {
-                        int logId = Integer.parseUnsignedInt(m.group(1), 16);
-                        ids.add(logId);
-                    }
-                }
-            }
-        }
-        return ids;
-
     }
 }

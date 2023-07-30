@@ -66,6 +66,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
 import org.slf4j.Logger;
@@ -342,7 +343,17 @@ public class DefaultEntryLogger implements EntryLogger {
                 throw new FileNotFoundException(
                         "Entry log directory '" + dir + "' does not exist");
             }
-            long lastLogId = getLastLogId(dir);
+            long lastLogId;
+            long lastLogFileFromFile = getLastLogIdFromFile(dir);
+            long lastLogIdInDir = getLastLogIdInDir(dir);
+            if (lastLogFileFromFile < lastLogIdInDir) {
+                LOG.info("The lastLogFileFromFile is {}, the lastLogIdInDir is {}, "
+                        + "use lastLogIdInDir as the lastLogId.", lastLogFileFromFile, lastLogIdInDir);
+                lastLogId = lastLogIdInDir;
+            } else {
+                lastLogId = lastLogFileFromFile;
+            }
+
             if (lastLogId > logId) {
                 logId = lastLogId;
             }
@@ -533,7 +544,7 @@ public class DefaultEntryLogger implements EntryLogger {
         return true;
     }
 
-    private long getLastLogId(File dir) {
+    private long getLastLogIdFromFile(File dir) {
         long id = readLastLogId(dir);
         // read success
         if (id > 0) {
@@ -555,6 +566,17 @@ public class DefaultEntryLogger implements EntryLogger {
         // order the collections
         Collections.sort(logs);
         return logs.get(logs.size() - 1);
+    }
+
+    private long getLastLogIdInDir(File dir) {
+        List<Integer> currentIds = new ArrayList<Integer>();
+        currentIds.addAll(LedgerDirUtil.logIdsInDirectory(dir));
+        currentIds.addAll(LedgerDirUtil.compactedLogIdsInDirectory(dir));
+        if (currentIds.isEmpty()) {
+            return -1;
+        }
+        Collections.sort(currentIds);
+        return currentIds.get(currentIds.size() - 1);
     }
 
     /**
