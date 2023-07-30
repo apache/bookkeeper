@@ -81,7 +81,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultEntryLogger implements EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
 
-    public static final String NAME = "DEFAULT";
+    public static final String TYPE = "DEFAULT";
 
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
@@ -590,8 +590,8 @@ public class DefaultEntryLogger implements EntryLogger {
     }
 
     @Override
-    public String name() {
-        return NAME;
+    public String type() {
+        return TYPE;
     }
 
     @Override

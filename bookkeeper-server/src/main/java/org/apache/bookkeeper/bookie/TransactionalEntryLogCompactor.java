@@ -215,7 +215,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     }
 
     private void compactingLogWriteDone() {
-        if (DefaultEntryLogger.NAME.equals(entryLogger.name())) {
+        if (DefaultEntryLogger.TYPE.equals(entryLogger.type())) {
             ((DefaultEntryLogger) entryLogger).clearCompactingLogId();
         }
     }

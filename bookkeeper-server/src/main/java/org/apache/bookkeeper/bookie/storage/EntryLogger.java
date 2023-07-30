@@ -130,5 +130,5 @@ public interface EntryLogger extends AutoCloseable {
      */
     boolean removeEntryLog(long entryLogId);
 
-    String name();
+    String type();
 }

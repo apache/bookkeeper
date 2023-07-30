@@ -64,7 +64,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  */
 public class DirectEntryLogger implements EntryLogger {
 
-    public static final String NAME = "direct";
+    public static final String TYPE = "direct";
     private final Slogger slog;
     private final File ledgerDir;
     private final EntryLogIds ids;
@@ -383,8 +383,8 @@ public class DirectEntryLogger implements EntryLogger {
     }
 
     @Override
-    public String name() {
-        return NAME;
+    public String type() {
+        return TYPE;
     }
 
     @Override
