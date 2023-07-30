@@ -141,7 +141,7 @@ class EntryLoggerAllocator {
             return bc;
         }
     }
-    
+
     void clearCompactingLogId() {
         writingCompactingLogId = -1;
     }

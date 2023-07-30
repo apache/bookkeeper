@@ -593,7 +593,6 @@ public class DefaultEntryLogger implements EntryLogger {
     public String name() {
         return NAME;
     }
-    
 
     @Override
     public void flush() throws IOException {
