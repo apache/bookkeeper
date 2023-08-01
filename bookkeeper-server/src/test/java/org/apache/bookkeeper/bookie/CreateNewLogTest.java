@@ -545,18 +545,18 @@ public class CreateNewLogTest {
         Assert.assertEquals(9, el.getPreviousAllocatedEntryLogId());
 
         //Mock half ledgerDirs lastId is 3.
-        for (int i = 0; i < ledgerDirs.length / 2; i++) {
-            File dir = ledgerDirsManager.pickRandomWritableDir();
+        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size() / 2; i++) {
+            File dir = ledgerDirsManager.getAllLedgerDirs().get(i);
             LOG.info("Picked this directory: {}", dir);
             el.getEntryLoggerAllocator().setLastLogId(dir, 3);
         }
 
         el = new DefaultEntryLogger(conf, ledgerDirsManager);
         Assert.assertEquals(9, el.getPreviousAllocatedEntryLogId());
-    
+
         //Mock all ledgerDirs lastId is 3.
-        for (int i = 0; i < ledgerDirs.length / 2; i++) {
-            File dir = ledgerDirsManager.pickRandomWritableDir();
+        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
+            File dir = ledgerDirsManager.getAllLedgerDirs().get(i);
             LOG.info("Picked this directory: {}", dir);
             el.getEntryLoggerAllocator().setLastLogId(dir, 3);
         }
