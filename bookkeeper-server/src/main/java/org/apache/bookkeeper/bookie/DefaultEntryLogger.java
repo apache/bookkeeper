@@ -81,8 +81,6 @@ import org.slf4j.LoggerFactory;
 public class DefaultEntryLogger implements EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
 
-    public static final String TYPE = "DEFAULT";
-
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
 
@@ -587,11 +585,6 @@ public class DefaultEntryLogger implements EntryLogger {
      */
     void checkpoint() throws IOException {
         entryLogManager.checkpoint();
-    }
-
-    @Override
-    public String type() {
-        return TYPE;
     }
 
     @Override

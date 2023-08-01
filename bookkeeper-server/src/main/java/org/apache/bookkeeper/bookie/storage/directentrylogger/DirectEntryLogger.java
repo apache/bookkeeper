@@ -63,8 +63,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * DirectEntryLogger.
  */
 public class DirectEntryLogger implements EntryLogger {
-
-    public static final String TYPE = "direct";
     private final Slogger slog;
     private final File ledgerDir;
     private final EntryLogIds ids;
@@ -380,11 +378,6 @@ public class DirectEntryLogger implements EntryLogger {
         boolean result = file.delete();
         slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
         return result;
-    }
-
-    @Override
-    public String type() {
-        return TYPE;
     }
 
     @Override
