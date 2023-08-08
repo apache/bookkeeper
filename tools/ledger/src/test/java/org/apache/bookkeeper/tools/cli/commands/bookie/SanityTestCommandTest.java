@@ -34,7 +34,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
