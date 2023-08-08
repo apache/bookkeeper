@@ -134,7 +134,6 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
             }
             CompletableFuture<LedgerHandle> lhFuture = new CompletableFuture<>();
             CompletableFuture<Void> readEntryFuture = new CompletableFuture<>();
-
             FutureUtils.collect(entriesFutures).thenCompose(_r -> lh.closeAsync()).thenCompose(_r -> {
                 bk.asyncOpenLedger(lh.getId(), BookKeeper.DigestType.MAC, new byte[0], (orc, olh, octx) -> {
                     if (orc != BKException.Code.OK) {
