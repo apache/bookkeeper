@@ -46,6 +46,10 @@ public class BufferedReadChannel extends BufferedChannelBase {
     private long fileSize = -1;
     private final boolean sealed;
 
+    public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
+        this(fileChannel, readCapacity, false);
+    }
+
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity, boolean sealed) {
         super(fileChannel);
         this.sealed = sealed;

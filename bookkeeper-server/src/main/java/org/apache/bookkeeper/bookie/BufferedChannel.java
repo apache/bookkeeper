@@ -86,7 +86,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
             long unpersistedBytesBound) throws IOException {
-        super(fc, readCapacity, false);
+        super(fc, readCapacity);
         this.writeCapacity = writeCapacity;
         this.position = fc.position();
         this.writeBufferStartPosition.set(position);
