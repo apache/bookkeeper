@@ -678,7 +678,8 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "listunderreplicated [[--missingreplica <bookieaddress>]"
-                    + " [--excludingmissingreplica <bookieaddress>]] [--printmissingreplica] [--printreplicationworkerid]";
+                    + " [--excludingmissingreplica <bookieaddress>]] [--printmissingreplica]"
+                    + " [--printreplicationworkerid]";
         }
 
         @Override
