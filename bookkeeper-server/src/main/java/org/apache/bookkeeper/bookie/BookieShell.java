@@ -295,7 +295,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "metaformat   [-nonInteractive] [-force]";
+            return "metaformat   [--nonInteractive] [--force]";
         }
 
         @Override
@@ -378,7 +378,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "nukeexistingcluster -zkledgersrootpath <zkledgersrootpath> [-instanceid <instanceid> | -force]";
+            return "nukeexistingcluster --zkledgersrootpath <zkledgersrootpath> [--instanceid <instanceid> | --force]";
         }
 
         @Override
@@ -423,7 +423,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookieformat [-nonInteractive] [-force] [-deleteCookie]";
+            return "bookieformat [--nonInteractive] [--force] [--deleteCookie]";
         }
 
         @Override
@@ -505,7 +505,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover [-deleteCookie] <bookieSrc[,bookieSrc,...]>";
+            return "recover [--deleteCookie] <bookieSrc[,bookieSrc,...]>";
         }
 
         @Override
@@ -611,9 +611,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readledger  [-bookie <address:port>]  [-msg] -ledgerid <ledgerid> "
-                    + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]] "
-                    + "[-force-recovery]";
+            return "readledger  [--bookie <address:port>]  [--msg] --ledgerid <ledgerid> "
+                    + "[--firstentryid <firstentryid> [--lastentryid <lastentryid>]] "
+                    + "[--force-recovery]";
         }
 
         @Override
@@ -677,8 +677,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listunderreplicated [[-missingreplica <bookieaddress>]"
-                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica] [-printreplicationworkerid]";
+            return "listunderreplicated [[--missingreplica <bookieaddress>]"
+                    + " [--excludingmissingreplica <bookieaddress>]] [--printmissingreplica] [--printreplicationworkerid]";
         }
 
         @Override
@@ -735,7 +735,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listledgers  [-meta] [-bookieid <bookieaddress>]";
+            return "listledgers  [--meta] [--bookieid <bookieaddress>]";
         }
 
         @Override
@@ -781,7 +781,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "activeledgers  [-logId <entry log id>] [-timeout <timeout>] [-formatter <ledger id formatter>]";
+            return "activeledgers  [--logId <entry log id>] [--timeout <timeout>] [--formatter <ledger id formatter>]";
         }
 
         @Override
@@ -844,7 +844,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid> [--dumptofile FILENAME|--restorefromfile FILENAME]";
+            return "ledgermetadata --ledgerid <ledgerid> [--dumptofile FILENAME|--restorefromfile FILENAME]";
         }
 
         @Override
@@ -924,7 +924,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "simpletest   [-ensemble N] [-writeQuorum N] [-ackQuorum N] [-numEntries N]";
+            return "simpletest   [--ensemble N] [--writeQuorum N] [--ackQuorum N] [--numEntries N]";
         }
 
         @Override
@@ -956,7 +956,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookiesanity [-entries N] [-timeout N]";
+            return "bookiesanity [--entries N] [--timeout N]";
         }
 
         @Override
@@ -1025,8 +1025,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> "
-                    + "[-entryid <entryid>]] [-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
+            return "readlog      [--msg] <entry_log_id | entry_log_file_name> [--ledgerid <ledgerid> "
+                    + "[--entryid <entryid>]] [--startpos <startEntryLogBytePos> [--endpos <endEntryLogBytePos>]]";
         }
 
         @Override
@@ -1131,7 +1131,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readjournal [-dir] [-msg] <journal_id | journal_file_name>";
+            return "readjournal [-dir] [--msg] <journal_id | journal_file_name>";
         }
 
         @Override
@@ -1226,7 +1226,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listbookies  [-readwrite|-readonly|-all] [-hostnames]";
+            return "listbookies  [--readwrite|--readonly|--all] [--hostnames]";
         }
 
         @Override
@@ -1265,7 +1265,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listfilesondisc  [-journal|-entrylog|-index]";
+            return "listfilesondisc  [--journal|--entrylog|--index]";
         }
 
         @Override
@@ -1341,7 +1341,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "autorecovery [-enable|-disable]";
+            return "autorecovery [--enable|--disable]";
         }
 
         @Override
@@ -1417,7 +1417,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "lostbookierecoverydelay [-get|-set <value>]";
+            return "lostbookierecoverydelay [--get|--set <value>]";
         }
 
         @Override
@@ -1542,7 +1542,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updatecookie [-bookieId <hostname|ip>] [-expandstorage] [-list] [-delete <force>]";
+            return "updatecookie [--bookieId <hostname|ip>] [--expandstorage] [--list] [--delete <force>]";
         }
 
         @Override
@@ -1616,8 +1616,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-maxOutstandingReads N] [-limit N] "
-                    + "[-verbose true/false] [-printprogress N]";
+            return "updateledgers --bookieId <hostname|ip> [--updatespersec N] [--maxOutstandingReads N] [--limit N] "
+                    + "[--verbose true/false] [--printprogress N]";
         }
 
         @Override
@@ -1693,8 +1693,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateBookieInLedger -srcBookie <source bookie> -destBookie <destination bookie> "
-                    + "[-updatespersec N] [-maxOutstandingReads N] [-limit N] [-verbose true/false] [-printprogress N]";
+            return "updateBookieInLedger -srcBookie <source bookie> --destBookie <destination bookie> "
+                    + "[--updatespersec N] [--maxOutstandingReads N] [--limit N] [--verbose true/false]"
+                    + " [--printprogress N]";
         }
 
         @Override
@@ -1772,7 +1773,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "deleteledger -ledgerid <ledgerid> [-force]";
+            return "deleteledger --ledgerid <ledgerid> [--force]";
         }
 
         @Override
@@ -1872,7 +1873,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "forceauditchecks [-checkallledgerscheck [-placementpolicycheck] [-replicascheck]";
+            return "forceauditchecks [--checkallledgerscheck [--placementpolicycheck] [--replicascheck]";
         }
 
         @Override
@@ -1936,7 +1937,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_DECOMMISSIONBOOKIE + " [-bookieid <bookieaddress>]";
+            return CMD_DECOMMISSIONBOOKIE + " [--bookieid <bookieaddress>]";
         }
 
         @Override
@@ -1972,7 +1973,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_ENDPOINTINFO + " [-bookieid <bookieaddress>]";
+            return CMD_ENDPOINTINFO + " [--bookieid <bookieaddress>]";
         }
 
         @Override
