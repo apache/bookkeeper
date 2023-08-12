@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
@@ -111,7 +112,7 @@ public class BufferedReadChannel extends BufferedChannelBase  {
         }
 
         readBufferStartPosition = Long.MIN_VALUE;
-        readBuffer.release();
+        ReferenceCountUtil.release(readBuffer);
 
         // BufferedReadChannel is not response for fileChannel close.
 
