@@ -170,4 +170,41 @@ public class KeyValueStorageTest {
         db.close();
         FileUtils.deleteDirectory(tmpDir);
     }
+
+    @Test
+    public void testBatch() throws Exception {
+
+        configuration.setOperationMaxNumbersInSingleRocksDBWriteBatch(5);
+
+        File tmpDir = Files.createTempDirectory("junitTemporaryFolder").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+
+        KeyValueStorage db = storageFactory.newKeyValueStorage(tmpDir.toString(), "subDir", DbConfigType.Default,
+                configuration);
+
+        assertEquals(null, db.getFloor(toArray(3)));
+        assertEquals(0, db.count());
+
+        Batch batch = db.newBatch();
+        assertEquals(0, batch.batchCount());
+
+        batch.put(toArray(1), toArray(1));
+        batch.put(toArray(2), toArray(2));
+        assertEquals(2, batch.batchCount());
+
+        batch.put(toArray(3), toArray(3));
+        batch.put(toArray(4), toArray(4));
+        batch.put(toArray(5), toArray(5));
+        assertEquals(0, batch.batchCount());
+        batch.put(toArray(6), toArray(6));
+        assertEquals(1, batch.batchCount());
+
+        batch.flush();
+        assertEquals(1, batch.batchCount());
+        batch.close();
+        assertEquals(0, batch.batchCount());
+
+        db.close();
+        FileUtils.deleteDirectory(tmpDir);
+    }
 }
