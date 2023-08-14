@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
@@ -85,7 +86,7 @@ public class SanityTestCommandTest extends BookieCommandTestBase {
             }).when(bk).asyncOpenLedger(anyLong(), any(BookKeeper.DigestType.class), eq(new byte[0]),
                     any(OpenCallback.class), any());
         });
-
+        when(lh.closeAsync()).thenReturn(CompletableFuture.completedFuture(null));
         when(lh.getLastAddConfirmed()).thenReturn(9L);
         Enumeration<LedgerEntry> entryEnumeration = getEntry();
         when(lh.getId()).thenReturn(1L);
