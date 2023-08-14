@@ -339,6 +339,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
+    protected static final String MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH =
+        "maxOperationNumbersInSingleRocksdbWriteBatch";
+
     protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
 
     /**
@@ -4101,5 +4104,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
         return this;
+    }
+
+    /**
+     * Set the max operation numbers in a single rocksdb write batch.
+     * The rocksdb write batch is related to the memory usage. If the batch is too large, it will cause the OOM.
+     *
+     * @param maxNumbersInSingleRocksDBBatch
+     * @return
+     */
+    public ServerConfiguration setOperationMaxNumbersInSingleRocksDBWriteBatch(int maxNumbersInSingleRocksDBBatch) {
+        this.setProperty(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, maxNumbersInSingleRocksDBBatch);
+        return this;
+    }
+
+    /**
+     * Get the max operation numbers in a single rocksdb write batch.
+     *
+     * @return
+     */
+    public int getMaxOperationNumbersInSingleRocksDBBatch() {
+        return getInt(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, 100000);
     }
 }
