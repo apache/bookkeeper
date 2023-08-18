@@ -22,11 +22,9 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +56,14 @@ public class EntryLogCompactor extends AbstractLogCompactor {
     @Override
     public boolean compact(EntryLogMetadata entryLogMeta) {
         try {
+            long start = System.currentTimeMillis();
+            throttler.resetRate();
             entryLogger.scanEntryLog(entryLogMeta.getEntryLogId(),
                 scannerFactory.newScanner(entryLogMeta));
+            long scan = System.currentTimeMillis();
             scannerFactory.flush();
-            LOG.info("Removing entry log {} after compaction", entryLogMeta.getEntryLogId());
+            LOG.info("Removing entry log {} after compaction, scan {}ms ,flush {}ms",
+                entryLogMeta.getEntryLogId(), scan - start, System.currentTimeMillis() - scan);
             logRemovalListener.removeEntryLog(entryLogMeta.getEntryLogId());
         } catch (LedgerDirsManager.NoWritableLedgerDirException nwlde) {
             LOG.warn("No writable ledger directory available, aborting compaction", nwlde);

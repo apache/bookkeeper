@@ -22,12 +22,10 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.HardLink;
@@ -171,6 +169,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
         void start() throws IOException {
             // scan entry log into compaction log and offset list
             entryLogger.createNewCompactionLog();
+            throttler.resetRate();
             entryLogger.scanEntryLog(metadata.getEntryLogId(), new EntryLogScanner() {
                 @Override
                 public boolean accept(long ledgerId) {

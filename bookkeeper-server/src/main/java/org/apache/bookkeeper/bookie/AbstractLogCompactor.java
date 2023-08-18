@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.util.concurrent.RateLimiter;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
@@ -59,10 +58,12 @@ public abstract class AbstractLogCompactor {
 
     static class Throttler {
         private final RateLimiter rateLimiter;
-        private final boolean isThrottleByBytes;
+        private final ServerConfiguration conf;
+        private boolean isThrottleByBytes;
 
         Throttler(ServerConfiguration conf) {
-            this.isThrottleByBytes  = conf.getIsThrottleByBytes();
+            this.conf = conf;
+            this.isThrottleByBytes = conf.getIsThrottleByBytes();
             this.rateLimiter = RateLimiter.create(this.isThrottleByBytes
                 ? conf.getCompactionRateByBytes() : conf.getCompactionRateByEntries());
         }
@@ -70,6 +71,18 @@ public abstract class AbstractLogCompactor {
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
         void acquire(int permits) {
             rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
+        }
+
+        // reset rate of limiter before compact one entry log file
+        void resetRate() {
+            this.isThrottleByBytes = conf.getIsThrottleByBytes();
+            this.rateLimiter.setRate(this.isThrottleByBytes
+                ? conf.getCompactionRateByBytes() : conf.getCompactionRateByEntries());
+        }
+
+        // get rate of limiter for unit test
+        double getRate() {
+            return this.rateLimiter.getRate();
         }
     }
 
