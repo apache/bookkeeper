@@ -66,5 +66,5 @@ The BookKeeper project contains several subfolders that you should be aware of:
 |:----------------------------------------------------------------------------------------------|:----------------------------------------------------------|
 | [`bookkeeper-server`]({{ site.github_repo }}/tree/master/bookkeeper-server)                   | The BookKeeper server and client                          |
 | [`bookkeeper-benchmark`]({{ site.github_repo }}/tree/master/bookkeeper-benchmark)             | A benchmarking suite for measuring BookKeeper performance |
-| [`bookkeeper-stats`]({{ site.github_repo }}/tree/master/bookkeeper-stats)                     | A BookKeeper stats library                                |
-| [`bookkeeper-stats-providers`]({{ site.github_repo }}/tree/master/bookkeeper-stats-providers) | BookKeeper stats providers                                |
+| [`bookkeeper-stats`]({{ site.github_repo }}/tree/master/stats)                     | A BookKeeper stats library                                           |
+| [`bookkeeper-stats-providers`]({{ site.github_repo }}/tree/master/stats/bookkeeper-stats-providers) | BookKeeper stats providers                          |
