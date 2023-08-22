@@ -90,6 +90,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected int minNumRacksPerWriteQuorum;
     protected boolean enforceMinNumRacksPerWriteQuorum;
     protected boolean ignoreLocalNodeInPlacementPolicy;
+    protected boolean useHostnameResolveLocalNodePlacementPolicy;
 
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
@@ -160,6 +161,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               int minNumRacksPerWriteQuorum,
                                                               boolean enforceMinNumRacksPerWriteQuorum,
                                                               boolean ignoreLocalNodeInPlacementPolicy,
+                                                              boolean useHostnameResolveLocalNodePlacementPolicy,
                                                               StatsLogger statsLogger,
                                                               BookieAddressResolver bookieAddressResolver) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
@@ -195,6 +197,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
         this.enforceMinNumRacksPerWriteQuorum = enforceMinNumRacksPerWriteQuorum;
         this.ignoreLocalNodeInPlacementPolicy = ignoreLocalNodeInPlacementPolicy;
+        this.useHostnameResolveLocalNodePlacementPolicy = useHostnameResolveLocalNodePlacementPolicy;
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -206,7 +209,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         BookieNode bn = null;
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
-                bn = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
+                String hostname = useHostnameResolveLocalNodePlacementPolicy ?
+                    InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
+                bn = createDummyLocalBookieNode(hostname);
             } catch (IOException e) {
                 LOG.error("Failed to get local host address : ", e);
             }
@@ -303,6 +308,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getMinNumRacksPerWriteQuorum(),
                 conf.getEnforceMinNumRacksPerWriteQuorum(),
                 conf.getIgnoreLocalNodeInPlacementPolicy(),
+                conf.getUseHostnameResolveLocalNodePlacementPolicy(),
                 statsLogger,
                 bookieAddressResolver);
     }
