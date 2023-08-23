@@ -1714,8 +1714,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r3");
 
-        String hostname = useHostnameResolveLocalNodePlacementPolicy ?
-            InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
+        String hostname = useHostnameResolveLocalNodePlacementPolicy
+            ? InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
         StaticDNSResolver.addNodeToRack(hostname, "/default-region/r1");
         if (useHostnameResolveLocalNodePlacementPolicy) {
             conf.setUseHostnameResolveLocalNodePlacementPolicy(useHostnameResolveLocalNodePlacementPolicy);
