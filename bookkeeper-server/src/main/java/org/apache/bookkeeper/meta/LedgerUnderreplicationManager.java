@@ -240,6 +240,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @param cb
      * @throws ReplicationException.UnavailableException
      */
+    @Deprecated
     void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException;
 

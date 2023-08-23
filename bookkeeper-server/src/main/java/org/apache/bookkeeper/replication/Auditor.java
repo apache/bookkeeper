@@ -183,7 +183,6 @@ public class Auditor implements AutoCloseable {
                 conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorReplicasCheckTask);
-
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -393,8 +392,6 @@ public class Auditor implements AutoCloseable {
                 knownBookies = getAvailableBookies();
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
-                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
-                        new UnderReplicatedLedgersChangedCb());
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, so exiting", bke);
                 submitShutdownTask();
@@ -404,7 +401,7 @@ public class Auditor implements AutoCloseable {
                 submitShutdownTask();
                 return;
             }
-
+            scheduleReplicateStatTask();
             scheduleBookieCheckTask();
             scheduleCheckAllLedgersTask();
             schedulePlacementPolicyCheckTask();
@@ -558,14 +555,26 @@ public class Auditor implements AutoCloseable {
         executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
     }
 
-    private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
-        @Override
-        public void operationComplete(int rc, Void result) {
+    private void scheduleReplicateStatTask() {
+        long interval = conf.getAuditorUnderReplicasStatInterval();
+        if (interval <= 0) {
+            LOG.info("Under Replicas Stats disabled");
+            return;
+        }
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r, "AuditorStat-" + bookieIdentifier);
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
             Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
                     .listLedgersToRereplicate(null);
             auditorStats.getUnderReplicatedLedgersGuageValue().set(Iterators.size(underreplicatedLedgersInfo));
-            auditorStats.getNumReplicatedLedgers().inc();
-        }
+        }, interval, interval, TimeUnit.SECONDS);
     }
 
     private class LostBookieRecoveryDelayChangedCb implements GenericCallback<Void> {

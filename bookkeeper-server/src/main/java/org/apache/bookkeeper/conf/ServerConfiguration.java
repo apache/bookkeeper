@@ -214,6 +214,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String UNDERREPLICATED_LEDGER_RECOVERY_GRACE_PERIOD =
             "underreplicatedLedgerRecoveryGracePeriod";
     protected static final String AUDITOR_REPLICAS_CHECK_INTERVAL = "auditorReplicasCheckInterval";
+    protected static final String AUDITOR_UNDER_REPLICAS_STAT_INTERVAL = "auditorUnderReplicasStatInterval";
     protected static final String AUDITOR_MAX_NUMBER_OF_CONCURRENT_OPEN_LEDGER_OPERATIONS =
         "auditorMaxNumberOfConcurrentOpenLedgerOperations";
     protected static final String AUDITOR_ACQUIRE_CONCURRENT_OPEN_LEDGER_OPERATIONS_TIMEOUT_MSEC =
@@ -2712,6 +2713,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicReplicasCheckInterval() {
         return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
+    }
+    
+    /**
+     * The interval of auditor to get the under replicas stat.
+     * @param interval
+     *              The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorUnderReplicasStatInterval(long interval) {
+        setProperty(AUDITOR_UNDER_REPLICAS_STAT_INTERVAL, interval);
+    }
+    
+    /**
+     * Get the interval of auditor to get the under replicas stat.
+     *
+     * @return The interval in seconds. By default, it is disabled.
+     */
+    public long getAuditorUnderReplicasStatInterval() {
+        return getLong(AUDITOR_UNDER_REPLICAS_STAT_INTERVAL, 0);
     }
 
     /**
