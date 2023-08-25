@@ -78,6 +78,7 @@ public class Auditor implements AutoCloseable {
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ScheduledExecutorService executor;
+    private ScheduledExecutorService auditorStatExecutor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
     protected volatile Future<?> auditTask;
@@ -561,7 +562,7 @@ public class Auditor implements AutoCloseable {
             LOG.info("Under Replicas Stats disabled");
             return;
         }
-        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
+        auditorStatExecutor = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactory() {
                     @Override
                     public Thread newThread(Runnable r) {
@@ -570,7 +571,7 @@ public class Auditor implements AutoCloseable {
                         return t;
                     }
                 });
-        scheduledExecutorService.scheduleAtFixedRate(() -> {
+        auditorStatExecutor.scheduleAtFixedRate(() -> {
             Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
                     .listLedgersToRereplicate(null);
             auditorStats.getUnderReplicatedLedgersGuageValue().set(Iterators.size(underreplicatedLedgersInfo));
@@ -627,6 +628,9 @@ public class Auditor implements AutoCloseable {
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
+        if (auditorStatExecutor != null) {
+            auditorStatExecutor.shutdown();
+        }
         executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
