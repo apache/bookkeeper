@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeS
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -223,7 +224,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(), writeSet);
         LOG.info("reorder set : {}", reorderSet);
-        assertEquals(reorderSet, origWriteSet);
+        assertNotEquals(reorderSet, origWriteSet);
     }
 
     @Test
@@ -1655,10 +1656,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
 
         repp.uninitalize();
-        updateMyRack("/default-region/r3");
+        updateMyRack("/default-region/r2");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        //repp = new RegionAwareEnsemblePlacementPolicy();
         ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
         conf.setReorderReadSequenceEnabled(true);
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
@@ -1688,7 +1688,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet origWriteSet = testWriteSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
             testEnsemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), testWriteSet);
-        LOG.info("[hangc] reorder set: {}, orig set: {}", reorderSet, origWriteSet);
+        assertNotEquals(reorderSet, origWriteSet);
+        assertEquals(reorderSet.get(0), origWriteSet.get(2));
     }
 
     @Test

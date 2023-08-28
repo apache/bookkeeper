@@ -814,17 +814,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         Map<Integer, String> writeSetWithRegion = new HashMap<>();
-        /*
         for (int i = 0; i < writeSet.size(); i++) {
-            writeSetWithRegion.put(writeSet.get(i), "");
+            int idx = writeSet.get(i);
+            writeSetWithRegion.put(idx, resolveNetworkLocation(ensemble.get(idx)));
         }
-         */
-        writeSetWithRegion.put(writeSet.get(0), "/default-region/r1");
-        writeSetWithRegion.put(writeSet.get(1), "/default-region/r1");
-        writeSetWithRegion.put(writeSet.get(2), "/default-region/r2");
-        writeSetWithRegion.put(writeSet.get(3), "/default-region/r3");
         return reorderReadSequenceWithRegion(
-            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
+            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, true,
+            localNode.getNetworkLocation(), writeSet.size());
     }
 
     /**
