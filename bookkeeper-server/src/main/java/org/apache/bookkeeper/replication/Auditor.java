@@ -78,7 +78,6 @@ public class Auditor implements AutoCloseable {
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ScheduledExecutorService executor;
-    private ScheduledExecutorService auditorStatExecutor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
     protected volatile Future<?> auditTask;
@@ -402,7 +401,6 @@ public class Auditor implements AutoCloseable {
                 submitShutdownTask();
                 return;
             }
-            scheduleReplicateStatTask();
             scheduleBookieCheckTask();
             scheduleCheckAllLedgersTask();
             schedulePlacementPolicyCheckTask();
@@ -556,28 +554,6 @@ public class Auditor implements AutoCloseable {
         executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
     }
 
-    private void scheduleReplicateStatTask() {
-        long interval = conf.getAuditorUnderReplicasStatInterval();
-        if (interval <= 0) {
-            LOG.info("Under Replicas Stats disabled");
-            return;
-        }
-        auditorStatExecutor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r, "AuditorStat-" + bookieIdentifier);
-                        t.setDaemon(true);
-                        return t;
-                    }
-                });
-        auditorStatExecutor.scheduleAtFixedRate(() -> {
-            Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
-                    .listLedgersToRereplicate(null);
-            auditorStats.getUnderReplicatedLedgersGuageValue().set(Iterators.size(underreplicatedLedgersInfo));
-        }, interval, interval, TimeUnit.SECONDS);
-    }
-
     private class LostBookieRecoveryDelayChangedCb implements GenericCallback<Void> {
         @Override
         public void operationComplete(int rc, Void result) {
@@ -628,9 +604,6 @@ public class Auditor implements AutoCloseable {
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
-        if (auditorStatExecutor != null) {
-            auditorStatExecutor.shutdown();
-        }
         executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {

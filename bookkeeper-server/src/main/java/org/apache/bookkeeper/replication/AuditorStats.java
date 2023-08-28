@@ -131,15 +131,6 @@ public class AuditorStats {
     )
     private final Counter numDelayedBookieAuditsCancelled;
 
-    /**
-     * Please using {@link org.apache.bookkeeper.replication.ReplicationWorker.numLedgersReplicated}.
-     */
-    @StatsDoc(
-            name = NUM_REPLICATED_LEDGERS,
-            help = "the number of replicated ledgers"
-    )
-    @Deprecated
-    private final Counter numReplicatedLedgers;
     @StatsDoc(
             name = NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY,
             help = "Gauge for number of ledgers not adhering to placement policy found in placement policy check"
@@ -173,11 +164,6 @@ public class AuditorStats {
     )
     private final Gauge<Integer> numLedgersHavingLessThanWQReplicasOfAnEntry;
     @StatsDoc(
-            name = NUM_UNDER_REPLICATED_LEDGERS_GUAGE,
-            help = "Gauge for num of underreplicated ledgers"
-    )
-    private final Gauge<Integer> numUnderReplicatedLedgers;
-    @StatsDoc(
             name = NUM_SKIPPING_CHECK_TASK_TIMES,
             help = "the times of auditor check task skipped"
     )
@@ -208,7 +194,6 @@ public class AuditorStats {
         numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
-        numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
         numSkippingCheckTaskTimes = this.statsLogger.getCounter(NUM_SKIPPING_CHECK_TASK_TIMES);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
@@ -290,17 +275,5 @@ public class AuditorStats {
         };
         this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_WQ_REPLICAS_OF_AN_ENTRY,
                 numLedgersHavingLessThanWQReplicasOfAnEntry);
-        numUnderReplicatedLedgers = new Gauge<Integer>() {
-            @Override
-            public Integer getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Integer getSample() {
-                return underReplicatedLedgersGuageValue.get();
-            }
-        };
-        this.statsLogger.registerGauge(NUM_UNDER_REPLICATED_LEDGERS_GUAGE, numUnderReplicatedLedgers);
     }
 }
