@@ -1643,6 +1643,55 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    public void testReadRequestReorder() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
+
+        repp.uninitalize();
+        updateMyRack("/default-region/r3");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        //repp = new RegionAwareEnsemblePlacementPolicy();
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setReorderReadSequenceEnabled(true);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+            DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        //update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        List<BookieId> testEnsemble = new ArrayList<>();
+        testEnsemble.add(addr1.toBookieId());
+        testEnsemble.add(addr2.toBookieId());
+        testEnsemble.add(addr3.toBookieId());
+        testEnsemble.add(addr4.toBookieId());
+        DistributionSchedule.WriteSet testWriteSet = writeSetFromValues(0, 1, 2, 3);
+
+        Map<BookieId, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1.toBookieId(), 1L);
+        bookiePendingMap.put(addr2.toBookieId(), 7L);
+        bookiePendingMap.put(addr3.toBookieId(), 1L);
+        bookiePendingMap.put(addr4.toBookieId(), 5L);
+        DistributionSchedule.WriteSet origWriteSet = testWriteSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            testEnsemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), testWriteSet);
+        LOG.info("[hangc] reorder set: {}, orig set: {}", reorderSet, origWriteSet);
+    }
+
+    @Test
     public void testNewEnsembleWithPickDifferentRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
