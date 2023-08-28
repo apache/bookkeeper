@@ -48,7 +48,7 @@ else # boot2docker uid and gid
 fi
 
 docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
-FROM ${IMAGE_NAME}
+FROM --platform=linux/amd64 ${IMAGE_NAME}
 RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
   useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}
 ENV  HOME /home/${USER_NAME}
