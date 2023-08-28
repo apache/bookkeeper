@@ -2714,7 +2714,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public long getAuditorPeriodicReplicasCheckInterval() {
         return getLong(AUDITOR_REPLICAS_CHECK_INTERVAL, 0);
     }
-    
+
     /**
      * The interval of auditor to get the under replicas stat.
      * @param interval
@@ -2723,7 +2723,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public void setAuditorUnderReplicasStatInterval(long interval) {
         setProperty(AUDITOR_UNDER_REPLICAS_STAT_INTERVAL, interval);
     }
-    
+
     /**
      * Get the interval of auditor to get the under replicas stat.
      *

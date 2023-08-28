@@ -241,8 +241,8 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @throws ReplicationException.UnavailableException
      */
     @Deprecated
-    void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
-            throws ReplicationException.UnavailableException;
+    default void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {}
 
     /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.

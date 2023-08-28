@@ -130,9 +130,9 @@ public class AuditorStats {
             help = "the number of delayed-bookie-audits cancelled"
     )
     private final Counter numDelayedBookieAuditsCancelled;
-    
+
     /**
-     * Please using {@link org.apache.bookkeeper.replication.ReplicationWorker.numLedgersReplicated}
+     * Please using {@link org.apache.bookkeeper.replication.ReplicationWorker.numLedgersReplicated}.
      */
     @StatsDoc(
             name = NUM_REPLICATED_LEDGERS,
