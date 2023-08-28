@@ -167,10 +167,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // ignore usage of local node in the internal logic of placement policy
     public static final String IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY = "ignoreLocalNodeInPlacementPolicy";
 
-    // Use hostname to resolve local placement info
-    public static final String USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY =
-        "useHostnameResolveLocalNodePlacementPolicy";
-
     // minimum number of zones per write quorum in ZoneAwarePlacementPolicy
     public static final String MIN_NUM_ZONES_PER_WRITE_QUORUM = "minNumZonesPerWriteQuorum";
 
@@ -1012,22 +1008,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getIgnoreLocalNodeInPlacementPolicy() {
         return getBoolean(IGNORE_LOCAL_NODE_IN_PLACEMENT_POLICY, false);
-    }
-
-    /**
-     * Set the flag to use hostname to resolve local node placement policy.
-     * @param useHostnameResolveLocalNodePlacementPolicy
-     */
-    public void setUseHostnameResolveLocalNodePlacementPolicy(boolean useHostnameResolveLocalNodePlacementPolicy) {
-        setProperty(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, useHostnameResolveLocalNodePlacementPolicy);
-    }
-
-    /**
-     * Get whether to use hostname to resolve local node placement policy.
-     * @return
-     */
-    public boolean getUseHostnameResolveLocalNodePlacementPolicy() {
-        return getBoolean(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, false);
     }
 
     /**

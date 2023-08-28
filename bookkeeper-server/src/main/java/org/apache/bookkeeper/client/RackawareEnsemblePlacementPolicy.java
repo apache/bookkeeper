@@ -57,6 +57,24 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           int minNumRacksPerWriteQuorum,
                                                           boolean enforceMinNumRacksPerWriteQuorum,
                                                           boolean ignoreLocalNodeInPlacementPolicy,
+            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
+        return initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
+            reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
+            enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, false,
+            statsLogger, bookieAddressResolver);
+    }
+
+    @Override
+    protected RackawareEnsemblePlacementPolicy initialize(DNSToSwitchMapping dnsResolver,
+                                                          HashedWheelTimer timer,
+                                                          boolean reorderReadsRandom,
+                                                          int stabilizePeriodSeconds,
+                                                          int reorderThresholdPendingRequests,
+                                                          boolean isWeighted,
+                                                          int maxWeightMultiple,
+                                                          int minNumRacksPerWriteQuorum,
+                                                          boolean enforceMinNumRacksPerWriteQuorum,
+                                                          boolean ignoreLocalNodeInPlacementPolicy,
                                                           boolean useHostnameResolveLocalNodePlacementPolicy,
             StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
         if (stabilizePeriodSeconds > 0) {

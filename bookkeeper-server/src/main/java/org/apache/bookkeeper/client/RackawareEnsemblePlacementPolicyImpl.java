@@ -148,6 +148,41 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     /**
      * Initialize the policy.
      *
+     * @param dnsResolver
+     * @param timer
+     * @param reorderReadsRandom
+     * @param stabilizePeriodSeconds
+     * @param reorderThresholdPendingRequests
+     * @param isWeighted
+     * @param maxWeightMultiple
+     * @param minNumRacksPerWriteQuorum
+     * @param enforceMinNumRacksPerWriteQuorum
+     * @param ignoreLocalNodeInPlacementPolicy
+     * @param statsLogger
+     * @param bookieAddressResolver
+     * @return initialized ensemble placement policy
+     */
+    protected RackawareEnsemblePlacementPolicyImpl initialize(DNSToSwitchMapping dnsResolver,
+                                                              HashedWheelTimer timer,
+                                                              boolean reorderReadsRandom,
+                                                              int stabilizePeriodSeconds,
+                                                              int reorderThresholdPendingRequests,
+                                                              boolean isWeighted,
+                                                              int maxWeightMultiple,
+                                                              int minNumRacksPerWriteQuorum,
+                                                              boolean enforceMinNumRacksPerWriteQuorum,
+                                                              boolean ignoreLocalNodeInPlacementPolicy,
+                                                              StatsLogger statsLogger,
+                                                              BookieAddressResolver bookieAddressResolver) {
+        return initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
+            reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
+            enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy,
+            false, statsLogger, bookieAddressResolver);
+    }
+
+    /**
+     * Initialize the policy.
+     *
      * @param dnsResolver the object used to resolve addresses to their network address
      * @return initialized ensemble placement policy
      */

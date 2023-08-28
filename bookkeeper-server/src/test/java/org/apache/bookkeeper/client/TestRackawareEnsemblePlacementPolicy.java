@@ -1706,6 +1706,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
 
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
@@ -1713,6 +1715,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r3");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r4");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/default-region/r5");
 
         String hostname = useHostnameResolveLocalNodePlacementPolicy
             ? InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
@@ -1731,6 +1735,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3.toBookieId());
         addrs.add(addr4.toBookieId());
         addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         int ensembleSize = 3;
