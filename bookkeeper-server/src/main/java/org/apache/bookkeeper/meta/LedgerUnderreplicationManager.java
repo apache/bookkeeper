@@ -159,6 +159,39 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
             throws ReplicationException.UnavailableException;
 
     /**
+     * Emit Auditor tasks re-schedule.
+     *
+     */
+    void emitRescheduleAuditorTasks()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Finishing Auditor tasks re-schedule.
+     *
+     */
+    void finishedRescheduleAuditorTasks()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Check whether the Auditor tasks re-schedule is emitted or not. This will return
+     * true if the schedule task is emitted, otherwise return false.
+     *
+     * @return - return true if it is emitted otherwise return false
+     */
+    boolean isAuditorTasksRescheduleEmit()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Receive notification asynchronously when the schedule auditor tasks
+     * is emitted.
+     *
+     * @param cb
+     *            - callback implementation to receive the notification
+     */
+    void notifyRescheduleAuditorTasksChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException;
+
+    /**
      * Creates the zNode for lostBookieRecoveryDelay with the specified value and returns true.
      * If the node is already existing, then it returns false.
      *

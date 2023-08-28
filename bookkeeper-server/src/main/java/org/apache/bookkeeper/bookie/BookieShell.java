@@ -1856,6 +1856,7 @@ public class BookieShell implements Tool {
                     + "upon next Auditor startup ");
             opts.addOption("rc", "replicascheck", false, "Force replicasCheck audit "
                     + "upon next Auditor startup ");
+            opts.addOption("f", "force", false, "Force re-schedule auditor task to run.");
         }
 
         @Override
@@ -1872,7 +1873,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "forceauditchecks [-checkallledgerscheck [-placementpolicycheck] [-replicascheck]";
+            return "forceauditchecks [-checkallledgerscheck] [-placementpolicycheck] [-replicascheck] [-force]";
         }
 
         @Override
@@ -1880,6 +1881,7 @@ public class BookieShell implements Tool {
             boolean checkAllLedgersCheck = cmdLine.hasOption("calc");
             boolean placementPolicyCheck = cmdLine.hasOption("ppc");
             boolean replicasCheck = cmdLine.hasOption("rc");
+            boolean forceScheduleTask = cmdLine.hasOption("f");
 
             if (checkAllLedgersCheck || placementPolicyCheck  || replicasCheck) {
                 runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
@@ -1899,6 +1901,10 @@ public class BookieShell implements Tool {
                             if (replicasCheck) {
                                 LOG.info("Resetting ReplicasCheckCTime to : " + new Timestamp(time));
                                 underreplicationManager.setReplicasCheckCTime(time);
+                            }
+                            if (forceScheduleTask) {
+                                LOG.info("Emitting Reschedule Auditor check tasks execution.");
+                                underreplicationManager.emitRescheduleAuditorTasks();
                             }
                         }
                     } catch (InterruptedException | ReplicationException e) {

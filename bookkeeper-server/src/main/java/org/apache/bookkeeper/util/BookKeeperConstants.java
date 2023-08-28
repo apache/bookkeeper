@@ -50,6 +50,7 @@ public class BookKeeperConstants {
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
     public static final String DISABLE_HEALTH_CHECK = "disableHealthCheck";
+    public static final String SCHEDULE_AUDITOR_NODE = "scheduleAuditor";
 
     /**
      * Set the max log size limit to 1GB. It makes extra room for entry log file before

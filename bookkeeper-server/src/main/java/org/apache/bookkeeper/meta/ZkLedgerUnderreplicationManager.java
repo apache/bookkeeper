@@ -772,6 +772,104 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
     }
 
+    @Override
+    public void emitRescheduleAuditorTasks()
+            throws ReplicationException.UnavailableException {
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("emitRescheduleAuditorTasks()");
+        }
+        try {
+            String znode = basePath + '/' + BookKeeperConstants.SCHEDULE_AUDITOR_NODE;
+            zkc.create(znode, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
+            LOG.info("Auto Schedule auditor tasks emitted!");
+        } catch (KeeperException.NodeExistsException ke) {
+            LOG.warn("Schedule auditor tasks is already emitted!", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Schedule auditor tasks is already emitted!", ke);
+        } catch (KeeperException ke) {
+            LOG.error("Exception while emitting auto schedule auditor tasks", ke);
+            throw ReplicationException.fromKeeperException("Exception while emitting auto schedule auditor tasks", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while emitting auto schedule auditor tasks", ie);
+        }
+    }
+
+    @Override
+    public void finishedRescheduleAuditorTasks()
+            throws ReplicationException.UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("finishedRescheduleAuditorTasks()");
+        }
+        try {
+            zkc.delete(basePath + '/' + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, -1);
+            LOG.info("Finished automatic schedule auditor tasks");
+        } catch (KeeperException.NoNodeException ke) {
+            LOG.warn("Schedule auditor tasks is already finished!", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Schedule auditor tasks is already finished!", ke);
+        } catch (KeeperException ke) {
+            LOG.error("Exception while finishing schedule auditor tasks", ke);
+            throw ReplicationException.fromKeeperException("Exception while finishing schedule auditor tasks", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while finishing schedule auditor tasks", ie);
+        }
+    }
+
+    @Override
+    public boolean isAuditorTasksRescheduleEmit()
+            throws ReplicationException.UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("isAuditorTasksRescheduleEmit()");
+        }
+        try {
+            return null != zkc.exists(basePath + '/'
+                    + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, false);
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of "
+                    + "auditor tasks schedule", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void notifyRescheduleAuditorTasksChanged(final GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("notifyRescheduleAuditorTasksChanged()");
+        }
+        Watcher w = new Watcher() {
+            @Override
+            public void process(WatchedEvent e) {
+                if (e.getType() == Event.EventType.NodeCreated) {
+                    LOG.info("Schedule auditor tasks is emitted externally through Zookeeper, "
+                            + "since SCHEDULE_AUDITOR_NODE ZNode is created");
+                    cb.operationComplete(0, null);
+                }
+            }
+        };
+        try {
+            zkc.addWatch(basePath + "/"
+                    + BookKeeperConstants.SCHEDULE_AUDITOR_NODE, w, AddWatchMode.PERSISTENT);
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of "
+                    + "schedule auditor tasks", ke);
+            throw ReplicationException.fromKeeperException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while contacting zookeeper", ie);
+        }
+    }
+
     /**
      * Check whether the ledger is being replicated by any bookie.
      */
