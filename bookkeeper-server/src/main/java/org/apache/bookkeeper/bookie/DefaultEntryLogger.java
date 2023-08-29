@@ -69,6 +69,7 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -575,8 +576,8 @@ public class DefaultEntryLogger implements EntryLogger {
         if (currentIds.isEmpty()) {
             return -1;
         }
-        Collections.sort(currentIds);
-        return currentIds.get(currentIds.size() - 1);
+        Pair<Integer, Integer> largestGap = LedgerDirUtil.findLargestGap(currentIds);
+        return largestGap.getLeft() - 1;
     }
 
     /**

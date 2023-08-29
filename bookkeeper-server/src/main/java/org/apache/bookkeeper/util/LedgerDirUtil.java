@@ -20,11 +20,14 @@
  */
 package org.apache.bookkeeper.util;
 
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LedgerDirUtil {
 
@@ -64,5 +67,38 @@ public class LedgerDirUtil {
             }
         }
         return ids;
+    }
+
+    /**
+     * O(nlogn) algorithm to find largest contiguous gap between
+     * integers in a passed list. n should be relatively small.
+     * Entry logs should be about 1GB in size, so even if the node
+     * stores a PB, there should be only 1000000 entry logs.
+     */
+    public static Pair<Integer, Integer> findLargestGap(List<Integer> currentIds) {
+        if (currentIds.isEmpty()) {
+            return Pair.of(0, Integer.MAX_VALUE);
+        }
+        
+        Collections.sort(currentIds);
+        
+        int nextIdCandidate = 0;
+        int maxIdCandidate = currentIds.get(0);
+        int maxGap = maxIdCandidate - nextIdCandidate;
+        for (int i = 0; i < currentIds.size(); i++) {
+            int gapStart = currentIds.get(i) + 1;
+            int j = i + 1;
+            int gapEnd = Integer.MAX_VALUE;
+            if (j < currentIds.size()) {
+                gapEnd = currentIds.get(j);
+            }
+            int gapSize = gapEnd - gapStart;
+            if (gapSize > maxGap) {
+                maxGap = gapSize;
+                nextIdCandidate = gapStart;
+                maxIdCandidate = gapEnd;
+            }
+        }
+        return Pair.of(nextIdCandidate, maxIdCandidate);
     }
 }
