@@ -100,7 +100,7 @@ public class AutoCloseableLifecycleComponent implements LifecycleComponent {
         try {
             closeable.close();
         } catch (Exception e) {
-            LOG.warn("failed to close {}", getClass().getName(), e);
+            LOG.warn("failed to close {}", componentName, e);
         }
         listeners.forEach(LifecycleListener::afterClose);
     }
