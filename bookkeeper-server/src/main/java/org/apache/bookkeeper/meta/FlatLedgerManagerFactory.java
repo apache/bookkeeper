@@ -90,6 +90,13 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     }
 
     @Override
+    public MigrationManager newMigrationManagerManager()
+            throws ReplicationException.UnavailableException, InterruptedException,
+            ReplicationException.CompatibilityException {
+        return new ZkMigrationManager(conf, zk);
+    }
+
+    @Override
     public LedgerAuditorManager newLedgerAuditorManager() {
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         return new ZkLedgerAuditorManager(zk, serverConfiguration, NullStatsLogger.INSTANCE);

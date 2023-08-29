@@ -40,6 +40,7 @@ public class BookKeeperConstants {
     public static final String AVAILABLE_NODE = "available";
     public static final String COOKIE_NODE = "cookies";
     public static final String UNDER_REPLICATION_NODE = "underreplication";
+    public static final String MIGRATION_REPLICAS = "migratedReplicas";
     public static final String UNDER_REPLICATION_LOCK = "locks";
     public static final String DISABLE_NODE = "disable";
     public static final String LOSTBOOKIERECOVERYDELAY_NODE = "lostBookieRecoveryDelay";
