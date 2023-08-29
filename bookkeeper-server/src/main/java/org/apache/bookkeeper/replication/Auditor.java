@@ -21,14 +21,12 @@
 package org.apache.bookkeeper.replication;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -46,7 +44,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
@@ -183,7 +180,6 @@ public class Auditor implements AutoCloseable {
                 conf, auditorStats, admin, ledgerManager,
                 ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorReplicasCheckTask);
-
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -393,8 +389,6 @@ public class Auditor implements AutoCloseable {
                 knownBookies = getAvailableBookies();
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
-                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
-                        new UnderReplicatedLedgersChangedCb());
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, so exiting", bke);
                 submitShutdownTask();
@@ -404,7 +398,6 @@ public class Auditor implements AutoCloseable {
                 submitShutdownTask();
                 return;
             }
-
             scheduleBookieCheckTask();
             scheduleCheckAllLedgersTask();
             schedulePlacementPolicyCheckTask();
@@ -556,16 +549,6 @@ public class Auditor implements AutoCloseable {
                 replicasCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
         executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
-    }
-
-    private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
-        @Override
-        public void operationComplete(int rc, Void result) {
-            Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
-                    .listLedgersToRereplicate(null);
-            auditorStats.getUnderReplicatedLedgersGuageValue().set(Iterators.size(underreplicatedLedgersInfo));
-            auditorStats.getNumReplicatedLedgers().inc();
-        }
     }
 
     private class LostBookieRecoveryDelayChangedCb implements GenericCallback<Void> {
