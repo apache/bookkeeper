@@ -667,6 +667,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                     BookieProtocol.ETOOMANYREQUESTS,
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getAddRequestStats());
+                r.release();
+                r.recycle();
+                write.recycle();
             }
         }
     }
@@ -703,6 +706,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
                     requestStats.getReadRequestStats());
                 onReadRequestFinish();
+                read.recycle();
             }
         }
     }

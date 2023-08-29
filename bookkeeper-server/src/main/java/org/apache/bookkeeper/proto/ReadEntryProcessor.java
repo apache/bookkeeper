@@ -189,7 +189,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         return String.format("ReadEntry(%d, %d)", request.getLedgerId(), request.getEntryId());
     }
 
-    private void recycle() {
+    void recycle() {
         request.recycle();
         super.reset();
         this.recyclerHandle.recycle(this);
