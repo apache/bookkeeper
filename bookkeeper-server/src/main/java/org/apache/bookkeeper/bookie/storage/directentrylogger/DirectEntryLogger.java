@@ -58,6 +58,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 
 /**
  * DirectEntryLogger.
@@ -365,7 +366,7 @@ public class DirectEntryLogger implements EntryLogger {
 
     @Override
     public Collection<Long> getFlushedLogIds() {
-        return EntryLogIdsImpl.logIdsInDirectory(ledgerDir).stream()
+        return LedgerDirUtil.logIdsInDirectory(ledgerDir).stream()
             .filter(logId -> !unflushedLogs.contains(logId))
             .map(i -> Long.valueOf(i))
             .collect(Collectors.toList());
@@ -492,7 +493,7 @@ public class DirectEntryLogger implements EntryLogger {
                         }
                     }
 
-                    Matcher m = EntryLogIdsImpl.COMPACTED_FILE_PATTERN.matcher(f.getName());
+                    Matcher m = LedgerDirUtil.COMPACTED_FILE_PATTERN.matcher(f.getName());
                     if (m.matches()) {
                         int dstLogId = Integer.parseUnsignedInt(m.group(1), 16);
                         int srcLogId = Integer.parseUnsignedInt(m.group(2), 16);
