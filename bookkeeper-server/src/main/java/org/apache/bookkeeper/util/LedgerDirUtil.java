@@ -79,9 +79,9 @@ public class LedgerDirUtil {
         if (currentIds.isEmpty()) {
             return Pair.of(0, Integer.MAX_VALUE);
         }
-        
+
         Collections.sort(currentIds);
-        
+
         int nextIdCandidate = 0;
         int maxIdCandidate = currentIds.get(0);
         int maxGap = maxIdCandidate - nextIdCandidate;

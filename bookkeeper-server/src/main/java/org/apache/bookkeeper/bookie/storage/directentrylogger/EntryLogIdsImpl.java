@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie.storage.directentrylogger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
