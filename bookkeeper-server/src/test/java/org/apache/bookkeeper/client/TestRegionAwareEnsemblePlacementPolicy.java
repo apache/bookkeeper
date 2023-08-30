@@ -1950,7 +1950,6 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 bookie9Count++;
             }
 
-            LOG.info("[hangc] ensemble: {}", ensemble);
             if (!ensemble.contains(addr8.toBookieId()) && !ensemble.contains(addr9.toBookieId())) {
                 fail("Failed to select bookie located on the same region and rack with bookie client");
             }
@@ -1960,28 +1959,37 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
         LOG.info("Bookie1 Count: {}, Bookie8 Count: {}, Bookie9 Count: {}", bookie1Count, bookie8Count, bookie9Count);
 
-        //addr4 shutdown.
-        addrs.remove(addr5.toBookieId());
+        //shutdown all the bookies located in the same region and rack with local node
+        // to test new ensemble should contain addr1
+        addrs.remove(addr8.toBookieId());
+        addrs.remove(addr9.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         bookie1Count = 0;
         bookie8Count = 0;
         bookie9Count = 0;
         for (int i = 0; i < 100; ++i) {
-            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
-                repp.newEnsemble(ensembleSize, writeQuorumSize,
-                    ackQuorumSize, null, excludeBookies);
-            List<BookieId> ensemble = ensembleResponse.getResult();
-            if (ensemble.contains(addr1.toBookieId())) {
-                bookie1Count++;
-            }
-            if (ensemble.contains(addr8.toBookieId())) {
-                bookie8Count++;
-            }
-            if (ensemble.contains(addr9.toBookieId())) {
-                bookie9Count++;
-            }
-            if (!ensemble.contains(addr8.toBookieId()) && !ensemble.contains(addr9.toBookieId())) {
-                fail("Failed to select bookie located on the same region and rack with bookie client");
+            try {
+                EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                        ackQuorumSize, null, excludeBookies);
+                List<BookieId> ensemble = ensembleResponse.getResult();
+                if (ensemble.contains(addr1.toBookieId())) {
+                    bookie1Count++;
+                }
+                if (ensemble.contains(addr8.toBookieId())) {
+                    bookie8Count++;
+                }
+                if (ensemble.contains(addr9.toBookieId())) {
+                    bookie9Count++;
+                }
+                if (!ensemble.contains(addr1.toBookieId())) {
+                    fail("Failed to select bookie located on the same region with bookie client");
+                }
+                if (ensemble.contains(addr8.toBookieId()) || ensemble.contains(addr9.toBookieId())) {
+                    fail("Selected the shutdown bookies");
+                }
+            } catch (BKNotEnoughBookiesException e) {
+                fail("Failed to select the ensemble.");
             }
         }
         LOG.info("Bookie1 Count: {}, Bookie8 Count: {}, Bookie9 Count: {}", bookie1Count, bookie8Count, bookie9Count);
