@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -202,7 +203,8 @@ class EntryLoggerAllocator {
     /**
      * writes the given id to the "lastId" file in the given directory.
      */
-    private void setLastLogId(File dir, long logId) throws IOException {
+    @VisibleForTesting
+    void setLastLogId(File dir, long logId) throws IOException {
         FileOutputStream fos;
         fos = new FileOutputStream(new File(dir, "lastId"));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8));

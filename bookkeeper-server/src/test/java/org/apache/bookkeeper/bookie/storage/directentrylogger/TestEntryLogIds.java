@@ -37,6 +37,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Test;
@@ -259,16 +260,16 @@ public class TestEntryLogIds {
 
     @Test
     public void testGapSelection() throws Exception {
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList()), Pair.of(0, Integer.MAX_VALUE));
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(0)),
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList()), Pair.of(0, Integer.MAX_VALUE));
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList(0)),
             Pair.of(1, Integer.MAX_VALUE));
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(1, 2, 3, 4, 5, 6)),
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList(1, 2, 3, 4, 5, 6)),
             Pair.of(7, Integer.MAX_VALUE));
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE)),
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE)),
             Pair.of(0, Integer.MAX_VALUE));
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2)),
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2)),
             Pair.of(0, Integer.MAX_VALUE / 2));
-        assertEquals(EntryLogIdsImpl.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2 - 1)),
+        assertEquals(LedgerDirUtil.findLargestGap(Lists.newArrayList(Integer.MAX_VALUE / 2 - 1)),
             Pair.of(Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
     }
 
