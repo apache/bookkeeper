@@ -23,7 +23,7 @@
   <parent>
     <artifactId>bookkeeper-dist</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.3-SNAPSHOT</version>
+    <version>4.16.3</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -154,4 +154,8 @@
       </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>v4.16.3-rc0</tag>
+  </scm>
 </project>
