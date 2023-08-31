@@ -39,6 +39,7 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -914,6 +915,7 @@ public class DefaultEntryLogTest {
             long readEntryId = data.readLong();
             Assert.assertEquals("LedgerId", 1L, readLedgerId);
             Assert.assertEquals("EntryId", i, readEntryId);
+            ReferenceCountUtil.release(data);
         }
     }
 
