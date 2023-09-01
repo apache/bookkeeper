@@ -840,7 +840,7 @@ public class DefaultEntryLogger implements EntryLogger {
 
     @Override
     public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(location, -1L, -1L, false /* validateEntry */);
+        return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
     }
 
 
