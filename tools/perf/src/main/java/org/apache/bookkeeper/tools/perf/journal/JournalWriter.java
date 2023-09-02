@@ -390,7 +390,7 @@ public class JournalWriter implements Runnable {
                     buf,
                     false,
                     (rc, ledgerId, entryId, addr, ctx) -> {
-                        ReferenceCountUtil.safeRelease(buf);
+                        ReferenceCountUtil.release(buf);
                         if (0 == rc) {
                             if (null != semaphore) {
                                 semaphore.release(len);

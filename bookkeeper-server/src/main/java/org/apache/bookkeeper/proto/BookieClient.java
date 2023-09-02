@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.util.ReferenceCounted;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -139,7 +140,7 @@ public interface BookieClient {
      *                   {@link org.apache.bookkeeper.client.api.WriteFlag}
      */
     void addEntry(BookieId address, long ledgerId, byte[] masterKey,
-                  long entryId, ByteBufList toSend, WriteCallback cb, Object ctx,
+                  long entryId, ReferenceCounted toSend, WriteCallback cb, Object ctx,
                   int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags);
 
     /**

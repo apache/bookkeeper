@@ -295,14 +295,14 @@ public class EmbeddedServer {
                 StatsProviderService statsProviderService = new StatsProviderService(conf);
                 statsProvider = statsProviderService.getStatsProvider();
                 serverBuilder.addComponent(statsProviderService);
-                log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
+                log.info("Load lifecycle component : {}", statsProviderService.getName());
             }
 
             StatsLogger rootStatsLogger = statsProvider.getStatsLogger("");
 
             // 2. Build metadata driver
             if (metadataDriver == null) {
-                if (ledgerManagerFactory == null && registrationManager == null) {
+                if (ledgerManagerFactory == null || registrationManager == null) {
                     metadataDriver = BookieResources.createMetadataDriver(conf.getServerConf(), rootStatsLogger);
                     serverBuilder.addComponent(new AutoCloseableLifecycleComponent("metadataDriver", metadataDriver));
                 }
@@ -431,7 +431,7 @@ public class EmbeddedServer {
                     new BookieService(conf, bookie, rootStatsLogger, allocatorWithOomHandler, uncleanShutdownDetection);
 
             serverBuilder.addComponent(bookieService);
-            log.info("Load lifecycle component : {}", BookieService.class.getName());
+            log.info("Load lifecycle component : {}", bookieService.getName());
 
             if (conf.getServerConf().isLocalScrubEnabled()) {
                 serverBuilder.addComponent(
@@ -446,7 +446,7 @@ public class EmbeddedServer {
                 autoRecoveryService = new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
 
                 serverBuilder.addComponent(autoRecoveryService);
-                log.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
+                log.info("Load lifecycle component : {}", autoRecoveryService.getName());
             }
 
             // 7. build data integrity check service
@@ -456,7 +456,7 @@ public class EmbeddedServer {
                 dataIntegrityService =
                         new DataIntegrityService(conf, rootStatsLogger.scope(REPLICATION_SCOPE), integCheck);
                 serverBuilder.addComponent(dataIntegrityService);
-                log.info("Load lifecycle component : {}", DataIntegrityService.class.getName());
+                log.info("Load lifecycle component : {}", dataIntegrityService.getName());
             }
 
             // 8. build http service
@@ -470,7 +470,7 @@ public class EmbeddedServer {
                         .build();
                 httpService = new HttpService(provider, conf, rootStatsLogger);
                 serverBuilder.addComponent(httpService);
-                log.info("Load lifecycle component : {}", HttpService.class.getName());
+                log.info("Load lifecycle component : {}", httpService.getName());
             }
 
             // 9. build extra services
@@ -483,7 +483,7 @@ public class EmbeddedServer {
                             rootStatsLogger);
                     for (ServerLifecycleComponent component : components) {
                         serverBuilder.addComponent(component);
-                        log.info("Load lifecycle component : {}", component.getClass().getName());
+                        log.info("Load lifecycle component : {}", component.getName());
                     }
                 } catch (Exception e) {
                     if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {

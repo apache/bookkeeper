@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import lombok.Getter;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -58,9 +60,10 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                                     BookKeeperAdmin admin,
                                     LedgerManager ledgerManager,
                                     LedgerUnderreplicationManager ledgerUnderreplicationManager,
-                                    ShutdownTaskHandler shutdownTaskHandler) {
+                                    ShutdownTaskHandler shutdownTaskHandler,
+                                    BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask) {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         this.underreplicatedLedgerRecoveryGracePeriod = conf.getUnderreplicatedLedgerRecoveryGracePeriod();
         this.numOfLedgersFoundNotAdheringInPlacementPolicyCheck = new AtomicInteger(0);
         this.numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck = new AtomicInteger(0);
@@ -70,6 +73,12 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
 
     @Override
     protected void runTask() {
+        if (hasBookieCheckTask()) {
+            LOG.info("Audit bookie task already scheduled; skipping periodic placement policy check task");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
+            return;
+        }
+
         try {
             if (!isLedgerReplicationEnabled()) {
                 LOG.info("Ledger replication disabled, skipping placementPolicyCheck");

@@ -22,6 +22,7 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
@@ -33,6 +34,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
@@ -136,6 +139,11 @@ public class ReplicationWorker implements Runnable {
             help = "the number of entries ReplicationWorker unable to read"
         )
     private final Counter numEntriesUnableToReadForReplication;
+    @StatsDoc(
+            name = NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED,
+            help = "the number of not adhering placement policy ledgers re-replicated"
+    )
+    private final Counter numNotAdheringPlacementLedgersReplicated;
     private final Map<String, Counter> exceptionCounters;
     final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
     final LoadingCache<Long, ConcurrentSkipListSet<Long>> unableToReadEntriesForReplication;
@@ -217,6 +225,8 @@ public class ReplicationWorker implements Runnable {
                 .getCounter(NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
         this.numEntriesUnableToReadForReplication = this.statsLogger
                 .getCounter(NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION);
+        this.numNotAdheringPlacementLedgersReplicated = this.statsLogger
+                .getCounter(NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
         this.exceptionCounters = new HashMap<String, Counter>();
         this.onReadEntryFailureCallback = (ledgerid, entryid) -> {
             numEntriesUnableToReadForReplication.inc();
@@ -448,6 +458,7 @@ public class ReplicationWorker implements Runnable {
 
             boolean foundOpenFragments = false;
             long numFragsReplicated = 0;
+            long numNotAdheringPlacementFragsReplicated = 0;
             for (LedgerFragment ledgerFragment : fragments) {
                 if (!ledgerFragment.isClosed()) {
                     foundOpenFragments = true;
@@ -461,6 +472,10 @@ public class ReplicationWorker implements Runnable {
                 try {
                     admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
                     numFragsReplicated++;
+                    if (ledgerFragment.getReplicateType() == LedgerFragment
+                            .ReplicateType.DATA_NOT_ADHERING_PLACEMENT) {
+                        numNotAdheringPlacementFragsReplicated++;
+                    }
                 } catch (BKException.BKBookieHandleNotAvailableException e) {
                     LOG.warn("BKBookieHandleNotAvailableException while replicating the fragment", e);
                 } catch (BKException.BKLedgerRecoveryException e) {
@@ -472,6 +487,9 @@ public class ReplicationWorker implements Runnable {
 
             if (numFragsReplicated > 0) {
                 numLedgersReplicated.inc();
+            }
+            if (numNotAdheringPlacementFragsReplicated > 0) {
+                numNotAdheringPlacementLedgersReplicated.inc();
             }
 
             if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
@@ -545,6 +563,14 @@ public class ReplicationWorker implements Runnable {
      *
      * <p>Missing bookies in closed ledgers are fine, as we know the last confirmed add, so
      * we can tell which entries are supposed to exist and rereplicate them if necessary.
+     *
+     * <p>Another corner case is that there are multiple ensembles in the ledger and the last
+     * segment/ensemble is open, but nothing has been written to some quorums in the ensemble.
+     * For the v2 protocol, this ledger's lastAddConfirm entry is the last segment/ensemble's `key - 2`,
+     * not `key - 2`, the explanation please refer to: https://github.com/apache/bookkeeper/pull/3917.
+     * If we treat the penultimate segment/ensemble as closed state, we will can't replicate
+     * the last entry in the segment. So in this case, we should also check if the penultimate
+     * segment/ensemble has missing bookies.
      */
     private boolean isLastSegmentOpenAndMissingBookies(LedgerHandle lh) throws BKException {
         LedgerMetadata md = admin.getLedgerMetadata(lh);
@@ -554,6 +580,10 @@ public class ReplicationWorker implements Runnable {
 
         SortedMap<Long, ? extends List<BookieId>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
         List<BookieId> finalEnsemble = ensembles.get(ensembles.lastKey());
+        if (ensembles.size() > 1 && lh.getLastAddConfirmed() < ensembles.lastKey() - 1) {
+            finalEnsemble = new ArrayList<>(finalEnsemble);
+            finalEnsemble.addAll((new TreeMap<>(ensembles)).floorEntry(ensembles.lastKey() - 1).getValue());
+        }
         Collection<BookieId> available = admin.getAvailableBookies();
         for (BookieId b : finalEnsemble) {
             if (!available.contains(b)) {

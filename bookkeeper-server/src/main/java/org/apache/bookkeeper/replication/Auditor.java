@@ -21,14 +21,12 @@
 package org.apache.bookkeeper.replication;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -46,7 +44,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
@@ -172,15 +169,17 @@ public class Auditor implements AutoCloseable {
                 bookieLedgerIndexer, hasAuditCheckTask, submitBookieCheckTask);
         allAuditorTasks.add(auditorBookieCheckTask);
         this.auditorCheckAllLedgersTask = new AuditorCheckAllLedgersTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorCheckAllLedgersTask);
         this.auditorPlacementPolicyCheckTask = new AuditorPlacementPolicyCheckTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorPlacementPolicyCheckTask);
         this.auditorReplicasCheckTask = new AuditorReplicasCheckTask(
-                conf, auditorStats, admin, ledgerManager, ledgerUnderreplicationManager, shutdownTaskHandler);
+                conf, auditorStats, admin, ledgerManager,
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         allAuditorTasks.add(auditorReplicasCheckTask);
-
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -388,29 +387,17 @@ public class Auditor implements AutoCloseable {
             try {
                 watchBookieChanges();
                 knownBookies = getAvailableBookies();
+                this.ledgerUnderreplicationManager
+                        .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, so exiting", bke);
                 submitShutdownTask();
-            }
-
-            try {
-                this.ledgerUnderreplicationManager
-                        .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
+                return;
             } catch (UnavailableException ue) {
-                LOG.error("Exception while registering for LostBookieRecoveryDelay change notification, so exiting",
-                        ue);
+                LOG.error("Exception while registering for change notification, so exiting", ue);
                 submitShutdownTask();
+                return;
             }
-
-            try {
-                this.ledgerUnderreplicationManager.notifyUnderReplicationLedgerChanged(
-                        new UnderReplicatedLedgersChangedCb());
-            } catch (UnavailableException ue) {
-                LOG.error("Exception while registering for under-replicated ledgers change notification, so exiting",
-                        ue);
-                submitShutdownTask();
-            }
-
             scheduleBookieCheckTask();
             scheduleCheckAllLedgersTask();
             schedulePlacementPolicyCheckTask();
@@ -564,16 +551,6 @@ public class Auditor implements AutoCloseable {
         executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
     }
 
-    private class UnderReplicatedLedgersChangedCb implements GenericCallback<Void> {
-        @Override
-        public void operationComplete(int rc, Void result) {
-            Iterator<UnderreplicatedLedger> underreplicatedLedgersInfo = ledgerUnderreplicationManager
-                    .listLedgersToRereplicate(null);
-            auditorStats.getUnderReplicatedLedgersGuageValue().set(Iterators.size(underreplicatedLedgersInfo));
-            auditorStats.getNumReplicatedLedgers().inc();
-        }
-    }
-
     private class LostBookieRecoveryDelayChangedCb implements GenericCallback<Void> {
         @Override
         public void operationComplete(int rc, Void result) {
@@ -592,8 +569,8 @@ public class Auditor implements AutoCloseable {
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             LOG.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);

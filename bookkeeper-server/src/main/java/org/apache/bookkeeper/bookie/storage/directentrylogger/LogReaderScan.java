@@ -21,16 +21,16 @@
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 
 class LogReaderScan {
-    static void scan(LogReader reader, EntryLogScanner scanner) throws IOException {
+    static void scan(ByteBufAllocator allocator, LogReader reader, EntryLogScanner scanner) throws IOException {
         int offset = Header.LOGFILE_LEGACY_HEADER_SIZE;
 
-        ByteBuf entry = PooledByteBufAllocator.DEFAULT.directBuffer(16 * 1024 * 1024);
+        ByteBuf entry = allocator.directBuffer(16 * 1024 * 1024);
 
         try {
             while (offset < reader.maxOffset()) {
@@ -56,7 +56,7 @@ class LogReaderScan {
                 offset += entrySize;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
         }
     }
 }

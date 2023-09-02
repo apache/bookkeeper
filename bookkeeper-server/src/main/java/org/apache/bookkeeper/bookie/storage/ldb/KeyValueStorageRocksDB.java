@@ -51,6 +51,7 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.LRUCache;
+import org.rocksdb.LiveFileMetaData;
 import org.rocksdb.Options;
 import org.rocksdb.OptionsUtil;
 import org.rocksdb.ReadOptions;
@@ -83,6 +84,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private final ReadOptions optionCache;
     private final ReadOptions optionDontCache;
     private final WriteBatch emptyBatch;
+    private final int writeBatchMaxSize;
+
+    private String dbPath;
 
     private static final String ROCKSDB_LOG_PATH = "dbStorage_rocksDB_logPath";
     private static final String ROCKSDB_LOG_LEVEL = "dbStorage_rocksDB_logLevel";
@@ -96,6 +100,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
     private static final String ROCKSDB_FORMAT_VERSION = "dbStorage_rocksDB_format_version";
+    private static final String ROCKSDB_CHECKSUM_TYPE = "dbStorage_rocksDB_checksum_type";
 
     public KeyValueStorageRocksDB(String basePath, String subPath, DbConfigType dbConfigType, ServerConfiguration conf)
             throws IOException {
@@ -139,6 +144,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
         optionCache.setFillCache(true);
         optionDontCache.setFillCache(false);
+
+        this.writeBatchMaxSize = conf.getMaxOperationNumbersInSingleRocksDBBatch();
     }
 
     private RocksDB initializeRocksDBWithConfFile(String basePath, String subPath, DbConfigType dbConfigType,
@@ -157,13 +164,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
                 dbOptions.setDbLogDir(logPathSetting.toString());
             }
-            String path = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
+            this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
             this.options = dbOptions;
             this.columnFamilyDescriptors = cfDescs;
             if (readOnly) {
-                return RocksDB.openReadOnly(dbOptions, path, cfDescs, cfHandles);
+                return RocksDB.openReadOnly(dbOptions, dbPath, cfDescs, cfHandles);
             } else {
-                return RocksDB.open(dbOptions, path, cfDescs, cfHandles);
+                return RocksDB.open(dbOptions, dbPath, cfDescs, cfHandles);
             }
         } catch (RocksDBException e) {
             throw new IOException("Error open RocksDB database", e);
@@ -174,6 +181,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                                            ServerConfiguration conf, boolean readOnly) throws IOException {
         Options options = new Options();
         options.setCreateIfMissing(true);
+        ChecksumType checksumType = ChecksumType.valueOf(conf.getString(ROCKSDB_CHECKSUM_TYPE, "kxxHash"));
 
         if (dbConfigType == DbConfigType.EntryLocation) {
             /* Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override */
@@ -214,7 +222,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             tableOptions.setBlockSize(blockSize);
             tableOptions.setBlockCache(cache);
             tableOptions.setFormatVersion(formatVersion);
-            tableOptions.setChecksumType(ChecksumType.kxxHash);
+            tableOptions.setChecksumType(checksumType);
             if (bloomFilterBitsPerKey > 0) {
                 tableOptions.setFilterPolicy(new BloomFilter(bloomFilterBitsPerKey, false));
             }
@@ -226,6 +234,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setTableFormatConfig(tableOptions);
         } else {
             this.cache = null;
+            BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
+            tableOptions.setChecksumType(checksumType);
+            options.setTableFormatConfig(tableOptions);
         }
 
             // Configure file path
@@ -236,7 +247,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
             options.setDbLogDir(logPathSetting.toString());
         }
-        String path = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
+        this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
 
         // Configure log level
         String logLevel = conf.getString(ROCKSDB_LOG_LEVEL, "info");
@@ -263,9 +274,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         this.options = options;
         try {
             if (readOnly) {
-                return RocksDB.openReadOnly(options, path);
+                return RocksDB.openReadOnly(options, dbPath);
             } else {
-                return RocksDB.open(options, path);
+                return RocksDB.open(options, dbPath);
             }
         } catch (RocksDBException e) {
             throw new IOException("Error open RocksDB database", e);
@@ -361,12 +372,47 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
+    public String getDBPath() {
+        return dbPath;
+    }
+
+    @Override
     public void compact(byte[] firstKey, byte[] lastKey) throws IOException {
         try {
             db.compactRange(firstKey, lastKey);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB compact", e);
         }
+    }
+
+    @Override
+    public void compact() throws IOException {
+        try {
+            final long start = System.currentTimeMillis();
+            final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
+            final long oriRocksDBSize = getRocksDBSize();
+            log.info("Starting RocksDB {} compact, current RocksDB hold {} files and {} Bytes.",
+                    db.getName(), oriRocksDBFileCount, oriRocksDBSize);
+
+            db.compactRange();
+
+            final long end = System.currentTimeMillis();
+            final int rocksDBFileCount = db.getLiveFilesMetaData().size();
+            final long rocksDBSize = getRocksDBSize();
+            log.info("RocksDB {} compact finished {} ms, space reduced {} Bytes, current hold {} files and {} Bytes.",
+                    db.getName(), end - start, oriRocksDBSize - rocksDBSize, rocksDBFileCount, rocksDBSize);
+        } catch (RocksDBException e) {
+            throw new IOException("Error in RocksDB compact", e);
+        }
+    }
+
+    private long getRocksDBSize() {
+        List<LiveFileMetaData> liveFilesMetaData = db.getLiveFilesMetaData();
+        long rocksDBFileSize = 0L;
+        for (LiveFileMetaData fileMetaData : liveFilesMetaData) {
+            rocksDBFileSize += fileMetaData.size();
+        }
+        return rocksDBFileSize;
     }
 
     @Override
@@ -473,21 +519,29 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public Batch newBatch() {
-        return new RocksDBBatch();
+        return new RocksDBBatch(writeBatchMaxSize);
     }
 
     private class RocksDBBatch implements Batch {
         private final WriteBatch writeBatch = new WriteBatch();
+        private final int batchSize;
+        private int batchCount = 0;
+
+        RocksDBBatch(int batchSize) {
+            this.batchSize = batchSize;
+        }
 
         @Override
         public void close() {
             writeBatch.close();
+            batchCount = 0;
         }
 
         @Override
         public void put(byte[] key, byte[] value) throws IOException {
             try {
                 writeBatch.put(key, value);
+                countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
             }
@@ -497,6 +551,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         public void remove(byte[] key) throws IOException {
             try {
                 writeBatch.delete(key);
+                countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
             }
@@ -505,15 +560,29 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         @Override
         public void clear() {
             writeBatch.clear();
+            batchCount = 0;
         }
 
         @Override
         public void deleteRange(byte[] beginKey, byte[] endKey) throws IOException {
             try {
                 writeBatch.deleteRange(beginKey, endKey);
+                countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
             }
+        }
+
+        private void countBatchAndFlushIfNeeded() throws IOException {
+            if (++batchCount >= batchSize) {
+                flush();
+                clear();
+            }
+        }
+
+        @Override
+        public int batchCount() {
+            return batchCount;
         }
 
         @Override

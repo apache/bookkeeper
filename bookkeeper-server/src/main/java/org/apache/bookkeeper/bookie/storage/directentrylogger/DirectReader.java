@@ -56,8 +56,6 @@ class DirectReader implements LogReader {
         this.filename = filename;
         this.maxSaneEntrySize = maxSaneEntrySize;
         this.readBlockStats = readBlockStats;
-
-        nativeBuffer = new Buffer(nativeIO, bufferSize);
         closed = false;
 
         try {
@@ -71,6 +69,7 @@ class DirectReader implements LogReader {
                                   .kv("errno", ne.getErrno()).toString());
         }
         refreshMaxOffset();
+        nativeBuffer = new Buffer(nativeIO, allocator, bufferSize);
     }
 
     @Override
@@ -91,7 +90,7 @@ class DirectReader implements LogReader {
         try {
             readIntoBufferAt(buf, offset, size);
         } catch (IOException e) {
-            ReferenceCountUtil.safeRelease(buf);
+            ReferenceCountUtil.release(buf);
             throw e;
         }
 
@@ -121,7 +120,7 @@ class DirectReader implements LogReader {
                 try {
                     return intBuf.getInt(0);
                 } finally {
-                    ReferenceCountUtil.safeRelease(intBuf);
+                    ReferenceCountUtil.release(intBuf);
                 }
             }
         }
@@ -138,7 +137,7 @@ class DirectReader implements LogReader {
                 try {
                     return longBuf.getLong(0);
                 } finally {
-                    ReferenceCountUtil.safeRelease(longBuf);
+                    ReferenceCountUtil.release(longBuf);
                 }
             }
         }

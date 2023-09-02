@@ -22,5 +22,10 @@ import io.netty.buffer.ByteBuf;
 
 public interface IntHash {
     int calculate(ByteBuf buffer);
+
+    int calculate(ByteBuf buffer, int offset, int len);
+
     int resume(int current, ByteBuf buffer);
+
+    int resume(int current, ByteBuf buffer, int offset, int len);
 }

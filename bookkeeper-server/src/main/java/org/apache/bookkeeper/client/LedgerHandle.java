@@ -46,6 +46,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +101,7 @@ public class LedgerHandle implements WriteHandle {
     final byte[] ledgerKey;
     private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
+    final ExecutorService executor;
     long lastAddPushed;
 
     private enum HandleState {
@@ -194,6 +196,7 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
+        this.executor = clientCtx.getMainWorkerPool().chooseThread(ledgerId);
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
@@ -1337,7 +1340,7 @@ public class LedgerHandle implements WriteHandle {
                 });
             } catch (RejectedExecutionException e) {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                    BKException.Code.InterruptedException),
+                                BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
                 op.recyclePendAddOpObject();
             }
@@ -1355,13 +1358,8 @@ public class LedgerHandle implements WriteHandle {
             }
         }
 
-        try {
-            executeOrdered(op);
-        } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(
-                    BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
-                    LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
-        }
+        op.initiate();
+
     }
 
     synchronized void updateLastConfirmed(long lac, long len) {
@@ -1875,7 +1873,8 @@ public class LedgerHandle implements WriteHandle {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
                     failedBookies, ledgerId);
             }
-            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet());
+            executeOrdered(() ->
+                    unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet()));
             return;
         }
 
@@ -2085,7 +2084,7 @@ public class LedgerHandle implements WriteHandle {
      * @throws RejectedExecutionException
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
-        clientCtx.getMainWorkerPool().executeOrdered(ledgerId, runnable);
+        executor.execute(runnable);
     }
 
 }

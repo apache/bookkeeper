@@ -53,8 +53,13 @@ public class LedgerFragment {
         this.schedule = lh.getDistributionSchedule();
         SortedMap<Long, ? extends List<BookieId>> ensembles = lh
                 .getLedgerMetadata().getAllEnsembles();
+        // Check if the ledger fragment is closed has two conditions
+        // 1. The ledger is closed
+        // 2. This fragment is not the last fragment and this ledger's lastAddConfirm >= ensembles.lastKey() - 1.
+        //    This case happens when the ledger's last ensemble is empty
         this.isLedgerClosed = lh.getLedgerMetadata().isClosed()
-                || !ensemble.equals(ensembles.get(ensembles.lastKey()));
+                || (!ensemble.equals(ensembles.get(ensembles.lastKey()))
+            && lh.getLastAddConfirmed() >= ensembles.lastKey() - 1);
     }
 
     public LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
@@ -229,9 +234,9 @@ public class LedgerFragment {
     @Override
     public String toString() {
         return String.format("Fragment(LedgerID: %d, FirstEntryID: %d[%d], "
-                + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s)", ledgerId, firstEntryId,
+                        + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s, Type: %s)", ledgerId, firstEntryId,
                 getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
-                getAddresses(), isLedgerClosed);
+                getAddresses(), isLedgerClosed, replicateType);
     }
 
     /**

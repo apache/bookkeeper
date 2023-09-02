@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -60,12 +60,14 @@ class Buffer {
     final int bufferSize;
     ByteBuf buffer;
     ByteBuffer byteBuffer;
+    ByteBufAllocator allocator;
     long pointer = 0;
 
-    Buffer(NativeIO nativeIO, int bufferSize) throws IOException {
+    Buffer(NativeIO nativeIO, ByteBufAllocator allocator, int bufferSize) throws IOException {
         checkArgument(isAligned(bufferSize),
                       "Buffer size not aligned %d", bufferSize);
 
+        this.allocator = allocator;
         this.buffer = allocateAligned(ALIGNMENT, bufferSize);
         this.nativeIO = nativeIO;
         this.bufferSize = bufferSize;
@@ -74,7 +76,7 @@ class Buffer {
     }
 
     private ByteBuf allocateAligned(int alignment, int bufferSize) {
-        ByteBuf buf = PooledByteBufAllocator.DEFAULT.directBuffer(bufferSize + alignment);
+        ByteBuf buf = allocator.directBuffer(bufferSize + alignment);
         long addr = buf.memoryAddress();
         if ((addr & (alignment - 1)) == 0) {
             // The address is already aligned
@@ -243,7 +245,7 @@ class Buffer {
      * Free the memory that backs this buffer.
      */
     void free() {
-        ReferenceCountUtil.safeRelease(buffer);
+        ReferenceCountUtil.release(buffer);
         buffer = null;
         byteBuffer = null;
     }

@@ -1159,6 +1159,33 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testReplicateEmptyOpenStateLedger() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, 2, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        assertFalse(lh.getLedgerMetadata().isClosed());
+
+        List<BookieId> firstEnsemble = lh.getLedgerMetadata().getAllEnsembles().firstEntry().getValue();
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue();
+        killBookie(ensemble.get(1));
+
+        startNewBookie();
+        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30));
+        ReplicationWorker replicationWorker = new ReplicationWorker(baseConf);
+        replicationWorker.start();
+
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(), ensemble.get(1).toString());
+            Awaitility.waitAtMost(60, TimeUnit.SECONDS).untilAsserted(() ->
+                assertFalse(ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath))
+            );
+
+            LedgerHandle lh1 = bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32, TESTPASSWD);
+            assertTrue(lh1.getLedgerMetadata().isClosed());
+        } finally {
+            replicationWorker.shutdown();
+        }
+    }
+
+    @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
         testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class, null);
     }
@@ -1178,6 +1205,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                         statsLogger.getCounter(ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
                 final Counter numLedgersReplicatedCounter =
                         statsLogger.getCounter(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+                final Counter numNotAdheringPlacementLedgersCounter = statsLogger
+                        .getCounter(ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
 
                 assertEquals("NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER",
                         1, numDeferLedgerLockReleaseOfFailedLedgerCounter.get().longValue());
@@ -1186,10 +1215,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                     assertFalse((boolean) result);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             0, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            0, numNotAdheringPlacementLedgersCounter.get().longValue());
+
                 } else {
                     assertTrue((boolean) result);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             1, numLedgersReplicatedCounter.get().longValue());
+                    assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
+                            1, numNotAdheringPlacementLedgersCounter.get().longValue());
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -1367,7 +1401,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
         final AuditorPeriodicCheckTest.TestAuditor auditor = new AuditorPeriodicCheckTest.TestAuditor(
-                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger);
+                BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false, statsLogger, null);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0,

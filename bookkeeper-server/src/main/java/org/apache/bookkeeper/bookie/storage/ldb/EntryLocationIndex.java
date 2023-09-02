@@ -48,6 +48,7 @@ public class EntryLocationIndex implements Closeable {
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
     private final EntryLocationIndexStats stats;
+    private boolean isCompacting;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
@@ -189,15 +190,32 @@ public class EntryLocationIndex implements Closeable {
         deletedLedgers.add(ledgerId);
     }
 
-    public void removeOffsetFromDeletedLedgers() throws IOException {
-        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
-        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
+    public String getEntryLocationDBPath() {
+        return locationsDb.getDBPath();
+    }
 
+    public void compact() throws IOException {
+        try {
+            isCompacting = true;
+            locationsDb.compact();
+        } finally {
+            isCompacting = false;
+        }
+    }
+
+    public boolean isCompacting() {
+        return isCompacting;
+    }
+
+    public void removeOffsetFromDeletedLedgers() throws IOException {
         Set<Long> ledgersToDelete = deletedLedgers.items();
 
         if (ledgersToDelete.isEmpty()) {
             return;
         }
+
+        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
+        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
 
         log.info("Deleting indexes for ledgers: {}", ledgersToDelete);
         long startTime = System.nanoTime();

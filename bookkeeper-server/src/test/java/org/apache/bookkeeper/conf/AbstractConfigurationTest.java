@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 
+import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -130,4 +131,52 @@ public class AbstractConfigurationTest {
         conf.getMetadataServiceUri();
     }
 
+    @Test
+    public void testAllocatorLeakDetectionPolicy() {
+        String nettyOldLevelKey = "io.netty.leakDetectionLevel";
+        String nettyLevelKey = "io.netty.leakDetection.level";
+
+        String nettyOldLevelStr = System.getProperty(nettyOldLevelKey);
+        String nettyLevelStr = System.getProperty(nettyLevelKey);
+
+        //Remove netty property for test.
+        System.getProperties().remove(nettyOldLevelKey);
+        System.getProperties().remove(nettyLevelKey);
+
+        assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
+
+        System.getProperties().put(nettyOldLevelKey, "zazaza");
+        assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
+
+        conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "zazaza");
+        assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
+
+        System.getProperties().put(nettyOldLevelKey, "simple");
+        assertEquals(LeakDetectionPolicy.Simple, conf.getAllocatorLeakDetectionPolicy());
+
+        System.getProperties().put(nettyLevelKey, "disabled");
+        assertEquals(LeakDetectionPolicy.Disabled, conf.getAllocatorLeakDetectionPolicy());
+
+        System.getProperties().put(nettyLevelKey, "advanCed");
+        assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
+
+        conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "simPle");
+        assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
+
+        conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "advanCed");
+        assertEquals(LeakDetectionPolicy.Advanced, conf.getAllocatorLeakDetectionPolicy());
+
+        conf.setProperty(AbstractConfiguration.ALLOCATOR_LEAK_DETECTION_POLICY, "paranoiD");
+        assertEquals(LeakDetectionPolicy.Paranoid, conf.getAllocatorLeakDetectionPolicy());
+
+        System.getProperties().remove(nettyOldLevelKey);
+        System.getProperties().remove(nettyLevelKey);
+        //Revert the netty properties.
+        if (nettyOldLevelStr != null) {
+            System.getProperties().put(nettyOldLevelKey, nettyOldLevelStr);
+        }
+        if (nettyLevelStr != null) {
+            System.getProperties().put(nettyLevelKey, nettyLevelStr);
+        }
+    }
 }

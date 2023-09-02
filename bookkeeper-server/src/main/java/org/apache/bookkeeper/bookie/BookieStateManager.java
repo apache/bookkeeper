@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SANITY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -33,10 +34,12 @@ import java.io.UncheckedIOException;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -47,9 +50,11 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * An implementation of StateManager.
@@ -67,7 +72,7 @@ public class BookieStateManager implements StateManager {
     private final List<File> statusDirs;
 
     // use an executor to execute the state changes task
-    final ExecutorService stateService = Executors.newSingleThreadExecutor(
+    final ScheduledExecutorService stateService = Executors.newScheduledThreadPool(1,
             new ThreadFactoryBuilder().setNameFormat("BookieStateManagerService-%d").build());
 
     // Running flag
@@ -78,6 +83,7 @@ public class BookieStateManager implements StateManager {
     private final BookieStatus bookieStatus = new BookieStatus();
     private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
+    private final AtomicInteger sanityPassed = new AtomicInteger(-1);
     private volatile boolean availableForHighPriorityWrites = true;
 
     private final Supplier<BookieId> bookieIdSupplier;
@@ -89,6 +95,11 @@ public class BookieStateManager implements StateManager {
         help = "Bookie status (1: up, 0: readonly, -1: unregistered)"
     )
     private final Gauge<Number> serverStatusGauge;
+    @StatsDoc(
+        name = SERVER_SANITY,
+        help = "Bookie sanity (1: up, 0: down, -1: unknown)"
+    )
+    private final Gauge<Number> serverSanityGauge;
 
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
@@ -149,6 +160,32 @@ public class BookieStateManager implements StateManager {
             }
         };
         statsLogger.registerGauge(SERVER_STATUS, serverStatusGauge);
+        this.serverSanityGauge = new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return -1;
+            }
+
+            @Override
+            public Number getSample() {
+                return sanityPassed.get();
+            }
+        };
+        if (conf.isSanityCheckMetricsEnabled()) {
+            statsLogger.registerGauge(SERVER_SANITY, serverSanityGauge);
+            stateService.scheduleAtFixedRate(() -> {
+                if (isReadOnly()) {
+                    sanityPassed.set(1);
+                    return;
+                }
+                SanityTestCommand.handleAsync(conf, new SanityTestCommand.SanityFlags()).thenAccept(__ -> {
+                    sanityPassed.set(1);
+                }).exceptionally(ex -> {
+                    sanityPassed.set(0);
+                    return null;
+                });
+            }, 60, 60, TimeUnit.SECONDS);
+        }
     }
 
     private boolean isRegistrationManagerDisabled() {
@@ -191,6 +228,11 @@ public class BookieStateManager implements StateManager {
     @Override
     public boolean isReadOnly(){
         return forceReadOnly.get() || bookieStatus.isInReadOnlyMode();
+    }
+
+    @Override
+    public boolean isForceReadOnly(){
+        return forceReadOnly.get();
     }
 
     @Override

@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -36,9 +37,12 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -59,15 +63,27 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.replication.ReplicationTestUtil;
+import org.apache.bookkeeper.replication.ReplicationWorker;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang3.tuple.Pair;
+import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,11 +91,25 @@ import org.slf4j.LoggerFactory;
 /**
  * Testing ledger write entry cases.
  */
+@RunWith(Parameterized.class)
 public class BookieWriteLedgerTest extends
     BookKeeperClusterTestCase implements AddCallback {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+            { true, true }, { true, false }, { false, true }, { false, false }
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useV2;
+
+    @Parameterized.Parameter(1)
+    public boolean writeJournal;
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
@@ -106,6 +136,9 @@ public class BookieWriteLedgerTest extends
     @Override
     @Before
     public void setUp() throws Exception {
+        baseConf.setJournalWriteData(writeJournal);
+        baseClientConf.setUseV2WireProtocol(useV2);
+
         super.setUp();
         rng = new Random(0); // Initialize the Random
         // Number Generator
@@ -1432,6 +1465,68 @@ public class BookieWriteLedgerTest extends
         }
 
         bkc.deleteLedger(lh.ledgerId);
+    }
+
+    @Test
+    public void testReadLacNotSameWithMetadataLedgerReplication() throws Exception {
+       lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
+        for (int i = 0; i < 10; ++i) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            lh.addEntry(entry.array());
+        }
+
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue();
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        killBookie(ensemble.get(1));
+
+        try {
+            lh.ensembleChangeLoop(ensemble, Collections.singletonMap(1, ensemble.get(1)));
+        } catch (Exception e) {
+            fail();
+        }
+
+        LedgerHandle lh1 = bkc.openLedgerNoRecovery(lh.ledgerId, digestType, ledgerPassword);
+        assertEquals(2, lh1.getLedgerMetadata().getAllEnsembles().size());
+        List<BookieId> firstEnsemble = lh1.getLedgerMetadata().getAllEnsembles().firstEntry().getValue();
+
+        long entryId = lh1.getLedgerMetadata().getAllEnsembles().lastEntry().getKey() - 1;
+        try {
+            lh1.readAsync(entryId, entryId).get();
+            fail();
+        } catch (Exception e) {
+            LOG.info("Failed to read entry: {} ", entryId, e);
+        }
+
+        MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
+            URI.create(baseConf.getMetadataServiceUri()));
+        driver.initialize(
+            baseConf,
+            NullStatsLogger.INSTANCE);
+        // initialize urReplicationManager
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30));
+
+
+        ReplicationWorker replicationWorker = new ReplicationWorker(baseConf);
+        replicationWorker.start();
+        String basePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf) + '/'
+            + BookKeeperConstants.UNDER_REPLICATION_NODE
+            + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh1.getId(), ensemble.get(1).toString());
+
+            Awaitility.waitAtMost(30, TimeUnit.SECONDS).untilAsserted(() ->
+                assertFalse(ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh1.getId(), basePath))
+            );
+
+            assertNotEquals(firstEnsemble, lh1.getLedgerMetadata().getAllEnsembles().firstEntry().getValue());
+        } finally {
+            replicationWorker.shutdown();
+        }
     }
 
     @Test

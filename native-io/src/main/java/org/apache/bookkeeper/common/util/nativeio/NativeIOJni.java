@@ -34,6 +34,8 @@ class NativeIOJni {
      */
     static native int fallocate(int fd, int mode, long offset, long len) throws NativeIOException;
 
+    static native int posix_fadvise(int fd, long offset, long len, int flag) throws NativeIOException;
+
     static native int pwrite(int fd, long pointer, int count, long offset) throws NativeIOException;
 
     static native long posix_memalign(int alignment, int size) throws NativeIOException;

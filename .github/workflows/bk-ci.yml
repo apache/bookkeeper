@@ -79,9 +79,16 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
-        run: mvn clean -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: |
+          mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Check license files
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -109,13 +116,13 @@ jobs:
             module: bookkeeper-server
             flag: client
             test_args: "-Dtest='org.apache.bookkeeper.client.**'"
-          - step_name: Remaining Tests
-            module: bookkeeper-server
-            flag: remaining
-            test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
           - step_name: Replication Tests
             module: bookkeeper-server
             flag: replication
+            test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
+          - step_name: Remaining Tests
+            module: bookkeeper-server
+            flag: remaining
             test_args: "-Dtest='!org.apache.bookkeeper.client.**,!org.apache.bookkeeper.bookie.**,!org.apache.bookkeeper.replication.**,!org.apache.bookkeeper.tls.**'"
           - step_name: TLS Tests
             module: bookkeeper-server
@@ -152,6 +159,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build
         run: |
           projects_list=
@@ -166,13 +178,7 @@ jobs:
           if [[ ! -z "${{ matrix.module }}" ]]; then
             projects_list="-pl ${{ matrix.module }}"
           fi
-          mvn -Pcode-coverage -B -nsu $projects_list verify ${{ matrix.test_args }}
-
-      - name: Upload coverage to Codecov
-        if: ${{ matrix.flag }} != 'shell'
-        uses: codecov/codecov-action@v3
-        with:
-          flags: ${{ matrix.flag }}
+          mvn -B -nsu $projects_list verify ${{ matrix.test_args }}
 
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
         if: ${{ always() }}
@@ -223,6 +229,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build with Maven
         run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
@@ -264,6 +275,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 8
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: Build with Maven
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
@@ -311,6 +327,11 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
 
@@ -342,6 +363,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -387,6 +413,11 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
@@ -421,6 +452,11 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 11
+
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
 
       - name: run "clean install verify" to trigger dependency check
         # excluding dlfs because it includes hadoop lib with

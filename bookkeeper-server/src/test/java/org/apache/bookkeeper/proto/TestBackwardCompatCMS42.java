@@ -161,8 +161,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
 
         }
 
-        client.sendRequest(new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                                           1L, 1L, (short) 0, null));
+        ReadRequest read = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION,
+                1L, 1L, (short) 0, null);
+        client.sendRequest(read);
         Response response = client.takeResponse();
         assertEquals("Should have failed",
                      response.getErrorCode(), BookieProtocol.EUA);

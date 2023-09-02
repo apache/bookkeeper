@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>backward-compat</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -29,7 +29,7 @@
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test Bouncy Castle Provider load non FIPS version</name>
   <properties>
-    <bc-non-fips.version>1.68</bc-non-fips.version>
+    <bc-non-fips.version>1.75</bc-non-fips.version>
   </properties>
 
   <dependencies>
@@ -54,13 +54,13 @@
 
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
+      <artifactId>bcpkix-jdk18on</artifactId>
       <version>${bc-non-fips.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-ext-jdk15on</artifactId>
+      <artifactId>bcprov-ext-jdk18on</artifactId>
       <version>${bc-non-fips.version}</version>
     </dependency>
 

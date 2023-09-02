@@ -41,8 +41,6 @@ public class AuditorBookieCheckTask extends AuditorTask {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorBookieCheckTask.class);
 
     private final BookieLedgerIndexer bookieLedgerIndexer;
-    private final BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask;
-    private final AtomicBoolean hasTask = new AtomicBoolean(false);
     private final BiConsumer<Void, Throwable> submitCheckTask;
 
     public AuditorBookieCheckTask(ServerConfiguration conf,
@@ -55,17 +53,14 @@ public class AuditorBookieCheckTask extends AuditorTask {
                                   BiConsumer<AtomicBoolean, Throwable> hasAuditCheckTask,
                                   BiConsumer<Void, Throwable> submitCheckTask) {
         super(conf, auditorStats, admin, ledgerManager,
-                ledgerUnderreplicationManager, shutdownTaskHandler);
+                ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
         this.bookieLedgerIndexer = bookieLedgerIndexer;
-        this.hasAuditCheckTask = hasAuditCheckTask;
         this.submitCheckTask = submitCheckTask;
     }
 
     @Override
     protected void runTask() {
-        hasTask.set(false);
-        hasAuditCheckTask.accept(hasTask, null);
-        if (!hasTask.get()) {
+        if (!hasBookieCheckTask()) {
             startAudit(true);
         } else {
             // if due to a lost bookie an audit task was scheduled,
@@ -73,6 +68,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             // went ahead, we'll report under replication and the user
             // wanted to avoid that(with lostBookieRecoveryDelay option)
             LOG.info("Audit already scheduled; skipping periodic bookie check");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
         }
     }
 

@@ -31,10 +31,9 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAV
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAVING_NO_REPLICA_OF_AN_ENTRY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY;
-import static org.apache.bookkeeper.replication.ReplicationStats.NUM_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
-import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS_GUAGE;
 import static org.apache.bookkeeper.replication.ReplicationStats.PLACEMENT_POLICY_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICAS_CHECK_TIME;
 import static org.apache.bookkeeper.replication.ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE;
@@ -130,11 +129,6 @@ public class AuditorStats {
     )
     private final Counter numDelayedBookieAuditsCancelled;
     @StatsDoc(
-            name = NUM_REPLICATED_LEDGERS,
-            help = "the number of replicated ledgers"
-    )
-    private final Counter numReplicatedLedgers;
-    @StatsDoc(
             name = NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY,
             help = "Gauge for number of ledgers not adhering to placement policy found in placement policy check"
     )
@@ -167,10 +161,10 @@ public class AuditorStats {
     )
     private final Gauge<Integer> numLedgersHavingLessThanWQReplicasOfAnEntry;
     @StatsDoc(
-            name = NUM_UNDER_REPLICATED_LEDGERS_GUAGE,
-            help = "Gauge for num of underreplicated ledgers"
+            name = NUM_SKIPPING_CHECK_TASK_TIMES,
+            help = "the times of auditor check task skipped"
     )
-    private final Gauge<Integer> numUnderReplicatedLedgers;
+    private final Counter numSkippingCheckTaskTimes;
 
     public AuditorStats(StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
@@ -197,7 +191,7 @@ public class AuditorStats {
         numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
-        numReplicatedLedgers = this.statsLogger.getCounter(NUM_REPLICATED_LEDGERS);
+        numSkippingCheckTaskTimes = this.statsLogger.getCounter(NUM_SKIPPING_CHECK_TASK_TIMES);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
@@ -278,17 +272,5 @@ public class AuditorStats {
         };
         this.statsLogger.registerGauge(ReplicationStats.NUM_LEDGERS_HAVING_LESS_THAN_WQ_REPLICAS_OF_AN_ENTRY,
                 numLedgersHavingLessThanWQReplicasOfAnEntry);
-        numUnderReplicatedLedgers = new Gauge<Integer>() {
-            @Override
-            public Integer getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Integer getSample() {
-                return underReplicatedLedgersGuageValue.get();
-            }
-        };
-        this.statsLogger.registerGauge(NUM_UNDER_REPLICATED_LEDGERS_GUAGE, numUnderReplicatedLedgers);
     }
 }

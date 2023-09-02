@@ -40,7 +40,7 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 @Slf4j
 public final class ServiceNameResolverProvider extends NameResolverFactoryProvider {
 
-    private final DnsNameResolverProvider dnsProvider;
+    private final NameResolverProvider dnsProvider;
     private final Resource<ExecutorService> executorResource;
 
     public ServiceNameResolverProvider() {

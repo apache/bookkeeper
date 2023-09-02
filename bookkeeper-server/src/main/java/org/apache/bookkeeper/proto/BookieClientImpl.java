@@ -32,6 +32,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -270,7 +271,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                 pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -280,20 +281,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                              final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
-        try {
-            executor.executeOrdered(ledgerId, new Runnable() {
-                @Override
-                public void run() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                }
-                @Override
-                public String toString() {
-                    return String.format("CompleteWrite(ledgerId=%d, entryId=%d, addr=%s)", ledgerId, entryId, addr);
-                }
-            });
-        } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
-        }
+        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
     }
 
     @Override
@@ -301,7 +289,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                          final long ledgerId,
                          final byte[] masterKey,
                          final long entryId,
-                         final ByteBufList toSend,
+                         final ReferenceCounted toSend,
                          final WriteCallback cb,
                          final Object ctx,
                          final int options,
@@ -370,7 +358,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
 
         private BookieClientImpl bookieClient;
-        private ByteBufList toSend;
+        private ReferenceCounted toSend;
         private long ledgerId;
         private long entryId;
         private BookieId addr;
@@ -382,7 +370,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private EnumSet<WriteFlag> writeFlags;
 
         static ChannelReadyForAddEntryCallback create(
-                BookieClientImpl bookieClient, ByteBufList toSend, long ledgerId,
+                BookieClientImpl bookieClient, ReferenceCounted toSend, long ledgerId,
                 long entryId, BookieId addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
                 EnumSet<WriteFlag> writeFlags) {
@@ -411,7 +399,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                               toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
-            ReferenceCountUtil.safeRelease(toSend);
+            ReferenceCountUtil.release(toSend);
             recycle();
         }
 
