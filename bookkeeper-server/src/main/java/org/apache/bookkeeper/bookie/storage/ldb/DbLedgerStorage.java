@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -60,6 +61,7 @@ import org.apache.bookkeeper.bookie.storage.directentrylogger.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
 import org.apache.bookkeeper.common.util.MathUtils;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -127,6 +129,8 @@ public class DbLedgerStorage implements LedgerStorage {
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
 
+    private OrderedExecutor checkpointExecutor = null;
+
     protected ByteBufAllocator allocator;
 
     // parent DbLedgerStorage stats (not per directory)
@@ -177,8 +181,17 @@ public class DbLedgerStorage implements LedgerStorage {
         long readAheadCacheBatchBytesSize = conf.getInt(READ_AHEAD_CACHE_BATCH_BYTES_SIZE,
                 DEFAULT_READ_AHEAD_CACHE_BATCH_BYTES_SIZE);
 
+        int ledgerDirSize = ledgerDirsManager.getAllLedgerDirs().size();
+
+        if (ledgerDirSize > 1) {
+            checkpointExecutor = OrderedExecutor.newBuilder()
+                    .numThreads(ledgerDirSize)
+                    .name("DbLedgerStorageSyncThread")
+                    .build();
+        }
+
         ledgerStorageList = Lists.newArrayList();
-        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
+        for (int i = 0; i < ledgerDirSize; i++) {
             File ledgerDir = ledgerDirsManager.getAllLedgerDirs().get(i);
             File indexDir = indexDirsManager.getAllLedgerDirs().get(i);
             // Create a ledger dirs manager for the single directory
@@ -318,6 +331,9 @@ public class DbLedgerStorage implements LedgerStorage {
         if (entryLoggerFlushExecutor != null) {
             entryLoggerFlushExecutor.shutdown();
         }
+        if (checkpointExecutor != null) {
+            checkpointExecutor.shutdown();
+        }
     }
 
     @Override
@@ -388,8 +404,41 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @Override
     public void checkpoint(Checkpoint checkpoint) throws IOException {
+        if (checkpointExecutor != null) {
+            triggerEachLedgerStorageCheckPointAndWait(checkpoint);
+        } else {
+            for (LedgerStorage ls : ledgerStorageList) {
+                ls.checkpoint(checkpoint);
+            }
+        }
+    }
+
+    private void triggerEachLedgerStorageCheckPointAndWait(Checkpoint checkpoint) throws IOException {
+        CompletableFuture<?>[] tasks = new CompletableFuture[ledgerStorageList.size()];
+        int index = 0;
         for (LedgerStorage ls : ledgerStorageList) {
-            ls.checkpoint(checkpoint);
+            CompletableFuture<Void> task = new CompletableFuture<>();
+            checkpointExecutor.chooseThread(index).execute(() -> {
+                try {
+                    ls.checkpoint(checkpoint);
+                    task.complete(null);
+                } catch (Exception e) {
+                    task.completeExceptionally(e);
+                }
+            });
+            tasks[index] = task;
+            index++;
+        }
+
+        try {
+            CompletableFuture.allOf(tasks).get();
+        } catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException) {
+                throw (IOException) cause;
+            } else {
+                throw new IOException(cause);
+            }
         }
     }
 
