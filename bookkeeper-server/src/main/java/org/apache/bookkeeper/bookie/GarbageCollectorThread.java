@@ -595,7 +595,7 @@ public class GarbageCollectorThread implements Runnable {
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
         int totalEntryLogIds = 0;
         for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
-            totalEntryLogIds = compactableBuckets.get(currBucket).size();
+            totalEntryLogIds += compactableBuckets.get(currBucket).size();
         }
         long lastPrintTimestamp = 0;
         AtomicInteger processedEntryLogCnt = new AtomicInteger(0);
