@@ -1641,7 +1641,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
             LOG.info("Count of Ledgers which need to be rereplicated: {}, waiting {} seconds for next check",
-                ledgers.size(), sleepTimePerLedger / 1000);
+                ledgers.size(), sleepTimeForThisCheck / 1000);
             Thread.sleep(sleepTimeForThisCheck);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
