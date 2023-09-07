@@ -101,19 +101,15 @@ class EntryLoggerAllocator {
             BufferedLogChannel bc;
             if (!entryLogPreAllocationEnabled) {
                 // create a new log directly
-                bc = allocateNewLog(dirForNextEntryLog);
-                writingLogId = bc.getLogId();
-                return bc;
+                return allocateNewLog(dirForNextEntryLog);
             } else {
                 // allocate directly to response request
                 if (null == preallocation) {
                     bc = allocateNewLog(dirForNextEntryLog);
-                    writingLogId = bc.getLogId();
                 } else {
                     // has a preallocated entry log
                     try {
                         bc = preallocation.get();
-                        writingLogId = bc.getLogId();
                     } catch (ExecutionException ee) {
                         if (ee.getCause() instanceof IOException) {
                             throw (IOException) (ee.getCause());
@@ -136,10 +132,16 @@ class EntryLoggerAllocator {
 
     BufferedLogChannel createNewLogForCompaction(File dirForNextEntryLog) throws IOException {
         synchronized (createCompactionLogLock) {
-            BufferedLogChannel bc = allocateNewLog(dirForNextEntryLog, COMPACTING_SUFFIX);
-            writingCompactingLogId = bc.getLogId();
-            return bc;
+            return allocateNewLog(dirForNextEntryLog, COMPACTING_SUFFIX);
         }
+    }
+    
+    void setWritingLogId(long lodId) {
+        this.writingLogId = lodId;
+    }
+    
+    void setWritingCompactingLogId(long logId) {
+        this.writingCompactingLogId = logId;
     }
 
     void clearCompactingLogId() {

@@ -44,7 +44,7 @@ public class BufferedReadChannel extends BufferedChannelBase {
     long invocationCount = 0;
     long cacheHitCount = 0;
     private long fileSize = -1;
-    private final boolean sealed;
+    final boolean sealed;
 
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
         this(fileChannel, readCapacity, false);
