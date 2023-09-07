@@ -159,7 +159,8 @@ public class DefaultEntryLogTest {
         conf.setEntryLogFilePreAllocationEnabled(true);
 
         TestStatsProvider statsProvider = new TestStatsProvider();
-        TestStatsProvider.TestStatsLogger statsLogger = statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
         DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
                 UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
@@ -182,7 +183,8 @@ public class DefaultEntryLogTest {
         conf.setEntryLogFilePreAllocationEnabled(true);
 
         TestStatsProvider statsProvider = new TestStatsProvider();
-        TestStatsProvider.TestStatsLogger statsLogger = statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
         DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
                 UnpooledByteBufAllocator.DEFAULT);
         EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();

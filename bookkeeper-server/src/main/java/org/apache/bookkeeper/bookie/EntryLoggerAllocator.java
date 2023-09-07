@@ -135,11 +135,11 @@ class EntryLoggerAllocator {
             return allocateNewLog(dirForNextEntryLog, COMPACTING_SUFFIX);
         }
     }
-    
+
     void setWritingLogId(long lodId) {
         this.writingLogId = lodId;
     }
-    
+
     void setWritingCompactingLogId(long logId) {
         this.writingCompactingLogId = logId;
     }
