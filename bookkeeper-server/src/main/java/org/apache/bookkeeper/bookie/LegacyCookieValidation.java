@@ -178,6 +178,7 @@ public class LegacyCookieValidation implements CookieValidation {
                 } else {
                     masterCookie.verify(rmCookie.getValue());
                 }
+                return rmCookie;
             } catch (BookieException.CookieNotFoundException e) {
                 continue;
             }
