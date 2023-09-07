@@ -103,11 +103,11 @@ public abstract class ReplicationException extends Exception {
     public static class BKAuditException extends ReplicationException {
         private static final long serialVersionUID = 95551905L;
 
-        BKAuditException(String message, Throwable cause) {
+        public BKAuditException(String message, Throwable cause) {
             super(message, cause);
         }
 
-        BKAuditException(String message) {
+        public BKAuditException(String message) {
             super(message);
         }
     }

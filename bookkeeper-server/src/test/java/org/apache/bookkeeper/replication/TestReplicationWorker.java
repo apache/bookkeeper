@@ -649,7 +649,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         }
 
         @Override
-        void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
+        protected void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
             delayReplicationPeriods.add(delayPeriod);
             super.scheduleTaskWithDelay(timerTask, delayPeriod);
         }

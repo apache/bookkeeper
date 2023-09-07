@@ -39,7 +39,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class AuditorTask implements Runnable {
+public abstract class AuditorTask implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(AuditorTask.class);
 
     protected final ServerConfiguration conf;
@@ -156,7 +156,7 @@ abstract class AuditorTask implements Runnable {
     /**
      * ShutdownTaskHandler used to shutdown auditor executor.
      */
-    interface ShutdownTaskHandler {
+    public interface ShutdownTaskHandler {
         void submitShutdownTask();
     }
 

@@ -54,7 +54,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
     private final ExecutorService ledgerCheckerExecutor;
 
-    AuditorCheckAllLedgersTask(ServerConfiguration conf,
+    public AuditorCheckAllLedgersTask(ServerConfiguration conf,
                                AuditorStats auditorStats,
                                BookKeeperAdmin admin,
                                LedgerManager ledgerManager,
@@ -91,7 +91,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
     }
 
     @Override
-    protected void runTask() {
+    public void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic all ledgers check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();

@@ -55,7 +55,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
     private final AtomicInteger numOfClosedLedgersAuditedInPlacementPolicyCheck;
     private final AtomicInteger numOfURLedgersElapsedRecoveryGracePeriod;
 
-    AuditorPlacementPolicyCheckTask(ServerConfiguration conf,
+    public AuditorPlacementPolicyCheckTask(ServerConfiguration conf,
                                     AuditorStats auditorStats,
                                     BookKeeperAdmin admin,
                                     LedgerManager ledgerManager,
@@ -72,7 +72,7 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
     }
 
     @Override
-    protected void runTask() {
+    public void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic placement policy check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();

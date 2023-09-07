@@ -59,7 +59,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
     }
 
     @Override
-    protected void runTask() {
+    public void runTask() {
         if (!hasBookieCheckTask()) {
             startAudit(true);
         } else {
@@ -82,7 +82,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
      *
      * @param shutDownTask A boolean that indicates whether or not to schedule shutdown task on any failure
      */
-    void startAudit(boolean shutDownTask) {
+    public void startAudit(boolean shutDownTask) {
         try {
             auditBookies();
             shutDownTask = false;

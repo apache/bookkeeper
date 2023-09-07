@@ -638,7 +638,7 @@ public class ReplicationWorker implements Runnable {
         return false;
     }
 
-    void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
+    protected void scheduleTaskWithDelay(TimerTask timerTask, long delayPeriod) {
         pendingReplicationTimer.schedule(timerTask, delayPeriod);
     }
 

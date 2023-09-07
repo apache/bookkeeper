@@ -66,7 +66,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     private final AtomicInteger numLedgersFoundHavingLessThanAQReplicasOfAnEntry;
     private final AtomicInteger numLedgersFoundHavingLessThanWQReplicasOfAnEntry;
 
-    AuditorReplicasCheckTask(ServerConfiguration conf,
+    public AuditorReplicasCheckTask(ServerConfiguration conf,
                              AuditorStats auditorStats, BookKeeperAdmin admin,
                              LedgerManager ledgerManager,
                              LedgerUnderreplicationManager ledgerUnderreplicationManager,
@@ -81,7 +81,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     }
 
     @Override
-    protected void runTask() {
+    public void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic replicas check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();
