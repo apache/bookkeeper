@@ -101,14 +101,13 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
         int numOfBookies = 5;
         List<BookieId> bookieAddresses = new ArrayList<>();
         BookieSocketAddress bookieAddress;
-        try (RegistrationManager regManager = driver.createRegistrationManager()) {
-            // all the numOfBookies (5) are going to be in different racks
-            for (int i = 0; i < numOfBookies; i++) {
-                bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
-                StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
-                bookieAddresses.add(bookieAddress.toBookieId());
-                regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
-            }
+        RegistrationManager regManager = driver.createRegistrationManager();
+        // all the numOfBookies (5) are going to be in different racks
+        for (int i = 0; i < numOfBookies; i++) {
+            bookieAddress = new BookieSocketAddress("98.98.98." + i, 2181);
+            StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), "/rack" + (i));
+            bookieAddresses.add(bookieAddress.toBookieId());
+            regManager.registerBookie(bookieAddress.toBookieId(), false, BookieServiceInfo.EMPTY);
         }
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
@@ -208,6 +207,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
             if (auditor != null) {
                 auditor.close();
             }
+            regManager.close();
         }
     }
 
