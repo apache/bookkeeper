@@ -34,6 +34,19 @@ import java.util.concurrent.locks.StampedLock;
  * no node allocations are required to store the values.
  *
  * <p>Items <strong>MUST</strong> be &gt;= 0.
+ *
+ * <br>
+ * <b>WARN: method forEach do not guarantee thread safety, nor does the items method.</b>
+ * <br>
+ * The forEach method is specifically designed for single-threaded usage. When iterating over a set
+ * with concurrent writes, it becomes possible for new values to be either observed or not observed.
+ * There is no guarantee that if we write value1 and value2, and are able to see value2, then we will also see value1.
+ *
+ * <br>
+ * It is crucial to understand that the results obtained from aggregate status methods such as items
+ * are typically reliable only when the map is not undergoing concurrent updates from other threads.
+ * When concurrent updates are involved, the results of these methods reflect transient states
+ * that may be suitable for monitoring or estimation purposes, but not for program control.
  */
 public class ConcurrentLongHashSet {
 
