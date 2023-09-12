@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
@@ -58,6 +59,7 @@ import org.slf4j.LoggerFactory;
 public class GarbageCollectorThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
+    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private EntryLogMetadataMap entryLogMetaMap;
@@ -591,6 +593,13 @@ public class GarbageCollectorThread implements Runnable {
                 entryLogUsageBuckets);
 
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
+        int totalEntryLogIds = 0;
+        for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
+            totalEntryLogIds += compactableBuckets.get(currBucket).size();
+        }
+        long lastPrintTimestamp = 0;
+        AtomicInteger processedEntryLogCnt = new AtomicInteger(0);
+
         stopCompaction:
         for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
             LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
@@ -608,7 +617,11 @@ public class GarbageCollectorThread implements Runnable {
 
                 final int bucketIndex = currBucket;
                 final long logId = entryLogIds.remove();
-
+                if (System.currentTimeMillis() - lastPrintTimestamp >= MINUTE) {
+                    lastPrintTimestamp = System.currentTimeMillis();
+                    LOG.info("Compaction progress {} / {}, current compaction entryLogId: {}",
+                        processedEntryLogCnt.get(), totalEntryLogIds, logId);
+                }
                 entryLogMetaMap.forKey(logId, (entryLogId, meta) -> {
                     if (meta == null) {
                         if (LOG.isDebugEnabled()) {
@@ -625,6 +638,7 @@ public class GarbageCollectorThread implements Runnable {
                     compactEntryLog(meta);
                     gcStats.getReclaimedSpaceViaCompaction().addCount(meta.getTotalSize() - priorRemainingSize);
                     compactedBuckets[bucketIndex]++;
+                    processedEntryLogCnt.getAndIncrement();
                 });
             }
         }
