@@ -463,7 +463,6 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
             bookieAddresses.add(bookieAddress);
             regManager.registerBookie(bookieAddress, false, BookieServiceInfo.EMPTY);
         }
-        
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerManager lm = mFactory.newLedgerManager();
