@@ -68,6 +68,8 @@ import org.slf4j.LoggerFactory;
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
 public class Auditor implements AutoCloseable {
+    public static final String AUDITOR_AWAIT_TERMINATION = "auditor.awaitTermination";
+    private final int awaitTermination = Integer.getInteger(AUDITOR_AWAIT_TERMINATION , 30);
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
     private final BookKeeper bkc;
@@ -620,7 +622,7 @@ public class Auditor implements AutoCloseable {
         LOG.info("Shutting down auditor");
         executor.shutdown();
         try {
-            while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+            while (!executor.awaitTermination(awaitTermination, TimeUnit.SECONDS)) {
                 LOG.warn("Executor not shutting down, interrupting");
                 executor.shutdownNow();
             }

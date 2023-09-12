@@ -92,6 +92,10 @@ import org.slf4j.LoggerFactory;
  * A class runs several bookie servers for testing.
  */
 public abstract class BookKeeperClusterTestCase {
+    
+    static {
+        System.setProperty(Auditor.AUDITOR_AWAIT_TERMINATION, "1");
+    }
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
 
