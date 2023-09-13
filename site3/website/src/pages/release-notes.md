@@ -16,10 +16,10 @@ The technical details of this release are summarized below.
 * Fix deletedLedgers count [PR #4026](https://github.com/apache/bookkeeper/pull/4026)
 * Fix read write request leak when executor throw `RejectedExecutionException` [PR #4024](https://github.com/apache/bookkeeper/pull/4024)
 * Recycle LongWrapper finally to avoid memory leak [PR #4007](https://github.com/apache/bookkeeper/pull/4007)
+* Remove underreplicaiton callback [PR #4058](https://github.com/apache/bookkeeper/pull/4058)
 
 #### Improvements
 * Force to use linux/amd64 to build release [PR #4060](https://github.com/apache/bookkeeper/pull/4060)
-* Remove underreplicaiton callback [PR #4058](https://github.com/apache/bookkeeper/pull/4058)
 * Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044)
 * Change pendingDeletedLedgers as ConcurrentHashSet [PR #3989](https://github.com/apache/bookkeeper/pull/3989)
 * Enable kv logs in log4j configuration [PR #3986](https://github.com/apache/bookkeeper/pull/3986)
