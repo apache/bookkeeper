@@ -1,6 +1,39 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.16.3
+
+Rlease 4.16.3 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.3.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fix AutoCloseableLifecycleComponent close exception log [PR #4042](https://github.com/apache/bookkeeper/pull/4042)
+* Make compatible between DefaultEntryLogger and DirectEntryLogger [PR #4041](https://github.com/apache/bookkeeper/pull/4041)
+* Fix deletedLedgers count [PR #4026](https://github.com/apache/bookkeeper/pull/4026)
+* Fix read write request leak when executor throw `RejectedExecutionException` [PR #4024](https://github.com/apache/bookkeeper/pull/4024)
+* Recycle LongWrapper finally to avoid memory leak [PR #4007](https://github.com/apache/bookkeeper/pull/4007)
+* Remove underreplicaiton callback [PR #4058](https://github.com/apache/bookkeeper/pull/4058)
+
+#### Improvements
+* Force to use linux/amd64 to build release [PR #4060](https://github.com/apache/bookkeeper/pull/4060)
+* Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044)
+* Change pendingDeletedLedgers as ConcurrentHashSet [PR #3989](https://github.com/apache/bookkeeper/pull/3989)
+* Enable kv logs in log4j configuration [PR #3986](https://github.com/apache/bookkeeper/pull/3986)
+* Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956)
+* Optimize getEntryLogMetadata [PR #3948](https://github.com/apache/bookkeeper/pull/3948)
+
+#### Dependency updates
+* Bump guava version from 31.0.1-jre to 32.0.1-jre [PR #4008](https://github.com/apache/bookkeeper/pull/4008)
+* Upgrade Netty to 4.1.94.Final to address CVE-2023-34462 [PR #3999](https://github.com/apache/bookkeeper/pull/3999)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.3+is%3Aclosed
+
 ## 4.14.8
 
 Release 4.14.8 includes multiple bug fixes and some dependencies CVE fixes.
