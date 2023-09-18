@@ -810,7 +810,7 @@
         <artifactId>rxjava</artifactId>
         <version>${rxjava.version}</version>
       </dependency>
-  
+
       <dependency>
         <groupId>com.carrotsearch</groupId>
         <artifactId>hppc</artifactId>
@@ -1284,6 +1284,7 @@
           --add-opens java.base/java.util=ALL-UNNAMED
           --add-opens java.base/java.util.concurrent=ALL-UNNAMED
           --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED
+          --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
           --add-opens java.base/java.util.stream=ALL-UNNAMED
           --add-opens java.base/java.util.zip=ALL-UNNAMED
           --add-opens java.base/java.time=ALL-UNNAMED
