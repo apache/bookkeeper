@@ -161,6 +161,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
         "ensemblePlacementPolicyOrderSlowBookies";
     protected static final String BOOKIE_ADDRESS_RESOLVER_ENABLED = "bookieAddressResolverEnabled";
+    // Use hostname to resolve local placement info
+    public static final String USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY =
+        "useHostnameResolveLocalNodePlacementPolicy";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -1312,6 +1315,22 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     public ClientConfiguration setBookieAddressResolverEnabled(boolean enabled) {
         setProperty(BOOKIE_ADDRESS_RESOLVER_ENABLED, enabled);
         return this;
+    }
+
+    /**
+     * Set the flag to use hostname to resolve local node placement policy.
+     * @param useHostnameResolveLocalNodePlacementPolicy
+     */
+    public void setUseHostnameResolveLocalNodePlacementPolicy(boolean useHostnameResolveLocalNodePlacementPolicy) {
+        setProperty(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, useHostnameResolveLocalNodePlacementPolicy);
+    }
+
+    /**
+     * Get whether to use hostname to resolve local node placement policy.
+     * @return
+     */
+    public boolean getUseHostnameResolveLocalNodePlacementPolicy() {
+        return getBoolean(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, false);
     }
 
     /**
