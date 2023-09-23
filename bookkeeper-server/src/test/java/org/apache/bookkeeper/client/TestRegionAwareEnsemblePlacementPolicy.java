@@ -27,12 +27,16 @@ import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.RE
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_REGIONS_TO_WRITE;
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
@@ -416,6 +421,68 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
+    }
+
+    @Test
+    public void testReplaceBookieWithNoMoreBookie() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r3");
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+
+        List<BookieId> ensemble = new ArrayList<>();
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        BookKeeper bookKeeper = new BookKeeper();
+        BookKeeperAdmin admin = new BookKeeperAdmin(bookKeeper, NullStatsLogger.INSTANCE,
+                new ClientConfiguration(conf));
+        Field field = BookKeeper.class.getDeclaredField("placementPolicy");
+        field.setAccessible(true);
+        field.set(bookKeeper, repp);
+        LedgerHandle mockHandle = mock(LedgerHandle.class);
+        Map<Long, List<BookieId>> ensembles = new HashMap<>();
+        ensembles.put(0L, ensemble);
+        LedgerMetadataImpl ledgerMetadata = new LedgerMetadataImpl(0, 0, 3, 3, 2, LedgerMetadata.State.CLOSED,
+                Optional.of(1L), Optional.of(10L), ensembles, Optional.empty(), Optional.empty(), 0L, false, 0L,
+                Collections.emptyMap());
+        when(mockHandle.getLedgerMetadata()).thenReturn(ledgerMetadata);
+
+        //Not downgradeToSelf, can't find replaced bookie.
+        try {
+            admin.getReplacementBookiesByIndexes(mockHandle, ensemble, Sets.newHashSet(1), Optional.empty(), false);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKNotEnoughBookiesException ignore) {
+        }
+
+        //Use downgradeToSelf, find addr2 itself.
+        Map<Integer, BookieId> replaceResult = admin.getReplacementBookiesByIndexes(mockHandle, ensemble,
+                Sets.newHashSet(1), Optional.empty(), true);
+        assertFalse(replaceResult.isEmpty());
+        assertEquals(1, replaceResult.size());
+        assertEquals(addr2.toBookieId(), replaceResult.get(1));
+
+        //Make addr2 shutdown, then can't find replaced bookie.
+        addrs.remove(addr2.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        try {
+            admin.getReplacementBookiesByIndexes(mockHandle, ensemble, Sets.newHashSet(1), Optional.empty(), false);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
+        } catch (BKNotEnoughBookiesException ignore) {
+        }
     }
 
     @Test

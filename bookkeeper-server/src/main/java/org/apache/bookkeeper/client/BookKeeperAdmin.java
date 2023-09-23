@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -1061,14 +1062,15 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
         }
         return getReplacementBookiesByIndexes(
-                lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate));
+                lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate), false);
     }
 
-    private Map<Integer, BookieId> getReplacementBookiesByIndexes(
+    @VisibleForTesting
+    Map<Integer, BookieId> getReplacementBookiesByIndexes(
                 LedgerHandle lh,
                 List<BookieId> ensemble,
                 Set<Integer> bookieIndexesToRereplicate,
-                Optional<Set<BookieId>> excludedBookies)
+                Optional<Set<BookieId>> excludedBookies, boolean downgradeToSelf)
             throws BKException.BKNotEnoughBookiesException {
         // target bookies to replicate
         Map<Integer, BookieId> targetBookieAddresses =
@@ -1078,35 +1080,58 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (excludedBookies.isPresent()) {
             bookiesToExclude.addAll(excludedBookies.get());
         }
+        //We want to prioritize replacing offline nodes, so we put the indices of offline nodes at the beginning.
+        List<Integer> orderedBookieIndexesToRereplicate = new LinkedList<>();
+        for (Integer index : bookieIndexesToRereplicate) {
+            boolean alive = ((TopologyAwareEnsemblePlacementPolicy) bkc.getPlacementPolicy()).isAlive(
+                    ensemble.get(index));
+            if (alive) {
+                orderedBookieIndexesToRereplicate.add(index);
+            } else {
+                orderedBookieIndexesToRereplicate.add(0, index);
+            }
+        }
 
         // excluding bookies that need to be replicated
-        for (Integer bookieIndex : bookieIndexesToRereplicate) {
+        for (Integer bookieIndex : orderedBookieIndexesToRereplicate) {
             BookieId bookie = ensemble.get(bookieIndex);
             bookiesToExclude.add(bookie);
         }
-
+        List<BookieId> newEnsemble = new ArrayList<>(ensemble);
         // allocate bookies
-        for (Integer bookieIndex : bookieIndexesToRereplicate) {
-            BookieId oldBookie = ensemble.get(bookieIndex);
-            EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
-                    bkc.getPlacementPolicy().replaceBookie(
-                            lh.getLedgerMetadata().getEnsembleSize(),
-                            lh.getLedgerMetadata().getWriteQuorumSize(),
-                            lh.getLedgerMetadata().getAckQuorumSize(),
-                            lh.getLedgerMetadata().getCustomMetadata(),
-                            ensemble,
-                            oldBookie,
-                            bookiesToExclude);
-            BookieId newBookie = replaceBookieResponse.getResult();
-            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
-            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
-                LOG.debug(
-                        "replaceBookie for bookie: {} in ensemble: {} "
-                                + "is not adhering to placement policy and chose {}",
-                        oldBookie, ensemble, newBookie);
+        for (Integer bookieIndex : orderedBookieIndexesToRereplicate) {
+            BookieId oldBookie = newEnsemble.get(bookieIndex);
+            BookieId newBookie;
+            try {
+                EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
+                        bkc.getPlacementPolicy().replaceBookie(
+                                lh.getLedgerMetadata().getEnsembleSize(),
+                                lh.getLedgerMetadata().getWriteQuorumSize(),
+                                lh.getLedgerMetadata().getAckQuorumSize(),
+                                lh.getLedgerMetadata().getCustomMetadata(),
+                                newEnsemble,
+                                oldBookie,
+                                bookiesToExclude);
+                newBookie = replaceBookieResponse.getResult();
+                PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy =
+                        replaceBookieResponse.getAdheringToPolicy();
+                if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
+                    LOG.debug(
+                            "replaceBookie for bookie: {} in ensemble: {} "
+                                    + "is not adhering to placement policy and chose {}",
+                            oldBookie, newEnsemble, newBookie);
+                }
+            } catch (BKException.BKNotEnoughBookiesException e) {
+                if (downgradeToSelf && ((TopologyAwareEnsemblePlacementPolicy) bkc.getPlacementPolicy()).isAlive(
+                        oldBookie)) {
+                    newBookie = oldBookie;
+                } else {
+                    throw e;
+                }
             }
             targetBookieAddresses.put(bookieIndex, newBookie);
             bookiesToExclude.add(newBookie);
+            newEnsemble.set(bookieIndex, newBookie);
         }
 
         return targetBookieAddresses;
@@ -1136,7 +1161,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (LedgerFragment.ReplicateType.DATA_LOSS == ledgerFragment.getReplicateType()) {
             Optional<Set<BookieId>> excludedBookies = Optional.empty();
             targetBookieAddresses = getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
-                    ledgerFragment.getBookiesIndexes(), excludedBookies);
+                    ledgerFragment.getBookiesIndexes(), excludedBookies, true);
         } else if (LedgerFragment.ReplicateType.DATA_NOT_ADHERING_PLACEMENT == ledgerFragment.getReplicateType()) {
             targetBookieAddresses = replaceNotAdheringPlacementPolicyBookie(ledgerFragment.getEnsemble(),
                     lh.getLedgerMetadata().getWriteQuorumSize(), lh.getLedgerMetadata().getAckQuorumSize());
