@@ -141,6 +141,12 @@ public class Cookie {
         if (this.layoutVersion >= 5 && c.layoutVersion < 5) {
             return true;
         }
+        if (indexDirs == null && c.indexDirs == null) {
+            return true;
+        }
+        if (indexDirs == null || c.indexDirs == null) {
+            return false;
+        }
         if (!checkIfSuperSet) {
             return indexDirs.equals(c.indexDirs);
         } else {
