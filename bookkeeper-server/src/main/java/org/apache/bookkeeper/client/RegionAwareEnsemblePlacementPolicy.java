@@ -160,11 +160,17 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         }
 
         for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> regionEntry : perRegionPlacement.entrySet()) {
-            Set<BookieId> regionSet = perRegionClusterChange.get(regionEntry.getKey());
+            String region = regionEntry.getKey();
+            RackawareEnsemblePlacementPolicyImpl regionPlacement =
+                    (RackawareEnsemblePlacementPolicyImpl) regionEntry.getValue();
+            Set<BookieId> regionSet = perRegionClusterChange.get(region);
             if (null == regionSet) {
                 regionSet = new HashSet<BookieId>();
             }
-            regionEntry.getValue().handleBookiesThatJoined(regionSet);
+            regionPlacement.handleBookiesThatJoined(regionSet);
+            if (!ignoreLocalNodeInPlacementPolicy && !region.equals(myRegion)) {
+                regionPlacement.localNode = null;
+            }
         }
     }
 
@@ -192,10 +198,15 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             regionPlacement.onBookieRackChange(Collections.singletonList(bookieAddress));
                         } else {
                             address2Region.put(bookieAddress, newRegion);
-                            TopologyAwareEnsemblePlacementPolicy oldRegionPlacement = perRegionPlacement.get(oldRegion);
+                            RackawareEnsemblePlacementPolicyImpl oldRegionPlacement =
+                                    (RackawareEnsemblePlacementPolicyImpl) perRegionPlacement.get(oldRegion);
                             oldRegionPlacement.handleBookiesThatLeft(Collections.singleton(bookieAddress));
-                            TopologyAwareEnsemblePlacementPolicy newRegionPlacement = perRegionPlacement.get(
-                                    newRegion);
+                            if (!ignoreLocalNodeInPlacementPolicy &&
+                                    !getLocalRegion(oldRegionPlacement.localNode).equals(oldRegion)) {
+                                oldRegionPlacement.localNode = null;
+                            }
+                            RackawareEnsemblePlacementPolicyImpl newRegionPlacement =
+                                    (RackawareEnsemblePlacementPolicyImpl) perRegionPlacement.get(newRegion);
                             if (newRegionPlacement == null) {
                                 newRegionPlacement = new RackawareEnsemblePlacementPolicy()
                                         .initialize(dnsResolver, timer, this.reorderReadsRandom,
@@ -209,6 +220,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 perRegionPlacement.put(newRegion, newRegionPlacement);
                             }
                             newRegionPlacement.handleBookiesThatJoined(Collections.singleton(bookieAddress));
+                            if (!ignoreLocalNodeInPlacementPolicy &&
+                                    !getLocalRegion(newRegionPlacement.localNode).equals(newRegion)) {
+                                newRegionPlacement.localNode = null;
+                            }
                         }
                     }
                 } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
@@ -240,13 +255,17 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             // R1;R2;...
             String[] regions = regionsString.split(";");
             for (String region : regions) {
-                perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy(true)
+                RackawareEnsemblePlacementPolicy regionPlacement = new RackawareEnsemblePlacementPolicy(true)
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
                                 this.ignoreLocalNodeInPlacementPolicy, this.ignoreLocalNodeInPlacementPolicy,
-                                statsLogger, bookieAddressResolver)
+                                statsLogger, bookieAddressResolver);
+                perRegionPlacement.put(region, regionPlacement
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
+                if (!region.equals(myRegion)) {
+                    regionPlacement.localNode = null;
+                }
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY,
                     MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT);
