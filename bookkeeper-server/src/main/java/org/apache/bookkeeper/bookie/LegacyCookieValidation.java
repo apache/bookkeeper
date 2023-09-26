@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -221,7 +222,8 @@ public class LegacyCookieValidation implements CookieValidation {
         }
     }
 
-    private static void stampNewCookie(ServerConfiguration conf,
+    @VisibleForTesting
+    public static void stampNewCookie(ServerConfiguration conf,
                                        Cookie masterCookie,
                                        RegistrationManager rm,
                                        Version version,
