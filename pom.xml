@@ -108,6 +108,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <javac.target>1.8</javac.target>
+    <release.target>8</release.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
     <src.dir>src/main/java</src.dir>
@@ -1273,6 +1274,7 @@
         <jdk>[11,)</jdk>
       </activation>
       <properties>
+        <maven.compiler.release>${release.target}</maven.compiler.release>
         <test.additional.args>
           --add-opens java.base/java.io=ALL-UNNAMED
           --add-opens java.base/java.lang=ALL-UNNAMED
