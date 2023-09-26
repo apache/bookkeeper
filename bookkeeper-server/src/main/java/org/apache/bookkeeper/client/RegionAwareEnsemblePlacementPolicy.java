@@ -85,6 +85,13 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         address2Region = new ConcurrentHashMap<BookieId, String>();
     }
 
+    protected String getRegionOfLocalNode(BookieNode localNode) {
+        if (null == localNode || null == localNode.getAddr()) {
+            return UNKNOWN_REGION;
+        }
+        return parseBookieRegion(localNode.getAddr());
+    }
+
     protected String getLocalRegion(BookieNode node) {
         if (null == node || null == node.getAddr()) {
             return UNKNOWN_REGION;
@@ -166,6 +173,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
             regionEntry.getValue().handleBookiesThatJoined(regionSet);
         }
+
+        if (!joinedBookies.isEmpty()) {
+            recreateLocalNode();
+        }
     }
 
     @Override
@@ -215,9 +226,18 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
                 }
             });
+            if (!bookieAddressList.isEmpty()) {
+                recreateLocalNode();
+            }
         } finally {
             rwLock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void recreateLocalNode() {
+        super.recreateLocalNode();
+        myRegion = getRegionOfLocalNode(localNode);
     }
 
     @Override
@@ -229,7 +249,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                                          BookieAddressResolver bookieAddressResolver) {
         super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver)
                 .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
-        myRegion = getLocalRegion(localNode);
+        myRegion = getRegionOfLocalNode(localNode);
         enableValidation = conf.getBoolean(REPP_ENABLE_VALIDATION, true);
         // We have to statically provide regions we want the writes to go through and how many regions
         // are required for durability. This decision cannot be driven by the active bookies as the

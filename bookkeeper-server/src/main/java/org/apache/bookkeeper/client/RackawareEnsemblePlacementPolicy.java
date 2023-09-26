@@ -291,5 +291,19 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
         if (null != slave) {
             slave.handleBookiesThatJoined(joinedBookies);
         }
+        if (!joinedBookies.isEmpty()) {
+            recreateLocalNode();
+        }
+    }
+
+    @Override
+    public void onBookieRackChange(List<BookieId> bookieAddressList) {
+        super.onBookieRackChange(bookieAddressList);
+        if (null != slave) {
+            slave.onBookieRackChange(bookieAddressList);
+        }
+        if (!bookieAddressList.isEmpty()) {
+            recreateLocalNode();
+        }
     }
 }

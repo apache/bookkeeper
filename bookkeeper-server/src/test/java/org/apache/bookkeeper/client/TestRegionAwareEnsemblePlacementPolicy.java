@@ -33,6 +33,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1879,5 +1881,135 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals("region3", repp.address2Region.get(addr2.toBookieId()));
         assertEquals("region2", repp.address2Region.get(addr3.toBookieId()));
         assertEquals("region3", repp.address2Region.get(addr4.toBookieId()));
+    }
+
+    public void testNewEnsemblePickWithMyRegionLocalNodeUpdate() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r4");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region3/r5");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region3/r6");
+
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        Assert.assertEquals("/region1/r1", repp.localNode.getNetworkLocation());
+        Assert.assertEquals("region1", repp.myRegion);
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : repp.perRegionPlacement.entrySet()) {
+            String region = entry.getKey();
+            RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
+                    (RackawareEnsemblePlacementPolicy) entry.getValue();
+            if (region.equals("region1")) {
+                Assert.assertEquals("/region1/r1",
+                        rackawareEnsemblePlacementPolicy.localNode.getNetworkLocation());
+            }
+        }
+
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        Set<BookieId> excludeBookies = new HashSet<>();
+
+        for (int i = 0; i < 10000; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            if (!ensemble.contains(addr1.toBookieId())) {
+                fail("Failed to select bookie located on the same region and rack with bookie client");
+            }
+            if (ensemble.contains(addr2.toBookieId())) {
+                fail("addr1 and addr2 is same region.");
+            }
+            if (ensemble.contains(addr3.toBookieId()) && ensemble.contains(addr4.toBookieId())) {
+                fail("addr3 and addr4 is same region.");
+            }
+            if (ensemble.contains(addr5.toBookieId()) && ensemble.contains(addr6.toBookieId())) {
+                fail("addr5 and addr6 is same region.");
+            }
+        }
+
+        // change rackInfo of addr1 and localNode
+        StaticDNSResolver.changeRack(Collections.singletonList(addr1),
+                Collections.singletonList("/region2/r7"));
+
+        Assert.assertEquals("/region2/r7", repp.localNode.getNetworkLocation());
+        Assert.assertEquals("region2", repp.myRegion);
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : repp.perRegionPlacement.entrySet()) {
+            String region = entry.getKey();
+            RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
+                    (RackawareEnsemblePlacementPolicy) entry.getValue();
+
+            if (region.equals("region2")) {
+                Assert.assertEquals("/region2/r7",
+                        rackawareEnsemblePlacementPolicy.localNode.getNetworkLocation());
+            }
+        }
+
+        for (int i = 0; i < 10000; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            if (!ensemble.contains(addr1.toBookieId())) {
+                fail("Failed to select bookie located on the same region and rack with bookie client");
+            }
+            if (!ensemble.contains(addr2.toBookieId())) {
+                fail("Failed to select bookie located on the region1");
+            }
+            if (ensemble.contains(addr3.toBookieId()) || ensemble.contains(addr4.toBookieId())) {
+                fail("addr3 and addr4 is same region of addr1.");
+            }
+            if (!ensemble.contains(addr5.toBookieId()) && !ensemble.contains(addr6.toBookieId())) {
+                fail("addr5 and addr6 is the same region, should select one.");
+            }
+        }
+
+        //addr1 shutdown, rackInfo of addr1 and localNode still exist
+        addrs.remove(addr1.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        Assert.assertEquals("/region2/r7", repp.localNode.getNetworkLocation());
+        Assert.assertEquals("region2", repp.myRegion);
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : repp.perRegionPlacement.entrySet()) {
+            String region = entry.getKey();
+            RackawareEnsemblePlacementPolicy rackawareEnsemblePlacementPolicy =
+                    (RackawareEnsemblePlacementPolicy) entry.getValue();
+
+            if (region.equals("region2")) {
+                Assert.assertEquals("/region2/r7",
+                        rackawareEnsemblePlacementPolicy.localNode.getNetworkLocation());
+            }
+        }
+
+        for (int i = 0; i < 10000; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            if (ensemble.contains(addr1.toBookieId())) {
+                fail("Failed to select bookie located on the shutdown bookie client");
+            }
+        }
     }
 }

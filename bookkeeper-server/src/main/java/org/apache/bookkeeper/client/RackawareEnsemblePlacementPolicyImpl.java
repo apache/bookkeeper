@@ -285,6 +285,20 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return defaultRack;
     }
 
+    public void recreateLocalNode() {
+        if (!ignoreLocalNodeInPlacementPolicy) {
+            BookieNode bn = null;
+            try {
+                String hostname = useHostnameResolveLocalNodePlacementPolicy
+                        ? InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
+                bn = createDummyLocalBookieNode(hostname);
+            } catch (IOException e) {
+                LOG.error("Failed to get local host address : ", e);
+            }
+            localNode = bn;
+        }
+    }
+
     @Override
     public RackawareEnsemblePlacementPolicyImpl initialize(ClientConfiguration conf,
                                                            Optional<DNSToSwitchMapping> optionalDnsResolver,
