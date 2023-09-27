@@ -19,16 +19,15 @@
 
 package org.apache.bookkeeper.common.conf;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Define a group of configuration settings.
