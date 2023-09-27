@@ -19,12 +19,6 @@
 
 package org.apache.bookkeeper.common.conf;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -36,6 +30,13 @@ import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * A configuration key in a configuration.
  */
@@ -45,6 +46,8 @@ import org.apache.commons.configuration.ConfigurationException;
 @Public
 @Slf4j
 public class ConfigKey {
+
+    public static class ConfigKeyBuilder {}
 
     public static final Comparator<ConfigKey> ORDERING = (o1, o2) -> {
         int ret = Integer.compare(o1.orderInGroup, o2.orderInGroup);

@@ -964,7 +964,6 @@
           <notimestamp>true</notimestamp>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <doclint>none</doclint>
-          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
               <title>Bookkeeper Client</title>

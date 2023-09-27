@@ -38,7 +38,6 @@
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
-          <subpackages>org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
               <title>Bookkeeper Stats API</title>
