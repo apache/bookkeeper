@@ -859,9 +859,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
         }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1058,9 +1060,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
         }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1165,9 +1169,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        if (!validate(ensSize, writeQuorumSize, ackQuorumSize)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
         }
+
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -1662,5 +1668,24 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     public ClientContext getClientCtx() {
         return clientCtx;
+    }
+
+    private boolean validate(int ensembleSize, int writeQuorumSize, int ackQuorumSize) {
+
+        if (writeQuorumSize > ensembleSize) {
+            LOG.error("Invalid writeQuorumSize {} > ensembleSize {}", writeQuorumSize, ensembleSize);
+            return false;
+        }
+
+        if (ackQuorumSize > writeQuorumSize) {
+            LOG.error("Invalid ackQuorumSize {} > writeQuorumSize {}", ackQuorumSize, writeQuorumSize);
+            return false;
+        }
+
+        if (ackQuorumSize <= 0) {
+            LOG.error("Invalid ackQuorumSize {} <= 0", ackQuorumSize);
+            return false;
+        }
+        return true;
     }
 }

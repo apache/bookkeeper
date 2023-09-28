@@ -31,6 +31,9 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.netty.util.IllegalReferenceCountException;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -72,12 +75,14 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.ACL;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Tests of the main BookKeeper client.
  */
+@RunWith(DataProviderRunner.class)
 public class BookKeeperTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
     private static final long INVALID_LEDGERID = -1L;
@@ -1124,6 +1129,89 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                         .build()) {
             bkc.createLedger(digestType, "testPasswd".getBytes()).close();
             assertSame(bkc.getBookieAddressResolver(), tested.getBookieAddressResolver());
+        }
+    }
+
+    @DataProvider
+    public static Object[][] illegalLedgerCreationArguments() {
+        return new Object[][] {
+            {0, 0, 0},
+            {3, 3, -1},
+            {2, 3, 1},
+            {2, 2, 3},
+            {3, 3, 0}
+        };
+    }
+    @Test
+    @UseDataProvider("illegalLedgerCreationArguments")
+    public void testCreateLedgerWithIllegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) {
+        final byte[] passwd = "testpasswd".getBytes();
+        final byte[] data = "data".getBytes();
+
+        try {
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof BKException.BKIncorrectParameterException);
+            assertEquals(e.getMessage(), "Incorrect parameter input");
+        }
+
+        try {
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof BKException.BKIncorrectParameterException);
+            assertEquals(e.getMessage(), "Incorrect parameter input");
+        }
+    }
+
+    @DataProvider
+    public static Object[][] legalLedgerCreationArguments() {
+        return new Object[][] {
+            {1, 1, 1},
+            {2, 2, 1},
+            {3, 2, 1},
+            {3, 2, 2},
+            {3, 3, 3}
+        };
+    }
+
+    @Test
+    @UseDataProvider("legalLedgerCreationArguments")
+    public void testCreateLedgerWithlegalArguments(int ensSize, int writeQuorumSize, int ackQuorumSize) {
+        final byte[] passwd = "testpasswd".getBytes();
+        final byte[] data = "data".getBytes();
+
+        try {
+            LedgerHandle lh = bkc.createLedger(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(data);
+            }
+            lh.close();
+        } catch (Exception e) {
+            fail();
+        }
+
+        try {
+            LedgerHandle lh = bkc.createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                BookKeeper.DigestType.CRC32, passwd);
+            for (int i = 0; i < 10; ++i) {
+                lh.addEntry(i, data);
+            }
+            lh.close();
+        } catch (Exception e) {
+            fail();
         }
     }
 

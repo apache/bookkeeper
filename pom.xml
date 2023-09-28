@@ -145,6 +145,7 @@
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
     <junit.version>4.12</junit.version>
+    <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
     <junit5.version>5.8.2</junit5.version>
     <libthrift.version>0.14.2</libthrift.version>
@@ -698,6 +699,11 @@
         <version>${junit.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.tngtech.java</groupId>
+        <artifactId>junit-dataprovider</artifactId>
+        <version>${junit-dataprovider.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
         <version>${hamcrest.version}</version>
@@ -846,6 +852,11 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.java</groupId>
+      <artifactId>junit-dataprovider</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency><!-- Needed by junit -->
