@@ -271,8 +271,12 @@ public class MockLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public void forceGC(boolean forceMajor, boolean forceMinor) {
-        CompactableLedgerStorage.super.forceGC(forceMajor, forceMinor);
+    public void forceGC(boolean forceMajor, boolean forceMinor,
+                        double majorCompactionThreshold, double minorCompactionThreshold,
+                        long majorCompactionMaxTimeMillis, long minorCompactionMaxTimeMillis) {
+        CompactableLedgerStorage.super.forceGC(forceMajor, forceMinor,
+                majorCompactionThreshold, minorCompactionThreshold,
+                majorCompactionMaxTimeMillis, minorCompactionMaxTimeMillis);
     }
 
     public void suspendMinorGC() {
