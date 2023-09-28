@@ -597,6 +597,8 @@ public class BookieShell implements Tool {
             opts.addOption("r", "force-recovery", false,
                 "Ensure the ledger is properly closed before reading");
             opts.addOption("b", "bookie", true, "Only read from a specific bookie");
+            opts.addOption("lf", "ledgeridformatter", false, "Set ledger id formatter");
+            opts.addOption("ef", "entryformatter", false, "Set entry formatter");
         }
 
         @Override
@@ -613,7 +615,8 @@ public class BookieShell implements Tool {
         String getUsage() {
             return "readledger  [-bookie <address:port>]  [-msg] -ledgerid <ledgerid> "
                     + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]] "
-                    + "[-force-recovery]";
+                    + "[-force-recovery] [-ledgeridformatter <ledgeridformatter>] "
+                    + "[-entryformatter <entryformatter>]";
         }
 
         @Override

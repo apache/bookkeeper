@@ -18,10 +18,12 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -201,11 +203,7 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                                                    return;
                                                }
 
-                                               LOG.info("--------- Lid={}, Eid={} ---------",
-                                                   ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
-                                               if (flags.msg) {
-                                                   LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
-                                               }
+                                               formatEntry(flags.ledgerId, entryId, buffer, flags.msg);
 
                                                future.complete(null);
                                            }, null, BookieProtocol.FLAG_NONE);
@@ -244,5 +242,44 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         if (printMsg) {
             entryFormatter.formatEntry(entry.getEntry());
         }
+    }
+
+    /**
+     * Format the entry into a readable format.
+     *
+     * @param ledgerId
+     *          ledgerId to print
+     * @param entryId
+     *           entryId to print
+     * @param data
+     *          ledgerentry to print
+     * @param printMsg
+     *          Whether printing the message body
+     */
+    private void formatEntry(long ledgerId, long entryId, ByteBuf data, boolean printMsg) {
+        long entrySize = data.readableBytes();
+
+        LOG.info("--------- Lid={}, Eid={}, EntrySize={} ---------",
+                ledgerIdFormatter.formatLedgerId(ledgerId), entryId, entrySize);
+
+        if (printMsg) {
+            entryFormatter.formatEntry(getEntry(data));
+        }
+    }
+
+    /**
+     * Returns the content of the entry.
+     * This method can be called only once. While using v2 wire protocol this method will automatically release
+     * the internal ByteBuf
+     *
+     * @return the content of the entry
+     * @throws IllegalStateException if this method is called twice
+     */
+    public byte[] getEntry(ByteBuf data) {
+        checkState(null != data, "entry content can be accessed only once");
+        byte[] entry = new byte[data.readableBytes()];
+        data.readBytes(entry);
+        data.release();
+        return entry;
     }
 }

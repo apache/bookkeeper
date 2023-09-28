@@ -22,11 +22,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.LinkedList;
@@ -35,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import lombok.SneakyThrows;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -42,9 +45,14 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClientImpl;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
+import org.apache.bookkeeper.util.HexDumpEntryFormatter;
+import org.apache.bookkeeper.util.StringEntryFormatter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  * Unit test for {@link ReadLedgerCommand}.
@@ -110,33 +118,81 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class)))
                 .thenReturn(scheduledExecutorService);
 
-        mockConstruction(BookieClientImpl.class);
+        mockConstruction(BookieClientImpl.class, (bkC, content) -> {
+            doAnswer(new Answer<Void>() {
+                @Override
+                public Void answer(InvocationOnMock invocation) {
+                    ((BookkeeperInternalCallbacks.ReadEntryCallback) invocation.getArguments()[3])
+                            .readEntryComplete(BKException.Code.OK, entry.getLedgerId(), entry.getEntryId(),
+                                    Unpooled.wrappedBuffer("abc".getBytes()), null);
+                    return null;
+                }
+            }).when(bkC).readEntry(any(BookieId.class), anyLong(), anyLong(), any(
+                    BookkeeperInternalCallbacks.ReadEntryCallback.class), any(), anyInt());
+        });
 
+        mockConstruction(StringEntryFormatter.class);
+        mockConstruction(HexDumpEntryFormatter.class);
+        when(entry.getEntry()).thenReturn("abc".getBytes());
 
     }
 
     @Test
     public void testWithoutBookieAddress() throws Exception {
         ReadLedgerCommand cmd = new ReadLedgerCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-r" }));
+        // test string EntryFormatter
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-r", "-m", "-ef", "string" }));
         verify(ledgerHandle, times(1)).getLastAddConfirmed();
         verify(getMockedConstruction(BookKeeperAdmin.class).constructed().get(0),
                 times(1)).readEntries(anyLong(), anyLong(), anyLong());
         verify(entry, times(1)).getLedgerId();
         verify(entry, times(1)).getEntryId();
         verify(entry, times(1)).getLength();
+        Assert.assertEquals(1, getMockedConstruction(StringEntryFormatter.class).constructed().size());
+        Assert.assertEquals(0, getMockedConstruction(HexDumpEntryFormatter.class).constructed().size());
+        verify(getMockedConstruction(StringEntryFormatter.class).constructed().get(0),
+                times(1)).formatEntry(any(byte[].class));
+
+        cmd = new ReadLedgerCommand();
+        // test hex EntryFormatter
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-r", "-m", "-ef", "hex" }));
+        Assert.assertEquals(1, getMockedConstruction(HexDumpEntryFormatter.class).constructed().size());
+        verify(getMockedConstruction(HexDumpEntryFormatter.class).constructed().get(0),
+                times(1)).formatEntry(any(byte[].class));
     }
 
     @Test
     public void testWithBookieAddress() throws Exception {
+        // test string EntryFormatter
         ReadLedgerCommand cmd = new ReadLedgerCommand();
-        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
+        Assert.assertTrue(cmd.apply(bkFlags,
+                new String[]{"-b", bookieSocketAddress.getId(), "-m", "-l", String.valueOf(entry.getLedgerId()),
+                        "-fe", String.valueOf(entry.getEntryId()), "-le", String.valueOf(entry.getEntryId() + 1),
+                        "-ef", "string"}));
+
         Assert.assertEquals(1, getMockedConstruction(NioEventLoopGroup.class).constructed().size());
         Assert.assertEquals(1, getMockedConstruction(DefaultThreadFactory.class).constructed().size());
         Assert.assertEquals(1, getMockedConstruction(BookieClientImpl.class).constructed().size());
-        verify(getMockedConstruction(NioEventLoopGroup.class).constructed().get(0), times(1)).shutdownGracefully();
+        Assert.assertEquals(1, getMockedConstruction(StringEntryFormatter.class).constructed().size());
+        Assert.assertEquals(0, getMockedConstruction(HexDumpEntryFormatter.class).constructed().size());
+        verify(getMockedConstruction(NioEventLoopGroup.class).constructed().get(0),
+                times(1)).shutdownGracefully();
         verify(orderedExecutor, times(1)).shutdown();
-        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(1)).close();
+        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0),
+                times(1)).close();
+        verify(getMockedConstruction(StringEntryFormatter.class).constructed().get(0),
+                times(1)).formatEntry(any(byte[].class));
+
+        // test hex EntryFormatter
+        cmd = new ReadLedgerCommand();
+        Assert.assertTrue(cmd.apply(bkFlags,
+                new String[]{"-b", bookieSocketAddress.getId(), "-m", "-l", String.valueOf(entry.getLedgerId()),
+                        "-fe", String.valueOf(entry.getEntryId()), "-le", String.valueOf(entry.getEntryId() + 1),
+                        "-ef", "hex"}));
+
+        Assert.assertEquals(1, getMockedConstruction(HexDumpEntryFormatter.class).constructed().size());
+        verify(getMockedConstruction(HexDumpEntryFormatter.class).constructed().get(0),
+                times(1)).formatEntry(any(byte[].class));
     }
 
 }
