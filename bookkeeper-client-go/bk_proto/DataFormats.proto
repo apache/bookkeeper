@@ -1,0 +1,143 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto2";
+
+option java_package = "org.apache.bookkeeper.proto";
+option optimize_for = SPEED;
+
+/**
+* Metadata format for storing ledger information
+*/
+message LedgerMetadataFormat {
+    required int32 quorumSize = 1;
+    required int32 ensembleSize = 2;
+    required int64 length = 3;
+    optional int64 lastEntryId = 4;
+
+    enum State {
+        OPEN = 1;
+        IN_RECOVERY = 2;
+        CLOSED = 3;
+    }
+    required State state = 5 [default = OPEN];
+
+    message Segment {
+        repeated string ensembleMember = 1;
+        required int64 firstEntryId = 2;
+    }
+    repeated Segment segment = 6;
+
+    enum DigestType {
+        CRC32 = 1;
+        HMAC = 2;
+        CRC32C = 3;
+        DUMMY = 4;
+    }
+    optional DigestType digestType = 7;
+    optional bytes password = 8;
+
+    optional int32 ackQuorumSize = 9;
+    
+    optional int64 ctime = 10;
+
+    message cMetadataMapEntry {
+        optional string key = 1;
+        optional bytes value = 2;
+    }
+    repeated cMetadataMapEntry customMetadata = 11;
+
+    optional int64 cToken = 12;
+}
+
+message LedgerRereplicationLayoutFormat {
+    required string type = 1;
+    required int32 version = 2;
+}
+ 
+message UnderreplicatedLedgerFormat {
+    repeated string replica = 1;
+    optional int64 ctime = 2;
+}
+
+/**
+* Cookie format for storing cookie information
+*/
+message CookieFormat {
+    required string bookieHost = 1;
+    required string journalDir = 2;
+    required string ledgerDirs = 3;
+    optional string instanceId = 4;
+}
+
+/**
+ * Debug information for locks
+ */
+message LockDataFormat {
+    optional string bookieId = 1;
+}
+
+/**
+ * Debug information for auditor votes
+ */
+message AuditorVoteFormat {
+    optional string bookieId = 1;
+}
+
+/**
+ * information of checkAllLedgers execution
+ */
+message CheckAllLedgersFormat {
+    optional int64 checkAllLedgersCTime = 1;
+}
+
+/**
+ * information of PlacementPolicyCheck execution
+ */
+message PlacementPolicyCheckFormat {
+    optional int64 placementPolicyCheckCTime = 1;
+}
+
+/**
+ * information of ReplicasCheck execution
+ */
+message ReplicasCheckFormat {
+    optional int64 replicasCheckCTime = 1;
+}
+
+/**
+ * information about services exposed by a Bookie.
+ */
+message BookieServiceInfoFormat {
+
+    /**
+     * Information about an endpoint.
+     */
+    message Endpoint {
+        required string id = 1;
+        required int32 port = 2;
+        required string host = 3;
+        required string protocol = 4;
+
+        repeated string auth = 5;
+        repeated string extensions = 6;
+    }
+
+    repeated Endpoint endpoints = 6;
+    map<string, string> properties = 7;
+}
+

@@ -1,0 +1,230 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto2";
+
+option java_package = "org.apache.bookkeeper.proto";
+option optimize_for = SPEED;
+
+/**
+ * Protocol Versions.
+ */
+enum ProtocolVersion {
+    VERSION_ONE = 1;
+    VERSION_TWO = 2;
+    VERSION_THREE = 3;
+}
+
+/**
+ * Status codes.
+ */
+enum StatusCode {
+    EOK = 0;
+
+    // Server side Errors 4xx
+    ENOLEDGER = 402;
+    ENOENTRY = 403;
+    EBADREQ = 404;
+
+    // IO/access errors 5xx
+    EIO = 501;
+    EUA = 502;
+    EBADVERSION = 503;
+    EFENCED = 504;
+    EREADONLY = 505;
+    ETOOMANYREQUESTS = 506;
+}
+
+/**
+ * Supported operations by this protocol.
+ */
+enum OperationType {
+    READ_ENTRY = 1;
+    ADD_ENTRY = 2;
+    // Not supported yet.
+    RANGE_READ_ENTRY = 3;
+    RANGE_ADD_ENTRY = 4;
+
+    AUTH = 5;
+    WRITE_LAC = 6;
+    READ_LAC = 7;
+    GET_BOOKIE_INFO = 8;
+    START_TLS = 9;
+    FORCE_LEDGER = 10;
+    GET_LIST_OF_ENTRIES_OF_LEDGER = 11;
+}
+
+/**
+ * Packet header for all requests.
+ */
+message BKPacketHeader {
+    required ProtocolVersion version = 1;
+    required OperationType operation = 2;
+    required uint64 txnId = 3;
+    optional uint32 priority = 4 [default = 0];
+}
+
+message ContextPair {
+    required string key = 1;
+    required string value = 2;
+}
+
+message Request {
+    required BKPacketHeader header = 1;
+    // Requests
+    optional ReadRequest readRequest = 100;
+    optional AddRequest addRequest = 101;
+    optional AuthMessage authRequest = 102;
+    optional WriteLacRequest writeLacRequest = 103;
+    optional ReadLacRequest readLacRequest = 104;
+    optional GetBookieInfoRequest getBookieInfoRequest = 105;
+    optional StartTLSRequest startTLSRequest = 106;
+    optional ForceLedgerRequest forceLedgerRequest = 107;
+    optional GetListOfEntriesOfLedgerRequest getListOfEntriesOfLedgerRequest = 108;
+    // to pass MDC context
+    repeated ContextPair requestContext = 200;
+}
+
+message ReadRequest {
+    enum Flag {
+        FENCE_LEDGER = 1;
+        ENTRY_PIGGYBACK = 2;
+    }
+    optional Flag flag = 100;
+    required int64 ledgerId = 1;
+    // entryId will be -1 for reading the LAST_ADD_CONFIRMED entry.
+    required int64 entryId = 2;
+    // Used while fencing a ledger.
+    optional bytes masterKey = 3;
+    // Used for waiting on last add confirmed update
+    optional int64 previousLAC = 4;
+    // Used as a timeout (in milliseconds) for the long polling request
+    optional int64 timeOut = 5;
+}
+
+message AddRequest {
+    enum Flag {
+        RECOVERY_ADD = 1;
+    }
+    optional Flag flag = 100;
+    required int64 ledgerId = 1;
+    required int64 entryId = 2;
+    required bytes masterKey = 3;
+    required bytes body = 4;
+    optional int32 writeFlags = 5;
+}
+
+message StartTLSRequest {
+}
+
+message WriteLacRequest {
+    required int64 ledgerId = 1;
+    required int64 lac = 2;
+    required bytes masterKey = 3;
+    required bytes body = 4;
+}
+
+message ForceLedgerRequest {
+    required int64 ledgerId = 1;
+}
+
+message ReadLacRequest {
+    required int64 ledgerId = 1;
+}
+
+message GetBookieInfoRequest {
+    enum Flags {
+        TOTAL_DISK_CAPACITY = 0x01;
+        FREE_DISK_SPACE = 0x02;
+    }
+    // bitwise OR of Flags
+    optional int64 requested = 1;
+}
+
+message GetListOfEntriesOfLedgerRequest {
+	required int64 ledgerId = 1;
+}
+
+message Response {
+
+    required BKPacketHeader header = 1;
+    // EOK if the underlying request succeeded. Each individual response
+    // has a more meaningful status. EBADREQ if we have an unsupported request.
+    required StatusCode status = 2;
+    // Response
+    optional ReadResponse readResponse = 100;
+    optional AddResponse addResponse = 101;
+    optional AuthMessage authResponse = 102;
+    optional WriteLacResponse writeLacResponse = 103;
+    optional ReadLacResponse readLacResponse = 104;
+    optional GetBookieInfoResponse getBookieInfoResponse = 105;
+    optional StartTLSResponse startTLSResponse = 106;
+    optional ForceLedgerResponse forceLedgerResponse = 107;
+    optional GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = 108;
+}
+
+message ReadResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 entryId = 3;
+    optional bytes body = 4;
+    // Piggyback LAC
+    optional int64 maxLAC = 5;
+    optional int64 lacUpdateTimestamp = 6;
+}
+
+message AddResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 entryId = 3;
+}
+
+message AuthMessage {
+    required string authPluginName = 1;
+    required bytes payload = 2;
+}
+
+message WriteLacResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+}
+
+message ForceLedgerResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+}
+
+message ReadLacResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    optional bytes lacBody = 3; // lac sent by PutLacRequest
+    optional bytes lastEntryBody = 4; // Actual last entry on the disk
+}
+
+message GetBookieInfoResponse {
+    required StatusCode status = 1;
+    optional int64 totalDiskCapacity = 2;
+    optional int64 freeDiskSpace = 3;
+}
+
+message GetListOfEntriesOfLedgerResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    optional bytes availabilityOfEntriesOfLedger = 3; // condensed encoded format representing availability of entries of ledger
+}
+
+message StartTLSResponse {
+}
