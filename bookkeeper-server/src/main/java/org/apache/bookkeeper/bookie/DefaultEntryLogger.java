@@ -66,8 +66,10 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,7 +193,7 @@ public class DefaultEntryLogger implements EntryLogger {
                     throw e;
                 }
             } finally {
-                ReferenceCountUtil.safeRelease(serializedMap);
+                ReferenceCountUtil.release(serializedMap);
             }
             // Flush the ledger's map out before we write the header.
             // Otherwise the header might point to something that is not fully
@@ -342,7 +344,17 @@ public class DefaultEntryLogger implements EntryLogger {
                 throw new FileNotFoundException(
                         "Entry log directory '" + dir + "' does not exist");
             }
-            long lastLogId = getLastLogId(dir);
+            long lastLogId;
+            long lastLogFileFromFile = getLastLogIdFromFile(dir);
+            long lastLogIdInDir = getLastLogIdInDir(dir);
+            if (lastLogFileFromFile < lastLogIdInDir) {
+                LOG.info("The lastLogFileFromFile is {}, the lastLogIdInDir is {}, "
+                        + "use lastLogIdInDir as the lastLogId.", lastLogFileFromFile, lastLogIdInDir);
+                lastLogId = lastLogIdInDir;
+            } else {
+                lastLogId = lastLogFileFromFile;
+            }
+
             if (lastLogId > logId) {
                 logId = lastLogId;
             }
@@ -524,15 +536,16 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (FileNotFoundException e) {
             LOG.error("Trying to delete an entryLog file that could not be found: "
                     + entryLogId + ".log");
-            return false;
+            return true;
         }
         if (!entryLogFile.delete()) {
             LOG.warn("Could not delete entry log file {}", entryLogFile);
+            return false;
         }
         return true;
     }
 
-    private long getLastLogId(File dir) {
+    private long getLastLogIdFromFile(File dir) {
         long id = readLastLogId(dir);
         // read success
         if (id > 0) {
@@ -554,6 +567,17 @@ public class DefaultEntryLogger implements EntryLogger {
         // order the collections
         Collections.sort(logs);
         return logs.get(logs.size() - 1);
+    }
+
+    private long getLastLogIdInDir(File dir) {
+        List<Integer> currentIds = new ArrayList<Integer>();
+        currentIds.addAll(LedgerDirUtil.logIdsInDirectory(dir));
+        currentIds.addAll(LedgerDirUtil.compactedLogIdsInDirectory(dir));
+        if (currentIds.isEmpty()) {
+            return -1;
+        }
+        Pair<Integer, Integer> largestGap = LedgerDirUtil.findLargestGap(currentIds);
+        return largestGap.getLeft() - 1;
     }
 
     /**
@@ -816,7 +840,7 @@ public class DefaultEntryLogger implements EntryLogger {
 
     @Override
     public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(location, -1L, -1L, false /* validateEntry */);
+        return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
     }
 
 
@@ -843,7 +867,7 @@ public class DefaultEntryLogger implements EntryLogger {
         ByteBuf data = allocator.buffer(entrySize, entrySize);
         int rc = readFromLogChannel(entryLogId, fc, data, pos);
         if (rc != entrySize) {
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
             throw new IOException("Bad entry read from log file id: " + entryLogId,
                     new EntryLookupException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
@@ -877,7 +901,7 @@ public class DefaultEntryLogger implements EntryLogger {
             int ledgersCount = headers.readInt();
             return new Header(headerVersion, ledgersMapOffset, ledgersCount);
         } finally {
-            ReferenceCountUtil.safeRelease(headers);
+            ReferenceCountUtil.release(headers);
         }
     }
 
@@ -1026,7 +1050,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 pos += entrySize;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(data);
+            ReferenceCountUtil.release(data);
         }
     }
 
@@ -1036,6 +1060,9 @@ public class DefaultEntryLogger implements EntryLogger {
         // entry log
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
+        } catch (FileNotFoundException fne) {
+            LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
+            throw fne;
         } catch (Exception e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 
@@ -1118,7 +1145,7 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (IndexOutOfBoundsException e) {
             throw new IOException(e);
         } finally {
-            ReferenceCountUtil.safeRelease(ledgersMap);
+            ReferenceCountUtil.release(ledgersMap);
         }
 
         if (meta.getLedgersMap().size() != header.ledgersCount) {

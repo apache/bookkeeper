@@ -42,10 +42,10 @@ public class TestStorageContainerInfo {
             revision,
             endpoint,
             Lists.newArrayList(endpoint));
-        assertEquals(groupId, sc.getGroupId());
-        assertEquals(revision, sc.getRevision());
-        assertEquals(endpoint, sc.getWriteEndpoint());
-        assertEquals(Lists.newArrayList(endpoint), sc.getReadEndpoints());
+        assertEquals("Group ID mismatch", groupId, sc.getGroupId());
+        assertEquals("Revision mismatch", revision, sc.getRevision());
+        assertEquals("Write Endpoint mismatch", endpoint, sc.getWriteEndpoint());
+        assertEquals("Read Endpoint mismatch", Lists.newArrayList(endpoint), sc.getReadEndpoints());
     }
 
 }

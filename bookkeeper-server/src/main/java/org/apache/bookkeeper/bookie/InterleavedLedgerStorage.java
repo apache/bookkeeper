@@ -174,11 +174,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.checkpointer = checkpointer;
     }
 
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        this.gcThread.setStorageStorageNotificationListener(storageNotificationListener);
-    }
-
     public void initializeWithEntryLogger(ServerConfiguration conf,
                 LedgerManager ledgerManager,
                 LedgerDirsManager ledgerDirsManager,
@@ -265,7 +260,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         gcThread.enableForceGC(forceMajor, forceMinor);
     }
 
@@ -375,7 +370,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                     lac = bb.readLong();
                     lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
                 } finally {
-                    ReferenceCountUtil.safeRelease(bb);
+                    ReferenceCountUtil.release(bb);
                 }
             }
         }

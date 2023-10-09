@@ -19,6 +19,9 @@ set -e -x -u
 
 BK_HOME=/opt/bookkeeper
 
+cp -R /opt/bookkeeper_python_client/* /opt/bookkeeper
+cd ${BK_HOME}
+
 echo "starting bookkeeper standalone ..."
 ${BK_HOME}/bin/standalone process up
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -210,7 +210,7 @@ class EnvelopedEntryWriter implements Writer {
     @Override
     public void completeTransmit(long lssn, long entryId) {
         satisfyPromises(lssn, entryId);
-        buffer.release();
+        ReferenceCountUtil.release(buffer);
         synchronized (this) {
             ReferenceCountUtil.release(finalizedBuffer);
         }
@@ -219,7 +219,7 @@ class EnvelopedEntryWriter implements Writer {
     @Override
     public void abortTransmit(Throwable reason) {
         cancelPromises(reason);
-        buffer.release();
+        ReferenceCountUtil.release(buffer);
         synchronized (this) {
             ReferenceCountUtil.release(finalizedBuffer);
         }

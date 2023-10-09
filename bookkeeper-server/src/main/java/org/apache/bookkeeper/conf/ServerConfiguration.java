@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -116,6 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     protected static final String GC_ENTRYLOGMETADATA_CACHE_ENABLED = "gcEntryLogMetadataCacheEnabled";
     protected static final String GC_ENTRYLOG_METADATA_CACHE_PATH = "gcEntryLogMetadataCachePath";
+    protected static final String USE_TARGET_ENTRYLOG_SIZE_FOR_GC = "useTargetEntryLogSizeForGc";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -250,6 +251,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Statistics Parameters
     protected static final String ENABLE_STATISTICS = "enableStatistics";
     protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
+    protected static final String SANITY_CHECK_METRICS_ENABLED = "sanityCheckMetricsEnabled";
 
 
     // Rx adaptive ByteBuf allocator parameters
@@ -336,6 +338,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
+
+    protected static final String MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH =
+        "maxOperationNumbersInSingleRocksdbWriteBatch";
+
+    protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
 
     /**
      * Construct a default configuration object.
@@ -551,6 +558,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {
         this.setProperty(GC_ENTRYLOG_METADATA_CACHE_PATH, gcEntrylogMetadataCachePath);
+        return this;
+    }
+
+    public boolean isUseTargetEntryLogSizeForGc() {
+        return getBoolean(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, false);
+    }
+
+    public ServerConfiguration setUseTargetEntryLogSizeForGc(boolean useTargetEntryLogSizeForGc) {
+        this.setProperty(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, useTargetEntryLogSizeForGc);
         return this;
     }
 
@@ -1666,7 +1682,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of minor compaction
      */
     public double getMinorCompactionThreshold() {
-        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2f);
+        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2d);
     }
 
     /**
@@ -1694,7 +1710,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8d);
     }
 
     /**
@@ -2146,6 +2162,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          number of threads to handle journal callbacks.
      * @return server configuration
      */
+    @Deprecated
     public ServerConfiguration setNumJournalCallbackThreads(int numThreads) {
         setProperty(NUM_JOURNAL_CALLBACK_THREADS, numThreads);
         return this;
@@ -2156,6 +2173,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return the number of threads that handle journal callbacks.
      */
+    @Deprecated
     public int getNumJournalCallbackThreads() {
         return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
     }
@@ -3131,6 +3149,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+
+    /**
+     * Flag to enable sanity check metrics in bookie stats. Defaults to false/disabled.
+     *
+     * @return true, if bookie collects sanity check metrics in stats
+     */
+    public boolean isSanityCheckMetricsEnabled() {
+        return getBoolean(SANITY_CHECK_METRICS_ENABLED, false);
+    }
+
+    /**
+     * Enable sanity check metrics in bookie stats.
+     *
+     * @param sanityCheckMetricsEnabled
+     *          flag to enable sanity check metrics
+     * @return server configuration
+     */
+    public ServerConfiguration setSanityCheckMetricsEnabled(boolean sanityCheckMetricsEnabled) {
+        setProperty(SANITY_CHECK_METRICS_ENABLED, sanityCheckMetricsEnabled);
+        return this;
+    }
+
     /**
      * Validate the configuration.
      * @throws ConfigurationException
@@ -3975,6 +4015,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
     }
 
+
+    /**
+     * When this config is set to true,if we replay journal failed, we will skip.
+     * @param skipReplayJournalInvalidRecord
+     * @return
+     */
+    public ServerConfiguration setSkipReplayJournalInvalidRecord(boolean skipReplayJournalInvalidRecord) {
+        this.setProperty(SKIP_REPLAY_JOURNAL_INVALID_RECORD,
+                Boolean.toString(skipReplayJournalInvalidRecord));
+        return this;
+    }
+
+    /**
+     * @see #isSkipReplayJournalInvalidRecord .
+     */
+    public boolean isSkipReplayJournalInvalidRecord() {
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
+    }
+
     /**
      * Get default rocksdb conf.
      *
@@ -4045,5 +4104,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
         return this;
+    }
+
+    /**
+     * Set the max operation numbers in a single rocksdb write batch.
+     * The rocksdb write batch is related to the memory usage. If the batch is too large, it will cause the OOM.
+     *
+     * @param maxNumbersInSingleRocksDBBatch
+     * @return
+     */
+    public ServerConfiguration setOperationMaxNumbersInSingleRocksDBWriteBatch(int maxNumbersInSingleRocksDBBatch) {
+        this.setProperty(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, maxNumbersInSingleRocksDBBatch);
+        return this;
+    }
+
+    /**
+     * Get the max operation numbers in a single rocksdb write batch.
+     *
+     * @return
+     */
+    public int getMaxOperationNumbersInSingleRocksDBBatch() {
+        return getInt(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, 100000);
     }
 }

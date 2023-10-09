@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -616,7 +616,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (excludeZones.isEmpty()) {
             return "";
         }
-        StringBuilder excludedZonesString = new StringBuilder("~");
+        StringBuilder excludedZonesString = new StringBuilder(NetworkTopologyImpl.INVERSE);
         boolean firstZone = true;
         for (String excludeZone : excludeZones) {
             if (!firstZone) {

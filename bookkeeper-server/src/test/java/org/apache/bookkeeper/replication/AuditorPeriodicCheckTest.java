@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,12 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import java.io.File;
@@ -47,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,7 +52,6 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
-import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -71,18 +65,18 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -355,7 +349,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                     try {
                         latch.countDown();
                         for (int i = 0; i < numLedgers; i++) {
-                            auditor.checkAllLedgers();
+                            ((AuditorCheckAllLedgersTask) auditor.auditorCheckAllLedgersTask).checkAllLedgers();
                         }
                     } catch (Exception e) {
                         LOG.error("Caught exception while checking all ledgers", e);
@@ -399,19 +393,16 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         ServerConfiguration configuration = confByIndex(0);
         configuration.setAuditorMaxNumberOfConcurrentOpenLedgerOperations(10);
 
-        Auditor auditor1 = new Auditor(BookieImpl.getBookieId(configuration).toString(),
-            configuration, NullStatsLogger.INSTANCE);
-        Auditor auditor = Mockito.spy(auditor1);
-
-        BookKeeper bookKeeper = Mockito.spy(auditor.getBookKeeper(configuration));
-        BookKeeperAdmin admin = Mockito.spy(auditor.getBookKeeperAdmin(bookKeeper));
-        when(auditor.getBookKeeper(configuration)).thenReturn(bookKeeper);
-        when(auditor.getBookKeeperAdmin(bookKeeper)).thenReturn(admin);
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numLedgersChecked = statsLogger
+                .getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(configuration).toString(),
+            configuration, statsLogger);
 
         try {
-            auditor.checkAllLedgers();
-            verify(admin, times(numberLedgers)).asyncOpenLedgerNoRecovery(anyLong(),
-                any(AsyncCallback.OpenCallback.class), eq(null));
+            ((AuditorCheckAllLedgersTask) auditor.auditorCheckAllLedgersTask).checkAllLedgers();
+            assertEquals("NUM_LEDGERS_CHECKED", numberLedgers, (long) numLedgersChecked.get());
         } catch (Exception e) {
             LOG.error("Caught exception while checking all ledgers ", e);
             fail();
@@ -456,7 +447,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicBookieCheckInterval(0);
 
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
-                statsLogger);
+                statsLogger, null);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("CHECK_ALL_LEDGERS_TIME SuccessCount", 0, checkAllLedgersStatsLogger.getSuccessCount());
         long curTimeBeforeStart = System.currentTimeMillis();
@@ -550,7 +541,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicBookieCheckInterval(0);
 
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
-                statsLogger);
+                statsLogger, null);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());
         long curTimeBeforeStart = System.currentTimeMillis();
@@ -654,7 +645,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicCheckInterval(0);
         servConf.setAuditorPeriodicBookieCheckInterval(0);
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
-                statsLogger);
+                statsLogger, null);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("REPLICAS_CHECK_TIME SuccessCount", 0, replicasCheckStatsLogger.getSuccessCount());
         long curTimeBeforeStart = System.currentTimeMillis();
@@ -710,38 +701,234 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         auditor.close();
     }
 
+    @Test
+    public void testDelayBookieAuditOfCheckAllLedgers() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 10;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 2; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numBookieAuditsDelayed =
+                statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
+        TestOpStatsLogger underReplicatedLedgerTotalSizeStatsLogger = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.UNDER_REPLICATED_LEDGERS_TOTAL_SIZE);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
+
+        servConf.setAuditorPeriodicCheckInterval(1);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
+        servConf.setAuditorPeriodicBookieCheckInterval(Long.MAX_VALUE);
+
+        urm.setLostBookieRecoveryDelay(Integer.MAX_VALUE);
+
+        AtomicBoolean canRun = new AtomicBoolean(false);
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc,
+                false, statsLogger, canRun);
+        final CountDownLatch latch = auditor.getLatch();
+
+        auditor.start();
+
+        killBookie(addressByIndex(0));
+
+        Awaitility.await().untilAsserted(() -> assertEquals(1, (long) numBookieAuditsDelayed.get()));
+        final Future<?> auditTask = auditor.auditTask;
+        assertTrue(auditTask != null && !auditTask.isDone());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
+
+        canRun.set(true);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(auditor.auditTask.equals(auditTask)
+                && auditor.auditTask != null && !auditor.auditTask.isDone());
+        // wrong num is numLedgers, right num is 0
+        assertEquals("UNDER_REPLICATED_LEDGERS_TOTAL_SIZE",
+                0,
+                underReplicatedLedgerTotalSizeStatsLogger.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
+
+        auditor.close();
+    }
+
+    @Test
+    public void testDelayBookieAuditOfPlacementPolicy() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 10;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 2; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numBookieAuditsDelayed =
+                statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
+        TestOpStatsLogger placementPolicyCheckTime = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
+
+        servConf.setAuditorPeriodicCheckInterval(0);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(1);
+        servConf.setAuditorPeriodicBookieCheckInterval(Long.MAX_VALUE);
+
+        urm.setLostBookieRecoveryDelay(Integer.MAX_VALUE);
+
+        AtomicBoolean canRun = new AtomicBoolean(false);
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc,
+                false, statsLogger, canRun);
+        final CountDownLatch latch = auditor.getLatch();
+
+        auditor.start();
+
+        killBookie(addressByIndex(0));
+
+        Awaitility.await().untilAsserted(() -> assertEquals(1, (long) numBookieAuditsDelayed.get()));
+        final Future<?> auditTask = auditor.auditTask;
+        assertTrue(auditTask != null && !auditTask.isDone());
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME", 0, placementPolicyCheckTime.getSuccessCount());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
+
+        canRun.set(true);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(auditor.auditTask.equals(auditTask)
+                && auditor.auditTask != null && !auditor.auditTask.isDone());
+        // wrong successCount is > 0, right successCount is = 0
+        assertEquals("PLACEMENT_POLICY_CHECK_TIME", 0, placementPolicyCheckTime.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
+
+        auditor.close();
+    }
+
+    @Test
+    public void testDelayBookieAuditOfReplicasCheck() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 10;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 2; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        Counter numBookieAuditsDelayed =
+                statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
+        TestOpStatsLogger replicasCheckTime = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.REPLICAS_CHECK_TIME);
+        Counter numSkippingCheckTaskTimes =
+                statsLogger.getCounter(ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES);
+
+        servConf.setAuditorPeriodicCheckInterval(0);
+        servConf.setAuditorPeriodicPlacementPolicyCheckInterval(0);
+        servConf.setAuditorPeriodicBookieCheckInterval(Long.MAX_VALUE);
+        servConf.setAuditorPeriodicReplicasCheckInterval(1);
+
+        urm.setLostBookieRecoveryDelay(Integer.MAX_VALUE);
+
+        AtomicBoolean canRun = new AtomicBoolean(false);
+
+        final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc,
+                false, statsLogger, canRun);
+        final CountDownLatch latch = auditor.getLatch();
+
+        auditor.start();
+
+        killBookie(addressByIndex(0));
+
+        Awaitility.await().untilAsserted(() -> assertEquals(1, (long) numBookieAuditsDelayed.get()));
+        final Future<?> auditTask = auditor.auditTask;
+        assertTrue(auditTask != null && !auditTask.isDone());
+        assertEquals("REPLICAS_CHECK_TIME", 0, replicasCheckTime.getSuccessCount());
+        assertEquals("NUM_SKIPPING_CHECK_TASK_TIMES", 0, (long) numSkippingCheckTaskTimes.get());
+
+        canRun.set(true);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(auditor.auditTask.equals(auditTask)
+                && auditor.auditTask != null && !auditor.auditTask.isDone());
+        // wrong successCount is > 0, right successCount is = 0
+        assertEquals("REPLICAS_CHECK_TIME", 0, replicasCheckTime.getSuccessCount());
+        assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
+
+        auditor.close();
+    }
+
     static class TestAuditor extends Auditor {
 
         final AtomicReference<CountDownLatch> latchRef = new AtomicReference<CountDownLatch>(new CountDownLatch(1));
 
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
-                StatsLogger statsLogger) throws UnavailableException {
+                StatsLogger statsLogger, AtomicBoolean exceptedRun) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
+            renewAuditorTestWrapperTask(exceptedRun);
         }
 
         public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
-                BookKeeperAdmin bkadmin, boolean ownadmin, StatsLogger statsLogger) throws UnavailableException {
+                BookKeeperAdmin bkadmin, boolean ownadmin, StatsLogger statsLogger,
+                           AtomicBoolean exceptedRun) throws UnavailableException {
             super(bookieIdentifier, conf, bkc, ownBkc, bkadmin, ownadmin, statsLogger);
+            renewAuditorTestWrapperTask(exceptedRun);
         }
 
-        public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger)
+        public TestAuditor(final String bookieIdentifier, ServerConfiguration conf, StatsLogger statsLogger,
+                           AtomicBoolean exceptedRun)
                 throws UnavailableException {
             super(bookieIdentifier, conf, statsLogger);
+            renewAuditorTestWrapperTask(exceptedRun);
         }
 
-        void checkAllLedgers() throws BKException, IOException, InterruptedException {
-            super.checkAllLedgers();
-            latchRef.get().countDown();
-        }
-
-        void placementPolicyCheck() throws BKAuditException {
-            super.placementPolicyCheck();
-            latchRef.get().countDown();
-        }
-
-        void replicasCheck() throws BKAuditException {
-            super.replicasCheck();
-            latchRef.get().countDown();
+        private void renewAuditorTestWrapperTask(AtomicBoolean exceptedRun) {
+            super.auditorCheckAllLedgersTask =
+                    new AuditorTestWrapperTask(super.auditorCheckAllLedgersTask, latchRef, exceptedRun);
+            super.auditorPlacementPolicyCheckTask =
+                    new AuditorTestWrapperTask(super.auditorPlacementPolicyCheckTask, latchRef, exceptedRun);
+            super.auditorReplicasCheckTask =
+                    new AuditorTestWrapperTask(super.auditorReplicasCheckTask, latchRef, exceptedRun);
         }
 
         CountDownLatch getLatch() {
@@ -750,6 +937,35 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         void setLatch(CountDownLatch latch) {
             latchRef.set(latch);
+        }
+
+        private static class AuditorTestWrapperTask extends AuditorTask {
+            private final AuditorTask innerTask;
+            private final AtomicReference<CountDownLatch> latchRef;
+            private final AtomicBoolean exceptedRun;
+
+            AuditorTestWrapperTask(AuditorTask innerTask,
+                                   AtomicReference<CountDownLatch> latchRef,
+                                   AtomicBoolean exceptedRun) {
+                super(null, null, null, null, null,
+                        null, null);
+                this.innerTask = innerTask;
+                this.latchRef = latchRef;
+                this.exceptedRun = exceptedRun;
+            }
+
+            @Override
+            protected void runTask() {
+                if (exceptedRun == null || exceptedRun.get()) {
+                    innerTask.runTask();
+                    latchRef.get().countDown();
+                }
+            }
+
+            @Override
+            public void shutdown() {
+                innerTask.shutdown();
+            }
         }
     }
 

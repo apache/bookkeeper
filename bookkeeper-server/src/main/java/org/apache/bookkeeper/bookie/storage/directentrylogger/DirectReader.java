@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -55,8 +56,6 @@ class DirectReader implements LogReader {
         this.filename = filename;
         this.maxSaneEntrySize = maxSaneEntrySize;
         this.readBlockStats = readBlockStats;
-
-        nativeBuffer = new Buffer(nativeIO, bufferSize);
         closed = false;
 
         try {
@@ -70,6 +69,7 @@ class DirectReader implements LogReader {
                                   .kv("errno", ne.getErrno()).toString());
         }
         refreshMaxOffset();
+        nativeBuffer = new Buffer(nativeIO, allocator, bufferSize);
     }
 
     @Override
@@ -90,7 +90,7 @@ class DirectReader implements LogReader {
         try {
             readIntoBufferAt(buf, offset, size);
         } catch (IOException e) {
-            buf.release();
+            ReferenceCountUtil.release(buf);
             throw e;
         }
 
@@ -120,7 +120,7 @@ class DirectReader implements LogReader {
                 try {
                     return intBuf.getInt(0);
                 } finally {
-                    intBuf.release();
+                    ReferenceCountUtil.release(intBuf);
                 }
             }
         }
@@ -137,7 +137,7 @@ class DirectReader implements LogReader {
                 try {
                     return longBuf.getLong(0);
                 } finally {
-                    longBuf.release();
+                    ReferenceCountUtil.release(longBuf);
                 }
             }
         }
@@ -206,12 +206,9 @@ class DirectReader implements LogReader {
         long bufferOffset = 0;
         long bytesToRead = Math.min(blockSize, bytesAvailable);
         long bytesOutstanding = bytesToRead;
-        int attempts = 0;
         long bytesRead = -1;
         try {
             while (true) {
-                attempts++;
-
                 long readSize = blockSize - bufferOffset;
                 long pointerWithOffset = nativeBuffer.pointer(bufferOffset, readSize);
                 bytesRead = nativeIO.pread(fd, pointerWithOffset,

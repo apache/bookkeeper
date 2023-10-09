@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -60,7 +61,6 @@ public interface LedgerStorage {
     void setStateManager(StateManager stateManager);
     void setCheckpointSource(CheckpointSource checkpointSource);
     void setCheckpointer(Checkpointer checkpointer);
-    void setStorageStorageNotificationListener(LedgerStorageNotificationListener ledgerStorageNotificationListener);
 
     /**
      * Start any background threads belonging to the storage system. For example, garbage collection.
@@ -232,7 +232,7 @@ public interface LedgerStorage {
     /**
      * Force trigger Garbage Collection with forceMajor or forceMinor parameter.
      */
-    default void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    default void forceGC(boolean forceMajor, boolean forceMinor) {
         return;
     }
 
@@ -258,6 +258,26 @@ public interface LedgerStorage {
 
     default boolean isMinorGcSuspended() {
         return false;
+    }
+
+    default void entryLocationCompact() {
+        return;
+    }
+
+    default void entryLocationCompact(List<String> locations) {
+        return;
+    }
+
+    default boolean isEntryLocationCompacting() {
+        return false;
+    }
+
+    default Map<String, Boolean> isEntryLocationCompacting(List<String> locations) {
+        return Collections.emptyMap();
+    }
+
+    default List<String> getEntryLocationDBPath() {
+        return Collections.emptyList();
     }
 
     /**

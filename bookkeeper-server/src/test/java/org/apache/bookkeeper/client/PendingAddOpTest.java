@@ -82,7 +82,7 @@ public class PendingAddOpTest {
         assertSame(lh, op.lh);
         assertEquals(Code.NotEnoughBookiesException, rcHolder.get());
 
-        op.run();
+        op.initiate();
         // after the op is run, the object is recycled.
         assertNull(op.lh);
     }

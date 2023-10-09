@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.HashedWheelTimer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -84,6 +85,12 @@ public class LongPollReadEntryProcessorV3Test {
 
         Channel channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);
+
+        BookieRequestHandler requestHandler = mock(BookieRequestHandler.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
         Bookie bookie = mock(Bookie.class);
 
         BookieRequestProcessor requestProcessor = mock(BookieRequestProcessor.class);
@@ -104,7 +111,7 @@ public class LongPollReadEntryProcessorV3Test {
 
         LongPollReadEntryProcessorV3 processor = new LongPollReadEntryProcessorV3(
             request,
-            channel,
+            requestHandler,
             requestProcessor,
             executor, executor, timer);
 

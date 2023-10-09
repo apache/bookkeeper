@@ -26,7 +26,7 @@ import org.jctools.queues.MpscArrayQueue;
 /**
  * Blocking queue optimized for multiple producers and single consumer.
  */
-public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQueue<T> {
+public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQueue<T>, BatchedBlockingQueue<T> {
 
     public BlockingMpscQueue(int size) {
         super(size);
@@ -121,6 +121,45 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
     @Override
     public int drainTo(Collection<? super T> c, int maxElements) {
         return drain(c::add, maxElements);
+    }
+
+    @Override
+    public void putAll(T[] a, int offset, int len) throws InterruptedException {
+        for (int i = 0; i < len; i++) {
+            put(a[offset + i]);
+        }
+    }
+
+    @Override
+    public int takeAll(T[] array) throws InterruptedException {
+        int items = 0;
+
+        T t;
+        while (items < array.length && (t = poll()) != null) {
+            array[items++] = t;
+        }
+
+        if (items == 0) {
+            array[items++] = take();
+        }
+
+        return items;
+    }
+
+    @Override
+    public int pollAll(T[] array, long timeout, TimeUnit unit) throws InterruptedException {
+        int items = 0;
+
+        T t;
+        while (items < array.length && (t = poll()) != null) {
+            array[items++] = t;
+        }
+
+        if (items == 0 && (t = poll(timeout, unit)) != null) {
+            array[items++] = t;
+        }
+
+        return items;
     }
 
     /**

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -831,7 +831,7 @@ public class AuditorPlacementPolicyCheckTest extends BookKeeperClusterTestCase {
                 .getOpStatsLogger(ReplicationStats.PLACEMENT_POLICY_CHECK_TIME);
 
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf,
-                statsLogger);
+                statsLogger, null);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("PLACEMENT_POLICY_CHECK_TIME SuccessCount", 0, placementPolicyCheckStatsLogger.getSuccessCount());

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -293,6 +293,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
         logger.info("LogSegments : {}", segments);
+        logger.info("LogSegments size: {}", segments.size());
 
         assertTrue(segments.size() >= 2);
         ensureOnlyOneInprogressLogSegments(segments);
@@ -308,6 +309,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
         segments = dlm.getLogSegments();
         logger.info("LogSegments : {}", segments);
+        logger.info("LogSegments size: {}", segments.size());
 
         assertEquals(numSegmentsAfterAsyncWrites + numLogSegments / 2, segments.size());
         ensureOnlyOneInprogressLogSegments(segments);

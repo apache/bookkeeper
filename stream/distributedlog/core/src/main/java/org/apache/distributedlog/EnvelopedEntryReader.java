@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,6 +19,7 @@ package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -80,7 +81,7 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
 
     private void releaseBuffer() {
         isExhausted = true;
-        this.src.release();
+        ReferenceCountUtil.release(this.src);
     }
 
     @Override

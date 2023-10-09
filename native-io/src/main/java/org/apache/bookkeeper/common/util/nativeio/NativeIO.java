@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -46,6 +46,12 @@ public interface NativeIO {
      * not exist.
      */
     int fallocate(int fd, int mode, long offset, long len) throws NativeIOException;
+
+    /**
+     * posix_fadvise is a linux-only syscall, so callers must handle the possibility that it does
+     * not exist.
+     */
+    int posix_fadvise(int fd, long offset, long len, int flag) throws NativeIOException;
 
     int pwrite(int fd, long pointer, int count, long offset) throws NativeIOException;
 

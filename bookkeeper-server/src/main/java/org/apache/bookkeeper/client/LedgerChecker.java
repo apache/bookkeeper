@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -87,6 +87,9 @@ public class LedgerChecker {
                     cb.operationComplete(rc, fragment);
                 }
             } else if (!completed.getAndSet(true)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Read {}:{} from {} failed, the error code: {}", ledgerId, entryId, ctx, rc);
+                }
                 cb.operationComplete(rc, fragment);
             }
         }
@@ -254,7 +257,7 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
             bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
-                                   manycb, null, BookieProtocol.FLAG_NONE);
+                                   manycb, bookie, BookieProtocol.FLAG_NONE);
         } else {
             if (lastStored <= firstStored) {
                 cb.operationComplete(Code.IncorrectParameterException, null);
@@ -296,7 +299,8 @@ public class LedgerChecker {
                     fragment, cb);
             for (Long entryID: entriesToBeVerified) {
                 acquirePermit();
-                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, bookie,
+                        BookieProtocol.FLAG_NONE);
             }
         }
     }
@@ -443,18 +447,17 @@ public class LedgerChecker {
                                                   }
                                               });
 
-                DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
-                for (int i = 0; i < writeSet.size(); i++) {
+                DistributionSchedule ds = lh.getDistributionSchedule();
+                for (int i = 0; i < ds.getWriteQuorumSize(); i++) {
                     try {
                         acquirePermit();
-                        BookieId addr = curEnsemble.get(writeSet.get(i));
+                        BookieId addr = curEnsemble.get(ds.getWriteSetBookieIndex(entryToRead, i));
                         bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                 eecb, null, BookieProtocol.FLAG_NONE);
                     } catch (InterruptedException e) {
                         LOG.error("InterruptedException when checking entry : {}", entryToRead, e);
                     }
                 }
-                writeSet.recycle();
                 return;
             } else {
                 fragments.add(lastLedgerFragment);

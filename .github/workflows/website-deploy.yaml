@@ -46,10 +46,15 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Set up Maven
+        uses: apache/pulsar-test-infra/setup-maven@master
+        with:
+          maven-version: 3.8.7
+
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
 
       - name: Setup yarn
         run: npm install -g yarn

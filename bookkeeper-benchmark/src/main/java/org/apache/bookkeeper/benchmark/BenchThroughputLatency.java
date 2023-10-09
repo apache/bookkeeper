@@ -111,7 +111,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     Random rand = new Random();
     public void close() throws InterruptedException, BKException {
         for (int i = 0; i < numberOfLedgers; i++) {
-            lh[i].close();
+            if (lh[i] != null) {
+                lh[i].close();
+            }
         }
         bk.close();
     }
@@ -257,6 +259,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         options.addOption("skipwarmup", false, "Skip warm up, default false");
         options.addOption("sendlimit", true, "Max number of entries to send. Default 20000000");
         options.addOption("latencyFile", true, "File to dump latencies. Default is latencyDump.dat");
+        options.addOption("useV2", false, "Whether use V2 protocol to send requests to the bookie server.");
+        options.addOption("warmupMessages", true, "Number of messages to warm up. Default 10000");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -281,6 +285,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
         int throttle = Integer.parseInt(cmd.getOptionValue("throttle", "10000"));
         int sendLimit = Integer.parseInt(cmd.getOptionValue("sendlimit", "20000000"));
+        int warmupMessages = Integer.parseInt(cmd.getOptionValue("warmupMessages", "10000"));
 
         final int sockTimeout = Integer.parseInt(cmd.getOptionValue("sockettimeout", "5"));
 
@@ -321,11 +326,15 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setThrottleValue(throttle).setReadTimeout(sockTimeout).setZkServers(servers);
 
+        if (cmd.hasOption("useV2")) {
+            conf.setUseV2WireProtocol(true);
+        }
+
         if (!cmd.hasOption("skipwarmup")) {
             long throughput;
             LOG.info("Starting warmup");
 
-            throughput = warmUp(data, ledgers, ensemble, quorum, passwd, conf);
+            throughput = warmUp(data, ledgers, ensemble, quorum, passwd, warmupMessages, conf);
             LOG.info("Warmup tp: " + throughput);
             LOG.info("Warmup phase finished");
         }
@@ -438,7 +447,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
      * <p>TODO: update benchmark to use metadata service uri {@link https://github.com/apache/bookkeeper/issues/1331}
      */
     private static long warmUp(byte[] data, int ledgers, int ensemble, int qSize,
-                               byte[] passwd, ClientConfiguration conf)
+                               byte[] passwd, int warmupMessages, ClientConfiguration conf)
             throws KeeperException, IOException, InterruptedException, BKException {
         final CountDownLatch connectLatch = new CountDownLatch(1);
         final int bookies;
@@ -465,7 +474,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
 
         BenchThroughputLatency warmup = new BenchThroughputLatency(bookies, bookies, bookies, passwd,
-                                                                   ledgers, 10000, conf);
+                                                                   ledgers, warmupMessages, conf);
         warmup.setEntryData(data);
         Thread thread = new Thread(warmup);
         thread.start();

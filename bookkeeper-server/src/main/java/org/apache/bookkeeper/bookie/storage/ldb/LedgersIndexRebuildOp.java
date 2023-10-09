@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -222,7 +222,7 @@ public class LedgersIndexRebuildOp {
                     LOG.info("Found ledger {} in journal", ledgerId);
                 }
             }
-        });
+        }, false);
     }
 
     private void delete(Path path) {

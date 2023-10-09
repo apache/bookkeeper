@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +19,6 @@ package org.apache.bookkeeper.proto;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.util.Recycler;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -47,11 +46,11 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         startTimeNanos = -1L;
     }
 
-    public static WriteEntryProcessor create(ParsedAddRequest request, Channel channel,
+    public static WriteEntryProcessor create(ParsedAddRequest request, BookieRequestHandler requestHandler,
                                              BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
-        wep.init(request, channel, requestProcessor);
-        requestProcessor.onAddRequestStart(channel);
+        wep.init(request, requestHandler, requestProcessor);
+        requestProcessor.onAddRequestStart(requestHandler.ctx().channel());
         return wep;
     }
 
@@ -66,6 +65,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.release();
             request.recycle();
+            recycle();
             return;
         }
 
@@ -74,9 +74,10 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         ByteBuf addData = request.getData();
         try {
             if (request.isRecoveryAdd()) {
-                requestProcessor.getBookie().recoveryAddEntry(addData, this, channel, request.getMasterKey());
+                requestProcessor.getBookie().recoveryAddEntry(addData, this, requestHandler, request.getMasterKey());
             } else {
-                requestProcessor.getBookie().addEntry(addData, false, this, channel, request.getMasterKey());
+                requestProcessor.getBookie().addEntry(addData, false, this,
+                        requestHandler, request.getMasterKey());
             }
         } catch (OperationRejectedException e) {
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
@@ -100,8 +101,6 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                       request.ledgerId, request.entryId, t.getMessage(), t);
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
-        } finally {
-            addData.release();
         }
 
         if (rc != BookieProtocol.EOK) {
@@ -111,6 +110,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.recycle();
+            recycle();
         }
     }
 
@@ -124,9 +124,10 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             requestProcessor.getRequestStats().getAddEntryStats()
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
-        sendWriteReqResponse(rc,
-                     ResponseBuilder.buildAddResponse(request),
-                     requestProcessor.getRequestStats().getAddRequestStats());
+
+        requestHandler.prepareSendResponseV2(rc, request);
+        requestProcessor.onAddRequestFinish();
+
         request.recycle();
         recycle();
     }

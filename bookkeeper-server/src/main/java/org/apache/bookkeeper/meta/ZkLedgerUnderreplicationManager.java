@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -620,8 +620,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!this.isLedgerReplicationEnabled()) {
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             this.notifyLedgerReplicationEnabled(cb);
             cb.await();
         }

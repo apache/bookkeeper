@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,6 +30,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -78,7 +80,7 @@ public class WriteCacheTest {
         assertEquals(0, cache.count());
         assertEquals(0, cache.size());
 
-        entry1.release();
+        ReferenceCountUtil.release(entry1);
         cache.close();
     }
 
@@ -119,7 +121,7 @@ public class WriteCacheTest {
 
         assertEquals(0, findCount.get());
 
-        entry.release();
+        ReferenceCountUtil.release(entry);
         cache.close();
     }
 
@@ -142,7 +144,7 @@ public class WriteCacheTest {
     }
 
     @Test
-    public void testEmptyCache() {
+    public void testEmptyCache() throws IOException {
         WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024);
 
         assertEquals(0, cache.count());
@@ -220,7 +222,7 @@ public class WriteCacheTest {
     }
 
     @Test
-    public void testLedgerDeletion() {
+    public void testLedgerDeletion() throws IOException {
         WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024);
 
         ByteBuf entry = Unpooled.buffer(1024);
@@ -303,5 +305,22 @@ public class WriteCacheTest {
             assertTrue(cache.hasEntry(ledgerId, i));
         }
         assertFalse(cache.hasEntry(ledgerId, 48));
+    }
+
+    @Test(expected = IOException.class)
+    public void testForEachIOException() throws Exception {
+        try (WriteCache cache = new WriteCache(allocator, 1024 * 1024, 16 * 1024)) {
+
+            for (int i = 0; i < 48; i++) {
+                boolean inserted = cache.put(1, i, Unpooled.wrappedBuffer(("test-" + i).getBytes()));
+                assertTrue(inserted);
+            }
+
+            assertEquals(48, cache.count());
+
+            cache.forEach(((ledgerId, entryId, entry) -> {
+                throw new IOException("test throw IOException.");
+            }));
+        }
     }
 }

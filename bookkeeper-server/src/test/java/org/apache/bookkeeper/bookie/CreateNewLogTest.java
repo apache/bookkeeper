@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -523,6 +523,46 @@ public class CreateNewLogTest {
         Assert.assertEquals(
                 "previousAllocatedEntryLogId after 2 times createNewLog is called", 2,
                 el.getPreviousAllocatedEntryLogId());
+    }
+
+    @Test
+    public void testLastIdCompatibleBetweenDefaultAndDirectEntryLogger() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+
+        // Creating a new configuration with a number of
+        // ledger directories.
+        conf.setLedgerDirNames(ledgerDirs);
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        DefaultEntryLogger el = new DefaultEntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManagerBase = (EntryLogManagerBase) el.getEntryLogManager();
+        for (int i = 0; i < 10; i++) {
+            entryLogManagerBase.createNewLog(i);
+        }
+
+        Assert.assertEquals(9, el.getPreviousAllocatedEntryLogId());
+
+        //Mock half ledgerDirs lastId is 3.
+        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size() / 2; i++) {
+            File dir = ledgerDirsManager.getAllLedgerDirs().get(i);
+            LOG.info("Picked this directory: {}", dir);
+            el.getEntryLoggerAllocator().setLastLogId(dir, 3);
+        }
+
+        el = new DefaultEntryLogger(conf, ledgerDirsManager);
+        Assert.assertEquals(9, el.getPreviousAllocatedEntryLogId());
+
+        //Mock all ledgerDirs lastId is 3.
+        for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
+            File dir = ledgerDirsManager.getAllLedgerDirs().get(i);
+            LOG.info("Picked this directory: {}", dir);
+            el.getEntryLoggerAllocator().setLastLogId(dir, 3);
+        }
+
+        el = new DefaultEntryLogger(conf, ledgerDirsManager);
+        Assert.assertEquals(9, el.getPreviousAllocatedEntryLogId());
     }
 
     /*

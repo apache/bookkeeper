@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -59,7 +60,8 @@ import org.slf4j.LoggerFactory;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JournalChannel.class, FileChannelProvider.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*"})
+@PowerMockIgnore({"jdk.internal.loader.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
+    "com.sun.org.apache.xerces.*", "javax.naming.*"})
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -173,7 +175,7 @@ public class BookieJournalTest {
 
             fc.write(lenBuff);
             fc.write(packet.nioBuffer());
-            packet.release();
+            ReferenceCountUtil.release(packet);
         }
     }
 
@@ -217,7 +219,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.release(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -251,7 +253,7 @@ public class BookieJournalTest {
 
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.release(packet);
         }
         bc.flushAndForceWrite(false);
 
@@ -284,7 +286,7 @@ public class BookieJournalTest {
             lenBuff.flip();
             bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.release(packet);
         }
         // write fence key
         ByteBuf packet = generateFenceEntry(1);
@@ -294,6 +296,52 @@ public class BookieJournalTest {
         bc.write(packet);
         bc.flushAndForceWrite(false);
         updateJournalVersion(jc, JournalChannel.V4);
+        return jc;
+    }
+
+    private JournalChannel writeV4JournalWithInvalidRecord(File journalDir,
+                                                           int numEntries, byte[] masterKey) throws Exception {
+        long logId = System.currentTimeMillis();
+        JournalChannel jc = new JournalChannel(journalDir, logId);
+
+        moveToPosition(jc, JournalChannel.VERSION_HEADER_SIZE);
+
+        BufferedChannel bc = jc.getBufferedChannel();
+
+        byte[] data = new byte[1024];
+        Arrays.fill(data, (byte) 'X');
+        long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
+        for (int i = 0; i <= numEntries; i++) {
+            ByteBuf packet;
+            if (i == 0) {
+                packet = generateMetaEntry(1, masterKey);
+            } else {
+                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data);
+            }
+            lastConfirmed = i;
+            ByteBuffer lenBuff = ByteBuffer.allocate(4);
+            if (i == numEntries - 1) {
+                //mock when flush data to file ,it writes an invalid entry to journal
+                lenBuff.putInt(-1);
+            } else {
+                lenBuff.putInt(packet.readableBytes());
+            }
+            lenBuff.flip();
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
+            packet.release();
+        }
+
+        // write fence key
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
+        //mock
+        bc.write(lenBuf);
+        bc.write(packet);
+        bc.flushAndForceWrite(false);
+        updateJournalVersion(jc, JournalChannel.V4);
+
         return jc;
     }
 
@@ -332,7 +380,7 @@ public class BookieJournalTest {
             }
             bc.write(lenBuff);
             bc.write(packet);
-            packet.release();
+            ReferenceCountUtil.release(packet);
             Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key
@@ -842,7 +890,7 @@ public class BookieJournalTest {
             assertEquals(journalIds.size(), 1);
 
             try {
-                journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner);
+                journal.scanJournal(journalIds.get(0), Long.MAX_VALUE, journalScanner, false);
                 fail("Should not have been able to scan the journal");
             } catch (Exception e) {
                 // Expected
@@ -852,7 +900,74 @@ public class BookieJournalTest {
         b.shutdown();
     }
 
-    private class DummyJournalScan implements Journal.JournalScanner {
+    /**
+     * Test for invalid record data during read of Journal.
+     */
+    @Test
+    public void testJournalScanInvalidRecordWithSkipFlag() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(ledgerDir));
+
+        try {
+            writeV4JournalWithInvalidRecord(BookieImpl.getCurrentDirectory(journalDir),
+                100, "testPasswd".getBytes());
+        } catch (Exception e) {
+            fail();
+        }
+
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        // Disabled skip broken journal files by default
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+                .setMetadataServiceUri(null)
+                .setSkipReplayJournalInvalidRecord(true);
+
+        Journal.JournalScanner journalScanner = new DummyJournalScan();
+
+        BookieImpl b = new TestBookieImpl(conf);
+
+        for (Journal journal : b.journals) {
+            List<Long> journalIds = Journal.listJournalIds(journal.getJournalDirectory(), null);
+            assertEquals(journalIds.size(), 1);
+            try {
+                journal.scanJournal(journalIds.get(0), 0, journalScanner, conf.isSkipReplayJournalInvalidRecord());
+            } catch (Exception e) {
+                fail("Should pass the journal scanning because we enabled skip flag by default.");
+            }
+        }
+
+        b.shutdown();
+
+        // Disabled skip broken journal files by default
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+                .setMetadataServiceUri(null);
+
+        journalScanner = new DummyJournalScan();
+
+        b = new TestBookieImpl(conf);
+
+        for (Journal journal : b.journals) {
+            List<Long> journalIds = Journal.listJournalIds(journal.getJournalDirectory(), null);
+            assertEquals(journalIds.size(), 1);
+            try {
+                journal.scanJournal(journalIds.get(0), 0, journalScanner, conf.isSkipReplayJournalInvalidRecord());
+                fail("Should fail the journal scanning because of disabled skip flag");
+            } catch (Exception e) {
+                // expected.
+            }
+        }
+
+        b.shutdown();
+    }
+
+
+    static class DummyJournalScan implements Journal.JournalScanner {
 
         @Override
         public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {

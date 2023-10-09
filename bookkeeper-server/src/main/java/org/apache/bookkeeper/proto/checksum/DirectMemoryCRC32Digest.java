@@ -43,10 +43,7 @@ class DirectMemoryCRC32Digest implements CRC32Digest {
     }
 
     @Override
-    public void update(ByteBuf buf) {
-        int index = buf.readerIndex();
-        int length = buf.readableBytes();
-
+    public void update(ByteBuf buf, int index, int length) {
         try {
             if (buf.hasMemoryAddress()) {
                 // Calculate CRC directly from the direct memory pointer

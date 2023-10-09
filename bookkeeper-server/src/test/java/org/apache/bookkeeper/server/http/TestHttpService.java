@@ -23,17 +23,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -50,12 +55,14 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieSanityService;
 import org.apache.bookkeeper.server.http.service.BookieSanityService.BookieSanity;
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
+import org.apache.bookkeeper.server.http.service.ClusterInfoService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
@@ -921,6 +928,34 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testGetClusterInfo() throws Exception {
+        HttpEndpointService clusterInfoServer = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.CLUSTER_INFO);
+
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = clusterInfoServer.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        LOG.info("Get response: {}", response1.getBody());
+
+        ClusterInfoService.ClusterInfo info = JsonUtil.fromJson(response1.getBody(),
+                ClusterInfoService.ClusterInfo.class);
+        assertFalse(info.isAuditorElected());
+        assertTrue(info.getAuditorId().length() == 0);
+        assertFalse(info.isClusterUnderReplicated());
+        assertTrue(info.isLedgerReplicationEnabled());
+        assertTrue(info.getTotalBookiesCount() > 0);
+        assertTrue(info.getWritableBookiesCount() > 0);
+        assertTrue(info.getReadonlyBookiesCount() == 0);
+        assertTrue(info.getUnavailableBookiesCount() == 0);
+        assertTrue(info.getTotalBookiesCount() == info.getWritableBookiesCount());
+
+        // Try using POST instead of GET
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = clusterInfoServer.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+    }
+
+    @Test
     public void testBookieReadOnlyState() throws Exception {
         HttpEndpointService bookieStateServer = bkHttpServiceProvider
                 .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE);
@@ -986,6 +1021,14 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         response = bookieReadOnlyService.handle(request);
         readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
         assertFalse(readOnlyState.isReadOnly());
+
+        //forceReadonly to writable
+        baseConf.setForceReadOnlyBookie(true);
+        baseConf.setReadOnlyModeEnabled(true);
+        restartBookies();
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(false)), HttpServer.Method.PUT,  null);
+        response = bookieReadOnlyService.handle(request);
+        assertEquals(400, response.getStatusCode());
     }
 
     @Test
@@ -1057,5 +1100,80 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         );
         assertEquals(responseMap7.get("isMajorGcSuspended"), "false");
         assertEquals(responseMap7.get("isMinorGcSuspended"), "false");
+    }
+
+    @Test
+    public void testTriggerEntryLocationCompactService() throws Exception {
+        BookieServer bookieServer = serverByIndex(numberOfBookies - 1);
+        LedgerStorage spyLedgerStorage = spy(bookieServer.getBookie().getLedgerStorage());
+        List<String> dbLocationPath = Lists.newArrayList("/data1/bookkeeper/ledgers/current/locations",
+                "/data2/bookkeeper/ledgers/current/locations");
+        when(spyLedgerStorage.getEntryLocationDBPath())
+                .thenReturn(dbLocationPath);
+
+        HashMap<String, Boolean> statusMap = Maps.newHashMap();
+        statusMap.put("/data1/bookkeeper/ledgers/current/locations", false);
+        statusMap.put("/data2/bookkeeper/ledgers/current/locations", true);
+        when(spyLedgerStorage.isEntryLocationCompacting(dbLocationPath))
+                .thenReturn(statusMap);
+
+        Field ledgerStorageField = bookieServer.getBookie().getClass().getDeclaredField("ledgerStorage");
+        ledgerStorageField.setAccessible(true);
+        ledgerStorageField.set(bookieServer.getBookie(), spyLedgerStorage);
+
+        HttpEndpointService triggerEntryLocationCompactService = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.TRIGGER_ENTRY_LOCATION_COMPACT);
+
+        // 1. Put
+        // 1.1 Trigger all entry location rocksDB compact, should return OK
+        HttpServiceRequest request1 = new HttpServiceRequest("{\"entryLocationRocksDBCompact\":true}",
+                HttpServer.Method.PUT, null);
+        HttpServiceResponse response1 = triggerEntryLocationCompactService.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        LOG.info("Get response: {}", response1.getBody());
+
+        // 1.2 Specified trigger entry location rocksDB compact, should return OK
+        String body2 = "{\"entryLocationRocksDBCompact\":true,\"entryLocations\""
+               + ":\"/data1/bookkeeper/ledgers/current/locations\"}";
+        HttpServiceRequest request2 = new HttpServiceRequest(body2, HttpServer.Method.PUT, null);
+        HttpServiceResponse response2 = triggerEntryLocationCompactService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        LOG.info("Get response: {}", response2.getBody());
+        assertTrue(response2.getBody().contains("Triggered entry Location RocksDB"));
+
+        // 1.3 Specified invalid entry location rocksDB compact, should return BAD_REQUEST
+        String body3 = "{\"entryLocationRocksDBCompact\":true,\"entryLocations\""
+                + ":\"/invalid1/locations,/data2/bookkeeper/ledgers/current/locations\"}";
+        HttpServiceRequest request3 = new HttpServiceRequest(body3, HttpServer.Method.PUT, null);
+        HttpServiceResponse response3 = triggerEntryLocationCompactService.handle(request3);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response3.getStatusCode());
+        LOG.info("Get response: {}", response3.getBody());
+        assertTrue(response3.getBody().contains("is invalid"));
+
+        // 1.4 Some rocksDB is running compact, should return OK
+        String body4 = "{\"entryLocationRocksDBCompact\":true,\"entryLocations\""
+                + ":\"/data1/bookkeeper/ledgers/current/locations,/data2/bookkeeper/ledgers/current/locations\"}";
+        HttpServiceRequest request4 = new HttpServiceRequest(body4, HttpServer.Method.PUT, null);
+        HttpServiceResponse response4 = triggerEntryLocationCompactService.handle(request4);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
+        LOG.info("Get response: {}", response4.getBody());
+
+        // 1.5 Put, empty body, should return BAD_REQUEST
+        HttpServiceRequest request5 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+        HttpServiceResponse response5 = triggerEntryLocationCompactService.handle(request5);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response5.getStatusCode());
+        LOG.info("Get response: {}", response5.getBody());
+
+        // 2. GET, should return OK
+        HttpServiceRequest request6 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response6 = triggerEntryLocationCompactService.handle(request6);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response6.getStatusCode());
+        assertTrue(response6.getBody().contains("\"/data2/bookkeeper/ledgers/current/locations\" : true"));
+        assertTrue(response6.getBody().contains("\"/data1/bookkeeper/ledgers/current/locations\" : false"));
+
+        // 3. POST, should return NOT_FOUND
+        HttpServiceRequest request7 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response7 = triggerEntryLocationCompactService.handle(request7);
+        assertEquals(HttpServer.StatusCode.METHOD_NOT_ALLOWED.getValue(), response7.getStatusCode());
     }
 }

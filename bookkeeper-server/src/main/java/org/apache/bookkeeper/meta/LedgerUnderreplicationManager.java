@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -240,8 +240,9 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @param cb
      * @throws ReplicationException.UnavailableException
      */
-    void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
-            throws ReplicationException.UnavailableException;
+    @Deprecated
+    default void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {}
 
     /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -128,6 +128,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
         baseClientConf.setUseV2WireProtocol(useV2Protocol);
+        baseClientConf.setLimitStatsLogging(false);
 
         switch (clientKeyStoreFormat) {
         case PEM:

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -28,7 +28,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -56,22 +55,24 @@ public class DbLedgerStorageWriteCacheTest {
         @Override
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            EntryLogger entryLogger, StatsLogger statsLogger, ScheduledExecutorService gcExecutor,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize)
+            EntryLogger entryLogger, StatsLogger statsLogger,
+            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                entryLogger, statsLogger, allocator, gcExecutor, writeCacheSize,
-                readCacheSize, readAheadCacheBatchSize);
+                entryLogger, statsLogger, allocator, writeCacheSize,
+                readCacheSize, readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
                     StatsLogger statsLogger,
-                    ByteBufAllocator allocator, ScheduledExecutorService gcExecutor, long writeCacheSize,
-                    long readCacheSize, int readAheadCacheBatchSize) throws IOException {
+                    ByteBufAllocator allocator, long writeCacheSize,
+                    long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
+                    throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
-                      statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize, readAheadCacheBatchSize);
+                      statsLogger, allocator, writeCacheSize, readCacheSize, readAheadCacheBatchSize,
+                      readAheadCacheBatchBytesSize);
             }
 
           @Override

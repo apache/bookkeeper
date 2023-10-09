@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -27,9 +27,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.protobuf.ByteString;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
@@ -50,12 +55,15 @@ public class TestBookieRequestProcessor {
 
     final BookieRequestProcessor requestProcessor = mock(BookieRequestProcessor.class);
 
+    private final ChannelGroup channelGroup = new DefaultChannelGroup(null);
+
     @Test
     public void testConstructLongPollThreads() throws Exception {
         // long poll threads == read threads
         ServerConfiguration conf = new ServerConfiguration();
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT,
+                channelGroup)) {
             assertSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());
         }
 
@@ -63,7 +71,8 @@ public class TestBookieRequestProcessor {
         conf = new ServerConfiguration();
         conf.setNumReadWorkerThreads(0);
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT,
+                channelGroup)) {
             assertNull(processor.getReadThreadPool());
             assertNotNull(processor.getLongPollThreadPool());
         }
@@ -73,7 +82,8 @@ public class TestBookieRequestProcessor {
         conf.setNumReadWorkerThreads(2);
         conf.setNumLongPollWorkerThreads(2);
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT,
+                channelGroup)) {
             assertNotNull(processor.getReadThreadPool());
             assertNotNull(processor.getLongPollThreadPool());
             assertNotSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());
@@ -137,7 +147,14 @@ public class TestBookieRequestProcessor {
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).build();
         Request request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
 
-        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, requestProcessor);
+        Channel channel = mock(Channel.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        BookieRequestHandler requestHandler = mock(BookieRequestHandler.class);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
+        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler,
+                requestProcessor);
         String toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
@@ -155,7 +172,7 @@ public class TestBookieRequestProcessor {
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).setFlag(Flag.RECOVERY_ADD).setWriteFlags(0)
                 .build();
         request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
-        writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, requestProcessor);
+        writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler, requestProcessor);
         toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",

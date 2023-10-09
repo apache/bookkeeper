@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import java.util.concurrent.CountDownLatch;
@@ -57,7 +58,9 @@ public class WriteEntryProcessorV3Test {
 
     private Request request;
     private WriteEntryProcessorV3 processor;
+
     private Channel channel;
+    private BookieRequestHandler requestHandler;
     private BookieRequestProcessor requestProcessor;
     private Bookie bookie;
 
@@ -78,6 +81,12 @@ public class WriteEntryProcessorV3Test {
             .build();
         channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);
+
+        requestHandler = mock(BookieRequestHandler.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
@@ -86,7 +95,7 @@ public class WriteEntryProcessorV3Test {
         when(channel.isActive()).thenReturn(true);
         processor = new WriteEntryProcessorV3(
             request,
-            channel,
+            requestHandler,
             requestProcessor);
     }
 
@@ -99,7 +108,7 @@ public class WriteEntryProcessorV3Test {
 
         processor = new WriteEntryProcessorV3(
             request,
-            channel,
+            requestHandler,
             requestProcessor);
     }
 
