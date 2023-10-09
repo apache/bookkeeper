@@ -118,11 +118,6 @@ public class SortedLedgerStorage
         interleavedLedgerStorage.setCheckpointer(checkpointer);
     }
 
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        this.interleavedLedgerStorage.setStorageStorageNotificationListener(storageNotificationListener);
-    }
-
     @VisibleForTesting
     ScheduledExecutorService getScheduler() {
         return scheduler;
@@ -372,7 +367,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         interleavedLedgerStorage.forceGC(forceMajor, forceMinor);
     }
 

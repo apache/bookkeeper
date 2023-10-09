@@ -90,6 +90,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected int minNumRacksPerWriteQuorum;
     protected boolean enforceMinNumRacksPerWriteQuorum;
     protected boolean ignoreLocalNodeInPlacementPolicy;
+    protected boolean useHostnameResolveLocalNodePlacementPolicy;
 
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
@@ -147,6 +148,41 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     /**
      * Initialize the policy.
      *
+     * @param dnsResolver
+     * @param timer
+     * @param reorderReadsRandom
+     * @param stabilizePeriodSeconds
+     * @param reorderThresholdPendingRequests
+     * @param isWeighted
+     * @param maxWeightMultiple
+     * @param minNumRacksPerWriteQuorum
+     * @param enforceMinNumRacksPerWriteQuorum
+     * @param ignoreLocalNodeInPlacementPolicy
+     * @param statsLogger
+     * @param bookieAddressResolver
+     * @return initialized ensemble placement policy
+     */
+    protected RackawareEnsemblePlacementPolicyImpl initialize(DNSToSwitchMapping dnsResolver,
+                                                              HashedWheelTimer timer,
+                                                              boolean reorderReadsRandom,
+                                                              int stabilizePeriodSeconds,
+                                                              int reorderThresholdPendingRequests,
+                                                              boolean isWeighted,
+                                                              int maxWeightMultiple,
+                                                              int minNumRacksPerWriteQuorum,
+                                                              boolean enforceMinNumRacksPerWriteQuorum,
+                                                              boolean ignoreLocalNodeInPlacementPolicy,
+                                                              StatsLogger statsLogger,
+                                                              BookieAddressResolver bookieAddressResolver) {
+        return initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
+            reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
+            enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy,
+            false, statsLogger, bookieAddressResolver);
+    }
+
+    /**
+     * Initialize the policy.
+     *
      * @param dnsResolver the object used to resolve addresses to their network address
      * @return initialized ensemble placement policy
      */
@@ -160,6 +196,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               int minNumRacksPerWriteQuorum,
                                                               boolean enforceMinNumRacksPerWriteQuorum,
                                                               boolean ignoreLocalNodeInPlacementPolicy,
+                                                              boolean useHostnameResolveLocalNodePlacementPolicy,
                                                               StatsLogger statsLogger,
                                                               BookieAddressResolver bookieAddressResolver) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
@@ -195,6 +232,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
         this.enforceMinNumRacksPerWriteQuorum = enforceMinNumRacksPerWriteQuorum;
         this.ignoreLocalNodeInPlacementPolicy = ignoreLocalNodeInPlacementPolicy;
+        this.useHostnameResolveLocalNodePlacementPolicy = useHostnameResolveLocalNodePlacementPolicy;
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -206,7 +244,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         BookieNode bn = null;
         if (!ignoreLocalNodeInPlacementPolicy) {
             try {
-                bn = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
+                String hostname = useHostnameResolveLocalNodePlacementPolicy
+                    ? InetAddress.getLocalHost().getCanonicalHostName() : InetAddress.getLocalHost().getHostAddress();
+                bn = createDummyLocalBookieNode(hostname);
             } catch (IOException e) {
                 LOG.error("Failed to get local host address : ", e);
             }
@@ -303,6 +343,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getMinNumRacksPerWriteQuorum(),
                 conf.getEnforceMinNumRacksPerWriteQuorum(),
                 conf.getIgnoreLocalNodeInPlacementPolicy(),
+                conf.getUseHostnameResolveLocalNodePlacementPolicy(),
                 statsLogger,
                 bookieAddressResolver);
     }
@@ -414,9 +455,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 return PlacementResult.of(addrs, PlacementPolicyAdherence.FAIL);
             }
-
+            //Choose different rack nodes.
+            String curRack = null;
             for (int i = 0; i < ensembleSize; i++) {
-                String curRack;
                 if (null == prevNode) {
                     if ((null == localNode) || defaultRack.equals(localNode.getNetworkLocation())) {
                         curRack = NodeBase.ROOT;
@@ -424,11 +465,24 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         curRack = localNode.getNetworkLocation();
                     }
                 } else {
-                    curRack = "~" + prevNode.getNetworkLocation();
+                    if (!curRack.startsWith("~")) {
+                        curRack = "~" + prevNode.getNetworkLocation();
+                    } else {
+                        curRack = curRack + NetworkTopologyImpl.NODE_SEPARATOR + prevNode.getNetworkLocation();
+                    }
                 }
                 boolean firstBookieInTheEnsemble = (null == prevNode);
-                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
-                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+                try {
+                    prevNode = selectRandomFromRack(curRack, excludeNodes, ensemble, ensemble);
+                } catch (BKNotEnoughBookiesException e) {
+                    if (!curRack.equals(NodeBase.ROOT)) {
+                        curRack = NodeBase.ROOT;
+                        prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
+                                !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
+                    } else {
+                        throw e;
+                    }
+                }
             }
             List<BookieId> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
@@ -519,9 +573,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         networkLoc, excludeBookies);
                 throw e;
             }
-            LOG.warn("Failed to choose a bookie from {} : "
-                     + "excluded {}, fallback to choose bookie randomly from the cluster.",
-                     networkLoc, excludeBookies);
+            LOG.warn("Failed to choose a bookie from network location {}, "
+                    + "the bookies in the network location are {}, excluded bookies {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                     networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             // randomly choose one from whole cluster, ignore the provided predicate.
             return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
         }
@@ -544,6 +599,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
              * the whole cluster and exclude the racks specified at
              * <tt>excludeRacks</tt>.
              */
+            LOG.warn("Failed to choose a bookie node from network location {}, "
+                    + "the bookies in the network location are {}, excluded bookies {}, "
+                    + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
+                networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
             return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
         }
     }
@@ -1173,7 +1232,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     curRack = localNode.getNetworkLocation();
                 }
             } else {
-                curRack = "~" + prevNode.getNetworkLocation();
+                curRack = NetworkTopologyImpl.INVERSE + prevNode.getNetworkLocation();
             }
             try {
                 prevNode = replaceToAdherePlacementPolicyInternal(
@@ -1240,7 +1299,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         // avoid additional replace from write quorum candidates by preExcludeRacks and postExcludeRacks
         // avoid to use first candidate bookies for election by provisionalEnsembleNodes
         conditionList.add(Pair.of(
-                "~" + String.join(",",
+                NetworkTopologyImpl.INVERSE + String.join(",",
                         Stream.concat(preExcludeRacks.stream(), postExcludeRacks.stream()).collect(Collectors.toSet())),
                 provisionalEnsembleNodes
         ));

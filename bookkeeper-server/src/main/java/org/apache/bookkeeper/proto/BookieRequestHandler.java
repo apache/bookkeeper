@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,32 +20,44 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
 import java.nio.channels.ClosedChannelException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Serverside handler for bookkeeper requests.
  */
-class BookieRequestHandler extends ChannelInboundHandlerAdapter {
+@Slf4j
+public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
+    private static final int DEFAULT_PENDING_RESPONSE_SIZE = 256;
+
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
+
+    private ChannelHandlerContext ctx;
+
+    private ByteBuf pendingSendResponses = null;
+    private int maxPendingResponsesSize = DEFAULT_PENDING_RESPONSE_SIZE;
 
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
         this.allChannels = allChannels;
     }
 
+    public ChannelHandlerContext ctx() {
+        return ctx;
+    }
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        LOG.info("Channel connected  {}", ctx.channel());
+        log.info("Channel connected {}", ctx.channel());
+        this.ctx = ctx;
         super.channelActive(ctx);
     }
 
@@ -56,16 +68,16 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        LOG.info("Channels disconnected: {}", ctx.channel());
+        log.info("Channels disconnected: {}", ctx.channel());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (cause instanceof ClosedChannelException) {
-            LOG.info("Client died before request could be completed on {}", ctx.channel(), cause);
+            log.info("Client died before request could be completed on {}", ctx.channel(), cause);
             return;
         }
-        LOG.error("Unhandled exception occurred in I/O thread or handler on {}", ctx.channel(), cause);
+        log.error("Unhandled exception occurred in I/O thread or handler on {}", ctx.channel(), cause);
         ctx.close();
     }
 
@@ -75,6 +87,27 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg);
             return;
         }
-        requestProcessor.processRequest(msg, ctx.channel());
+        requestProcessor.processRequest(msg, this);
+    }
+
+    public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
+        if (pendingSendResponses == null) {
+            pendingSendResponses = ctx().alloc().directBuffer(maxPendingResponsesSize);
+        }
+        BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
+    }
+
+    public synchronized void flushPendingResponse() {
+        if (pendingSendResponses != null) {
+            maxPendingResponsesSize = (int) Math.max(
+                    maxPendingResponsesSize * 0.5 + 0.5 * pendingSendResponses.readableBytes(),
+                    DEFAULT_PENDING_RESPONSE_SIZE);
+            if (ctx().channel().isActive()) {
+                ctx().writeAndFlush(pendingSendResponses, ctx.voidPromise());
+            } else {
+                pendingSendResponses.release();
+            }
+            pendingSendResponses = null;
+        }
     }
 }

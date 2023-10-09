@@ -61,7 +61,7 @@ Currently all the HTTP endpoints could be divided into these 5 components:
         |403 | Permission denied |
         |404 | Not found |
 
-## Config
+## Metrics
 
 ### Endpoint: /metrics
 1. Method: GET

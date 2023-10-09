@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -28,7 +28,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -155,7 +155,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
         final TestAuditor auditor = new TestAuditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, true,
                 new TestBookKeeperAdmin(bkc, statsLogger, expectedReturnAvailabilityOfEntriesOfLedger,
                         errorReturnValueForGetAvailabilityOfEntriesOfLedger),
-                true, statsLogger);
+                true, statsLogger, null);
         auditorRef.setValue(auditor);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("REPLICAS_CHECK_TIME SuccessCount", 0, replicasCheckStatsLogger.getSuccessCount());
@@ -301,7 +301,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * BookieHandleNotAvailableException so asyncGetListOfEntriesOfLedger will
          * return BookieHandleNotAvailableException.
          */
-        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new LinkedHashMap<Long, List<BookieId>>();
         segmentEnsembles.put(0L, bookieAddresses);
         long ledgerId = 1L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
@@ -399,7 +399,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * Empty one for all of the bookies, so this ledger would be counted in
          * ledgersFoundHavingNoReplicaOfAnEntry .
          */
-        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new LinkedHashMap<Long, List<BookieId>>();
         segmentEnsembles.put(0L, bookieAddresses);
         long ledgerId = 1L;
         createClosedLedgerMetadata(lm, ledgerId, ensembleSize, writeQuorumSize, ackQuorumSize, segmentEnsembles,
@@ -529,7 +529,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * would be counted towards
          * ledgersFoundHavingLessThanAQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new LinkedHashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
@@ -682,7 +682,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * for this ledger a copy of entry 3, so this ledger would be counted
          * towards ledgersFoundHavingLessThanWQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new LinkedHashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;
@@ -837,7 +837,7 @@ public class AuditorReplicasCheckTest extends BookKeeperClusterTestCase {
          * numLedgersFoundHavingNoReplicaOfAnEntry/LessThanAQReplicasOfAnEntry
          * /WQReplicasOfAnEntry.
          */
-        Map<Long, List<BookieId>> segmentEnsembles = new HashMap<Long, List<BookieId>>();
+        Map<Long, List<BookieId>> segmentEnsembles = new LinkedHashMap<Long, List<BookieId>>();
         int ensembleSize = 4;
         int writeQuorumSize = 3;
         int ackQuorumSize = 2;

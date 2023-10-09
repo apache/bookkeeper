@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,6 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -34,11 +35,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -51,11 +53,10 @@ import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.LedgerStorageNotificationListener;
 import org.apache.bookkeeper.bookie.StateManager;
-import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -83,11 +84,11 @@ public class DbLedgerStorage implements LedgerStorage {
     public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
     public static final String DIRECT_IO_ENTRYLOGGER = "dbStorage_directIOEntryLogger";
     public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMb";
+        "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_READBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerTotalReadBufferSizeMb";
+        "dbStorage_directIOEntryLoggerTotalReadBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_READBUFFER_SIZE_MB =
-        "dbStorage_directIOEntryLoggerReadBufferSizeMb";
+        "dbStorage_directIOEntryLoggerReadBufferSizeMB";
     public static final String DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS =
         "dbStorage_directIOEntryLoggerMaxFdCacheTimeSeconds";
 
@@ -101,7 +102,10 @@ public class DbLedgerStorage implements LedgerStorage {
         (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
+    static final String READ_AHEAD_CACHE_BATCH_BYTES_SIZE = "dbStorage_readAheadCacheBatchBytesSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
+    // the default value is -1. this feature(limit of read ahead bytes) is disabled
+    private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_BYTES_SIZE = -1;
 
     private static final long DEFAULT_DIRECT_IO_TOTAL_WRITEBUFFER_SIZE_MB =
         (long) (0.125 * PlatformDependent.estimateMaxDirectMemory())
@@ -120,8 +124,6 @@ public class DbLedgerStorage implements LedgerStorage {
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
-    // Keep 1 single Bookie GC thread so the compactions from multiple individual directories are serialized
-    private ScheduledExecutorService gcExecutor;
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
 
@@ -172,8 +174,8 @@ public class DbLedgerStorage implements LedgerStorage {
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
         int readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
-
-        gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollector"));
+        long readAheadCacheBatchBytesSize = conf.getInt(READ_AHEAD_CACHE_BATCH_BYTES_SIZE,
+                DEFAULT_READ_AHEAD_CACHE_BATCH_BYTES_SIZE);
 
         ledgerStorageList = Lists.newArrayList();
         for (int i = 0; i < ledgerDirsManager.getAllLedgerDirs().size(); i++) {
@@ -222,7 +224,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     numReadThreads = conf.getServerNumIOThreads();
                 }
 
-                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ledgerDirsManager, slog),
+                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, slog),
                     new NativeIOImpl(),
                     allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
                     conf.getEntryLogSizeLimit(),
@@ -238,9 +240,9 @@ public class DbLedgerStorage implements LedgerStorage {
             }
             ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm,
                 idm, entrylogger,
-                statsLogger, gcExecutor, perDirectoryWriteCacheSize,
+                statsLogger, perDirectoryWriteCacheSize,
                 perDirectoryReadCacheSize,
-                readAheadCacheBatchSize));
+                readAheadCacheBatchSize, readAheadCacheBatchBytesSize));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
             if (!lDirs[0].getPath().equals(iDirs[0].getPath())) {
                 idm.getListeners().forEach(indexDirsManager::addLedgerDirsListener);
@@ -278,13 +280,12 @@ public class DbLedgerStorage implements LedgerStorage {
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            EntryLogger entryLogger, StatsLogger statsLogger,
-            ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize)
+            EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
+            int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
-                                                  statsLogger, allocator, gcExecutor, writeCacheSize, readCacheSize,
-                                                  readAheadCacheBatchSize);
+                                                  statsLogger, allocator, writeCacheSize, readCacheSize,
+                                                  readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
     }
 
     @Override
@@ -298,11 +299,6 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void setCheckpointer(Checkpointer checkpointer) {
         ledgerStorageList.forEach(s -> s.setCheckpointer(checkpointer));
-    }
-
-    @Override
-    public void setStorageStorageNotificationListener(LedgerStorageNotificationListener storageNotificationListener) {
-        ledgerStorageList.forEach(s -> s.setStorageStorageNotificationListener(storageNotificationListener));
     }
 
     @Override
@@ -515,7 +511,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         ledgerStorageList.stream().forEach(s -> s.forceGC(forceMajor, forceMinor));
     }
 
@@ -552,6 +548,47 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public boolean isMinorGcSuspended() {
         return ledgerStorageList.stream().allMatch(SingleDirectoryDbLedgerStorage::isMinorGcSuspended);
+    }
+
+    @Override
+    public void entryLocationCompact() {
+        ledgerStorageList.forEach(SingleDirectoryDbLedgerStorage::entryLocationCompact);
+    }
+
+    @Override
+    public void entryLocationCompact(List<String> locations) {
+        for (SingleDirectoryDbLedgerStorage ledgerStorage : ledgerStorageList) {
+            String entryLocation = ledgerStorage.getEntryLocationDBPath().get(0);
+            if (locations.contains(entryLocation)) {
+                ledgerStorage.entryLocationCompact();
+            }
+        }
+    }
+
+    @Override
+    public boolean isEntryLocationCompacting() {
+        return ledgerStorageList.stream().anyMatch(SingleDirectoryDbLedgerStorage::isEntryLocationCompacting);
+    }
+
+    @Override
+    public Map<String, Boolean> isEntryLocationCompacting(List<String> locations) {
+        HashMap<String, Boolean> isCompacting = Maps.newHashMap();
+        for (SingleDirectoryDbLedgerStorage ledgerStorage : ledgerStorageList) {
+            String entryLocation = ledgerStorage.getEntryLocationDBPath().get(0);
+            if (locations.contains(entryLocation)) {
+                isCompacting.put(entryLocation, ledgerStorage.isEntryLocationCompacting());
+            }
+        }
+        return isCompacting;
+    }
+
+    @Override
+    public List<String> getEntryLocationDBPath() {
+        List<String> allEntryLocationDBPath = Lists.newArrayList();
+        for (SingleDirectoryDbLedgerStorage ledgerStorage : ledgerStorageList) {
+            allEntryLocationDBPath.addAll(ledgerStorage.getEntryLocationDBPath());
+        }
+        return allEntryLocationDBPath;
     }
 
     @Override

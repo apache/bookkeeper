@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -310,7 +310,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 tryObtainTxn = null;
                 tryObtainListener = null;
                 // mark flag to issue an allocation request
-                shouldAllocate = true;
+                if (lhToNotify == null) {
+                    shouldAllocate = true;
+                }
             }
         }
         if (null != listenerToNotify && null != lhToNotify) {

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -1145,7 +1145,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (MapUtils.isEmpty(targetBookieAddresses)) {
             LOG.warn("Could not replicate for {} ledger: {}, not find target bookie.",
                     ledgerFragment.getReplicateType(), ledgerFragment.getLedgerId());
-            return;
+            throw new BKException.BKLedgerRecoveryException();
         }
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
     }
@@ -1631,14 +1631,17 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieId thisBookieAddress,
             LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
-        int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
-        int sleepTimePerLedger = 10 * 1000; // 10 secs
+        int maxSleepTimeInBetweenChecks = 5 * 60 * 1000; // 5 minutes
+        int sleepTimePerLedger = 3 * 1000; // 3 secs
         Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
                 thisBookieAddress, ledgerManager);
+        ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
+
         while (!ledgers.isEmpty()) {
-            LOG.info("Count of Ledgers which need to be rereplicated: {}", ledgers.size());
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
+            LOG.info("Count of Ledgers which need to be rereplicated: {}, waiting {} seconds for next check",
+                ledgers.size(), sleepTimeForThisCheck / 1000);
             Thread.sleep(sleepTimeForThisCheck);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);

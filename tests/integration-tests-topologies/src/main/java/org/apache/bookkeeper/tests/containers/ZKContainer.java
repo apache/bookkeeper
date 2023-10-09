@@ -43,7 +43,7 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
 
     @Override
     public String getExternalServiceUri() {
-        return "zk://" + getContainerIpAddress() + ":" + getMappedPort(ZK_PORT) + "/ledgers";
+        return "zk://" + getHost() + ":" + getMappedPort(ZK_PORT) + "/ledgers";
     }
 
     @Override

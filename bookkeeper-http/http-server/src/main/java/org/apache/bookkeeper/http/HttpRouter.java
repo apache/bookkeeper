@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -50,9 +50,12 @@ public abstract class HttpRouter<Handler> {
     public static final String SUSPEND_GC_COMPACTION        = "/api/v1/bookie/gc/suspend_compaction";
     public static final String RESUME_GC_COMPACTION         = "/api/v1/bookie/gc/resume_compaction";
     public static final String BOOKIE_STATE                 = "/api/v1/bookie/state";
+    public static final String BOOKIE_SANITY                 = "/api/v1/bookie/sanity";
     public static final String BOOKIE_STATE_READONLY        = "/api/v1/bookie/state/readonly";
     public static final String BOOKIE_IS_READY              = "/api/v1/bookie/is_ready";
     public static final String BOOKIE_INFO                  = "/api/v1/bookie/info";
+    public static final String CLUSTER_INFO                  = "/api/v1/bookie/cluster_info";
+    public static final String ENTRY_LOCATION_COMPACT       = "/api/v1/bookie/entry_location_compact";
     // autorecovery
     public static final String AUTORECOVERY_STATUS          = "/api/v1/autorecovery/status";
     public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
@@ -85,14 +88,18 @@ public abstract class HttpRouter<Handler> {
         this.endpointHandlers.put(GC, handlerFactory.newHandler(HttpServer.ApiType.GC));
         this.endpointHandlers.put(GC_DETAILS, handlerFactory.newHandler(HttpServer.ApiType.GC_DETAILS));
         this.endpointHandlers.put(BOOKIE_STATE, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE));
+        this.endpointHandlers.put(BOOKIE_SANITY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_SANITY));
         this.endpointHandlers.put(BOOKIE_STATE_READONLY,
                 handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_STATE_READONLY));
         this.endpointHandlers.put(BOOKIE_IS_READY, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_IS_READY));
         this.endpointHandlers.put(BOOKIE_INFO, handlerFactory.newHandler(HttpServer.ApiType.BOOKIE_INFO));
+        this.endpointHandlers.put(CLUSTER_INFO, handlerFactory.newHandler(HttpServer.ApiType.CLUSTER_INFO));
         this.endpointHandlers.put(SUSPEND_GC_COMPACTION,
             handlerFactory.newHandler(HttpServer.ApiType.SUSPEND_GC_COMPACTION));
         this.endpointHandlers.put(RESUME_GC_COMPACTION,
             handlerFactory.newHandler(HttpServer.ApiType.RESUME_GC_COMPACTION));
+        this.endpointHandlers.put(ENTRY_LOCATION_COMPACT,
+                handlerFactory.newHandler(HttpServer.ApiType.TRIGGER_ENTRY_LOCATION_COMPACT));
 
         // autorecovery
         this.endpointHandlers.put(AUTORECOVERY_STATUS, handlerFactory

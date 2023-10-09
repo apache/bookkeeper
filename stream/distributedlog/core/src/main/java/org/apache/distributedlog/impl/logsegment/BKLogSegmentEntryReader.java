@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -800,7 +800,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                         return;
                     }
                 } finally {
-                    ReferenceCountUtil.safeRelease(removedEntry);
+                    ReferenceCountUtil.release(removedEntry);
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
                 // skip this entry and move forward

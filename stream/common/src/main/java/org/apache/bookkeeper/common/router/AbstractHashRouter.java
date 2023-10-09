@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.common.router;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.common.hash.Murmur3;
 
 /**
@@ -38,7 +39,7 @@ public abstract class AbstractHashRouter<K> implements HashRouter<K> {
             return Murmur3.hash128(
                 keyData, keyData.readerIndex(), keyData.readableBytes(), HASH_SEED)[0];
         } finally {
-            keyData.release();
+            ReferenceCountUtil.release(keyData);
         }
     }
 

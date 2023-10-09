@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -38,6 +38,11 @@ public class NativeIOImpl implements NativeIO {
     @Override
     public int fallocate(int fd, int mode, long offset, long len) throws NativeIOException {
         return NativeIOJni.fallocate(fd, mode, offset, len);
+    }
+
+    @Override
+    public int posix_fadvise(int fd, long offset, long len, int flag) throws NativeIOException {
+        return NativeIOJni.posix_fadvise(fd, offset, len, flag);
     }
 
     @Override

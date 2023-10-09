@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.bookkeeper.common.component;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -99,7 +100,7 @@ public class AutoCloseableLifecycleComponent implements LifecycleComponent {
         try {
             closeable.close();
         } catch (Exception e) {
-            LOG.warn("failed to close {}", getClass().getName(), e);
+            LOG.warn("failed to close {}", componentName, e);
         }
         listeners.forEach(LifecycleListener::afterClose);
     }

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -33,6 +33,8 @@ class NativeIOJni {
      * not exist.
      */
     static native int fallocate(int fd, int mode, long offset, long len) throws NativeIOException;
+
+    static native int posix_fadvise(int fd, long offset, long len, int flag) throws NativeIOException;
 
     static native int pwrite(int fd, long pointer, int count, long offset) throws NativeIOException;
 

@@ -1,4 +1,4 @@
-/**
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -55,7 +55,7 @@ public class TestMetadata {
     public void testReadMetaFromHeader() throws Exception {
         File ledgerDir = tmpDirs.createNew("writeMetadataBeforeFsync", "logs");
         int logId = 5678;
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(logId, logFilename(ledgerDir, logId),
                      1 << 24, writeExecutor,
                      buffers, new NativeIOImpl(), Slogger.CONSOLE)) {

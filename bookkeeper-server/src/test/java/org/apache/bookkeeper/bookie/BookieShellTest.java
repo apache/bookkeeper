@@ -50,6 +50,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.RecoverCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -67,6 +68,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -74,6 +76,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link BookieShell}.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "org.w3c.*"})
 @PrepareForTest({ BookieShell.class, MetadataDrivers.class, RecoverCommand.class })
 public class BookieShellTest {
 
@@ -91,6 +94,7 @@ public class BookieShellTest {
     private SimpleTestCommand mockSimpleTestCommand;
     private ListBookiesCommand.Flags mockListBookiesFlags;
     private ListBookiesCommand mockListBookiesCommand;
+    private ClusterInfoCommand mockClusterInfoCommand;
 
     @Before
     public void setup() throws Exception {
@@ -127,6 +131,11 @@ public class BookieShellTest {
             .withParameterTypes(ListBookiesCommand.Flags.class)
             .withArguments(mockListBookiesFlags)
             .thenReturn(mockListBookiesCommand);
+
+        this.mockClusterInfoCommand = spy(new ClusterInfoCommand());
+        whenNew(ClusterInfoCommand.class)
+                .withNoArguments()
+                .thenReturn(mockClusterInfoCommand);
 
         // construct the bookie shell.
         this.shell = new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
@@ -454,6 +463,13 @@ public class BookieShellTest {
         assertEquals(0, shell.run(new String[] {
                 "forceauditchecks", "-calc", "-rc", "-ppc"
         }));
+    }
+
+    @Test
+    public void testClusterInfoCmd() throws Exception {
+        doReturn(true).when(mockClusterInfoCommand).apply(same(shell.bkConf), any(CliFlags.class));
+        shell.run(new String[]{ "clusterinfo" });
+        verifyNew(ClusterInfoCommand.class, times(1)).withNoArguments();
     }
 
 }

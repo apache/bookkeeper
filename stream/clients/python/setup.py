@@ -19,7 +19,7 @@ import setuptools
 
 name = 'apache-bookkeeper-client'
 description = 'Apache BookKeeper client library'
-version = '4.16.0'
+version = '4.17.0'
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
@@ -31,7 +31,7 @@ dependencies = [
     'six>=1.10.0',
     'pytz',
     'futures>=3.2.0;python_version<"3.2"',
-    'grpcio<1.28,>=1.8.2',
+    'grpcio>=1.8.2',
     'pymmh3>=0.0.5'
 ]
 extras = {

@@ -22,13 +22,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.util.Enumeration;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand.SanityFlags;
@@ -81,59 +86,125 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         }
     }
 
-    private boolean handle(ServerConfiguration conf, SanityFlags cmdFlags) throws Exception {
+    private static boolean handle(ServerConfiguration conf, SanityFlags cmdFlags) throws Exception {
+        try {
+            return handleAsync(conf, cmdFlags).get();
+        } catch (Exception e) {
+            LOG.warn("Error in bookie sanity test", e);
+            return false;
+        }
+    }
+
+    public static CompletableFuture<Boolean> handleAsync(ServerConfiguration conf, SanityFlags cmdFlags) {
+        CompletableFuture<Boolean> result = new CompletableFuture<Boolean>();
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.addConfiguration(conf);
         clientConf.setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
         clientConf.setAddEntryTimeout(cmdFlags.timeout);
         clientConf.setReadEntryTimeout(cmdFlags.timeout);
 
-        BookKeeper bk = new BookKeeper(clientConf);
-        LedgerHandle lh = null;
+        BookKeeper bk;
         try {
-            lh = bk.createLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0]);
-            LOG.info("Create ledger {}", lh.getId());
-
-            for (int i = 0; i < cmdFlags.entries; i++) {
-                String content = "entry-" + i;
-                lh.addEntry(content.getBytes(UTF_8));
-            }
-
-            LOG.info("Written {} entries in ledger {}", cmdFlags.entries, lh.getId());
-
-            // Reopen the ledger and read entries
-            lh = bk.openLedger(lh.getId(), BookKeeper.DigestType.MAC, new byte[0]);
-            if (lh.getLastAddConfirmed() != (cmdFlags.entries - 1)) {
-                throw new Exception("Invalid last entry found on ledger. expecting: " + (cmdFlags.entries - 1)
-                                        + " -- found: " + lh.getLastAddConfirmed());
-            }
-
-            Enumeration<LedgerEntry> entries = lh.readEntries(0, cmdFlags.entries - 1);
-            int i = 0;
-            while (entries.hasMoreElements()) {
-                LedgerEntry entry = entries.nextElement();
-                String actualMsg = new String(entry.getEntry(), UTF_8);
-                String expectedMsg = "entry-" + (i++);
-                if (!expectedMsg.equals(actualMsg)) {
-                    throw new Exception("Failed validation of received message - Expected: " + expectedMsg
-                                            + ", Actual: " + actualMsg);
-                }
-            }
-
-            LOG.info("Read {} entries from ledger {}", i, lh.getId());
-        } catch (Exception e) {
-            LOG.warn("Error in bookie sanity test", e);
-            return false;
-        } finally {
-            if (lh != null) {
-                bk.deleteLedger(lh.getId());
-                LOG.info("Deleted ledger {}", lh.getId());
-            }
-
-            bk.close();
+            bk = new BookKeeper(clientConf);
+        } catch (BKException | IOException | InterruptedException e) {
+            LOG.warn("Failed to initialize bookkeeper client", e);
+            result.completeExceptionally(e);
+            return result;
         }
 
-        LOG.info("Bookie sanity test succeeded");
-        return true;
+        bk.asyncCreateLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0], (rc, lh, ctx) -> {
+            if (rc != BKException.Code.OK) {
+                LOG.warn("ledger creation failed for sanity command {}", rc);
+                result.completeExceptionally(BKException.create(rc));
+                return;
+            }
+            List<CompletableFuture<Void>> entriesFutures = new ArrayList<>();
+            for (int i = 0; i < cmdFlags.entries; i++) {
+                String content = "entry-" + i;
+                CompletableFuture<Void> entryFuture = new CompletableFuture<>();
+                entriesFutures.add(entryFuture);
+                lh.asyncAddEntry(content.getBytes(UTF_8), (arc, alh, entryId, actx) -> {
+                    if (arc != BKException.Code.OK) {
+                        LOG.warn("ledger add entry failed for {}-{}", alh.getId(), arc);
+                        entryFuture.completeExceptionally(BKException.create(arc));
+                        return;
+                    }
+                    entryFuture.complete(null);
+                }, null);
+            }
+            CompletableFuture<LedgerHandle> lhFuture = new CompletableFuture<>();
+            CompletableFuture<Void> readEntryFuture = new CompletableFuture<>();
+            FutureUtils.collect(entriesFutures).thenCompose(_r -> lh.closeAsync()).thenCompose(_r -> {
+                bk.asyncOpenLedger(lh.getId(), BookKeeper.DigestType.MAC, new byte[0], (orc, olh, octx) -> {
+                    if (orc != BKException.Code.OK) {
+                        LOG.warn("open sanity ledger failed for {}-{}", lh.getId(), orc);
+                        lhFuture.completeExceptionally(BKException.create(orc));
+                        return;
+                    }
+                    long lac = olh.getLastAddConfirmed();
+                    if (lac != (cmdFlags.entries - 1)) {
+                        lhFuture.completeExceptionally(new Exception("Invalid last entry found on ledger. expecting: "
+                                + (cmdFlags.entries - 1) + " -- found: " + lac));
+                        return;
+                    }
+                    lhFuture.complete(lh);
+                }, null);
+                return lhFuture;
+            }).thenCompose(rlh -> {
+                rlh.asyncReadEntries(0, cmdFlags.entries - 1, (rrc, rlh2, entries, rctx) -> {
+                    if (rrc != BKException.Code.OK) {
+                        LOG.warn("reading sanity ledger failed for {}-{}", lh.getId(), rrc);
+                        readEntryFuture.completeExceptionally(BKException.create(rrc));
+                        return;
+                    }
+                    int i = 0;
+                    while (entries.hasMoreElements()) {
+                        LedgerEntry entry = entries.nextElement();
+                        String actualMsg = new String(entry.getEntry(), UTF_8);
+                        String expectedMsg = "entry-" + (i++);
+                        if (!expectedMsg.equals(actualMsg)) {
+                            readEntryFuture.completeExceptionally(
+                                    new Exception("Failed validation of received message - Expected: " + expectedMsg
+                                            + ", Actual: " + actualMsg));
+                            return;
+                        }
+                    }
+                    LOG.info("Read {} entries from ledger {}", i, lh.getId());
+                    LOG.info("Bookie sanity test succeeded");
+                    readEntryFuture.complete(null);
+                }, null);
+                return readEntryFuture;
+            }).thenAccept(_r -> {
+                close(bk, lh);
+                result.complete(true);
+            }).exceptionally(ex -> {
+                close(bk, lh);
+                result.completeExceptionally(ex.getCause());
+                return null;
+            });
+        }, null);
+        return result;
     }
+
+    public static void close(BookKeeper bk, LedgerHandle lh) {
+        if (lh != null) {
+            bk.asyncDeleteLedger(lh.getId(), (rc, ctx) -> {
+                if (rc != BKException.Code.OK) {
+                    LOG.info("Failed to delete ledger id {}", lh.getId());
+                }
+                close(bk);
+            }, null);
+        } else {
+            close(bk);
+        }
+    }
+
+    private static void close(BookKeeper bk) {
+        try {
+            bk.close();
+        } catch (Exception e) {
+            LOG.info("Failed to close bookkeeper client {}", e.getMessage(), e);
+        }
+    }
+
 }
