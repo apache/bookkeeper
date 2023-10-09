@@ -135,7 +135,7 @@ public class PendingAddOpTest {
         op.setEntryId(0);
         lh.pendingAddOps.add(op);
         lh.clientCtx.getMainWorkerPool().submitOrdered(lh.ledgerId, (Callable<Void>) () -> {
-            op.run();
+            op.initiate();
             return null;
         }).get();
     }
