@@ -122,7 +122,7 @@ public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfigur
         try {
             doClose();
         } catch (IOException e) {
-            log.warn("failed to close {}", getClass().getName(), e);
+            log.warn("failed to close {}", componentName, e);
         }
         listeners.forEach(LifecycleListener::afterClose);
     }

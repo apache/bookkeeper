@@ -4,7 +4,7 @@
 
 # Apache BookKeeper
 
-Apache BookKeeper is a scalable, fault tolerant and low latency storage service optimized for append-only workloads.
+Apache BookKeeper is a scalable, fault-tolerant and low latency storage service optimized for append-only workloads.
 
 It is suitable for being used in following scenarios:
 
@@ -18,7 +18,7 @@ It is suitable for being used in following scenarios:
 * Checkout the project [website](https://bookkeeper.apache.org/).
 * *Concepts*: Start with the [basic concepts](https://bookkeeper.apache.org/docs/getting-started/concepts) of Apache BookKeeper.
   This will help you to fully understand the other parts of the documentation.
-* Follow the [Install](https://bookkeeper.apache.org/docs/getting-started/installation) guide to setup BookKeeper.
+* Follow the [Installation](https://bookkeeper.apache.org/docs/getting-started/installation) guide to set up BookKeeper.
 
 ## Documentation
 
@@ -28,7 +28,7 @@ Please visit the [Documentation](https://bookkeeper.apache.org/docs/overview/) f
 
 ### Report a Bug
 
-For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a Github issue](https://github.com/apache/bookkeeper/issues).
+For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a GitHub issue](https://github.com/apache/bookkeeper/issues).
 
 ### Need Help?
 
@@ -46,7 +46,7 @@ We feel that a welcoming open community is important and welcome contributions.
 
 1. See our [installation guide](https://bookkeeper.apache.org/docs/next/getting-started/installation/) to get your local environment setup.
 
-2. Take a look at our open issues: [Github Issues](https://github.com/apache/bookkeeper/issues).
+2. Take a look at our open issues: [GitHub Issues](https://github.com/apache/bookkeeper/issues).
 
 3. Review our [coding style](https://bookkeeper.apache.org/community/coding-guide/) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn more about our conventions.
 
