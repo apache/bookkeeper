@@ -324,10 +324,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     excludedBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             List<String> availableRegions = new ArrayList<>();
-            for (String region: perRegionPlacement.keySet()) {
-                if ((null == disallowBookiePlacementInRegionFeatureName)
+            for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : perRegionPlacement.entrySet()) {
+                String region = entry.getKey();
+                if ((null == disallowBookiePlacementInRegionFeatureName
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)
-                            .isAvailable()) {
+                            .isAvailable()) && !entry.getValue().knownBookies.isEmpty()) {
                     availableRegions.add(region);
                 }
             }
