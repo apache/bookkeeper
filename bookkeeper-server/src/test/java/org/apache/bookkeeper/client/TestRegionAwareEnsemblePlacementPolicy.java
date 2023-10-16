@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
@@ -528,7 +527,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         Field modifiers = Field.class.getDeclaredField("modifiers");
         modifiers.setAccessible(true);
-        modifiers.setInt(logField,logField.getModifiers() & ~Modifier.FINAL);
+        modifiers.setInt(logField, logField.getModifiers() & ~Modifier.FINAL);
         logField.setAccessible(true);
         logField.set(null, mockLogger);
 
