@@ -326,9 +326,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             List<String> availableRegions = new ArrayList<>();
             for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : perRegionPlacement.entrySet()) {
                 String region = entry.getKey();
-                if ((null == disallowBookiePlacementInRegionFeatureName
+                if (!entry.getValue().knownBookies.isEmpty() && (null == disallowBookiePlacementInRegionFeatureName
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)
-                            .isAvailable()) && !entry.getValue().knownBookies.isEmpty()) {
+                            .isAvailable())) {
                     availableRegions.add(region);
                 }
             }
