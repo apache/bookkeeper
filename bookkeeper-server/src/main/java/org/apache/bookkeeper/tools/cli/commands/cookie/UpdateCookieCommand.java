@@ -43,6 +43,14 @@ public class UpdateCookieCommand extends CookieCommand<Flags> {
     private static final String NAME = "update";
     private static final String DESC = "Update a cookie for a given bookie";
 
+    private static final String USAGE = "cookie_update      Update a cookie for a given bookie\n"
+            + "             Usage:  cookie_update [options]\n"
+            + "             Options:\n"
+            + "             * -cf, --cookie-file\n"
+            + "              The file to be uploaded as cookie (param format: `cookieFilePath`)\n"
+            + "             * <bookie-id>\n"
+            + "              Bookie ID (param format: `address:port`)";
+
     /**
      * Flags to create a cookie for a given bookie.
      */
@@ -73,6 +81,7 @@ public class UpdateCookieCommand extends CookieCommand<Flags> {
     private UpdateCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
+            .withUsage(USAGE)
             .withDescription(DESC)
             .withFlags(flags)
             .withConsole(console)

@@ -42,6 +42,11 @@ public class CreateCookieCommand extends CookieCommand<Flags> {
 
     private static final String NAME = "create";
     private static final String DESC = "Create a cookie for a given bookie";
+    private static final String USAGE = "cookie_create      Create a cookie for a given bookie\n"
+            + "             Usage:  cookie_create [options]\n"
+            + "             Options:\n"
+            + "             * -cf, --cookie-file\n"
+            + "              The file to be uploaded as cookie (param format: `cookieFilePath`)";
 
     /**
      * Flags to create a cookie for a given bookie.
@@ -73,6 +78,7 @@ public class CreateCookieCommand extends CookieCommand<Flags> {
     private CreateCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
+            .withUsage(USAGE)
             .withDescription(DESC)
             .withFlags(flags)
             .withConsole(console)

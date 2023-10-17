@@ -41,6 +41,12 @@ public class DeleteCookieCommand extends CookieCommand<Flags> {
     private static final String NAME = "delete";
     private static final String DESC = "Delete a cookie for a given bookie";
 
+    private static final String USAGE = "cookie_delete      Delete a cookie for a given bookie\n"
+            + "             Usage:  cookie_delete [options]\n"
+            + "             Options:\n"
+            + "             * <bookie-id>\n"
+            + "              The bookie-id to be deleted (param format: `address:port`)";
+
     /**
      * Flags to delete a cookie for a given bookie.
      */
@@ -64,6 +70,7 @@ public class DeleteCookieCommand extends CookieCommand<Flags> {
     private DeleteCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
+            .withUsage(USAGE)
             .withDescription(DESC)
             .withFlags(flags)
             .withConsole(console)

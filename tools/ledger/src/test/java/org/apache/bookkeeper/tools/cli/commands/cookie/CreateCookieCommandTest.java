@@ -76,7 +76,7 @@ public class CreateCookieCommandTest extends CookieCommandTestBase {
     }
 
     private void assertPrintUsage(String consoleOutput) {
-        assertPrintUsage(consoleOutput, "create [flags] <bookie-id>");
+        assertPrintUsage(consoleOutput, "cookie_create [options]");
     }
 
     /**

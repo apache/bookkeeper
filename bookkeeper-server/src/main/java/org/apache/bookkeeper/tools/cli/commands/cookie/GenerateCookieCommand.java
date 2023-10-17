@@ -43,6 +43,22 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
     private static final String NAME = "generate";
     private static final String DESC = "Generate a cookie for a given bookie";
 
+    private static final String USAGE = "cookie_generate      Generate a cookie for a given bookie\n"
+            + "             Usage:  cookie_generate [options]\n"
+            + "             Options:\n"
+            + "               -i, --instance-id\n"
+            + "              The instance id of the cluster that this bookie belongs to."
+            + " If omitted, it will used the instance id of the cluster that this cli connects to. \n"
+            + "             * -j, --journal-dirs\n"
+            + "              The journal directories used by this bookie "
+                                + "(param format: `journalDir1,...,journalDirM`)\n"
+            + "             * -l, --ledger-dirs\n"
+            + "              The ledger directories used by this bookie (param format: `ledgerDir1,...,ledgerDirN`)\n"
+            + "             * -o, --output-file\n"
+            + "              The output file to save the generated cookie (param format: `cookieLocalFilePath`)\n"
+            + "               -ix, --index-dirs\n"
+            + "              The index directories used by this bookie (param format: `indexDir1,...,indexDirN`)";
+
     /**
      * Flags to generate a cookie for a given bookie.
      */
@@ -96,6 +112,7 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
     private GenerateCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
+            .withUsage(USAGE)
             .withDescription(DESC)
             .withFlags(flags)
             .withConsole(console)

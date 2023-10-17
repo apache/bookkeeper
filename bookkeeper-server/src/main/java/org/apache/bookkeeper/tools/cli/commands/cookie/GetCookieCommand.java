@@ -42,6 +42,12 @@ public class GetCookieCommand extends CookieCommand<Flags> {
     private static final String NAME = "get";
     private static final String DESC = "Retrieve a cookie for a given bookie";
 
+    private static final String USAGE = "cookie_get      Retrieve a cookie for a given bookie\n"
+            + "             Usage:  cookie_get [options]\n"
+            + "             Options:\n"
+            + "             * <bookie-id>\n"
+            + "              The bookie-id to get (param format: `address:port`)";
+
     /**
      * Flags to delete a cookie for a given bookie.
      */
@@ -65,6 +71,7 @@ public class GetCookieCommand extends CookieCommand<Flags> {
     private GetCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
+            .withUsage(USAGE)
             .withDescription(DESC)
             .withFlags(flags)
             .withConsole(console)
