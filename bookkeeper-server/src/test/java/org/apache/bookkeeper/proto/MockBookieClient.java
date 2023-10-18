@@ -25,8 +25,6 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
-import lombok.Getter;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -34,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
