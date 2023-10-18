@@ -27,10 +27,15 @@ import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.RE
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_REGIONS_TO_WRITE;
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -497,6 +502,51 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         } catch (BKNotEnoughBookiesException bnebe) {
             // should throw not enou
         }
+    }
+
+    @Test
+    public void testNewEnsembleBookieWithOneEmptyRegion() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region4/r4");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+
+        Field logField = repp.getClass().getDeclaredField("LOG");
+        Logger mockLogger = mock(Logger.class);
+
+        Field modifiers = Field.class.getDeclaredField("modifiers");
+        modifiers.setAccessible(true);
+        modifiers.setInt(logField, logField.getModifiers() & ~Modifier.FINAL);
+        logField.setAccessible(true);
+        logField.set(null, mockLogger);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        repp.newEnsemble(3, 3, 3, null,
+                new HashSet<BookieId>()).getResult();
+        verify(mockLogger, times(0)).warn("Could not allocate {} bookies in region {}, try allocating {} bookies",
+                1, "UnknownRegion", 0);
+        addrs = new HashSet<BookieId>();
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        repp.newEnsemble(3, 3, 3, null,
+                new HashSet<BookieId>()).getResult();
+
+        verify(mockLogger, times(0)).warn("Could not allocate {} bookies in region {}, try allocating {} bookies",
+                1, "UnknownRegion", 0);
     }
 
     @Test
