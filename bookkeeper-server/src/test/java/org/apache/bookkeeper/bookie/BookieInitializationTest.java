@@ -753,6 +753,22 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
     }
 
+    /**
+     * Mock InterleavedLedgerStorage class where addEntry is mocked to throw
+     * IOException.
+     */
+    public static class MockInterleavedLedgerStorage2 extends InterleavedLedgerStorage {
+        AtomicInteger atmoicInt = new AtomicInteger(0);
+
+        @Override
+        public long addEntry(ByteBuf entry) throws IOException {
+            if (atmoicInt.incrementAndGet() == 10) {
+                throw new IOException("Some Injected IOException");
+            }
+            return super.addEntry(entry);
+        }
+    }
+
     @Test
     public void testBookieStartException() throws Exception {
         File journalDir = tmpDirs.createNew("bookie", "journal");
@@ -813,6 +829,51 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         startFuture.get();
 
         /*
+         * This Bookie is configured to use MockInterleavedLedgerStorage2.
+         * MockInterleavedLedgerStorage2 throws an IOException for addEntry request.
+         * This is to simulate Bookie/BookieServer/BookieService 'start' failure
+         * which is different from the above case.
+         * This failure will be caught in Bookie and trigger shutdown.
+         */
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration();
+        int port2 = PortManager.nextFreePort();
+        conf2.setBookiePort(port2).setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() }).setMetadataServiceUri(metadataServiceUri)
+                .setLedgerStorageClass(MockInterleavedLedgerStorage2.class.getName());
+
+        BookieConfiguration bkConf2 = new BookieConfiguration(conf2);
+        MetadataBookieDriver metadataDriver2 = BookieResources.createMetadataDriver(
+                conf2, NullStatsLogger.INSTANCE);
+        try (RegistrationManager rm = metadataDriver2.createRegistrationManager()) {
+            /*
+             * create cookie and write it to JournalDir/LedgerDir.
+             */
+            String instanceId = rm.getClusterInstanceId();
+            Cookie.Builder cookieBuilder = Cookie.generateCookie(conf2).setInstanceId(instanceId);
+            Cookie cookie = cookieBuilder.build();
+            cookie.writeToDirectory(new File(journalDir, "current"));
+            cookie.writeToDirectory(new File(ledgerDir, "current"));
+            Versioned<byte[]> newCookie = new Versioned<>(
+                    cookie.toString().getBytes(UTF_8), Version.NEW
+            );
+            rm.writeCookie(BookieImpl.getBookieId(conf2), newCookie);
+        }
+
+        /*
+         * Create LifecycleComponent for BookieServer and start it.
+         */
+        LifecycleComponent server2 = Main.buildBookieServer(bkConf2);
+        CompletableFuture<Void> startFuture2 = ComponentStarter.startComponent(server2);
+
+        /*
+         * Since Bookie/BookieServer/BookieService is expected to shutdown, it would
+         * cause bookie-server component's exceptionHandler to get triggered.
+         * This exceptionHandler will make sure all of the components to get
+         * closed and then finally completes the Future.
+         */
+        startFuture2.get();
+
+        /*
          * make sure that Component's exceptionHandler is called by checking if
          * the error message of ExceptionHandler is logged. This Log message is
          * defined in anonymous exceptionHandler class defined in
@@ -821,6 +882,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         loggerOutput.expect((List<LoggingEvent> logEvents) -> {
             assertThat(logEvents,
                     hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component:"))));
+            assertThat(logEvents, hasItem(hasProperty("message",
+                    containsString("Exception while replaying journals, shutting down"))));
         });
     }
 

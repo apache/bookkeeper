@@ -138,7 +138,7 @@ public class BookieServer {
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
             this.requestProcessor.close();
-            return;
+            throw new InterruptedException("fail fast, bookie startup is not successful");
         }
 
         this.uncleanShutdownDetection.registerStartUp();
