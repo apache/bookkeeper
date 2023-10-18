@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.Lists;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -38,13 +37,14 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * Ledger recovery tests using mocks rather than a real cluster.
@@ -488,7 +488,7 @@ public class HandleFailuresTest {
 
         // Execute appendAsync at the same thread of preWriteHook exception thread. So that the `delayedWriteFailedBookies` could update before
         // appendAsync invoke.
-        ((MockBookieClient) clientCtx.getBookieClient()).executor
+        ((MockBookieClient) clientCtx.getBookieClient()).getExecutor()
                 .chooseThread(lh.ledgerId)
                 .execute(() -> e2.set(lh.appendAsync("entry2".getBytes())));
         changeInProgress.get();

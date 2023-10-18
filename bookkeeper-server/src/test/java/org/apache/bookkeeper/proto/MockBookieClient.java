@@ -25,6 +25,8 @@ import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -56,7 +58,8 @@ import org.slf4j.LoggerFactory;
 public class MockBookieClient implements BookieClient {
     static final Logger LOG = LoggerFactory.getLogger(MockBookieClient.class);
 
-    public final OrderedExecutor executor;
+    @Getter
+    final OrderedExecutor executor;
     final MockBookies mockBookies;
     final Set<BookieId> errorBookies =
             Collections.newSetFromMap(new ConcurrentHashMap<>());
