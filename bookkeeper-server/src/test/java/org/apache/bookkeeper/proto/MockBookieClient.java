@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 public class MockBookieClient implements BookieClient {
     static final Logger LOG = LoggerFactory.getLogger(MockBookieClient.class);
 
-    final OrderedExecutor executor;
+    public final OrderedExecutor executor;
     final MockBookies mockBookies;
     final Set<BookieId> errorBookies =
             Collections.newSetFromMap(new ConcurrentHashMap<>());
