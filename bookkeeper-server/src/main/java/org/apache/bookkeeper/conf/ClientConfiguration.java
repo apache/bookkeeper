@@ -201,7 +201,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Logs
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
-    
+
     protected static final String DEBUG_BOOKIE_HANDLE_NOT_AVAILABLE_LOG = "debugBookieHandleNotAvailableLog";
 
     /**
@@ -2083,12 +2083,12 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected ClientConfiguration getThis() {
         return this;
     }
-    
+
     public ClientConfiguration setDebugBookieHandleNotAvailableLog(boolean isDebug) {
         setProperty(DEBUG_BOOKIE_HANDLE_NOT_AVAILABLE_LOG, isDebug);
         return this;
     }
-    
+
     public boolean isDebugBookieHandleNotAvailableLog() {
         return getBoolean(DEBUG_BOOKIE_HANDLE_NOT_AVAILABLE_LOG, false);
     }

@@ -32,7 +32,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 public class DefaultBookieAddressResolver implements BookieAddressResolver {
 
     private final RegistrationClient registrationClient;
-    
+
     private final boolean isDebugBookieHandleNotAvailableLog;
 
     public DefaultBookieAddressResolver(RegistrationClient registrationClient,
@@ -40,7 +40,7 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
         this.registrationClient = registrationClient;
         this.isDebugBookieHandleNotAvailableLog = isDebugBookieHandleNotAvailableLog;
     }
-    
+
     public RegistrationClient getRegistrationClient() {
         return registrationClient;
     }
