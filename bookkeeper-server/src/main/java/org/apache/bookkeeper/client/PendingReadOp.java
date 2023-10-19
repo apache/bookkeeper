@@ -212,9 +212,17 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
                             lh.ledgerId, eId, host);
                 }
             } else {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("{} while reading L{} E{} from bookie: {}",
-                            errMsg, lh.ledgerId, eId, host);
+                if (clientCtx.getConf().debugBookieHandleNotAvailableLog
+                        && BKException.Code.BookieHandleNotAvailableException == rc) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{} while reading L{} E{} from bookie: {}",
+                                errMsg, lh.ledgerId, eId, host);
+                    }
+                } else {
+                    if (LOG.isInfoEnabled()) {
+                        LOG.info("{} while reading L{} E{} from bookie: {}",
+                                errMsg, lh.ledgerId, eId, host);
+                    }
                 }
             }
 

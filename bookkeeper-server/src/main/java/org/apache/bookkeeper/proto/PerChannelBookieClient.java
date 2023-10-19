@@ -538,8 +538,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         try {
             addr = bookieAddressResolver.resolve(bookieId);
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
-            LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
-                    bookieId, err.toString());
+            if (conf.isDebugBookieHandleNotAvailableLog()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
+                            bookieId, err.toString());
+                }
+            } else {
+                LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
+                        bookieId, err.toString());
+            }
             return processBookieNotResolvedError(startTime, err);
         }
 

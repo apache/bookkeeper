@@ -32,11 +32,19 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 public class DefaultBookieAddressResolver implements BookieAddressResolver {
 
     private final RegistrationClient registrationClient;
+    
+    private final boolean isDebugBookieHandleNotAvailableLog;
 
     public DefaultBookieAddressResolver(RegistrationClient registrationClient) {
-        this.registrationClient = registrationClient;
+        this(registrationClient, false);
     }
-
+    
+    public DefaultBookieAddressResolver(RegistrationClient registrationClient,
+            boolean isDebugBookieHandleNotAvailableLog) {
+        this.registrationClient = registrationClient;
+        this.isDebugBookieHandleNotAvailableLog = isDebugBookieHandleNotAvailableLog;
+    }
+    
     public RegistrationClient getRegistrationClient() {
         return registrationClient;
     }
@@ -65,7 +73,13 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
                 }
                 return BookieSocketAddress.resolveLegacyBookieId(bookieId);
             }
-            log.info("Cannot resolve {}, bookie is unknown {}", bookieId, ex.toString());
+            if (isDebugBookieHandleNotAvailableLog) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Cannot resolve {}, bookie is unknown {}", bookieId, ex.toString());
+                }
+            } else {
+                log.info("Cannot resolve {}, bookie is unknown {}", bookieId, ex.toString());
+            }
             throw new BookieIdNotResolvedException(bookieId, ex);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {
