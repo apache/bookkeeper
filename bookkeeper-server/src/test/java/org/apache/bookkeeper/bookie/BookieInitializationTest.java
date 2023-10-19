@@ -112,6 +112,7 @@ import org.apache.zookeeper.data.Stat;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.LoggingEvent;
@@ -818,6 +819,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * Create LifecycleComponent for BookieServer and start it.
          */
         LifecycleComponent server = Main.buildBookieServer(bkConf);
+        Whitebox.setInternalState(server, "name", "bookie-server-1");
         CompletableFuture<Void> startFuture = ComponentStarter.startComponent(server);
 
         /*
@@ -863,6 +865,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * Create LifecycleComponent for BookieServer and start it.
          */
         LifecycleComponent server2 = Main.buildBookieServer(bkConf2);
+        Whitebox.setInternalState(server2, "name", "bookie-server-2");
         CompletableFuture<Void> startFuture2 = ComponentStarter.startComponent(server2);
 
         /*
@@ -878,10 +881,13 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * the error message of ExceptionHandler is logged. This Log message is
          * defined in anonymous exceptionHandler class defined in
          * ComponentStarter.startComponent method.
+         * component1's name is bookie-server-1, component2's name is bookie-server-2.
          */
         loggerOutput.expect((List<LoggingEvent> logEvents) -> {
-            assertThat(logEvents,
-                    hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component:"))));
+            assertThat(logEvents, hasItem(hasProperty("message",
+                    containsString("Triggered exceptionHandler of Component: " + server.getName()))));
+            assertThat(logEvents, hasItem(hasProperty("message",
+                    containsString("Triggered exceptionHandler of Component: " + server2.getName()))));
             assertThat(logEvents, hasItem(hasProperty("message",
                     containsString("Exception while replaying journals, shutting down"))));
         });
