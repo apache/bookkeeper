@@ -493,9 +493,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownTimer = false;
         }
 
-        BookieAddressResolver bookieAddressResolver = conf.getBookieAddressResolverEnabled()
-                ? new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient())
-                : new BookieAddressResolverDisabled();
+        BookieAddressResolver bookieAddressResolver =
+                conf.getBookieAddressResolverEnabled() ? new DefaultBookieAddressResolver(
+                        metadataDriver.getRegistrationClient(), conf.isDebugBookieHandleNotAvailableLog())
+                        : new BookieAddressResolverDisabled();
         if (dnsResolver != null) {
             dnsResolver.setBookieAddressResolver(bookieAddressResolver);
         }

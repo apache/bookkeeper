@@ -35,10 +35,6 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
     
     private final boolean isDebugBookieHandleNotAvailableLog;
 
-    public DefaultBookieAddressResolver(RegistrationClient registrationClient) {
-        this(registrationClient, false);
-    }
-    
     public DefaultBookieAddressResolver(RegistrationClient registrationClient,
             boolean isDebugBookieHandleNotAvailableLog) {
         this.registrationClient = registrationClient;

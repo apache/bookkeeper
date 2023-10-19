@@ -99,7 +99,7 @@ public abstract class BookKeeperClusterTestBase {
 
     private static boolean findIfBookieRegistered(String bookieName) throws Exception {
         DefaultBookieAddressResolver resolver =
-                new DefaultBookieAddressResolver(metadataClientDriver.getRegistrationClient());
+                new DefaultBookieAddressResolver(metadataClientDriver.getRegistrationClient(), false);
         Set<BookieId> bookies =
             FutureUtils.result(metadataClientDriver
                     .getRegistrationClient().getWritableBookies()).getValue();

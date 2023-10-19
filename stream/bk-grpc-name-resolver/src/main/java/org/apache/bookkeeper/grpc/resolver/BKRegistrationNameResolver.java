@@ -83,8 +83,8 @@ class BKRegistrationNameResolver extends NameResolver {
         } catch (MetadataException e) {
             throw new RuntimeException("Failed to initialize registration client driver at " + serviceURI, e);
         }
-        this.bookieAddressResolver = conf.getBookieAddressResolverEnabled()
-                ? new DefaultBookieAddressResolver(clientDriver.getRegistrationClient())
+        this.bookieAddressResolver = conf.getBookieAddressResolverEnabled() ? new DefaultBookieAddressResolver(
+                clientDriver.getRegistrationClient(), conf.isDebugBookieHandleNotAvailableLog())
                 : new BookieAddressResolverDisabled();
 
         resolve();

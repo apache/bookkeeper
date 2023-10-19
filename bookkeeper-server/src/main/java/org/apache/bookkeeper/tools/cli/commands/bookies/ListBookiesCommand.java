@@ -86,7 +86,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
         }
 
         BookieAddressResolver bookieAddressResolver = bookieAddressResolverEnabled
-                ? new DefaultBookieAddressResolver(regClient)
+                ? new DefaultBookieAddressResolver(regClient, false)
                 : new BookieAddressResolverDisabled();
 
         boolean hasBookies = false;
