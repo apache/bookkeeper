@@ -4223,6 +4223,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Get whether bookie is using hostname for registration and in ledger
  metadata.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getUseHostnameResolveLocalNodePlacementPolicy()">getUseHostnameResolveLocalNodePlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Get whether to use hostname to resolve local node placement policy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getUseShortHostName()">getUseShortHostName()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">If bookie is using hostname for registration and in ledger metadata then
@@ -4557,6 +4561,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize(ClientConfiguration, Optional&lt;DNSToSwitchMapping&gt;, HashedWheelTimer, FeatureProvider, StatsLogger, BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ZoneawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">ZoneawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, boolean, StatsLogger, BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, boolean, StatsLogger, BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>
+<div class="block">Initialize the policy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, StatsLogger, BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize(DNSToSwitchMapping, HashedWheelTimer, boolean, int, int, boolean, int, int, boolean, boolean, StatsLogger, BookieAddressResolver)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
@@ -8247,6 +8257,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Configure the bookie to use its hostname to register with the
  co-ordination service(eg: zookeeper) and in ledger metadata.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setUseHostnameResolveLocalNodePlacementPolicy(boolean)">setUseHostnameResolveLocalNodePlacementPolicy(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Set the flag to use hostname to resolve local node placement policy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setUseShortHostName(boolean)">setUseShortHostName(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Configure the bookie to use its short hostname or FQDN hostname to
@@ -8924,6 +8938,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#USE_HOST_NAME_AS_BOOKIE_ID">USE_HOST_NAME_AS_BOOKIE_ID</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY">USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#USE_SHORT_HOST_NAME">USE_SHORT_HOST_NAME</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#USE_TARGET_ENTRYLOG_SIZE_FOR_GC">USE_TARGET_ENTRYLOG_SIZE_FOR_GC</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -8933,6 +8949,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#USE_V2_WIRE_PROTOCOL">USE_V2_WIRE_PROTOCOL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#useHostName()">useHostName()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#useHostnameResolveLocalNodePlacementPolicy">useHostnameResolveLocalNodePlacementPolicy</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ClientInternalConf.html#useV2WireProtocol">useV2WireProtocol</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ClientInternalConf.html" title="class in org.apache.bookkeeper.client">ClientInternalConf</a></dt>
 <dd>&nbsp;</dd>
