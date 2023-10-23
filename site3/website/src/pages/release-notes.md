@@ -90,7 +90,7 @@ https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.14.8+is
 
 Release 4.16.2 includes multiple bug fixes and some dependencies CVE fixes.
 
-Apache BookKeeper users are encouraged to upgrade to 4.16.2.
+**The binaries were compiled for M1 and Apache BookKeeper users are NOT encouraged to upgrade to 4.16.2.**
 The technical details of this release are summarized below.
 
 ### Highlights
