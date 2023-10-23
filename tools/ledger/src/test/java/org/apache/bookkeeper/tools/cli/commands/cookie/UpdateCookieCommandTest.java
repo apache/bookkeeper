@@ -76,7 +76,7 @@ public class UpdateCookieCommandTest extends CookieCommandTestBase {
     }
 
     private void assertPrintUsage(String consoleOutput) {
-        assertPrintUsage(consoleOutput, "update [flags] <bookie-id>");
+        assertPrintUsage(consoleOutput, "cookie_update [options]");
     }
 
     /**

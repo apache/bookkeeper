@@ -293,7 +293,7 @@ public class LedgerFragmentReplicator {
             assert false;
         }
 
-        long numberOfEntriesToReplicate = (lastEntryId - firstEntryId) + 1;
+        long numberOfEntriesToReplicate = firstEntryId == INVALID_ENTRY_ID ? 0 : (lastEntryId - firstEntryId) + 1;
         long splitsWithFullEntries = numberOfEntriesToReplicate
                 / rereplicationEntryBatchSize;
 
