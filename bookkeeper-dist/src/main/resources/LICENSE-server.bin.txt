@@ -260,9 +260,9 @@ Apache Software License, Version 2.
 - lib/org.apache.logging.log4j-log4j-slf4j-impl-2.18.0.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-lang3-3.6.jar [20]
-- lib/org.apache.zookeeper-zookeeper-3.8.1.jar [21]
-- lib/org.apache.zookeeper-zookeeper-jute-3.8.1.jar [21]
-- lib/org.apache.zookeeper-zookeeper-3.8.1-tests.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.8.3.jar [21]
+- lib/org.apache.zookeeper-zookeeper-jute-3.8.3.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.8.3-tests.jar [21]
 - lib/org.eclipse.jetty-jetty-http-9.4.51.v20230217.jar [22]
 - lib/org.eclipse.jetty-jetty-io-9.4.51.v20230217.jar [22]
 - lib/org.eclipse.jetty-jetty-security-9.4.51.v20230217.jar [22]
@@ -314,7 +314,7 @@ Apache Software License, Version 2.
 - lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar [47]
 - lib/io.perfmark-perfmark-api-0.26.0.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.2.jar [49]
-- lib/org.xerial.snappy-snappy-java-1.1.10.1.jar [50]
+- lib/org.xerial.snappy-snappy-java-1.1.10.5.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/com.carrotsearch-hppc-0.9.1.jar [52]
 - lib/com.squareup.okhttp3-okhttp-4.11.0.jar [53]
@@ -391,7 +391,7 @@ Apache Software License, Version 2.
 [47] Source available at https://github.com/dropwizard/metrics/releases/tag/v4.1.12.1
 [48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.26.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.2
-[50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.1
+[50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.5
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 [53] Source available at https://github.com/square/okio/releases/tag/parent-3.2.0
