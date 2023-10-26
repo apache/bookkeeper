@@ -507,7 +507,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         try {
             excludeBookies = addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
             excludeBookies.addAll(currentEnsemble);
-    
+
             Set<Node> ensembleNodes = new HashSet<>();
             Set<Node> excludeNodes = new HashSet<>();
             BookieNode bn = knownBookies.get(bookieToReplace);
@@ -516,7 +516,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
             for (BookieId bookieId : currentEnsemble) {
                 if (bookieId.equals(bookieToReplace)) {
-                    ensembleNodes.add(bn);
                     continue;
                 }
                 ensembleNodes.add(convertBookieToNode(bookieId));
