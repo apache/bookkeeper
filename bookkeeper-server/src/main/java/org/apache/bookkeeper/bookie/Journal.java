@@ -1033,15 +1033,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (localQueueEntriesLen > 0) {
                         qe = localQueueEntries[localQueueEntriesIdx];
                         localQueueEntries[localQueueEntriesIdx++] = null;
-                        journalStats.getJournalQueueSize().dec();
-                        journalStats.getJournalQueueStats()
-                                .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                     }
-                } else {
-                    journalStats.getJournalQueueSize().dec();
-                    journalStats.getJournalQueueStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                 }
+
                 if (numEntriesToFlush > 0) {
                     boolean shouldFlush = false;
                     // We should issue a forceWrite if any of the three conditions below holds good
@@ -1161,6 +1155,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (qe == null) { // no more queue entry
                     continue;
                 }
+
+                journalStats.getJournalQueueSize().dec();
+                journalStats.getJournalQueueStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+
                 if ((qe.entryId == BookieImpl.METAENTRY_ID_LEDGER_EXPLICITLAC)
                         && (journalFormatVersionToWrite < JournalChannel.V6)) {
                     /*
