@@ -162,6 +162,10 @@ elif [ ${COMMAND} == "autorecovery" ]; then
   exec "${JAVA}" ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "localbookie" ]; then
   NUMBER=$1
+  if [[ ! "$NUMBER" =~ ^[0-9]+$ ]]; then
+      bookkeeper_help;
+      exit 1;
+  fi
   shift
   exec "${JAVA}" ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "standalone" ]; then
