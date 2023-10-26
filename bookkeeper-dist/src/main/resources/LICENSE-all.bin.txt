@@ -706,7 +706,7 @@ This product bundles the bouncycastle Library.
 For license details, see deps/bouncycastle-1.0.2.3/LICENSE.html
 
 Bundled as
-  - lib/org.bouncycastle-bc-fips-1.0.2.3.jar
+  - lib/org.bouncycastle-bc-fips-1.0.2.4.jar
 ------------------------------------------------------------------------------------
 This product uses the annotations from The Checker Framework, which are licensed under
 MIT License. For details, see deps/checker-qual-3.5.0/LICENSE
