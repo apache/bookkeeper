@@ -116,9 +116,6 @@ public class CleanupLedgerManager implements LedgerManager {
         futures.add(promise);
         promise.whenComplete((result, exception) -> {
             futures.remove(promise);
-            if (exception != null) {
-                log.error("Failed on operating ledger metadata: {}", BKException.getExceptionCode(exception));
-            }
         });
     }
 
