@@ -52,7 +52,7 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                            final LayoutManager layoutManager,
                                            final int factoryVersion)
     throws IOException {
-        checkArgument(layoutManager == null || layoutManager instanceof ZkLayoutManager);
+        checkArgument(layoutManager instanceof ZkLayoutManager);
 
         if (CUR_VERSION != factoryVersion) {
             throw new IOException("Incompatible layout version found : "
@@ -60,7 +60,7 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
         this.conf = conf;
 
-        this.zk = layoutManager == null ? null : ((ZkLayoutManager) layoutManager).getZk();
+        this.zk = ((ZkLayoutManager) layoutManager).getZk();
         return this;
     }
 

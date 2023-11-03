@@ -164,12 +164,6 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             throw new IOException("Empty Ledger Root Path.");
         }
 
-        // if layoutManager is null, return the default ledger manager
-        if (layoutManager == null) {
-            return new FlatLedgerManagerFactory()
-                   .initialize(conf, null, FlatLedgerManagerFactory.CUR_VERSION);
-        }
-
         LedgerManagerFactory lmFactory;
 
         // check that the configured ledger manager is
