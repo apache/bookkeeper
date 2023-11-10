@@ -62,6 +62,10 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
             } else if (!stateManager.isReadOnly() && inState.isReadOnly()) {
                 stateManager.transitionToReadOnlyMode().get();
             }
+            boolean isForce = request.getParams().getOrDefault("force", "false").equals("true");
+            if (stateManager.isReadOnly() && isForce) {
+                stateManager.forceToReadOnly();
+            }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
             response.setBody("Unsupported method. Should be GET or PUT method");
