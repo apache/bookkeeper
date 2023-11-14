@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.EnsemblePlacementPolicy.PlacementPolicyAdherence;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
@@ -603,12 +604,22 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
-            List<BookieId> ensemble = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(3, 2, 2, null, new HashSet<BookieId>());
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assertEquals(0, getNumCoveredRegionsInWriteQuorum(ensemble, 2));
-            List<BookieId> ensemble2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble, 2, 2));
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse2 =
+                    repp.newEnsemble(4, 2, 2, null,
+                    new HashSet<BookieId>());
+            List<BookieId> ensemble2 = ensembleResponse2.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.getAdheringToPolicy();
             assertEquals(0, getNumCoveredRegionsInWriteQuorum(ensemble2, 2));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy2);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble2, 2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -637,19 +648,30 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
-            List<BookieId> ensemble = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(3, 2, 2, null, new HashSet<BookieId>());
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
+
             int numCovered = getNumCoveredRegionsInWriteQuorum(ensemble, 2);
             assertTrue(numCovered >= 1);
             assertTrue(numCovered < 3);
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
         try {
-            List<BookieId> ensemble2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse2 =
+            repp.newEnsemble(4, 2, 2, null,
+                    new HashSet<BookieId>());
+            List<BookieId> ensemble2 = ensembleResponse2.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.getAdheringToPolicy();
+
             int numCovered = getNumCoveredRegionsInWriteQuorum(ensemble2, 2);
             assertTrue(numCovered >= 1 && numCovered < 3);
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy2);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble2, 2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -696,9 +718,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                     repp.newEnsemble(ensembleSize, writeQuorumSize,
                             ackQuorumSize, null, excludeBookies);
             List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             if (ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId())) {
                 fail("addr1 and addr2 is same rack.");
             }
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble, writeQuorumSize, ackQuorumSize));
         }
 
         //addr4 shutdown.
@@ -709,7 +735,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                      repp.newEnsemble(ensembleSize, writeQuorumSize,
                             ackQuorumSize, null, excludeBookies);
             List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble, writeQuorumSize, ackQuorumSize));
         }
     }
 
@@ -744,12 +774,24 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr8.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
-            List<BookieId> ensemble1 = repp.newEnsemble(3, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse1 =
+                    repp.newEnsemble(3, 2, 2, null, new HashSet<BookieId>());
+            List<BookieId> ensemble1 = ensembleResponse1.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy1 = ensembleResponse1.getAdheringToPolicy();
             assertEquals(3, getNumCoveredRegionsInWriteQuorum(ensemble1, 2));
-            List<BookieId> ensemble2 = repp.newEnsemble(4, 2, 2, null,
-                    new HashSet<BookieId>()).getResult();
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy1);
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble1, 2, 2));
+
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse2 =
+                    repp.newEnsemble(4, 2, 2, null,
+                            new HashSet<BookieId>());
+            List<BookieId> ensemble2 = ensembleResponse2.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy2 = ensembleResponse2.getAdheringToPolicy();
             assertEquals(4, getNumCoveredRegionsInWriteQuorum(ensemble2, 2));
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy2);
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble2, 2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -857,27 +899,46 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr10.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
         try {
-            List<BookieId> ensemble = repp.newEnsemble(6, 6, 4, null,
-                    new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(6, 6, 4, null, new HashSet<BookieId>());
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.contains(addr4.toBookieId()));
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensemble = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieId>()).getResult();
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
+
+            ensembleResponse = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieId>());
+            ensemble = ensembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.contains(addr4.toBookieId()));
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 7);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensemble = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieId>()).getResult();
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 7, 4));
+
+            ensembleResponse = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieId>());
+            ensemble = ensembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.contains(addr4.toBookieId()));
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 8);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            ensemble = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>()).getResult();
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 8, 5));
+
+            ensembleResponse = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>());
+            ensemble = ensembleResponse.getResult();
+            isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.contains(addr4.toBookieId()));
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 9);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -1024,10 +1085,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
         try {
-            List<BookieId> ensemble = repp.newEnsemble(10, 10, 10, null,
-                                                                  new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(10, 10, 10, null, new HashSet<BookieId>());
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1036,11 +1101,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         try {
             Set<BookieId> excludedAddrs = new HashSet<BookieId>();
             excludedAddrs.add(addr10.toBookieId());
-            List<BookieId> ensemble = repp.newEnsemble(10, 10, 10, null,
-                                                                  excludedAddrs).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(10, 10, 10, null, excludedAddrs);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.contains(addr11.toBookieId()) && ensemble.contains(addr12.toBookieId()));
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -1130,9 +1199,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         List<BookieId> ensemble;
         try {
-            ensemble = repp.newEnsemble(6, 6, ackQuorum, null, new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(6, 6, ackQuorum, null, new HashSet<BookieId>());
+            ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
+            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, ackQuorum));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1263,8 +1337,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         List<BookieId> ensemble;
         try {
-            ensemble = repp.newEnsemble(6, 6, 4, null, new HashSet<BookieId>()).getResult();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(6, 6, 4, null, new HashSet<BookieId>());
+            ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 6);
+            // only one region, fallback to RackawareEnsemblePlacementPolicy, which is PlacementPolicyAdherence.MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1388,9 +1468,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
     private void basicReorderReadSequenceWithLocalRegionTest(String myRegion, boolean isReadLAC) throws Exception {
         prepareNetworkTopologyForReorderTests(myRegion);
-        List<BookieId> ensemble = repp.newEnsemble(9, 9, 5, null,
-                                                              new HashSet<BookieId>()).getResult();
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>());
+        List<BookieId> ensemble = ensembleResponse.getResult();
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
+
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
+        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
@@ -1449,9 +1534,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     private void basicReorderReadSequenceWithRemoteRegionTest(String myRegion, boolean isReadLAC) throws Exception {
         prepareNetworkTopologyForReorderTests(myRegion);
 
-        List<BookieId> ensemble = repp.newEnsemble(9, 9, 5, null,
-                                                              new HashSet<BookieId>()).getResult();
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>());
+        List<BookieId> ensemble = ensembleResponse.getResult();
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
+
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
+        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
@@ -1522,9 +1612,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         prepareNetworkTopologyForReorderTests(myRegion);
 
-        List<BookieId> ensemble = repp.newEnsemble(9, 9, 5, null,
-                                                              new HashSet<BookieId>()).getResult();
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>());
+        List<BookieId> ensemble = ensembleResponse.getResult();
+        PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
+
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
+        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
