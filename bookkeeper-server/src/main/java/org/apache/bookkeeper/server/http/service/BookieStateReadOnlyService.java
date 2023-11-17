@@ -31,6 +31,8 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
+import java.util.Map;
+
 /**
  * HttpEndpointService that handles readOnly state related http requests.
  * The GET method will get the current readOnly state of the bookie.
@@ -62,9 +64,12 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
             } else if (!stateManager.isReadOnly() && inState.isReadOnly()) {
                 stateManager.transitionToReadOnlyMode().get();
             }
-            boolean isForce = request.getParams().getOrDefault("force", "false").equals("true");
-            if (stateManager.isReadOnly() && isForce) {
-                stateManager.forceToReadOnly();
+            Map<String, String> params = request.getParams();
+            if (params != null) {
+                boolean isForce = params.getOrDefault("force", "false").equals("true");
+                if (stateManager.isReadOnly() && isForce) {
+                    stateManager.forceToReadOnly();
+                }
             }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
