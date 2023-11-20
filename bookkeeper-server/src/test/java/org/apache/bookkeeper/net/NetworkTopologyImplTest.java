@@ -66,6 +66,46 @@ public class NetworkTopologyImplTest {
   }
 
   @Test
+  public void testRestartBKWithNewRackDepth() {
+      NetworkTopologyImpl networkTopology = new NetworkTopologyImpl();
+      String dp1Rack = "/rack-1";
+      String dp2Rack = "/dp/rack-1";
+      BookieId bkId1 = BookieId.parse("bookieIdScopeRack0");
+      BookieId bkId2 = BookieId.parse("bookieIdScopeRack1");
+
+      // Register 2 BKs with depth 1 rack.
+      BookieNode dp1BkNode1 = new BookieNode(bkId1, dp1Rack);
+      BookieNode dp1BkNode2 = new BookieNode(bkId2, dp1Rack);
+      networkTopology.add(dp1BkNode1);
+      networkTopology.add(dp1BkNode2);
+
+      // Update one BK with depth 2 rack.
+      // Assert it can not be added due to different depth.
+      networkTopology.remove(dp1BkNode1);
+      BookieNode dp2BkNode1 = new BookieNode(bkId1, dp2Rack);
+      try {
+          networkTopology.add(dp2BkNode1);
+          fail("Expected add node failed caused by different depth of rack");
+      } catch (NetworkTopologyImpl.InvalidTopologyException ex) {
+          // Expected ex.
+      }
+      Set<Node> leaves = networkTopology.getLeaves(dp1Rack);
+      assertEquals(leaves.size(), 1);
+      assertTrue(leaves.contains(dp1BkNode2));
+
+      // Update all Bks with depth 2 rack.
+      // Verify update success.
+      networkTopology.remove(dp1BkNode2);
+      BookieNode dp2BkNode2 = new BookieNode(bkId2, dp2Rack);
+      networkTopology.add(dp2BkNode1);
+      networkTopology.add(dp2BkNode2);
+      leaves = networkTopology.getLeaves(dp2Rack);
+      assertEquals(leaves.size(), 2);
+      assertTrue(leaves.contains(dp2BkNode1));
+      assertTrue(leaves.contains(dp2BkNode2));
+  }
+
+  @Test
   public void getLeavesShouldReturnLeavesThatAreNotInExcludedScope() {
       // GIVEN
       // Topology with three racks and 1 bookie in each rack.
