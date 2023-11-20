@@ -506,6 +506,9 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 if (rack == null) {
                     numOfRacks--;
                 }
+                if (clusterMap.numOfLeaves == 0) {
+                    depthOfAllLeaves = -1;
+                }
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("NetworkTopology became:\n" + this.toString());
