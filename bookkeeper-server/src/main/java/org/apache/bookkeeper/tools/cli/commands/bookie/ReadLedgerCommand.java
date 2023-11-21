@@ -188,8 +188,11 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                 BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT,
                                                                  executor, scheduler, NullStatsLogger.INSTANCE,
                                                                  bk.getBookieAddressResolver());
-
-                LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
+                if (lastEntry == -1) {
+                    // If lastEntry is not specified, read the last entry from the ledger
+                    lastEntry = bk.openLedgerNoRecovery(flags.ledgerId).getLastAddConfirmed();
+                }
+                LongStream.rangeClosed(flags.firstEntryId, lastEntry).forEach(entryId -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();
 
                     bookieClient.readEntry(bookie, flags.ledgerId, entryId,

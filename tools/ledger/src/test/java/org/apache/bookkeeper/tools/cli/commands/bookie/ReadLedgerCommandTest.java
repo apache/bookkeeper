@@ -54,6 +54,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     private static final BookieId bookieSocketAddress = BookieId.parse("localhost:9000");
 
     private LedgerHandle ledgerHandle;
+    private LedgerHandle ledgerHandleNoRecovery;
     private LedgerEntry entry;
     private OrderedExecutor orderedExecutor;
     private ScheduledExecutorService scheduledExecutorService;
@@ -70,11 +71,13 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         mockServerConfigurationConstruction();
         mockClientConfigurationConstruction();
         ledgerHandle = mock(LedgerHandle.class);
+        ledgerHandleNoRecovery = mock(LedgerHandle.class);
         entry = mock(LedgerEntry.class);
         orderedExecutor = mock(OrderedExecutor.class);
         scheduledExecutorService = mock(ScheduledExecutorService.class);
 
         when(ledgerHandle.getLastAddConfirmed()).thenReturn(1L);
+        when(ledgerHandleNoRecovery.getLastAddConfirmed()).thenReturn(-2L);
 
         List<LedgerEntry> entries = new LinkedList<>();
         entries.add(entry);
@@ -89,6 +92,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 when(bookKeeperAdmin.getBookieAddressResolver())
                         .thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
                 when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
+                when(bookKeeperAdmin.openLedgerNoRecovery(anyLong())).thenReturn(ledgerHandleNoRecovery);
                 when(bookKeeperAdmin.readEntries(anyLong(), anyLong(), anyLong())).thenReturn(entries);
             }
         });
