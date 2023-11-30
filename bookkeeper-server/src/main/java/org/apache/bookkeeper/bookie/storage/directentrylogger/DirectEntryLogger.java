@@ -244,14 +244,15 @@ public class DirectEntryLogger implements EntryLogger {
 
         long start = System.nanoTime();
         LogReader reader = getReader(logId);
-
+        ByteBuf buf = null;
         try {
-            ByteBuf buf = reader.readEntryAt(pos);
+            buf = reader.readEntryAt(pos);
             if (validateEntry) {
                 long thisLedgerId = buf.getLong(0);
                 long thisEntryId = buf.getLong(8);
                 if (thisLedgerId != ledgerId
                     || thisEntryId != entryId) {
+                    ReferenceCountUtil.release(buf);
                     throw new IOException(
                             exMsg("Bad location").kv("location", location)
                             .kv("expectedLedger", ledgerId).kv("expectedEntry", entryId)
