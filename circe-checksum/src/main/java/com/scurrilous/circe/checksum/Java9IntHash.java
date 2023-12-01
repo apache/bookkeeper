@@ -109,11 +109,13 @@ public class Java9IntHash implements IntHash {
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
+            int loopOffset = offset;
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
-                buffer.slice(offset, len).readBytes(b, 0, length);
+                buffer.slice(loopOffset, len).readBytes(b, 0, length);
                 negCrc = resume(negCrc, b, 0, length);
                 toRead -= length;
+                loopOffset += length;
             }
         }
 
