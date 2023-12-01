@@ -112,7 +112,7 @@ public class Java9IntHash implements IntHash {
             int loopOffset = offset;
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
-                buffer.slice(loopOffset, len).readBytes(b, 0, length);
+                buffer.slice(loopOffset, length).readBytes(b, 0, length);
                 negCrc = resume(negCrc, b, 0, length);
                 toRead -= length;
                 loopOffset += length;
