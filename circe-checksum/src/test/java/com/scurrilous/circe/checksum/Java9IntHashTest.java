@@ -35,7 +35,7 @@ public class Java9IntHashTest {
     }
 
     @Test
-    public void calculateCheckSum() {
+    public void calculateCheckSumUsingCompositeByteBuf() {
         // byteBuffers[0] = byteBuffers[1] + byteBuffers[2].
         // byteBuffers[2] is a composite ByteBuf.
         ByteBuf[] byteBuffers = generateByteBuffers();
@@ -60,7 +60,7 @@ public class Java9IntHashTest {
     }
 
     @Test
-    public void calculateCheckSumUsingNoArrayNoMemoryAddrData() {
+    public void calculateCheckSumUsingNoArrayNoMemoryAddrByteBuf() {
         // byteBuffers[0] = byteBuffers[1] + byteBuffers[2].
         // byteBuffers[2] is a composite ByteBuf.
         ByteBuf[] byteBuffers = generateByteBuffers();
