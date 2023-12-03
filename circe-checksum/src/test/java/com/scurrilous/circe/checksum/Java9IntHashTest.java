@@ -47,7 +47,7 @@ public class Java9IntHashTest {
         ByteBuf b2 = ByteBufAllocator.DEFAULT.heapBuffer(3);
         b2.writeBytes(new byte[]{4,5,6});
         ByteBuf b3 = ByteBufAllocator.DEFAULT.heapBuffer(hugeDataLen);
-        b2.writeBytes(hugeData);
+        b3.writeBytes(hugeData);
 
         return new ByteBuf[]{bTotal, b1, new CompositeByteBuf(ByteBufAllocator.DEFAULT, false, 2,  b2, b3)};
     }

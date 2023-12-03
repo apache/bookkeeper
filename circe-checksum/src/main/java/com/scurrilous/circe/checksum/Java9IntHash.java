@@ -109,10 +109,11 @@ public class Java9IntHash implements IntHash {
             negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
         } else if (buffer instanceof CompositeByteBuf) {
            CompositeByteBuf compositeByteBuf = (CompositeByteBuf) buffer;
+           int loopedCurrent = current;
            for (int i = 0; i < compositeByteBuf.numComponents(); i ++) {
-               negCrc = resume(~negCrc, compositeByteBuf.component(i));
+               loopedCurrent = resume(loopedCurrent, compositeByteBuf.component(i));
            }
-           return ~negCrc;
+           return loopedCurrent;
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
