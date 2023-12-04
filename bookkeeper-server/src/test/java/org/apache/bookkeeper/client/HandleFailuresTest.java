@@ -31,11 +31,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
@@ -480,14 +482,20 @@ public class HandleFailuresTest {
         b1Delay.completeExceptionally(new BKException.BKWriteException());
 
         log.info("write second entry, should have enough bookies, but blocks completion on failure handling");
-        CompletableFuture<?> e2 = lh.appendAsync("entry2".getBytes());
+        AtomicReference<CompletableFuture<?>> e2 = new AtomicReference<>();
+
+        // Execute appendAsync at the same thread of preWriteHook exception thread. So that the
+        // `delayedWriteFailedBookies` could update before appendAsync invoke.
+        ((MockBookieClient) clientCtx.getBookieClient()).getExecutor()
+                .chooseThread(lh.ledgerId)
+                .execute(() -> e2.set(lh.appendAsync("entry2".getBytes())));
         changeInProgress.get();
         assertEventuallyTrue("e2 should eventually complete", () -> lh.pendingAddOps.peek().completed);
-        Assert.assertFalse("e2 shouldn't be completed to client", e2.isDone());
+        Assert.assertFalse("e2 shouldn't be completed to client", e2.get().isDone());
         blockEnsembleChange.complete(null); // allow ensemble change to continue
 
         log.info("e2 should complete");
-        e2.get(10, TimeUnit.SECONDS);
+        e2.get().get(10, TimeUnit.SECONDS);
     }
 
 }
