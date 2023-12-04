@@ -676,6 +676,7 @@ public class GarbageCollectorThread implements Runnable {
         if (!this.running) {
             return;
         }
+        this.running = false;
         LOG.info("Shutting down GarbageCollectorThread");
 
         throttler.cancelledAcquire();
@@ -685,7 +686,6 @@ public class GarbageCollectorThread implements Runnable {
             Thread.sleep(100);
         }
 
-        this.running = false;
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {
