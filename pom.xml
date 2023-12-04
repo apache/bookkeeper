@@ -140,7 +140,7 @@
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.13.4.20221013</jackson.version>
     <jcommander.version>1.82</jcommander.version>
-    <jetty.version>9.4.51.v20230217</jetty.version>
+    <jetty.version>9.4.53.v20231009</jetty.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.14.3</jsoup.version>
