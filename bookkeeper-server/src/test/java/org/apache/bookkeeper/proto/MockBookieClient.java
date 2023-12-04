@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -56,6 +57,7 @@ import org.slf4j.LoggerFactory;
 public class MockBookieClient implements BookieClient {
     static final Logger LOG = LoggerFactory.getLogger(MockBookieClient.class);
 
+    @Getter
     final OrderedExecutor executor;
     final MockBookies mockBookies;
     final Set<BookieId> errorBookies =
