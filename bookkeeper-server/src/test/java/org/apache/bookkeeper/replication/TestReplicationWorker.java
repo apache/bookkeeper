@@ -1246,6 +1246,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         baseClientConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
         baseClientConf.setProperty("enforceStrictZoneawarePlacement", false);
+        bkc.close();
         bkc = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -1357,6 +1358,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         if (checkReplicationStats == null) {
             rw.shutdown();
         }
+        baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(false);
+        bookKeeper.close();
     }
 
     private EnsemblePlacementPolicy buildRackAwareEnsemblePlacementPolicy(List<BookieId> bookieIds) {
