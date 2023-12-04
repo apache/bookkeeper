@@ -1148,7 +1148,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return true if reorder read sequence is enabled, otherwise false.
      */
     public boolean isReorderReadSequenceEnabled() {
-        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, false);
+        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, true);
     }
 
     /**
