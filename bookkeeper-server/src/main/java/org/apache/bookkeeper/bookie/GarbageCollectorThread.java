@@ -670,6 +670,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (!this.running) {
             return;
         }
+        this.running = false;
         LOG.info("Shutting down GarbageCollectorThread");
 
         throttler.cancelledAcquire();
@@ -679,7 +680,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             Thread.sleep(100);
         }
 
-        this.running = false;
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {
