@@ -74,13 +74,13 @@ SoundCloud Ltd. (http://soundcloud.com/).
 This product includes software developed as part of the
 Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
 ------------------------------------------------------------------------------------
-- lib/org.eclipse.jetty-jetty-http-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-io-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-security-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-server-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-servlet-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-util-9.4.51.v20230217.jar
-- lib/org.eclipse.jetty-jetty-util-ajax-9.4.51.v20230217.jar
+- lib/org.eclipse.jetty-jetty-http-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-io-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-security-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-server-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-servlet-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-util-9.4.53.v20231009.jar
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.53.v20231009.jar
 
 ==============================================================
  Jetty Web Container
@@ -102,7 +102,7 @@ Jetty is dual licensed under both
 
 Jetty may be distributed under either license.
 
-lib/org.eclipse.jetty-jetty-util-9.4.51.v20230217.jar bundles UnixCrypt
+lib/org.eclipse.jetty-jetty-util-9.4.53.v20231009.jar bundles UnixCrypt
 
 The UnixCrypt.java code implements the one way cryptography used by
 Unix systems for simple password protection.  Copyright 1996 Aki Yoshida,
