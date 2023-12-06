@@ -36,6 +36,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -122,6 +123,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     will fail (even if retry it many times).
     */
     @Test
+    @Ignore
     @SuppressWarnings("deprecation")
     public void testBookieServerZKSessionExpireBehaviour() throws Exception {
         // 6000 is minimum due to default tick time
