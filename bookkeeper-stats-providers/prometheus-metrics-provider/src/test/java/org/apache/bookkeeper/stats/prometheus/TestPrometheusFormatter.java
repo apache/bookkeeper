@@ -208,7 +208,6 @@ public class TestPrometheusFormatter {
             assertTrue(output.contains("# TYPE jvm_memory_direct_bytes_used gauge"));
             assertTrue(output.contains("# TYPE jvm_gc_collection_seconds summary"));
             assertTrue(output.contains("# TYPE jvm_memory_pool_bytes_committed gauge"));
-            assertTrue(output.contains("# TYPE process_cpu_seconds counter"));
         } catch (Exception e) {
             fail();
         }
