@@ -50,7 +50,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 
 ### Monitoring
 
-* Apache BookKeeper uses a pluggable [StatsProvider](https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats) on exporting metrics
+* Apache BookKeeper uses a pluggable [StatsProvider](https://github.com/apache/bookkeeper/tree/master/stats/bookkeeper-stats-providers) on exporting metrics
 * Any new features should come with appropriate metrics for monitoring the feature is working correctly.
 * Those metrics should be taken seriously and only export useful metrics that would be used on production on monitoring/alerting healthy of the system, or troubleshooting problems.
 
