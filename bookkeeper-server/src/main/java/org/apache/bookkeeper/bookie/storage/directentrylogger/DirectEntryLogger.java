@@ -244,6 +244,7 @@ public class DirectEntryLogger implements EntryLogger {
 
         long start = System.nanoTime();
         LogReader reader = getReader(logId);
+        
         try {
             ByteBuf buf = reader.readEntryAt(pos);
             if (validateEntry) {
