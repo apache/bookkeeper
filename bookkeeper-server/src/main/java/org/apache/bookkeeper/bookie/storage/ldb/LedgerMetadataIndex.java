@@ -408,6 +408,7 @@ public class LedgerMetadataIndex implements Closeable {
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted
+                ledgersCount.incrementAndGet();
                 return;
             } else {
                 if (log.isDebugEnabled()) {
