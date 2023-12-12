@@ -66,7 +66,7 @@ public class TriggerGCService implements HttpEndpointService {
         try {
             if (HttpServer.Method.PUT == request.getMethod()) {
                 String requestBody = request.getBody();
-                if (StringUtils.isBlank(requestBody)) {
+                if (requestBody == null || StringUtils.isEmpty(requestBody.trim())) {
                     bookieServer.getBookie().getLedgerStorage().forceGC();
                 } else {
                     @SuppressWarnings("unchecked")
