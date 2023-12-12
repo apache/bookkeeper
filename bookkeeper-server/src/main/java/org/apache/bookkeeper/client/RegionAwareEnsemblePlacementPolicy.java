@@ -682,8 +682,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 Set<BookieId> bookieIds = regionsInQuorum.get(region);
 
                 TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(region);
-                PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = policyWithinRegion.isEnsembleAdheringToPlacementPolicy(
-                        new ArrayList<>(bookieIds), bookieIds.size(), 1);
+                PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = policyWithinRegion
+                        .isEnsembleAdheringToPlacementPolicy(new ArrayList<>(bookieIds), bookieIds.size(), 1);
                 if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("For ensemble {}, write set starting at {} are all from one region, "

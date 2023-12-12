@@ -1206,7 +1206,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, ackQuorum));
+            assertEquals(PlacementPolicyAdherence.FAIL,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, ackQuorum));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1342,9 +1343,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 6);
-            // only one region, fallback to RackawareEnsemblePlacementPolicy, which is PlacementPolicyAdherence.MEETS_STRICT
+            // only one region, fallback to RackawareEnsemblePlacementPolicy,
+            // which is PlacementPolicyAdherence.MEETS_STRICT
             assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT,
+                    repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
