@@ -19,7 +19,7 @@ import setuptools
 
 name = 'apache-bookkeeper-client'
 description = 'Apache BookKeeper client library'
-version = '4.15.5'
+version = '4.15.6-alpha-0'
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
