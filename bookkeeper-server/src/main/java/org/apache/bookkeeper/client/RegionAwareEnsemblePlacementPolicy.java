@@ -658,8 +658,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             regionsInQuorum.clear();
             for (int j = 0; j < writeQuorumSize; j++) {
                 bookie = ensembleList.get((i + j) % ensembleSize);
-                if (knownBookies.containsKey(bookie)) {
-                    String region = getLocalRegion(knownBookies.get(bookie));
+                BookieNode bookieNode = knownBookies.get(bookie);
+                if (bookieNode != null) {
+                    String region = getLocalRegion(bookieNode);
                     if (regionsInQuorum.containsKey(region)) {
                         regionsInQuorum.get(region).add(bookie);
                     } else {
