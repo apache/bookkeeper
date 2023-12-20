@@ -221,6 +221,14 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     }
 
     @Override
+    public void updateBookieInfo(Map<BookieId, BookieInfoReader.BookieInfo> bookieInfoMap) {
+        super.updateBookieInfo(bookieInfoMap);
+        for (TopologyAwareEnsemblePlacementPolicy policy: perRegionPlacement.values()) {
+            policy.updateBookieInfo(bookieInfoMap);
+        }
+    }
+
+    @Override
     public RegionAwareEnsemblePlacementPolicy initialize(ClientConfiguration conf,
                                                          Optional<DNSToSwitchMapping> optionalDnsResolver,
                                                          HashedWheelTimer timer,
