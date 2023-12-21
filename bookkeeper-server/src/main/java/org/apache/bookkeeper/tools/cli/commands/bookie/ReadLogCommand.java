@@ -189,6 +189,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
                     if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
                         stopScanning.setValue(true);
                     } else {
+                        int entrySize = entry.readableBytes();
                         /**
                          * entrySize of an entry (inclusive of payload and
                          * header) value is stored as int value in log file, but
@@ -197,7 +198,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
                          * 4 (intsize of entrySize). Please check
                          * EntryLogger.scanEntryLog.
                          */
-                        long entryEndPos = entryStartPos + entry.readableBytes() + 4 - 1;
+                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
                         if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
                             FormatUtil.formatEntry(entryStartPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
                             entryFound.setValue(true);
