@@ -51,7 +51,7 @@ class LogReaderScan {
                 reader.readIntoBufferAt(entry, offset, entrySize);
                 long ledgerId = entry.getLong(0);
                 if (ledgerId >= 0 && scanner.accept(ledgerId)) {
-                    scanner.process(ledgerId, initOffset, entry, entrySize);
+                    scanner.process(ledgerId, initOffset, entry);
                 }
                 offset += entrySize;
             }

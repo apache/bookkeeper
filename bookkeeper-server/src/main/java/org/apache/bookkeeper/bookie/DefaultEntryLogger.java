@@ -1063,7 +1063,7 @@ public class DefaultEntryLogger implements EntryLogger {
                             LOG.warn("Short read for ledger entry id from entrylog {}", entryLogId);
                             return;
                         }
-                        scanner.process(ledgerId, offset, data, entrySize);
+                        scanner.process(ledgerId, offset, data);
                         break;
                 }
                 // Advance position to the next entry
