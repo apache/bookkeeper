@@ -176,7 +176,7 @@ public class LedgersIndexRebuildOp {
                 }
 
                 @Override
-                public ReadLengthType getLengthToRead() {
+                public ReadLengthType getReadLengthType() {
                     return ReadLengthType.READ_NOTHING;
                 }
             });

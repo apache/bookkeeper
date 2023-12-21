@@ -434,7 +434,7 @@ public class DirectEntryLogger implements EntryLogger {
             }
 
             @Override
-            public ReadLengthType getLengthToRead() {
+            public ReadLengthType getReadLengthType() {
                 return ReadLengthType.READ_NOTHING;
             }
         });

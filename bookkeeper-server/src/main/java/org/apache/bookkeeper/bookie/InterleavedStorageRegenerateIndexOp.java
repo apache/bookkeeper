@@ -138,7 +138,7 @@ public class InterleavedStorageRegenerateIndexOp {
                 }
 
                 @Override
-                public ReadLengthType getLengthToRead() {
+                public ReadLengthType getReadLengthType() {
                     return ReadLengthType.READ_LEDGER_ENTRY_ID_LENGTH;
                 }
             });

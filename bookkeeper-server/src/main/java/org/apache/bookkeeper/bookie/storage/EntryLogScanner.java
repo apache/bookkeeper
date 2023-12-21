@@ -82,7 +82,7 @@ public interface EntryLogScanner {
     default void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException{}
 
 
-    default ReadLengthType getLengthToRead(){
+    default ReadLengthType getReadLengthType(){
         return ReadLengthType.READ_ALL;
     }
 }
