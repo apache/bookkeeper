@@ -423,11 +423,8 @@ public class DirectEntryLogger implements EntryLogger {
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(logId, new EntryLogScanner() {
             @Override
-            public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
+            public void process(long ledgerId, long offset, int entrySize) throws IOException {
                 // add new entry size of a ledger to entry log meta
-                if (throttler != null) {
-                    throttler.acquire(entry.readableBytes());
-                }
                 meta.addLedgerSize(ledgerId, entrySize + Integer.BYTES);
             }
 

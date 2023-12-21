@@ -100,9 +100,7 @@ public class LocationsIndexRebuildOp {
             for (long entryLogId : entryLogs) {
                 entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                     @Override
-                    public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
-                        long entryId = entry.getLong(8);
-
+                    public void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {
                         // Actual location indexed is pointing past the entry size
                         long location = (entryLogId << 32L) | (offset + 4);
 

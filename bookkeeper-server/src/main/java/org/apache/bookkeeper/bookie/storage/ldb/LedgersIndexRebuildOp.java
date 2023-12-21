@@ -162,7 +162,7 @@ public class LedgersIndexRebuildOp {
         for (long entryLogId : entryLogs) {
             entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
+                public void process(long ledgerId, long offset, int entrySize) throws IOException {
                     if (ledgers.add(ledgerId)) {
                         if (verbose) {
                             LOG.info("Found ledger {} in entry log", ledgerId);

@@ -1169,10 +1169,7 @@ public class DefaultEntryLogger implements EntryLogger {
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(entryLogId, new EntryLogScanner() {
             @Override
-            public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
-                if (throttler != null) {
-                    throttler.acquire(entry.readableBytes());
-                }
+            public void process(long ledgerId, long offset, int entrySize) throws IOException {
                 // add new entry size of a ledger to entry log meta
                 meta.addLedgerSize(ledgerId, entrySize + 4);
             }

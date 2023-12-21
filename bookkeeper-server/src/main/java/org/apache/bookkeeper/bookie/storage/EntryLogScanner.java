@@ -49,24 +49,38 @@ public interface EntryLogScanner {
      * Tests whether or not the entries belongs to the specified ledger
      * should be processed.
      *
-     * @param ledgerId
-     *          Ledger ID.
+     * @param ledgerId ledger id
      * @return true if and only the entries of the ledger should be scanned.
      */
     boolean accept(long ledgerId);
 
     /**
-     * Process an entry.
-     *
-     * @param ledgerId
-     *          Ledger ID.
-     * @param offset
-     *          File offset of this entry.
-     * @param entry
-     *          Entry ByteBuf
+     * Process an entry when ReadLengthType is READ_NOTHING.
+     * @param ledgerId ledger id
+     * @param entrySize entry size
      * @throws IOException
      */
-    void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException;
+    default void process(long ledgerId, long offset, int entrySize) throws IOException {}
+
+    /**
+     * Process an entry when ReadLengthType is READ_LEDGER_ENTRY_ID_LENGTH.
+     * @param ledgerId ledger id
+     * @param offset offset of the entry
+     * @param entrySize entry size
+     * @param entryId entry id
+     * @throws IOException
+     */
+    default void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {}
+
+    /**
+     * Process an entry when ReadLengthType is READ_ALL.
+     * @param ledgerId ledger id
+     * @param offset offset of the entry
+     * @param entry entry
+     * @param entrySize entry size
+     */
+    default void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException{}
+
 
     default ReadLengthType getLengthToRead(){
         return ReadLengthType.READ_ALL;
