@@ -114,7 +114,7 @@ public class InterleavedStorageRegenerateIndexOp {
             LOG.info("Scanning {}", entryLogId);
             entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
                     long entryId = entry.getLong(8);
 
                     stats.computeIfAbsent(ledgerId, (ignore) -> new RecoveryStats()).registerEntry(entryId);
@@ -137,6 +137,11 @@ public class InterleavedStorageRegenerateIndexOp {
                 @Override
                 public boolean accept(long ledgerId) {
                     return ledgerIds.contains(ledgerId);
+                }
+
+                @Override
+                public int getLengthToRead() {
+                    return EntryLogScanner.READ_ENTRY_ID;
                 }
             });
 

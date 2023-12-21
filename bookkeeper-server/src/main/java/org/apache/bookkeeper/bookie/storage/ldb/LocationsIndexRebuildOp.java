@@ -100,7 +100,7 @@ public class LocationsIndexRebuildOp {
             for (long entryLogId : entryLogs) {
                 entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                     @Override
-                    public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                    public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
                         long entryId = entry.getLong(8);
 
                         // Actual location indexed is pointing past the entry size
@@ -134,6 +134,11 @@ public class LocationsIndexRebuildOp {
                     @Override
                     public boolean accept(long ledgerId) {
                         return activeLedgers.contains(ledgerId);
+                    }
+
+                    @Override
+                    public int getLengthToRead() {
+                        return EntryLogScanner.READ_ENTRY_ID;
                     }
                 });
 

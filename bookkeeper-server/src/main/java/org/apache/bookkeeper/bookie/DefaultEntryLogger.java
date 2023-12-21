@@ -1036,15 +1036,20 @@ public class DefaultEntryLogger implements EntryLogger {
                 }
                 // read the entry
                 data.clear();
-                data.capacity(entrySize);
-                int rc = readFromLogChannel(entryLogId, bc, data, pos);
-                if (rc != entrySize) {
-                    LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
-                            entryLogId, pos, rc, entrySize);
-                    return;
+                int capacity = Math.min(scanner.getLengthToRead(), entrySize);
+                // skip read when scanner.getLengthToRead() == 0.
+                if (capacity > 0) {
+                    data.capacity(capacity);
+                    int rc = readFromLogChannel(entryLogId, bc, data, pos);
+                    if (rc != entrySize) {
+                        LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
+                                entryLogId, pos, rc, entrySize);
+                        return;
+                    }
                 }
+
                 // process the entry
-                scanner.process(ledgerId, offset, data);
+                scanner.process(ledgerId, offset, data, entrySize);
 
                 // Advance position to the next entry
                 pos += entrySize;
@@ -1164,17 +1169,23 @@ public class DefaultEntryLogger implements EntryLogger {
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(entryLogId, new EntryLogScanner() {
             @Override
-            public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+            public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
                 if (throttler != null) {
                     throttler.acquire(entry.readableBytes());
                 }
                 // add new entry size of a ledger to entry log meta
-                meta.addLedgerSize(ledgerId, entry.readableBytes() + 4);
+                meta.addLedgerSize(ledgerId, entrySize + 4);
             }
 
             @Override
             public boolean accept(long ledgerId) {
                 return ledgerId >= 0;
+            }
+
+            @Override
+            public int getLengthToRead(){
+                // we only need to read the entry size.
+                return EntryLogScanner.READ_NOTHING;
             }
         });
 

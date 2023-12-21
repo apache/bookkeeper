@@ -184,12 +184,11 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long ledgerId, long entryStartPos, ByteBuf entry) throws IOException {
+            public void process(long ledgerId, long entryStartPos, ByteBuf entry, int entrySize) throws IOException {
                 if (!stopScanning.booleanValue()) {
                     if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
                         stopScanning.setValue(true);
                     } else {
-                        int entrySize = entry.readableBytes();
                         /**
                          * entrySize of an entry (inclusive of payload and
                          * header) value is stored as int value in log file, but
@@ -256,7 +255,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
+            public void process(long candidateLedgerId, long startPos, ByteBuf entry, int entrySize) {
                 long entrysLedgerId = entry.getLong(entry.readerIndex());
                 long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
                 if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
@@ -289,7 +288,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry) {
+            public void process(long ledgerId, long startPos, ByteBuf entry, int entrySize) {
                 FormatUtil.formatEntry(startPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
             }
         });

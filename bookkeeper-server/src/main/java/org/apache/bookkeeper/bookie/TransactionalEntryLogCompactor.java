@@ -169,7 +169,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
                     throttler.acquire(entry.readableBytes());
                     synchronized (TransactionalEntryLogCompactor.this) {
                         long lid = entry.getLong(entry.readerIndex());
@@ -315,7 +315,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
                     long lid = entry.getLong(entry.readerIndex());
                     long entryId = entry.getLong(entry.readerIndex() + 8);
                     if (lid != ledgerId || entryId < -1) {
@@ -326,6 +326,11 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                     }
                     long location = (compactionLog.getDstLogId() << 32L) | (offset + 4);
                     offsets.add(new EntryLocation(lid, entryId, location));
+                }
+
+                @Override
+                public int getLengthToRead() {
+                    return EntryLogScanner.READ_LEDGER_ENTRY_ID
                 }
             });
             LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getDstLogId());
