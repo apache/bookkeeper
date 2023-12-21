@@ -169,7 +169,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException {
+                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
                     throttler.acquire(entry.readableBytes());
                     synchronized (TransactionalEntryLogCompactor.this) {
                         long lid = entry.getLong(entry.readerIndex());

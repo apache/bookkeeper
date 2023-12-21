@@ -184,7 +184,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long ledgerId, long entryStartPos, ByteBuf entry, int entrySize) throws IOException {
+            public void process(long ledgerId, long entryStartPos, ByteBuf entry) throws IOException {
                 if (!stopScanning.booleanValue()) {
                     if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
                         stopScanning.setValue(true);
@@ -197,7 +197,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
                          * 4 (intsize of entrySize). Please check
                          * EntryLogger.scanEntryLog.
                          */
-                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
+                        long entryEndPos = entryStartPos + entry.readableBytes() + 4 - 1;
                         if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
                             FormatUtil.formatEntry(entryStartPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
                             entryFound.setValue(true);
@@ -255,7 +255,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long candidateLedgerId, long startPos, ByteBuf entry, int entrySize) {
+            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
                 long entrysLedgerId = entry.getLong(entry.readerIndex());
                 long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
                 if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
@@ -288,7 +288,7 @@ public class ReadLogCommand extends BookieCommand<ReadLogCommand.ReadLogFlags> {
             }
 
             @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry, int entrySize) {
+            public void process(long ledgerId, long startPos, ByteBuf entry) {
                 FormatUtil.formatEntry(startPos, entry, printMsg, ledgerIdFormatter, entryFormatter);
             }
         });

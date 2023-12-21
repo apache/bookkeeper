@@ -77,9 +77,8 @@ public interface EntryLogScanner {
      * @param ledgerId ledger id
      * @param offset offset of the entry
      * @param entry entry
-     * @param entrySize entry size
      */
-    default void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException{}
+    default void process(long ledgerId, long offset, ByteBuf entry) throws IOException{}
 
 
     default ReadLengthType getReadLengthType(){
