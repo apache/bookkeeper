@@ -57,6 +57,7 @@ public interface EntryLogScanner {
     /**
      * Process an entry when ReadLengthType is READ_NOTHING.
      * @param ledgerId ledger id
+     * @param offset init offset of the entry
      * @param entrySize entry size
      * @throws IOException
      */
@@ -65,7 +66,7 @@ public interface EntryLogScanner {
     /**
      * Process an entry when ReadLengthType is READ_LEDGER_ENTRY_ID_LENGTH.
      * @param ledgerId ledger id
-     * @param offset offset of the entry
+     * @param offset init offset of the entry
      * @param entrySize entry size
      * @param entryId entry id
      * @throws IOException
@@ -75,7 +76,7 @@ public interface EntryLogScanner {
     /**
      * Process an entry when ReadLengthType is READ_ALL.
      * @param ledgerId ledger id
-     * @param offset offset of the entry
+     * @param offset init offset of the entry
      * @param entry entry
      */
     default void process(long ledgerId, long offset, ByteBuf entry) throws IOException{}
