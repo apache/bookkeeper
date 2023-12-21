@@ -33,7 +33,7 @@ public interface EntryLogScanner {
         // Read nothing of the entry
         READ_NOTHING(0),
         // Read ledger id(8 byte) and entry id(8 byte) in the beginning of the entry
-        READ_LEDGER_ENTRY_ID_LENGTH(16);
+        READ_LEDGER_ENTRY_ID(16);
 
         private final int lengthToRead;
         ReadLengthType(int lengthToRead) {
@@ -77,7 +77,7 @@ public interface EntryLogScanner {
      * Process an entry when ReadLengthType is READ_ALL.
      * @param ledgerId ledger id
      * @param offset init offset of the entry
-     * @param entry entry
+     * @param entry entry, containing ledgerId(8byte), entryId(8byte),... entrySize=entry.readableBytes()
      */
     default void process(long ledgerId, long offset, ByteBuf entry) throws IOException{}
 

@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Sets;
-import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -136,7 +136,7 @@ public class LocationsIndexRebuildOp {
 
                     @Override
                     public ReadLengthType getReadLengthType() {
-                        return ReadLengthType.READ_LEDGER_ENTRY_ID_LENGTH;
+                        return ReadLengthType.READ_LEDGER_ENTRY_ID;
                     }
                 });
 

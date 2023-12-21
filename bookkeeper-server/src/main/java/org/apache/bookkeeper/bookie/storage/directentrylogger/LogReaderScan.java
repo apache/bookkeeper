@@ -60,7 +60,7 @@ class LogReaderScan {
                     case READ_NOTHING:
                         scanner.process(ledgerId, initOffset, entrySize);
                         break;
-                    case READ_LEDGER_ENTRY_ID_LENGTH:
+                    case READ_LEDGER_ENTRY_ID:
                         long entryId = reader.readLongAt(offset + Long.BYTES);
                         scanner.process(ledgerId, initOffset, entrySize, entryId);
                         break;

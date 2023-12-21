@@ -327,7 +327,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
                 @Override
                 public ReadLengthType getReadLengthType() {
-                    return ReadLengthType.READ_LEDGER_ENTRY_ID_LENGTH;
+                    return ReadLengthType.READ_LEDGER_ENTRY_ID;
                 }
             });
             LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getDstLogId());
