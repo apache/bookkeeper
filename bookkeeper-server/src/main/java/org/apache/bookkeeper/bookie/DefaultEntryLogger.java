@@ -1036,7 +1036,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 }
                 // read the entry
                 data.clear();
-                int capacity = Math.min(scanner.getLengthToRead(), entrySize);
+                int capacity = Math.min(scanner.getLengthToRead().getLengthToRead(), entrySize);
                 // skip read when scanner.getLengthToRead() == 0.
                 if (capacity > 0) {
                     data.capacity(capacity);
@@ -1183,9 +1183,9 @@ public class DefaultEntryLogger implements EntryLogger {
             }
 
             @Override
-            public int getLengthToRead(){
+            public ReadLengthType getLengthToRead(){
                 // we only need to read the entry size.
-                return EntryLogScanner.READ_NOTHING;
+                return ReadLengthType.READ_NOTHING;
             }
         });
 

@@ -27,9 +27,23 @@ import java.io.IOException;
  * Scan entries in a entry log file.
  */
 public interface EntryLogScanner {
-    public static final int READ_ALL = Integer.MAX_VALUE;
-    public static final int READ_NOTHING = 0;
-    public static final int READ_LEDGER_ENTRY_ID = 16;
+    enum ReadLengthType {
+        // Read all data of the entry
+        READ_ALL(Integer.MAX_VALUE),
+        // Read nothing of the entry
+        READ_NOTHING(0),
+        // Read ledger id(8 byte) and entry id(8 byte) in the beginning of the entry
+        READ_LEDGER_ENTRY_ID_LENGTH(16);
+
+        private final int lengthToRead;
+        ReadLengthType(int lengthToRead) {
+            this.lengthToRead = lengthToRead;
+        }
+
+        public int getLengthToRead() {
+            return lengthToRead;
+        }
+    }
 
     /**
      * Tests whether or not the entries belongs to the specified ledger
@@ -54,7 +68,7 @@ public interface EntryLogScanner {
      */
     void process(long ledgerId, long offset, ByteBuf entry, int entrySize) throws IOException;
 
-    default int getLengthToRead(){
-        return READ_ALL;
+    default ReadLengthType getLengthToRead(){
+        return ReadLengthType.READ_ALL;
     }
 }
