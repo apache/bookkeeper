@@ -29,7 +29,6 @@ import java.io.IOException;
 public interface EntryLogScanner {
     public static final int READ_ALL = Integer.MAX_VALUE;
     public static final int READ_NOTHING = 0;
-    public static final int READ_ENTRY_ID = 8;
     public static final int READ_LEDGER_ENTRY_ID = 16;
 
     /**

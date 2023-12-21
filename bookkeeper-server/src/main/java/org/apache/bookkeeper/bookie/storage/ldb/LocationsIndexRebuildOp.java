@@ -138,7 +138,7 @@ public class LocationsIndexRebuildOp {
 
                     @Override
                     public int getLengthToRead() {
-                        return EntryLogScanner.READ_ENTRY_ID;
+                        return EntryLogScanner.READ_LEDGER_ENTRY_ID;
                     }
                 });
 
