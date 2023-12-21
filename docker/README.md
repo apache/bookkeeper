@@ -118,7 +118,7 @@ docker run -it --rm \
     --network "bk_network" \
     --env BK_zkServers=test_zookeeper:2181 \
     apache/bookkeeper \
-    bookkeeper shell metaformat
+    /opt/bookkeeper/bin/bookkeeper shell metaformat
 ```
 Now we can start our Bookkeeper ensemble (e.g. with three bookies):
 ```
