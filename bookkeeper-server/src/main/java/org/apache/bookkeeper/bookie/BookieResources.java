@@ -70,6 +70,7 @@ public class BookieResources {
             .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
             .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
             .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+            .exitOnOutOfMemory(conf.exitOnOutOfMemory())
             .build();
     }
 
