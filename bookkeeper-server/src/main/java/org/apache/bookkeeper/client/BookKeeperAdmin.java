@@ -1530,6 +1530,35 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     /**
+     * Setter for inFlightReadEntryNumInLedgerChecker value in Zookeeper.
+     *
+     * @param inFlightReadEntryNumInLedgerChecker value to set
+     * @throws CompatibilityException
+     * @throws InterruptedException
+     * @throws UnavailableException
+     */
+    public void setInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNumInLedgerChecker)
+            throws CompatibilityException, InterruptedException, UnavailableException {
+        LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
+        urlManager.setInFlightReadEntryNumInLedgerChecker(inFlightReadEntryNumInLedgerChecker);
+    }
+
+    /**
+     * Returns the current inFlightReadEntryNumInLedgerChecker value in Zookeeper.
+     *
+     * @return
+     *          current inFlightReadEntryNumInLedgerChecker value
+     * @throws CompatibilityException
+     * @throws InterruptedException
+     * @throws UnavailableException
+     */
+    public int getInFlightReadEntryNumInLedgerChecker()
+            throws CompatibilityException, InterruptedException, UnavailableException {
+        LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
+        return urlManager.getInFlightReadEntryNumInLedgerChecker();
+    }
+
+    /**
      * Trigger AuditTask by resetting lostBookieRecoveryDelay to its current
      * value. If Autorecovery is not enabled or if there is no Auditor then this
      * method will throw UnavailableException.

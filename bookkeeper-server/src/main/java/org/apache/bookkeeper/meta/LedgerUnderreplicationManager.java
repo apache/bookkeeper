@@ -235,6 +235,35 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     long getReplicasCheckCTime() throws ReplicationException.UnavailableException;
 
     /**
+     * Creates the Znode for inFlightReadEntryNumInLedgerChecker with the specified value and returns true.
+     * If the node is already existing, then it returns false.
+     *
+     * @param inFlightReadEntryNumInLedgerChecker
+     * @return
+     *      true if it succeeds in creating zNode for inFlightReadEntryNumInLedgerChecker, false if it is already existing
+     * @throws ReplicationException.UnavailableException
+     */
+    boolean initializeInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNumInLedgerChecker)
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Setter for the inFlightReadEntryNumInLedgerChecker znode.
+     *
+     * @param inFlightReadEntryNumInLedgerChecker
+     * @throws ReplicationException.UnavailableException
+     */
+    void setInFlightReadEntryNumInLedgerChecker(int inFlightReadEntryNumInLedgerChecker)
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the inFlightReadEntryNumInLedgerChecker in znode.
+     *
+     * @return the int value of inFlightReadEntryNumInLedgerChecker
+     * @throws ReplicationException.UnavailableException
+     */
+    int getInFlightReadEntryNumInLedgerChecker() throws ReplicationException.UnavailableException;
+
+    /**
      * Receive notification asynchronously when the num of under-replicated ledgers  Changed.
      *
      * @param cb
