@@ -33,6 +33,7 @@ import lombok.Setter;
 @Getter
 @Builder
 public class GarbageCollectionStatus {
+    private String ledgerDir;
     // whether the GC thread is in force GC.
     private boolean forceCompacting;
     // whether the GC thread is in major compacting.
