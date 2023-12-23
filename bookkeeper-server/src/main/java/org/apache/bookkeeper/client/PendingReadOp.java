@@ -576,6 +576,14 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
         }
 
         if (isRecoveryRead) {
+            // Return BookieHandleNotAvailableException immediately if bookie is not available when recovery read.
+            // In the case of network isolation, reading a faulty bookie node will time out,
+            // which will cause a slow recovery or even timeout.
+            if (clientCtx.getBookieWatcher().isBookieUnavailable(to)) {
+                this.readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
+                        lh.ledgerId, entry.eId, null, new ReadContext(bookieIndex, to, entry));
+                return;
+            }
             int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
                     this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
