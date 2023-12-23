@@ -1063,6 +1063,8 @@ public class DefaultEntryLogger implements EntryLogger {
                         }
                         scanner.process(ledgerId, offset, data);
                         break;
+                     default:
+                         throw new IOException("Unknown read length type " + scanner.getReadLengthType());
                 }
                 // Advance position to the next entry
                 pos += entrySize;

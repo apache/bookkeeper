@@ -67,6 +67,9 @@ class LogReaderScan {
                     case READ_ALL:
                         reader.readIntoBufferAt(entry, offset, entrySize);
                         scanner.process(ledgerId, initOffset, entry);
+                        break;
+                    default:
+                        throw new IOException("Unknown read length type: " + scanner.getReadLengthType());
                 }
                 offset += entrySize;
             }
