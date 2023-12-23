@@ -25,6 +25,12 @@ import java.io.IOException;
 
 /**
  * Scan entries in a entry log file.
+ * Implementation for this interface should choose one of the following ReadLengthType:
+ * READ_ALL, READ_NOTHING, READ_LEDGER_ENTRY_ID_LENGTH. <br/>
+ * If the implementation chooses READ_ALL, it should implement {@link #process(long, long, ByteBuf)}. <br/>
+ * If the implementation chooses READ_NOTHING, it should implement {@link #process(long, long, int)}. <br/>
+ * If the implementation chooses READ_LEDGER_ENTRY_ID_LENGTH, it should implement {@link #process(long, long, int, long)}. <br/>
+ *
  */
 public interface EntryLogScanner {
     enum ReadLengthType {
@@ -61,7 +67,9 @@ public interface EntryLogScanner {
      * @param entrySize entry size
      * @throws IOException
      */
-    default void process(long ledgerId, long offset, int entrySize) throws IOException {}
+    default void process(long ledgerId, long offset, int entrySize) throws IOException {
+        throw new UnsupportedOperationException("Not implemented when ReadLengthType is READ_NOTHING");
+    }
 
     /**
      * Process an entry when ReadLengthType is READ_LEDGER_ENTRY_ID_LENGTH.
@@ -71,7 +79,9 @@ public interface EntryLogScanner {
      * @param entryId entry id
      * @throws IOException
      */
-    default void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {}
+    default void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {
+        throw new UnsupportedOperationException("Not implemented when ReadLengthType is READ_LEDGER_ENTRY_ID_LENGTH");
+    }
 
     /**
      * Process an entry when ReadLengthType is READ_ALL.
@@ -79,7 +89,9 @@ public interface EntryLogScanner {
      * @param offset init offset of the entry
      * @param entry entry, containing ledgerId(8byte), entryId(8byte),... entrySize=entry.readableBytes()
      */
-    default void process(long ledgerId, long offset, ByteBuf entry) throws IOException{}
+    default void process(long ledgerId, long offset, ByteBuf entry) throws IOException{
+        throw new UnsupportedOperationException("Not implemented when ReadLengthType is READ_ALL");
+    }
 
 
     default ReadLengthType getReadLengthType(){
