@@ -105,11 +105,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     static final int SLOW_MASK        = 0x20 << 24;
     static final int UNAVAIL_MASK     = 0x40 << 24;
     static final int MASK_BITS        = 0xFFF << 20;
+    static final String UNKNOWN_RACK = "UnknownRack";
 
     protected HashedWheelTimer timer;
     // Use a loading cache so slow bookies are expired. Use entryId as values.
     protected Cache<BookieId, Long> slowBookies;
     protected BookieNode localNode;
+    protected String myRack;
     protected boolean reorderReadsRandom = false;
     protected boolean enforceDurability = false;
     protected int stabilizePeriodSeconds = 0;
@@ -257,7 +259,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         LOG.info("Initialize rackaware ensemble placement policy @ {} @ {} : {}.",
                 localNode, null == localNode ? "Unknown" : localNode.getNetworkLocation(),
                 dnsResolver.getClass().getName());
-
+        myRack = getLocalRack(localNode);
         this.isWeighted = isWeighted;
         if (this.isWeighted) {
             this.maxWeightMultiple = maxWeightMultiple;
@@ -856,10 +858,12 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             DistributionSchedule.WriteSet writeSet) {
         Map<Integer, String> writeSetWithRegion = new HashMap<>();
         for (int i = 0; i < writeSet.size(); i++) {
-            writeSetWithRegion.put(writeSet.get(i), "");
+            int idx = writeSet.get(i);
+            writeSetWithRegion.put(idx, resolveNetworkLocation(ensemble.get(idx)));
         }
         return reorderReadSequenceWithRegion(
-            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
+            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, true,
+            myRack, writeSet.size());
     }
 
     /**
@@ -899,7 +903,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         boolean regionAware,
         String myRegion,
         int remoteNodeInReorderSequence) {
-        boolean useRegionAware = regionAware && (!myRegion.equals(UNKNOWN_REGION));
+        boolean useRegionAware = regionAware && !UNKNOWN_REGION.equals(myRegion) && !UNKNOWN_RACK.equals(myRegion);
         int ensembleSize = ensemble.size();
 
         // For rack aware, If all the bookies in the write set are available, simply return the original write set,
@@ -991,7 +995,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     long slowIdx = numPendingReqs * ensembleSize + idx;
                     writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);
                 } else {
-                    if (useRegionAware && !myRegion.equals(region)) {
+                    if (useRegionAware && !region.equals(myRegion)) {
                         writeSet.set(i, idx | REMOTE_MASK);
                     } else {
                         writeSet.set(i, idx | LOCAL_MASK);
@@ -1000,7 +1004,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             } else {
                 // use bookies with earlier failed entryIds first
                 long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
-                if (useRegionAware && !myRegion.equals(region)) {
+                if (useRegionAware && !region.equals(myRegion)) {
                     writeSet.set(i, (int) (failIdx & ~MASK_BITS) | REMOTE_FAIL_MASK);
                 } else {
                     writeSet.set(i, (int) (failIdx & ~MASK_BITS) | LOCAL_FAIL_MASK);
@@ -1358,5 +1362,12 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
         }
         throw new BKNotEnoughBookiesException();
+    }
+
+    protected String getLocalRack(BookieNode node) {
+        if (null == node || null == node.getAddr()) {
+            return UNKNOWN_RACK;
+        }
+        return node.getNetworkLocation();
     }
 }
