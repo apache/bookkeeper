@@ -238,10 +238,10 @@ jobs:
         run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Run metadata driver tests
-        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DfailIfNoTests -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Run all integration tests
-        run: mvn -B -nsu -f tests/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu -f tests/pom.xml test -DfailIfNoTests -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
@@ -285,14 +285,14 @@ jobs:
         run: mvn -B -nsu clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Test current server with old clients
-        run: mvn -B -nsu -DintegrationTests -pl :backward-compat-current-server-old-clients test
+        run: mvn -B -nsu -DfailIfNoTests -DintegrationTests -pl :backward-compat-current-server-old-clients test
 
       - name: Test progressive upgrade
-        run: mvn -B -nsu -DintegrationTests -pl :upgrade test
+        run: mvn -B -nsu -DfailIfNoTests -DintegrationTests -pl :upgrade test
 
       - name: Other tests
         run: |
-          mvn -B -nsu -DintegrationTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
+          mvn -B -nsu -DfailIfNoTests -DintegrationTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
 
   windows-build:
     name: Build with windows on JDK 11
