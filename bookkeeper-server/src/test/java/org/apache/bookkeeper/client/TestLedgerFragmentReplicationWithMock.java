@@ -58,7 +58,8 @@ public class TestLedgerFragmentReplicationWithMock {
         BookieClientImpl bookieClient = Mockito.mock(BookieClientImpl.class);
         doAnswer(invocationOnMock -> {
             ByteBuf toSend = invocationOnMock.getArgument(4);
-            BookieProtoEncoding.RequestEnDeCoderPreV3 deCoderPreV3 = new BookieProtoEncoding.RequestEnDeCoderPreV3(null);
+            BookieProtoEncoding.RequestEnDeCoderPreV3 deCoderPreV3 =
+                new BookieProtoEncoding.RequestEnDeCoderPreV3(null);
             toSend.readerIndex(4);
             BookieProtocol.ParsedAddRequest request = (BookieProtocol.ParsedAddRequest) deCoderPreV3.decode(toSend);
 
@@ -68,7 +69,8 @@ public class TestLedgerFragmentReplicationWithMock {
             assertEquals(flag, BookieProtocol.FLAG_RECOVERY_ADD);
             latch.countDown();
             return null;
-        }).when(bookieClient).addEntry(any(), anyLong(), any(), anyLong(), any(), any(), any(), anyInt(), anyBoolean(), any());
+        }).when(bookieClient)
+            .addEntry(any(), anyLong(), any(), anyLong(), any(), any(), any(), anyInt(), anyBoolean(), any());
 
         BookKeeper bkc = Mockito.mock(BookKeeper.class);
         when(bkc.getBookieClient()).thenReturn(bookieClient);
