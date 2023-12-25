@@ -618,10 +618,16 @@ public class Auditor implements AutoCloseable {
             if (ownBkc) {
                 bkc.close();
             }
+            if (ledgerManager != null) {
+                ledgerManager.close();
+            }
+            if (ledgerUnderreplicationManager != null) {
+                ledgerUnderreplicationManager.close();
+            }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted while shutting down auditor bookie", ie);
-        } catch (BKException bke) {
+        } catch (UnavailableException | IOException | BKException bke) {
             LOG.warn("Exception while shutting down auditor bookie", bke);
         }
     }
