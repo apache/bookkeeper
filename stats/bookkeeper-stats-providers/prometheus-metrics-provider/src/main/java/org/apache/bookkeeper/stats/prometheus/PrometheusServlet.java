@@ -17,6 +17,8 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.exporter.common.TextFormat;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.Writer;
 import javax.servlet.ServletException;
@@ -40,10 +42,15 @@ public class PrometheusServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType(TextFormat.CONTENT_TYPE_004);
+        String m_regex = req.getParameter("m_regex");
 
         Writer writer = resp.getWriter();
         try {
-            provider.writeAllMetrics(writer);
+            if (StringUtils.isNotBlank(m_regex)) {
+                provider.writeAllMetrics(writer, m_regex);
+            } else {
+                provider.writeAllMetrics(writer);
+            }
             writer.flush();
         } finally {
             writer.close();

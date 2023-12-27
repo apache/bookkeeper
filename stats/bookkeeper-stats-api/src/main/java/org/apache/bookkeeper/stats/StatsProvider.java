@@ -48,6 +48,16 @@ public interface StatsProvider {
     }
 
     /**
+     *
+     * @param writer
+     * @param filterRegexStr
+     * @throws IOException
+     */
+    default void writeAllMetrics(Writer writer, String filterRegexStr) throws IOException {
+        throw new UnsupportedOperationException("writeAllMetrics is not implemented yet");
+    }
+
+    /**
      * Return the stats logger to a given <i>scope</i>.
      * @param scope
      *          Scope for the given stats

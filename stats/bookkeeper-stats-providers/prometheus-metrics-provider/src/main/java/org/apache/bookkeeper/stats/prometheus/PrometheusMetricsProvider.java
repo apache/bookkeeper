@@ -179,11 +179,27 @@ public class PrometheusMetricsProvider implements StatsProvider {
     public void writeAllMetrics(Writer writer) throws IOException {
         PrometheusTextFormat prometheusTextFormat = new PrometheusTextFormat();
         PrometheusTextFormat.writeMetricsCollectedByPrometheusClient(writer, registry);
-
         gauges.forEach((sc, gauge) -> prometheusTextFormat.writeGauge(writer, sc.getScope(), gauge));
         counters.forEach((sc, counter) -> prometheusTextFormat.writeCounter(writer, sc.getScope(), counter));
         opStats.forEach((sc, opStatLogger) ->
                 prometheusTextFormat.writeOpStat(writer, sc.getScope(), opStatLogger));
+    }
+
+    @Override
+    public void writeAllMetrics(Writer writer, String filterRegexStr) throws IOException {
+        PrometheusTextFormat prometheusTextFormat = new PrometheusTextFormat();
+        PrometheusTextFormat.writeMetricsCollectedByPrometheusClient(writer, registry);
+        gauges.entrySet().stream()
+                .filter(entry -> entry.getKey().getScope().matches(filterRegexStr))
+                .forEach(entry -> prometheusTextFormat.writeGauge(writer, entry.getKey().getScope(), entry.getValue()));
+
+        counters.entrySet().stream()
+                .filter(entry -> entry.getKey().getScope().matches(filterRegexStr))
+                .forEach(entry -> prometheusTextFormat.writeCounter(writer, entry.getKey().getScope(), entry.getValue()));
+
+        opStats.entrySet().stream()
+                .filter(entry -> entry.getKey().getScope().matches(filterRegexStr))
+                .forEach(entry -> prometheusTextFormat.writeOpStat(writer, entry.getKey().getScope(), entry.getValue()));
     }
 
     @Override
