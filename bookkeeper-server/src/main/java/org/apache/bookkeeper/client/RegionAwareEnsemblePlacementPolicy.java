@@ -134,7 +134,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             topology.add(node);
             knownBookies.put(addr, node);
             historyBookies.put(addr, node);
-            String region = getLocalRegion(node);
+            String region = parseBookieRegion(addr);
+            address2Region.put(addr, region);
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
