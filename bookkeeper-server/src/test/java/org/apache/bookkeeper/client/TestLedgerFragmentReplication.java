@@ -263,6 +263,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         testSplitIntoSubFragments(22, 103, 11, 8, lh);
         testSplitIntoSubFragments(49, 51, 1, 3, lh);
         testSplitIntoSubFragments(11, 101, 3, 31, lh);
+        testSplitIntoSubFragments(0, -1, 1, 1, lh);
+        testSplitIntoSubFragments(0, -1, 10, 1, lh);
     }
 
     /**
@@ -272,17 +274,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             final long oriFragmentLastEntry, long entriesPerSubFragment,
             long expectedSubFragments, LedgerHandle lh) {
         LedgerFragment fr = new LedgerFragment(lh, oriFragmentFirstEntry,
-                oriFragmentLastEntry, Sets.newHashSet(0)) {
-            @Override
-            public long getLastStoredEntryId() {
-                return oriFragmentLastEntry;
-            }
-
-            @Override
-            public long getFirstStoredEntryId() {
-                return oriFragmentFirstEntry;
-            }
-        };
+                oriFragmentLastEntry, Sets.newHashSet(0));
         Set<LedgerFragment> subFragments = LedgerFragmentReplicator
                 .splitIntoSubFragments(lh, fr, entriesPerSubFragment);
         assertEquals(expectedSubFragments, subFragments.size());

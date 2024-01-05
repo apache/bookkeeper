@@ -122,13 +122,15 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
         }
 
         if (channel.isActive()) {
-            ChannelPromise promise = channel.voidPromise();
+            final ChannelPromise promise;
             if (logger.isDebugEnabled()) {
                 promise = channel.newPromise().addListener(future -> {
                     if (!future.isSuccess()) {
                         logger.debug("Netty channel write exception. ", future.cause());
                     }
                 });
+            } else {
+                promise = channel.voidPromise();
             }
             channel.writeAndFlush(response, promise);
         } else {

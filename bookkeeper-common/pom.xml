@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.17.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-common</artifactId>
   <name>Apache BookKeeper :: Common</name>

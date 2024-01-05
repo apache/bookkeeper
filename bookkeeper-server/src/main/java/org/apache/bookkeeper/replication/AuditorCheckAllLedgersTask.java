@@ -94,6 +94,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
     protected void runTask() {
         if (hasBookieCheckTask()) {
             LOG.info("Audit bookie task already scheduled; skipping periodic all ledgers check task");
+            auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
 
@@ -102,6 +103,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         try {
             if (!isLedgerReplicationEnabled()) {
                 LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                checkSuccess = true;
                 return;
             }
 

@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
+import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
@@ -30,10 +31,10 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 public class BufferPool implements AutoCloseable {
     private final ArrayBlockingQueue<Buffer> pool;
 
-    BufferPool(NativeIO nativeIO, int bufferSize, int maxPoolSize) throws IOException {
+    BufferPool(NativeIO nativeIO, ByteBufAllocator allocator, int bufferSize, int maxPoolSize) throws IOException {
         pool = new ArrayBlockingQueue<>(maxPoolSize);
         for (int i = 0; i < maxPoolSize; i++) {
-            pool.add(new Buffer(nativeIO, bufferSize));
+            pool.add(new Buffer(nativeIO, allocator, bufferSize));
         }
     }
 

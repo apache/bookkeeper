@@ -41,7 +41,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
@@ -227,7 +226,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
          * The last mark should first be max journal log id,
          * and then max log position in max journal log.
          */
-        void readLog() {
+        public void readLog() {
             byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             LogMark mark = new LogMark();
@@ -422,6 +421,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         private void recycle() {
             logFile = null;
+            flushed = false;
             if (forceWriteWaiters != null) {
                 forceWriteWaiters.recycle();
                 forceWriteWaiters = null;
@@ -552,18 +552,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             running = false;
             this.interrupt();
             this.join();
-        }
-    }
-
-    private static class CbThreadFactory implements ThreadFactory {
-        private int counter = 0;
-        private String threadBaseName = "bookie-journal-callback";
-
-        public Thread newThread(Runnable r) {
-            int threadOrdinal = counter++;
-            Thread t = new Thread(r, threadBaseName + "-" + threadOrdinal);
-            ThreadRegistry.register(threadBaseName, threadOrdinal, t.getId());
-            return t;
         }
     }
 
@@ -804,13 +792,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Scan the journal.
      *
-     * @param journalId Journal Log Id
-     * @param journalPos Offset to start scanning
-     * @param scanner Scanner to handle entries
+     * @param journalId         Journal Log Id
+     * @param journalPos        Offset to start scanning
+     * @param scanner           Scanner to handle entries
+     * @param skipInvalidRecord when invalid record,should we skip it or not
      * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner, boolean skipInvalidRecord)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -872,6 +861,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (!isPaddingRecord) {
                     scanner.process(journalVersion, offset, recBuff);
                 }
+            }
+            return recLog.fc.position();
+        } catch (IOException e) {
+            if (skipInvalidRecord) {
+                LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
+            } else {
+                throw e;
             }
             return recLog.fc.position();
         } finally {
@@ -1037,15 +1033,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (localQueueEntriesLen > 0) {
                         qe = localQueueEntries[localQueueEntriesIdx];
                         localQueueEntries[localQueueEntriesIdx++] = null;
-                        journalStats.getJournalQueueSize().dec();
-                        journalStats.getJournalQueueStats()
-                                .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                     }
-                } else {
-                    journalStats.getJournalQueueSize().dec();
-                    journalStats.getJournalQueueStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
                 }
+
                 if (numEntriesToFlush > 0) {
                     boolean shouldFlush = false;
                     // We should issue a forceWrite if any of the three conditions below holds good
@@ -1165,6 +1155,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (qe == null) { // no more queue entry
                     continue;
                 }
+
+                journalStats.getJournalQueueSize().dec();
+                journalStats.getJournalQueueStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime), TimeUnit.NANOSECONDS);
+
                 if ((qe.entryId == BookieImpl.METAENTRY_ID_LEDGER_EXPLICITLAC)
                         && (journalFormatVersionToWrite < JournalChannel.V6)) {
                     /*

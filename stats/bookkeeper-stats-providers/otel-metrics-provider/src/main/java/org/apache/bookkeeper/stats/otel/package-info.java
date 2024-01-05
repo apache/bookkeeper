@@ -14,26 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats.prometheus;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import org.junit.Assert;
-import org.junit.Test;
-
 /**
- * Test for {@link PrometheusTextFormat}.
+ * A stats provider implementation based on OpenTelemetry.
  */
-public class PrometheusTextFormatTest {
-
-    @Test
-    public void testPrometheusTypeDuplicate() throws IOException {
-        PrometheusTextFormat prometheusTextFormat = new PrometheusTextFormat();
-        StringWriter writer = new StringWriter();
-        prometheusTextFormat.writeType(writer, "counter", "gauge");
-        prometheusTextFormat.writeType(writer, "counter", "gauge");
-        String string = writer.toString();
-        Assert.assertEquals("# TYPE counter gauge\n", string);
-    }
-
-}
+package org.apache.bookkeeper.stats.otel;

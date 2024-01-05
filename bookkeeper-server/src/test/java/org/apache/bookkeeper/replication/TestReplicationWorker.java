@@ -1159,6 +1159,33 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testReplicateEmptyOpenStateLedger() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, 2, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        assertFalse(lh.getLedgerMetadata().isClosed());
+
+        List<BookieId> firstEnsemble = lh.getLedgerMetadata().getAllEnsembles().firstEntry().getValue();
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue();
+        killBookie(ensemble.get(1));
+
+        startNewBookie();
+        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30));
+        ReplicationWorker replicationWorker = new ReplicationWorker(baseConf);
+        replicationWorker.start();
+
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(), ensemble.get(1).toString());
+            Awaitility.waitAtMost(60, TimeUnit.SECONDS).untilAsserted(() ->
+                assertFalse(ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath))
+            );
+
+            LedgerHandle lh1 = bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32, TESTPASSWD);
+            assertTrue(lh1.getLedgerMetadata().isClosed());
+        } finally {
+            replicationWorker.shutdown();
+        }
+    }
+
+    @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
         testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class, null);
     }
@@ -1219,6 +1246,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         baseClientConf.setProperty("reppDnsResolverClass", StaticDNSResolver.class.getName());
         baseClientConf.setProperty("enforceStrictZoneawarePlacement", false);
+        bkc.close();
         bkc = new BookKeeperTestClient(baseClientConf) {
             @Override
             protected EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -1330,6 +1358,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         if (checkReplicationStats == null) {
             rw.shutdown();
         }
+        baseConf.setRepairedPlacementPolicyNotAdheringBookieEnable(false);
+        bookKeeper.close();
     }
 
     private EnsemblePlacementPolicy buildRackAwareEnsemblePlacementPolicy(List<BookieId> bookieIds) {

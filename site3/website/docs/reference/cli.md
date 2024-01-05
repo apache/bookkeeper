@@ -14,7 +14,6 @@ Manages bookies.
 | `BOOKIE_LOG_CONF`        | The Log4j configuration file.                                                                        | `${bookkeeperHome}/bookkeeper-server/conf/log4j2.xml`     | 
 | `BOOKIE_CONF`            | The configuration file for the bookie.                                                               | `${bookkeeperHome}/bookkeeper-server/conf/bk_server.conf` | 
 | `BOOKIE_EXTRA_CLASSPATH` | Extra paths to add to BookKeeper's [classpath](https://en.wikipedia.org/wiki/Classpath_(Java)).      |                                                           | 
-| `ENTRY_FORMATTER_CLASS`  | The entry formatter class used to format entries.                                                    |                                                           | 
 | `BOOKIE_PID_DIR`         | The directory where the bookie server PID file is stored.                                            |                                                           | 
 | `BOOKIE_STOP_TIMEOUT`    | The wait time before forcefully killing the bookie server instance if stopping it is not successful. |                                                           | 
 

@@ -1,6 +1,6 @@
 ---
 id: overview
-title: Apache BookKeeper 4.14.7
+title: Apache BookKeeper 4.16.3-SNAPSHOT
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -21,7 +21,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version 4.14.7.
+This documentation is for Apache BookKeeper&trade; version 4.16.3.
 
 Apache BookKeeper&trade; is a scalable, fault-tolerant, low-latency storage service optimized for real-time workloads. It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
@@ -32,13 +32,14 @@ Use case | Example
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | The HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | Twitter [Manhattan](https://blog.twitter.com/engineering/en_us/a/2016/strong-consistency-in-manhattan.html)
 [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | [HerdDB](https://github.com/diennea/herddb)
-Message storage | [Apache Pulsar](http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage)
-Offset/cursor storage | [Apache Pulsar](http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage)
+[WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | [Pravega](https://github.com/pravega/pravega)
+Message storage | [Apache Pulsar](https://pulsar.apache.org/docs/concepts-architecture-overview#persistent-storage)
+Offset/cursor storage | [Apache Pulsar](https://pulsar.apache.org/docs/concepts-architecture-overview#persistent-storage)
 Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Storing snapshots to replicated state machines
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
-- [Apache BookKeeper 4.14.7 Release Notes](/release-notes#4147)
+- [Apache BookKeeper 4.16.3 Release Notes](/release-notes#4163)
 - [Java API docs]({{ site.javadoc_base_url }})
 
 Or start [using](../getting-started/installation) Apache BookKeeper today.

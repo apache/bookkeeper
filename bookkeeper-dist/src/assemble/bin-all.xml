@@ -64,7 +64,7 @@
         <include>javax.servlet-api-4.0.0/CDDL+GPL-1.1</include>
         <include>bouncycastle-1.0.2.3/LICENSE.html</include>
         <include>jsr-305/LICENSE</include>
-        <include>netty-4.1.89.Final/*</include>
+        <include>netty/*</include>
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>

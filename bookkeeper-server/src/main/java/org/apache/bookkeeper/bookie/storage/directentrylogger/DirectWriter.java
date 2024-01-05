@@ -45,6 +45,7 @@ class DirectWriter implements LogWriter {
     final ExecutorService writeExecutor;
     final Object bufferLock = new Object();
     final List<Future<?>> outstandingWrites = new ArrayList<Future<?>>();
+    final Slogger slog;
     Buffer nativeBuffer;
     long offset;
     private static volatile boolean useFallocate = true;
@@ -60,6 +61,7 @@ class DirectWriter implements LogWriter {
         this.filename = filename;
         this.writeExecutor = writeExecutor;
         this.nativeIO = nativeIO;
+        this.slog = slog.ctx(DirectWriter.class);
 
         offset = 0;
 
@@ -76,7 +78,7 @@ class DirectWriter implements LogWriter {
         if (useFallocate) {
             if (!SystemUtils.IS_OS_LINUX) {
                 disableUseFallocate();
-                slog.warn(Events.FALLOCATE_NOT_AVAILABLE);
+                this.slog.warn(Events.FALLOCATE_NOT_AVAILABLE);
             } else {
                 try {
                     int ret = nativeIO.fallocate(fd, NativeIO.FALLOC_FL_ZERO_RANGE, 0, maxFileSize);
@@ -85,7 +87,7 @@ class DirectWriter implements LogWriter {
                     // fallocate(2) is not supported on all filesystems.  Since this is an optimization, disable
                     // subsequent usage instead of failing the operation.
                     disableUseFallocate();
-                    slog.kv("message", ex.getMessage())
+                    this.slog.kv("message", ex.getMessage())
                         .kv("file", filename)
                         .kv("errno", ex.getErrno())
                         .warn(Events.FALLOCATE_NOT_AVAILABLE);
@@ -233,10 +235,11 @@ class DirectWriter implements LogWriter {
             throw new IOException(exMsg(ne.getMessage())
                                   .kv("file", filename)
                                   .kv("errno", ne.getErrno()).toString());
-        }
-        synchronized (bufferLock) {
-            bufferPool.release(nativeBuffer);
-            nativeBuffer = null;
+        } finally {
+            synchronized (bufferLock) {
+                bufferPool.release(nativeBuffer);
+                nativeBuffer = null;
+            }
         }
     }
 

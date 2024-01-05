@@ -7,8 +7,8 @@ const baseUrl = process.env.BASE_URL || "/"
 const deployUrl = process.env.DEPLOY_URL || "https://bookkeeper.apache.org";
 const variables = {
   /** They are used in .md files*/
-  latest_release: "4.15.3",
-  stable_release: "4.14.7",
+  latest_release: "4.16.3",
+  stable_release: "4.14.8",
   github_repo: "https://github.com/apache/bookkeeper",
   github_master: "https://github.com/apache/bookkeeper/tree/master",
   mirror_base_url: "https://www.apache.org/dyn/closer.lua/bookkeeper",

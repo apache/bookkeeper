@@ -20,17 +20,26 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.assertEntryEquals;
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -888,6 +897,29 @@ public class DefaultEntryLogTest {
         Assert.assertEquals("EntryId", 1L, readEntryId);
     }
 
+    @Test
+    public void testReadEntryWithoutLedgerID() throws Exception {
+        List<Long> locations = new ArrayList<>();
+        // `+ 1` is not a typo: create one more log file than the max number of o cached readers
+        for (int i = 0; i < 10; i++) {
+            ByteBuf e = makeEntry(1L, i, 100);
+            long loc = entryLogger.addEntry(1L, e.slice());
+            locations.add(loc);
+        }
+        entryLogger.flush();
+        for (Long loc : locations) {
+            int i = locations.indexOf(loc);
+            ByteBuf data = entryLogger.readEntry(loc);
+            assertEntryEquals(data, makeEntry(1L, i, 100));
+            long readLedgerId = data.readLong();
+            long readEntryId = data.readLong();
+            Assert.assertEquals("LedgerId", 1L, readLedgerId);
+            Assert.assertEquals("EntryId", i, readEntryId);
+            ReferenceCountUtil.release(data);
+        }
+    }
+
+
     /*
      * tests basic logic of EntryLogManager interface for
      * EntryLogManagerForEntryLogPerLedger.
@@ -1432,6 +1464,21 @@ public class DefaultEntryLogTest {
             BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
             Assert.assertEquals("unpersistedBytes should be 0", 0L, logChannel.getUnpersistedBytes());
         }
+    }
+
+    @Test
+    public void testSingleEntryLogCreateNewLog() throws Exception {
+        Assert.assertTrue(entryLogger.getEntryLogManager() instanceof EntryLogManagerForSingleEntryLog);
+        EntryLogManagerForSingleEntryLog singleEntryLog =
+                (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
+        EntryLogManagerForSingleEntryLog mockSingleEntryLog = spy(singleEntryLog);
+        BufferedLogChannel activeLogChannel = mockSingleEntryLog.getCurrentLogForLedgerForAddEntry(1, 1024, true);
+        Assert.assertTrue(activeLogChannel != null);
+
+        verify(mockSingleEntryLog, times(1)).createNewLog(anyLong(), anyString());
+        // `readEntryLogHardLimit` and `reachEntryLogLimit` should not call if new create log
+        verify(mockSingleEntryLog, times(0)).reachEntryLogLimit(any(), anyLong());
+        verify(mockSingleEntryLog, times(0)).readEntryLogHardLimit(any(), anyLong());
     }
 
     /*

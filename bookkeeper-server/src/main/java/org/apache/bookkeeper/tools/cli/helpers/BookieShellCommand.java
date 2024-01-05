@@ -23,6 +23,7 @@ import org.apache.bookkeeper.bookie.BookieShell.Command;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This is a util class that converts new cli command to old shell command.
@@ -52,7 +53,8 @@ public class BookieShellCommand<CliFlagsT extends CliFlags> implements Command {
 
     @Override
     public String description() {
-        return shellCmdName + " [options]";
+        // format as org.apache.bookkeeper.bookie.BookieShell.MyCommand.description
+        return StringUtils.isBlank(bkCmd.getUsage()) ? shellCmdName + " [options]" : bkCmd.getUsage();
     }
 
     @Override

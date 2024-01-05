@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM maven:3.8.6-eclipse-temurin-8
+FROM --platform=linux/amd64 maven:3.9.0-eclipse-temurin-8
 
 RUN apt-get update
 RUN apt-get install -y g++ cmake gnupg2 vim subversion

@@ -251,6 +251,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Statistics Parameters
     protected static final String ENABLE_STATISTICS = "enableStatistics";
     protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
+    protected static final String SANITY_CHECK_METRICS_ENABLED = "sanityCheckMetricsEnabled";
 
 
     // Rx adaptive ByteBuf allocator parameters
@@ -337,6 +338,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
+
+    protected static final String MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH =
+        "maxOperationNumbersInSingleRocksdbWriteBatch";
+
+    protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
 
     /**
      * Construct a default configuration object.
@@ -3143,6 +3149,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+
+    /**
+     * Flag to enable sanity check metrics in bookie stats. Defaults to false/disabled.
+     *
+     * @return true, if bookie collects sanity check metrics in stats
+     */
+    public boolean isSanityCheckMetricsEnabled() {
+        return getBoolean(SANITY_CHECK_METRICS_ENABLED, false);
+    }
+
+    /**
+     * Enable sanity check metrics in bookie stats.
+     *
+     * @param sanityCheckMetricsEnabled
+     *          flag to enable sanity check metrics
+     * @return server configuration
+     */
+    public ServerConfiguration setSanityCheckMetricsEnabled(boolean sanityCheckMetricsEnabled) {
+        setProperty(SANITY_CHECK_METRICS_ENABLED, sanityCheckMetricsEnabled);
+        return this;
+    }
+
     /**
      * Validate the configuration.
      * @throws ConfigurationException
@@ -3987,6 +4015,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
     }
 
+
+    /**
+     * When this config is set to true,if we replay journal failed, we will skip.
+     * @param skipReplayJournalInvalidRecord
+     * @return
+     */
+    public ServerConfiguration setSkipReplayJournalInvalidRecord(boolean skipReplayJournalInvalidRecord) {
+        this.setProperty(SKIP_REPLAY_JOURNAL_INVALID_RECORD,
+                Boolean.toString(skipReplayJournalInvalidRecord));
+        return this;
+    }
+
+    /**
+     * @see #isSkipReplayJournalInvalidRecord .
+     */
+    public boolean isSkipReplayJournalInvalidRecord() {
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
+    }
+
     /**
      * Get default rocksdb conf.
      *
@@ -4057,5 +4104,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setLedgerMetadataRocksdbConf(String ledgerMetadataRocksdbConf) {
         this.setProperty(LEDGER_METADATA_ROCKSDB_CONF, ledgerMetadataRocksdbConf);
         return this;
+    }
+
+    /**
+     * Set the max operation numbers in a single rocksdb write batch.
+     * The rocksdb write batch is related to the memory usage. If the batch is too large, it will cause the OOM.
+     *
+     * @param maxNumbersInSingleRocksDBBatch
+     * @return
+     */
+    public ServerConfiguration setOperationMaxNumbersInSingleRocksDBWriteBatch(int maxNumbersInSingleRocksDBBatch) {
+        this.setProperty(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, maxNumbersInSingleRocksDBBatch);
+        return this;
+    }
+
+    /**
+     * Get the max operation numbers in a single rocksdb write batch.
+     *
+     * @return
+     */
+    public int getMaxOperationNumbersInSingleRocksDBBatch() {
+        return getInt(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, 100000);
     }
 }
