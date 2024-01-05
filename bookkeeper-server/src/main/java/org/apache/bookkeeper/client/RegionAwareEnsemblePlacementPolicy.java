@@ -392,9 +392,20 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
                 int startRegionIndex = lastRegionIndex % numRegionsAvailable;
+                int localRegionIndex = -1;
+                if (myRegion != null && !UNKNOWN_REGION.equals(myRegion)) {
+                    localRegionIndex = availableRegions.indexOf(myRegion);
+                }
+                String region = myRegion;
                 for (int i = 0; i < numRegionsAvailable; ++i) {
-                    String region = availableRegions.get(startRegionIndex % numRegionsAvailable);
-                    startRegionIndex++;
+                    // select the local region first, and for the rest region select, use round-robin selection.
+                    if (i > 0 || localRegionIndex == -1) {
+                        if (startRegionIndex % numRegionsAvailable == localRegionIndex) {
+                            startRegionIndex++;
+                        }
+                        region = availableRegions.get(startRegionIndex % numRegionsAvailable);
+                        startRegionIndex++;
+                    }
                     final Pair<Integer, Integer> currentAllocation = regionsWiseAllocation.get(region);
                     TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(region);
                     if (!regionsReachedMaxAllocation.contains(region)) {
