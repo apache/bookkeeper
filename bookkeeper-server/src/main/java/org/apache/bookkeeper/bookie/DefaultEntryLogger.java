@@ -684,7 +684,7 @@ public class DefaultEntryLogger implements EntryLogger {
     private void removeCurCompactionLog() {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
-                if (!compactionLogChannel.getLogFile().delete()) {
+                if (compactionLogChannel.getLogFile().exists() && !compactionLogChannel.getLogFile().delete()) {
                     LOG.warn("Could not delete compaction log file {}", compactionLogChannel.getLogFile());
                 }
 
