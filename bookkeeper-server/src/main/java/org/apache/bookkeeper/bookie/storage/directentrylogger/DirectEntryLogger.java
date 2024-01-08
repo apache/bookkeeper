@@ -252,6 +252,7 @@ public class DirectEntryLogger implements EntryLogger {
                 long thisEntryId = buf.getLong(8);
                 if (thisLedgerId != ledgerId
                     || thisEntryId != entryId) {
+                    ReferenceCountUtil.release(buf);
                     throw new IOException(
                             exMsg("Bad location").kv("location", location)
                             .kv("expectedLedger", ledgerId).kv("expectedEntry", entryId)
