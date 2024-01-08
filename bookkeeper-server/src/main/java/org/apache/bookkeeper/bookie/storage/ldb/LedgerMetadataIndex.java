@@ -305,6 +305,10 @@ public class LedgerMetadataIndex implements Closeable {
      * Flushes all pending changes.
      */
     public void flush() throws IOException {
+        if (pendingLedgersUpdates.isEmpty()) {
+            return;
+        }
+
         LongWrapper key = LongWrapper.get();
 
         try {
@@ -328,6 +332,10 @@ public class LedgerMetadataIndex implements Closeable {
     }
 
     public void removeDeletedLedgers() throws IOException {
+        if (pendingDeletedLedgers.isEmpty()) {
+            return;
+        }
+
         LongWrapper key = LongWrapper.get();
 
         try {
