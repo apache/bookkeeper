@@ -22,12 +22,18 @@ package org.apache.bookkeeper.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class for creating hardlinks.
@@ -42,7 +48,7 @@ import java.util.Arrays;
  * efficient - and minimizes the impact of the extra buffer creations.
  */
 public class HardLink {
-
+  private static final Logger LOG = LoggerFactory.getLogger(HardLink.class);
   /**
    * OS Types.
    */
@@ -395,11 +401,18 @@ public class HardLink {
     return getHardLinkCommand.getMaxAllowedCmdArgLength();
   }
 
+  private static final AtomicBoolean CREATE_LINK_SUPPORTED = new AtomicBoolean(true);
+
   /*
    * ****************************************************
    * Complexity is above.  User-visible functionality is below
    * ****************************************************
    */
+
+  @VisibleForTesting
+  static void enableJdkLinkApi(boolean enable) {
+    CREATE_LINK_SUPPORTED.set(enable);
+  }
 
   /**
    * Creates a hardlink.
@@ -416,6 +429,23 @@ public class HardLink {
       throw new IOException(
           "invalid arguments to createHardLink: link name is null");
     }
+
+    // if createLink available try first, else fall back to shell command.
+    if (CREATE_LINK_SUPPORTED.get()) {
+      try {
+        Path newFile = Files.createLink(linkName.toPath(), file.toPath());
+        if (newFile.toFile().exists()) {
+          return;
+        }
+      } catch (UnsupportedOperationException e) {
+        LOG.error("createLink not supported", e);
+        CREATE_LINK_SUPPORTED.set(false);
+      } catch (IOException e) {
+        LOG.error("error when create hard link use createLink", e);
+        CREATE_LINK_SUPPORTED.set(false);
+      }
+    }
+
     // construct and execute shell command
     String[] hardLinkCommand = getHardLinkCommand.linkOne(file, linkName);
     Process process = Runtime.getRuntime().exec(hardLinkCommand);
