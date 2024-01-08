@@ -585,6 +585,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../LedgerFragmentReplicator.html#recoverLedgerFragmentEntry(java.lang.Long,org.apache.bookkeeper.client.LedgerHandle,org.apache.zookeeper.AsyncCallback.VoidCallback,java.util.Set,java.util.function.BiConsumer)">recoverLedgerFragmentEntry</a></span>&#8203;(java.lang.Long&nbsp;entryId,
+                          <a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                          org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentEntryMcb,
+                          java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;newBookies,
+                          java.util.function.BiConsumer&lt;java.lang.Long,&#8203;java.lang.Long&gt;&nbsp;onReadEntryFailureCallback)</code></th>
+<td class="colLast">
+<div class="block">This method asynchronously recovers a specific ledger entry by reading
+ the values via the BookKeeper Client (which would read it from the other
+ replicas) and then writing it to the chosen new bookie.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../LedgerFragmentReplicator.html#replicate(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,org.apache.zookeeper.AsyncCallback.VoidCallback,java.util.Set,java.util.function.BiConsumer)">replicate</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
          <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
          org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentMcb,
@@ -595,7 +608,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  a ledger that was stored in an ensemble that included the failed bookie.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#replicateLedgerFragment(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,java.util.function.BiConsumer)">replicateLedgerFragment</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
@@ -604,12 +617,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SyncCounter.</span><code><span class="memberNameLink"><a href="../SyncCounter.html#setLh(org.apache.bookkeeper.client.LedgerHandle)">setLh</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) static java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../LedgerFragmentReplicator.html#splitIntoSubFragments(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,long)">splitIntoSubFragments</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                      <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
