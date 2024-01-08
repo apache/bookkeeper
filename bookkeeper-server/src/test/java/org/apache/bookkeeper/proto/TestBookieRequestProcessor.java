@@ -153,9 +153,10 @@ public class TestBookieRequestProcessor {
         BookieRequestHandler requestHandler = mock(BookieRequestHandler.class);
         when(requestHandler.ctx()).thenReturn(ctx);
 
-        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler,
+        WriteEntryProcessorV3 writeEntryProcessorV3 = WriteEntryProcessorV3.create(request, requestHandler,
                 requestProcessor);
         String toString = writeEntryProcessorV3.toString();
+        writeEntryProcessorV3.recycle();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
                 toString.contains("masterKey"));
@@ -172,8 +173,9 @@ public class TestBookieRequestProcessor {
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).setFlag(Flag.RECOVERY_ADD).setWriteFlags(0)
                 .build();
         request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
-        writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler, requestProcessor);
+        writeEntryProcessorV3 = WriteEntryProcessorV3.create(request, requestHandler, requestProcessor);
         toString = writeEntryProcessorV3.toString();
+        writeEntryProcessorV3.recycle();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
                 toString.contains("masterKey"));
