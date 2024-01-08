@@ -267,12 +267,15 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         BookieServer newAuditor = null;
         int retryCount = 8;
         while (retryCount > 0) {
-            List<BookieServer> auditors = getAuditorBookie();
-            if (auditors.size() > 0) {
-                newAuditor = auditors.get(0);
-                if (auditor != newAuditor) {
-                    break;
+            try {
+                List<BookieServer> auditors = getAuditorBookie();
+                if (auditors.size() > 0) {
+                    newAuditor = auditors.get(0);
+                    if (auditor != newAuditor) {
+                        break;
+                    }
                 }
+            } catch (Exception ignore) {
             }
             Thread.sleep(500);
             retryCount--;

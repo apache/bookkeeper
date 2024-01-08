@@ -118,7 +118,7 @@ docker run -it --rm \
     --network "bk_network" \
     --env BK_zkServers=test_zookeeper:2181 \
     apache/bookkeeper \
-    bookkeeper shell metaformat
+    /opt/bookkeeper/bin/bookkeeper shell metaformat
 ```
 Now we can start our Bookkeeper ensemble (e.g. with three bookies):
 ```
@@ -232,8 +232,8 @@ Be careful where you put the transaction log (journal). A dedicated transaction 
 
 Here is some useful and graceful command the could be used to replace the default command, once you want to delete the cookies and do auto recovery:
 ```
-/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
-/bookkeeper/bin/bookkeeper autorecovery
+/opt/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
+/opt/bookkeeper/bin/bookkeeper autorecovery
 ```
 Use them, and replace the default [CMD] when you wanted to do things other than start a bookie.
 

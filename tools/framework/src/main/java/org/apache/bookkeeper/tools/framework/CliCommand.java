@@ -72,4 +72,8 @@ public class CliCommand<GlobalFlagsT extends CliFlags, CommandFlagsT extends Cli
         // run with "empty args", which will print the usage for this command group.
         Cli.printUsage(spec);
     }
+
+    public String getUsage() {
+        return spec.usage();
+    }
 }

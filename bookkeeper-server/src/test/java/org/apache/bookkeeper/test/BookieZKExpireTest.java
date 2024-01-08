@@ -32,6 +32,7 @@ import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -121,7 +122,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     Attempt to reconnect by BookieStateManager's RegistrationManager listener
     will fail (even if retry it many times).
     */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/4142")
     @SuppressWarnings("deprecation")
     public void testBookieServerZKSessionExpireBehaviour() throws Exception {
         // 6000 is minimum due to default tick time
