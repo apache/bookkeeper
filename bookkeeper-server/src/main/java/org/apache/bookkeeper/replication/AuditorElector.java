@@ -241,13 +241,15 @@ public class AuditorElector {
             // close auditor manager
             submitShutdownTask();
             executor.shutdown();
-            try {
-                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+            new Thread(() -> {
+                try {
+                    if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                        executor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
                     executor.shutdownNow();
                 }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-            }
+            }, "shutdownCheck").start();
         }
 
         if (auditor != null) {
