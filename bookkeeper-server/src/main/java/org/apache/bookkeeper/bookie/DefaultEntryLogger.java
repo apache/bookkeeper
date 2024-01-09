@@ -255,8 +255,6 @@ public class DefaultEntryLogger implements EntryLogger {
      * </pre>
      */
     static final int LOGFILE_HEADER_SIZE = 1024;
-    final ByteBuf logfileHeader = Unpooled.buffer(LOGFILE_HEADER_SIZE);
-
     static final int HEADER_VERSION_POSITION = 4;
     static final int LEDGERS_MAP_OFFSET_POSITION = HEADER_VERSION_POSITION + 4;
 
@@ -327,15 +325,6 @@ public class DefaultEntryLogger implements EntryLogger {
         if (listener != null) {
             addListener(listener);
         }
-
-        // Initialize the entry log header buffer. This cannot be a static object
-        // since in our unit tests, we run multiple Bookies and thus EntryLoggers
-        // within the same JVM. All of these Bookie instances access this header
-        // so there can be race conditions when entry logs are rolled over and
-        // this header buffer is cleared before writing it into the new logChannel.
-        logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
-        logfileHeader.writeInt(HEADER_CURRENT_VERSION);
-        logfileHeader.writerIndex(LOGFILE_HEADER_SIZE);
 
         // Find the largest logId
         long logId = INVALID_LID;
