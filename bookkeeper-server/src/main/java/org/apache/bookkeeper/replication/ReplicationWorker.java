@@ -600,7 +600,7 @@ public class ReplicationWorker implements Runnable {
     /**
      * Gets the under replicated fragments.
      */
-    private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage)
+    Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh, Long ledgerVerificationPercentage)
             throws InterruptedException {
         //The data loss fragments is first to repair. If a fragment is data_loss and not_adhering_placement
         //at the same time, we only fix data_loss in this time. After fix data_loss, the fragment is still
