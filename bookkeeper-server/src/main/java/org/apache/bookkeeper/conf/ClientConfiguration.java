@@ -202,6 +202,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
 
+    protected static final String CLIENT_MAX_IDLE_CONNECTIONS_MINUTES = "clientMaxIdleConnectionsMinutes";
+
     /**
      * Construct a default client-side configuration.
      */
@@ -2075,6 +2077,32 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public long getClientConnectBookieUnavailableLogThrottlingMs() {
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
+    }
+
+    /**
+     * Set the client max idle connections time for no any read-write operations happened, in minutes.
+     * After this time, the connection will be closed.
+     *
+     * @param maxIdleConnectionsMinutes
+     *        Default is -1 (disabled)
+     * @param unit
+     * @return client configuration.
+     */
+    public ClientConfiguration setClientMaxIdleConnectionsMinutes(
+            int maxIdleConnectionsMinutes, TimeUnit unit) {
+        setProperty(CLIENT_MAX_IDLE_CONNECTIONS_MINUTES, unit.toMinutes(maxIdleConnectionsMinutes));
+        return this;
+    }
+
+    /**
+     * Get the client max idle connections time for no any read-write operations happened, in minutes.
+     * After this time, the connection will be closed.
+     *
+     * @return max idle connections for no any read-write operations happened, in minutes.
+     *         Default is -1 (disabled)
+     */
+    public long getClientMaxIdleConnectionsMinutes() {
+        return getLong(CLIENT_MAX_IDLE_CONNECTIONS_MINUTES, -1);
     }
 
     @Override
