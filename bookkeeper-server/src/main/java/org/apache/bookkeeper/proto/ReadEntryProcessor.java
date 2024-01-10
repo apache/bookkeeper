@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
-
+    private long readTimeoutNanos;
     private ExecutorService fenceThreadPool;
     private boolean throttleReadResponses;
 
@@ -52,6 +52,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         rep.fenceThreadPool = fenceThreadPool;
         rep.throttleReadResponses = throttleReadResponses;
         requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
+        rep.readTimeoutNanos = requestProcessor.getServerCfg() != null ? TimeUnit.MILLISECONDS.toNanos(
+                requestProcessor.getServerCfg().getReadEntryPendingTimeoutMillis()) : -1;
         return rep;
     }
 
@@ -71,6 +73,11 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         int errorCode = BookieProtocol.EOK;
         long startTimeNanos = MathUtils.nowInNano();
         ByteBuf data = null;
+        if (readTimeoutNanos >= 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
+            LOG.debug("Read request timeout {}", request);
+            sendResponse(null, BookieProtocol.ETOOMANYREQUESTS, startTimeNanos);
+            return;
+        }
         try {
             CompletableFuture<Boolean> fenceResult = null;
             if (request.isFencing()) {

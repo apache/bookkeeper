@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -124,6 +125,49 @@ public class ReadEntryProcessorTest {
         assertEquals(BookieProtocol.READENTRY, response.getOpCode());
         assertEquals(errorCode, response.getErrorCode());
         service.shutdown();
+    }
+
+    @Test
+    public void testAsynchronousRequestTimeout() throws Exception {
+        boolean result = false;
+        BookieRequestProcessor requestPrc = mock(BookieRequestProcessor.class);
+        when(requestPrc.getBookie()).thenReturn(bookie);
+        when(requestPrc.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
+        when(requestPrc.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
+        ServerConfiguration configuration = new ServerConfiguration();
+        configuration.setReadEntryPendingTimeoutMillis(0L);
+        when(requestPrc.getServerCfg()).thenReturn(configuration);
+        CompletableFuture<Boolean> fenceResult = FutureUtils.createFuture();
+        when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
+
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+        ExecutorService service = Executors.newCachedThreadPool();
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+                1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestPrc, service, true);
+        processor.run();
+
+        fenceResult.complete(result);
+        latch.await();
+        verify(channel, times(1)).writeAndFlush(any(Response.class));
+
+        assertTrue(writtenObject.get() instanceof Response);
+        Response response = (Response) writtenObject.get();
+        assertEquals(1, response.getEntryId());
+        assertEquals(ledgerId, response.getLedgerId());
+        assertEquals(BookieProtocol.READENTRY, response.getOpCode());
+        assertEquals(BookieProtocol.ETOOMANYREQUESTS, response.getErrorCode());
+        service.shutdownNow();
     }
 
     @Test

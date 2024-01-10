@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
@@ -28,12 +30,19 @@ import com.google.protobuf.ByteString;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.DefaultChannelPromise;
+import io.netty.channel.EventLoop;
 import io.netty.util.HashedWheelTimer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
@@ -118,5 +127,65 @@ public class LongPollReadEntryProcessorV3Test {
         processor.run();
 
         cancelFuture.get(10, TimeUnit.SECONDS);
+    }
+    @Test
+    public void testReadTimeout() throws Exception {
+        Request request = Request.newBuilder()
+            .setHeader(BKPacketHeader.newBuilder()
+                       .setTxnId(System.currentTimeMillis())
+                       .setVersion(ProtocolVersion.VERSION_THREE)
+                       .setOperation(OperationType.READ_ENTRY)
+                       .build())
+            .setReadRequest(ReadRequest.newBuilder()
+                            .setLedgerId(10)
+                            .setEntryId(1)
+                            .setMasterKey(ByteString.copyFrom(new byte[0]))
+                            .setPreviousLAC(0)
+                            .build())
+            .build();
+
+        Channel channel = mock(Channel.class);
+        when(channel.isOpen()).thenReturn(true);
+        when(channel.isWritable()).thenReturn(true);
+        when(channel.isActive()).thenReturn(true);
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(true);
+        when(channel.eventLoop()).thenReturn(eventLoop);
+
+        BookieRequestHandler requestHandler = mock(BookieRequestHandler.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(requestHandler.ctx()).thenReturn(ctx);
+
+        Bookie bookie = mock(Bookie.class);
+
+        BookieRequestProcessor requestProcessor = mock(BookieRequestProcessor.class);
+        when(requestProcessor.getBookie()).thenReturn(bookie);
+        when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
+        ServerConfiguration configuration = new ServerConfiguration();
+        configuration.setReadEntryPendingTimeoutMillis(0L);
+        when(requestProcessor.getServerCfg()).thenReturn(configuration);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any());
+
+        LongPollReadEntryProcessorV3 processor = new LongPollReadEntryProcessorV3(
+            request,
+            requestHandler,
+            requestProcessor,
+            executor, executor, timer);
+        processor.run();
+        latch.await();
+        assertTrue(writtenObject.get() instanceof BookkeeperProtocol.Response);
+        BookkeeperProtocol.Response response = (BookkeeperProtocol.Response) writtenObject.get();
+        assertEquals(1, response.getReadResponse().getEntryId());
+        assertEquals(10, response.getReadResponse().getLedgerId());
+        assertEquals(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS, response.getReadResponse().getStatus());
     }
 }

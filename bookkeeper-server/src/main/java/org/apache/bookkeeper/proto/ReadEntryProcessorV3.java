@@ -45,6 +45,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     protected Stopwatch lastPhaseStartTime;
     private final ExecutorService fenceThreadPool;
+    private final long readTimeoutNanos;
 
     private CompletableFuture<Boolean> fenceResult = null;
 
@@ -66,6 +67,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         this.readRequest = request.getReadRequest();
         this.ledgerId = readRequest.getLedgerId();
         this.entryId = readRequest.getEntryId();
+        this.readTimeoutNanos = requestProcessor.getServerCfg() != null ? TimeUnit.MILLISECONDS.toNanos(
+                requestProcessor.getServerCfg().getReadEntryPendingTimeoutMillis()) : -1;
         if (RequestUtils.isFenceRequest(this.readRequest)) {
             this.readStats = requestProcessor.getRequestStats().getFenceReadEntryStats();
             this.reqStats = requestProcessor.getRequestStats().getFenceReadRequestStats();
@@ -199,6 +202,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         final ReadResponse.Builder readResponse = ReadResponse.newBuilder()
             .setLedgerId(ledgerId)
             .setEntryId(entryId);
+        long startTimeNanos = MathUtils.nowInNano();
+        if (readTimeoutNanos >= 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
+            LOG.debug("Read request timeout {}", request);
+            return buildResponse(readResponse, StatusCode.ETOOMANYREQUESTS, startTimeSw);
+        }
         try {
             // handle fence reqest
             if (RequestUtils.isFenceRequest(readRequest)) {

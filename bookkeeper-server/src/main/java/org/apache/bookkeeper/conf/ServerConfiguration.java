@@ -229,6 +229,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
     protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
     protected static final String READ_WORKER_THREADS_THROTTLING_ENABLED = "readWorkerThreadsThrottlingEnabled";
+    protected static final String READ_ENTRY_PENDING_TIMEOUT_MILLIS = "readEntryPendingTimeoutMillis";
 
     // Long poll parameters
     protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
@@ -2030,7 +2031,23 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return getBoolean(READ_WORKER_THREADS_THROTTLING_ENABLED, true);
     }
 
+    /**
+     * Set timout millis for pending read request.
+     * @param timeoutMillis timout millis of pending read request.
+     * @return server configuration
+     */
+    public ServerConfiguration setReadEntryPendingTimeoutMillis(long timeoutMillis) {
+        setProperty(READ_ENTRY_PENDING_TIMEOUT_MILLIS, timeoutMillis);
+        return this;
+    }
 
+    /**
+     * Get timout millis for pending read request.
+     * @return timout millis
+     */
+    public long getReadEntryPendingTimeoutMillis() {
+        return getLong(READ_ENTRY_PENDING_TIMEOUT_MILLIS, 5_000L);
+    }
 
     /**
      * Set the number of threads that would handle read requests.
