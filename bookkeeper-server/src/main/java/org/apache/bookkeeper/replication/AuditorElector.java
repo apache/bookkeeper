@@ -25,12 +25,14 @@ import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -148,8 +150,8 @@ public class AuditorElector {
     /**
      * Run cleanup operations for the auditor elector.
      */
-    private void submitShutdownTask() {
-        executor.submit(new Runnable() {
+    private Future<?> submitShutdownTask() {
+        return executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     if (!running.compareAndSet(true, false)) {
@@ -239,17 +241,16 @@ public class AuditorElector {
                 return;
             }
             // close auditor manager
-            submitShutdownTask();
-            executor.shutdown();
-            new Thread(() -> {
-                try {
-                    if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-                        executor.shutdownNow();
-                    }
-                } catch (InterruptedException e) {
-                    executor.shutdownNow();
-                }
-            }, "shutdownCheck").start();
+            try {
+                submitShutdownTask().get(10, TimeUnit.SECONDS);
+                executor.shutdown();
+            } catch (ExecutionException e) {
+                LOG.warn("Failed to close auditor manager", e);
+                executor.shutdownNow();
+            } catch (TimeoutException e) {
+                LOG.warn("Failed to close auditor manager in 10 seconds", e);
+                executor.shutdownNow();
+            }
         }
 
         if (auditor != null) {
