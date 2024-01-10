@@ -507,13 +507,26 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         try {
             excludeBookies = addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
             excludeBookies.addAll(currentEnsemble);
+
+            Set<Node> ensembleNodes = new HashSet<>();
+            Set<Node> excludeNodes = new HashSet<>();
             BookieNode bn = knownBookies.get(bookieToReplace);
             if (null == bn) {
                 bn = createBookieNode(bookieToReplace);
             }
-
-            Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
-            Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
+            for (BookieId bookieId : currentEnsemble) {
+                if (bookieId.equals(bookieToReplace)) {
+                    continue;
+                }
+                ensembleNodes.add(convertBookieToNode(bookieId));
+            }
+            for (BookieId bookieId : excludeBookies) {
+                if (bookieId.equals(bookieToReplace)) {
+                    excludeNodes.add(bn);
+                    continue;
+                }
+                excludeNodes.add(convertBookieToNode(bookieId));
+            }
 
             excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);

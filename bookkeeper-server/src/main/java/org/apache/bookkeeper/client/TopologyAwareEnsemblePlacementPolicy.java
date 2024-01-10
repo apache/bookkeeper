@@ -824,9 +824,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             if (null != historyBookie) {
                 return historyBookie.getNetworkLocation();
             }
-
-            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
-                      NetworkTopology.DEFAULT_REGION_AND_RACK, err);
+            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}. {}", addr,
+                      NetworkTopology.DEFAULT_REGION_AND_RACK, err.getMessage());
             return NetworkTopology.DEFAULT_REGION_AND_RACK;
         }
     }
