@@ -1827,14 +1827,6 @@ public class LedgerHandle implements WriteHandle {
                     }
                     return;
                 }
-                // Check if it is the next entry in the sequence.
-                if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead + 1) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
-                                pendingAddsSequenceHead + 1);
-                    }
-                    return;
-                }
 
                 pendingAddOps.remove();
                 explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
