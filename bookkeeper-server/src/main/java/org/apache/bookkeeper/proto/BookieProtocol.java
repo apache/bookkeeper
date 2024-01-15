@@ -395,7 +395,7 @@ public interface BookieProtocol {
         }
 
         private final Handle<BatchedReadRequest> recyclerHandle;
-    
+
         private BatchedReadRequest(Handle<BatchedReadRequest> recyclerHandle) {
             this.recyclerHandle = recyclerHandle;
         }
