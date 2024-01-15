@@ -172,6 +172,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
     private final OpStatsLogger clientChannelWriteWaitStats;
+    private final AtomicBoolean sendAddSuccessCallbacksInProgress = new AtomicBoolean(false);
 
     LedgerHandle(ClientContext clientCtx,
                  long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
@@ -1810,35 +1811,43 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+
     void sendAddSuccessCallbacks() {
-        // Start from the head of the queue and proceed while there are
-        // entries that have had all their responses come back
-
-        // synchronize on pendingAddOps to ensure that drainPendingAddsAndAdjustLength isn't concurrently
-        // modifying pendingAddOps
-        synchronized (pendingAddOps) {
-            PendingAddOp pendingAddOp;
-
-            while ((pendingAddOp = pendingAddOps.peek()) != null
-                    && !changingEnsemble) {
-                if (!pendingAddOp.completed) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("pending add not completed: {}", pendingAddOp);
-                    }
-                    return;
-                }
-
-                pendingAddOps.remove();
-                explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-                pendingAddsSequenceHead = pendingAddOp.entryId;
-                if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                    this.lastAddConfirmed = pendingAddsSequenceHead;
-                }
-
-                pendingAddOp.submitCallback(BKException.Code.OK);
-            }
+        if (!sendAddSuccessCallbacksInProgress.compareAndSet(false, true)) {
+            // another thread is already sending the callbacks
+            return;
         }
+        try {
+            // Start from the head of the queue and proceed while there are
+            // entries that have had all their responses come back
 
+            // synchronize on pendingAddOps to ensure that drainPendingAddsAndAdjustLength isn't concurrently
+            // modifying pendingAddOps
+            synchronized (pendingAddOps) {
+                PendingAddOp pendingAddOp;
+
+                while ((pendingAddOp = pendingAddOps.peek()) != null
+                        && !changingEnsemble) {
+                    if (!pendingAddOp.completed) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("pending add not completed: {}", pendingAddOp);
+                        }
+                        return;
+                    }
+
+                    pendingAddOps.remove();
+                    explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
+                    pendingAddsSequenceHead = pendingAddOp.entryId;
+                    if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                        this.lastAddConfirmed = pendingAddsSequenceHead;
+                    }
+
+                    pendingAddOp.submitCallback(BKException.Code.OK);
+                }
+            }
+        } finally {
+            sendAddSuccessCallbacksInProgress.set(false);
+        }
     }
 
     @VisibleForTesting
