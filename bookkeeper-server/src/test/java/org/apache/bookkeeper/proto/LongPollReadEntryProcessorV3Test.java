@@ -162,7 +162,7 @@ public class LongPollReadEntryProcessorV3Test {
         when(requestProcessor.getBookie()).thenReturn(bookie);
         when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
         ServerConfiguration configuration = new ServerConfiguration();
-        configuration.setReadEntryPendingTimeoutMillis(0L);
+        configuration.setReadEntryPendingTimeoutMillis(1L);
         when(requestProcessor.getServerCfg()).thenReturn(configuration);
         AtomicReference<Object> writtenObject = new AtomicReference<>();
         ChannelPromise promise = new DefaultChannelPromise(channel);
@@ -179,6 +179,8 @@ public class LongPollReadEntryProcessorV3Test {
             requestHandler,
             requestProcessor,
             executor, executor, timer);
+        // 1ms to timeout
+        Thread.sleep(1);
         processor.run();
         latch.await();
         assertTrue(writtenObject.get() instanceof BookkeeperProtocol.Response);

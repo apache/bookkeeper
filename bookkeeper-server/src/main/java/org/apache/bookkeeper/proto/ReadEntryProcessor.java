@@ -73,7 +73,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         int errorCode = BookieProtocol.EOK;
         long startTimeNanos = MathUtils.nowInNano();
         ByteBuf data = null;
-        if (readTimeoutNanos >= 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
+        if (readTimeoutNanos > 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
             LOG.debug("Read request timeout {}", request);
             sendResponse(null, BookieProtocol.ETOOMANYREQUESTS, startTimeNanos);
             return;

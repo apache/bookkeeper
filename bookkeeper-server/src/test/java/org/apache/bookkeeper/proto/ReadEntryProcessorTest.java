@@ -135,7 +135,7 @@ public class ReadEntryProcessorTest {
         when(requestPrc.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestPrc.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
         ServerConfiguration configuration = new ServerConfiguration();
-        configuration.setReadEntryPendingTimeoutMillis(0L);
+        configuration.setReadEntryPendingTimeoutMillis(1L);
         when(requestPrc.getServerCfg()).thenReturn(configuration);
         CompletableFuture<Boolean> fenceResult = FutureUtils.createFuture();
         when(bookie.fenceLedger(anyLong(), any())).thenReturn(fenceResult);
@@ -155,8 +155,9 @@ public class ReadEntryProcessorTest {
                 1, BookieProtocol.FLAG_DO_FENCING, new byte[]{});
         ReadEntryProcessor processor = ReadEntryProcessor.create(
                 request, requestHandler, requestPrc, service, true);
+        // 1ms to timeout
+        Thread.sleep(1);
         processor.run();
-
         fenceResult.complete(result);
         latch.await();
         verify(channel, times(1)).writeAndFlush(any(Response.class));

@@ -203,7 +203,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             .setLedgerId(ledgerId)
             .setEntryId(entryId);
         long startTimeNanos = MathUtils.nowInNano();
-        if (readTimeoutNanos >= 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
+        if (readTimeoutNanos > 0 && startTimeNanos - enqueueNanos > readTimeoutNanos) {
             LOG.debug("Read request timeout {}", request);
             return buildResponse(readResponse, StatusCode.ETOOMANYREQUESTS, startTimeSw);
         }
