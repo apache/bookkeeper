@@ -125,7 +125,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
 
-        requestHandler.prepareSendResponseV2(rc, request);
+        requestHandler.prepareSendResponseV2(rc, this);
         requestProcessor.onAddRequestFinish();
 
         request.recycle();

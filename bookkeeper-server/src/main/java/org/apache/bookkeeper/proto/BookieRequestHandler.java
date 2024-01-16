@@ -20,14 +20,18 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 
 /**
  * Serverside handler for bookkeeper requests.
@@ -44,6 +48,12 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     private ByteBuf pendingSendResponses = null;
     private int maxPendingResponsesSize = DEFAULT_PENDING_RESPONSE_SIZE;
+    private long firstGroupEnqueueNanos = 0;
+    private int sucReq = 0;
+    private int faiReq = 0;
+    private long sucOverNanos = 0;
+    private long faiOverNanos = 0;
+    private OpStatsLogger statsLogger;
 
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
@@ -90,11 +100,47 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         requestProcessor.processRequest(msg, this);
     }
 
-    public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
+    public synchronized void prepareSendResponseV2(int rc, WriteEntryProcessor wep) {
         if (pendingSendResponses == null) {
             pendingSendResponses = ctx().alloc().directBuffer(maxPendingResponsesSize);
+            firstGroupEnqueueNanos = wep.enqueueNanos;
+            statsLogger = wep.requestProcessor.getRequestStats().getAddRequestStats();
         }
-        BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
+        markRequestStatus(rc, wep);
+        BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, wep.request, pendingSendResponses);
+    }
+
+    @VisibleForTesting
+    public void markRequestStatus(int rc, WriteEntryProcessor wep) {
+        if (BookieProtocol.EOK == rc) {
+            sucReq++;
+            sucOverNanos += (wep.enqueueNanos - firstGroupEnqueueNanos);
+        } else {
+            faiReq++;
+            faiOverNanos += (wep.enqueueNanos - firstGroupEnqueueNanos);
+        }
+    }
+
+    @VisibleForTesting
+    public void registerRequestStatus() {
+        if (statsLogger != null) {
+            long avgSucEnqueueNanos = firstGroupEnqueueNanos + (sucReq > 0 ? (sucOverNanos / sucReq) : 0);
+            for (int i = 0; i < sucReq; i++) {
+                statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(avgSucEnqueueNanos), TimeUnit.NANOSECONDS);
+            }
+
+            long avgFaiEnqueueNanos = firstGroupEnqueueNanos + (faiReq > 0 ? (faiOverNanos / faiReq) : 0);
+            for (int i = 0; i < faiReq; i++) {
+                statsLogger.registerFailedEvent(MathUtils.elapsedNanos(avgFaiEnqueueNanos), TimeUnit.NANOSECONDS);
+            }
+        }
+
+        statsLogger = null;
+        firstGroupEnqueueNanos = 0;
+        sucReq = 0;
+        sucOverNanos = 0;
+        faiReq = 0;
+        faiOverNanos = 0;
     }
 
     public synchronized void flushPendingResponse() {
@@ -107,6 +153,8 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             } else {
                 pendingSendResponses.release();
             }
+
+            registerRequestStatus();
             pendingSendResponses = null;
         }
     }
