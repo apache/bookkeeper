@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-stats-parent</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.4-SNAPSHOT</version>
+    <version>4.16.4</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-api</artifactId>
@@ -59,4 +59,8 @@
   </build>
   <dependencies>
   </dependencies>
+
+  <scm>
+    <tag>v4.16.4-rc0</tag>
+  </scm>
 </project>

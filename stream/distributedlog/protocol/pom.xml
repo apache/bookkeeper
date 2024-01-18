@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>distributedlog</artifactId>
-    <version>4.16.4-SNAPSHOT</version>
+    <version>4.16.4</version>
   </parent>
   <artifactId>distributedlog-protocol</artifactId>
   <name>Apache BookKeeper :: DistributedLog :: Protocol</name>
@@ -61,4 +61,8 @@
       </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>v4.16.4-rc0</tag>
+  </scm>
 </project>
