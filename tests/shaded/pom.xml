@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>tests-parent</artifactId>
-    <version>4.16.4</version>
+    <version>4.16.4-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.tests.shaded</groupId>
@@ -32,8 +32,4 @@
     <module>bookkeeper-server-tests-shaded-test</module>
     <module>distributedlog-core-shaded-test</module>
   </modules>
-
-  <scm>
-    <tag>v4.16.4-rc0</tag>
-  </scm>
 </project>
