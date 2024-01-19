@@ -20,7 +20,7 @@
 
 mkdir -p $BK_JOURNALDIR $BK_LEDGERDIR
 
-sed -i "s|journalDirectory=.*|journalDirectory=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/bk_server.conf
+sed -i "s|journalDirectories=.*|journalDirectories=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/bk_server.conf
 sed -i "s|ledgerDirectories=.*|ledgerDirectories=$BK_LEDGERDIR|" /opt/bookkeeper/*/conf/bk_server.conf
 sed -i "s|zkServers=.*|zkServers=$BK_ZKCONNECTSTRING|" /opt/bookkeeper/*/conf/bk_server.conf
 
