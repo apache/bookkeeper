@@ -68,7 +68,7 @@ Parameter | Description | Default
 :---------|:------------|:-------
 `bookiePort` | The TCP port that the bookie listens on | `3181`
 `zkServers` | A comma-separated list of ZooKeeper servers in `hostname:port` format | `localhost:2181`
-`journalDirectories` | The directories where the [log device](../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL) | `/tmp/bk-txn`
+`journalDirectories` | The directories where the [log device](../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL, as a comma-separated list) | `/tmp/bk-txn`
 `ledgerDirectories` | The directories where the [ledger device](../getting-started/concepts#ledger-device) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
 
 > Ideally, the directories specified `journalDirectories` and `ledgerDirectories` should be on difference devices.
