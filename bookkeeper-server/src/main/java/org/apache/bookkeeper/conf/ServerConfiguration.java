@@ -2046,7 +2046,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return timout millis
      */
     public long getReadEntryPendingTimeoutMillis() {
-        return getLong(READ_ENTRY_PENDING_TIMEOUT_MILLIS, 5_000L);
+        return getLong(READ_ENTRY_PENDING_TIMEOUT_MILLIS, 30_000L);
     }
 
     /**
