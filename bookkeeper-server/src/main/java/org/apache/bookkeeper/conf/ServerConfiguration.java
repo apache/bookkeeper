@@ -4140,7 +4140,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         this.setProperty(MAX_BATCH_READ_SIZE, maxBatchReadSize);
         return this;
     }
-    
+
     /**
      * Get the max batch read size.
      *

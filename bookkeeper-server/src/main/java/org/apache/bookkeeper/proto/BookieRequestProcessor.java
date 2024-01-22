@@ -682,7 +682,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 this, fenceThreadPool, throttleReadResponses, serverCfg.getMaxBatchReadSize())
                 : ReadEntryProcessor.create(r, requestHandler,
                         this, fenceThreadPool, throttleReadResponses);
-        
+
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
         // and execute in highPriorityThreadPool
