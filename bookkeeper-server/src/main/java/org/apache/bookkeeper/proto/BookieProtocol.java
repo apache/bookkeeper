@@ -27,6 +27,7 @@ import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.util.ByteBufList;
 
 /**
  * The packets of the Bookie protocol all have a 4-byte integer indicating the
@@ -132,6 +133,7 @@ public interface BookieProtocol {
     byte READ_LAC = 4;
     byte WRITE_LAC = 5;
     byte GET_BOOKIE_INFO = 6;
+    byte BATCH_READ_ENTRY = 7;
 
     /**
      * The error code that indicates success.
@@ -328,6 +330,10 @@ public interface BookieProtocol {
 
         private final Handle<ReadRequest> recyclerHandle;
 
+        private ReadRequest() {
+            recyclerHandle = null;
+        }
+
         private ReadRequest(Handle<ReadRequest> recyclerHandle) {
             this.recyclerHandle = recyclerHandle;
         }
@@ -344,7 +350,74 @@ public interface BookieProtocol {
             ledgerId = -1;
             entryId = -1;
             masterKey = null;
-            recyclerHandle.recycle(this);
+            if (recyclerHandle != null) {
+                recyclerHandle.recycle(this);
+            }
+        }
+    }
+
+    /**
+     * The request for reading data with batch optimization.
+     * The ledger_id and entry_id will be used as start_ledger_id and start_entry_id.
+     * And the batch read operation can only happen on one ledger.
+     */
+    class BatchedReadRequest extends ReadRequest {
+
+        long requestId;
+        int maxCount;
+        long maxSize;
+
+        static BatchedReadRequest create(byte protocolVersion, long ledgerId, long entryId,
+                short flags, byte[] masterKey, long requestId, int maxCount, long maxSize) {
+            BatchedReadRequest request = RECYCLER.get();
+            request.protocolVersion = protocolVersion;
+            request.ledgerId = ledgerId;
+            request.entryId = entryId;
+            request.flags = flags;
+            request.masterKey = masterKey;
+            request.requestId = requestId;
+            request.maxCount = maxCount;
+            request.maxSize = maxSize;
+            request.opCode = BATCH_READ_ENTRY;
+            return request;
+        }
+
+        int getMaxCount() {
+            return maxCount;
+        }
+
+        long getMaxSize() {
+            return maxSize;
+        }
+
+        long getRequestId() {
+            return requestId;
+        }
+
+        private final Handle<BatchedReadRequest> recyclerHandle;
+
+        private BatchedReadRequest(Handle<BatchedReadRequest> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<BatchedReadRequest> RECYCLER = new Recycler<BatchedReadRequest>() {
+            @Override
+            protected BatchedReadRequest newObject(Handle<BatchedReadRequest> handle) {
+                return new BatchedReadRequest(handle);
+            }
+        };
+
+        @Override
+        public void recycle() {
+            ledgerId = -1;
+            entryId = -1;
+            masterKey = null;
+            maxCount = -1;
+            maxSize = -1;
+            requestId = -1;
+            if (recyclerHandle != null) {
+                recyclerHandle.recycle(this);
+            }
         }
     }
 
@@ -438,6 +511,70 @@ public interface BookieProtocol {
 
         ByteBuf getData() {
             return data;
+        }
+
+        @Override
+        public int refCnt() {
+            return data.refCnt();
+        }
+
+        @Override
+        public ReferenceCounted retain() {
+            data.retain();
+            return this;
+        }
+
+        @Override
+        public ReferenceCounted retain(int increment) {
+            return data.retain(increment);
+        }
+
+        @Override
+        public ReferenceCounted touch() {
+            data.touch();
+            return this;
+        }
+
+        @Override
+        public ReferenceCounted touch(Object hint) {
+            data.touch(hint);
+            return this;
+        }
+
+        @Override
+        public boolean release() {
+            return data.release();
+        }
+
+        @Override
+        public boolean release(int decrement) {
+            return data.release(decrement);
+        }
+    }
+
+    /**
+     * The response for batched read.
+     * The ledger_id and entry_id will be used as start_ledger_id and start_entry_id.
+     * And all the returned data is from one ledger.
+     */
+    class BatchedReadResponse extends Response implements ReferenceCounted {
+
+        final long requestId;
+        final ByteBufList data;
+
+        BatchedReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId, long requestId,
+                ByteBufList data) {
+            init(protocolVersion, BATCH_READ_ENTRY, errorCode, ledgerId, entryId);
+            this.requestId = requestId;
+            this.data = data;
+        }
+
+        ByteBufList getData() {
+            return data;
+        }
+
+        long getRequestId() {
+            return requestId;
         }
 
         @Override
