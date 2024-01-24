@@ -135,6 +135,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Journal Parameters
     protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected static final String MAX_JOURNAL_RETENTION_TIME_MS = "maxJournalRetentionTimeMs";
+    protected static final String JOURNAL_RETENTION_TIME_ENABLE = "journalRetentionTimeEnable";
     protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
     protected static final String JOURNAL_WRITE_DATA = "journalWriteData";
     protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
@@ -880,6 +882,45 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setMaxBackupJournals(int maxBackupJournals) {
         this.setProperty(MAX_BACKUP_JOURNALS, Integer.toString(maxBackupJournals));
+        return this;
+    }
+
+    /**
+     * Max retention time in milliseconds for older journal files kept.
+     *
+     * @return max retention time in milliseconds for older journal files kept
+     */
+    public long getMaxJournalRetentionTimeMs() {
+        return this.getLong(MAX_JOURNAL_RETENTION_TIME_MS, 7 * 24 * 3600000);
+    }
+
+    /**
+     * Set max retention time in milliseconds for older journal files kept.
+     *
+     * @param maxJournalRetentionTimeMs
+     *          max retention time in milliseconds for older journal files kept
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxJournalRetentionTimeMs(long maxJournalRetentionTimeMs) {
+        this.setProperty(MAX_JOURNAL_RETENTION_TIME_MS, maxJournalRetentionTimeMs);
+        return this;
+    }
+
+    /**
+     * Get journal retention time enable.
+     * @return
+     */
+    public boolean getJournalRetentionTimeEnable() {
+        return this.getBoolean(JOURNAL_RETENTION_TIME_ENABLE, false);
+    }
+
+    /**
+     * Set journal retention time enable.
+     * @param journalRetentionTimeEnable
+     * @return
+     */
+    public ServerConfiguration setJournalRetentionTimeEnable(boolean journalRetentionTimeEnable) {
+        setProperty(JOURNAL_RETENTION_TIME_ENABLE, journalRetentionTimeEnable);
         return this;
     }
 

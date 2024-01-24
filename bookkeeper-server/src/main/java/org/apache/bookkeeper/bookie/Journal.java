@@ -593,6 +593,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     // number journal files kept before marked journal
     final int maxBackupJournals;
 
+    final long maxJournalRetentionTimeMs;
+    final boolean journalRetentionTimeEnable;
+
     final File journalDirectory;
     final ServerConfiguration conf;
     final ForceWriteThread forceWriteThread;
@@ -676,6 +679,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
         this.syncData = conf.getJournalSyncData();
         this.maxBackupJournals = conf.getMaxBackupJournals();
+        this.maxJournalRetentionTimeMs = conf.getMaxJournalRetentionTimeMs();
+        this.journalRetentionTimeEnable = conf.getJournalRetentionTimeEnable();
         this.forceWriteThread = new ForceWriteThread(this, conf.getJournalAdaptiveGroupWrites(),
                 journalStatsLogger);
         this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
@@ -781,6 +786,20 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     // make sure the journal id is smaller than marked journal id
                     if (id < mark.getCurMark().getLogFileId()) {
                         File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
+                        if (!journalFile.delete()) {
+                            LOG.warn("Could not delete old journal file {}", journalFile);
+                        }
+                        LOG.info("garbage collected journal " + journalFile.getName());
+                    }
+                }
+            }
+            if (journalRetentionTimeEnable) {
+                logs = listJournalIds(journalDirectory, new JournalRollingFilter(mark));
+                long maxLastModifiedTime = System.currentTimeMillis() - maxJournalRetentionTimeMs;
+                for (int i = 0; i < logs.size(); i++) {
+                    long id = logs.get(i);
+                    File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
+                    if (id < mark.getCurMark().getLogFileId() && journalFile.lastModified() <= maxLastModifiedTime) {
                         if (!journalFile.delete()) {
                             LOG.warn("Could not delete old journal file {}", journalFile);
                         }

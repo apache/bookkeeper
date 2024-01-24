@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.complete;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
@@ -34,6 +35,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -237,11 +239,74 @@ public class BookieWriteToJournalTest {
         journal.shutdown();
     }
 
+    @Test
+    public void testJournalRetentionTime() throws IOException, InterruptedException {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalRetentionTimeEnable(false);
+        conf.setMaxJournalRetentionTimeMs(3);
+        conf.setJournalDirName(tempDir.newFolder().getPath());
+        conf.setLedgerDirNames(new String[]{tempDir.newFolder().getPath()});
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker);
+
+        Journal journal1 = new Journal(0, conf.getJournalDirs()[0], conf, ledgerDirsManager);
+        conf.setJournalRetentionTimeEnable(true);
+        Journal journal2 = new Journal(0, conf.getJournalDirs()[0], conf, ledgerDirsManager);
+
+        long logId = System.currentTimeMillis();
+        int count = 4;
+        for (int i = 0; i < count; i++) {
+            logId += 1;
+            new File(conf.getJournalDirs()[0], Long.toHexString(logId) + ".txn").createNewFile();
+        }
+
+        journal1.setLastLogMark(logId, 0);
+        journal2.setLastLogMark(logId, 0);
+
+        List<Long> logs = Journal.listJournalIds(conf.getJournalDirs()[0],
+                new JournalRollingFilter(journal1.getLastLogMark()));
+        assertEquals(count - 1, logs.size());
+        assertTrue(logs.size() < conf.getMaxBackupJournals());
+
+        // wait txn file retention time reached.
+        Thread.sleep(5);
+
+        // journal1 disable retention time
+        CheckpointSource.Checkpoint checkpoint = journal1.newCheckpoint();
+        journal1.checkpointComplete(checkpoint, true);
+
+        logs = Journal.listJournalIds(conf.getJournalDirs()[0],
+                new JournalRollingFilter(journal1.getLastLogMark()));
+        assertEquals(count - 1, logs.size());
+
+        // journal2 enable retention time
+        checkpoint = journal2.newCheckpoint();
+        journal2.checkpointComplete(checkpoint, true);
+
+        logs = Journal.listJournalIds(conf.getJournalDirs()[0],
+                new JournalRollingFilter(journal2.getLastLogMark()));
+        assertEquals(0, logs.size());
+    }
+
     private static ByteBuf buildEntry(long ledgerId, long entryId, long lastAddConfirmed) {
         final ByteBuf data = Unpooled.buffer();
         data.writeLong(ledgerId);
         data.writeLong(entryId);
         data.writeLong(lastAddConfirmed);
         return data;
+    }
+
+    private static class JournalRollingFilter implements Journal.JournalIdFilter {
+
+        final Journal.LastLogMark lastMark;
+
+        JournalRollingFilter(Journal.LastLogMark lastMark) {
+            this.lastMark = lastMark;
+        }
+
+        @Override
+        public boolean accept(long journalId) {
+            return journalId < lastMark.getCurMark().getLogFileId();
+        }
     }
 }
