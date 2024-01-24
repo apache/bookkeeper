@@ -330,7 +330,7 @@ public interface BookieProtocol {
 
         private final Handle<ReadRequest> recyclerHandle;
 
-        private ReadRequest() {
+        protected ReadRequest() {
             recyclerHandle = null;
         }
 

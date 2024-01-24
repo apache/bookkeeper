@@ -21,16 +21,21 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.bookkeeper.util.ByteBufList;
 
 class ResponseBuilder {
     static BookieProtocol.Response buildErrorResponse(int errorCode, BookieProtocol.Request r) {
         if (r.getOpCode() == BookieProtocol.ADDENTRY) {
             return BookieProtocol.AddResponse.create(r.getProtocolVersion(), errorCode,
                                                   r.getLedgerId(), r.getEntryId());
-        } else {
-            assert(r.getOpCode() == BookieProtocol.READENTRY);
+        } else if (r.getOpCode() == BookieProtocol.READENTRY) {
             return new BookieProtocol.ReadResponse(r.getProtocolVersion(), errorCode,
                                                    r.getLedgerId(), r.getEntryId());
+        } else {
+            assert(r.getOpCode() == BookieProtocol.BATCH_READ_ENTRY);
+            return new BookieProtocol.BatchedReadResponse(r.getProtocolVersion(), errorCode,
+                    r.getLedgerId(), r.getEntryId(), ((BookieProtocol.BatchedReadRequest) r).getRequestId(),
+                    null);
         }
     }
 
@@ -42,5 +47,10 @@ class ResponseBuilder {
     static BookieProtocol.Response buildReadResponse(ByteBuf data, BookieProtocol.Request r) {
         return new BookieProtocol.ReadResponse(r.getProtocolVersion(), BookieProtocol.EOK,
                 r.getLedgerId(), r.getEntryId(), data);
+    }
+
+    static BookieProtocol.Response buildBatchedReadResponse(ByteBufList data, BookieProtocol.BatchedReadRequest r) {
+        return new BookieProtocol.BatchedReadResponse(r.getProtocolVersion(), BookieProtocol.EOK,
+                r.getLedgerId(), r.getEntryId(), r.getRequestId(), data);
     }
 }
