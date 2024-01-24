@@ -344,6 +344,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
 
+    protected static final String MAX_BATCH_READ_SIZE = "maxBatchReadSize";
+    protected static final int DEFAULT_MAX_BATCH_READ_SIZE = 5 * 1024 * 1024; // 5MB
+
     /**
      * Construct a default configuration object.
      */
@@ -4125,5 +4128,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getMaxOperationNumbersInSingleRocksDBBatch() {
         return getInt(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, 100000);
+    }
+
+    /**
+     * Set the max batch read size.
+     *
+     * @param maxBatchReadSize
+     * @return
+     */
+    public ServerConfiguration setMaxBatchReadSize(long maxBatchReadSize) {
+        this.setProperty(MAX_BATCH_READ_SIZE, maxBatchReadSize);
+        return this;
+    }
+
+    /**
+     * Get the max batch read size.
+     *
+     * @return
+     */
+    public long getMaxBatchReadSize() {
+        return this.getLong(MAX_BATCH_READ_SIZE, DEFAULT_MAX_BATCH_READ_SIZE);
     }
 }
