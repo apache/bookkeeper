@@ -34,8 +34,7 @@ class ResponseBuilder {
         } else {
             assert(r.getOpCode() == BookieProtocol.BATCH_READ_ENTRY);
             return new BookieProtocol.BatchedReadResponse(r.getProtocolVersion(), errorCode,
-                    r.getLedgerId(), r.getEntryId(), ((BookieProtocol.BatchedReadRequest) r).getRequestId(),
-                    null);
+                    r.getLedgerId(), r.getEntryId(), ((BookieProtocol.BatchedReadRequest) r).getRequestId());
         }
     }
 
