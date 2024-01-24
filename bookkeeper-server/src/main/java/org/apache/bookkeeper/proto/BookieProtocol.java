@@ -561,7 +561,7 @@ public interface BookieProtocol {
 
         final long requestId;
         final ByteBufList data;
-    
+
         BatchedReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId, long requestId) {
             this(protocolVersion, errorCode, ledgerId, entryId, requestId, ByteBufList.get());
         }

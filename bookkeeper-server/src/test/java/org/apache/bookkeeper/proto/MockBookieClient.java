@@ -82,7 +82,8 @@ public class MockBookieClient implements BookieClient {
     private Hook preWriteHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
     private Hook postWriteHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
     private BatchHook preBatchReadHook = (bookie, ledgerId, startEntryId, maxCount, maxSize) -> FutureUtils.value(null);
-    private BatchHook postBatchReadHook = (bookie, ledgerId, startEntryId, maxCount, maxSize) -> FutureUtils.value(null);
+    private BatchHook postBatchReadHook = (bookie, ledgerId, startEntryId, maxCount, maxSize) -> FutureUtils.value(
+            null);
 
     public MockBookieClient(OrderedExecutor executor) {
         this.executor = executor;

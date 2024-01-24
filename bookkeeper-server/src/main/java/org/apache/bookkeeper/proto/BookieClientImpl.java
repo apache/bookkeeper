@@ -523,7 +523,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                         allowFastFail);
             }
         }, ledgerId);
-        
     }
 
     @Override
