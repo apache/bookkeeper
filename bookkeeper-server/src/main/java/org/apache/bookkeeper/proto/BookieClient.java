@@ -185,20 +185,20 @@ public interface BookieClient {
      * Batch read entries with a null masterkey, disallowing failfast.
      * @see #batchReadEntries(BookieId,long,long,int,long,BatchedReadEntryCallback,Object,int,byte[],boolean)
      */
-    default void batchReadEntries(BookieId address, long ledgerId, long firstEntry,
+    default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
             int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
             int flags) {
-        batchReadEntries(address, ledgerId, firstEntry, maxCount, maxSize, cb, ctx, flags, null);
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, null);
     }
 
     /**
      * Batch read entries, disallowing failfast.
      * @see #batchReadEntries(BookieId,long,long,int,long,BatchedReadEntryCallback,Object,int,byte[],boolean)
      */
-    default void batchReadEntries(BookieId address, long ledgerId, long firstEntry,
+    default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
             int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
             int flags, byte[] masterKey) {
-        batchReadEntries(address, ledgerId, firstEntry, maxCount, maxSize, cb, ctx, flags, masterKey, false);
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, masterKey, false);
     }
 
     /**
