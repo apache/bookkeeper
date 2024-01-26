@@ -399,7 +399,7 @@ public class BookieProtoEncoding {
                     }
                 }
                 return new BookieProtocol.BatchedReadResponse(version, rc, ledgerId, entryId, requestId, data == null
-                        ? null : data.retain());
+                        ? ByteBufList.get() : data.retain());
             case BookieProtocol.AUTH:
                 ByteBufInputStream bufStream = new ByteBufInputStream(buffer);
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();

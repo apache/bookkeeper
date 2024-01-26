@@ -70,10 +70,20 @@ public class MockBookieClient implements BookieClient {
         CompletableFuture<Void> runHook(BookieId bookie, long ledgerId, long entryId);
     }
 
+    /**
+     * Runs before or after an operation. Can stall the operation or error it.
+     */
+    public interface BatchHook {
+        CompletableFuture<Void> runHook(BookieId bookie, long ledgerId, long startEntryId, int maxCount, long maxSize);
+    }
+
     private Hook preReadHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
     private Hook postReadHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
     private Hook preWriteHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
     private Hook postWriteHook = (bookie, ledgerId, entryId) -> FutureUtils.value(null);
+    private BatchHook preBatchReadHook = (bookie, ledgerId, startEntryId, maxCount, maxSize) -> FutureUtils.value(null);
+    private BatchHook postBatchReadHook = (bookie, ledgerId, startEntryId, maxCount, maxSize) -> FutureUtils.value(
+            null);
 
     public MockBookieClient(OrderedExecutor executor) {
         this.executor = executor;
@@ -221,6 +231,41 @@ public class MockBookieClient implements BookieClient {
                     } else {
                         cb.readEntryComplete(BKException.Code.OK,
                                 ledgerId, entryId, res.slice(), ctx);
+                    }
+                }, executor.chooseThread(ledgerId));
+    }
+
+    @Override
+    public void batchReadEntries(BookieId addr, long ledgerId, long startEntryId, int maxCount, long maxSize,
+            BookkeeperInternalCallbacks.BatchedReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
+            boolean allowFastFail) {
+        preBatchReadHook.runHook(addr, ledgerId, startEntryId, maxCount, maxSize)
+                .thenComposeAsync((res) -> {
+                    LOG.info("[{};L{}] batch read entries startEntryId:{} maxCount:{} maxSize:{}",
+                            addr, ledgerId, startEntryId, maxCount, maxSize);
+                    if (isErrored(addr)) {
+                        LOG.warn("[{};L{}] erroring batch read entries startEntryId:{} maxCount:{} maxSize:{}",
+                                addr, ledgerId, startEntryId, maxCount, maxSize);
+                        return FutureUtils.exception(new BKException.BKReadException());
+                    }
+
+                    try {
+                        ByteBufList data = mockBookies.batchReadEntries(addr, flags, ledgerId, startEntryId,
+                                maxCount, maxSize);
+                        return FutureUtils.value(data);
+                    } catch (BKException bke) {
+                        return FutureUtils.exception(bke);
+                    }
+                }, executor.chooseThread(ledgerId))
+                .thenCompose((buf) -> postBatchReadHook.runHook(addr, ledgerId, startEntryId, maxCount, maxSize)
+                        .thenApply((res) -> buf))
+                .whenCompleteAsync((res, ex) -> {
+                    if (ex != null) {
+                        cb.readEntriesComplete(BKException.getExceptionCode(ex, BKException.Code.ReadException),
+                                ledgerId, startEntryId, null, ctx);
+                    } else {
+                        cb.readEntriesComplete(BKException.Code.OK,
+                                ledgerId, startEntryId, res, ctx);
                     }
                 }, executor.chooseThread(ledgerId));
     }
