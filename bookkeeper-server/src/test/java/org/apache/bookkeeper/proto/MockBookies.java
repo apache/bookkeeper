@@ -123,7 +123,7 @@ public class MockBookies {
         return entry;
     }
 
-    public ByteBufList batchReadEntry(BookieId bookieId, int flags, long ledgerId, long startEntryId,
+    public ByteBufList batchReadEntries(BookieId bookieId, int flags, long ledgerId, long startEntryId,
             int maxCount, long maxSize) throws BKException {
         MockLedgerData ledger = getBookieData(bookieId).get(ledgerId);
 
@@ -142,24 +142,17 @@ public class MockBookies {
         }
         long frameSize = 24 + 8 + 4;
         for (long i = startEntryId; i < startEntryId + maxCount; i++) {
-            try {
-                ByteBuf entry = ledger.getEntry(i);
-                frameSize += entry.readableBytes() + 4;
-                if (data == null) {
-                    data = ByteBufList.get(entry);
-                } else {
-                    if (frameSize > maxSize) {
-                        entry.release();
-                        break;
-                    }
-                    data.add(entry);
-                }
-            } catch (Throwable e) {
-                if (data == null) {
-                    throw e;
-                }
-                break;
-            }
+             ByteBuf entry = ledger.getEntry(i);
+             frameSize += entry.readableBytes() + 4;
+             if (data == null) {
+                 data = ByteBufList.get(entry);
+             } else {
+                 if (frameSize > maxSize) {
+                     entry.release();
+                     break;
+                 }
+                 data.add(entry);
+             }
         }
         return data;
     }

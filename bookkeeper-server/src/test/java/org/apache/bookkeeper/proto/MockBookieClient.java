@@ -250,7 +250,7 @@ public class MockBookieClient implements BookieClient {
                     }
 
                     try {
-                        ByteBufList data = mockBookies.batchReadEntry(addr, flags, ledgerId, startEntryId,
+                        ByteBufList data = mockBookies.batchReadEntries(addr, flags, ledgerId, startEntryId,
                                 maxCount, maxSize);
                         return FutureUtils.value(data);
                     } catch (BKException bke) {
