@@ -380,6 +380,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                     checkArgument(r instanceof BookieProtocol.ReadRequest);
                     processReadRequest((BookieProtocol.ReadRequest) r, requestHandler);
                     break;
+                case BookieProtocol.BATCH_READ_ENTRY:
+                    checkArgument(r instanceof BookieProtocol.BatchedReadRequest);
+                    processReadRequest((BookieProtocol.BatchedReadRequest) r, requestHandler);
+                    break;
                 case BookieProtocol.AUTH:
                     LOG.info("Ignoring auth operation from client {}",
                             requestHandler.ctx().channel().remoteAddress());
