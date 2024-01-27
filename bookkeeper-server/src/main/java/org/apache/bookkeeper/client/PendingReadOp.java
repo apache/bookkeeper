@@ -21,27 +21,17 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.api.LedgerEntries;
-import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -54,85 +44,176 @@ import org.slf4j.LoggerFactory;
  * application as soon as it arrives rather than waiting for the whole thing.
  *
  */
-class PendingReadOp implements ReadEntryCallback, Runnable {
+class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     private ScheduledFuture<?> speculativeTask = null;
-    protected final LinkedList<LedgerEntryRequest> seq;
-    private final CompletableFuture<LedgerEntries> future;
-    private final Set<BookieId> heardFromHosts;
-    private final BitSet heardFromHostsBitSet;
-    private final Set<BookieId> sentToHosts = new HashSet<BookieId>();
-    LedgerHandle lh;
-    final ClientContext clientCtx;
+    protected final LinkedList<SingleLedgerEntryRequest> seq;
 
-    long numPendingEntries;
-    final long startEntryId;
-    final long endEntryId;
-    long requestTimeNanos;
+    PendingReadOp(LedgerHandle lh,
+                  ClientContext clientCtx,
+                  long startEntryId,
+                  long endEntryId,
+                  boolean isRecoveryRead) {
+        super(lh, clientCtx, startEntryId, endEntryId, isRecoveryRead);
+        this.seq = new LinkedList<>();
+        numPendingEntries = endEntryId - startEntryId + 1;
+    }
 
-    final int requiredBookiesMissingEntryForRecovery;
-    final boolean isRecoveryRead;
+    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+        if (speculativeTask != null) {
+            speculativeTask.cancel(mayInterruptIfRunning);
+            speculativeTask = null;
+        }
+    }
 
-    boolean parallelRead = false;
-    final AtomicBoolean complete = new AtomicBoolean(false);
-    boolean allowFailFast = false;
+    public ScheduledFuture<?> getSpeculativeTask() {
+        return speculativeTask;
+    }
 
-    abstract class LedgerEntryRequest implements SpeculativeRequestExecutor, AutoCloseable {
+    PendingReadOp parallelRead(boolean enabled) {
+        this.parallelRead = enabled;
+        return this;
+    }
 
-        final AtomicBoolean complete = new AtomicBoolean(false);
-
-        int rc = BKException.Code.OK;
-        int firstError = BKException.Code.OK;
-        int numBookiesMissingEntry = 0;
-
-        final List<BookieId> ensemble;
-        final DistributionSchedule.WriteSet writeSet;
-        final LedgerEntryImpl entryImpl;
-        final long eId;
-
-        LedgerEntryRequest(List<BookieId> ensemble, long lId, long eId) {
-            this.entryImpl = LedgerEntryImpl.create(lId, eId);
-            this.ensemble = ensemble;
-            this.eId = eId;
-
-            if (clientCtx.getConf().enableReorderReadSequence) {
-                writeSet = clientCtx.getPlacementPolicy()
-                    .reorderReadSequence(
-                            ensemble,
-                            lh.getBookiesHealthInfo(),
-                            lh.getWriteSetForReadOperation(eId));
-            } else {
-                writeSet = lh.getWriteSetForReadOperation(eId);
+    void initiate() {
+        long nextEnsembleChange = startEntryId, i = startEntryId;
+        this.requestTimeNanos = MathUtils.nowInNano();
+        List<BookieId> ensemble = null;
+        do {
+            if (i == nextEnsembleChange) {
+                ensemble = getLedgerMetadata().getEnsembleAt(i);
+                nextEnsembleChange = LedgerMetadataUtils.getNextEnsembleChange(getLedgerMetadata(), i);
             }
+            SingleLedgerEntryRequest entry;
+            if (parallelRead) {
+                entry = new ParallelReadRequest(ensemble, lh.ledgerId, i);
+            } else {
+                entry = new SequenceReadRequest(ensemble, lh.ledgerId, i);
+            }
+            seq.add(entry);
+            i++;
+        } while (i <= endEntryId);
+        // read the entries.
+        for (LedgerEntryRequest entry : seq) {
+            entry.read();
+            if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
+                speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                    .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
+            }
+        }
+    }
+
+    @Override
+    public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
+        final ReadContext rctx = (ReadContext) ctx;
+        final SingleLedgerEntryRequest entry = (SingleLedgerEntryRequest) rctx.entry;
+
+        if (rc != BKException.Code.OK) {
+            entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
+            return;
+        }
+
+        heardFromHosts.add(rctx.to);
+        heardFromHostsBitSet.set(rctx.bookieIndex, true);
+
+        buffer.retain();
+        // if entry has completed don't handle twice
+        if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
+            if (!isRecoveryRead) {
+                // do not advance LastAddConfirmed for recovery reads
+                lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
+            }
+            submitCallback(BKException.Code.OK);
+        } else {
+            buffer.release();
+        }
+
+        if (numPendingEntries < 0) {
+            LOG.error("Read too many values for ledger {} : [{}, {}].",
+                    ledgerId, startEntryId, endEntryId);
+        }
+
+    }
+
+    protected void submitCallback(int code) {
+        if (BKException.Code.OK == code) {
+            numPendingEntries--;
+            if (numPendingEntries != 0) {
+                return;
+            }
+        }
+
+        // ensure callback once
+        if (!complete.compareAndSet(false, true)) {
+            return;
+        }
+
+        cancelSpeculativeTask(true);
+
+        long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
+        if (code != BKException.Code.OK) {
+            long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
+            Integer firstRc = null;
+            for (LedgerEntryRequest req : seq) {
+                if (!req.isComplete()) {
+                    firstUnread = req.eId;
+                    firstRc = req.rc;
+                    break;
+                }
+            }
+            LOG.error(
+                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
+                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
+                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
+                    BKException.getMessage(code), firstUnread, firstRc);
+            clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            // release the entries
+            seq.forEach(LedgerEntryRequest::close);
+            future.completeExceptionally(BKException.create(code));
+        } else {
+            clientCtx.getClientStats().getReadOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            future.complete(LedgerEntriesImpl.create(Lists.transform(seq, input -> input.entryImpl)));
+        }
+    }
+
+    void sendReadTo(int bookieIndex, BookieId to, SingleLedgerEntryRequest entry) throws InterruptedException {
+        if (lh.throttler != null) {
+            lh.throttler.acquire();
+        }
+
+        if (isRecoveryRead) {
+            int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
+            clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
+                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
+        } else {
+            clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
+                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
+        }
+    }
+
+    abstract class SingleLedgerEntryRequest extends LedgerEntryRequest {
+        final LedgerEntryImpl entryImpl;
+
+        SingleLedgerEntryRequest(List<BookieId> ensemble, long lId, long eId) {
+            super(ensemble, eId);
+            this.entryImpl = LedgerEntryImpl.create(lId, eId);
         }
 
         @Override
         public void close() {
-            // this request has succeeded before, can't recycle writeSet again
-            if (complete.compareAndSet(false, true)) {
-                rc = BKException.Code.UnexpectedConditionException;
-                writeSet.recycle();
-            }
+            super.close();
             entryImpl.close();
         }
 
         /**
-         * Execute the read request.
-         */
-        abstract void read();
-
-        /**
          * Complete the read request from <i>host</i>.
          *
-         * @param bookieIndex
-         *          bookie index
-         * @param host
-         *          host that respond the read
-         * @param buffer
-         *          the data buffer
+         * @param bookieIndex bookie index
+         * @param host        host that respond the read
+         * @param buffer      the data buffer
          * @return return true if we managed to complete the entry;
-         *         otherwise return false if the read entry is not complete or it is already completed before
+         * otherwise return false if the read entry is not complete or it is already completed before
          */
         boolean complete(int bookieIndex, BookieId host, final ByteBuf buffer) {
             ByteBuf content;
@@ -141,7 +222,7 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
             }
             try {
                 content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
-            } catch (BKDigestMatchException e) {
+            } catch (BKException.BKDigestMatchException e) {
                 clientCtx.getClientStats().getReadOpDmCounter().inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
                 return false;
@@ -161,125 +242,9 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
                 return false;
             }
         }
-
-        /**
-         * Fail the request with given result code <i>rc</i>.
-         *
-         * @param rc
-         *          result code to fail the request.
-         * @return true if we managed to fail the entry; otherwise return false if it already failed or completed.
-         */
-        boolean fail(int rc) {
-            if (complete.compareAndSet(false, true)) {
-                this.rc = rc;
-                submitCallback(rc);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        /**
-         * Log error <i>errMsg</i> and reattempt read from <i>host</i>.
-         *
-         * @param bookieIndex
-         *          bookie index
-         * @param host
-         *          host that just respond
-         * @param errMsg
-         *          error msg to log
-         * @param rc
-         *          read result code
-         */
-        synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
-            if (BKException.Code.OK == firstError
-                || BKException.Code.NoSuchEntryException == firstError
-                || BKException.Code.NoSuchLedgerExistsException == firstError) {
-                firstError = rc;
-            } else if (BKException.Code.BookieHandleNotAvailableException == firstError
-                       && BKException.Code.NoSuchEntryException != rc
-                       && BKException.Code.NoSuchLedgerExistsException != rc) {
-                // if other exception rather than NoSuchEntryException or NoSuchLedgerExistsException is
-                // returned we need to update firstError to indicate that it might be a valid read but just
-                // failed.
-                firstError = rc;
-            }
-            if (BKException.Code.NoSuchEntryException == rc
-                || BKException.Code.NoSuchLedgerExistsException == rc) {
-                ++numBookiesMissingEntry;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
-                            lh.ledgerId, eId, host);
-                }
-            } else {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("{} while reading L{} E{} from bookie: {}",
-                            errMsg, lh.ledgerId, eId, host);
-                }
-            }
-
-            lh.recordReadErrorOnBookie(bookieIndex);
-        }
-
-        /**
-         * Send to next replica speculatively, if required and possible.
-         * This returns the host we may have sent to for unit testing.
-         *
-         * @param heardFromHostsBitSet
-         *      the set of hosts that we already received responses.
-         * @return host we sent to if we sent. null otherwise.
-         */
-        abstract BookieId maybeSendSpeculativeRead(BitSet heardFromHostsBitSet);
-
-        /**
-         * Whether the read request completed.
-         *
-         * @return true if the read request is completed.
-         */
-        boolean isComplete() {
-            return complete.get();
-        }
-
-        /**
-         * Get result code of this entry.
-         *
-         * @return result code.
-         */
-        int getRc() {
-            return rc;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("L%d-E%d", lh.getId(), eId);
-        }
-
-        /**
-         * Issues a speculative request and indicates if more speculative
-         * requests should be issued.
-         *
-         * @return whether more speculative requests should be issued
-         */
-        @Override
-        public ListenableFuture<Boolean> issueSpeculativeRequest() {
-            return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Send speculative read for {}. Hosts sent are {}, "
-                                            + " Hosts heard are {}, ensemble is {}.",
-                                this, sentToHosts, heardFromHostsBitSet, ensemble);
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-            });
-        }
     }
 
-    class ParallelReadRequest extends LedgerEntryRequest {
+    class ParallelReadRequest extends SingleLedgerEntryRequest {
 
         int numPendings;
 
@@ -326,7 +291,7 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
         }
     }
 
-    class SequenceReadRequest extends LedgerEntryRequest {
+    class SequenceReadRequest extends SingleLedgerEntryRequest {
         static final int NOT_FOUND = -1;
         int nextReplicaIndexToReadFrom = 0;
 
@@ -456,205 +421,4 @@ class PendingReadOp implements ReadEntryCallback, Runnable {
             return completed;
         }
     }
-
-    PendingReadOp(LedgerHandle lh,
-                  ClientContext clientCtx,
-                  long startEntryId,
-                  long endEntryId,
-                  boolean isRecoveryRead) {
-        this.seq = new LinkedList<>();
-        this.future = new CompletableFuture<>();
-        this.lh = lh;
-        this.clientCtx = clientCtx;
-        this.startEntryId = startEntryId;
-        this.endEntryId = endEntryId;
-        this.isRecoveryRead = isRecoveryRead;
-
-        this.allowFailFast = false;
-        numPendingEntries = endEntryId - startEntryId + 1;
-        requiredBookiesMissingEntryForRecovery = getLedgerMetadata().getWriteQuorumSize()
-                - getLedgerMetadata().getAckQuorumSize() + 1;
-        heardFromHosts = new HashSet<>();
-        heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
-    }
-
-    CompletableFuture<LedgerEntries> future() {
-        return future;
-    }
-
-    protected LedgerMetadata getLedgerMetadata() {
-        return lh.getLedgerMetadata();
-    }
-
-    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
-        if (speculativeTask != null) {
-            speculativeTask.cancel(mayInterruptIfRunning);
-            speculativeTask = null;
-        }
-    }
-
-    public ScheduledFuture<?> getSpeculativeTask() {
-        return speculativeTask;
-    }
-
-    PendingReadOp parallelRead(boolean enabled) {
-        this.parallelRead = enabled;
-        return this;
-    }
-
-    void allowFailFastOnUnwritableChannel() {
-        allowFailFast = true;
-    }
-
-    public void submit() {
-        clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
-    }
-
-    void initiate() {
-        long nextEnsembleChange = startEntryId, i = startEntryId;
-        this.requestTimeNanos = MathUtils.nowInNano();
-        List<BookieId> ensemble = null;
-        do {
-            if (i == nextEnsembleChange) {
-                ensemble = getLedgerMetadata().getEnsembleAt(i);
-                nextEnsembleChange = LedgerMetadataUtils.getNextEnsembleChange(getLedgerMetadata(), i);
-            }
-            LedgerEntryRequest entry;
-            if (parallelRead) {
-                entry = new ParallelReadRequest(ensemble, lh.ledgerId, i);
-            } else {
-                entry = new SequenceReadRequest(ensemble, lh.ledgerId, i);
-            }
-            seq.add(entry);
-            i++;
-        } while (i <= endEntryId);
-        // read the entries.
-        for (LedgerEntryRequest entry : seq) {
-            entry.read();
-            if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
-                speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
-                    .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
-            }
-        }
-    }
-
-    @Override
-    public void run() {
-        initiate();
-    }
-
-    private static class ReadContext implements ReadEntryCallbackCtx {
-        final int bookieIndex;
-        final BookieId to;
-        final LedgerEntryRequest entry;
-        long lac = LedgerHandle.INVALID_ENTRY_ID;
-
-        ReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
-            this.bookieIndex = bookieIndex;
-            this.to = to;
-            this.entry = entry;
-        }
-
-        @Override
-        public void setLastAddConfirmed(long lac) {
-            this.lac = lac;
-        }
-
-        @Override
-        public long getLastAddConfirmed() {
-            return lac;
-        }
-    }
-
-    private static ReadContext createReadContext(int bookieIndex, BookieId to, LedgerEntryRequest entry) {
-        return new ReadContext(bookieIndex, to, entry);
-    }
-
-    void sendReadTo(int bookieIndex, BookieId to, LedgerEntryRequest entry) throws InterruptedException {
-        if (lh.throttler != null) {
-            lh.throttler.acquire();
-        }
-
-        if (isRecoveryRead) {
-            int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
-            clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
-        } else {
-            clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
-        }
-    }
-
-    @Override
-    public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
-        final ReadContext rctx = (ReadContext) ctx;
-        final LedgerEntryRequest entry = rctx.entry;
-
-        if (rc != BKException.Code.OK) {
-            entry.logErrorAndReattemptRead(rctx.bookieIndex, rctx.to, "Error: " + BKException.getMessage(rc), rc);
-            return;
-        }
-
-        heardFromHosts.add(rctx.to);
-        heardFromHostsBitSet.set(rctx.bookieIndex, true);
-
-        buffer.retain();
-        // if entry has completed don't handle twice
-        if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
-            if (!isRecoveryRead) {
-                // do not advance LastAddConfirmed for recovery reads
-                lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
-            }
-            submitCallback(BKException.Code.OK);
-        } else {
-            buffer.release();
-        }
-
-        if (numPendingEntries < 0) {
-            LOG.error("Read too many values for ledger {} : [{}, {}].",
-                    ledgerId, startEntryId, endEntryId);
-        }
-    }
-
-    protected void submitCallback(int code) {
-        if (BKException.Code.OK == code) {
-            numPendingEntries--;
-            if (numPendingEntries != 0) {
-                return;
-            }
-        }
-
-        // ensure callback once
-        if (!complete.compareAndSet(false, true)) {
-            return;
-        }
-
-        cancelSpeculativeTask(true);
-
-        long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
-        if (code != BKException.Code.OK) {
-            long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
-            Integer firstRc = null;
-            for (LedgerEntryRequest req : seq) {
-                if (!req.isComplete()) {
-                    firstUnread = req.eId;
-                    firstRc = req.rc;
-                    break;
-                }
-            }
-            LOG.error(
-                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
-                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
-                    BKException.getMessage(code), firstUnread, firstRc);
-            clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
-            // release the entries
-            seq.forEach(LedgerEntryRequest::close);
-            future.completeExceptionally(BKException.create(code));
-        } else {
-            clientCtx.getClientStats().getReadOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
-            future.complete(LedgerEntriesImpl.create(Lists.transform(seq, input -> input.entryImpl)));
-        }
-    }
-
 }
