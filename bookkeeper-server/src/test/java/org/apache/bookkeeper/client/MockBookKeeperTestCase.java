@@ -96,6 +96,7 @@ public abstract class MockBookKeeperTestCase {
     protected BookieClient bookieClient;
     protected LedgerManager ledgerManager;
     protected LedgerIdGenerator ledgerIdGenerator;
+    protected EnsemblePlacementPolicy placementPolicy;
 
     private BookieWatcher bookieWatcher;
 
@@ -152,6 +153,7 @@ public abstract class MockBookKeeperTestCase {
         scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(4).name("bk-test").build();
         executor = OrderedExecutor.newBuilder().build();
         bookieWatcher = mock(BookieWatcher.class);
+        placementPolicy = new DefaultEnsemblePlacementPolicy();
 
         bookieClient = mock(BookieClient.class);
         ledgerManager = mock(LedgerManager.class);
@@ -194,7 +196,7 @@ public abstract class MockBookKeeperTestCase {
 
                 @Override
                 public EnsemblePlacementPolicy getPlacementPolicy() {
-                    return null;
+                    return placementPolicy;
                 }
 
                 @Override
