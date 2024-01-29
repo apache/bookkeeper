@@ -13,38 +13,50 @@ $ mvn clean install -DskipTests
 ```
 
 ## Start Standalone
+The following two methods can be started.
 
 ```
 $ bin/streamstorage standalone
 ```
+or
+
+```
+$ bin/bookkeeper standalone
+```
 
 ## CLI Usage
 
-CLI is available at `bin/streamstorage-cli`
+CLI is available at `bin/bkctl`
 
 ## Examples
 
 ### Distributed Counters
 
-#### Create Table
+#### Create NameSpace
 
-Stream is the management unit. A `Table` is a materialized view of a `Stream`.
+The default namespace is `default`.
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 stream create --stream test_dist_counter
+bin/bkctl namespace create ns1
 
+```
+
+#### Create Table
+
+```
+bin/bkctl -n ns1 tables create test_dist_counter
 ```
 
 #### Listen on a key
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table get -t test_dist_counter -k "counter-1" --watch
+bin/bkctl -n ns1 table get test_dist_counter counter-1
 ```
 
 #### Increment a counter
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_dist_counter -k "counter-1" -a 100
+bin/bkctl -n ns1 table inc test_dist_counter counter-1 2
 ```
 
 ### K/V Store
@@ -54,29 +66,29 @@ Use the table service as the normal k/v store for storing metadata
 #### Create Table
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 stream create --stream test_kv_store
+bin/bkctl stream create --stream test_kv_store
 ```
 
 #### Listen on a key
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table get -t test_kv_store -k "test-key" --watch
+bin/bkctl table get test_kv_store test-key
 ```
 
 #### Put Key/Value
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table put -t test_kv_store -k "test-key" -v "test-value-`date`"
+bin/bkctl table put test_kv_store test-key 1
 ```
 
 #### Increment
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table get -t test_kv_store -k "test-counter-key" --watch
+bin/streamstorage-cli -s table get -t test_kv_store -k "test-counter-key" --watch
 ```
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_kv_store -k "test-counter-key" -a 200
+bin/streamstorage-cli -s table incr -t test_kv_store -k "test-counter-key" -a 200
 ```
 
 ## Features
@@ -99,7 +111,7 @@ bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_kv_store -k "test-cou
     - [ ] Thin client with server-side request routing
     - [ ] Multiple language clients: C++, Python, Go
 - [ ] Deployment
-    - [ ] Run table service as a bookkeeper lifecycle component in bookie server
+    - [x] Run table service as a bookkeeper lifecycle component in bookie server
 
 ## Later Improvements
 
