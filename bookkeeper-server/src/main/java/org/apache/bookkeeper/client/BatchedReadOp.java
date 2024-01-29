@@ -62,7 +62,7 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         this.requestTimeNanos = MathUtils.nowInNano();
         List<BookieId> ensemble = getLedgerMetadata().getEnsembleAt(startEntryId);
         if (parallelRead) {
-            LOG.info("Batch read unsupported the parallelRead, fail back to sequence read.");
+            LOG.info("Batch read unsupported the parallelRead, failback to sequence read.");
         }
         request = new SequenceReadRequest(ensemble, lh.ledgerId, startEntryId, maxCount, maxSize);
         request.read();
