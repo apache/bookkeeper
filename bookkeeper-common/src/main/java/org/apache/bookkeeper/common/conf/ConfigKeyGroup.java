@@ -38,6 +38,8 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 @Public
 public class ConfigKeyGroup {
 
+    public static class ConfigKeyGroupBuilder {}
+
     /**
      * Ordering the key groups in a configuration.
      */

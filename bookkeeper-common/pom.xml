@@ -135,11 +135,10 @@
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
-          <subpackages>org.apache.bookkeeper.common.annotation</subpackages>
           <groups>
             <group>
               <title>Bookkeeper Client</title>
-              <packages>org.apache.bookkeeper.common.annotation*</packages>
+              <packages>org.apache.bookkeeper.common.annotation</packages>
             </group>
           </groups>
         </configuration>

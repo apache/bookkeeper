@@ -294,11 +294,10 @@
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
-          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
           <groups>
             <group>
               <title>Bookkeeper</title>
-              <packages>org.apache.bookkeeper*</packages>
+              <packages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</packages>
             </group>
           </groups>
         </configuration>

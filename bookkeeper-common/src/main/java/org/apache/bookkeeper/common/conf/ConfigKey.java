@@ -46,6 +46,8 @@ import org.apache.commons.configuration.ConfigurationException;
 @Slf4j
 public class ConfigKey {
 
+    public static class ConfigKeyBuilder {}
+
     public static final Comparator<ConfigKey> ORDERING = (o1, o2) -> {
         int ret = Integer.compare(o1.orderInGroup, o2.orderInGroup);
         if (ret == 0) {
