@@ -359,7 +359,7 @@ public class BookieClientTest {
     }
 
     @Test
-    public void testBatchedRead() throws Exception {
+    public void testBatchRead() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setUseV2WireProtocol(true);
         BookieClient bc = new BookieClientImpl(conf, eventLoopGroup,
