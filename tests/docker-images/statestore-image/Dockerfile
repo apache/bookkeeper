@@ -40,10 +40,10 @@ RUN set -x \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
-     && apt-get -y --purge autoremove \
-     && apt-get autoclean \
-     && apt-get clean \
-     && rm -rf /var/lib/apt/lists/*
+    && apt-get -y --purge autoremove \
+    && apt-get autoclean \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && pip install zk-shell \
     && mkdir -pv /opt \
     && cd /opt
