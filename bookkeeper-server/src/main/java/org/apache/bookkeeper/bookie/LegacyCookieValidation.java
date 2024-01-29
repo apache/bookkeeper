@@ -94,7 +94,7 @@ public class LegacyCookieValidation implements CookieValidation {
             if (!missedCookieDirs.isEmpty()) {
                 if (rmCookie == null) {
                     // 5.1 new environment: all directories should be empty
-                    verifyDirsForNewEnvironment(missedCookieDirs);
+                    verifyDirsForNewEnvironment(directories);
                     stampNewCookie(conf, masterCookie, registrationManager,
                             Version.NEW, directories);
                 } else if (allowExpansion) {
