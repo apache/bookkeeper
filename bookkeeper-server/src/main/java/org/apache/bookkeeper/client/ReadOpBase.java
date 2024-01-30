@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -39,6 +40,7 @@ public abstract class ReadOpBase implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadOpBase.class);
 
+    protected ScheduledFuture<?> speculativeTask = null;
     protected final CompletableFuture<LedgerEntries> future;
     protected final Set<BookieId> heardFromHosts;
     protected final BitSet heardFromHostsBitSet;
@@ -52,12 +54,10 @@ public abstract class ReadOpBase implements Runnable {
     protected final int requiredBookiesMissingEntryForRecovery;
     protected final boolean isRecoveryRead;
 
-    protected boolean parallelRead = false;
     protected final AtomicBoolean complete = new AtomicBoolean(false);
     protected boolean allowFailFast = false;
     long numPendingEntries;
     final long endEntryId;
-
     protected ReadOpBase(LedgerHandle lh, ClientContext clientCtx, long startEntryId, long endEntryId,
                          boolean isRecoveryRead) {
         this.lh = lh;
@@ -75,6 +75,17 @@ public abstract class ReadOpBase implements Runnable {
 
     protected LedgerMetadata getLedgerMetadata() {
         return lh.getLedgerMetadata();
+    }
+
+    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+        if (speculativeTask != null) {
+            speculativeTask.cancel(mayInterruptIfRunning);
+            speculativeTask = null;
+        }
+    }
+
+    public ScheduledFuture<?> getSpeculativeTask() {
+        return speculativeTask;
     }
 
     CompletableFuture<LedgerEntries> future() {

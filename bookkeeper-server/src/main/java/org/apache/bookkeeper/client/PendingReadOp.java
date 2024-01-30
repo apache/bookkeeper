@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
-    private ScheduledFuture<?> speculativeTask = null;
+    protected boolean parallelRead = false;
     protected final LinkedList<SingleLedgerEntryRequest> seq;
 
     PendingReadOp(LedgerHandle lh,
@@ -58,17 +58,6 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         super(lh, clientCtx, startEntryId, endEntryId, isRecoveryRead);
         this.seq = new LinkedList<>();
         numPendingEntries = endEntryId - startEntryId + 1;
-    }
-
-    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
-        if (speculativeTask != null) {
-            speculativeTask.cancel(mayInterruptIfRunning);
-            speculativeTask = null;
-        }
-    }
-
-    public ScheduledFuture<?> getSpeculativeTask() {
-        return speculativeTask;
     }
 
     PendingReadOp parallelRead(boolean enabled) {
