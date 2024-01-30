@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.BatchedReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -179,6 +180,47 @@ public interface BookieClient {
     void readEntry(BookieId address, long ledgerId, long entryId,
                    ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
                    boolean allowFastFail);
+
+    /**
+     * Batch read entries with a null masterkey, disallowing failfast.
+     * @see #batchReadEntries(BookieId,long,long,int,long,BatchedReadEntryCallback,Object,int,byte[],boolean)
+     */
+    default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
+            int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
+            int flags) {
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, null);
+    }
+
+    /**
+     * Batch read entries, disallowing failfast.
+     * @see #batchReadEntries(BookieId,long,long,int,long,BatchedReadEntryCallback,Object,int,byte[],boolean)
+     */
+    default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
+            int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
+            int flags, byte[] masterKey) {
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, masterKey, false);
+    }
+
+    /**
+     * Batch read entries from bookie at address {@code address}.
+     *
+     * @param address address of the bookie to read from
+     * @param ledgerId id of the ledger the entry belongs to
+     * @param startEntryId id of the entry started
+     * @param maxCount the total entries count in this batch
+     * @param maxSize the total entries size in this batch
+     * @param cb the callback notified when the request completes
+     * @param ctx a context object passed to the callback on completion
+     * @param flags a bit mask of flags from BookieProtocol.FLAG_*
+     *              {@link org.apache.bookkeeper.proto.BookieProtocol}
+     * @param masterKey the master key of the ledger being read from. This is only required
+     *                  if the FLAG_DO_FENCING is specified.
+     * @param allowFastFail fail the read immediately if the channel is non-writable
+     *                      {@link #isWritable(BookieId,long)}
+     */
+    void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
+            int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
+            int flags, byte[] masterKey, boolean allowFastFail);
 
     /**
      * Send a long poll request to bookie, waiting for the last add confirmed

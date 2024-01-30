@@ -18,7 +18,13 @@ There is no upper limit on the number of bookies that you can run in a single en
 
 ### Performance
 
+#### Disks
+
 To achieve optimal performance, BookKeeper requires each server to have at least two disks. It's possible to run a bookie with a single disk but performance will be significantly degraded.
+
+#### Sticky reads
+
+BookKeeper sticky reads enables bookie node to read entries efficiently. The sticky reads are only available when ensemble (E) size is equal to quorum write (Qw).
 
 ### ZooKeeper
 

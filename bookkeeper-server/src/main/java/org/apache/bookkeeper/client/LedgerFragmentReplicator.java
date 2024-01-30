@@ -336,7 +336,7 @@ public class LedgerFragmentReplicator {
      *            New bookies we want to use to recover and replicate the ledger
      *            entries that were stored on the failed bookie.
      */
-    private void recoverLedgerFragmentEntry(final Long entryId,
+    void recoverLedgerFragmentEntry(final Long entryId,
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
             final Set<BookieId> newBookies,
@@ -410,7 +410,7 @@ public class LedgerFragmentReplicator {
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length),
                                 lh.getLedgerKey(),
-                                0
+                                BookieProtocol.FLAG_RECOVERY_ADD
                                 );
                 if (replicationThrottle != null) {
                     if (toSend instanceof ByteBuf) {

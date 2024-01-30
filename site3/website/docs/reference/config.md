@@ -278,7 +278,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | --------- | ----------- | ------- | 
 | enableStatistics | Whether statistics are enabled for the bookie. | true |
 | sanityCheckMetricsEnabled | Flag to enable sanity check metrics in bookie stats. | false |
-| statsProviderClass | Stats provider class.<br />Options:<br /> - Prometheus    : org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider<br /> - Codahale     : org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider<br /> - Twitter Finagle  : org.apache.bookkeeper.stats.twitter.finagle.FinagleStatsProvider<br /> - Twitter Ostrich  : org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider<br /> - Twitter Science  : org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider<br /> | org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider | 
+| statsProviderClass | Stats provider class.<br />Options:<br /> - Prometheus    : org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider<br /> - Codahale     : org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider<br /> - OpenTelemetry  : org.apache.bookkeeper.stats.otel.OtelMetricsProvider | org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider
 | limitStatsLogging | option to limit stats logging | true | 
 
 

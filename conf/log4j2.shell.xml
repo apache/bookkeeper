@@ -21,23 +21,38 @@
 -->
 <Configuration status="warn" monitorInterval="10">
     <Properties>
-        <Property name="bookkeeper.log.root.level">INFO</Property>
-        <Property name="bookkeeper.log.root.appender">CONSOLE</Property>
+        <Property name="bookkeeper.shell.log.dir">.</Property>
+        <Property name="bookkeeper.shell.log.file">bookkeeper-shell.log</Property>
+        <Property name="bookkeeper.shell.root.level">INFO</Property>
+        <Property name="bookkeeper.shell.root.appender">ROLLINGFILE</Property>
     </Properties>
     <Appenders>
         <Console name="CONSOLE" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ABSOLUTE} %-5p %m%n"/>
         </Console>
+        <RollingFile name="ROLLINGFILE" fileName="${sys:bookkeeper.shell.log.dir}/${sys:bookkeeper.shell.log.file}" filePattern="${sys:bookkeeper.shell.log.dir}/${sys:bookkeeper.shell.log.file}%d{.yyyy-MM-dd}">
+            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="100"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
-        <Root level="${sys:bookkeeper.log.root.level}">
-            <AppenderRef ref="${sys:bookkeeper.log.root.appender}"/>
+        <Root level="${sys:bookkeeper.shell.root.level}">
+            <AppenderRef ref="${sys:bookkeeper.shell.root.appender}"/>
         </Root>
-        <Logger name="org.apache.zookeeper" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.bookie.BookieShell" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.client.BookKeeperAdmin" level="INFO"/>
-        <Logger name="org.apache.bookkeeper.tools.cli.commands.bookies.InstanceIdCommand" level="INFO"/>
-        <Logger name="org.apache.bookkeeper" level="INFO"/>
+        <Logger name="org.apache.bookkeeper.bookie.BookieShell" level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+        </Logger>
+        <Logger name="org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp" level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+        </Logger>
+        <Logger name="org.apache.bookkeeper.client.BookKeeperAdmin" level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+        </Logger>
+        <Logger name="org.apache.bookkeeper.tools.cli.commands" level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+        </Logger>
     </Loggers>
 </Configuration>

@@ -471,6 +471,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 boolean enableGroupForceWrites,
                                 StatsLogger statsLogger) {
             super("ForceWriteThread");
+            this.setPriority(Thread.MAX_PRIORITY);
             this.threadToNotifyOnEx = threadToNotifyOnEx;
             this.enableGroupForceWrites = enableGroupForceWrites;
             this.forceWriteThreadTime = statsLogger.getThreadScopedCounter("force-write-thread-time");
@@ -650,6 +651,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator) {
         super(journalThreadName + "-" + conf.getBookiePort());
+        this.setPriority(Thread.MAX_PRIORITY);
         this.allocator = allocator;
 
         StatsLogger journalStatsLogger = statsLogger.scopeLabel("journalIndex", String.valueOf(journalIndex));

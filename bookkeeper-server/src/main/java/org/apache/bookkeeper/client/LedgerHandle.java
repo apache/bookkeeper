@@ -1913,6 +1913,7 @@ public class LedgerHandle implements WriteHandle {
 
     void ensembleChangeLoop(List<BookieId> origEnsemble, Map<Integer, BookieId> failedBookies) {
         int ensembleChangeId = numEnsembleChanges.incrementAndGet();
+        ensembleChangeCounter.inc();
         String logContext = String.format("[EnsembleChange(ledger:%d, change-id:%010d)]", ledgerId, ensembleChangeId);
 
         // when the ensemble changes are too frequent, close handle

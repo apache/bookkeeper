@@ -123,7 +123,7 @@ public class ByteBufList extends AbstractReferenceCounted {
         return buf;
     }
 
-    private static ByteBufList get() {
+    public static ByteBufList get() {
         ByteBufList buf = RECYCLER.get();
         buf.setRefCnt(1);
         return buf;

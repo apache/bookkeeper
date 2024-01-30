@@ -477,8 +477,9 @@ public class FastTimer extends Timer {
      */
     public double getRate(int seconds) {
         seconds = Math.min(seconds, timeWindow - 2);
-        int t = getNow(getHash()) - 1; // start from last completed second
-        int secFrom = t - seconds;
+        int t = getNow(getHash());
+        // start from last completed second
+        int secFrom = t - seconds - 1;
         long sum = 0;
         for (int h = 0; h < HASH_SIZE; h++) {
             for (int i = t; i > secFrom; i--) {

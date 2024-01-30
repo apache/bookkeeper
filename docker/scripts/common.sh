@@ -71,7 +71,7 @@ echo "  BK_STREAM_STORAGE_ROOT_PATH is ${BK_STREAM_STORAGE_ROOT_PATH}"
 echo "  BK_NUM_STORAGE_CONTAINERS is ${BK_NUM_STORAGE_CONTAINERS}"
 echo "  BOOKIE_GRPC_PORT is ${BOOKIE_GRPC_PORT}"
 
-python scripts/apply-config-from-env.py ${BK_HOME}/conf
+python scripts/apply-config-from-env.py ${BK_HOME}/conf/*.conf
 
 export BOOKIE_CONF=${BK_HOME}/conf/bk_server.conf
 export SERVICE_PORT=${PORT0}

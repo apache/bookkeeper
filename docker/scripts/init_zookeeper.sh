@@ -63,7 +63,7 @@ function create_zk_dynamic_conf() {
 function init_zookeeper() {
 
     # apply zookeeper envs
-    python scripts/apply-config-from-env.py ${BK_HOME}/conf
+    python scripts/apply-config-from-env.py ${BK_HOME}/conf/zookeeper.conf
 
     # create dirs if they don't exist
     create_zk_dirs
