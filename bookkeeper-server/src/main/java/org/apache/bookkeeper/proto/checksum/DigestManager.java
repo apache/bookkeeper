@@ -54,7 +54,11 @@ public abstract class DigestManager {
 
     abstract int getMacCodeLength();
 
-    abstract int update(int digest, ByteBuf buffer, int offset, int len);
+    abstract int internalUpdate(int digest, ByteBuf buffer, int offset, int len);
+
+    final int update(int digest, ByteBuf buffer, int offset, int len) {
+        return internalUpdate(digest, buffer, offset, len);
+    }
 
     abstract void populateValueAndReset(int digest, ByteBuf buffer);
 

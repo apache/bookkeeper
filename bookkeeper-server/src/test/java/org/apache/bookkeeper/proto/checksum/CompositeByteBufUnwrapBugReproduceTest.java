@@ -90,7 +90,7 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         }
 
         @Override
-        int update(int digest, ByteBuf data, int offset, int len) {
+        int internalUpdate(int digest, ByteBuf data, int offset, int len) {
             return intHash.resume(digest, data, offset, len);
         }
     }
