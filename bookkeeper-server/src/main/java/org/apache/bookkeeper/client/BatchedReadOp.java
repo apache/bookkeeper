@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
@@ -44,6 +45,8 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
     final int maxCount;
     final long maxSize;
 
+    private ScheduledFuture<?> speculativeTask = null;
+
     BatchedLedgerEntryRequest request;
 
     BatchedReadOp(LedgerHandle lh,
@@ -61,11 +64,12 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
     void initiate() {
         this.requestTimeNanos = MathUtils.nowInNano();
         List<BookieId> ensemble = getLedgerMetadata().getEnsembleAt(startEntryId);
-        if (parallelRead) {
-            LOG.info("Batch read unsupported the parallelRead, failback to sequence read.");
-        }
         request = new SequenceReadRequest(ensemble, lh.ledgerId, startEntryId, maxCount, maxSize);
         request.read();
+        if (clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
+            speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                    .initiateSpeculativeRequest(clientCtx.getScheduler(), request);
+        }
     }
 
     @Override
@@ -74,6 +78,8 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         if (!complete.compareAndSet(false, true)) {
             return;
         }
+
+        cancelSpeculativeTask(true);
 
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
@@ -91,11 +97,6 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             clientCtx.getClientStats().getReadOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
             future.complete(LedgerEntriesImpl.create(request.entries));
         }
-    }
-
-    BatchedReadOp parallelRead(boolean enabled) {
-        this.parallelRead = enabled;
-        return this;
     }
 
     @Override
