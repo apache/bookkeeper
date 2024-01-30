@@ -342,7 +342,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             BatchedReadOp op = new BatchedReadOp(l, bkspec.getClientCtx(), 0, 5, 5120, false);
             // if we've already heard from all hosts,
             // we only send the initial read
-            req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0, 1,1024);
+            req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0, 1, 1024);
             assertTrue("Should have sent to first",
                        req0.maybeSendSpeculativeRead(allHosts).equals(ensemble.get(0)));
             assertNull("Should not have sent another",
@@ -394,7 +394,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
         BookKeeper bkspec = new BookKeeperTestClient(conf, new TestStatsProvider());
         LedgerHandle l = bkspec.createLedger(1, 1, digestType, passwd);
         List<BookieId> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
-        BatchedReadOp op = new BatchedReadOp(l, bkspec.getClientCtx(), 0, 5, 5120,false);
+        BatchedReadOp op = new BatchedReadOp(l, bkspec.getClientCtx(), 0, 5, 5120, false);
         BatchedReadOp.LedgerEntryRequest req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0, 1, 1024);
         assertNotNull(req0.writeSet);
     }
