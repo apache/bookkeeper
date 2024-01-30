@@ -19,7 +19,6 @@
 package com.scurrilous.circe.checksum;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -107,13 +106,6 @@ public class Java9IntHash implements IntHash {
         } else if (buffer.hasArray()) {
             int arrayOffset = buffer.arrayOffset() + offset;
             negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
-        } else if (buffer instanceof CompositeByteBuf) {
-           CompositeByteBuf compositeByteBuf = (CompositeByteBuf) buffer;
-           int loopedCurrent = current;
-           for (int i = 0; i < compositeByteBuf.numComponents(); i ++) {
-               loopedCurrent = resume(loopedCurrent, compositeByteBuf.component(i));
-           }
-           return loopedCurrent;
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
