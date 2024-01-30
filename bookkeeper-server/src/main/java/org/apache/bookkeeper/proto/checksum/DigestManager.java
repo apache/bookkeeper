@@ -20,10 +20,8 @@ package org.apache.bookkeeper.proto.checksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.security.GeneralSecurityException;
@@ -136,22 +134,7 @@ public abstract class DigestManager {
 
         // Compute checksum over the headers
         int digest = update(0, buf, buf.readerIndex(), buf.readableBytes());
-
-        // don't unwrap slices
-        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
-                ? data.unwrap() : data;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.safeRelease(data);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf cbb = (CompositeByteBuf) unwrapped;
-            for (int i = 0; i < cbb.numComponents(); i++) {
-                ByteBuf b = cbb.component(i);
-                digest = update(digest, b, b.readerIndex(), b.readableBytes());
-            }
-        } else {
-            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-        }
+        digest = update(digest, data, data.readerIndex(), data.readableBytes());
 
         populateValueAndReset(digest, buf);
 
@@ -159,11 +142,11 @@ public abstract class DigestManager {
         buf.readerIndex(0);
 
         if (isSmallEntry) {
-            buf.writeBytes(unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-            unwrapped.release();
+            buf.writeBytes(data, data.readerIndex(), data.readableBytes());
+            data.release();
             return buf;
         } else {
-            return ByteBufList.get(buf, unwrapped);
+            return ByteBufList.get(buf, data);
         }
     }
 
@@ -176,25 +159,9 @@ public abstract class DigestManager {
         headersBuffer.writeLong(length);
 
         int digest = update(0, headersBuffer, 0, METADATA_LENGTH);
-
-        // don't unwrap slices
-        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
-                ? data.unwrap() : data;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(data);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf cbb = ((CompositeByteBuf) unwrapped);
-            for (int i = 0; i < cbb.numComponents(); i++) {
-                ByteBuf b = cbb.component(i);
-                digest = update(digest, b, b.readerIndex(), b.readableBytes());
-            }
-        } else {
-            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-        }
+        digest = update(digest, data, data.readerIndex(), data.readableBytes());
         populateValueAndReset(digest, headersBuffer);
-
-        return ByteBufList.get(headersBuffer, unwrapped);
+        return ByteBufList.get(headersBuffer, data);
     }
 
     /**
