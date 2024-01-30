@@ -780,6 +780,8 @@ public class LedgerHandle implements WriteHandle {
             asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
                 @Override
                 public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    //If the bookie server not support the batch read request, the bookie server will close the
+                    // connection, then get the BookieHandleNotAvailableException.
                     if (rc == Code.BookieHandleNotAvailableException) {
                         notSupportBatch = true;
                         if (failbackToSingleRead) {
@@ -870,6 +872,8 @@ public class LedgerHandle implements WriteHandle {
             asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
                 @Override
                 public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    //If the bookie server not support the batch read request, the bookie server will close the
+                    // connection, then get the BookieHandleNotAvailableException.
                     if (rc == Code.BookieHandleNotAvailableException) {
                         notSupportBatch = true;
                         if (failbackToSingleRead) {
@@ -951,6 +955,8 @@ public class LedgerHandle implements WriteHandle {
         batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
                 .whenComplete((entries, ex) -> {
                     if (ex != null) {
+                        //If the bookie server not support the batch read request, the bookie server will close the
+                        // connection, then get the BookieHandleNotAvailableException.
                         if (ex instanceof BKException.BKBookieHandleNotAvailableException) {
                             notSupportBatch = true;
                             if (failbackToSingleRead) {
