@@ -20,6 +20,21 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.SPECULATIVE_READ_COUNT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.BitSet;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -30,22 +45,6 @@ import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.BitSet;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
-import static org.apache.bookkeeper.client.BookKeeperClientStats.SPECULATIVE_READ_COUNT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This unit test tests ledger fencing.
@@ -121,7 +120,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             assertFalse(l.await(milliseconds, TimeUnit.MILLISECONDS));
         }
     }
-    
 
     /**
      * Test basic speculative functionality.
@@ -138,15 +136,15 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
         long id = getLedgerToRead(3, 2);
         BookKeeperTestClient bknospec = createClient(0); // disabled
         BookKeeperTestClient bkspec = createClient(2000);
-        
+
         LedgerHandle lnospec = bknospec.openLedger(id, digestType, passwd);
         LedgerHandle lspec = bkspec.openLedger(id, digestType, passwd);
-        
+
         // sleep second bookie
         CountDownLatch sleepLatch = new CountDownLatch(1);
         BookieId second = lnospec.getLedgerMetadata().getAllEnsembles().get(0L).get(1);
         sleepBookie(second, sleepLatch);
-        
+
         try {
             // read first entry, both go to first bookie, should be fine
             LatchCallback nospeccb = new LatchCallback();
@@ -155,7 +153,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             lspec.asyncBatchReadEntries(0, 1, 1024, false, speccb, null);
             nospeccb.expectSuccess(2000);
             speccb.expectSuccess(2000);
-            
+
             // read second entry, both look for second book, spec read client
             // tries third bookie, nonspec client hangs as read timeout is very long.
             nospeccb = new LatchCallback();
@@ -167,7 +165,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             // Check that the second bookie is registered as slow at entryId 1
             RackawareEnsemblePlacementPolicy rep = (RackawareEnsemblePlacementPolicy) bkspec.getPlacementPolicy();
             assertTrue(rep.slowBookies.asMap().size() == 1);
-            
+
             assertTrue(
                     "Stats should not reflect speculative reads if disabled",
                     bknospec.getTestStatsProvider()
@@ -176,7 +174,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
                     "Stats should reflect speculative reads",
                     bkspec.getTestStatsProvider()
                             .getCounter(CLIENT_SCOPE + "." + SPECULATIVE_READ_COUNT).get() > 0);
-            
         } finally {
             sleepLatch.countDown();
             lspec.close();
@@ -251,7 +248,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             assertTrue("should have taken longer than one timeout, but less than 2",
                        latch4.getDuration() >= timeout
                        && latch4.getDuration() < timeout * 2);
-
         } finally {
             sleepLatch.countDown();
             l.close();
@@ -294,7 +290,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             LatchCallback latch1 = new LatchCallback();
             l.asyncBatchReadEntries(1, 1, 1024, false, latch1, null);
             latch1.expectSuccess(timeout / 2);
-
         } finally {
             sleepLatch0.countDown();
             sleepLatch1.countDown();

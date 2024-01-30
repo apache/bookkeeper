@@ -659,9 +659,9 @@ public class LedgerHandle implements WriteHandle {
             boolean failbackToSingleRead)
             throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
-        
+
         asyncBatchReadEntries(startEntry, maxCount, maxSize, failbackToSingleRead, new SyncReadCallback(result), null);
-        
+
         return SyncCallbackUtils.waitForResult(result);
     }
 
@@ -687,7 +687,7 @@ public class LedgerHandle implements WriteHandle {
 
         return SyncCallbackUtils.waitForResult(result);
     }
-    
+
     /**
      * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
      * This is the same of
@@ -701,12 +701,13 @@ public class LedgerHandle implements WriteHandle {
      *
      * @param failbackToSingleRead
      */
-    public Enumeration<LedgerEntry> batchReadUnconfirmedEntries(long firstEntry, int maxCount, long maxSize, boolean failbackToSingleRead)
-            throws InterruptedException, BKException {
+    public Enumeration<LedgerEntry> batchReadUnconfirmedEntries(long firstEntry, int maxCount, long maxSize,
+            boolean failbackToSingleRead) throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
-        
-        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, failbackToSingleRead, new SyncReadCallback(result), null);
-        
+
+        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, failbackToSingleRead,
+                new SyncReadCallback(result), null);
+
         return SyncCallbackUtils.waitForResult(result);
     }
 
@@ -740,7 +741,7 @@ public class LedgerHandle implements WriteHandle {
 
         asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
-    
+
     /**
      * Read a sequence of entries in asynchronously.
      * It send an RPC to get all entries instead of send multi RPC to get all entries.
@@ -833,7 +834,7 @@ public class LedgerHandle implements WriteHandle {
 
         asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
-    
+
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * It sends an RPC to get all entries instead of send multi RPC to get all entries.
@@ -850,8 +851,8 @@ public class LedgerHandle implements WriteHandle {
      * @param ctx
      *          control object
      */
-    public void asyncBatchReadUnconfirmedEntries(long startEntry, int maxCount, long maxSize, boolean failbackToSingleRead,
-            ReadCallback cb, Object ctx) {
+    public void asyncBatchReadUnconfirmedEntries(long startEntry, int maxCount, long maxSize,
+            boolean failbackToSingleRead, ReadCallback cb, Object ctx) {
         // Little sanity check
         if (startEntry < 0) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{}", ledgerId, startEntry);
@@ -910,7 +911,7 @@ public class LedgerHandle implements WriteHandle {
 
         return readEntriesInternalAsync(firstEntry, lastEntry, false);
     }
-    
+
     /**
      * Read a sequence of entries in asynchronously.
      * It sends an RPC to get all entries instead of send multi RPC to get all entries.
@@ -973,7 +974,7 @@ public class LedgerHandle implements WriteHandle {
                 });
         return future;
     }
-    
+
     private boolean notSupportBatchRead() {
         if (!clientCtx.getConf().batchReadEnabled) {
             return true;
@@ -984,7 +985,7 @@ public class LedgerHandle implements WriteHandle {
         LedgerMetadata ledgerMetadata = getLedgerMetadata();
         return ledgerMetadata.getEnsembleSize() != ledgerMetadata.getWriteQuorumSize();
     }
-    
+
     private CompletableFuture<LedgerEntries> batchReadEntriesInternalAsync(long startEntry, int maxCount, long maxSize,
             boolean isRecoveryRead) {
         int nettyMaxFrameSizeBytes = clientCtx.getConf().nettyMaxFrameSizeBytes;
@@ -1023,7 +1024,7 @@ public class LedgerHandle implements WriteHandle {
                     ws.recycle();
                 }
             }
-        
+
             if (isHandleWritable()) {
                 // Ledger handle in read/write mode: submit to OSE for ordered execution.
                 executeOrdered(op);
@@ -1125,7 +1126,7 @@ public class LedgerHandle implements WriteHandle {
                                             })),
                                     ctx);
                         }
-                        
+
                         @Override
                         public void onFailure(Throwable cause) {
                             if (cause instanceof BKException) {
@@ -1140,7 +1141,7 @@ public class LedgerHandle implements WriteHandle {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
         }
     }
-    
+
     /*
      * Read the last entry in the ledger
      *

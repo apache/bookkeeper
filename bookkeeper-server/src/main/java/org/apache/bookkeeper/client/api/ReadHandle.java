@@ -44,7 +44,7 @@ public interface ReadHandle extends Handle {
      * @return an handle to the result of the operation
      */
     CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry);
-    
+
     /**
      * Read a sequence of entries asynchronously.
      *

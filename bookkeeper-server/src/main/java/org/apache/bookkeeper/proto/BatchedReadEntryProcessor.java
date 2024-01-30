@@ -88,7 +88,8 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
     @Override
     public String toString() {
         BatchedReadRequest br = (BatchedReadRequest) request;
-        return String.format("BatchedReadEntry(%d, %d %d, %d)", br.getLedgerId(), br.getEntryId(), br.getMaxCount(), br.getMaxSize());
+        return String.format("BatchedReadEntry(%d, %d %d, %d)", br.getLedgerId(), br.getEntryId(), br.getMaxCount(),
+                br.getMaxSize());
     }
 
     protected void recycle() {
