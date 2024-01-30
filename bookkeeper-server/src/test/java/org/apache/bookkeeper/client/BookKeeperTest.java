@@ -94,9 +94,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
             .setZkTimeout(20000);
 
-        CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
-        l.await();
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS);
 
         BookKeeper bkc = new BookKeeper(conf);
         bkc.createLedger(digestType, "testPasswd".getBytes()).close();
@@ -109,9 +107,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
             .setZkTimeout(20000);
 
-        CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
-        l.await();
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS);
 
         ZooKeeper zk = new ZooKeeper(
             zkUtil.getZooKeeperConnectString(),
