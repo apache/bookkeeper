@@ -140,19 +140,19 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
 
     @Override
     public void sleepCluster(final int time,
-                            final TimeUnit timeUnit,
-                            final CountDownLatch l)
+                            final TimeUnit timeUnit)
             throws InterruptedException, IOException {
         Thread[] allthreads = new Thread[Thread.activeCount()];
         Thread.enumerate(allthreads);
         for (final Thread t : allthreads) {
             if (t.getName().contains("SyncThread:0")) {
+                final CountDownLatch suspendLatch = new CountDownLatch(1);
                 Thread sleeper = new Thread() {
                     @SuppressWarnings("deprecation")
                     public void run() {
                         try {
                             t.suspend();
-                            l.countDown();
+                            suspendLatch.countDown();
                             timeUnit.sleep(time);
                             t.resume();
                         } catch (Exception e) {
@@ -161,6 +161,36 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
                     }
                 };
                 sleeper.start();
+                suspendLatch.await();
+                return;
+            }
+        }
+        throw new IOException("ZooKeeper thread not found");
+    }
+
+    @Override
+    public void sleepCluster(final CountDownLatch l)
+            throws InterruptedException, IOException {
+        Thread[] allthreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allthreads);
+        for (final Thread t : allthreads) {
+            if (t.getName().contains("SyncThread:0")) {
+                final CountDownLatch suspendLatch = new CountDownLatch(1);
+                Thread sleeper = new Thread() {
+                    @SuppressWarnings("deprecation")
+                    public void run() {
+                        try {
+                            t.suspend();
+                            suspendLatch.countDown();
+                            l.await();
+                            t.resume();
+                        } catch (Exception e) {
+                            LOG.error("Error suspending thread", e);
+                        }
+                    }
+                };
+                sleeper.start();
+                suspendLatch.await();
                 return;
             }
         }

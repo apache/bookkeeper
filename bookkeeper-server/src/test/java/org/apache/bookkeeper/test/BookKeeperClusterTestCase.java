@@ -267,6 +267,11 @@ public abstract class BookKeeperClusterTestCase {
         zkUtil.killCluster();
     }
 
+    protected void sleepZKCluster(final CountDownLatch l)
+            throws InterruptedException, IOException {
+        zkUtil.sleepCluster(l);
+    }
+
     /**
      * Start cluster. Also, starts the auto recovery process for each bookie, if
      * isAutoRecoveryEnabled is true.
