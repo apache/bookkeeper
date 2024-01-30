@@ -45,8 +45,6 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
     final int maxCount;
     final long maxSize;
 
-    private ScheduledFuture<?> speculativeTask = null;
-
     BatchedLedgerEntryRequest request;
 
     BatchedReadOp(LedgerHandle lh,
