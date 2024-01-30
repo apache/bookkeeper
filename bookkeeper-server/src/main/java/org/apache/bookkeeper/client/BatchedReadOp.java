@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
@@ -44,8 +43,6 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
 
     final int maxCount;
     final long maxSize;
-
-    private ScheduledFuture<?> speculativeTask = null;
 
     BatchedLedgerEntryRequest request;
 
