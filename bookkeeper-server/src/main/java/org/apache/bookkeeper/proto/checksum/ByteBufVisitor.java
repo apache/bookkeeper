@@ -31,7 +31,7 @@ import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
 
 /**
- * This class visits the wrapped child buffers of a Netty {@link ByteBuf} for a given offset and length.
+ * This class visits the possible wrapped child buffers of a Netty {@link ByteBuf} for a given offset and length.
  * <p>
  * The Netty ByteBuf API does not provide a method to visit the wrapped child buffers. The
  * {@link ByteBuf#unwrap()} method is not suitable for this purpose as it loses the
@@ -48,15 +48,71 @@ import java.nio.charset.Charset;
  * throw an exception. This is to ensure correctness and to fail fast if some ByteBuf implementation is not
  * following the expected and supported interface contract.
  */
-public class ChildByteBufVisitor {
-    public static void visitChildBuffers(ByteBuf parentBuffer, int parentOffset, int parentLength,
-                                  ChildByteBufVisitorCallback callback) {
-        // call getBytes to trigger the wrapped buffer visit
-        parentBuffer.getBytes(parentOffset, new GetBytesCallbackByteBuf(callback), 0, parentLength);
+public class ByteBufVisitor {
+    private static final int DEFAULT_VISIT_MAX_DEPTH = 10;
+
+    /**
+     * This method traverses the potential nested composite buffers of the provided buffer, given a specific offset and
+     * length. The traversal continues until it encounters a buffer that is backed by an array or a memory address,
+     * which allows for the inspection of individual buffer segments without the need for data duplication.
+     * If no such wrapped buffer is found, the callback function is invoked with the original buffer, offset,
+     * and length as parameters.
+     *
+     * @param buffer   the buffer to visit
+     * @param offset   the offset for the buffer
+     * @param length   the length for the buffer
+     * @param callback the callback to call for each visited buffer
+     */
+    public static void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback callback) {
+        visitBuffers(buffer, offset, length, callback, DEFAULT_VISIT_MAX_DEPTH);
     }
 
-    public interface ChildByteBufVisitorCallback {
-        void visitChildBuffer(ByteBuf childBuffer, int childIndex, int childLength);
+    /**
+     * The callback interface for visiting buffers.
+     */
+    public interface ByteBufVisitorCallback {
+        void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength);
+    }
+
+    /**
+     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback)}. This method allows to specify
+     * the maximum depth of recursion for visiting wrapped buffers.
+     */
+    public static void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback callback,
+                                    int maxDepth) {
+        doRecursivelyVisitBuffers(buffer, offset, length, callback, maxDepth, 0);
+    }
+
+    private static void doRecursivelyVisitBuffers(ByteBuf buffer, int offset, int length,
+                                                  ByteBufVisitorCallback callback, int maxDepth, int depth) {
+        if (length == 0) {
+            // skip visiting empty buffers
+            return;
+        }
+        // visit the wrapped buffers recursively if the buffer is not backed by an array or memory address
+        // and the max depth has not been reached
+        if (depth < maxDepth && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
+            visitBuffersImpl(buffer, offset, length, (visitBuffer, visitIndex, visitLength) -> {
+                if (visitBuffer == buffer && visitIndex == offset && visitLength == length) {
+                    // visit the buffer since it was already passed to visitBuffersImpl and further recursion
+                    // would cause unnecessary recursion up to the max depth of recursion
+                    callback.visitBuffer(visitBuffer, visitIndex, visitLength);
+                } else {
+                    // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
+                    doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, callback, maxDepth, depth + 1);
+                }
+            });
+        } else {
+            // visit the buffer
+            callback.visitBuffer(buffer, offset, length);
+        }
+    }
+
+    // Implementation for visiting a single buffer level using {@link ByteBuf#getBytes(int, ByteBuf, int, int)}
+    private static void visitBuffersImpl(ByteBuf parentBuffer, int parentOffset, int parentLength,
+                                        ByteBufVisitorCallback callback) {
+        // call getBytes to trigger the wrapped buffer visit
+        parentBuffer.getBytes(parentOffset, new GetBytesCallbackByteBuf(callback), 0, parentLength);
     }
 
     /**
@@ -64,14 +120,14 @@ public class ChildByteBufVisitor {
      * a {@link ByteBuf#getBytes(int, ByteBuf)} for visiting the wrapped child buffers.
      */
     static class GetBytesCallbackByteBuf extends ByteBuf {
-        private final ChildByteBufVisitorCallback callback;
+        private final ByteBufVisitorCallback callback;
         private final int capacity;
 
-        GetBytesCallbackByteBuf(ChildByteBufVisitorCallback callback) {
+        GetBytesCallbackByteBuf(ByteBufVisitorCallback callback) {
             this(callback, Integer.MAX_VALUE);
         }
 
-        GetBytesCallbackByteBuf(ChildByteBufVisitorCallback callback, int capacity) {
+        GetBytesCallbackByteBuf(ByteBufVisitorCallback callback, int capacity) {
             this.callback = callback;
             this.capacity = capacity;
         }
@@ -79,7 +135,7 @@ public class ChildByteBufVisitor {
 
         @Override
         public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
-            callback.visitChildBuffer(src, srcIndex, length);
+            callback.visitBuffer(src, srcIndex, length);
             return this;
         }
 

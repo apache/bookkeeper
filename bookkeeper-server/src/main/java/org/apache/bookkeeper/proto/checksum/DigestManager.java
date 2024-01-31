@@ -48,7 +48,6 @@ public abstract class DigestManager {
 
     public static final int METADATA_LENGTH = 32;
     public static final int LAC_METADATA_LENGTH = 16;
-    private static final int MAX_SUB_BUFFER_VISIT_RECURSION_DEPTH = 10;
 
     final long ledgerId;
     final boolean useV2Protocol;
@@ -59,48 +58,15 @@ public abstract class DigestManager {
     abstract int internalUpdate(int digest, ByteBuf buffer, int offset, int len);
 
     final int update(int digest, ByteBuf buffer, int offset, int len) {
-        return recursiveSubBufferVisitForDigestUpdate(digest, buffer, offset, len, 0);
-    }
-
-    private int recursiveSubBufferVisitForDigestUpdate(int digest, ByteBuf buffer, int offset, int len, int depth) {
-        if (len == 0) {
-            return digest;
-        }
-        if (depth < MAX_SUB_BUFFER_VISIT_RECURSION_DEPTH && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
-            return visitChildBuffersAndCallInternalUpdateForEach(digest, buffer, offset, len, depth);
-        }
-        return internalUpdate(digest, buffer, offset, len);
-    }
-
-    /**
-     * This method is used to visit the wrapped buffers and call internalUpdate for each of them.
-     * CompositeByteBuf is one of the wrapped buffer types that will be visited. It can contain multiple
-     * sub buffers. The sub buffers can be wrapped buffers as well.
-     *
-     * Netty doesn't provide an API to visit the wrapped buffers, so we have to use the a hack here.
-     *
-     * @param digest current digest value
-     * @param buffer the buffer to visit
-     * @param offset the offset in the buffer
-     * @param len the length in the buffer
-     * @param depth the recursion depth of the wrapped buffer visit
-     * @return updated digest value
-     */
-    private int visitChildBuffersAndCallInternalUpdateForEach(int digest, ByteBuf buffer, int offset, int len,
-                                                              int depth) {
-        // hold the digest in a MutableInt so that it can be updated in the wrapped buffer visit
         MutableInt digestRef = new MutableInt(digest);
-        ChildByteBufVisitor.visitChildBuffers(buffer, offset, len,
+        ByteBufVisitor.visitBuffers(buffer, offset, len,
                 (ByteBuf childBuffer, int childIndex, int childLength) -> {
                     if (childLength > 0) {
                         // recursively visit the sub buffer and update the digest
-                        int updatedDigest =
-                                recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, childIndex,
-                                        childLength, depth + 1);
+                        int updatedDigest = internalUpdate(digestRef.intValue(), childBuffer, childIndex, childLength);
                         digestRef.setValue(updatedDigest);
                     }
                 });
-        // return updated digest value
         return digestRef.intValue();
     }
 
