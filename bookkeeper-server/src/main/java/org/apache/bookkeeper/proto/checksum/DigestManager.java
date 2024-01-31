@@ -90,15 +90,16 @@ public abstract class DigestManager {
                                                               int depth) {
         // hold the digest in a MutableInt so that it can be updated in the wrapped buffer visit
         MutableInt digestRef = new MutableInt(digest);
-        ChildByteBufVisitor.visitChildBuffers(buffer, offset, len, (ByteBuf childBuffer, int srcIndex, int length) -> {
-            if (length > 0) {
-                // recursively visit the sub buffer and update the digest
-                int updatedDigest =
-                        recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, srcIndex, length,
-                                depth + 1);
-                digestRef.setValue(updatedDigest);
-            }
-        });
+        ChildByteBufVisitor.visitChildBuffers(buffer, offset, len,
+                (ByteBuf childBuffer, int childIndex, int childLength) -> {
+                    if (childLength > 0) {
+                        // recursively visit the sub buffer and update the digest
+                        int updatedDigest =
+                                recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, childIndex,
+                                        childLength, depth + 1);
+                        digestRef.setValue(updatedDigest);
+                    }
+                });
         // return updated digest value
         return digestRef.intValue();
     }
