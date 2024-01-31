@@ -23,14 +23,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 /**
- * Reproduces a bug in the checksum calculation when the payload is
- * a CompositeByteBuf and this buffer has a reader index state other than 0.
+ * This test class was added to reproduce a bug in the checksum calculation when
+ * the payload is a CompositeByteBuf and this buffer has a reader index state other than 0.
  * The reader index state gets lost in the unwrapping process.
  *
- * There are at least 2 different bugs. One that occurs when the
- * payload is >= BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD and the other when
- * it's < BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD.
- * This test covers both useV2Protocol=true and useV2Protocol=false since the bug is triggered differently.
+ * There were at least 2 different bugs. One that occured when the
+ * payload was >= BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD and the other when
+ * it was < BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD.
+ * This test covers both useV2Protocol=true and useV2Protocol=false since the bug was triggered differently.
+ *
+ * The bug has been fixed and this test is here to make sure it doesn't happen again.
  */
 @RunWith(Parameterized.class)
 public class CompositeByteBufUnwrapBugReproduceTest {
@@ -118,7 +120,14 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         assertArrayEquals(ByteBufUtil.getBytes(payload2.duplicate()), testPayLoad);
 
         byte[] output2 = computeDigestAndPackageForSending(intHash, payload2);
-        assertArrayEquals(output1, output2);
+        assertArrayEquals(referenceOutput, output2);
+
+        ByteBuf payload3 = wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(payload.retainedDuplicate());
+        // this validates that the readable bytes in payload3 match the TEST_PAYLOAD content
+        assertArrayEquals(ByteBufUtil.getBytes(payload3.duplicate()), testPayLoad);
+
+        byte[] output3 = computeDigestAndPackageForSending(intHash, payload3);
+        assertArrayEquals(referenceOutput, output3);
     }
 
     private byte[] computeDigestAndPackageForSending(IntHash intHash, ByteBuf data) {
@@ -143,6 +152,27 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         outerComposite.readerIndex(bufferPrefixLength);
 
         return outerComposite;
+    }
+
+    ByteBuf wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(ByteBuf payload) {
+        // create a new buffer with a prefix and the actual payload
+        ByteBuf prefixedPayload = ByteBufAllocator.DEFAULT.buffer(bufferPrefixLength + payload.readableBytes());
+        prefixedPayload.writeBytes(RandomUtils.nextBytes(bufferPrefixLength));
+        prefixedPayload.writeBytes(payload);
+
+        CompositeByteBuf innerComposite = ByteBufAllocator.DEFAULT.compositeBuffer();
+        innerComposite.addComponent(true, prefixedPayload);
+        innerComposite.addComponent(true, Unpooled.EMPTY_BUFFER);
+
+        // wrap the buffer in a composite buffer
+        CompositeByteBuf outerComposite = ByteBufAllocator.DEFAULT.compositeBuffer();
+        outerComposite.addComponent(true, innerComposite);
+        outerComposite.addComponent(true, Unpooled.EMPTY_BUFFER);
+
+        // set reader index state. this is the state that gets lost in the unwrapping process
+        outerComposite.readerIndex(bufferPrefixLength);
+
+        return outerComposite.duplicate().duplicate();
     }
 
     private static byte[] packagedBufferToBytes(ReferenceCounted packagedBuffer) {
