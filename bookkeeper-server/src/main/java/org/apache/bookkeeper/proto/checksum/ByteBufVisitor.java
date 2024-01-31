@@ -1000,22 +1000,7 @@ public class ByteBufVisitor {
         }
 
         @Override
-        public int hashCode() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public int compareTo(ByteBuf buffer) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
             throw new UnsupportedOperationException();
         }
 
@@ -1052,6 +1037,21 @@ public class ByteBufVisitor {
         @Override
         public boolean release(int decrement) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + '@' + Integer.toHexString(System.identityHashCode(this));
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this;
         }
     }
 }
