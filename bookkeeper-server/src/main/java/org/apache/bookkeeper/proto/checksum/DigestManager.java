@@ -20,7 +20,6 @@ package org.apache.bookkeeper.proto.checksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.DuplicatedByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
@@ -68,7 +67,7 @@ public abstract class DigestManager {
             return digest;
         }
         if (depth < MAX_SUB_BUFFER_VISIT_RECURSION_DEPTH && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
-            return visitWrappedBuffersAndCallInternalUpdateForEach(digest, buffer, offset, len, depth);
+            return visitChildBuffersAndCallInternalUpdateForEach(digest, buffer, offset, len, depth);
         }
         return internalUpdate(digest, buffer, offset, len);
     }
@@ -87,46 +86,16 @@ public abstract class DigestManager {
      * @param depth the recursion depth of the wrapped buffer visit
      * @return updated digest value
      */
-    private int visitWrappedBuffersAndCallInternalUpdateForEach(int digest, ByteBuf buffer, int offset, int len,
-                                                                int depth) {
+    private int visitChildBuffersAndCallInternalUpdateForEach(int digest, ByteBuf buffer, int offset, int len,
+                                                              int depth) {
         // hold the digest in a MutableInt so that it can be updated in the wrapped buffer visit
         MutableInt digestRef = new MutableInt(digest);
-        ByteBuf sliced = buffer.slice(offset, len);
-        // call getBytes to trigger the wrapped buffer visit
-        sliced.getBytes(0, new DuplicatedByteBuf(Unpooled.EMPTY_BUFFER) {
-            @Override
-            public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
-                if (length > 0) {
-                    // recursively visit the sub buffer and update the digest
-                    int updatedDigest = recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), src, srcIndex,
-                            length, depth + 1);
-                    digestRef.setValue(updatedDigest);
-                }
-                return this;
-            }
-
-            @Override
-            public boolean hasArray() {
-                // return false so that the wrapped buffer is visited
-                return false;
-            }
-
-            @Override
-            public boolean hasMemoryAddress() {
-                // return false so that the wrapped buffer is visited
-                return false;
-            }
-
-            @Override
-            public int nioBufferCount() {
-                // return 0 so that the wrapped buffer is visited
-                return 0;
-            }
-
-            @Override
-            public int capacity() {
-                // should return sufficient capacity for the total length
-                return len;
+        ChildByteBufVisitor.visitChildBuffers(buffer, offset, len, (ByteBuf childBuffer, int srcIndex, int length) -> {
+            if (length > 0) {
+                // recursively visit the sub buffer and update the digest
+                int updatedDigest =
+                        recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, srcIndex, length, depth + 1);
+                digestRef.setValue(updatedDigest);
             }
         });
         // return updated digest value
