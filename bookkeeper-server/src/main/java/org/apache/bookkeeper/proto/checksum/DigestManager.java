@@ -94,7 +94,8 @@ public abstract class DigestManager {
             if (length > 0) {
                 // recursively visit the sub buffer and update the digest
                 int updatedDigest =
-                        recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, srcIndex, length, depth + 1);
+                        recursiveSubBufferVisitForDigestUpdate(digestRef.intValue(), childBuffer, srcIndex, length,
+                                depth + 1);
                 digestRef.setValue(updatedDigest);
             }
         });
