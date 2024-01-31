@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
 import com.scurrilous.circe.checksum.IntHash;
 import com.scurrilous.circe.checksum.Java8IntHash;
 import com.scurrilous.circe.checksum.Java9IntHash;
@@ -89,7 +90,8 @@ public class CompositeByteBufUnwrapBugReproduceTest {
     static class TestIntHashDigestManager extends DigestManager {
         private final IntHash intHash;
 
-        public TestIntHashDigestManager(IntHash intHash, long ledgerId, boolean useV2Protocol, ByteBufAllocator allocator) {
+        public TestIntHashDigestManager(IntHash intHash, long ledgerId, boolean useV2Protocol,
+                                        ByteBufAllocator allocator) {
             super(ledgerId, useV2Protocol, allocator);
             this.intHash = intHash;
         }
@@ -140,7 +142,8 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         byte[] output2 = computeDigestAndPackageForSending(intHash, payload2);
         assertArrayEquals(referenceOutput, output2);
 
-        ByteBuf payload3 = wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(payload.retainedDuplicate());
+        ByteBuf payload3 = wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(
+                payload.retainedDuplicate());
         // this validates that the readable bytes in payload3 match the TEST_PAYLOAD content
         assertArrayEquals(ByteBufUtil.getBytes(payload3.duplicate()), testPayLoad);
 
