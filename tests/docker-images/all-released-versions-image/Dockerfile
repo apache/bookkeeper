@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM openjdk:8-jdk
+FROM eclipse-temurin:8-jdk
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ENV BK_JOURNALDIR=/opt/bookkeeper/data/journal
