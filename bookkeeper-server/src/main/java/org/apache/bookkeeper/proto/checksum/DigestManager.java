@@ -32,6 +32,7 @@ import org.apache.bookkeeper.proto.BookieProtoEncoding;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.ByteBufVisitor;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
