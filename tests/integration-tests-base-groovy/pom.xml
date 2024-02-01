@@ -33,6 +33,8 @@
   <properties>
     <groovy-eclipse-compiler.version>3.7.0</groovy-eclipse-compiler.version>
     <groovy-eclipse-batch.version>3.0.8-01</groovy-eclipse-batch.version>
+    <!-- must be compatible with arquillian-cube-docker -->
+    <docker-java.version>3.2.14</docker-java.version>
   </properties>
 
   <build>
@@ -93,6 +95,22 @@
 
     </plugins>
   </build>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-bom</artifactId>
+        <version>${docker-java.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.arquillian.cube</groupId>
+        <artifactId>arquillian-cube-docker</artifactId>
+        <version>${arquillian-cube.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
