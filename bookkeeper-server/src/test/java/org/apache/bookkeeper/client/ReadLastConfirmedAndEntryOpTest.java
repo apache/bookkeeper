@@ -85,7 +85,7 @@ public class ReadLastConfirmedAndEntryOpTest {
     private ScheduledExecutorService scheduler;
     private OrderedScheduler orderedScheduler;
     private ClientInternalConf internalConf;
-    private EnsemblePlacementPolicy mockPlacementPolicy;
+    private EnsemblePlacementPolicy placementPolicy;
     private LedgerMetadata ledgerMetadata;
     private DistributionSchedule distributionSchedule;
     private DigestManager digestManager;
@@ -121,10 +121,11 @@ public class ReadLastConfirmedAndEntryOpTest {
             .build();
 
         this.mockBookieClient = mock(BookieClient.class);
-        this.mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
+        //this.mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
+        this.placementPolicy = new DefaultEnsemblePlacementPolicy();
         this.mockClientCtx = mock(ClientContext.class);
         when(mockClientCtx.getBookieClient()).thenReturn(mockBookieClient);
-        when(mockClientCtx.getPlacementPolicy()).thenReturn(mockPlacementPolicy);
+        when(mockClientCtx.getPlacementPolicy()).thenReturn(placementPolicy);
         when(mockClientCtx.getConf()).thenReturn(internalConf);
         when(mockClientCtx.getScheduler()).thenReturn(orderedScheduler);
         when(mockClientCtx.getMainWorkerPool()).thenReturn(orderedScheduler);
