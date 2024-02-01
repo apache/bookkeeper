@@ -23,8 +23,14 @@ MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 ENV BK_JOURNALDIR=/opt/bookkeeper/data/journal
 ENV BK_LEDGERDIR=/opt/bookkeeper/data/ledgers
 ENV BK_ZKCONNECTSTRING=zookeeper1,zookeeper2,zookeeper3
+ENV DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
+ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
-RUN apt-get update && apt-get install -qy wget supervisor bash \
+RUN sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
+    -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
+    && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
+    && apt-get update && apt-get install -qy wget curl supervisor bash ca-certificates apt-transport-https \
     && echo "dash dash/sh boolean false" | debconf-set-selections \
     && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 

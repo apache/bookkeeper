@@ -239,6 +239,11 @@ jobs:
         with:
           maven-version: 3.8.7
 
+      - name: Pick ubuntu mirror for the docker image build
+        run: |
+          # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
+          $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
+
       - name: Build with Maven
         run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 

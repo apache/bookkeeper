@@ -46,7 +46,7 @@ jobs:
         uses: ./.github/actions/tune-runner-vm
       - name: Test
         run: ./stream/clients/python/scripts/test.sh
-  
+
 
   Stream-storage-python-client-integration-tests:
     name: StreamStorage Python Client Integration Tests
@@ -77,6 +77,10 @@ jobs:
           maven-version: 3.8.7
       - name: Build
         run: mvn -q -T 1C -B -nsu clean install -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip
+      - name: Pick ubuntu mirror for the docker image build
+        run: |
+          # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
+          $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
       - name: Build Test image
         run: ./stream/clients/python/docker/build-local-image.sh
       - name: Test
