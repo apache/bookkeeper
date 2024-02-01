@@ -19,7 +19,6 @@ package org.apache.bookkeeper.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,9 +62,11 @@ public class ByteBufVisitor {
      * @param offset   the offset for the buffer
      * @param length   the length for the buffer
      * @param callback the callback to call for each visited buffer
+     * @param context  the context to pass to the callback
      */
-    public static void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback callback) {
-        visitBuffers(buffer, offset, length, callback, DEFAULT_VISIT_MAX_DEPTH);
+    public static <T> void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback<T> callback,
+                                        T context) {
+        visitBuffers(buffer, offset, length, callback, context, DEFAULT_VISIT_MAX_DEPTH);
     }
 
     /**
@@ -74,88 +75,120 @@ public class ByteBufVisitor {
      * is due to the internal implementation detail of the {@link ByteBuf#getBytes(int, ByteBuf, int, int)}
      * method for heap buffers.
      */
-    public interface ByteBufVisitorCallback {
-        void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength);
-        void visitArray(byte[] visitArray, int visitIndex, int visitLength);
+    public interface ByteBufVisitorCallback<T> {
+        void visitBuffer(T context, ByteBuf visitBuffer, int visitIndex, int visitLength);
+        void visitArray(T context, byte[] visitArray, int visitIndex, int visitLength);
     }
 
     /**
-     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback)}. This method allows to specify
+     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback, Object)}. This method allows to specify
      * the maximum depth of recursion for visiting wrapped buffers.
      */
-    public static void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback callback,
-                                    int maxDepth) {
-        doRecursivelyVisitBuffers(buffer, offset, length, callback, maxDepth, 0);
+    public static <T> void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback<T> callback,
+                                        T context, int maxDepth) {
+        InternalContext<T> internalContext = new InternalContext<>();
+        internalContext.depth = 0;
+        internalContext.maxDepth = maxDepth;
+        internalContext.userContext = context;
+        internalContext.userCallback = callback;
+        doRecursivelyVisitBuffers(buffer, offset, length, InternalContextByteBufVisitorCallback.get(), internalContext);
     }
 
-    private static void doRecursivelyVisitBuffers(ByteBuf buffer, int offset, int length,
-                                                  ByteBufVisitorCallback callback, int maxDepth, int depth) {
+    private static class InternalContext<T> {
+        int depth;
+        int maxDepth;
+        ByteBuf parentBuffer;
+        int parentOffset;
+        int parentLength;
+        T userContext;
+        ByteBufVisitorCallback<T> userCallback;
+    }
+
+    private static class InternalContextByteBufVisitorCallback<T>
+            implements ByteBufVisitorCallback<InternalContext<T>> {
+        static final InternalContextByteBufVisitorCallback<?> INSTANCE = new InternalContextByteBufVisitorCallback<>();
+
+        static <T> InternalContextByteBufVisitorCallback<T> get() {
+            @SuppressWarnings("unchecked")
+            InternalContextByteBufVisitorCallback<T> instance = (InternalContextByteBufVisitorCallback<T>) INSTANCE;
+            return instance;
+        }
+
+        @Override
+        public void visitBuffer(InternalContext<T> internalContext, ByteBuf visitBuffer, int visitIndex,
+                                int visitLength) {
+            if (internalContext.depth > 0 && visitBuffer == internalContext.parentBuffer
+                    && visitIndex == internalContext.parentOffset && visitLength == internalContext.parentLength) {
+                // visit the buffer since it was already passed to visitBuffersImpl and further recursion
+                // would cause unnecessary recursion up to the max depth of recursion
+                internalContext.userCallback.visitBuffer(internalContext.userContext, visitBuffer,
+                        visitIndex, visitLength);
+            } else {
+                // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
+                doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, this, internalContext);
+            }
+        }
+
+        @Override
+        public void visitArray(InternalContext<T> internalContext, byte[] visitArray, int visitIndex,
+                               int visitLength) {
+            // visit the array
+            internalContext.userCallback.visitArray(internalContext.userContext, visitArray, visitIndex,
+                    visitLength);
+        }
+    }
+
+    private static <T> void doRecursivelyVisitBuffers(ByteBuf buffer, int offset, int length,
+                                                      ByteBufVisitorCallback<InternalContext<T>> callback,
+                                                      InternalContext<T> internalContext) {
         if (length == 0) {
             // skip visiting empty buffers
             return;
         }
         // visit the wrapped buffers recursively if the buffer is not backed by an array or memory address
         // and the max depth has not been reached
-        if (depth < maxDepth && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
-            visitBuffersImpl(buffer, offset, length, new ByteBufVisitorCallback() {
-                @Override
-                public void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength) {
-                    if (visitBuffer == buffer && visitIndex == offset && visitLength == length) {
-                        // visit the buffer since it was already passed to visitBuffersImpl and further recursion
-                        // would cause unnecessary recursion up to the max depth of recursion
-                        callback.visitBuffer(visitBuffer, visitIndex, visitLength);
-                    } else {
-                        // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
-                        doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, callback, maxDepth, depth + 1);
-                    }
-                }
-
-                @Override
-                public void visitArray(byte[] visitArray, int visitIndex, int visitLength) {
-                    // visit the array
-                    callback.visitArray(visitArray, visitIndex, visitLength);
-                }
-            });
+        if (internalContext.depth < internalContext.maxDepth && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
+            internalContext.parentBuffer = buffer;
+            internalContext.parentOffset = offset;
+            internalContext.parentLength = length;
+            visitBuffersImpl(buffer, offset, length, callback, internalContext);
         } else {
             // visit the buffer
-            callback.visitBuffer(buffer, offset, length);
+            internalContext.userCallback.visitBuffer(internalContext.userContext, buffer, offset, length);
         }
     }
 
     // Implementation for visiting a single buffer level using {@link ByteBuf#getBytes(int, ByteBuf, int, int)}
-    private static void visitBuffersImpl(ByteBuf parentBuffer, int parentOffset, int parentLength,
-                                        ByteBufVisitorCallback callback) {
+    private static <T> void visitBuffersImpl(ByteBuf parentBuffer, int parentOffset, int parentLength,
+                                         ByteBufVisitorCallback<InternalContext<T>> callback,
+                                         InternalContext<T> internalContext) {
         // call getBytes to trigger the wrapped buffer visit
-        parentBuffer.getBytes(parentOffset, new GetBytesCallbackByteBuf(callback), 0, parentLength);
+        parentBuffer.getBytes(parentOffset, new GetBytesCallbackByteBuf(callback, internalContext), 0, parentLength);
     }
 
     /**
      * A ByteBuf implementation that can be used as the destination buffer for
      * a {@link ByteBuf#getBytes(int, ByteBuf)} for visiting the wrapped child buffers.
      */
-    static class GetBytesCallbackByteBuf extends ByteBuf {
-        private final ByteBufVisitorCallback callback;
-        private final int capacity;
+    static class GetBytesCallbackByteBuf<T> extends ByteBuf {
+        private final ByteBufVisitorCallback<InternalContext<T>> callback;
+        private final InternalContext<T> internalContext;
 
-        GetBytesCallbackByteBuf(ByteBufVisitorCallback callback) {
-            this(callback, Integer.MAX_VALUE);
-        }
-
-        GetBytesCallbackByteBuf(ByteBufVisitorCallback callback, int capacity) {
+        GetBytesCallbackByteBuf(ByteBufVisitorCallback<InternalContext<T>> callback,
+                                InternalContext<T> internalContext) {
             this.callback = callback;
-            this.capacity = capacity;
+            this.internalContext = internalContext;
         }
-
 
         @Override
         public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
-            callback.visitBuffer(src, srcIndex, length);
+            callback.visitBuffer(internalContext, src, srcIndex, length);
             return this;
         }
 
         @Override
         public ByteBuf setBytes(int index, byte[] src, int srcIndex, int length) {
-            callback.visitBuffer(Unpooled.wrappedBuffer(src), srcIndex, length);
+            internalContext.userCallback.visitArray(internalContext.userContext, src, srcIndex, length);
             return this;
         }
 
@@ -180,9 +213,8 @@ public class ByteBufVisitor {
         @Override
         public int capacity() {
             // should return sufficient capacity for the total length
-            return capacity;
+            return Integer.MAX_VALUE;
         }
-
 
         @Override
         public ByteBuf capacity(int newCapacity) {
@@ -1069,4 +1101,5 @@ public class ByteBufVisitor {
             return obj == this;
         }
     }
+
 }

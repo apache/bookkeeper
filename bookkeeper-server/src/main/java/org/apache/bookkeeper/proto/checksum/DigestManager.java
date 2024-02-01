@@ -53,6 +53,7 @@ public abstract class DigestManager {
     final long ledgerId;
     final boolean useV2Protocol;
     private final ByteBufAllocator allocator;
+    private final MutableIntByteBufVisitorCallback byteBufVisitorCallback;
 
     abstract int getMacCodeLength();
 
@@ -62,28 +63,7 @@ public abstract class DigestManager {
 
     final int update(int digest, ByteBuf buffer, int offset, int len) {
         MutableInt digestRef = new MutableInt(digest);
-        ByteBufVisitor.visitBuffers(buffer, offset, len,
-                new ByteBufVisitor.ByteBufVisitorCallback() {
-                    @Override
-                    public void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength) {
-                        if (visitLength > 0) {
-                            // recursively visit the sub buffer and update the digest
-                            int updatedDigest =
-                                    internalUpdate(digestRef.intValue(), visitBuffer, visitIndex, visitLength);
-                            digestRef.setValue(updatedDigest);
-                        }
-                    }
-
-                    @Override
-                    public void visitArray(byte[] visitArray, int visitIndex, int visitLength) {
-                        if (visitLength > 0) {
-                            // update the digest with the array
-                            int updatedDigest =
-                                    internalUpdate(digestRef.intValue(), visitArray, visitIndex, visitLength);
-                            digestRef.setValue(updatedDigest);
-                        }
-                    }
-                });
+        ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
         return digestRef.intValue();
     }
 
@@ -98,6 +78,7 @@ public abstract class DigestManager {
         this.useV2Protocol = useV2Protocol;
         this.macCodeLength = getMacCodeLength();
         this.allocator = allocator;
+        this.byteBufVisitorCallback = new MutableIntByteBufVisitorCallback();
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
@@ -370,5 +351,28 @@ public abstract class DigestManager {
         long lastAddConfirmed = dataReceived.readLong();
         long length = dataReceived.readLong();
         return new RecoveryData(lastAddConfirmed, length);
+    }
+
+    private class MutableIntByteBufVisitorCallback implements ByteBufVisitor.ByteBufVisitorCallback<MutableInt> {
+
+        @Override
+        public void visitBuffer(MutableInt digestRef, ByteBuf visitBuffer, int visitIndex, int visitLength) {
+            if (visitLength > 0) {
+                // recursively visit the sub buffer and update the digest
+                int updatedDigest =
+                        internalUpdate(digestRef.intValue(), visitBuffer, visitIndex, visitLength);
+                digestRef.setValue(updatedDigest);
+            }
+        }
+
+        @Override
+        public void visitArray(MutableInt digestRef, byte[] visitArray, int visitIndex, int visitLength) {
+            if (visitLength > 0) {
+                // update the digest with the array
+                int updatedDigest =
+                        internalUpdate(digestRef.intValue(), visitArray, visitIndex, visitLength);
+                digestRef.setValue(updatedDigest);
+            }
+        }
     }
 }
