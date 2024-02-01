@@ -228,11 +228,11 @@
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
+              <output>native-io</output>
               <libraries>
                 <library>
                   <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
+                  <narSystemPackage>org.apache.bookkeeper.util.nativeio</narSystemPackage>
                 </library>
               </libraries>
               <cpp>
