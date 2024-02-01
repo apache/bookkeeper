@@ -130,25 +130,29 @@ public class CompositeByteBufUnwrapBugReproduceTest {
     }
 
     private void assertDigestAndPackageMatchesReference(IntHash intHash, ByteBuf payload, byte[] referenceOutput) {
-        byte[] output1 = computeDigestAndPackageForSending(intHash, payload.retainedDuplicate());
-        assertArrayEquals(referenceOutput, output1);
+        assertDigestAndPackageScenario(intHash, payload.retainedDuplicate(), referenceOutput,
+                "plain payload, no wrapping");
 
-        // wrap the payload in a CompositeByteBuf which contains another buffer where the payload contains a prefix
-        // the reader index is set past the prefix
         ByteBuf payload2 = wrapWithPrefixAndCompositeByteBufWithReaderIndexState(payload.retainedDuplicate());
-        // this validates that the readable bytes in payload2 match the TEST_PAYLOAD content
-        assertArrayEquals(ByteBufUtil.getBytes(payload2.duplicate()), testPayLoad);
-
-        byte[] output2 = computeDigestAndPackageForSending(intHash, payload2);
-        assertArrayEquals(referenceOutput, output2);
+        assertDigestAndPackageScenario(intHash, payload2, referenceOutput,
+                "payload with prefix wrapped in CompositeByteBuf with readerIndex state");
 
         ByteBuf payload3 = wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(
                 payload.retainedDuplicate());
-        // this validates that the readable bytes in payload3 match the TEST_PAYLOAD content
-        assertArrayEquals(ByteBufUtil.getBytes(payload3.duplicate()), testPayLoad);
+        assertDigestAndPackageScenario(intHash, payload3, referenceOutput,
+                "payload with prefix wrapped in 2 layers of CompositeByteBuf with readerIndex state in the outer "
+                        + "composite. In addition, the outer composite is duplicated twice.");
+    }
 
-        byte[] output3 = computeDigestAndPackageForSending(intHash, payload3);
-        assertArrayEquals(referenceOutput, output3);
+    private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput,
+                                                String scenario) {
+        // this validates that the readable bytes in the payload match the TEST_PAYLOAD content
+        assertArrayEquals(ByteBufUtil.getBytes(payload.duplicate()), testPayLoad,
+                "input is invalid for scenario '" + scenario + "'");
+        // compute the digest and package
+        byte[] output = computeDigestAndPackageForSending(intHash, payload);
+        // this validates that the output matches the reference output
+        assertArrayEquals(referenceOutput, output, "output is invalid for scenario '" + scenario + "'");
     }
 
     private byte[] computeDigestAndPackageForSending(IntHash intHash, ByteBuf data) {
