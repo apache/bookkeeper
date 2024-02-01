@@ -142,6 +142,10 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         assertDigestAndPackageScenario(intHash, payload3, referenceOutput,
                 "payload with prefix wrapped in 2 layers of CompositeByteBuf with readerIndex state in the outer "
                         + "composite. In addition, the outer composite is duplicated twice.");
+
+        ByteBuf payload4 = wrapInCompositeByteBufAndSlice(payload.retainedDuplicate());
+        assertDigestAndPackageScenario(intHash, payload4, referenceOutput,
+                "payload with prefix wrapped in CompositeByteBuf and sliced");
     }
 
     private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput,
@@ -198,6 +202,16 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         outerComposite.readerIndex(bufferPrefixLength);
 
         return outerComposite.duplicate().duplicate();
+    }
+
+    ByteBuf wrapInCompositeByteBufAndSlice(ByteBuf payload) {
+        // create a composite buffer
+        CompositeByteBuf compositeWithPrefix = ByteBufAllocator.DEFAULT.compositeBuffer();
+        compositeWithPrefix.addComponent(true, Unpooled.wrappedBuffer(RandomUtils.nextBytes(bufferPrefixLength)));
+        compositeWithPrefix.addComponent(true, payload);
+
+        // return a slice of the composite buffer so that it returns the payload
+        return compositeWithPrefix.slice(bufferPrefixLength, payload.readableBytes());
     }
 
     private static byte[] packagedBufferToBytes(ReferenceCounted packagedBuffer) {

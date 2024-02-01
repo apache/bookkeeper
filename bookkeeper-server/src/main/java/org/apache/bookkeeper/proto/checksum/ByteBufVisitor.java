@@ -19,6 +19,7 @@ package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -136,6 +137,12 @@ public class ByteBufVisitor {
         @Override
         public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
             callback.visitBuffer(src, srcIndex, length);
+            return this;
+        }
+
+        @Override
+        public ByteBuf setBytes(int index, byte[] src, int srcIndex, int length) {
+            callback.visitBuffer(Unpooled.wrappedBuffer(src), srcIndex, length);
             return this;
         }
 
@@ -541,11 +548,6 @@ public class ByteBufVisitor {
 
         @Override
         public ByteBuf setBytes(int index, byte[] src) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ByteBuf setBytes(int index, byte[] src, int srcIndex, int length) {
             throw new UnsupportedOperationException();
         }
 
