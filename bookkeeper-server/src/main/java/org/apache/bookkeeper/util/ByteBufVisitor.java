@@ -36,18 +36,18 @@ import java.nio.charset.Charset;
  * <p>
  * The Netty ByteBuf API does not provide a method to visit the wrapped child buffers. The
  * {@link ByteBuf#unwrap()} method is not suitable for this purpose as it loses the
- * {@link ByteBuf#readerIndex()} state, resulting in incorrect offset and length information. For instance,
- * unwrapping the slice wrapper of a ByteBuf will lose the offset and the length of the slice.
+ * {@link ByteBuf#readerIndex()} state, resulting in incorrect offset and length information.
  * <p>
  * Despite Netty not having a public API for visiting the sub buffers, it is possible to achieve this using
  * the {@link ByteBuf#getBytes(int, ByteBuf, int, int)} method. This class uses this method to visit the
  * wrapped child buffers by providing a suitable {@link ByteBuf} implementation. This implementation supports
  * the role of the destination buffer for the getBytes call. It requires implementing the
- * {@link ByteBuf#setBytes(int, ByteBuf, int, int)} method and other methods required by getBytes such as
- * {@link ByteBuf#hasArray()}, {@link ByteBuf#hasMemoryAddress()}, {@link ByteBuf#nioBufferCount()} and
- * {@link ByteBuf#capacity()}. All other methods in the internal ByteBuf implementation are not supported and will
- * throw an exception. This is to ensure correctness and to fail fast if some ByteBuf implementation is not
- * following the expected and supported interface contract.
+ * {@link ByteBuf#setBytes(int, ByteBuf, int, int)} and {@link ByteBuf#setBytes(int, byte[], int, int)} methods
+ * and other methods required by getBytes such as {@link ByteBuf#hasArray()}, {@link ByteBuf#hasMemoryAddress()},
+ * {@link ByteBuf#nioBufferCount()} and {@link ByteBuf#capacity()}.
+ * All other methods in the internal ByteBuf implementation are not supported and will throw an exception.
+ * This is to ensure correctness and to fail fast if some ByteBuf implementation is not following the expected
+ * and supported interface contract.
  */
 public class ByteBufVisitor {
     private static final int DEFAULT_VISIT_MAX_DEPTH = 10;
@@ -70,6 +70,9 @@ public class ByteBufVisitor {
 
     /**
      * The callback interface for visiting buffers.
+     * In case of a heap buffer that is backed by an byte[] array, the visitArray method is called. This
+     * is due to the internal implementation detail of the {@link ByteBuf#getBytes(int, ByteBuf, int, int)}
+     * method for heap buffers.
      */
     public interface ByteBufVisitorCallback {
         void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength);
