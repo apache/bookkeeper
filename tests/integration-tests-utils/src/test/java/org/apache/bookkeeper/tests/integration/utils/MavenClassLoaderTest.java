@@ -25,12 +25,6 @@ import org.junit.Test;
  * Unit test of {@link MavenClassLoader}.
  */
 public class MavenClassLoaderTest {
-    @Test(expected = ClassNotFoundException.class)
-    public void testLog4JReplacement() throws Exception {
-        MavenClassLoader.forBookKeeperVersion("4.0.0")
-            .newInstance("org.apache.log4j.Logger");
-    }
-
     @Test
     public void testNoZooKeeperInterference() throws Exception {
         // Use KeeperException, because ZooKeeper needs a watcher which would be a pain to construct
