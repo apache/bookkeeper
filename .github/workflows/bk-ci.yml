@@ -200,6 +200,10 @@ jobs:
           path: surefire-reports
           retention-days: 7
 
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps
+
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -247,6 +251,17 @@ jobs:
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
 
+      - name: Upload container logs on failure
+        uses: actions/upload-artifact@v4
+        if: ${{ !success() }}
+        continue-on-error: true
+        with:
+          retention-days: 7
+          name: backward-compatibility-tests-container-logs
+          if-no-files-found: ignore
+          path: |
+            **/docker.log
+
   backward-compatibility-tests:
     name: Backward compatibility tests
     runs-on: ubuntu-latest
@@ -293,6 +308,17 @@ jobs:
       - name: Other tests
         run: |
           mvn -B -nsu -DintegrationTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
+
+      - name: Upload container logs on failure
+        uses: actions/upload-artifact@v4
+        if: ${{ !success() }}
+        continue-on-error: true
+        with:
+          retention-days: 7
+          name: backward-compatibility-tests-container-logs
+          if-no-files-found: ignore
+          path: |
+            **/docker.log
 
   windows-build:
     name: Build with windows on JDK 11
