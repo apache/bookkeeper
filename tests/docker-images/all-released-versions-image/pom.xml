@@ -62,6 +62,10 @@
               <repository>apachebookkeeper/bookkeeper-all-released-versions</repository>
               <tag>${project.version}</tag>
               <pullNewerImage>false</pullNewerImage>
+              <buildArgs>
+                <UBUNTU_MIRROR>${UBUNTU_MIRROR}</UBUNTU_MIRROR>
+                <UBUNTU_SECURITY_MIRROR>${UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
+              </buildArgs>
             </configuration>
           </plugin>
         </plugins>
