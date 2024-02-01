@@ -29,6 +29,9 @@
 
   <properties>
     <groovy.version>3.0.11</groovy.version>
+    <!-- must be compatible with arquillian-cube-docker -->
+    <arquillian-cube.docker-java.version>3.2.14</arquillian-cube.docker-java.version>
+    <arquillian-cube.snakeyaml.version>1.19</arquillian-cube.snakeyaml.version>
   </properties>
 
   <modules>
