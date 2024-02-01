@@ -35,6 +35,7 @@
     <groovy-eclipse-batch.version>3.0.8-01</groovy-eclipse-batch.version>
     <!-- must be compatible with arquillian-cube-docker -->
     <docker-java.version>3.2.14</docker-java.version>
+    <snakeyaml.version>1.19</snakeyaml.version>
   </properties>
 
   <build>
@@ -108,6 +109,11 @@
         <groupId>org.arquillian.cube</groupId>
         <artifactId>arquillian-cube-docker</artifactId>
         <version>${arquillian-cube.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${snakeyaml.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
