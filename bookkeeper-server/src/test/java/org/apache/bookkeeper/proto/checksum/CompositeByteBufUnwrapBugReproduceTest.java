@@ -115,6 +115,11 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         int internalUpdate(int digest, ByteBuf data, int offset, int len) {
             return intHash.resume(digest, data, offset, len);
         }
+
+        @Override
+        int internalUpdate(int digest, byte[] buffer, int offset, int len) {
+            return intHash.resume(digest, buffer, offset, len);
+        }
     }
 
     @Test

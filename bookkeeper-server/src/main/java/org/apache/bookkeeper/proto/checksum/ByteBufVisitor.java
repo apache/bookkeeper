@@ -73,6 +73,7 @@ public class ByteBufVisitor {
      */
     public interface ByteBufVisitorCallback {
         void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength);
+        void visitArray(byte[] visitArray, int visitIndex, int visitLength);
     }
 
     /**
@@ -93,14 +94,23 @@ public class ByteBufVisitor {
         // visit the wrapped buffers recursively if the buffer is not backed by an array or memory address
         // and the max depth has not been reached
         if (depth < maxDepth && !buffer.hasMemoryAddress() && !buffer.hasArray()) {
-            visitBuffersImpl(buffer, offset, length, (visitBuffer, visitIndex, visitLength) -> {
-                if (visitBuffer == buffer && visitIndex == offset && visitLength == length) {
-                    // visit the buffer since it was already passed to visitBuffersImpl and further recursion
-                    // would cause unnecessary recursion up to the max depth of recursion
-                    callback.visitBuffer(visitBuffer, visitIndex, visitLength);
-                } else {
-                    // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
-                    doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, callback, maxDepth, depth + 1);
+            visitBuffersImpl(buffer, offset, length, new ByteBufVisitorCallback() {
+                @Override
+                public void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength) {
+                    if (visitBuffer == buffer && visitIndex == offset && visitLength == length) {
+                        // visit the buffer since it was already passed to visitBuffersImpl and further recursion
+                        // would cause unnecessary recursion up to the max depth of recursion
+                        callback.visitBuffer(visitBuffer, visitIndex, visitLength);
+                    } else {
+                        // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
+                        doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, callback, maxDepth, depth + 1);
+                    }
+                }
+
+                @Override
+                public void visitArray(byte[] visitArray, int visitIndex, int visitLength) {
+                    // visit the array
+                    callback.visitArray(visitArray, visitIndex, visitLength);
                 }
             });
         } else {

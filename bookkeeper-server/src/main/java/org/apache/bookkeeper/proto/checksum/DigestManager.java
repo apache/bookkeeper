@@ -57,14 +57,30 @@ public abstract class DigestManager {
 
     abstract int internalUpdate(int digest, ByteBuf buffer, int offset, int len);
 
+    abstract int internalUpdate(int digest, byte[] buffer, int offset, int len);
+
     final int update(int digest, ByteBuf buffer, int offset, int len) {
         MutableInt digestRef = new MutableInt(digest);
         ByteBufVisitor.visitBuffers(buffer, offset, len,
-                (ByteBuf childBuffer, int childIndex, int childLength) -> {
-                    if (childLength > 0) {
-                        // recursively visit the sub buffer and update the digest
-                        int updatedDigest = internalUpdate(digestRef.intValue(), childBuffer, childIndex, childLength);
-                        digestRef.setValue(updatedDigest);
+                new ByteBufVisitor.ByteBufVisitorCallback() {
+                    @Override
+                    public void visitBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength) {
+                        if (visitLength > 0) {
+                            // recursively visit the sub buffer and update the digest
+                            int updatedDigest =
+                                    internalUpdate(digestRef.intValue(), visitBuffer, visitIndex, visitLength);
+                            digestRef.setValue(updatedDigest);
+                        }
+                    }
+
+                    @Override
+                    public void visitArray(byte[] visitArray, int visitIndex, int visitLength) {
+                        if (visitLength > 0) {
+                            // update the digest with the array
+                            int updatedDigest =
+                                    internalUpdate(digestRef.intValue(), visitArray, visitIndex, visitLength);
+                            digestRef.setValue(updatedDigest);
+                        }
                     }
                 });
         return digestRef.intValue();

@@ -43,6 +43,11 @@ public class DummyDigestManager extends DigestManager {
     }
 
     @Override
+    int internalUpdate(int digest, byte[] buffer, int offset, int len) {
+        return 0;
+    }
+
+    @Override
     void populateValueAndReset(int digest, ByteBuf buffer) {}
 
     @Override

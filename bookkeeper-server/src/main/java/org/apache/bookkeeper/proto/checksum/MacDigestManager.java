@@ -102,6 +102,12 @@ public class MacDigestManager extends DigestManager {
     }
 
     @Override
+    int internalUpdate(int digest, byte[] buffer, int offset, int len) {
+        mac.get().update(buffer, offset, len);
+        return 0;
+    }
+
+    @Override
     boolean isInt32Digest() {
         return false;
     }

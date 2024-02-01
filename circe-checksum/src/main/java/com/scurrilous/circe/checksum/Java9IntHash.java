@@ -84,7 +84,8 @@ public class Java9IntHash implements IntHash {
         }
     }
 
-    private int resume(int current, byte[] array, int offset, int length) {
+    @Override
+    public int resume(int current, byte[] array, int offset, int length) {
         try {
             return (int) UPDATE_BYTES.invoke(null, current, array, offset, offset + length);
         } catch (IllegalAccessException | InvocationTargetException e) {
