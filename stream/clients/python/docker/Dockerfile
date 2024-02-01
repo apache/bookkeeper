@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM ubuntu:22.10
+FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ARG BK_TAR_BALL
