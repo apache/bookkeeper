@@ -80,8 +80,28 @@
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
-        <version>${nar-maven-plugin.version}</version>
         <extensions>true</extensions>
+        <configuration>
+          <runtime>${nar.runtime}</runtime>
+          <output>circe-checksum</output>
+          <libraries>
+            <library>
+              <type>jni</type>
+              <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
+            </library>
+          </libraries>
+          <cpp>
+            <optionSet>${nar.cpp.optionSet}</optionSet>
+            <exceptions>false</exceptions>
+            <rtti>false</rtti>
+            <optimize>full</optimize>
+            <includes>
+              <include>**/*.cpp</include>
+            </includes>
+          </cpp>
+          <!-- skip by default, enabled in OS profiles -->
+          <skip>true</skip>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -121,7 +141,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <executions>
                <execution>
@@ -167,23 +186,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
             </configuration>
           </plugin>
         </plugins>
@@ -201,23 +206,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
               <linker>
                 <libSet>rt</libSet>
               </linker>
@@ -238,23 +229,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
               <linker>
                 <name>g++</name>
               </linker>
