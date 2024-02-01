@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: bot actions
-        uses: actions/github-script@v1
+        uses: actions/github-script@v7
         env:
           PROVIDER: 'apache'
           REPOSITORY: 'bookkeeper'

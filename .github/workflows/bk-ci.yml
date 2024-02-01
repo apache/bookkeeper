@@ -44,7 +44,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
@@ -64,7 +64,7 @@ jobs:
       - name: Cache local Maven repository
         if: steps.check_changes.outputs.docs_only != 'true'
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -74,7 +74,7 @@ jobs:
 
       - name: Set up JDK 11
         if: steps.check_changes.outputs.docs_only != 'true'
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
@@ -138,14 +138,14 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -155,7 +155,7 @@ jobs:
 
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
@@ -193,7 +193,7 @@ jobs:
           annotate_only: 'true'
 
       - name: Upload Surefire reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         continue-on-error: true
         with:
@@ -213,14 +213,14 @@ jobs:
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -229,7 +229,7 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
@@ -279,14 +279,14 @@ jobs:
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -295,7 +295,7 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 8
@@ -342,7 +342,7 @@ jobs:
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
@@ -352,7 +352,7 @@ jobs:
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -362,7 +362,7 @@ jobs:
 
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
@@ -383,14 +383,14 @@ jobs:
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -399,7 +399,7 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
@@ -431,14 +431,14 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -448,7 +448,7 @@ jobs:
 
 
       - name: Set up JDK ${{ matrix.jdk_version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
@@ -473,14 +473,14 @@ jobs:
     if: ${{ needs.build-and-license-check.outputs.need_owasp == 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
 
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -489,7 +489,7 @@ jobs:
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 11
 
@@ -504,7 +504,7 @@ jobs:
         run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs'
 
       - name: Upload report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ cancelled() || failure() }}
         continue-on-error: true
         with:
