@@ -259,9 +259,6 @@ public class BookKeeperClusterUtils {
     }
 
     private static String computeBinFilenameByVersion(String version) {
-        if (OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME.contains(version)) {
-            return "bookkeeper";
-        }
-        return "bookkeeper_gradle";
+        return "bookkeeper";
     }
 }
