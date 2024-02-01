@@ -116,6 +116,7 @@ jobs:
             module: bookkeeper-server
             flag: client
             test_args: "-Dtest='org.apache.bookkeeper.client.**'"
+            timeout: 75
           - step_name: Replication Tests
             module: bookkeeper-server
             flag: replication
