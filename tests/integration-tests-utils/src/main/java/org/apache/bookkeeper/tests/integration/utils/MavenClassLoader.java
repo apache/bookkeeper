@@ -142,10 +142,13 @@ public class MavenClassLoader implements AutoCloseable {
     private static MavenClassLoader forBookkeeperCurrentVersion() throws Exception {
         if (currentVersionLibs == null) {
             final String version = BookKeeperClusterUtils.CURRENT_VERSION;
-            final String rootDirectory = System.getProperty("session.executionRootDirectory", ".");
+            String rootDirectory = System.getenv("GITHUB_WORKSPACE");
+            if (rootDirectory == null) {
+                rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../..";
+            }
             final String artifactName = "bookkeeper-server-" + version + "-bin";
             final Path tarFile = Paths.get(rootDirectory,
-                    "bookkeeper-dist", "server", "target", artifactName + ".tar.gz");
+                    "bookkeeper-dist", "server", "target", artifactName + ".tar.gz").toAbsolutePath();
             final File tempDir = new File(System.getProperty("maven.buildDirectory", "target"));
             extractTarGz(tarFile.toFile(), tempDir);
             List<File> jars = new ArrayList<>();

@@ -43,7 +43,6 @@
           <systemPropertyVariables>
             <currentVersion>${project.version}</currentVersion>
             <maven.buildDirectory>${project.build.directory}</maven.buildDirectory>
-            <session.executionRootDirectory>${session.executionRootDirectory}</session.executionRootDirectory>
           </systemPropertyVariables>
         </configuration>
       </plugin>
