@@ -153,6 +153,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Number of Threads
     protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
     protected static final String NUM_IO_THREADS = "numIOThreads";
+    protected static final String ISOLATE_READ_WRITE_THREAD_POOL = "isolateReadWriteThreadPool";
 
     // Ensemble Placement Policy
     public static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
@@ -899,6 +900,14 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * Get whether allows read and write requests to isolate in separate thread pools.
+     * @return
+     */
+    public boolean getIsolateReadWriteThreadPool() {
+        return getBoolean(ISOLATE_READ_WRITE_THREAD_POOL, false);
+    }
+
+    /**
      * Set the number of IO threads.
      *
      * <p>
@@ -916,6 +925,16 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setNumIOThreads(int numThreads) {
         setProperty(NUM_IO_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Set whether allows read and write requests to isolate in separate thread pools.
+     * @param isolateThreadPool
+     * @return
+     */
+    public ClientConfiguration setIsolateReadWriteThreadPool(boolean isolateThreadPool) {
+        setProperty(ISOLATE_READ_WRITE_THREAD_POOL, isolateThreadPool);
         return this;
     }
 

@@ -288,6 +288,20 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testIsolateReadWriteThreadPool() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        conf.setIsolateReadWriteThreadPool(true);
+
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
+        assertTrue(lh.isolateReadWriteThreadPool());
+
+        lh.close();
+        bkc.close();
+    }
+
+    @Test
     public void testReadFailureCallback() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());

@@ -511,6 +511,10 @@ public class LedgerHandle implements WriteHandle {
         return !getLedgerMetadata().isClosed() && handleState == HandleState.OPEN;
     }
 
+    boolean isolateReadWriteThreadPool() {
+        return clientCtx.getConf().isolateReadWriteThreadPool;
+    }
+
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
@@ -890,7 +894,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
 
-            if (isHandleWritable()) {
+            if (isHandleWritable() && !isolateReadWriteThreadPool()) {
                 // Ledger handle in read/write mode: submit to OSE for ordered execution.
                 executeOrdered(op);
             } else {

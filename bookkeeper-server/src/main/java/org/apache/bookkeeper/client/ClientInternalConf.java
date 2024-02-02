@@ -48,6 +48,7 @@ class ClientInternalConf {
     final boolean enableBookieFailureTracking;
     final boolean useV2WireProtocol;
     final boolean enforceMinNumFaultDomainsForWrite;
+    final boolean isolateReadWriteThreadPool;
 
     static ClientInternalConf defaultValues() {
         return fromConfig(new ClientConfiguration());
@@ -82,6 +83,7 @@ class ClientInternalConf {
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
         this.enableStickyReads = conf.isStickyReadsEnabled();
         this.enforceMinNumFaultDomainsForWrite = conf.getEnforceMinNumFaultDomainsForWrite();
+        this.isolateReadWriteThreadPool = conf.getIsolateReadWriteThreadPool();
 
         if (conf.getFirstSpeculativeReadTimeout() > 0) {
             this.readSpeculativeRequestPolicy =
