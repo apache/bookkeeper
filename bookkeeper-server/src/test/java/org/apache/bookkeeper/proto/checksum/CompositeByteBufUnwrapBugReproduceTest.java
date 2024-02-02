@@ -19,7 +19,6 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-
 import com.scurrilous.circe.checksum.IntHash;
 import com.scurrilous.circe.checksum.Java8IntHash;
 import com.scurrilous.circe.checksum.Java9IntHash;
@@ -33,9 +32,11 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import org.apache.bookkeeper.proto.BookieProtoEncoding;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.ByteBufVisitor;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,22 +57,30 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class CompositeByteBufUnwrapBugReproduceTest {
     final byte[] testPayLoad;
-    final int bufferPrefixLength;
+    final int defaultBufferPrefixLength;
     private final boolean useV2Protocol;
+
+    // set to 0 to 3 to run a single scenario for debugging purposes
+    private static final int RUN_SINGLE_SCENARIO_FOR_DEBUGGING = -1;
 
     @Parameterized.Parameters
     public static Collection<Object[]> testScenarios() {
-        return Arrays.asList(new Object[][] {
+        List<Object[]> scenarios = Arrays.asList(new Object[][] {
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD - 1, true},
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD - 1, false},
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD, true},
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD, false}
         });
+        if (RUN_SINGLE_SCENARIO_FOR_DEBUGGING >= 0)  {
+            // pick a single scenario for debugging
+            scenarios = scenarios.subList(RUN_SINGLE_SCENARIO_FOR_DEBUGGING, 1);
+        }
+        return scenarios;
     }
 
     public CompositeByteBufUnwrapBugReproduceTest(int payloadSize, boolean useV2Protocol) {
         this.testPayLoad = createTestPayLoad(payloadSize);
-        this.bufferPrefixLength = payloadSize / 7;
+        this.defaultBufferPrefixLength = payloadSize / 7;
         this.useV2Protocol = useV2Protocol;
     }
 
@@ -135,31 +144,53 @@ public class CompositeByteBufUnwrapBugReproduceTest {
     }
 
     private void assertDigestAndPackageMatchesReference(IntHash intHash, ByteBuf payload, byte[] referenceOutput) {
-        assertDigestAndPackageScenario(intHash, payload.retainedDuplicate(), referenceOutput,
+        assertDigestAndPackageScenario(intHash, payload.retainedDuplicate(), referenceOutput, testPayLoad,
                 "plain payload, no wrapping");
 
-        ByteBuf payload2 = wrapWithPrefixAndCompositeByteBufWithReaderIndexState(payload.retainedDuplicate());
-        assertDigestAndPackageScenario(intHash, payload2, referenceOutput,
+        ByteBuf payload2 = wrapWithPrefixAndCompositeByteBufWithReaderIndexState(payload.retainedDuplicate(),
+                defaultBufferPrefixLength);
+        assertDigestAndPackageScenario(intHash, payload2, referenceOutput, testPayLoad,
                 "payload with prefix wrapped in CompositeByteBuf with readerIndex state");
 
         ByteBuf payload3 = wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(
-                payload.retainedDuplicate());
-        assertDigestAndPackageScenario(intHash, payload3, referenceOutput,
+                payload.retainedDuplicate(), defaultBufferPrefixLength);
+        assertDigestAndPackageScenario(intHash, payload3, referenceOutput, testPayLoad,
                 "payload with prefix wrapped in 2 layers of CompositeByteBuf with readerIndex state in the outer "
                         + "composite. In addition, the outer composite is duplicated twice.");
 
-        ByteBuf payload4 = wrapInCompositeByteBufAndSlice(payload.retainedDuplicate());
-        assertDigestAndPackageScenario(intHash, payload4, referenceOutput,
+        ByteBuf payload4 = wrapInCompositeByteBufAndSlice(payload.retainedDuplicate(), defaultBufferPrefixLength);
+        assertDigestAndPackageScenario(intHash, payload4, referenceOutput, testPayLoad,
                 "payload with prefix wrapped in CompositeByteBuf and sliced");
     }
 
-    private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput,
+    private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput, byte[] testPayLoadArray,
                                                 String scenario) {
         // this validates that the readable bytes in the payload match the TEST_PAYLOAD content
-        assertArrayEquals(ByteBufUtil.getBytes(payload.duplicate()), testPayLoad,
+        assertArrayEquals(testPayLoadArray, ByteBufUtil.getBytes(payload.duplicate()),
                 "input is invalid for scenario '" + scenario + "'");
+
+        ByteBuf visitedCopy = Unpooled.buffer(payload.readableBytes());
+        ByteBufVisitor.visitBuffers(payload, payload.readerIndex(), payload.readableBytes(), new ByteBufVisitor.ByteBufVisitorCallback<Void>() {
+            @Override
+            public void visitBuffer(Void context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
+                visitedCopy.writeBytes(visitBuffer, visitIndex, visitLength);
+            }
+
+            @Override
+            public void visitArray(Void context, byte[] visitArray, int visitIndex, int visitLength) {
+                visitedCopy.writeBytes(visitArray, visitIndex, visitLength);
+            }
+        }, null);
+
+        assertArrayEquals(ByteBufUtil.getBytes(visitedCopy), testPayLoadArray,
+                "visited copy is invalid for scenario '" + scenario + "'. Bug in ByteBufVisitor?");
+
         // compute the digest and package
-        byte[] output = computeDigestAndPackageForSending(intHash, payload);
+        byte[] output = computeDigestAndPackageForSending(intHash, payload.duplicate());
+        if (referenceOutput == null) {
+            referenceOutput =
+                    computeDigestAndPackageForSending(new Java8IntHash(), Unpooled.wrappedBuffer(testPayLoadArray));
+        }
         // this validates that the output matches the reference output
         assertArrayEquals(referenceOutput, output, "output is invalid for scenario '" + scenario + "'");
     }
@@ -172,7 +203,7 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         return packagedBufferToBytes(packagedBuffer);
     }
 
-    ByteBuf wrapWithPrefixAndCompositeByteBufWithReaderIndexState(ByteBuf payload) {
+    ByteBuf wrapWithPrefixAndCompositeByteBufWithReaderIndexState(ByteBuf payload, int bufferPrefixLength) {
         // create a new buffer with a prefix and the actual payload
         ByteBuf prefixedPayload = ByteBufAllocator.DEFAULT.buffer(bufferPrefixLength + payload.readableBytes());
         prefixedPayload.writeBytes(RandomUtils.nextBytes(bufferPrefixLength));
@@ -188,7 +219,8 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         return outerComposite;
     }
 
-    ByteBuf wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(ByteBuf payload) {
+    ByteBuf wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(ByteBuf payload,
+                                                                                                      int bufferPrefixLength) {
         // create a new buffer with a prefix and the actual payload
         ByteBuf prefixedPayload = ByteBufAllocator.DEFAULT.buffer(bufferPrefixLength + payload.readableBytes());
         prefixedPayload.writeBytes(RandomUtils.nextBytes(bufferPrefixLength));
@@ -209,7 +241,7 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         return outerComposite.duplicate().duplicate();
     }
 
-    ByteBuf wrapInCompositeByteBufAndSlice(ByteBuf payload) {
+    ByteBuf wrapInCompositeByteBufAndSlice(ByteBuf payload, int bufferPrefixLength) {
         // create a composite buffer
         CompositeByteBuf compositeWithPrefix = ByteBufAllocator.DEFAULT.compositeBuffer();
         compositeWithPrefix.addComponent(true, Unpooled.wrappedBuffer(RandomUtils.nextBytes(bufferPrefixLength)));
