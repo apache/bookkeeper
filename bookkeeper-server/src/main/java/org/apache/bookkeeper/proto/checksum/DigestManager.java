@@ -61,10 +61,29 @@ public abstract class DigestManager {
 
     abstract int internalUpdate(int digest, byte[] buffer, int offset, int len);
 
+    protected int initialDigest() {
+        return 0;
+    };
+
+    protected int finalizeDigest(int digest) {
+        return digest;
+    }
+
     final int update(int digest, ByteBuf buffer, int offset, int len) {
+        if (len == 0) {
+            return digest;
+        }
         MutableInt digestRef = new MutableInt(digest);
         ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
         return digestRef.intValue();
+    }
+
+    protected final int initializeAndUpdate(ByteBuf buf, int offset, int len) {
+        return update(initialDigest(), buf, offset, len);
+    }
+
+    private int updateAndFinalize(ByteBuf data, int digest, int offset, int len) {
+        return finalizeDigest(update(digest, data, offset, len));
     }
 
     abstract void populateValueAndReset(int digest, ByteBuf buffer);
@@ -145,8 +164,8 @@ public abstract class DigestManager {
         buf.writeLong(length);
 
         // Compute checksum over the headers
-        int digest = update(0, buf, buf.readerIndex(), buf.readableBytes());
-        digest = update(digest, data, data.readerIndex(), data.readableBytes());
+        int digest = initializeAndUpdate(buf, buf.readerIndex(), buf.readableBytes());
+        digest = updateAndFinalize(data, digest, data.readerIndex(), data.readableBytes());
 
         populateValueAndReset(digest, buf);
 
@@ -170,8 +189,8 @@ public abstract class DigestManager {
         headersBuffer.writeLong(lastAddConfirmed);
         headersBuffer.writeLong(length);
 
-        int digest = update(0, headersBuffer, 0, METADATA_LENGTH);
-        digest = update(digest, data, data.readerIndex(), data.readableBytes());
+        int digest = initializeAndUpdate(headersBuffer, 0, METADATA_LENGTH);
+        digest = updateAndFinalize(data, digest, data.readerIndex(), data.readableBytes());
         populateValueAndReset(digest, headersBuffer);
         return ByteBufList.get(headersBuffer, data);
     }
@@ -193,7 +212,7 @@ public abstract class DigestManager {
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
 
-        int digest = update(0, headersBuffer, 0, LAC_METADATA_LENGTH);
+        int digest = finalizeDigest(initializeAndUpdate(headersBuffer, 0, LAC_METADATA_LENGTH));
         populateValueAndReset(digest, headersBuffer);
 
         return ByteBufList.get(headersBuffer);
@@ -229,10 +248,10 @@ public abstract class DigestManager {
                     this.getClass().getName(), dataReceived.readableBytes());
             throw new BKDigestMatchException();
         }
-        int digest = update(0, dataReceived, 0, METADATA_LENGTH);
+        int digest = initializeAndUpdate(dataReceived, 0, METADATA_LENGTH);
 
         int offset = METADATA_LENGTH + macCodeLength;
-        digest = update(digest, dataReceived, offset, dataReceived.readableBytes() - offset);
+        digest = updateAndFinalize(dataReceived, digest, offset, dataReceived.readableBytes() - offset);
 
         if (isInt32Digest()) {
             int receivedDigest = dataReceived.getInt(METADATA_LENGTH);
@@ -277,7 +296,7 @@ public abstract class DigestManager {
             throw new BKDigestMatchException();
         }
 
-        int digest = update(0, dataReceived, 0, LAC_METADATA_LENGTH);
+        int digest = finalizeDigest(initializeAndUpdate(dataReceived, 0, LAC_METADATA_LENGTH));
 
         if (isInt32Digest()) {
             int receivedDigest = dataReceived.getInt(LAC_METADATA_LENGTH);

@@ -54,4 +54,14 @@ class CRC32CDigestManager extends DigestManager {
     int internalUpdate(int digest, byte[] buffer, int offset, int len) {
         return Crc32cIntChecksum.resumeChecksum(digest, buffer, offset, len);
     }
+
+    @Override
+    protected int initialDigest() {
+        return Crc32cIntChecksum.initialValue();
+    }
+
+    @Override
+    protected int finalizeDigest(int digest) {
+        return Crc32cIntChecksum.finalizeValue(digest);
+    }
 }
