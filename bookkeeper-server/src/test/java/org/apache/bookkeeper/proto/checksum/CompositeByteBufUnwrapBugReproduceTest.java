@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
 import com.scurrilous.circe.checksum.IntHash;
 import com.scurrilous.circe.checksum.Java8IntHash;
 import com.scurrilous.circe.checksum.Java9IntHash;
