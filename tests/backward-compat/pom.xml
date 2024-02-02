@@ -79,6 +79,11 @@
   <profiles>
     <profile>
       <id>skipBackwardCompatTests</id>
+      <activation>
+        <property>
+          <name>skipBackwardCompatTests</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
