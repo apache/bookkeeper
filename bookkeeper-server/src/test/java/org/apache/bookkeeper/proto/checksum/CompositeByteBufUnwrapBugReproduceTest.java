@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.bookkeeper.proto.checksum;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -71,7 +72,7 @@ public class CompositeByteBufUnwrapBugReproduceTest {
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD, true},
                 {BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD, false}
         });
-        if (RUN_SINGLE_SCENARIO_FOR_DEBUGGING >= 0)  {
+        if (RUN_SINGLE_SCENARIO_FOR_DEBUGGING >= 0) {
             // pick a single scenario for debugging
             scenarios = scenarios.subList(RUN_SINGLE_SCENARIO_FOR_DEBUGGING, 1);
         }
@@ -173,24 +174,26 @@ public class CompositeByteBufUnwrapBugReproduceTest {
                 "payload with prefix wrapped in CompositeByteBuf and sliced");
     }
 
-    private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput, byte[] testPayLoadArray,
+    private void assertDigestAndPackageScenario(IntHash intHash, ByteBuf payload, byte[] referenceOutput,
+                                                byte[] testPayLoadArray,
                                                 String scenario) {
         // this validates that the readable bytes in the payload match the TEST_PAYLOAD content
         assertArrayEquals(testPayLoadArray, ByteBufUtil.getBytes(payload.duplicate()),
                 "input is invalid for scenario '" + scenario + "'");
 
         ByteBuf visitedCopy = Unpooled.buffer(payload.readableBytes());
-        ByteBufVisitor.visitBuffers(payload, payload.readerIndex(), payload.readableBytes(), new ByteBufVisitor.ByteBufVisitorCallback<Void>() {
-            @Override
-            public void visitBuffer(Void context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
-                visitedCopy.writeBytes(visitBuffer, visitIndex, visitLength);
-            }
+        ByteBufVisitor.visitBuffers(payload, payload.readerIndex(), payload.readableBytes(),
+                new ByteBufVisitor.ByteBufVisitorCallback<Void>() {
+                    @Override
+                    public void visitBuffer(Void context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
+                        visitedCopy.writeBytes(visitBuffer, visitIndex, visitLength);
+                    }
 
-            @Override
-            public void visitArray(Void context, byte[] visitArray, int visitIndex, int visitLength) {
-                visitedCopy.writeBytes(visitArray, visitIndex, visitLength);
-            }
-        }, null);
+                    @Override
+                    public void visitArray(Void context, byte[] visitArray, int visitIndex, int visitLength) {
+                        visitedCopy.writeBytes(visitArray, visitIndex, visitLength);
+                    }
+                }, null);
 
         assertArrayEquals(ByteBufUtil.getBytes(visitedCopy), testPayLoadArray,
                 "visited copy is invalid for scenario '" + scenario + "'. Bug in ByteBufVisitor?");
@@ -230,7 +233,7 @@ public class CompositeByteBufUnwrapBugReproduceTest {
     }
 
     ByteBuf wrapWithPrefixAndMultipleCompositeByteBufWithReaderIndexStateAndMultipleLayersOfDuplicate(ByteBuf payload,
-                                                                                                      int bufferPrefixLength) {
+                                                                                               int bufferPrefixLength) {
         // create a new buffer with a prefix and the actual payload
         ByteBuf prefixedPayload = ByteBufAllocator.DEFAULT.buffer(bufferPrefixLength + payload.readableBytes());
         prefixedPayload.writeBytes(RandomUtils.nextBytes(bufferPrefixLength));
