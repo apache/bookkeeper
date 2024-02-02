@@ -252,9 +252,7 @@ jobs:
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |
-          mvn -B -nsu -f tests/pom.xml test -DintegrationTests \
-            -pl '!org.apache.bookkeeper.tests:backward-compat,!org.apache.bookkeeper.tests.backward-compat:upgrade,!org.apache.bookkeeper.tests.backward-compat:upgrade-direct,!org.apache.bookkeeper.tests.backward-compat:hierarchical-ledger-manager,!org.apache.bookkeeper.tests.backward-compat:hostname-bookieid,!org.apache.bookkeeper.tests.backward-compat:recovery-no-password,!org.apache.bookkeeper.tests.backward-compat:old-cookie-new-cluster,!org.apache.bookkeeper.tests.backward-compat:backward-compat-current-server-old-clients,!org.apache.bookkeeper.tests.backward-compat:yahoo-custom-version,!org.apache.bookkeeper.tests.backward-compat:bc-non-fips' \
-            -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -PskipBackwardCompatTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
