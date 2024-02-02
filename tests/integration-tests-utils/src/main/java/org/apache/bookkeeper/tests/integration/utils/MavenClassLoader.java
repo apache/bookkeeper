@@ -44,6 +44,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
@@ -287,14 +288,16 @@ public class MavenClassLoader implements AutoCloseable {
             TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) debInputStream.getNextEntry()) != null) {
                 final File outputFile = new File(outputDir, entry.getName());
+                if (!outputFile.getParentFile().exists()) {
+                    outputFile.getParentFile().mkdirs();
+                }
                 if (entry.isDirectory()) {
-                    if (!outputFile.exists()) {
-                        if (!outputFile.mkdirs()) {
-                            throw new IllegalStateException(
-                                    String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
-                        }
-                    } else {
-                        outputFile.delete();
+                    if (outputFile.exists()) {
+                        FileUtils.deleteDirectory(outputFile);
+                    }
+                    if (!outputFile.mkdirs()) {
+                        throw new IllegalStateException(
+                                String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
                     }
                 } else {
                     try (final OutputStream outputFileStream = new FileOutputStream(outputFile)) {
