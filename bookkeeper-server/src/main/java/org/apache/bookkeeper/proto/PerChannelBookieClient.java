@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -83,6 +84,8 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,6 +100,8 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
+import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -174,6 +179,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
+    private static final int BATCH_RESPONSE_SIZE = 1_000;
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieId bookieId;
@@ -186,6 +192,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final int maxFrameSize;
     final long getBookieInfoTimeoutNanos;
     final int startTLSTimeout;
+    final boolean groupReadWriteResponses;
 
     private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
             ConcurrentOpenHashMap.<CompletionKey, CompletionValue>newBuilder().autoShrink(true).build();
@@ -327,6 +334,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     volatile Channel channel = null;
     private final ClientConnectionPeer connectionPeer;
     private volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
+    private final BatchedBlockingQueue<BookieProtocol.Response> responses;
 
     @SneakyThrows
     private FailedChannelFutureImpl processBookieNotResolvedError(long startTime,
@@ -411,6 +419,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (shFactory != null) {
             shFactory.init(NodeType.Client, conf, allocator);
         }
+        this.groupReadWriteResponses = conf.getGroupReadWriteResponses();
+        this.responses = new BatchedArrayBlockingQueue<>(BATCH_RESPONSE_SIZE);
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
             .scopeLabel(BookKeeperClientStats.BOOKIE_LABEL, bookieId.toString());
@@ -1386,12 +1396,31 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (msg instanceof BookieProtocol.Response) {
             BookieProtocol.Response response = (BookieProtocol.Response) msg;
-            readV2Response(response);
+            if (groupReadWriteResponses) {
+                if (!responses.offer(response)) {
+                    channelReadComplete(ctx);
+                    responses.put(response);
+                }
+            } else {
+                readV2Response(response);
+            }
         } else if (msg instanceof Response) {
             Response response = (Response) msg;
             readV3Response(response);
         } else {
             ctx.fireChannelRead(msg);
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (!responses.isEmpty()) {
+            int count = responses.size();
+            BookieProtocol.Response[] resp = new BookieProtocol.Response[count];
+            int responsesInQueue = responses.takeAll(resp);
+            if (responsesInQueue > 0) {
+                readV2Responses(resp);
+            }
         }
     }
 
@@ -1412,15 +1441,45 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // Unexpected response, so log it. The txnId should have been present.
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
-                        + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
+                    + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
             }
             response.release();
         } else {
             long orderingKey = completionValue.ledgerId;
             executor.executeOrdered(orderingKey,
-                    ReadV2ResponseCallback.create(completionValue, response.ledgerId, response.entryId,
-                                                  status, response));
+                ReadV2ResponseCallback.create(completionValue, response.ledgerId, response.entryId,
+                    status, response));
         }
+    }
+
+    private void readV2Responses(BookieProtocol.Response[] responses) {
+        Map<ExecutorService, BatchedReadV2ResponseCallback> callbackMap = new HashMap<>();
+        for (BookieProtocol.Response r : responses) {
+            if (r == null) {
+                break;
+            }
+            OperationType operationType = getOperationType(r.getOpCode());
+            StatusCode statusCode = getStatusCodeFromErrorCode(r.errorCode);
+            CompletionKey key = acquireV2Key(r.ledgerId, r.entryId, operationType);
+            CompletionValue completionValue = getCompletionValue(key);
+            key.release();
+
+            if (null == completionValue) {
+                // Unexpected response, so log it. The txnId should have been present.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
+                            + " and ledger:entry : " + r.ledgerId + ":" + r.entryId);
+                }
+                r.release();
+            } else {
+                callbackMap.computeIfAbsent(executor.chooseThread(r.ledgerId),
+                    k -> new BatchedReadV2ResponseCallback())
+                    .addCallback(ReadV2ResponseCallback.create(completionValue, r.ledgerId, r.entryId, statusCode, r));
+            }
+        }
+
+        callbackMap.forEach(Executor::execute);
+        callbackMap.clear();
     }
 
     private static class ReadV2ResponseCallback implements Runnable {
@@ -1470,6 +1529,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return new ReadV2ResponseCallback(handle);
             }
         };
+    }
+
+    private static class BatchedReadV2ResponseCallback implements Runnable {
+        List<ReadV2ResponseCallback> callbacks = new ArrayList<>();
+
+        BatchedReadV2ResponseCallback() {
+        }
+
+        @Override
+        public void run() {
+            callbacks.forEach(ReadV2ResponseCallback::run);
+            callbacks.clear();
+        }
+
+        void addCallback(ReadV2ResponseCallback callback) {
+            callbacks.add(callback);
+        }
     }
 
     private static OperationType getOperationType(byte opCode) {
