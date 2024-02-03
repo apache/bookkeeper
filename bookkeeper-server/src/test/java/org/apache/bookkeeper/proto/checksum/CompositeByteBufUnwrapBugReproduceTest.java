@@ -131,16 +131,6 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         int internalUpdate(int digest, byte[] buffer, int offset, int len) {
             return intHash.resume(digest, buffer, offset, len);
         }
-
-        @Override
-        protected int initialDigest() {
-            return intHash.initialValue();
-        }
-
-        @Override
-        protected int finalizeDigest(int digest) {
-            return intHash.finalizeValue(digest);
-        }
     }
 
     @Test

@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package com.scurrilous.circe.checksum;
 
 import static com.scurrilous.circe.params.CrcParameters.CRC32C;
@@ -45,9 +44,7 @@ public class ChecksumTest {
     @Test
     public void testCrc32cValueResume() {
         final byte[] bytes = "Some String".getBytes();
-        int checksum = Crc32cIntChecksum.finalizeValue(
-                Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), Unpooled.wrappedBuffer(bytes), 0,
-                        bytes.length));
+        int checksum = Crc32cIntChecksum.resumeChecksum(0, Unpooled.wrappedBuffer(bytes), 0, bytes.length);
 
         assertEquals(608512271, checksum);
     }
@@ -59,26 +56,22 @@ public class ChecksumTest {
         int checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes));
         assertEquals(608512271, checksum);
 
-        checksum =
-                Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), Unpooled.wrappedBuffer(bytes, 0, 1));
+        checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes, 0, 1));
         for (int i = 1; i < bytes.length; i++) {
             checksum = Crc32cIntChecksum.resumeChecksum(checksum, Unpooled.wrappedBuffer(bytes), i, 1);
         }
-        checksum = Crc32cIntChecksum.finalizeValue(checksum);
         assertEquals(608512271, checksum);
 
-        checksum =
-                Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), Unpooled.wrappedBuffer(bytes, 0, 4));
+        checksum = Crc32cIntChecksum.computeChecksum(Unpooled.wrappedBuffer(bytes, 0, 4));
         checksum = Crc32cIntChecksum.resumeChecksum(checksum, Unpooled.wrappedBuffer(bytes), 4, 7);
-        checksum = Crc32cIntChecksum.finalizeValue(checksum);
         assertEquals(608512271, checksum);
 
 
         ByteBuf buffer = Unpooled.wrappedBuffer(bytes, 0, 4);
-        checksum = Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), buffer);
+        checksum = Crc32cIntChecksum.computeChecksum(buffer);
         checksum = Crc32cIntChecksum.resumeChecksum(
-                checksum, Unpooled.wrappedBuffer(bytes), 4, bytes.length - 4);
-        checksum = Crc32cIntChecksum.finalizeValue(checksum);
+            checksum, Unpooled.wrappedBuffer(bytes), 4, bytes.length - 4);
+
         assertEquals(608512271, checksum);
     }
 
@@ -93,10 +86,7 @@ public class ChecksumTest {
     @Test
     public void testCrc32cLongValueResume() {
         final byte[] bytes = "Some String".getBytes();
-        long checksum =
-                Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), Unpooled.wrappedBuffer(bytes), 0,
-                        bytes.length);
-        checksum = Crc32cIntChecksum.finalizeValue((int) checksum);
+        long checksum = Crc32cIntChecksum.resumeChecksum(0, Unpooled.wrappedBuffer(bytes), 0, bytes.length);
 
         assertEquals(608512271L, checksum);
     }

@@ -68,12 +68,12 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int calculate(ByteBuf buffer) {
-        return finalizeValue(resume(initialValue(), buffer));
+        return resume(0, buffer);
     }
 
     @Override
     public int calculate(ByteBuf buffer, int offset, int len) {
-        return finalizeValue(resume(initialValue(), buffer, offset, len));
+        return resume(0, buffer, offset, len);
     }
 
     private int resume(int current, long address, int offset, int length) {
@@ -100,11 +100,13 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, ByteBuf buffer, int offset, int len) {
+        int negCrc = ~current;
+
         if (buffer.hasMemoryAddress()) {
-            current = resume(current, buffer.memoryAddress(), offset, len);
+            negCrc = resume(negCrc, buffer.memoryAddress(), offset, len);
         } else if (buffer.hasArray()) {
             int arrayOffset = buffer.arrayOffset() + offset;
-            current = resume(current, buffer.array(), arrayOffset, len);
+            negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
@@ -112,23 +114,12 @@ public class Java9IntHash implements IntHash {
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
                 buffer.getBytes(loopOffset, b, 0, length);
-                current = resume(current, b, 0, length);
+                negCrc = resume(negCrc, b, 0, length);
                 toRead -= length;
                 loopOffset += length;
             }
         }
-        return current;
-    }
 
-    @Override
-    public int initialValue() {
-        // match java.util.zip.CRC32C.reset logic
-        return 0xFFFFFFFF;
-    }
-
-    @Override
-    public int finalizeValue(int current) {
-        // match java.util.zip.CRC32C.getValue logic
-        return ~current;
+        return ~negCrc;
     }
 }

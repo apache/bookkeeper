@@ -65,8 +65,8 @@ public class Java9IntHashTest {
         int checksumRes1 = Crc32cIntChecksum.computeChecksum(bTotal);
 
         // Calculate: case-2.
-        int b1CheckSum = Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), b1);
-        int checksumRes2 = Crc32cIntChecksum.finalizeValue(Crc32cIntChecksum.resumeChecksum(b1CheckSum, b2));
+        int b1CheckSum = Crc32cIntChecksum.computeChecksum(b1);
+        int checksumRes2 = Crc32cIntChecksum.resumeChecksum(b1CheckSum, b2);
 
         // Verify: the results of both ways to calculate the checksum are same.
         Assert.assertEquals(checksumRes1, checksumRes2);
@@ -90,8 +90,8 @@ public class Java9IntHashTest {
         int checksumRes1 = Crc32cIntChecksum.computeChecksum(bTotal);
 
         // Calculate: case-2.
-        int b1CheckSum = Crc32cIntChecksum.resumeChecksum(Crc32cIntChecksum.initialValue(), b1);
-        int checksumRes2 = Crc32cIntChecksum.finalizeValue(Crc32cIntChecksum.resumeChecksum(b1CheckSum, b2));
+        int b1CheckSum = Crc32cIntChecksum.computeChecksum(b1);
+        int checksumRes2 = Crc32cIntChecksum.resumeChecksum(b1CheckSum, b2);
 
         // Verify: the results of both ways to calculate the checksum are same.
         Assert.assertEquals(checksumRes1, checksumRes2);

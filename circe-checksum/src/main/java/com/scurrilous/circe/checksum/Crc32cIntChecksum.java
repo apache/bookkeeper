@@ -94,11 +94,4 @@ public class Crc32cIntChecksum {
         return CRC32C_HASH.resume(previousChecksum, payload, offset, len);
     }
 
-    public static int initialValue() {
-        return CRC32C_HASH.initialValue();
-    }
-
-    public static int finalizeValue(int current) {
-        return CRC32C_HASH.finalizeValue(current);
-    }
 }

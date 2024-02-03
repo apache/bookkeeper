@@ -30,12 +30,4 @@ public interface IntHash {
     int resume(int current, ByteBuf buffer, int offset, int len);
 
     int resume(int current, byte[] buffer, int offset, int len);
-
-    default int initialValue() {
-        return 0;
-    }
-
-    default int finalizeValue(int current) {
-        return current;
-    }
 }
