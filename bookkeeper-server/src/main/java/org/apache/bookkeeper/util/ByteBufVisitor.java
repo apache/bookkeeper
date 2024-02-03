@@ -124,7 +124,6 @@ public class ByteBufVisitor {
                 internalContext.userCallback.visitBuffer(internalContext.userContext, visitBuffer,
                         visitIndex, visitLength);
             } else {
-                internalContext.depth++;
                 // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
                 doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, this, internalContext);
             }
@@ -152,7 +151,9 @@ public class ByteBufVisitor {
             internalContext.parentBuffer = buffer;
             internalContext.parentOffset = offset;
             internalContext.parentLength = length;
+            internalContext.depth++;
             visitBuffersImpl(buffer, offset, length, callback, internalContext);
+            internalContext.depth--;
         } else {
             // visit the buffer
             internalContext.userCallback.visitBuffer(internalContext.userContext, buffer, offset, length);
