@@ -73,9 +73,15 @@ public abstract class DigestManager {
         if (len == 0) {
             return digest;
         }
-        MutableInt digestRef = new MutableInt(digest);
-        ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
-        return digestRef.intValue();
+        if (buffer.hasMemoryAddress()) {
+            return internalUpdate(digest, buffer, offset, len);
+        } else if (buffer.hasArray()) {
+            return internalUpdate(digest, buffer.array(), offset, len);
+        } else {
+            MutableInt digestRef = new MutableInt(digest);
+            ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
+            return digestRef.intValue();
+        }
     }
 
     protected final int initializeAndUpdate(ByteBuf buf, int offset, int len) {
