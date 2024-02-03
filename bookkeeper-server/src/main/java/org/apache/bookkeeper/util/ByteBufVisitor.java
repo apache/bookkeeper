@@ -117,8 +117,8 @@ public class ByteBufVisitor {
         @Override
         public void visitBuffer(InternalContext<T> internalContext, ByteBuf visitBuffer, int visitIndex,
                                 int visitLength) {
-            if (internalContext.depth > 0 && visitBuffer == internalContext.parentBuffer
-                    && visitIndex == internalContext.parentOffset && visitLength == internalContext.parentLength) {
+            if (visitBuffer == internalContext.parentBuffer && visitIndex == internalContext.parentOffset
+                    && visitLength == internalContext.parentLength) {
                 // visit the buffer since it was already passed to visitBuffersImpl and further recursion
                 // would cause unnecessary recursion up to the max depth of recursion
                 internalContext.userCallback.visitBuffer(internalContext.userContext, visitBuffer,
