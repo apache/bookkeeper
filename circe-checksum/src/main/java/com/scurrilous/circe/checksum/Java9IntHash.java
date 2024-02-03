@@ -76,7 +76,7 @@ public class Java9IntHash implements IntHash {
         return resume(0, buffer, offset, len);
     }
 
-    private int resume(int current, long address, int offset, int length) {
+    private int updateDirectByteBuffer(int current, long address, int offset, int length) {
         try {
             return (int) UPDATE_DIRECT_BYTEBUFFER.invoke(null, current, address, offset, offset + length);
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -86,6 +86,13 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, byte[] array, int offset, int length) {
+        // the bit-wise complementing of the input and output is explained in the resume method below
+        current = ~current;
+        current = updateBytes(current, array, offset, length);
+        return ~current;
+    }
+
+    private static int updateBytes(int current, byte[] array, int offset, int length) {
         try {
             return (int) UPDATE_BYTES.invoke(null, current, array, offset, offset + length);
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -100,13 +107,22 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, ByteBuf buffer, int offset, int len) {
-        int negCrc = ~current;
+        // flip the bits (bit-wise complements) for the input value.
+        // this serves two purposes:
+        // - the CRC32C algorithm is designed to start with a seed value of all bits set to 1 (0xffffffff)
+        //   - when 0 is passed in initially, ~0 will result in the correct initial value (0xfffffff).
+        // - the CRC32C algorithm is designed in a way that the final value is complemented as the last step.
+        //   - this method will always complement the return value
+        // - for iterative use, the input value should be complemented to continue calculations.
+        // This way the algorithm can be used incrementally without a separate initialization step
+        // and finalization step.
+        current = ~current;
 
         if (buffer.hasMemoryAddress()) {
-            negCrc = resume(negCrc, buffer.memoryAddress(), offset, len);
+            current = updateDirectByteBuffer(current, buffer.memoryAddress(), offset, len);
         } else if (buffer.hasArray()) {
             int arrayOffset = buffer.arrayOffset() + offset;
-            negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
+            current = updateBytes(current, buffer.array(), arrayOffset, len);
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
@@ -114,12 +130,14 @@ public class Java9IntHash implements IntHash {
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
                 buffer.getBytes(loopOffset, b, 0, length);
-                negCrc = resume(negCrc, b, 0, length);
+                current = updateBytes(current, b, 0, length);
                 toRead -= length;
                 loopOffset += length;
             }
         }
 
-        return ~negCrc;
+        // return a complement of the current value to match the CRC32C algorithm's finalization step.
+        // if there's another resume step, the value will be complemented to start the next step.
+        return ~current;
     }
 }
