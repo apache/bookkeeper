@@ -94,4 +94,7 @@ public class Crc32cIntChecksum {
         return CRC32C_HASH.resume(previousChecksum, payload, offset, len);
     }
 
+    public static boolean acceptsMemoryAddressBuffer() {
+        return CRC32C_HASH.acceptsMemoryAddressBuffer();
+    }
 }

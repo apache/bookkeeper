@@ -92,6 +92,11 @@ public class Java9IntHash implements IntHash {
         return ~current;
     }
 
+    @Override
+    public boolean acceptsMemoryAddressBuffer() {
+        return true;
+    }
+
     private static int updateBytes(int current, byte[] array, int offset, int length) {
         try {
             return (int) UPDATE_BYTES.invoke(null, current, array, offset, offset + length);

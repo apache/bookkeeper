@@ -131,6 +131,11 @@ public class CompositeByteBufUnwrapBugReproduceTest {
         int internalUpdate(int digest, byte[] buffer, int offset, int len) {
             return intHash.resume(digest, buffer, offset, len);
         }
+
+        @Override
+        boolean acceptsMemoryAddressBuffer() {
+            return intHash.acceptsMemoryAddressBuffer();
+        }
     }
 
     @Test

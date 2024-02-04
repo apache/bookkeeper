@@ -58,4 +58,9 @@ public class Java8IntHash implements IntHash {
     public int resume(int current, byte[] buffer, int offset, int len) {
         return hash.resume(current, buffer, offset, len);
     }
+
+    @Override
+    public boolean acceptsMemoryAddressBuffer() {
+        return false;
+    }
 }

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ByteProcessor;
+import io.netty.util.concurrent.FastThreadLocal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,11 +83,17 @@ public class ByteBufVisitor {
     public interface ByteBufVisitorCallback<T> {
         void visitBuffer(T context, ByteBuf visitBuffer, int visitIndex, int visitLength);
         void visitArray(T context, byte[] visitArray, int visitIndex, int visitLength);
+        default boolean preferArrayOrMemoryAddress(T context) {
+            return true;
+        }
+        default boolean acceptsMemoryAddress(T context) {
+            return false;
+        }
     }
 
     /**
-     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback, Object)}. This method allows to specify
-     * the maximum depth of recursion for visiting wrapped buffers.
+     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback, Object, ByteBufAllocator)}. This method
+     * allows to specify the maximum depth of recursion for visiting wrapped buffers.
      */
     public static <T> void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback<T> callback,
                                         T context, int maxDepth) {
@@ -96,6 +103,14 @@ public class ByteBufVisitor {
         internalContext.callback = callback;
         internalContext.recursivelyVisitBuffers(buffer, offset, length);
     }
+
+    private static final int TL_COPY_BUFFER_SIZE = 64 * 1024;
+    private static final FastThreadLocal<byte[]> TL_COPY_BUFFER = new FastThreadLocal<byte[]>() {
+        @Override
+        protected byte[] initialValue() {
+            return new byte[TL_COPY_BUFFER_SIZE];
+        }
+    };
 
     private static class InternalContext<T> {
         int depth;
@@ -138,7 +153,33 @@ public class ByteBufVisitor {
         }
 
         private void passBufferToCallback(ByteBuf visitBuffer, int visitIndex, int visitLength) {
-            callback.visitBuffer(callbackContext, visitBuffer, visitIndex, visitLength);
+            if (callback.preferArrayOrMemoryAddress(callbackContext)) {
+                if (visitBuffer.hasArray()) {
+                    handleArray(visitBuffer.array(), visitBuffer.arrayOffset() + visitIndex, visitLength);
+                } else if (visitBuffer.hasMemoryAddress() && callback.acceptsMemoryAddress(callbackContext)) {
+                    callback.visitBuffer(callbackContext, visitBuffer, visitIndex, visitLength);
+                } else if (callback.acceptsMemoryAddress(callbackContext) && visitBuffer.isDirect()
+                        && visitBuffer.alloc().isDirectBufferPooled()) {
+                    // read-only buffers need to be copied before they can be directly accessed
+                    ByteBuf copyBuffer = visitBuffer.copy(visitIndex, visitLength);
+                    callback.visitBuffer(callbackContext, copyBuffer, 0, visitLength);
+                    copyBuffer.release();
+                } else {
+                    // fallback to reading the visited buffer into the copy buffer in a loop
+                    byte[] copyBuffer = TL_COPY_BUFFER.get();
+                    int remaining = visitLength;
+                    int currentOffset = visitIndex;
+                    while (remaining > 0) {
+                        int readLen = Math.min(remaining, copyBuffer.length);
+                        visitBuffer.getBytes(currentOffset, copyBuffer, 0, readLen);
+                        handleArray(copyBuffer, 0, readLen);
+                        remaining -= readLen;
+                        currentOffset += readLen;
+                    }
+                }
+            } else {
+                callback.visitBuffer(callbackContext, visitBuffer, visitIndex, visitLength);
+            }
         }
 
         void handleArray(byte[] visitArray, int visitIndex, int visitLength) {

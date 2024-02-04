@@ -111,4 +111,9 @@ public class MacDigestManager extends DigestManager {
     boolean isInt32Digest() {
         return false;
     }
+
+    @Override
+    boolean acceptsMemoryAddressBuffer() {
+        return false;
+    }
 }

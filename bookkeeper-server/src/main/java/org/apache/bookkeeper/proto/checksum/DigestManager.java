@@ -33,7 +33,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.ByteBufVisitor;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +52,7 @@ public abstract class DigestManager {
     final long ledgerId;
     final boolean useV2Protocol;
     private final ByteBufAllocator allocator;
-    private final MutableIntByteBufVisitorCallback byteBufVisitorCallback;
+    private final DigestUpdaterByteBufVisitorCallback byteBufVisitorCallback;
 
     abstract int getMacCodeLength();
 
@@ -67,9 +66,9 @@ public abstract class DigestManager {
         } else if (buffer.hasArray()) {
             return internalUpdate(digest, buffer.array(), buffer.arrayOffset() + offset, len);
         } else {
-            MutableInt digestRef = new MutableInt(digest);
-            ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
-            return digestRef.intValue();
+            UpdateContext updateContext = new UpdateContext(digest);
+            ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, updateContext);
+            return updateContext.digest;
         }
     }
 
@@ -84,7 +83,7 @@ public abstract class DigestManager {
         this.useV2Protocol = useV2Protocol;
         this.macCodeLength = getMacCodeLength();
         this.allocator = allocator;
-        this.byteBufVisitorCallback = new MutableIntByteBufVisitorCallback();
+        this.byteBufVisitorCallback = new DigestUpdaterByteBufVisitorCallback();
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
@@ -359,26 +358,37 @@ public abstract class DigestManager {
         return new RecoveryData(lastAddConfirmed, length);
     }
 
-    private class MutableIntByteBufVisitorCallback implements ByteBufVisitor.ByteBufVisitorCallback<MutableInt> {
+    private static class UpdateContext {
+        int digest;
 
-        @Override
-        public void visitBuffer(MutableInt digestRef, ByteBuf visitBuffer, int visitIndex, int visitLength) {
-            if (visitLength > 0) {
-                // recursively visit the sub buffer and update the digest
-                int updatedDigest =
-                        internalUpdate(digestRef.intValue(), visitBuffer, visitIndex, visitLength);
-                digestRef.setValue(updatedDigest);
-            }
-        }
-
-        @Override
-        public void visitArray(MutableInt digestRef, byte[] visitArray, int visitIndex, int visitLength) {
-            if (visitLength > 0) {
-                // update the digest with the array
-                int updatedDigest =
-                        internalUpdate(digestRef.intValue(), visitArray, visitIndex, visitLength);
-                digestRef.setValue(updatedDigest);
-            }
+        UpdateContext(int digest) {
+            this.digest = digest;
         }
     }
+
+    private class DigestUpdaterByteBufVisitorCallback implements ByteBufVisitor.ByteBufVisitorCallback<UpdateContext> {
+
+        @Override
+        public void visitBuffer(UpdateContext context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
+            if (visitLength > 0) {
+                // recursively visit the sub buffer and update the digest
+                context.digest = internalUpdate(context.digest, visitBuffer, visitIndex, visitLength);
+            }
+        }
+
+        @Override
+        public void visitArray(UpdateContext context, byte[] visitArray, int visitIndex, int visitLength) {
+            if (visitLength > 0) {
+                // update the digest with the array
+                context.digest = internalUpdate(context.digest, visitArray, visitIndex, visitLength);
+            }
+        }
+
+        @Override
+        public boolean acceptsMemoryAddress(UpdateContext context) {
+            return DigestManager.this.acceptsMemoryAddressBuffer();
+        }
+    }
+
+    abstract boolean acceptsMemoryAddressBuffer();
 }

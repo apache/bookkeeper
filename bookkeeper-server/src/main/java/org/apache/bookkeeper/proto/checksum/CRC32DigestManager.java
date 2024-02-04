@@ -79,4 +79,9 @@ class CRC32DigestManager extends DigestManager {
         // This is stored as 8 bytes
         return false;
     }
+
+    @Override
+    boolean acceptsMemoryAddressBuffer() {
+        return DirectMemoryCRC32Digest.isSupported();
+    }
 }
