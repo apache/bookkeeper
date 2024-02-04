@@ -91,7 +91,7 @@ public class ByteBufVisitor {
         internalContext.maxDepth = maxDepth;
         internalContext.userContext = context;
         internalContext.userCallback = callback;
-        doRecursivelyVisitBuffers(buffer, offset, length, InternalContextByteBufVisitorCallback.get(), internalContext);
+        recursivelyVisitBuffers(buffer, offset, length, internalContext);
     }
 
     private static class InternalContext<T> {
@@ -102,6 +102,8 @@ public class ByteBufVisitor {
         int parentLength;
         T userContext;
         ByteBufVisitorCallback<T> userCallback;
+        GetBytesCallbackByteBuf<T> callbackByteBuf = new GetBytesCallbackByteBuf(this);
+        InternalContextByteBufVisitorCallback<T> callback = InternalContextByteBufVisitorCallback.get();
     }
 
     private static class InternalContextByteBufVisitorCallback<T>
@@ -125,7 +127,7 @@ public class ByteBufVisitor {
                         visitIndex, visitLength);
             } else {
                 // use the doRecursivelyVisitBuffers method to visit the wrapped buffer, possibly recursively
-                doRecursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, this, internalContext);
+                recursivelyVisitBuffers(visitBuffer, visitIndex, visitLength, internalContext);
             }
         }
 
@@ -138,9 +140,8 @@ public class ByteBufVisitor {
         }
     }
 
-    private static <T> void doRecursivelyVisitBuffers(ByteBuf buffer, int offset, int length,
-                                                      ByteBufVisitorCallback<InternalContext<T>> callback,
-                                                      InternalContext<T> internalContext) {
+    private static <T> void recursivelyVisitBuffers(ByteBuf buffer, int offset, int length,
+                                                    InternalContext<T> internalContext) {
         if (length == 0) {
             // skip visiting empty buffers
             return;
@@ -152,7 +153,7 @@ public class ByteBufVisitor {
             internalContext.parentOffset = offset;
             internalContext.parentLength = length;
             internalContext.depth++;
-            visitBuffersImpl(buffer, offset, length, callback, internalContext);
+            visitBuffersImpl(buffer, offset, length, internalContext);
             internalContext.depth--;
         } else {
             // visit the buffer
@@ -162,10 +163,9 @@ public class ByteBufVisitor {
 
     // Implementation for visiting a single buffer level using {@link ByteBuf#getBytes(int, ByteBuf, int, int)}
     private static <T> void visitBuffersImpl(ByteBuf parentBuffer, int parentOffset, int parentLength,
-                                         ByteBufVisitorCallback<InternalContext<T>> callback,
-                                         InternalContext<T> internalContext) {
+                                             InternalContext<T> internalContext) {
         // call getBytes to trigger the wrapped buffer visit
-        parentBuffer.getBytes(parentOffset, new GetBytesCallbackByteBuf(callback, internalContext), 0, parentLength);
+        parentBuffer.getBytes(parentOffset, internalContext.callbackByteBuf, 0, parentLength);
     }
 
     /**
@@ -173,18 +173,15 @@ public class ByteBufVisitor {
      * a {@link ByteBuf#getBytes(int, ByteBuf)} for visiting the wrapped child buffers.
      */
     static class GetBytesCallbackByteBuf<T> extends ByteBuf {
-        private final ByteBufVisitorCallback<InternalContext<T>> callback;
         private final InternalContext<T> internalContext;
 
-        GetBytesCallbackByteBuf(ByteBufVisitorCallback<InternalContext<T>> callback,
-                                InternalContext<T> internalContext) {
-            this.callback = callback;
+        GetBytesCallbackByteBuf(InternalContext<T> internalContext) {
             this.internalContext = internalContext;
         }
 
         @Override
         public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
-            callback.visitBuffer(internalContext, src, srcIndex, length);
+            internalContext.callback.visitBuffer(internalContext, src, srcIndex, length);
             return this;
         }
 
