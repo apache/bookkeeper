@@ -70,7 +70,7 @@ class DirectMemoryCRC32Digest implements CRC32Digest {
     @Override
     public void update(byte[] buffer, int offset, int len) {
         try {
-            crcValue = (int) updateBytes.invoke(null, crcValue, buffer, offset, len);
+            crcValue = updateArray(crcValue, buffer, offset, len);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
