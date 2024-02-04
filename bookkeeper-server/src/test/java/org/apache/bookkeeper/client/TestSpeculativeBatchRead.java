@@ -149,8 +149,8 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             // read first entry, both go to first bookie, should be fine
             LatchCallback nospeccb = new LatchCallback();
             LatchCallback speccb = new LatchCallback();
-            lnospec.asyncBatchReadEntries(0, 1, 1024, false, nospeccb, null);
-            lspec.asyncBatchReadEntries(0, 1, 1024, false, speccb, null);
+            lnospec.asyncBatchReadEntries(0, 1, 1024, nospeccb, null);
+            lspec.asyncBatchReadEntries(0, 1, 1024, speccb, null);
             nospeccb.expectSuccess(2000);
             speccb.expectSuccess(2000);
 
@@ -205,13 +205,13 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             // read first entry, should complete faster than timeout
             // as bookie 0 has the entry
             LatchCallback latch0 = new LatchCallback();
-            l.asyncBatchReadEntries(0, 1, 1024, false, latch0, null);
+            l.asyncBatchReadEntries(0, 1, 1024, latch0, null);
             latch0.expectSuccess(timeout / 2);
 
             // second should have to hit two timeouts (bookie 1 & 2)
             // bookie 3 has the entry
             LatchCallback latch1 = new LatchCallback();
-            l.asyncBatchReadEntries(1, 1, 1024, false, latch1, null);
+            l.asyncBatchReadEntries(1, 1, 1024, latch1, null);
             latch1.expectTimeout(timeout);
             latch1.expectSuccess(timeout * 2);
             LOG.info("Timeout {} latch1 duration {}", timeout, latch1.getDuration());
@@ -229,19 +229,19 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             // third should not hit timeouts since bookies 1 & 2 are registered as slow
             // bookie 3 has the entry
             LatchCallback latch2 = new LatchCallback();
-            l.asyncBatchReadEntries(2, 1, 1024, false, latch2, null);
+            l.asyncBatchReadEntries(2, 1, 1024, latch2, null);
             latch2.expectSuccess(timeout);
 
             // fourth should have no timeout
             // bookie 3 has the entry
             LatchCallback latch3 = new LatchCallback();
-            l.asyncBatchReadEntries(3, 1, 1024, false, latch3, null);
+            l.asyncBatchReadEntries(3, 1, 1024, latch3, null);
             latch3.expectSuccess(timeout / 2);
 
             // fifth should hit one timeout, (bookie 4)
             // bookie 0 has the entry
             LatchCallback latch4 = new LatchCallback();
-            l.asyncBatchReadEntries(4, 1, 1024, false, latch4, null);
+            l.asyncBatchReadEntries(4, 1, 1024, latch4, null);
             latch4.expectTimeout(timeout / 2);
             latch4.expectSuccess(timeout);
             LOG.info("Timeout {} latch4 duration {}", timeout, latch4.getDuration());
@@ -277,7 +277,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             // read goes to first bookie, spec read timeout occurs,
             // goes to second
             LatchCallback latch0 = new LatchCallback();
-            l.asyncBatchReadEntries(0, 1, 1024, false, latch0, null);
+            l.asyncBatchReadEntries(0, 1, 1024, latch0, null);
             latch0.expectTimeout(timeout);
 
             // wake up first bookie
@@ -288,7 +288,7 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
 
             // check we can read next entry without issue
             LatchCallback latch1 = new LatchCallback();
-            l.asyncBatchReadEntries(1, 1, 1024, false, latch1, null);
+            l.asyncBatchReadEntries(1, 1, 1024, latch1, null);
             latch1.expectSuccess(timeout / 2);
         } finally {
             sleepLatch0.countDown();

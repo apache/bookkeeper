@@ -651,16 +651,13 @@ public class LedgerHandle implements WriteHandle {
      *          the total entries count.
      * @param maxSize
      *          the total entries size.
-     * @param failbackToSingleRead
-     *          is fail back to single read.
      * @see #asyncBatchReadEntries(long, int, long, boolean, ReadCallback, Object)
      */
-    public Enumeration<LedgerEntry> batchReadEntries(long startEntry, int maxCount, long maxSize,
-            boolean failbackToSingleRead)
+    public Enumeration<LedgerEntry> batchReadEntries(long startEntry, int maxCount, long maxSize)
             throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncBatchReadEntries(startEntry, maxCount, maxSize, failbackToSingleRead, new SyncReadCallback(result), null);
+        asyncBatchReadEntries(startEntry, maxCount, maxSize, new SyncReadCallback(result), null);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -698,15 +695,13 @@ public class LedgerHandle implements WriteHandle {
      * @param maxCount
      *          id of last entry of sequence (included)
      * @param maxSize
-     *
-     * @param failbackToSingleRead
+     *          the total entries size
      */
-    public Enumeration<LedgerEntry> batchReadUnconfirmedEntries(long firstEntry, int maxCount, long maxSize,
-            boolean failbackToSingleRead) throws InterruptedException, BKException {
+    public Enumeration<LedgerEntry> batchReadUnconfirmedEntries(long firstEntry, int maxCount, long maxSize)
+            throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, failbackToSingleRead,
-                new SyncReadCallback(result), null);
+        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, new SyncReadCallback(result), null);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -752,15 +747,12 @@ public class LedgerHandle implements WriteHandle {
      *          the entries count
      * @param maxSize
      *          the total entries size
-     * @param failbackToSingleRead
-     *          failback to {@link #asyncReadEntriesInternal(long, long, ReadCallback, Object, boolean) }
      * @param cb
      *          object implementing read callback interface
      * @param ctx
      *          control object
      */
-    public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, boolean failbackToSingleRead,
-            ReadCallback cb, Object ctx) {
+    public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb, Object ctx) {
         // Little sanity check
         if (startEntry > lastAddConfirmed) {
             LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
@@ -769,13 +761,8 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
         if (notSupportBatchRead()) {
-            if (failbackToSingleRead) {
-                long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
-                asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
-            } else {
-                LOG.error("Not support batch read not.");
-                cb.readComplete(BKException.Code.ReadException, this, null, ctx);
-            }
+            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
         } else {
             asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
                 @Override
@@ -784,12 +771,8 @@ public class LedgerHandle implements WriteHandle {
                     // connection, then get the BookieHandleNotAvailableException.
                     if (rc == Code.BookieHandleNotAvailableException) {
                         notSupportBatch = true;
-                        if (failbackToSingleRead) {
-                            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
-                            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
-                        } else {
-                            cb.readComplete(rc, lh, seq, ctx);
-                        }
+                        long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+                        asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
                     } else {
                         cb.readComplete(rc, lh, seq, ctx);
                     }
@@ -846,28 +829,21 @@ public class LedgerHandle implements WriteHandle {
      *          the entries count
      * @param maxSize
      *          the total entries size
-     * @param failbackToSingleRead
-     *          failback to {@link #asyncReadEntriesInternal(long, long, ReadCallback, Object, boolean)}
      * @param cb
      *          object implementing read callback interface
      * @param ctx
      *          control object
      */
-    public void asyncBatchReadUnconfirmedEntries(long startEntry, int maxCount, long maxSize,
-            boolean failbackToSingleRead, ReadCallback cb, Object ctx) {
+    public void asyncBatchReadUnconfirmedEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb,
+            Object ctx) {
         // Little sanity check
         if (startEntry < 0) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{}", ledgerId, startEntry);
             cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
         }
         if (notSupportBatchRead()) {
-            if (failbackToSingleRead) {
-                long lastEntry = startEntry + maxCount - 1;
-                asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
-            } else {
-                LOG.error("Not support batch read not.");
-                cb.readComplete(BKException.Code.ReadException, this, null, ctx);
-            }
+            long lastEntry = startEntry + maxCount - 1;
+            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
         } else {
             asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
                 @Override
@@ -876,12 +852,8 @@ public class LedgerHandle implements WriteHandle {
                     // connection, then get the BookieHandleNotAvailableException.
                     if (rc == Code.BookieHandleNotAvailableException) {
                         notSupportBatch = true;
-                        if (failbackToSingleRead) {
-                            long lastEntry = startEntry + maxCount - 1;
-                            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
-                        } else {
-                            cb.readComplete(rc, lh, seq, ctx);
-                        }
+                        long lastEntry = startEntry + maxCount - 1;
+                        asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
                     } else {
                         cb.readComplete(rc, lh, seq, ctx);
                     }
@@ -926,12 +898,9 @@ public class LedgerHandle implements WriteHandle {
      *          the entries count
      * @param maxSize
      *          the total entries size
-     * @param failbackToSingleRead
-     *          failback to {@link #readEntriesInternalAsync(long, long, boolean) }
      */
     @Override
-    public CompletableFuture<LedgerEntries> batchReadAsync(long startEntry, int maxCount, long maxSize,
-            boolean failbackToSingleRead) {
+    public CompletableFuture<LedgerEntries> batchReadAsync(long startEntry, int maxCount, long maxSize) {
         // Little sanity check
         if (startEntry < 0) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{}", ledgerId, startEntry);
@@ -943,13 +912,8 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKReadException());
         }
         if (notSupportBatchRead()) {
-            if (failbackToSingleRead) {
-                long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
-                return readEntriesInternalAsync(startEntry, lastEntry, false);
-            } else {
-                LOG.error("Not support batch read.");
-                return FutureUtils.exception(new BKReadException());
-            }
+            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+            return readEntriesInternalAsync(startEntry, lastEntry, false);
         }
         CompletableFuture<LedgerEntries> future = new CompletableFuture<>();
         batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
@@ -959,18 +923,14 @@ public class LedgerHandle implements WriteHandle {
                         // connection, then get the BookieHandleNotAvailableException.
                         if (ex instanceof BKException.BKBookieHandleNotAvailableException) {
                             notSupportBatch = true;
-                            if (failbackToSingleRead) {
-                                long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
-                                readEntriesInternalAsync(startEntry, lastEntry, false).whenComplete((entries1, ex1) -> {
-                                    if (ex1 != null) {
-                                        future.completeExceptionally(ex1);
-                                    } else {
-                                        future.complete(entries1);
-                                    }
-                                });
-                            } else {
-                                future.completeExceptionally(ex);
-                            }
+                            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+                            readEntriesInternalAsync(startEntry, lastEntry, false).whenComplete((entries1, ex1) -> {
+                                if (ex1 != null) {
+                                    future.completeExceptionally(ex1);
+                                } else {
+                                    future.complete(entries1);
+                                }
+                            });
                         } else {
                             future.completeExceptionally(ex);
                         }
