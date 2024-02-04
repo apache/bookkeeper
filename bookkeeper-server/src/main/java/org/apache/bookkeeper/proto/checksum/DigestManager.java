@@ -61,7 +61,7 @@ public abstract class DigestManager {
     abstract int internalUpdate(int digest, byte[] buffer, int offset, int len);
 
     final int update(int digest, ByteBuf buffer, int offset, int len) {
-        if (buffer.hasMemoryAddress()) {
+        if (buffer.hasMemoryAddress() && acceptsMemoryAddressBuffer()) {
             return internalUpdate(digest, buffer, offset, len);
         } else if (buffer.hasArray()) {
             return internalUpdate(digest, buffer.array(), buffer.arrayOffset() + offset, len);
