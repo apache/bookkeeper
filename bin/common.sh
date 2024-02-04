@@ -71,8 +71,8 @@ source ${BK_CONFDIR}/bkenv.sh
 source ${BK_CONFDIR}/bk_cli_env.sh
 
 detect_jdk8() {
-
-  if [ -f "$JAVA_HOME/lib/modules" ]; then
+  local is_java_8=$($JAVA -version 2>&1 | grep version | grep '"1\.8')
+  if [ -z "$is_java_8" ]; then
      echo "0"
   else
      echo "1"
