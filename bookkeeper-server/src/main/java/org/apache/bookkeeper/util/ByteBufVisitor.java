@@ -92,7 +92,7 @@ public class ByteBufVisitor {
     }
 
     /**
-     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback, Object, ByteBufAllocator)}. This method
+     * See @{@link #visitBuffers(ByteBuf, int, int, ByteBufVisitorCallback, Object)}. This method
      * allows to specify the maximum depth of recursion for visiting wrapped buffers.
      */
     public static <T> void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback<T> callback,

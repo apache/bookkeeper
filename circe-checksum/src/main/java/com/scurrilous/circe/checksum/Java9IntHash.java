@@ -112,15 +112,14 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, ByteBuf buffer, int offset, int len) {
-        // flip the bits (bit-wise complements) for the input value.
-        // this serves two purposes:
-        // - the CRC32C algorithm is designed to start with a seed value of all bits set to 1 (0xffffffff)
-        //   - when 0 is passed in initially, ~0 will result in the correct initial value (0xfffffff).
-        // - the CRC32C algorithm is designed in a way that the final value is complemented as the last step.
-        //   - this method will always complement the return value
-        // - for iterative use, the input value should be complemented to continue calculations.
-        // This way the algorithm can be used incrementally without a separate initialization step
-        // and finalization step.
+        // The input value is bit-wise complemented for two reasons:
+        // 1. The CRC32C algorithm is designed to start with a seed value where all bits are set to 1 (0xffffffff).
+        //    When 0 is initially passed in, ~0 results in the correct initial value (0xffffffff).
+        // 2. The CRC32C algorithm complements the final value as the last step. This method will always complement
+        //    the return value. Therefore, when the algorithm is used iteratively, it is necessary to complement
+        //    the input value to continue calculations.
+        // This allows the algorithm to be used incrementally without needing separate initialization and
+        // finalization steps.
         current = ~current;
 
         if (buffer.hasMemoryAddress()) {
@@ -141,8 +140,9 @@ public class Java9IntHash implements IntHash {
             }
         }
 
-        // return a complement of the current value to match the CRC32C algorithm's finalization step.
-        // if there's another resume step, the value will be complemented to start the next step.
+        // The current value is complemented to align with the finalization step of the CRC32C algorithm.
+        // If there is a subsequent resume step, the value will be complemented again to initiate the next step
+        // as described in the comments in the beginning of this method.
         return ~current;
     }
 }
