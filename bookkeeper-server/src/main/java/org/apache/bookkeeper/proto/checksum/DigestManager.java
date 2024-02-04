@@ -65,7 +65,7 @@ public abstract class DigestManager {
         if (buffer.hasMemoryAddress()) {
             return internalUpdate(digest, buffer, offset, len);
         } else if (buffer.hasArray()) {
-            return internalUpdate(digest, buffer.array(), offset, len);
+            return internalUpdate(digest, buffer.array(), buffer.arrayOffset() + offset, len);
         } else {
             MutableInt digestRef = new MutableInt(digest);
             ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, digestRef);
