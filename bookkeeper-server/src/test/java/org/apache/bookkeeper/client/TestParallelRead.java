@@ -33,7 +33,6 @@ import static org.mockito.Mockito.mock;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
@@ -268,8 +267,8 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         PendingReadOp pendingReadOp = new PendingReadOp(lh, clientContext, 1, 2, false);
         pendingReadOp.parallelRead(true);
         pendingReadOp.initiate();
-        PendingReadOp.LedgerEntryRequest first = pendingReadOp.seq.get(0);
-        PendingReadOp.LedgerEntryRequest second = pendingReadOp.seq.get(1);
+        PendingReadOp.SingleLedgerEntryRequest first = pendingReadOp.seq.get(0);
+        PendingReadOp.SingleLedgerEntryRequest second = pendingReadOp.seq.get(1);
 
         pendingReadOp.submitCallback(-105);
 
@@ -287,13 +286,9 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         assertTrue(second.complete.get());
 
         // Mock ledgerEntryImpl reuse
-        Method method = PendingReadOp.class.getDeclaredMethod("createReadContext",
-                int.class, BookieId.class, PendingReadOp.LedgerEntryRequest.class);
-        method.setAccessible(true);
-
         ByteBuf byteBuf = Unpooled.buffer(10);
         pendingReadOp.readEntryComplete(BKException.Code.OK, 1, 1, Unpooled.buffer(10),
-                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+                new ReadOpBase.ReadContext(1, BookieId.parse("test"), first));
 
         // byteBuf has been release
         assertEquals(byteBuf.refCnt(), 1);
@@ -308,15 +303,15 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         // read entry failed twice, will not close twice
         pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
-                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+                new ReadOpBase.ReadContext(1, BookieId.parse("test"), first));
 
         pendingReadOp.readEntryComplete(BKException.Code.TooManyRequestsException, 1, 1, Unpooled.buffer(10),
-                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+                new ReadOpBase.ReadContext(1, BookieId.parse("test"), first));
 
         // will not complete twice when completed
         byteBuf = Unpooled.buffer(10);
         pendingReadOp.readEntryComplete(Code.OK, 1, 1, Unpooled.buffer(10),
-                method.invoke(pendingReadOp, 1, BookieId.parse("test"), first));
+                new ReadOpBase.ReadContext(1, BookieId.parse("test"), first));
         assertEquals(1, byteBuf.refCnt());
 
     }
