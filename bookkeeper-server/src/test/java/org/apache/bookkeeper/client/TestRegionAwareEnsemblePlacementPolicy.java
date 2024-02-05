@@ -722,8 +722,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             if (ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId())) {
                 fail("addr1 and addr2 is same rack.");
             }
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL,
+            // 4 writeQuorum but only 2 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT,
                     repp.isEnsembleAdheringToPlacementPolicy(ensemble, writeQuorumSize, ackQuorumSize));
         }
 
@@ -737,8 +738,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL,
+            // 4 writeQuorum but only 2 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT,
                     repp.isEnsembleAdheringToPlacementPolicy(ensemble, writeQuorumSize, ackQuorumSize));
         }
     }
@@ -907,8 +909,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
+            // 6 writeQuorum but only 3 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
 
             ensembleResponse = repp.newEnsemble(7, 7, 4, null, new HashSet<BookieId>());
             ensemble = ensembleResponse.getResult();
@@ -917,8 +920,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 7);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 7, 4));
+            // 7 writeQuorum but only 3 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 7, 4));
 
             ensembleResponse = repp.newEnsemble(8, 8, 5, null, new HashSet<BookieId>());
             ensemble = ensembleResponse.getResult();
@@ -927,8 +931,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 8);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 8, 5));
+            // 8 writeQuorum but only 3 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 8, 5));
 
             ensembleResponse = repp.newEnsemble(9, 9, 5, null, new HashSet<BookieId>());
             ensemble = ensembleResponse.getResult();
@@ -937,8 +942,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.contains(addr8.toBookieId()));
             assert(ensemble.size() == 9);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
+            // 9 writeQuorum but only 3 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -1091,8 +1097,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
+            // 10 writeQuorum but only 5 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -1108,8 +1115,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             assert(ensemble.contains(addr11.toBookieId()) && ensemble.contains(addr12.toBookieId()));
             assert(ensemble.size() == 10);
             assertEquals(5, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
+            // 10 writeQuorum but only 5 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 10, 10));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -1205,8 +1213,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 6);
             assertEquals(3, getNumRegionsInEnsemble(ensemble));
-            assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.FAIL,
+            // 6 writeQuorum but only 3 regions, each region matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT,
                     repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, ackQuorum));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
@@ -1343,10 +1352,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble = ensembleResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
             assert(ensemble.size() == 6);
-            // only one region, fallback to RackawareEnsemblePlacementPolicy,
-            // which is PlacementPolicyAdherence.MEETS_STRICT
-            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
-            assertEquals(PlacementPolicyAdherence.MEETS_STRICT,
+            // 6 writeQuorum but only 1 region with 9 racks, which matches RackawareEnsemblePlacementPolicy MEETS_STRICT
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_SOFT,
                     repp.isEnsembleAdheringToPlacementPolicy(ensemble, 6, 4));
         } catch (BKNotEnoughBookiesException bnebe) {
             LOG.error("BKNotEnoughBookiesException", bnebe);
@@ -1477,8 +1485,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
 
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
-        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
+        // 9 nodes, 3 regions and 3 racks for each region
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
@@ -1543,8 +1552,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
 
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
-        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
+        // 9 nodes, 3 regions and 3 racks for each region
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
@@ -1621,8 +1631,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
 
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
-        assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
-        assertEquals(PlacementPolicyAdherence.FAIL, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
+        // 9 nodes, 3 regions and 3 racks for each region
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, isEnsembleAdheringToPlacementPolicy);
+        assertEquals(PlacementPolicyAdherence.MEETS_SOFT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 9, 5));
 
         DistributionSchedule ds = new RoundRobinDistributionSchedule(9, 9, 9);
 
