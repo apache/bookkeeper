@@ -370,18 +370,14 @@ public abstract class DigestManager {
 
         @Override
         public void visitBuffer(UpdateContext context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
-            if (visitLength > 0) {
-                // recursively visit the sub buffer and update the digest
-                context.digest = internalUpdate(context.digest, visitBuffer, visitIndex, visitLength);
-            }
+            // recursively visit the sub buffer and update the digest
+            context.digest = internalUpdate(context.digest, visitBuffer, visitIndex, visitLength);
         }
 
         @Override
         public void visitArray(UpdateContext context, byte[] visitArray, int visitIndex, int visitLength) {
-            if (visitLength > 0) {
-                // update the digest with the array
-                context.digest = internalUpdate(context.digest, visitArray, visitIndex, visitLength);
-            }
+            // update the digest with the array
+            context.digest = internalUpdate(context.digest, visitArray, visitIndex, visitLength);
         }
 
         @Override

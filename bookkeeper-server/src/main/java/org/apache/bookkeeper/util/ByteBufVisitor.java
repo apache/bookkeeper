@@ -97,6 +97,10 @@ public class ByteBufVisitor {
      */
     public static <T> void visitBuffers(ByteBuf buffer, int offset, int length, ByteBufVisitorCallback<T> callback,
                                         T context, int maxDepth) {
+        if (length == 0) {
+            // skip visiting empty buffers
+            return;
+        }
         InternalContext<T> internalContext = new InternalContext<>();
         internalContext.maxDepth = maxDepth;
         internalContext.callbackContext = context;
@@ -123,10 +127,6 @@ public class ByteBufVisitor {
         GetBytesCallbackByteBuf<T> callbackByteBuf = new GetBytesCallbackByteBuf(this);
 
         void recursivelyVisitBuffers(ByteBuf visitBuffer, int visitIndex, int visitLength) {
-            if (visitLength == 0) {
-                // skip visiting empty buffers
-                return;
-            }
             // visit the wrapped buffers recursively if the buffer is not backed by an array or memory address
             // and the max depth has not been reached
             if (depth < maxDepth && !visitBuffer.hasMemoryAddress() && !visitBuffer.hasArray()) {
@@ -143,6 +143,10 @@ public class ByteBufVisitor {
         }
 
         void handleBuffer(ByteBuf visitBuffer, int visitIndex, int visitLength) {
+            if (visitLength == 0) {
+                // skip visiting empty buffers
+                return;
+            }
             if (visitBuffer == parentBuffer && visitIndex == parentOffset && visitLength == parentLength) {
                 // further recursion would cause unnecessary recursion up to the max depth of recursion
                 passBufferToCallback(visitBuffer, visitIndex, visitLength);
@@ -183,6 +187,10 @@ public class ByteBufVisitor {
         }
 
         void handleArray(byte[] visitArray, int visitIndex, int visitLength) {
+            if (visitLength == 0) {
+                // skip visiting empty arrays
+                return;
+            }
             // pass array to callback
             callback.visitArray(callbackContext, visitArray, visitIndex, visitLength);
         }
