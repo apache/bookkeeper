@@ -22,13 +22,13 @@
 <Configuration status="warn" monitorInterval="10">
     <Appenders>
         <Console name="CONSOLE" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%c{1}] - %m%n"/>
         </Console>
         <File name="TRACEFILE" fileName="bookkeeper_trace.log">
-            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%c{1}][%ndc] - %m%n"/>
         </File>
         <RollingFile name="ROLLINGFILE" fileName="bookkeeper-benchmark.log" filePattern="bookkeeper-benchmark.log%d{.yyyy-MM-dd}">
-            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%c{1}] - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true"/>
             </Policies>
