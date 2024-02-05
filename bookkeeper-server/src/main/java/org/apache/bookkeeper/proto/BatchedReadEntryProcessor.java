@@ -85,6 +85,13 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
         return ResponseBuilder.buildBatchedReadResponse((ByteBufList) data, (BatchedReadRequest) request);
     }
 
+    @Override
+    public String toString() {
+        BatchedReadRequest br = (BatchedReadRequest) request;
+        return String.format("BatchedReadEntry(%d, %d %d, %d)", br.getLedgerId(), br.getEntryId(), br.getMaxCount(),
+                br.getMaxSize());
+    }
+
     protected void recycle() {
         request.recycle();
         super.reset();
