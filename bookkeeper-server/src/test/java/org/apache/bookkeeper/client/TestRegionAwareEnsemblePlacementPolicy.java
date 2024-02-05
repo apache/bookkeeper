@@ -1121,6 +1121,19 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
+
+        try {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(5, 5, 5, null, new HashSet<BookieId>());
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = ensembleResponse.getAdheringToPolicy();
+            assert(ensemble.size() == 5);
+            assertEquals(5, getNumRegionsInEnsemble(ensemble));
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
+            assertEquals(PlacementPolicyAdherence.MEETS_STRICT, repp.isEnsembleAdheringToPlacementPolicy(ensemble, 5, 5));
+        } catch (BKNotEnoughBookiesException bnebe) {
+            fail("Should not get not enough bookies exception even there is only one rack.");
+        }
     }
 
     @Test
