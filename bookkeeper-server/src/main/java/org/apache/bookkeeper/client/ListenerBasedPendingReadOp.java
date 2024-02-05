@@ -45,7 +45,7 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
 
     @Override
     protected void submitCallback(int code) {
-        LedgerEntryRequest request;
+        SingleLedgerEntryRequest request;
         while (!seq.isEmpty() && (request = seq.getFirst()) != null) {
             if (!request.isComplete()) {
                 return;
