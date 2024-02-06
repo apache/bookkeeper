@@ -42,8 +42,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -60,7 +65,20 @@ import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
 /**
  * A maven class loader for resolving and loading maven artifacts.
  */
+@Slf4j
 public class MavenClassLoader implements AutoCloseable {
+    private static ScheduledExecutorService DELAYED_CLOSE_EXECUTOR = createExecutorThatShutsDownIdleThreads();
+
+    private static ScheduledExecutorService createExecutorThatShutsDownIdleThreads() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        // Cast to ThreadPoolExecutor to access additional configuration methods
+        ThreadPoolExecutor poolExecutor = (ThreadPoolExecutor) executor;
+        // Set the timeout for idle threads
+        poolExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
+        // Allow core threads to time out
+        poolExecutor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
 
     private static List<File> currentVersionLibs;
 
@@ -310,7 +328,14 @@ public class MavenClassLoader implements AutoCloseable {
     @Override
     public void close() throws Exception {
         if (classloader instanceof Closeable) {
-            ((Closeable) classloader).close();
+            // delay closing the classloader so that currently executing asynchronous tasks can complete
+            DELAYED_CLOSE_EXECUTOR.schedule(() -> {
+                try {
+                    ((Closeable) classloader).close();
+                } catch (Exception e) {
+                    log.error("Failed to close classloader", e);
+                }
+            }, 5, TimeUnit.SECONDS);
         }
     }
 
