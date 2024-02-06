@@ -91,8 +91,12 @@ public class BookKeeperClusterUtils {
     public static void legacyMetadataFormat(DockerClient docker) throws Exception {
         @Cleanup
         ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
-        zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        if (zk.exists("/ledgers", false) == null) {
+            zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+        if (zk.exists("/ledgers/available", false) == null) {
+            zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
     }
 
     public static boolean metadataFormatIfNeeded(DockerClient docker, String version) throws Exception {
