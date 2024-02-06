@@ -145,7 +145,12 @@ public class MavenClassLoader implements AutoCloseable {
             final String version = BookKeeperClusterUtils.CURRENT_VERSION;
             String rootDirectory = System.getenv("GITHUB_WORKSPACE");
             if (rootDirectory == null) {
-                rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../../..";
+                File gitDirectory = findGitRoot(new File("."));
+                if (gitDirectory != null) {
+                    rootDirectory = gitDirectory.getAbsolutePath();
+                } else {
+                    rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../../..";
+                }
             }
             final String artifactName = "bookkeeper-server-" + version + "-bin";
             final Path tarFile = Paths.get(rootDirectory,
@@ -160,6 +165,16 @@ public class MavenClassLoader implements AutoCloseable {
             currentVersionLibs = jars;
         }
         return createClassLoader(currentVersionLibs.toArray(new File[]{}));
+    }
+
+    private static File findGitRoot(File currentDir) {
+        while (currentDir != null) {
+            if (new File(currentDir, ".git").exists()) {
+                return currentDir;
+            }
+            currentDir = currentDir.getParentFile();
+        }
+        return null;
     }
 
     public Object callStaticMethod(String className, String methodName, ArrayList<?> args) throws Exception {
