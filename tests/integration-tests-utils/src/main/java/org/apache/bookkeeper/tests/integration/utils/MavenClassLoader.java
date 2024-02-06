@@ -192,7 +192,7 @@ public class MavenClassLoader implements AutoCloseable {
         return forArtifact("org.apache.bookkeeper:bookkeeper-server:" + version);
     }
 
-    private static MavenClassLoader forBookkeeperCurrentVersion() throws Exception {
+    private static synchronized MavenClassLoader forBookkeeperCurrentVersion() throws Exception {
         if (currentVersionLibs == null) {
             final String version = BookKeeperClusterUtils.CURRENT_VERSION;
             String rootDirectory = System.getenv("GITHUB_WORKSPACE");
