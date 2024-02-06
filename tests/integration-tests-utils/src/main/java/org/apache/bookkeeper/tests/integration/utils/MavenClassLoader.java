@@ -99,6 +99,8 @@ public class MavenClassLoader implements AutoCloseable {
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
                     ScopeType.COMPILE, false));
+            deps.add(MavenDependencies.createDependency("org.slf4j:jcl-over-slf4j:" + slf4jVersion.get(),
+                    ScopeType.COMPILE, false));
         }
 
         MavenResolvedArtifact[] resolvedArtifact = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
@@ -108,10 +110,11 @@ public class MavenClassLoader implements AutoCloseable {
                     MavenCoordinate c = a.getCoordinate();
                     // exclude log4j
                     if (c.getGroupId().equals("org.apache.logging.log4j") || c.getGroupId().equals("log4j")
-                            || c.getGroupId().equals("ch.qos.reload4j")) {
+                            || c.getGroupId().equals("ch.qos.reload4j")
+                            || c.getGroupId().equals("commons-logging")) {
                         return false;
                     }
-                    if (c.getArtifactId().contains("log4j")) {
+                    if (c.getArtifactId().contains("log4j") || c.getArtifactId().contains("commons-logging")) {
                         return false;
                     }
                     return true;
