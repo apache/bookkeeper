@@ -145,7 +145,7 @@ public class MavenClassLoader implements AutoCloseable {
             final String version = BookKeeperClusterUtils.CURRENT_VERSION;
             String rootDirectory = System.getenv("GITHUB_WORKSPACE");
             if (rootDirectory == null) {
-                rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../..";
+                rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../../..";
             }
             final String artifactName = "bookkeeper-server-" + version + "-bin";
             final Path tarFile = Paths.get(rootDirectory,
