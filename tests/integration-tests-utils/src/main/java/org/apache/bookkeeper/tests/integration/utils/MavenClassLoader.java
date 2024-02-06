@@ -67,7 +67,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
  */
 @Slf4j
 public class MavenClassLoader implements AutoCloseable {
-    private static ScheduledExecutorService DELAYED_CLOSE_EXECUTOR = createExecutorThatShutsDownIdleThreads();
+    private static ScheduledExecutorService delayedCloseExecutor = createExecutorThatShutsDownIdleThreads();
 
     private static ScheduledExecutorService createExecutorThatShutsDownIdleThreads() {
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -329,7 +329,7 @@ public class MavenClassLoader implements AutoCloseable {
     public void close() throws Exception {
         if (classloader instanceof Closeable) {
             // delay closing the classloader so that currently executing asynchronous tasks can complete
-            DELAYED_CLOSE_EXECUTOR.schedule(() -> {
+            delayedCloseExecutor.schedule(() -> {
                 try {
                     ((Closeable) classloader).close();
                 } catch (Exception e) {
