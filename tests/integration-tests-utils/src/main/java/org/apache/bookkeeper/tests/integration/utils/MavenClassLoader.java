@@ -83,8 +83,7 @@ public class MavenClassLoader implements AutoCloseable {
                                                       String mainArtifact) throws Exception {
         Optional<String> slf4jVersion = Arrays.stream(resolver.resolve(mainArtifact)
                         .withTransitivity().asResolvedArtifact())
-                .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j")
-                        && a.getCoordinate().getArtifactId().equals("slf4j-1.2-api"))
+                .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j"))
                 .map((a) -> a.getCoordinate().getVersion())
                 .findFirst();
 
