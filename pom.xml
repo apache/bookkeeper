@@ -166,7 +166,7 @@
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>7.9.2</rocksdb.version>
-    <shrinkwrap.version>3.0.1</shrinkwrap.version>
+    <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>1.7.32</slf4j.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
