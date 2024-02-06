@@ -250,14 +250,14 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DintegrationTests -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Run metadata driver tests
         run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |
-          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -DskipBackwardCompatTests=true -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
@@ -319,17 +319,17 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DintegrationTests -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: Test current server with old clients
-        run: mvn -B -nsu -pl :backward-compat-current-server-old-clients test
+        run: mvn -B -nsu -DbackwardCompatTests -pl :backward-compat-current-server-old-clients test
 
       - name: Test progressive upgrade
-        run: mvn -B -nsu -pl :upgrade test
+        run: mvn -B -nsu -DbackwardCompatTests -pl :upgrade test
 
       - name: Other tests
         run: |
-          mvn -B -nsu -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
+          mvn -B -nsu -DbackwardCompatTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
 
       - name: Upload container logs on failure
         uses: actions/upload-artifact@v4

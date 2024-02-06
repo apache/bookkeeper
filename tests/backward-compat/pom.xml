@@ -70,8 +70,7 @@
       <id>backwardCompatTests</id>
       <activation>
         <property>
-          <name>skipBackwardCompatTests</name>
-          <value>!true</value>
+          <name>backwardCompatTests</name>
         </property>
       </activation>
       <modules>
