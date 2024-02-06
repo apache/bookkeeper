@@ -27,17 +27,6 @@
   <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>backward-compat</artifactId>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility</name>
-  <modules>
-    <module>upgrade</module>
-    <module>upgrade-direct</module>
-    <module>hierarchical-ledger-manager</module>
-    <module>hostname-bookieid</module>
-    <module>recovery-no-password</module>
-    <module>old-cookie-new-cluster</module>
-    <module>current-server-old-clients</module>
-    <module>yahoo-custom-version</module>
-    <module>bc-non-fips</module>
-  </modules>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -78,23 +67,24 @@
   </build>
   <profiles>
     <profile>
-      <id>skipBackwardCompatTests</id>
+      <id>backwardCompatTests</id>
       <activation>
         <property>
           <name>skipBackwardCompatTests</name>
+          <value>!true</value>
         </property>
       </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <skipTests>true</skipTests>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
+      <modules>
+        <module>upgrade</module>
+        <module>upgrade-direct</module>
+        <module>hierarchical-ledger-manager</module>
+        <module>hostname-bookieid</module>
+        <module>recovery-no-password</module>
+        <module>old-cookie-new-cluster</module>
+        <module>current-server-old-clients</module>
+        <module>yahoo-custom-version</module>
+        <module>bc-non-fips</module>
+      </modules>
     </profile>
   </profiles>
 </project>

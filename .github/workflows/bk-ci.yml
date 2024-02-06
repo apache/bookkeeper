@@ -257,7 +257,7 @@ jobs:
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |
-          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -DskipBackwardCompatTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -DskipBackwardCompatTests=true -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
