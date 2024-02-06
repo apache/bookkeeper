@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.tests.integration.utils;
 
+import static org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies.createExclusion;
+
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
@@ -51,6 +53,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencyExclusion;
 
 /**
  * A maven class loader for resolving and loading maven artifacts.
@@ -83,9 +86,15 @@ public class MavenClassLoader implements AutoCloseable {
                 .map((a) -> a.getCoordinate().getVersion())
                 .findFirst();
 
+        MavenDependency dependency = MavenDependencies.createDependency(mainArtifact, ScopeType.COMPILE, false,
+                createExclusion("log4j", "log4j"),
+                createExclusion("org.slf4j", "slf4j-log4j12"),
+                createExclusion("ch.qos.reload4j", "log4j"),
+                createExclusion("org.slf4j", "slf4j-reload4j"),
+                createExclusion("org.apache.logging.log4j", "*")
+                );
         List<MavenDependency> deps = Lists.newArrayList(
-                MavenDependencies.createDependency(
-                        mainArtifact, ScopeType.COMPILE, false));
+                dependency);
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
                     ScopeType.COMPILE, false));
