@@ -78,45 +78,15 @@
 
   </dependencies>
 
-
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <!-- DO NOT CHANGE VERSION
-               Versions newer than 2.8.1 do not respect useSystemClassLoader=false
-               https://issues.apache.org/jira/browse/SUREFIRE-1476 //-->
-          <version>2.8.1</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.maven.surefire</groupId>
-              <artifactId>surefire-junit4</artifactId>
-              <version>2.8.1</version>
-            </dependency>
-          </dependencies>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.8.1</version>
-        <configuration combine.self="override">
-          <argLine>-Xmx4G -Djava.net.preferIPv4Stack=true ${test.additional.args}</argLine>
-          <forkMode>once</forkMode>
+        <configuration>
+          <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
           <useSystemClassLoader>false</useSystemClassLoader>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
-          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-          <trimStackTrace>false</trimStackTrace>
-          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-          <classpathDependencyExcludes>
-            <classpathDependencyExclude>org.junit.platform:*</classpathDependencyExclude>
-            <classpathDependencyExclude>org.junit.vintage:*</classpathDependencyExclude>
-            <classpathDependencyExclude>org.junit.jupiter:*</classpathDependencyExclude>
-          </classpathDependencyExcludes>
         </configuration>
       </plugin>
     </plugins>

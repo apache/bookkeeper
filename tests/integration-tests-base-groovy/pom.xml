@@ -36,25 +36,6 @@
   </properties>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <!-- DO NOT CHANGE VERSION
-               Versions newer than 2.8.1 do not respect useSystemClassLoader=false
-               https://issues.apache.org/jira/browse/SUREFIRE-1476 //-->
-          <version>2.8.1</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.maven.surefire</groupId>
-              <artifactId>surefire-junit4</artifactId>
-              <version>2.8.1</version>
-            </dependency>
-          </dependencies>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -98,15 +79,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.8.1</version>
-        <configuration combine.self="override">
+        <configuration>
           <argLine>-Xmx4G -Djava.net.preferIPv4Stack=true ${test.additional.args}</argLine>
-          <forkMode>once</forkMode>
+          <forkCount>1</forkCount>
           <useSystemClassLoader>false</useSystemClassLoader>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
-          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-          <trimStackTrace>false</trimStackTrace>
-          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
           <systemPropertyVariables>
             <!-- only takes effect in later simpleLogger versions (1.7+) //-->
             <org.slf4j.simpleLogger.logFile>System.out</org.slf4j.simpleLogger.logFile>
