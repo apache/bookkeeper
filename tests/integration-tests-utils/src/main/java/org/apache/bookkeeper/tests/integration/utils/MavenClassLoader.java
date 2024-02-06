@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -50,10 +51,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencyExclusion;
 
 /**
  * A maven class loader for resolving and loading maven artifacts.
@@ -100,9 +102,24 @@ public class MavenClassLoader implements AutoCloseable {
                     ScopeType.COMPILE, false));
         }
 
-        File[] files = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
-                .resolve().withTransitivity().asFile();
-        return createClassLoader(files);
+        MavenResolvedArtifact[] resolvedArtifact = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
+                .resolve().withTransitivity().asResolvedArtifact();
+        File[] files = Arrays.stream(resolvedArtifact)
+                .filter((a) -> {
+                    MavenCoordinate c = a.getCoordinate();
+                    // exclude log4j
+                    if (c.getGroupId().equals("org.apache.logging.log4j") || c.getGroupId().equals("log4j")
+                            || c.getGroupId().equals("ch.qos.reload4j")) {
+                        return false;
+                    }
+                    if (c.getArtifactId().contains("log4j")) {
+                        return false;
+                    }
+                    return true;
+                }).map(MavenResolvedArtifact::asFile)
+                .collect(Collectors.toList())
+                .toArray(new File[0]);
+            return createClassLoader(files);
     }
 
     private static MavenClassLoader createClassLoader(File[] jars) {
