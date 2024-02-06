@@ -267,26 +267,31 @@ public class MavenClassLoader implements AutoCloseable {
     }
 
     public Object newBookKeeper(String zookeeper) throws Exception {
-        Class<?> clientConfigurationClass = Class
-                .forName("org.apache.bookkeeper.conf.ClientConfiguration", true, classloader);
-        Object clientConfiguration = newInstance("org.apache.bookkeeper.conf.ClientConfiguration");
-        clientConfigurationClass
-                .getMethod("setZkServers", String.class)
-                .invoke(clientConfiguration, zookeeper);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(classloader);
+            Class<?> clientConfigurationClass = Class
+                    .forName("org.apache.bookkeeper.conf.ClientConfiguration", true, classloader);
+            Object clientConfiguration = newInstance("org.apache.bookkeeper.conf.ClientConfiguration");
+            clientConfigurationClass
+                    .getMethod("setZkServers", String.class)
+                    .invoke(clientConfiguration, zookeeper);
 
-        // relax timeouts in order to get tests passing in limited environments
-        clientConfigurationClass
-                .getMethod("setReadTimeout", int.class)
-                .invoke(clientConfiguration, 15);
+            // relax timeouts in order to get tests passing in limited environments
+            clientConfigurationClass
+                    .getMethod("setReadTimeout", int.class)
+                    .invoke(clientConfiguration, 15);
 
-        clientConfigurationClass
-                .getMethod("setZkTimeout", int.class)
-                .invoke(clientConfiguration, 30_000);
-        Class<?> klass = Class.forName("org.apache.bookkeeper.client.BookKeeper", true, classloader);
-        return klass
-                .getConstructor(clientConfigurationClass)
-                .newInstance(clientConfiguration);
-
+            clientConfigurationClass
+                    .getMethod("setZkTimeout", int.class)
+                    .invoke(clientConfiguration, 30_000);
+            Class<?> klass = Class.forName("org.apache.bookkeeper.client.BookKeeper", true, classloader);
+            return klass
+                    .getConstructor(clientConfigurationClass)
+                    .newInstance(clientConfiguration);
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 
     public Object digestType(String type) throws Exception {
