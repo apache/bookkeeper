@@ -141,6 +141,12 @@ public class MavenClassLoader implements AutoCloseable {
                     try {
                         loadedClass = findClass(name);
                     } catch (ClassNotFoundException ignored) {
+                        // never load these classes from the parent classloader
+                        if (name.startsWith("org.apache")
+                                || name.startsWith("org.slf4j")
+                                || name.startsWith("log4j")) {
+                            throw ignored;
+                        }
                     }
                     if (loadedClass == null) {
                         try {
