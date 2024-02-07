@@ -13,13 +13,29 @@ brew install socat
 
 Run a TCP -> Unix socket proxy for docker in a separate terminal
 ```bash
-socat TCP-LISTEN:2375,range=127.0.0.1/32,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock &
+socat TCP-LISTEN:2375,bind=127.0.0.1,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock &
 ```
 
 Set the `DOCKER_HOST` environment variable in the terminal where you run the tests
 ```bash
 export DOCKER_HOST=tcp://localhost:2375
 ```
+
+Here's a shell script function to automate starting the proxy and setting `DOCKER_HOST`:
+```bash
+function docker_socket_proxy() {
+  local port=2375
+  socat /dev/null TCP4:127.0.0.1:$port,connect-timeout=2 &> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "Starting socat tcp proxy on port $port for docker socket /var/run/docker.sock"
+    socat TCP-LISTEN:$port,bind=127.0.0.1,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock &> /dev/null &
+    echo "Stop the proxy with 'kill $!'"
+  fi
+  export DOCKER_HOST=tcp://127.0.0.1:$port
+  echo "Added DOCKER_HOST=$DOCKER_HOST to environment"
+}
+```
+You can add the function to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
 
 ### Support for connecting to docker network from Mac host
 
