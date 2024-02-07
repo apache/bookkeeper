@@ -35,8 +35,8 @@ RUN sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://arc
     && echo "dash dash/sh boolean false" | debconf-set-selections \
     && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash \
     && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
-    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
-    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/jre/lib/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/jre/lib/security/java.security
 
 RUN mkdir /tarballs
 WORKDIR /tarballs
