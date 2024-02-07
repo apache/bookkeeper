@@ -20,16 +20,12 @@
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG TARGETARCH
-
-#ENV OPTS="$OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
 ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
 ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/

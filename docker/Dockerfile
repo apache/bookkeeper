@@ -20,8 +20,6 @@
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG TARGETARCH
-
 ARG BK_VERSION=4.15.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
@@ -31,7 +29,6 @@ ENV BOOKIE_HTTP_PORT=8080
 EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
 ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
