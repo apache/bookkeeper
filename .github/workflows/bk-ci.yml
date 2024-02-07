@@ -197,7 +197,7 @@ jobs:
         if: failure()
         continue-on-error: true
         with:
-          name: bookie-tests-reports
+          name: unit-${{ matrix.step_name }}-reports
           path: surefire-reports
           retention-days: 7
 
@@ -274,6 +274,27 @@ jobs:
           path: |
             **/docker.log
 
+      - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
+        if: ${{ always() }}
+        uses: ./.github/actions/copy-test-reports
+
+      - name: Publish Test Report
+        uses: apache/pulsar-test-infra/action-junit-report@master
+        if: ${{ always() }}
+        with:
+          report_paths: 'surefire-reports/TEST-*.xml'
+          annotate_only: 'true'
+
+      - name: Upload Surefire reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        continue-on-error: true
+        with:
+          name: integration-tests-reports
+          path: surefire-reports
+          if-no-files-found: ignore
+          retention-days: 7
+
   backward-compatibility-tests:
     name: Backward compatibility tests
     runs-on: ubuntu-latest
@@ -341,6 +362,27 @@ jobs:
           if-no-files-found: ignore
           path: |
             **/docker.log
+
+      - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories
+        if: ${{ always() }}
+        uses: ./.github/actions/copy-test-reports
+
+      - name: Publish Test Report
+        uses: apache/pulsar-test-infra/action-junit-report@master
+        if: ${{ always() }}
+        with:
+          report_paths: 'surefire-reports/TEST-*.xml'
+          annotate_only: 'true'
+
+      - name: Upload Surefire reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        continue-on-error: true
+        with:
+          name: backward-compatibility-tests-reports
+          path: surefire-reports
+          if-no-files-found: ignore
+          retention-days: 7
 
   windows-build:
     name: Build with windows on JDK 11
