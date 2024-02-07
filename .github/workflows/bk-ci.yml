@@ -200,6 +200,10 @@ jobs:
           path: surefire-reports
           retention-days: 7
 
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps
+
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest

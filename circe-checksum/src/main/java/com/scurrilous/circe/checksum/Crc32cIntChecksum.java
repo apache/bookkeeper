@@ -71,12 +71,30 @@ public class Crc32cIntChecksum {
     /**
      * Computes incremental checksum with input previousChecksum and input payload
      *
-     * @param previousChecksum : previously computed checksum
-     * @param payload
-     * @return
+     * @param previousChecksum the previously computed checksum
+     * @param payload the data for which the checksum is to be computed
+     * @param offset the starting position in the payload
+     * @param len the number of bytes to include in the checksum computation
+     * @return the updated checksum
      */
     public static int resumeChecksum(int previousChecksum, ByteBuf payload, int offset, int len) {
         return CRC32C_HASH.resume(previousChecksum, payload, offset, len);
     }
 
+    /**
+     * Computes incremental checksum with input previousChecksum and input payload
+     *
+     * @param previousChecksum the previously computed checksum
+     * @param payload the data for which the checksum is to be computed
+     * @param offset the starting position in the payload
+     * @param len the number of bytes to include in the checksum computation
+     * @return the updated checksum
+     */
+    public static int resumeChecksum(int previousChecksum, byte[] payload, int offset, int len) {
+        return CRC32C_HASH.resume(previousChecksum, payload, offset, len);
+    }
+
+    public static boolean acceptsMemoryAddressBuffer() {
+        return CRC32C_HASH.acceptsMemoryAddressBuffer();
+    }
 }
