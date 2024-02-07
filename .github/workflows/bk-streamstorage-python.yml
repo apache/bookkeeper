@@ -71,10 +71,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
       - name: Build
         run: mvn -q -T 1C -B -nsu clean install -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip
       - name: Pick ubuntu mirror for the docker image build

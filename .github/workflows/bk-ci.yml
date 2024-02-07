@@ -79,11 +79,6 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
-
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
@@ -153,17 +148,11 @@ jobs:
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
-
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
-
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
 
       - name: Build
         run: |
@@ -238,11 +227,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
@@ -329,11 +313,6 @@ jobs:
           distribution: 'temurin'
           java-version: 8
 
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
-
       - name: Pick ubuntu mirror for the docker image build
         run: |
           # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
@@ -410,17 +389,11 @@ jobs:
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
-
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
-
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -453,11 +426,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -496,17 +464,11 @@ jobs:
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
 
-
       - name: Set up JDK ${{ matrix.jdk_version }}
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
-
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
 
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
