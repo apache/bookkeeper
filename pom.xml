@@ -143,7 +143,7 @@
     <jetty.version>9.4.53.v20231009</jetty.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
-    <jsoup.version>1.14.3</jsoup.version>
+    <jsoup.version>1.15.3</jsoup.version>
     <junit.version>4.12</junit.version>
     <!-- required by zookeeper test utilities imported from ZooKeeper -->
     <junit5.version>5.8.2</junit5.version>
