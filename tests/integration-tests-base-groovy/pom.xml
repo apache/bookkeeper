@@ -43,6 +43,7 @@
         <configuration combine.self="override">
           <!-- combine.self="override" stops compilerArgs from parent pom being merged //-->
           <compilerId>groovy-eclipse-compiler</compilerId>
+          <fork>true</fork>
         </configuration>
         <dependencies>
           <dependency>
@@ -62,18 +63,6 @@
         <artifactId>groovy-eclipse-compiler</artifactId>
         <version>${groovy-eclipse-compiler.version}</version>
         <extensions>true</extensions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.gmavenplus</groupId>
-        <artifactId>gmavenplus-plugin</artifactId>
-        <version>${gmavenplus-plugin.version}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compileTests</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
