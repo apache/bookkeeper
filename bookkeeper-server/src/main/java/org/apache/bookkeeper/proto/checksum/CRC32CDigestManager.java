@@ -46,7 +46,17 @@ class CRC32CDigestManager extends DigestManager {
     }
 
     @Override
-    int update(int digest, ByteBuf data, int offset, int len) {
+    int internalUpdate(int digest, ByteBuf data, int offset, int len) {
         return Crc32cIntChecksum.resumeChecksum(digest, data, offset, len);
+    }
+
+    @Override
+    int internalUpdate(int digest, byte[] buffer, int offset, int len) {
+        return Crc32cIntChecksum.resumeChecksum(digest, buffer, offset, len);
+    }
+
+    @Override
+    boolean acceptsMemoryAddressBuffer() {
+        return Crc32cIntChecksum.acceptsMemoryAddressBuffer();
     }
 }

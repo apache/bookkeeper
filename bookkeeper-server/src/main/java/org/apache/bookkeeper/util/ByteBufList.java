@@ -22,7 +22,6 @@ package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -133,43 +132,14 @@ public class ByteBufList extends AbstractReferenceCounted {
      * Append a {@link ByteBuf} at the end of this {@link ByteBufList}.
      */
     public void add(ByteBuf buf) {
-        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
-                ? buf.unwrap() : buf;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(buf);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            ((CompositeByteBuf) unwrapped).forEach(b -> {
-                ReferenceCountUtil.retain(b);
-                buffers.add(b);
-            });
-            ReferenceCountUtil.release(unwrapped);
-        } else {
-            buffers.add(unwrapped);
-        }
+        buffers.add(buf);
     }
 
     /**
      * Prepend a {@link ByteBuf} at the beginning of this {@link ByteBufList}.
      */
     public void prepend(ByteBuf buf) {
-        // don't unwrap slices
-        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
-                ? buf.unwrap() : buf;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(buf);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf composite = (CompositeByteBuf) unwrapped;
-            for (int i = composite.numComponents() - 1; i >= 0; i--) {
-                ByteBuf b = composite.component(i);
-                ReferenceCountUtil.retain(b);
-                buffers.add(0, b);
-            }
-            ReferenceCountUtil.release(unwrapped);
-        } else {
-            buffers.add(0, unwrapped);
-        }
+        buffers.add(0, buf);
     }
 
     /**
@@ -285,7 +255,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     @Override
     protected void deallocate() {
         for (int i = 0; i < buffers.size(); i++) {
-            ReferenceCountUtil.release(buffers.get(i));
+            buffers.get(i).release();
         }
 
         buffers.clear();

@@ -96,13 +96,24 @@ public class MacDigestManager extends DigestManager {
     }
 
     @Override
-    int update(int digest, ByteBuf data, int offset, int len) {
+    int internalUpdate(int digest, ByteBuf data, int offset, int len) {
         mac.get().update(data.slice(offset, len).nioBuffer());
         return 0;
     }
 
     @Override
+    int internalUpdate(int digest, byte[] buffer, int offset, int len) {
+        mac.get().update(buffer, offset, len);
+        return 0;
+    }
+
+    @Override
     boolean isInt32Digest() {
+        return false;
+    }
+
+    @Override
+    boolean acceptsMemoryAddressBuffer() {
         return false;
     }
 }
