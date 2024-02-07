@@ -20,10 +20,8 @@ package org.apache.bookkeeper.proto.checksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.security.GeneralSecurityException;
@@ -34,6 +32,7 @@ import org.apache.bookkeeper.proto.BookieProtoEncoding;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.ByteBufVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +52,25 @@ public abstract class DigestManager {
     final long ledgerId;
     final boolean useV2Protocol;
     private final ByteBufAllocator allocator;
+    private final DigestUpdaterByteBufVisitorCallback byteBufVisitorCallback;
 
     abstract int getMacCodeLength();
 
-    abstract int update(int digest, ByteBuf buffer, int offset, int len);
+    abstract int internalUpdate(int digest, ByteBuf buffer, int offset, int len);
+
+    abstract int internalUpdate(int digest, byte[] buffer, int offset, int len);
+
+    final int update(int digest, ByteBuf buffer, int offset, int len) {
+        if (buffer.hasMemoryAddress() && acceptsMemoryAddressBuffer()) {
+            return internalUpdate(digest, buffer, offset, len);
+        } else if (buffer.hasArray()) {
+            return internalUpdate(digest, buffer.array(), buffer.arrayOffset() + offset, len);
+        } else {
+            UpdateContext updateContext = new UpdateContext(digest);
+            ByteBufVisitor.visitBuffers(buffer, offset, len, byteBufVisitorCallback, updateContext);
+            return updateContext.digest;
+        }
+    }
 
     abstract void populateValueAndReset(int digest, ByteBuf buffer);
 
@@ -69,6 +83,7 @@ public abstract class DigestManager {
         this.useV2Protocol = useV2Protocol;
         this.macCodeLength = getMacCodeLength();
         this.allocator = allocator;
+        this.byteBufVisitorCallback = new DigestUpdaterByteBufVisitorCallback();
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
@@ -136,22 +151,7 @@ public abstract class DigestManager {
 
         // Compute checksum over the headers
         int digest = update(0, buf, buf.readerIndex(), buf.readableBytes());
-
-        // don't unwrap slices
-        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
-                ? data.unwrap() : data;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.safeRelease(data);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf cbb = (CompositeByteBuf) unwrapped;
-            for (int i = 0; i < cbb.numComponents(); i++) {
-                ByteBuf b = cbb.component(i);
-                digest = update(digest, b, b.readerIndex(), b.readableBytes());
-            }
-        } else {
-            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-        }
+        digest = update(digest, data, data.readerIndex(), data.readableBytes());
 
         populateValueAndReset(digest, buf);
 
@@ -159,11 +159,11 @@ public abstract class DigestManager {
         buf.readerIndex(0);
 
         if (isSmallEntry) {
-            buf.writeBytes(unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-            unwrapped.release();
+            buf.writeBytes(data, data.readerIndex(), data.readableBytes());
+            data.release();
             return buf;
         } else {
-            return ByteBufList.get(buf, unwrapped);
+            return ByteBufList.get(buf, data);
         }
     }
 
@@ -176,25 +176,9 @@ public abstract class DigestManager {
         headersBuffer.writeLong(length);
 
         int digest = update(0, headersBuffer, 0, METADATA_LENGTH);
-
-        // don't unwrap slices
-        final ByteBuf unwrapped = data.unwrap() != null && data.unwrap() instanceof CompositeByteBuf
-                ? data.unwrap() : data;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(data);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf cbb = ((CompositeByteBuf) unwrapped);
-            for (int i = 0; i < cbb.numComponents(); i++) {
-                ByteBuf b = cbb.component(i);
-                digest = update(digest, b, b.readerIndex(), b.readableBytes());
-            }
-        } else {
-            digest = update(digest, unwrapped, unwrapped.readerIndex(), unwrapped.readableBytes());
-        }
+        digest = update(digest, data, data.readerIndex(), data.readableBytes());
         populateValueAndReset(digest, headersBuffer);
-
-        return ByteBufList.get(headersBuffer, unwrapped);
+        return ByteBufList.get(headersBuffer, data);
     }
 
     /**
@@ -373,4 +357,34 @@ public abstract class DigestManager {
         long length = dataReceived.readLong();
         return new RecoveryData(lastAddConfirmed, length);
     }
+
+    private static class UpdateContext {
+        int digest;
+
+        UpdateContext(int digest) {
+            this.digest = digest;
+        }
+    }
+
+    private class DigestUpdaterByteBufVisitorCallback implements ByteBufVisitor.ByteBufVisitorCallback<UpdateContext> {
+
+        @Override
+        public void visitBuffer(UpdateContext context, ByteBuf visitBuffer, int visitIndex, int visitLength) {
+            // recursively visit the sub buffer and update the digest
+            context.digest = internalUpdate(context.digest, visitBuffer, visitIndex, visitLength);
+        }
+
+        @Override
+        public void visitArray(UpdateContext context, byte[] visitArray, int visitIndex, int visitLength) {
+            // update the digest with the array
+            context.digest = internalUpdate(context.digest, visitArray, visitIndex, visitLength);
+        }
+
+        @Override
+        public boolean acceptsMemoryAddress(UpdateContext context) {
+            return DigestManager.this.acceptsMemoryAddressBuffer();
+        }
+    }
+
+    abstract boolean acceptsMemoryAddressBuffer();
 }

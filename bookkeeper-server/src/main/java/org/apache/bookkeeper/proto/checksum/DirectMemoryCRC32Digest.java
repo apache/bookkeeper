@@ -50,13 +50,27 @@ class DirectMemoryCRC32Digest implements CRC32Digest {
                 crcValue = (int) updateByteBuffer.invoke(null, crcValue, buf.memoryAddress(), index, length);
             } else if (buf.hasArray()) {
                 // Use the internal method to update from array based
-                crcValue = (int) updateBytes.invoke(null, crcValue, buf.array(), buf.arrayOffset() + index, length);
+                crcValue = updateArray(crcValue, buf.array(), buf.arrayOffset() + index, length);
             } else {
                 // Fallback to data copy if buffer is not contiguous
                 byte[] b = new byte[length];
                 buf.getBytes(index, b, 0, length);
-                crcValue = (int) updateBytes.invoke(null, crcValue, b, 0, b.length);
+                crcValue = updateArray(crcValue, b, 0, length);
             }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int updateArray(int crcValue, byte[] buf, int offset, int length)
+            throws IllegalAccessException, InvocationTargetException {
+        return (int) updateBytes.invoke(null, crcValue, buf, offset, length);
+    }
+
+    @Override
+    public void update(byte[] buffer, int offset, int len) {
+        try {
+            crcValue = updateArray(crcValue, buffer, offset, len);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
