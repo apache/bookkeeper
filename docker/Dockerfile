@@ -61,7 +61,10 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
-    && pip install zk-shell
+    && pip install zk-shell \
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 WORKDIR /opt/bookkeeper
 

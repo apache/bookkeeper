@@ -47,7 +47,9 @@ RUN set -x \
     && rm -rf /var/lib/apt/lists/* \
     && pip install zk-shell \
     && mkdir -pv /opt \
-    && cd /opt
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 WORKDIR /opt/bookkeeper
 RUN mkdir /opt/bookkeeper/lib

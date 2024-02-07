@@ -49,7 +49,10 @@ RUN set -x \
     && apt-get autoclean \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && pip install zk-shell
+    && pip install zk-shell \
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 # untar tarballs
 ADD target/${DISTRO_NAME}.tar.gz /opt
