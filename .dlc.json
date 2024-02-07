@@ -65,6 +65,9 @@
     },
     {
       "pattern": "^https://calendar.google.com/"
+    },
+    {
+      "pattern": "^#"
     }
   ],
   "timeout": "10s",
