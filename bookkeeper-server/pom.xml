@@ -275,7 +275,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <trimStackTrace>false</trimStackTrace>
           <properties>
@@ -289,12 +288,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
+          <!--
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
+          -->
           <groups>
             <group>
               <title>Bookkeeper</title>

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.DigestType;
@@ -79,7 +80,6 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
     public void testCommand(String... args) throws Exception {
         WriteHandle wh = mock(WriteHandle.class);
         AtomicLong counter = new AtomicLong(0L);
-        when(wh.append(any(byte[].class))).thenReturn(counter.get());
         CreateBuilder createBuilder = mock(CreateBuilder.class);
         when(createBuilder.execute()).thenReturn(FutureUtils.value(wh));
         when(createBuilder.withEnsembleSize(anyInt())).thenReturn(createBuilder);
@@ -90,23 +90,29 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         when(createBuilder.withPassword(any(byte[].class))).thenReturn(createBuilder);
         when(createBuilder.execute()).thenReturn(CompletableFuture.completedFuture(wh));
         when(mockBk.newCreateLedgerOp()).thenReturn(createBuilder);
-
+        long ledgerId = 1234L;
+        when(wh.getId()).thenReturn(ledgerId);
+        when(wh.getLastAddPushed()).then(__ -> counter.get() - 1L);
         List<LedgerEntry> entries = new ArrayList<>();
         byte[] data = new byte[100]; // test data
         Random random = new Random(0);
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) (random.nextInt(26) + 65);
         }
-        for (int i = 0; i < 10; i++) {
+        when(wh.append(any(byte[].class))).then(invocation -> {
+            long entryId = counter.getAndIncrement();
             ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.heapBuffer(100);
             buffer.writeBytes(data);
-            entries.add(LedgerEntryImpl.create(counter.get(), i, data.length, buffer));
-        }
-
-        LedgerEntriesImpl ledgerEntries = LedgerEntriesImpl.create(entries);
-
+            entries.add(LedgerEntryImpl.create(ledgerId, entryId, data.length, buffer));
+            return entryId;
+        });
         ReadHandle rh = mock(ReadHandle.class);
-        when(rh.read(anyLong(), anyLong())).thenReturn(ledgerEntries);
+        when(rh.read(anyLong(), anyLong())).then(
+                __ -> LedgerEntriesImpl.create(entries.stream()
+                        .map(LedgerEntry::duplicate).collect(Collectors.toList())));
+        when(rh.readUnconfirmed(anyLong(), anyLong())).then(
+                __ -> LedgerEntriesImpl.create(entries.stream()
+                        .map(LedgerEntry::duplicate).collect(Collectors.toList())));
         OpenBuilder openBuilder = mock(OpenBuilder.class);
         when(openBuilder.withLedgerId(anyLong())).thenReturn(openBuilder);
         when(openBuilder.withDigestType(any())).thenReturn(openBuilder);
@@ -134,10 +140,10 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         verify(createBuilder, times(1)).withPassword(eq(new byte[0]));
         verify(createBuilder, times(1)).execute();
 
-        verify(openBuilder, times(1)).withLedgerId(eq(0L));
-        verify(openBuilder, times(1)).execute();
+        verify(openBuilder, times(2)).withLedgerId(eq(1234L));
+        verify(openBuilder, times(2)).execute();
 
-        verify(deleteBuilder, times(1)).withLedgerId(eq(0L));
+        verify(deleteBuilder, times(1)).withLedgerId(eq(1234L));
         verify(deleteBuilder, times(1)).execute();
 
         // verify appends

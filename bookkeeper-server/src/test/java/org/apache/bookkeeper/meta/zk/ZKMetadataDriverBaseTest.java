@@ -90,7 +90,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
         driver.close();
 
-        verify(mockZkc, times(1)).close();
+        verify(mockZkc, times(1)).close(5000);
         assertNull(driver.zk);
     }
 

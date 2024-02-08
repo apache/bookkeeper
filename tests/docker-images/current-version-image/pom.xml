@@ -23,17 +23,10 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
-  <artifactId>all-versions-image</artifactId>
-  <name>Apache BookKeeper :: Tests :: Docker Images :: All Versions</name>
+  <artifactId>current-version-image</artifactId>
+  <name>Apache BookKeeper :: Tests :: Docker Images :: Current Version</name>
   <packaging>pom</packaging>
   <dependencies>
-    <dependency>
-      <groupId>org.apache.bookkeeper.tests</groupId>
-      <artifactId>all-released-versions-image</artifactId>
-      <version>${project.parent.version}</version>
-      <type>pom</type>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-dist-server</artifactId>
@@ -53,6 +46,49 @@
       </activation>
       <build>
         <plugins>
+          <!-- build cpp client, copy the wheel file and then build docker image -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec-maven-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>build-python-client</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${project.basedir}/target</workingDirectory>
+                  <executable>${project.basedir}/../../../stream/clients/python/scripts/docker_build.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- this task is used for copy docker scripts & python wheel file to build docker image -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>${maven-antrun-plugin.version}</version>
+            <executions>
+              <execution>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <echo>copy python wheel file</echo>
+                    <mkdir dir="${project.basedir}/target/bookkeeper-client" />
+                    <copydir src="${project.basedir}/../../../stream/clients/python/dist" dest="${project.basedir}/target/bookkeeper-client" />
+                    <echo>copying docker scripts</echo>
+                    <mkdir dir="${project.basedir}/target/scripts" />
+                    <copydir src="${project.basedir}/../../../docker/scripts" dest="${project.basedir}/target/scripts" />
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>com.spotify</groupId>
             <artifactId>dockerfile-maven-plugin</artifactId>
@@ -70,18 +106,18 @@
                   <goal>tag</goal>
                 </goals>
                 <configuration>
-                  <repository>apachebookkeeper/bookkeeper-all-versions</repository>
+                  <repository>apachebookkeeper/bookkeeper-current</repository>
                   <tag>latest</tag>
                 </configuration>
               </execution>
             </executions>
             <configuration>
-              <repository>apachebookkeeper/bookkeeper-all-versions</repository>
+              <repository>apachebookkeeper/bookkeeper-current</repository>
               <tag>${project.version}</tag>
               <pullNewerImage>false</pullNewerImage>
               <noCache>true</noCache>
               <buildArgs>
-                <BK_TARBALL>target/bookkeeper-dist-server-${project.version}-bin.tar.gz</BK_TARBALL>
+                <BK_VERSION>${project.version}</BK_VERSION>
                 <UBUNTU_MIRROR>${UBUNTU_MIRROR}</UBUNTU_MIRROR>
                 <UBUNTU_SECURITY_MIRROR>${UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
               </buildArgs>
@@ -93,7 +129,7 @@
             <version>${maven-dependency-plugin.version}</version>
             <executions>
               <execution>
-                <id>copy-tarball</id>
+                <id>copy-docker-dependencies</id>
                 <goals>
                   <goal>copy-dependencies</goal>
                 </goals>

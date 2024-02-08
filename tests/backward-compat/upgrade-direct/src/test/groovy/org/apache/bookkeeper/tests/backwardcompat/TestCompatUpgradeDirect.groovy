@@ -36,6 +36,12 @@ class TestCompatUpgradeDirect {
     private static final Logger LOG = LoggerFactory.getLogger(TestCompatUpgradeDirect.class)
     private static byte[] PASSWD = "foobar".getBytes()
 
+    static {
+        Thread.setDefaultUncaughtExceptionHandler { Thread t, Throwable e ->
+            LOG.error("Uncaught exception in thread {}", t, e)
+        }
+    }
+
     @ArquillianResource
     DockerClient docker
 
