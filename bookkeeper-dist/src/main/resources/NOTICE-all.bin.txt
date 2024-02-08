@@ -43,6 +43,7 @@ LongAdder), which was released with the following comments:
 - lib/io.netty-netty-tcnative-classes-2.0.61.Final.jar
 - lib/io.netty-netty-transport-4.1.104.Final.jar
 - lib/io.netty-netty-transport-classes-epoll-4.1.104.Final.jar
+- lib/io.netty-netty-transport-native-epoll-4.1.104.Final-linux-aarch_64.jar
 - lib/io.netty-netty-transport-native-epoll-4.1.104.Final-linux-x86_64.jar
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.24.Final-linux-x86_64.jar
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.24.Final-linux-aarch_64.jar
