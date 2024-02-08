@@ -146,8 +146,9 @@
     <jsoup.version>1.15.3</jsoup.version>
     <junit.version>4.13.2</junit.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <junit5.version>5.10.1</junit5.version>
-    <assertj-core.version>3.25.2</assertj-core.version>
+    <junit5.version>5.10.2</junit5.version>
+    <assertj-core.version>3.25.3</assertj-core.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.30</lombok.version>
     <log4j.version>2.18.0</log4j.version>
@@ -209,7 +210,6 @@
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <awaitility.version>4.0.3</awaitility.version>
     <otel.version>1.26.0</otel.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
