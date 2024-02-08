@@ -1094,6 +1094,9 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- This is generated during maven build -->
+            <exclude>dependency-reduced-pom.xml</exclude>
+
             <!-- IntelliJ -->
             <exclude>**/.idea/**</exclude>
 
@@ -1123,6 +1126,8 @@
             <exclude>**/*.iml</exclude>
             <exclude>**/*.iws</exclude>
             <exclude>**/*.ipr</exclude>
+            <!-- sdkman -->
+            <exclude>**/.sdkmanrc</exclude>
 
             <!-- Maven (CI builds) -->
             <exclude>.repository/**</exclude>
