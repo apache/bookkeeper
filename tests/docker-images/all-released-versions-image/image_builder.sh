@@ -29,4 +29,5 @@ SCRIPT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 ## BASE_DIR will be ./bookkeeper/
 BASE_DIR=${SCRIPT_DIR}/../../../
-docker build -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/all-released-versions-image
+docker build --build-arg UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}" --build-arg UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}" \
+  -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/all-released-versions-image
