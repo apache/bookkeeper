@@ -30,6 +30,7 @@
 
   <properties>
     <nar.runtime>dynamic</nar.runtime>
+    <nar.cpp.optionSet>-msse4.2 -mpclmul</nar.cpp.optionSet>
   </properties>
 
   <dependencies>
@@ -48,18 +49,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <compilerArgs>
-            <!-- Object.finalize() is deprecated at java 9 -->
-            <!-- <compilerArg>-Werror</compilerArg> -->
-            <compilerArg>-Xlint:deprecation</compilerArg>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-            <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-            <compilerArg>-Xpkginfo:always</compilerArg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.github.maven-nar</groupId>
@@ -123,17 +112,8 @@
           <plugin>
              <groupId>org.apache.maven.plugins</groupId>
              <artifactId>maven-compiler-plugin</artifactId>
-             <version>${maven-compiler-plugin.version}</version>
              <configuration>
-                <source>1.8</source>
-                <target>1.8</target>
                 <compilerArgs>
-                  <!-- Object.finalize() is deprecated at java 9 -->
-                  <!-- <compilerArg>-Werror</compilerArg> -->
-                  <compilerArg>-Xlint:deprecation</compilerArg>
-                  <compilerArg>-Xlint:unchecked</compilerArg>
-                   <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-                  <compilerArg>-Xpkginfo:always</compilerArg>
                   <!-- add -h flag to javac -->
                   <compilerArg>-h</compilerArg>
                   <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
@@ -209,6 +189,43 @@
               </cpp>
               <linker>
                 <libSet>rt</libSet>
+              </linker>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>Windows</id>
+      <activation>
+        <os>
+          <family>Windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.maven-nar</groupId>
+            <artifactId>nar-maven-plugin</artifactId>
+            <version>${nar-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <runtime>${nar.runtime}</runtime>
+              <output>native-io</output>
+              <libraries>
+                <library>
+                  <type>jni</type>
+                  <narSystemPackage>org.apache.bookkeeper.util.nativeio</narSystemPackage>
+                </library>
+              </libraries>
+              <cpp>
+                <optionSet>${nar.cpp.optionSet}</optionSet>
+                <exceptions>false</exceptions>
+                <rtti>false</rtti>
+                <optimize>full</optimize>
+              </cpp>
+              <linker>
+                <name>g++</name>
               </linker>
             </configuration>
           </plugin>

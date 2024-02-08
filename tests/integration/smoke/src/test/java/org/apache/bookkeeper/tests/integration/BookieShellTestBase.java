@@ -22,13 +22,17 @@ import static org.junit.Assert.assertTrue;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 /**
  * Test Base for testing bookie shell scripts.
  */
 @Slf4j
 public abstract class BookieShellTestBase {
+    @Rule
+    public Timeout testTimeout = Timeout.seconds(300);
 
     String currentVersion = System.getProperty("currentVersion");
     String bkScript;

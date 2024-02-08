@@ -42,8 +42,8 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version.Occurred;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.compress.utils.Sets;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
-import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils;
 
 /**
  * Integration test {@link KeySetReader}.

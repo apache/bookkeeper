@@ -29,5 +29,6 @@
   <modules>
     <module>all-released-versions-image</module>
     <module>all-versions-image</module>
+    <module>current-version-image</module>
   </modules>
 </project>
