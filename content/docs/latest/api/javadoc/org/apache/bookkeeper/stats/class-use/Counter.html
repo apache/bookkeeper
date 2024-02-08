@@ -107,6 +107,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.stats">org.apache.bookkeeper.bookie.stats</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.directentrylogger">org.apache.bookkeeper.bookie.storage.directentrylogger</a></th>
+<td class="colLast">
+<div class="block">Support for bookie entry logs using Direct IO.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.ldb">org.apache.bookkeeper.bookie.storage.ldb</a></th>
+<td class="colLast">
+<div class="block">Classes related to DB based ledger storage.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -119,27 +143,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.stats">org.apache.bookkeeper.common.stats</a></th>
+<td class="colLast">
+<div class="block">Stats Related Utils.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.stats">org.apache.bookkeeper.stats</a></th>
 <td class="colLast">
 <div class="block">A lightweight stats library used for exporting bookkeeper stats.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.stats.codahale">org.apache.bookkeeper.stats.codahale</a></th>
 <td class="colLast">
 <div class="block">A lightweight stats library implemention based on <i>Codahale</i> metrics library.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.stats.otel">org.apache.bookkeeper.stats.otel</a></th>
 <td class="colLast">
 <div class="block">A stats provider implementation based on OpenTelemetry.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.stats.prometheus">org.apache.bookkeeper.stats.prometheus</a></th>
 <td class="colLast">
 <div class="block">A stats provider implementation based on {@link https://prometheus.io/}.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.zookeeper">org.apache.bookkeeper.zookeeper</a></th>
+<td class="colLast">
+<div class="block">A simple retryable zookeeper wrapper provided in bookkeeper.</div>
 </td>
 </tr>
 </tbody>
@@ -147,6 +195,267 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> declared as <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Journal.QueueEntry.</span><code><span class="memberNameLink"><a href="../../bookie/Journal.QueueEntry.html#callbackTime">callbackTime</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with parameters of type <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../../bookie/Journal.QueueEntry.html" title="class in org.apache.bookkeeper.bookie">Journal.QueueEntry</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Journal.QueueEntry.</span><code><span class="memberNameLink"><a href="../../bookie/Journal.QueueEntry.html#create(io.netty.buffer.ByteBuf,boolean,long,long,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,org.apache.bookkeeper.stats.OpStatsLogger,org.apache.bookkeeper.stats.Counter)">create</a></span>&#8203;(io.netty.buffer.ByteBuf&nbsp;entry,
+      boolean&nbsp;ackBeforeSync,
+      long&nbsp;ledgerId,
+      long&nbsp;entryId,
+      <a href="../../proto/BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;cb,
+      java.lang.Object&nbsp;ctx,
+      long&nbsp;enqueueTime,
+      <a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;journalAddEntryStats,
+      <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;callbackTime)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getDeletedLedgerCounter()">getDeletedLedgerCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexPersistenceMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexPersistenceMgrStats.html#getEvictedLedgersCounter()">getEvictedLedgersCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getFlushBytesCounter()">getFlushBytesCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getFlushEmptyQueueCounter()">getFlushEmptyQueueCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getFlushMaxOutstandingBytesCounter()">getFlushMaxOutstandingBytesCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getFlushMaxWaitCounter()">getFlushMaxWaitCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getForceLedgerOps()">getForceLedgerOps</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getForceWriteQueueSize()">getForceWriteQueueSize</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexInMemPageMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexInMemPageMgrStats.html#getIllegalStateDeleteCounter()">getIllegalStateDeleteCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexInMemPageMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexInMemPageMgrStats.html#getIllegalStateResetCounter()">getIllegalStateResetCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalQueueSize()">getJournalQueueSize</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalWriteBytes()">getJournalWriteBytes</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getMajorCompactionCounter()">getMajorCompactionCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getMinorCompactionCounter()">getMinorCompactionCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexPersistenceMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexPersistenceMgrStats.html#getPendingGetFileInfoCounter()">getPendingGetFileInfoCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getReadBytes()">getReadBytes</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getReclaimedSpaceViaCompaction()">getReclaimedSpaceViaCompaction</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getReclaimedSpaceViaDeletes()">getReclaimedSpaceViaDeletes</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getReclaimFailedToDelete()">getReclaimFailedToDelete</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getThrottlingCounter()">getThrottlingCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getWriteBytes()">getWriteBytes</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.directentrylogger">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DirectEntryLoggerStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/directentrylogger/DirectEntryLoggerStats.html#getCachedReadersServedClosedCounter()">getCachedReadersServedClosedCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DirectEntryLoggerStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/directentrylogger/DirectEntryLoggerStats.html#getCloseReaderCounter()">getCloseReaderCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DirectEntryLoggerStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/directentrylogger/DirectEntryLoggerStats.html#getOpenReaderCounter()">getOpenReaderCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.ldb">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadAheadTime()">getReadAheadTime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadCacheHitCounter()">getReadCacheHitCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadCacheMissCounter()">getReadCacheMissCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadFromEntryLogTime()">getReadFromEntryLogTime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadFromLocationIndexTime()">getReadFromLocationIndexTime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getRejectedWriteRequests()">getRejectedWriteRequests</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getThrottledWriteRequests()">getThrottledWriteRequests</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getWriteCacheHitCounter()">getWriteCacheHitCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getWriteCacheMissCounter()">getWriteCacheMissCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -255,7 +564,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#%3Cinit%3E(org.apache.bookkeeper.net.DNSToSwitchMapping,java.util.function.Supplier,org.apache.bookkeeper.stats.Counter)">DNSResolverDecorator</a></span>&#8203;(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;resolver,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../client/TopologyAwareEnsemblePlacementPolicy.DNSResolverDecorator.html#%3Cinit%3E(org.apache.bookkeeper.net.DNSToSwitchMapping,java.util.function.Supplier,org.apache.bookkeeper.stats.Counter)">DNSResolverDecorator</a></span>&#8203;(<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;resolver,
                     java.util.function.Supplier&lt;java.lang.String&gt;&nbsp;defaultRackSupplier,
                     <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;failedToResolveNetworkLocationCounter)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -320,6 +629,119 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../client/impl/BookKeeperClientStatsImpl.html#getWriteTimedOutDueToNotEnoughFaultDomains()">getWriteTimedOutDueToNotEnoughFaultDomains</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#getCounter(java.lang.String)">getCounter</a></span>&#8203;(java.lang.String&nbsp;statName)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#getThreadScopedCounter(java.lang.String)">getThreadScopedCounter</a></span>&#8203;(java.lang.String&nbsp;name)</code></th>
+<td class="colLast">
+<div class="block">Thread-scoped stats not currently supported.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> declared as <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../proto/RequestStats.html#readLastEntryNoEntryErrorCounter">readLastEntryNoEntryErrorCounter</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../proto/RequestStats.html#getAddEntryRejectedCounter()">getAddEntryRejectedCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../proto/RequestStats.html#getReadEntryRejectedCounter()">getReadEntryRejectedCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../proto/RequestStats.html#getReadLastEntryNoEntryErrorCounter()">getReadLastEntryNoEntryErrorCounter</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumBookieAuditsDelayed()">getNumBookieAuditsDelayed</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumDelayedBookieAuditsCancelled()">getNumDelayedBookieAuditsCancelled</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersChecked()">getNumLedgersChecked</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumSkippingCheckTaskTimes()">getNumSkippingCheckTaskTimes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -530,6 +952,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.zookeeper">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a> that return <a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZooKeeperWatcherBase.</span><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperWatcherBase.html#getStateCounter(org.apache.zookeeper.Watcher.Event.KeeperState)">getStateCounter</a></span>&#8203;(org.apache.zookeeper.Watcher.Event.KeeperState&nbsp;state)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -580,7 +1024,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

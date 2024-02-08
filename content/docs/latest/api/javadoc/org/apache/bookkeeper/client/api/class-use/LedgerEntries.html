@@ -135,6 +135,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h3>Uses of <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a> in <a href="../../package-summary.html">org.apache.bookkeeper.client</a></h3>
 <table class="useSummary">
+<caption><span>Fields in <a href="../../package-summary.html">org.apache.bookkeeper.client</a> with type parameters of type <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadOpBase.</span><code><span class="memberNameLink"><a href="../../ReadOpBase.html#future">future</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
 <caption><span>Methods in <a href="../../package-summary.html">org.apache.bookkeeper.client</a> that return types with arguments of type <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -143,11 +158,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PendingReadOp.</span><code><span class="memberNameLink"><a href="../../PendingReadOp.html#future()">future</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#batchReadAsync(long,int,long)">batchReadAsync</a></span>&#8203;(long&nbsp;startEntry,
+              int&nbsp;maxCount,
+              long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries in asynchronously.</div>
+</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadOpBase.</span><code><span class="memberNameLink"><a href="../../ReadOpBase.html#future()">future</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#readAsync(long,long)">readAsync</a></span>&#8203;(long&nbsp;firstEntry,
          long&nbsp;lastEntry)</code></th>
@@ -155,14 +179,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#readEntriesInternalAsync(long,long,boolean)">readEntriesInternalAsync</a></span>&#8203;(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
                         boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#readUnconfirmedAsync(long,long)">readUnconfirmedAsync</a></span>&#8203;(long&nbsp;firstEntry,
                     long&nbsp;lastEntry)</code></th>
@@ -189,13 +213,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#batchRead(long,int,long)">batchRead</a></span>&#8203;(long&nbsp;startEntry,
+         int&nbsp;maxCount,
+         long&nbsp;maxSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#read(long,long)">read</a></span>&#8203;(long&nbsp;firstEntry,
     long&nbsp;lastEntry)</code></th>
 <td class="colLast">
 <div class="block">Read a sequence of entries synchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readUnconfirmed(long,long)">readUnconfirmed</a></span>&#8203;(long&nbsp;firstEntry,
                long&nbsp;lastEntry)</code></th>
@@ -214,6 +245,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>default java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#batchReadAsync(long,int,long)">batchReadAsync</a></span>&#8203;(long&nbsp;startEntry,
+              int&nbsp;maxCount,
+              long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries asynchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readAsync(long,long)">readAsync</a></span>&#8203;(long&nbsp;firstEntry,
          long&nbsp;lastEntry)</code></th>
@@ -221,7 +261,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readUnconfirmedAsync(long,long)">readUnconfirmedAsync</a></span>&#8203;(long&nbsp;firstEntry,
                     long&nbsp;lastEntry)</code></th>
@@ -307,7 +347,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -112,6 +112,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.commands.bookie">org.apache.bookkeeper.tools.cli.commands.bookie</a></th>
+<td class="colLast">
+<div class="block">Commands to operate a single bookie.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.verifier">org.apache.bookkeeper.verifier</a></th>
+<td class="colLast">
+<div class="block">Simple self-verifying workload generator.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -279,6 +297,174 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> declared as <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AutoRecoveryMain.</span><code><span class="memberNameLink"><a href="../../replication/AutoRecoveryMain.html#bkc">bkc</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Auditor.</span><code><span class="memberNameLink"><a href="../../replication/Auditor.html#createBookKeeperClient(org.apache.bookkeeper.conf.ServerConfiguration)">createBookKeeperClient</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Auditor.</span><code><span class="memberNameLink"><a href="../../replication/Auditor.html#createBookKeeperClient(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">createBookKeeperClient</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Auditor.</span><code><span class="memberNameLink"><a href="../../replication/Auditor.html#createBookKeeperClientThrowUnavailableException(org.apache.bookkeeper.conf.ServerConfiguration)">createBookKeeperClientThrowUnavailableException</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#getBookKeeper(org.apache.bookkeeper.conf.ServerConfiguration)">getBookKeeper</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">
+<div class="block">Get BookKeeper client according to configuration.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with parameters of type <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#getBookKeeperAdmin(org.apache.bookkeeper.client.BookKeeper)">getBookKeeperAdmin</a></span>&#8203;(<a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bookKeeper)</code></th>
+<td class="colLast">
+<div class="block">Get BookKeeper admin according to bookKeeper client.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with parameters of type <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.client.BookKeeperAdmin,boolean,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+       boolean&nbsp;ownBkc,
+       <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+       boolean&nbsp;ownAdmin,
+       <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+       boolean&nbsp;ownBkc,
+       <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorElector.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean)">AuditorElector</a></span>&#8203;(java.lang.String&nbsp;bookieId,
+              <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+              <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+              boolean&nbsp;ownBkc)</code></th>
+<td class="colLast">
+<div class="block">AuditorElector for performing the auditor election.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorElector.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,org.apache.bookkeeper.stats.StatsLogger,boolean)">AuditorElector</a></span>&#8203;(java.lang.String&nbsp;bookieId,
+              <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+              <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+              <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+              boolean&nbsp;ownBkc)</code></th>
+<td class="colLast">
+<div class="block">AuditorElector for performing the auditor election.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/ReplicationWorker.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.stats.StatsLogger)">ReplicationWorker</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+                 boolean&nbsp;ownBkc,
+                 <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tools.cli.commands.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> in <a href="../../tools/cli/commands/bookie/package-summary.html">org.apache.bookkeeper.tools.cli.commands.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../tools/cli/commands/bookie/package-summary.html">org.apache.bookkeeper.tools.cli.commands.bookie</a> with parameters of type <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SanityTestCommand.</span><code><span class="memberNameLink"><a href="../../tools/cli/commands/bookie/SanityTestCommand.html#close(org.apache.bookkeeper.client.BookKeeper,org.apache.bookkeeper.client.LedgerHandle)">close</a></span>&#8203;(<a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
+     <a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.verifier">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> in <a href="../../verifier/package-summary.html">org.apache.bookkeeper.verifier</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../verifier/package-summary.html">org.apache.bookkeeper.verifier</a> with parameters of type <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../verifier/DirectBookkeeperDriver.html#%3Cinit%3E(org.apache.bookkeeper.client.BookKeeper)">DirectBookkeeperDriver</a></span>&#8203;(<a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;client)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -329,7 +515,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

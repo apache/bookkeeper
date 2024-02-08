@@ -133,12 +133,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback</code></dd>
+<dd><code><a href="../proto/BookkeeperInternalCallbacks.WriteLacCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteLacCallback</a></code></dd>
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">PendingWriteLacOp</span>
 extends java.lang.Object
-implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback</pre>
+implements <a href="../proto/BookkeeperInternalCallbacks.WriteLacCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteLacCallback</a></pre>
 <div class="block">This represents a pending WriteLac operation. When it has got
  success from Ack Quorum bookies, sends success back to the application,
  otherwise failure is sent back to the caller.
@@ -192,7 +192,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#currentEnsemble">currentEnsemble</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -217,7 +217,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.util.ByteBufList</code></td>
+<td class="colFirst"><code>(package private) <a href="../util/ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toSend">toSend</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -241,7 +241,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,java.util.List,org.apache.bookkeeper.client.AsyncCallback.AddLacCallback,java.lang.Object)">PendingWriteLacOp</a></span>&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                  <a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                 java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+                 java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                  <a href="AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a>&nbsp;cb,
                  java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -266,7 +266,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiate(org.apache.bookkeeper.util.ByteBufList)">initiate</a></span>&#8203;(org.apache.bookkeeper.util.ByteBufList&nbsp;toSend)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiate(org.apache.bookkeeper.util.ByteBufList)">initiate</a></span>&#8203;(<a href="../util/ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a>&nbsp;toSend)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -283,7 +283,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeLacComplete(int,long,org.apache.bookkeeper.net.BookieId,java.lang.Object)">writeLacComplete</a></span>&#8203;(int&nbsp;rc,
                 long&nbsp;ledgerId,
-                org.apache.bookkeeper.net.BookieId&nbsp;addr,
+                <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr,
                 java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -317,7 +317,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <ul class="blockList">
 <li class="blockList">
 <h4>toSend</h4>
-<pre>org.apache.bookkeeper.util.ByteBufList toSend</pre>
+<pre><a href="../util/ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a> toSend</pre>
 </li>
 </ul>
 <a id="cb">
@@ -407,7 +407,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <ul class="blockListLast">
 <li class="blockList">
 <h4>currentEnsemble</h4>
-<pre>final&nbsp;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt; currentEnsemble</pre>
+<pre>final&nbsp;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt; currentEnsemble</pre>
 </li>
 </ul>
 </li>
@@ -428,7 +428,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <h4>PendingWriteLacOp</h4>
 <pre>PendingWriteLacOp&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                   <a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                  java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+                  java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                   <a href="AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a>&nbsp;cb,
                   java.lang.Object&nbsp;ctx)</pre>
 </li>
@@ -467,7 +467,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <ul class="blockList">
 <li class="blockList">
 <h4>initiate</h4>
-<pre class="methodSignature">void&nbsp;initiate&#8203;(org.apache.bookkeeper.util.ByteBufList&nbsp;toSend)</pre>
+<pre class="methodSignature">void&nbsp;initiate&#8203;(<a href="../util/ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a>&nbsp;toSend)</pre>
 </li>
 </ul>
 <a id="writeLacComplete(int,long,org.apache.bookkeeper.net.BookieId,java.lang.Object)">
@@ -478,11 +478,11 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <h4>writeLacComplete</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;writeLacComplete&#8203;(int&nbsp;rc,
                              long&nbsp;ledgerId,
-                             org.apache.bookkeeper.net.BookieId&nbsp;addr,
+                             <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr,
                              java.lang.Object&nbsp;ctx)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>writeLacComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback</code></dd>
+<dd><code><a href="../proto/BookkeeperInternalCallbacks.WriteLacCallback.html#writeLacComplete(int,long,org.apache.bookkeeper.net.BookieId,java.lang.Object)">writeLacComplete</a></code>&nbsp;in interface&nbsp;<code><a href="../proto/BookkeeperInternalCallbacks.WriteLacCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteLacCallback</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -555,7 +555,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

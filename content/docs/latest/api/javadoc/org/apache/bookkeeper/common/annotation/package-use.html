@@ -107,27 +107,88 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client.api">org.apache.bookkeeper.client.api</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.annotation">org.apache.bookkeeper.common.annotation</a></th>
 <td class="colLast">
 <div class="block">Annotations used across the whole project.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.conf">org.apache.bookkeeper.common.conf</a></th>
+<td class="colLast">
+<div class="block">Configuration related utilities.</div>
+</td>
+</tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.net">org.apache.bookkeeper.common.net</a></th>
+<td class="colLast">
+<div class="block">Classes for resolving service uris in bookkeeper.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.conf">org.apache.bookkeeper.conf</a></th>
 <td class="colLast">
 <div class="block">Configurations used by bookkeeper.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.discover">org.apache.bookkeeper.discover</a></th>
+<td class="colLast">
+<div class="block">Classes related to service discovery.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.component">org.apache.bookkeeper.server.component</a></th>
+<td class="colLast">
+<div class="block">The lifecycle components that run on a bookie server.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.common">org.apache.bookkeeper.tools.common</a></th>
+<td class="colLast">
+<div class="block">Common classes used across multiple tools.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.Private.html#org.apache.bookkeeper.bookie">InterfaceAudience.Private</a></th>
+<td class="colLast">
+<div class="block">Intended for use only within bookkeeper itself.</div>
 </td>
 </tr>
 </tbody>
@@ -242,6 +303,50 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 </li>
+<li class="blockList"><a id="org.apache.bookkeeper.common.conf">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../conf/package-summary.html">org.apache.bookkeeper.common.conf</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.Public.html#org.apache.bookkeeper.common.conf">InterfaceAudience.Public</a></th>
+<td class="colLast">
+<div class="block">Intended for use by any project or application.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.common.net">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../net/package-summary.html">org.apache.bookkeeper.common.net</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.Public.html#org.apache.bookkeeper.common.net">InterfaceAudience.Public</a></th>
+<td class="colLast">
+<div class="block">Intended for use by any project or application.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceStability.Evolving.html#org.apache.bookkeeper.common.net">InterfaceStability.Evolving</a></th>
+<td class="colLast">
+<div class="block">Evolving, but can break compatibility at minor release (i.e.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a id="org.apache.bookkeeper.conf">
 <!--   -->
 </a>
@@ -263,6 +368,94 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">
 <div class="block">Can evolve while retaining compatibility for minor release boundaries.;
  can break compatibility only at major release (ie.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.discover">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../../discover/package-summary.html">org.apache.bookkeeper.discover</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.LimitedPrivate.html#org.apache.bookkeeper.discover">InterfaceAudience.LimitedPrivate</a></th>
+<td class="colLast">
+<div class="block">Intended for use only within the project(s) specified in the annotation.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceStability.Evolving.html#org.apache.bookkeeper.discover">InterfaceStability.Evolving</a></th>
+<td class="colLast">
+<div class="block">Evolving, but can break compatibility at minor release (i.e.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.LimitedPrivate.html#org.apache.bookkeeper.meta">InterfaceAudience.LimitedPrivate</a></th>
+<td class="colLast">
+<div class="block">Intended for use only within the project(s) specified in the annotation.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceStability.Evolving.html#org.apache.bookkeeper.meta">InterfaceStability.Evolving</a></th>
+<td class="colLast">
+<div class="block">Evolving, but can break compatibility at minor release (i.e.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.server.component">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceStability.Evolving.html#org.apache.bookkeeper.server.component">InterfaceStability.Evolving</a></th>
+<td class="colLast">
+<div class="block">Evolving, but can break compatibility at minor release (i.e.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.tools.common">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.common.annotation</a> used by <a href="../../tools/common/package-summary.html">org.apache.bookkeeper.tools.common</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/InterfaceAudience.Private.html#org.apache.bookkeeper.tools.common">InterfaceAudience.Private</a></th>
+<td class="colLast">
+<div class="block">Intended for use only within bookkeeper itself.</div>
 </td>
 </tr>
 </tbody>
@@ -316,7 +509,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -224,18 +224,18 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater)">MetadataUpdateLoop</a></span>&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater)">MetadataUpdateLoop</a></span>&#8203;(<a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                   long&nbsp;ledgerId,
-                  java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                  java.util.function.Supplier&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                   <a href="MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                   <a href="MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                   <a href="MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater,com.google.common.util.concurrent.RateLimiter)">MetadataUpdateLoop</a></span>&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater,com.google.common.util.concurrent.RateLimiter)">MetadataUpdateLoop</a></span>&#8203;(<a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                   long&nbsp;ledgerId,
-                  java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                  java.util.function.Supplier&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                   <a href="MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                   <a href="MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                   <a href="MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue,
@@ -263,7 +263,7 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#run()">run</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -316,9 +316,9 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>MetadataUpdateLoop</h4>
-<pre>MetadataUpdateLoop&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<pre>MetadataUpdateLoop&#8203;(<a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                    long&nbsp;ledgerId,
-                   java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                   java.util.function.Supplier&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                    <a href="MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                    <a href="MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                    <a href="MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue)</pre>
@@ -330,9 +330,9 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>MetadataUpdateLoop</h4>
-<pre>MetadataUpdateLoop&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<pre>MetadataUpdateLoop&#8203;(<a href="../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                    long&nbsp;ledgerId,
-                   java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                   java.util.function.Supplier&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                    <a href="MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                    <a href="MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                    <a href="MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue,
@@ -369,7 +369,7 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>run</h4>
-<pre class="methodSignature">java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;run()</pre>
+<pre class="methodSignature">java.util.concurrent.CompletableFuture&lt;<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;run()</pre>
 </li>
 </ul>
 </li>
@@ -441,7 +441,7 @@ extends java.lang.Object</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

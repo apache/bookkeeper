@@ -124,10 +124,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
-<li><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest</a></li>
+<li><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.ReadOpBase.LedgerEntryRequest</a></li>
+<li>
+<ul class="inheritance">
+<li><a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.PendingReadOp.ParallelReadRequest</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -138,7 +143,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.AutoCloseable</code>, <code><a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a></code></dd>
+<dd><code><a href="SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a></code></dd>
 </dl>
 <dl>
 <dt>Enclosing class:</dt>
@@ -146,7 +151,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">PendingReadOp.ParallelReadRequest</span>
-extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></pre>
+extends <a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a></pre>
 </li>
 </ul>
 </div>
@@ -174,11 +179,18 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest">
+<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest">
 <!--   -->
 </a>
-<h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></h3>
-<code><a href="PendingReadOp.LedgerEntryRequest.html#complete">complete</a>, <a href="PendingReadOp.LedgerEntryRequest.html#eId">eId</a>, <a href="PendingReadOp.LedgerEntryRequest.html#ensemble">ensemble</a>, <a href="PendingReadOp.LedgerEntryRequest.html#entryImpl">entryImpl</a>, <a href="PendingReadOp.LedgerEntryRequest.html#firstError">firstError</a>, <a href="PendingReadOp.LedgerEntryRequest.html#numBookiesMissingEntry">numBookiesMissingEntry</a>, <a href="PendingReadOp.LedgerEntryRequest.html#rc">rc</a>, <a href="PendingReadOp.LedgerEntryRequest.html#writeSet">writeSet</a></code></li>
+<h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a></h3>
+<code><a href="PendingReadOp.SingleLedgerEntryRequest.html#entryImpl">entryImpl</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase.LedgerEntryRequest">
+<!--   -->
+</a>
+<h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a></h3>
+<code><a href="ReadOpBase.LedgerEntryRequest.html#complete">complete</a>, <a href="ReadOpBase.LedgerEntryRequest.html#eId">eId</a>, <a href="ReadOpBase.LedgerEntryRequest.html#ensemble">ensemble</a>, <a href="ReadOpBase.LedgerEntryRequest.html#firstError">firstError</a>, <a href="ReadOpBase.LedgerEntryRequest.html#numBookiesMissingEntry">numBookiesMissingEntry</a>, <a href="ReadOpBase.LedgerEntryRequest.html#rc">rc</a>, <a href="ReadOpBase.LedgerEntryRequest.html#writeSet">writeSet</a></code></li>
 </ul>
 </li>
 </ul>
@@ -197,7 +209,7 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ParallelReadRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ParallelReadRequest</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                    long&nbsp;lId,
                    long&nbsp;eId)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -223,7 +235,7 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">logErrorAndReattemptRead</a></span>&#8203;(int&nbsp;bookieIndex,
-                        org.apache.bookkeeper.net.BookieId&nbsp;host,
+                        <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                         java.lang.String&nbsp;errMsg,
                         int&nbsp;rc)</code></th>
 <td class="colLast">
@@ -231,7 +243,7 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.net.BookieId</code></td>
+<td class="colFirst"><code>(package private) <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maybeSendSpeculativeRead(java.util.BitSet)">maybeSendSpeculativeRead</a></span>&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</code></th>
 <td class="colLast">
 <div class="block">Send to next replica speculatively, if required and possible.</div>
@@ -246,11 +258,18 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></h3>
-<code><a href="PendingReadOp.LedgerEntryRequest.html#close()">close</a>, <a href="PendingReadOp.LedgerEntryRequest.html#complete(int,org.apache.bookkeeper.net.BookieId,io.netty.buffer.ByteBuf)">complete</a>, <a href="PendingReadOp.LedgerEntryRequest.html#fail(int)">fail</a>, <a href="PendingReadOp.LedgerEntryRequest.html#getRc()">getRc</a>, <a href="PendingReadOp.LedgerEntryRequest.html#isComplete()">isComplete</a>, <a href="PendingReadOp.LedgerEntryRequest.html#issueSpeculativeRequest()">issueSpeculativeRequest</a>, <a href="PendingReadOp.LedgerEntryRequest.html#toString()">toString</a></code></li>
+<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a></h3>
+<code><a href="PendingReadOp.SingleLedgerEntryRequest.html#close()">close</a>, <a href="PendingReadOp.SingleLedgerEntryRequest.html#complete(int,org.apache.bookkeeper.net.BookieId,io.netty.buffer.ByteBuf)">complete</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase.LedgerEntryRequest">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a></h3>
+<code><a href="ReadOpBase.LedgerEntryRequest.html#fail(int)">fail</a>, <a href="ReadOpBase.LedgerEntryRequest.html#getRc()">getRc</a>, <a href="ReadOpBase.LedgerEntryRequest.html#isComplete()">isComplete</a>, <a href="ReadOpBase.LedgerEntryRequest.html#issueSpeculativeRequest()">issueSpeculativeRequest</a>, <a href="ReadOpBase.LedgerEntryRequest.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -300,7 +319,7 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ParallelReadRequest</h4>
-<pre>ParallelReadRequest&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre>ParallelReadRequest&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                     long&nbsp;lId,
                     long&nbsp;eId)</pre>
 </li>
@@ -322,11 +341,11 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <li class="blockList">
 <h4>read</h4>
 <pre class="methodSignature">void&nbsp;read()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html#read()">PendingReadOp.LedgerEntryRequest</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html#read()">ReadOpBase.LedgerEntryRequest</a></code></span></div>
 <div class="block">Execute the read request.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="PendingReadOp.LedgerEntryRequest.html#read()">read</a></code>&nbsp;in class&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></code></dd>
+<dd><code><a href="ReadOpBase.LedgerEntryRequest.html#read()">read</a></code>&nbsp;in class&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -337,14 +356,14 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <li class="blockList">
 <h4>logErrorAndReattemptRead</h4>
 <pre class="methodSignature">void&nbsp;logErrorAndReattemptRead&#8203;(int&nbsp;bookieIndex,
-                              org.apache.bookkeeper.net.BookieId&nbsp;host,
+                              <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                               java.lang.String&nbsp;errMsg,
                               int&nbsp;rc)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">PendingReadOp.LedgerEntryRequest</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">ReadOpBase.LedgerEntryRequest</a></code></span></div>
 <div class="block">Log error <i>errMsg</i> and reattempt read from <i>host</i>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="PendingReadOp.LedgerEntryRequest.html#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">logErrorAndReattemptRead</a></code>&nbsp;in class&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></code></dd>
+<dd><code><a href="ReadOpBase.LedgerEntryRequest.html#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">logErrorAndReattemptRead</a></code>&nbsp;in class&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>bookieIndex</code> - bookie index</dd>
 <dd><code>host</code> - host that just respond</dd>
@@ -359,13 +378,13 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 <ul class="blockListLast">
 <li class="blockList">
 <h4>maybeSendSpeculativeRead</h4>
-<pre class="methodSignature">org.apache.bookkeeper.net.BookieId&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html#maybeSendSpeculativeRead(java.util.BitSet)">PendingReadOp.LedgerEntryRequest</a></code></span></div>
+<pre class="methodSignature"><a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html#maybeSendSpeculativeRead(java.util.BitSet)">ReadOpBase.LedgerEntryRequest</a></code></span></div>
 <div class="block">Send to next replica speculatively, if required and possible.
  This returns the host we may have sent to for unit testing.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="PendingReadOp.LedgerEntryRequest.html#maybeSendSpeculativeRead(java.util.BitSet)">maybeSendSpeculativeRead</a></code>&nbsp;in class&nbsp;<code><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></code></dd>
+<dd><code><a href="ReadOpBase.LedgerEntryRequest.html#maybeSendSpeculativeRead(java.util.BitSet)">maybeSendSpeculativeRead</a></code>&nbsp;in class&nbsp;<code><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>heardFromHostsBitSet</code> - the set of hosts that we already received responses.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -442,7 +461,7 @@ extends <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apac
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

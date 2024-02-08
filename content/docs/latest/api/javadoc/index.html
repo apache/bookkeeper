@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":1,"i1":2,"i2":16,"i3":1,"i4":1,"i5":1,"i6":4,"i7":16,"i8":8,"i9":16,"i10":8};
+var data = {"i0":16,"i1":16,"i2":16,"i3":16,"i4":16,"i5":16,"i6":16,"i7":16,"i8":16,"i9":16,"i10":16,"i11":16,"i12":16,"i13":1,"i14":2,"i15":16,"i16":16,"i17":16,"i18":16,"i19":1,"i20":16,"i21":16,"i22":16,"i23":16,"i24":16,"i25":16,"i26":16,"i27":16,"i28":16,"i29":16,"i30":16,"i31":1,"i32":16,"i33":1,"i34":16,"i35":16,"i36":16,"i37":16,"i38":16,"i39":16,"i40":16,"i41":16,"i42":16,"i43":16,"i44":16,"i45":16,"i46":16,"i47":16,"i48":16,"i49":16,"i50":16,"i51":16,"i52":16,"i53":4,"i54":16,"i55":8,"i56":16,"i57":8,"i58":16,"i59":16,"i60":16,"i61":16,"i62":16,"i63":16,"i64":16,"i65":16,"i66":16,"i67":16,"i68":16,"i69":16,"i70":16,"i71":16,"i72":16,"i73":16,"i74":16,"i75":16,"i76":16,"i77":16};
 var tabs = {65535:["t0","All Packages"],1:["t1","Bookkeeper Client"],2:["t2","Bookkeeper Client (New Fluent API - Experimental)"],4:["t4","Bookkeeper Stats API"],8:["t8","Bookkeeper Stats Providers"],16:["t16","Other Packages"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -111,70 +111,465 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor" id="i0">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/package-summary.html">com.scurrilous.circe</a></th>
+<td class="colLast">
+<div class="block">Provides interfaces and minimal support classes for providing and consuming
+ various forms of hash functions.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i1">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/checksum/package-summary.html">com.scurrilous.circe.checksum</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor" id="i2">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/crc/package-summary.html">com.scurrilous.circe.crc</a></th>
+<td class="colLast">
+<div class="block">Provides various implementations of <a href="http://en.wikipedia.org/wiki/Cyclic_redundancy_check">cyclic redundancy
+ check</a> (CRC) error-detecting codes.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i3">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/impl/package-summary.html">com.scurrilous.circe.impl</a></th>
+<td class="colLast">
+<div class="block">Provides support for implementing new <a href="com/scurrilous/circe/HashProvider.html" title="interface in com.scurrilous.circe">hash providers</a> in the form of abstract
+ base classes and utility classes.</div>
+</td>
+</tr>
+<tr class="altColor" id="i4">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/params/package-summary.html">com.scurrilous.circe.params</a></th>
+<td class="colLast">
+<div class="block">Defines <a href="com/scurrilous/circe/HashParameters.html" title="interface in com.scurrilous.circe">hash parameters</a>
+ classes that describe various commonly-used hash functions.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i5">
+<th class="colFirst" scope="row"><a href="com/scurrilous/circe/utils/package-summary.html">com.scurrilous.circe.utils</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor" id="i6">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/auth/package-summary.html">org.apache.bookkeeper.auth</a></th>
+<td class="colLast">
+<div class="block">Classes used to handle authentication in bookies and clients.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i7">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/package-summary.html">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="altColor" id="i8">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i9">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor" id="i10">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/storage/package-summary.html">org.apache.bookkeeper.bookie.storage</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i11">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a></th>
+<td class="colLast">
+<div class="block">Support for bookie entry logs using Direct IO.</div>
+</td>
+</tr>
+<tr class="altColor" id="i12">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a></th>
+<td class="colLast">
+<div class="block">Classes related to DB based ledger storage.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i13">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i1">
+<tr class="altColor" id="i14">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
-<tr class="altColor" id="i2">
+<tr class="rowColor" id="i15">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client implementation package.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i3">
+<tr class="altColor" id="i16">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/package-summary.html">org.apache.bookkeeper.common</a></th>
+<td class="colLast">
+<div class="block">Common functions and utils used across the project.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i17">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/allocator/package-summary.html">org.apache.bookkeeper.common.allocator</a></th>
+<td class="colLast">
+<div class="block">defines the utilities for allocator used across the project.</div>
+</td>
+</tr>
+<tr class="altColor" id="i18">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/allocator/impl/package-summary.html">org.apache.bookkeeper.common.allocator.impl</a></th>
+<td class="colLast">
+<div class="block">Implements the utilities for allocator used across the project.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i19">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/annotation/package-summary.html">org.apache.bookkeeper.common.annotation</a></th>
 <td class="colLast">
 <div class="block">Annotations used across the whole project.</div>
 </td>
 </tr>
-<tr class="altColor" id="i4">
+<tr class="altColor" id="i20">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/collections/package-summary.html">org.apache.bookkeeper.common.collections</a></th>
+<td class="colLast">
+<div class="block">Bookkeeper common collections.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i21">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/component/package-summary.html">org.apache.bookkeeper.common.component</a></th>
+<td class="colLast">
+<div class="block">Component and lifecycle management.</div>
+</td>
+</tr>
+<tr class="altColor" id="i22">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/concurrent/package-summary.html">org.apache.bookkeeper.common.concurrent</a></th>
+<td class="colLast">
+<div class="block">Utility classes commonly useful in concurrent programming.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i23">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/conf/package-summary.html">org.apache.bookkeeper.common.conf</a></th>
+<td class="colLast">
+<div class="block">Configuration related utilities.</div>
+</td>
+</tr>
+<tr class="altColor" id="i24">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/conf/validators/package-summary.html">org.apache.bookkeeper.common.conf.validators</a></th>
+<td class="colLast">
+<div class="block">A collection of validators that validate configuration settings.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i25">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/net/package-summary.html">org.apache.bookkeeper.common.net</a></th>
+<td class="colLast">
+<div class="block">Classes for resolving service uris in bookkeeper.</div>
+</td>
+</tr>
+<tr class="altColor" id="i26">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a></th>
+<td class="colLast">
+<div class="block">Stats Related Utils.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i27">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/util/package-summary.html">org.apache.bookkeeper.common.util</a></th>
+<td class="colLast">
+<div class="block">Util functions used across the project.</div>
+</td>
+</tr>
+<tr class="altColor" id="i28">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/util/affinity/package-summary.html">org.apache.bookkeeper.common.util.affinity</a></th>
+<td class="colLast">
+<div class="block">Util functions for CPU affinity.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i29">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/util/affinity/impl/package-summary.html">org.apache.bookkeeper.common.util.affinity.impl</a></th>
+<td class="colLast">
+<div class="block">Implementation of util functions for CPU affinity.</div>
+</td>
+</tr>
+<tr class="altColor" id="i30">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/common/util/nativeio/package-summary.html">org.apache.bookkeeper.common.util.nativeio</a></th>
+<td class="colLast">
+<div class="block">Utiltiies to access I/O using JNI.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i31">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/conf/package-summary.html">org.apache.bookkeeper.conf</a></th>
 <td class="colLast">
 <div class="block">Configurations used by bookkeeper.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i5">
+<tr class="altColor" id="i32">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/discover/package-summary.html">org.apache.bookkeeper.discover</a></th>
+<td class="colLast">
+<div class="block">Classes related to service discovery.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i33">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/feature/package-summary.html">org.apache.bookkeeper.feature</a></th>
 <td class="colLast">
 <div class="block">A <a href="https://en.wikipedia.org/wiki/Feature_toggle">feature-flag</a> system
  that is used to proportionally control what features are enabled for the system.</div>
 </td>
 </tr>
-<tr class="altColor" id="i6">
+<tr class="altColor" id="i34">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/meta/package-summary.html">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i35">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/meta/exceptions/package-summary.html">org.apache.bookkeeper.meta.exceptions</a></th>
+<td class="colLast">
+<div class="block">Exceptions for metadata service.</div>
+</td>
+</tr>
+<tr class="altColor" id="i36">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a></th>
+<td class="colLast">
+<div class="block">ZooKeeper based metadata implementation.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i37">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/metastore/package-summary.html">org.apache.bookkeeper.metastore</a></th>
+<td class="colLast">
+<div class="block">MetaStore-related classes.</div>
+</td>
+</tr>
+<tr class="altColor" id="i38">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/net/package-summary.html">org.apache.bookkeeper.net</a></th>
+<td class="colLast">
+<div class="block">Network-related classes.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i39">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/processor/package-summary.html">org.apache.bookkeeper.processor</a></th>
+<td class="colLast">
+<div class="block">Define the processors used by bookie from processing requests.</div>
+</td>
+</tr>
+<tr class="altColor" id="i40">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/proto/package-summary.html">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i41">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/proto/checksum/package-summary.html">org.apache.bookkeeper.proto.checksum</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper checksum.</div>
+</td>
+</tr>
+<tr class="altColor" id="i42">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/replication/package-summary.html">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i43">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/sasl/package-summary.html">org.apache.bookkeeper.sasl</a></th>
+<td class="colLast">
+<div class="block">SASL and JAAS Authentication classes.</div>
+</td>
+</tr>
+<tr class="altColor" id="i44">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/package-summary.html">org.apache.bookkeeper.server</a></th>
+<td class="colLast">
+<div class="block">BookKeeper Server (Bookie) related components.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i45">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/component/package-summary.html">org.apache.bookkeeper.server.component</a></th>
+<td class="colLast">
+<div class="block">The lifecycle components that run on a bookie server.</div>
+</td>
+</tr>
+<tr class="altColor" id="i46">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/conf/package-summary.html">org.apache.bookkeeper.server.conf</a></th>
+<td class="colLast">
+<div class="block">Server component related configuration.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i47">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/http/package-summary.html">org.apache.bookkeeper.server.http</a></th>
+<td class="colLast">
+<div class="block">Package for bookkeeper http service.</div>
+</td>
+</tr>
+<tr class="altColor" id="i48">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a></th>
+<td class="colLast">
+<div class="block">Define the services running in bookkeeper admin http server.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i49">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/server/service/package-summary.html">org.apache.bookkeeper.server.service</a></th>
+<td class="colLast">
+<div class="block">Services running in a storage server (bookie).</div>
+</td>
+</tr>
+<tr class="altColor" id="i50">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/shims/zk/package-summary.html">org.apache.bookkeeper.shims.zk</a></th>
+<td class="colLast">
+<div class="block">A shim layer to adopt different zookeeper versions.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i51">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/slogger/package-summary.html">org.apache.bookkeeper.slogger</a></th>
+<td class="colLast">
+<div class="block">Structured logging.</div>
+</td>
+</tr>
+<tr class="altColor" id="i52">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/slogger/slf4j/package-summary.html">org.apache.bookkeeper.slogger.slf4j</a></th>
+<td class="colLast">
+<div class="block">Structured logging (slf4j implementation).</div>
+</td>
+</tr>
+<tr class="rowColor" id="i53">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></th>
 <td class="colLast">
 <div class="block">A lightweight stats library used for exporting bookkeeper stats.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i7">
+<tr class="altColor" id="i54">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/stats/annotations/package-summary.html">org.apache.bookkeeper.stats.annotations</a></th>
 <td class="colLast">
 <div class="block">Annotations for bookkeeper stats api.</div>
 </td>
 </tr>
-<tr class="altColor" id="i8">
+<tr class="rowColor" id="i55">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/stats/codahale/package-summary.html">org.apache.bookkeeper.stats.codahale</a></th>
 <td class="colLast">
 <div class="block">A lightweight stats library implemention based on <i>Codahale</i> metrics library.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i9">
+<tr class="altColor" id="i56">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/stats/otel/package-summary.html">org.apache.bookkeeper.stats.otel</a></th>
 <td class="colLast">
 <div class="block">A stats provider implementation based on OpenTelemetry.</div>
 </td>
 </tr>
-<tr class="altColor" id="i10">
+<tr class="rowColor" id="i57">
 <th class="colFirst" scope="row"><a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></th>
 <td class="colLast">
 <div class="block">A stats provider implementation based on {@link https://prometheus.io/}.</div>
+</td>
+</tr>
+<tr class="altColor" id="i58">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/streaming/package-summary.html">org.apache.bookkeeper.streaming</a></th>
+<td class="colLast">
+<div class="block">A java io stream wrapper over bookkeeper ledgers.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i59">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tls/package-summary.html">org.apache.bookkeeper.tls</a></th>
+<td class="colLast">
+<div class="block">Security and TLS-related classes.</div>
+</td>
+</tr>
+<tr class="altColor" id="i60">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/package-summary.html">org.apache.bookkeeper.tools.cli</a></th>
+<td class="colLast">
+<div class="block">BookKeeper CLI that interacts with bookkeeper cluster.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i61">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/package-summary.html">org.apache.bookkeeper.tools.cli.commands</a></th>
+<td class="colLast">
+<div class="block">This package provides all the actual commands in bookie shell.</div>
+</td>
+</tr>
+<tr class="altColor" id="i62">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/autorecovery/package-summary.html">org.apache.bookkeeper.tools.cli.commands.autorecovery</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor" id="i63">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/bookie/package-summary.html">org.apache.bookkeeper.tools.cli.commands.bookie</a></th>
+<td class="colLast">
+<div class="block">Commands to operate a single bookie.</div>
+</td>
+</tr>
+<tr class="altColor" id="i64">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/bookies/package-summary.html">org.apache.bookkeeper.tools.cli.commands.bookies</a></th>
+<td class="colLast">
+<div class="block">Commands on operating a cluster of bookies.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i65">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/client/package-summary.html">org.apache.bookkeeper.tools.cli.commands.client</a></th>
+<td class="colLast">
+<div class="block">This package contains all client related commands.</div>
+</td>
+</tr>
+<tr class="altColor" id="i66">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/cookie/package-summary.html">org.apache.bookkeeper.tools.cli.commands.cookie</a></th>
+<td class="colLast">
+<div class="block">Cookie related cli commands.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i67">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/commands/health/package-summary.html">org.apache.bookkeeper.tools.cli.commands.health</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor" id="i68">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/cli/helpers/package-summary.html">org.apache.bookkeeper.tools.cli.helpers</a></th>
+<td class="colLast">
+<div class="block">This classes provides some helper mixins for easily to add commands
+ to bookie shell.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i69">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/common/package-summary.html">org.apache.bookkeeper.tools.common</a></th>
+<td class="colLast">
+<div class="block">Common classes used across multiple tools.</div>
+</td>
+</tr>
+<tr class="altColor" id="i70">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/tools/framework/package-summary.html">org.apache.bookkeeper.tools.framework</a></th>
+<td class="colLast">
+<div class="block">BookKeeper Tool Framework.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i71">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/util/package-summary.html">org.apache.bookkeeper.util</a></th>
+<td class="colLast">
+<div class="block">Bookkeeper utilities.</div>
+</td>
+</tr>
+<tr class="altColor" id="i72">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/util/collections/package-summary.html">org.apache.bookkeeper.util.collections</a></th>
+<td class="colLast">
+<div class="block">Bookkeeper collection utilities.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i73">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/util/nativeio/package-summary.html">org.apache.bookkeeper.util.nativeio</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor" id="i74">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/utils/affinity/package-summary.html">org.apache.bookkeeper.utils.affinity</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor" id="i75">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/verifier/package-summary.html">org.apache.bookkeeper.verifier</a></th>
+<td class="colLast">
+<div class="block">Simple self-verifying workload generator.</div>
+</td>
+</tr>
+<tr class="altColor" id="i76">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/versioning/package-summary.html">org.apache.bookkeeper.versioning</a></th>
+<td class="colLast">
+<div class="block">a versioning library provides an abstraction over versioned data.</div>
+</td>
+</tr>
+<tr class="rowColor" id="i77">
+<th class="colFirst" scope="row"><a href="org/apache/bookkeeper/zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a></th>
+<td class="colLast">
+<div class="block">A simple retryable zookeeper wrapper provided in bookkeeper.</div>
 </td>
 </tr>
 </tbody>
@@ -226,7 +621,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

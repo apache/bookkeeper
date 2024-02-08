@@ -395,7 +395,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>protected static org.apache.bookkeeper.common.conf.ConfigKey</code></td>
+<td class="colFirst"><code>protected static <a href="../common/conf/ConfigKey.html" title="class in org.apache.bookkeeper.common.conf">ConfigKey</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ENTRY_LOG_SIZE_LIMIT_KEY">ENTRY_LOG_SIZE_LIMIT_KEY</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -645,7 +645,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>protected static org.apache.bookkeeper.common.conf.ConfigKey</code></td>
+<td class="colFirst"><code>protected static <a href="../common/conf/ConfigKey.html" title="class in org.apache.bookkeeper.common.conf">ConfigKey</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#LEDGER_STORAGE_CLASS_KEY">LEDGER_STORAGE_CLASS_KEY</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1866,7 +1866,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 </td>
 </tr>
 <tr id="i116" class="altColor">
-<td class="colFirst"><code>java.lang.Class&lt;? extends org.apache.bookkeeper.discover.RegistrationManager&gt;</code></td>
+<td class="colFirst"><code>java.lang.Class&lt;? extends <a href="../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRegistrationManagerClass()">getRegistrationManagerClass</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>
@@ -2856,7 +2856,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <td class="colFirst"><code><a href="ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLedgerStorageClass(java.lang.String)">setLedgerStorageClass</a></span>&#8203;(java.lang.String&nbsp;ledgerStorageClass)</code></th>
 <td class="colLast">
-<div class="block">Set the <code>LedgerStorage</code> implementation class name.</div>
+<div class="block">Set the <a href="../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie"><code>LedgerStorage</code></a> implementation class name.</div>
 </td>
 </tr>
 <tr id="i257" class="rowColor">
@@ -3158,7 +3158,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 </tr>
 <tr id="i299" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setRegistrationManagerClass(java.lang.Class)">setRegistrationManagerClass</a></span>&#8203;(java.lang.Class&lt;? extends org.apache.bookkeeper.discover.RegistrationManager&gt;&nbsp;regManagerClass)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setRegistrationManagerClass(java.lang.Class)">setRegistrationManagerClass</a></span>&#8203;(java.lang.Class&lt;? extends <a href="../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&gt;&nbsp;regManagerClass)</code></th>
 <td class="colLast">
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>
 <div class="deprecationComment">since 4.7.0, in favor of using <a href="AbstractConfiguration.html#setMetadataServiceUri(java.lang.String)"><code>AbstractConfiguration.setMetadataServiceUri(String)</code></a></div>
@@ -3491,7 +3491,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <ul class="blockList">
 <li class="blockList">
 <h4>LEDGER_STORAGE_CLASS_KEY</h4>
-<pre>protected static final&nbsp;org.apache.bookkeeper.common.conf.ConfigKey LEDGER_STORAGE_CLASS_KEY</pre>
+<pre>protected static final&nbsp;<a href="../common/conf/ConfigKey.html" title="class in org.apache.bookkeeper.common.conf">ConfigKey</a> LEDGER_STORAGE_CLASS_KEY</pre>
 </li>
 </ul>
 <a id="ENTRY_LOG_SIZE_LIMIT">
@@ -3513,7 +3513,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <ul class="blockList">
 <li class="blockList">
 <h4>ENTRY_LOG_SIZE_LIMIT_KEY</h4>
-<pre>protected static final&nbsp;org.apache.bookkeeper.common.conf.ConfigKey ENTRY_LOG_SIZE_LIMIT_KEY</pre>
+<pre>protected static final&nbsp;<a href="../common/conf/ConfigKey.html" title="class in org.apache.bookkeeper.common.conf">ConfigKey</a> ENTRY_LOG_SIZE_LIMIT_KEY</pre>
 </li>
 </ul>
 <a id="ENTRY_LOG_FILE_PREALLOCATION_ENABLED">
@@ -6523,7 +6523,7 @@ extends <a href="AbstractConfiguration.html" title="class in org.apache.bookkeep
 <div class="block">Set JournalChannelProvider classname.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>journalChannelProvider</code> - The JournalChannelProvider classname. The class must implements <code>FileChannelProvider</code> and
+<dd><code>journalChannelProvider</code> - The JournalChannelProvider classname. The class must implements <a href="../bookie/FileChannelProvider.html" title="interface in org.apache.bookkeeper.bookie"><code>FileChannelProvider</code></a> and
           no args constructor is needed.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 </dl>
@@ -9291,7 +9291,7 @@ public&nbsp;boolean&nbsp;getJournalRemovePagesFromCache()</pre>
 <li class="blockList">
 <h4>setLedgerStorageClass</h4>
 <pre class="methodSignature">public&nbsp;<a href="ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;setLedgerStorageClass&#8203;(java.lang.String&nbsp;ledgerStorageClass)</pre>
-<div class="block">Set the <code>LedgerStorage</code> implementation class name.</div>
+<div class="block">Set the <a href="../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie"><code>LedgerStorage</code></a> implementation class name.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ledgerStorageClass</code> - the class name</dd>
@@ -10370,7 +10370,7 @@ public&nbsp;boolean&nbsp;getJournalRemovePagesFromCache()</pre>
 <li class="blockList">
 <h4>setRegistrationManagerClass</h4>
 <pre class="methodSignature">@Deprecated
-public&nbsp;void&nbsp;setRegistrationManagerClass&#8203;(java.lang.Class&lt;? extends org.apache.bookkeeper.discover.RegistrationManager&gt;&nbsp;regManagerClass)</pre>
+public&nbsp;void&nbsp;setRegistrationManagerClass&#8203;(java.lang.Class&lt;? extends <a href="../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&gt;&nbsp;regManagerClass)</pre>
 <div class="deprecationBlock"><span class="deprecatedLabel">Deprecated.</span>
 <div class="deprecationComment">since 4.7.0, in favor of using <a href="AbstractConfiguration.html#setMetadataServiceUri(java.lang.String)"><code>AbstractConfiguration.setMetadataServiceUri(String)</code></a></div>
 </div>
@@ -10388,8 +10388,8 @@ public&nbsp;void&nbsp;setRegistrationManagerClass&#8203;(java.lang.Class&lt;? ex
 <li class="blockList">
 <h4>getRegistrationManagerClass</h4>
 <pre class="methodSignature">@Deprecated
-public&nbsp;java.lang.Class&lt;? extends org.apache.bookkeeper.discover.RegistrationManager&gt;&nbsp;getRegistrationManagerClass()
-                                                                                                          throws org.apache.commons.configuration.ConfigurationException</pre>
+public&nbsp;java.lang.Class&lt;? extends <a href="../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&gt;&nbsp;getRegistrationManagerClass()
+                                                                           throws org.apache.commons.configuration.ConfigurationException</pre>
 <div class="deprecationBlock"><span class="deprecatedLabel">Deprecated.</span>
 <div class="deprecationComment">since 4.7.0, in favor of using <a href="AbstractConfiguration.html#getMetadataServiceUri()"><code>AbstractConfiguration.getMetadataServiceUri()</code></a></div>
 </div>
@@ -10861,7 +10861,7 @@ public&nbsp;java.lang.Class&lt;? extends org.apache.bookkeeper.discover.Registra
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

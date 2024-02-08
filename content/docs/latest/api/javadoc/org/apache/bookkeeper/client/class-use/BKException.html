@@ -112,6 +112,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.http">org.apache.bookkeeper.server.http</a></th>
+<td class="colLast">
+<div class="block">Package for bookkeeper http service.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.streaming">org.apache.bookkeeper.streaming</a></th>
+<td class="colLast">
+<div class="block">A java io stream wrapper over bookkeeper ledgers.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.commands.autorecovery">org.apache.bookkeeper.tools.cli.commands.autorecovery</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -489,6 +511,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#batchReadEntries(long,int,long)">batchReadEntries</a></span>&#8203;(long&nbsp;startEntry,
+                int&nbsp;maxCount,
+                long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#batchReadUnconfirmedEntries(long,int,long)">batchReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
+                           int&nbsp;maxCount,
+                           long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+ This is the same of
+ <code>#asyncBatchReadUnconfirmedEntries(long, int, long, boolean, ReadCallback, Object)</code></div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.Builder.</span><code><span class="memberNameLink"><a href="../BookKeeper.Builder.html#build()">build</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -598,7 +640,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#decommissionBookie(org.apache.bookkeeper.net.BookieId)">decommissionBookie</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookieAddress)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#decommissionBookie(org.apache.bookkeeper.net.BookieId)">decommissionBookie</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieAddress)</code></th>
 <td class="colLast">
 <div class="block">Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
  sure the ledgers stored in the given decommissioning bookie are properly
@@ -613,73 +655,73 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../BookieWatcher.html#getAllBookies()">getAllBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../BookieWatcherImpl.html#getAllBookies()">getAllBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getAllBookies()">getAllBookies</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get a list of all bookies including the not available ones.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getAvailableBookies()">getAvailableBookies</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get a list of the available bookies.</div>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieInfoReader.</span><code><span class="memberNameLink"><a href="../BookieInfoReader.html#getBookieInfo()">getBookieInfo</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#getBookieInfo()">getBookieInfo</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Retrieves BookieInfo from all the bookies in the cluster.</div>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../BookieWatcher.html#getBookies()">getBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../BookieWatcherImpl.html#getBookies()">getBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>org.apache.bookkeeper.discover.BookieServiceInfo</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getBookieServiceInfo(org.apache.bookkeeper.net.BookieId)">getBookieServiceInfo</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookiedId)</code></th>
+<td class="colFirst"><code><a href="../../discover/BookieServiceInfo.html" title="class in org.apache.bookkeeper.discover">BookieServiceInfo</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getBookieServiceInfo(org.apache.bookkeeper.net.BookieId)">getBookieServiceInfo</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookiedId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>java.util.SortedMap&lt;java.lang.Long,&#8203;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getLedgersContainBookies(java.util.Set)">getLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookies)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getLedgersContainBookies(java.util.Set)">getLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookies)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../BookieWatcher.html#getReadOnlyBookies()">getReadOnlyBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieWatcherImpl.</span><code><span class="memberNameLink"><a href="../BookieWatcherImpl.html#getReadOnlyBookies()">getReadOnlyBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>java.util.Collection&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Collection&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#getReadOnlyBookies()">getReadOnlyBookies</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get a list of readonly bookies synchronously.</div>
@@ -779,26 +821,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(long,java.util.Set,boolean,boolean)">recoverBookieData</a></span>&#8203;(long&nbsp;lid,
-                 java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookiesSrc,
+                 java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookiesSrc)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookiesSrc,
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookiesSrc,
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers,
                  boolean&nbsp;skipUnrecoverableLedgers)</code></th>
@@ -806,7 +848,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(org.apache.bookkeeper.net.BookieId)">recoverBookieData</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookieSrc)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(org.apache.bookkeeper.net.BookieId)">recoverBookieData</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieSrc)</code></th>
 <td class="colLast">
 <div class="block">Synchronous method to rebuild and recover the ledger fragments data that
  was stored on the source bookie.</div>
@@ -837,14 +879,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchReadOnlyBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchReadOnlyBookiesChanged</a></span>&#8203;(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchReadOnlyBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchReadOnlyBookiesChanged</a></span>&#8203;(<a href="../../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Notify when the available list of read only bookies changes.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchWritableBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchWritableBookiesChanged</a></span>&#8203;(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchWritableBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchWritableBookiesChanged</a></span>&#8203;(<a href="../../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Notify when the available list of bookies changes.</div>
 </td>
@@ -893,7 +935,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
           io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
-          org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+          <a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code></th>
 <td class="colLast">
@@ -920,6 +962,119 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../BookKeeperAdmin.LedgerEntriesIterator.html#%3Cinit%3E(long,long,long)">LedgerEntriesIterator</a></span>&#8203;(long&nbsp;ledgerId,
                      long&nbsp;firstEntry,
                      long&nbsp;lastEntry)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that throw <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorBookieCheckTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorBookieCheckTask.html#auditBookies()">auditBookies</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorCheckAllLedgersTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorCheckAllLedgersTask.html#checkAllLedgers()">checkAllLedgers</a></span>()</code></th>
+<td class="colLast">
+<div class="block">List all the ledgers and check them individually.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected java.util.List&lt;java.lang.String&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Auditor.</span><code><span class="memberNameLink"><a href="../../replication/Auditor.html#getAvailableBookies()">getAvailableBookies</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected java.util.List&lt;java.lang.String&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#getAvailableBookies()">getAvailableBookies</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.http">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a> in <a href="../../server/http/package-summary.html">org.apache.bookkeeper.server.http</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/http/package-summary.html">org.apache.bookkeeper.server.http</a> that throw <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../server/http/BKHttpServiceProvider.html" title="class in org.apache.bookkeeper.server.http">BKHttpServiceProvider</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BKHttpServiceProvider.Builder.</span><code><span class="memberNameLink"><a href="../../server/http/BKHttpServiceProvider.Builder.html#build()">build</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.streaming">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a> in <a href="../../streaming/package-summary.html">org.apache.bookkeeper.streaming</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../streaming/package-summary.html">org.apache.bookkeeper.streaming</a> that throw <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../streaming/LedgerInputStream.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle)">LedgerInputStream</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code></th>
+<td class="colLast">
+<div class="block">construct a outputstream from a ledger handle.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../streaming/LedgerInputStream.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,int)">LedgerInputStream</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                 int&nbsp;size)</code></th>
+<td class="colLast">
+<div class="block">construct a outputstream from a ledger handle.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tools.cli.commands.autorecovery">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a> in <a href="../../tools/cli/commands/autorecovery/package-summary.html">org.apache.bookkeeper.tools.cli.commands.autorecovery</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../tools/cli/commands/autorecovery/package-summary.html">org.apache.bookkeeper.tools.cli.commands.autorecovery</a> that throw <a href="../BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LostBookieRecoveryDelayCommand.</span><code><span class="memberNameLink"><a href="../../tools/cli/commands/autorecovery/LostBookieRecoveryDelayCommand.html#handler(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand.LBRDFlags)">handler</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../../tools/cli/commands/autorecovery/LostBookieRecoveryDelayCommand.LBRDFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.autorecovery">LostBookieRecoveryDelayCommand.LBRDFlags</a>&nbsp;flags)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -976,7 +1131,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

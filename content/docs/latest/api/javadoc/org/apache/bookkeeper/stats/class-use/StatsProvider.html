@@ -113,6 +113,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server">org.apache.bookkeeper.server</a></th>
+<td class="colLast">
+<div class="block">BookKeeper Server (Bookie) related components.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.http">org.apache.bookkeeper.server.http</a></th>
+<td class="colLast">
+<div class="block">Package for bookkeeper http service.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.http.service">org.apache.bookkeeper.server.http.service</a></th>
+<td class="colLast">
+<div class="block">Define the services running in bookkeeper admin http server.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.service">org.apache.bookkeeper.server.service</a></th>
+<td class="colLast">
+<div class="block">Services running in a storage server (bookie).</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.stats">org.apache.bookkeeper.stats</a></th>
 <td class="colLast">
 <div class="block">A lightweight stats library used for exporting bookkeeper stats.</div>
@@ -177,6 +201,123 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">
 <div class="block">Set the stats provider used by bookie.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a> in <a href="../../server/package-summary.html">org.apache.bookkeeper.server</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/package-summary.html">org.apache.bookkeeper.server</a> that return <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmbeddedServer.</span><code><span class="memberNameLink"><a href="../../server/EmbeddedServer.html#getStatsProvider()">getStatsProvider</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/package-summary.html">org.apache.bookkeeper.server</a> with parameters of type <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../server/EmbeddedServer.Builder.html" title="class in org.apache.bookkeeper.server">EmbeddedServer.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmbeddedServer.Builder.</span><code><span class="memberNameLink"><a href="../../server/EmbeddedServer.Builder.html#statsProvider(org.apache.bookkeeper.stats.StatsProvider)">statsProvider</a></span>&#8203;(<a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a>&nbsp;statsProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.http">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a> in <a href="../../server/http/package-summary.html">org.apache.bookkeeper.server.http</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../server/http/package-summary.html">org.apache.bookkeeper.server.http</a> declared as <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BKHttpServiceProvider.Builder.</span><code><span class="memberNameLink"><a href="../../server/http/BKHttpServiceProvider.Builder.html#statsProvider">statsProvider</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/http/package-summary.html">org.apache.bookkeeper.server.http</a> with parameters of type <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../server/http/BKHttpServiceProvider.Builder.html" title="class in org.apache.bookkeeper.server.http">BKHttpServiceProvider.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BKHttpServiceProvider.Builder.</span><code><span class="memberNameLink"><a href="../../server/http/BKHttpServiceProvider.Builder.html#setStatsProvider(org.apache.bookkeeper.stats.StatsProvider)">setStatsProvider</a></span>&#8203;(<a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a>&nbsp;statsProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.http.service">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a> in <a href="../../server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a> with parameters of type <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/MetricsService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsProvider)">MetricsService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+              <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a>&nbsp;statsProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.service">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a> in <a href="../../server/service/package-summary.html">org.apache.bookkeeper.server.service</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/service/package-summary.html">org.apache.bookkeeper.server.service</a> that return <a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">StatsProviderService.</span><code><span class="memberNameLink"><a href="../../server/service/StatsProviderService.html#getStatsProvider()">getStatsProvider</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -388,7 +529,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

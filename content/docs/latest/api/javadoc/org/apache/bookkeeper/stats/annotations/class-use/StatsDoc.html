@@ -107,6 +107,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.stats">org.apache.bookkeeper.bookie.stats</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.directentrylogger">org.apache.bookkeeper.bookie.storage.directentrylogger</a></th>
+<td class="colLast">
+<div class="block">Support for bookie entry logs using Direct IO.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.ldb">org.apache.bookkeeper.bookie.storage.ldb</a></th>
+<td class="colLast">
+<div class="block">Classes related to DB based ledger storage.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -118,11 +142,179 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client implementation package.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/BookieStateManager.html" title="class in org.apache.bookkeeper.bookie">BookieStateManager</a></span></code></th>
+<td class="colLast">
+<div class="block">An implementation of StateManager.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/EntryLogManagerForEntryLogPerLedger.EntryLogsPerLedgerCounter.html" title="class in org.apache.bookkeeper.bookie">EntryLogManagerForEntryLogPerLedger.EntryLogsPerLedgerCounter</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/InterleavedLedgerStorage.html" title="class in org.apache.bookkeeper.bookie">InterleavedLedgerStorage</a></span></code></th>
+<td class="colLast">
+<div class="block">Interleave ledger storage.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/BookieStats.html" title="class in org.apache.bookkeeper.bookie.stats">BookieStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for bookie related stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/EntryMemTableStats.html" title="class in org.apache.bookkeeper.bookie.stats">EntryMemTableStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for memtable related stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/GarbageCollectorStats.html" title="class in org.apache.bookkeeper.bookie.stats">GarbageCollectorStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for gc stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/IndexInMemPageMgrStats.html" title="class in org.apache.bookkeeper.bookie.stats">IndexInMemPageMgrStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for <a href="../../../bookie/IndexInMemPageMgr.html" title="class in org.apache.bookkeeper.bookie"><code>IndexInMemPageMgr</code></a> stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/IndexPersistenceMgrStats.html" title="class in org.apache.bookkeeper.bookie.stats">IndexPersistenceMgrStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for <a href="../../../bookie/IndexPersistenceMgr.html" title="class in org.apache.bookkeeper.bookie"><code>IndexPersistenceMgr</code></a> stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/stats/JournalStats.html" title="class in org.apache.bookkeeper.bookie.stats">JournalStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for journal related stats.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.directentrylogger">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/storage/directentrylogger/DirectEntryLoggerStats.html" title="class in org.apache.bookkeeper.bookie.storage.directentrylogger">DirectEntryLoggerStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.ldb">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/storage/ldb/DbLedgerStorageStats.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">DbLedgerStorageStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for db ledger storage stats with one instance per
+ ledger directory.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/storage/ldb/EntryLocationIndexStats.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">EntryLocationIndexStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for ledger metadata index stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/storage/ldb/LedgerMetadataIndexStats.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">LedgerMetadataIndexStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for ledger metadata index stats.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -237,6 +429,204 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a></span></code></th>
+<td class="colLast">
+<div class="block">This class manages all details of connection to a particular bookie.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html" title="class in org.apache.bookkeeper.proto">RequestStats</a></span></code></th>
+<td class="colLast">
+<div class="block">A umbrella class for request related stats.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#addEntryBlockedStats">addEntryBlockedStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#channelWriteStats">channelWriteStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadEntryStats">fenceReadEntryStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadRequestStats">fenceReadRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadWaitStats">fenceReadWaitStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#forceLedgerRequestStats">forceLedgerRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#forceLedgerStats">forceLedgerStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getBookieInfoRequestStats">getBookieInfoRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getBookieInfoStats">getBookieInfoStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getListOfEntriesOfLedgerRequestStats">getListOfEntriesOfLedgerRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getListOfEntriesOfLedgerStats">getListOfEntriesOfLedgerStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollPreWaitStats">longPollPreWaitStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollReadRequestStats">longPollReadRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollReadStats">longPollReadStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollWaitStats">longPollWaitStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntryBlockedStats">readEntryBlockedStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntrySchedulingDelayStats">readEntrySchedulingDelayStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntryStats">readEntryStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readLacRequestStats">readLacRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readLacStats">readLacStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readLastEntryNoEntryErrorCounter">readLastEntryNoEntryErrorCounter</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readRequestStats">readRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#writeLacRequestStats">writeLacRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#writeLacStats">writeLacStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with annotations of type <a href="../StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../replication/AuditorElector.html" title="class in org.apache.bookkeeper.replication">AuditorElector</a></span></code></th>
+<td class="colLast">
+<div class="block">Performing auditor election using Apache ZooKeeper.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../replication/ReplicationWorker.html" title="class in org.apache.bookkeeper.replication">ReplicationWorker</a></span></code></th>
+<td class="colLast">
+<div class="block">ReplicationWorker will take the fragments one by one from
+ ZKLedgerUnderreplicationManager and replicates to it.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -287,7 +677,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -107,21 +107,105 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.datainteg">org.apache.bookkeeper.bookie.datainteg</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.stats">org.apache.bookkeeper.bookie.stats</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.directentrylogger">org.apache.bookkeeper.bookie.storage.directentrylogger</a></th>
+<td class="colLast">
+<div class="block">Support for bookie entry logs using Direct IO.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.ldb">org.apache.bookkeeper.bookie.storage.ldb</a></th>
+<td class="colLast">
+<div class="block">Classes related to DB based ledger storage.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client.api">org.apache.bookkeeper.client.api</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.component">org.apache.bookkeeper.common.component</a></th>
+<td class="colLast">
+<div class="block">Component and lifecycle management.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.stats">org.apache.bookkeeper.common.stats</a></th>
+<td class="colLast">
+<div class="block">Stats Related Utils.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.util">org.apache.bookkeeper.common.util</a></th>
+<td class="colLast">
+<div class="block">Util functions used across the project.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta.zk">org.apache.bookkeeper.meta.zk</a></th>
+<td class="colLast">
+<div class="block">ZooKeeper based metadata implementation.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.component">org.apache.bookkeeper.server.component</a></th>
+<td class="colLast">
+<div class="block">The lifecycle components that run on a bookie server.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.service">org.apache.bookkeeper.server.service</a></th>
+<td class="colLast">
+<div class="block">Services running in a storage server (bookie).</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -148,11 +232,573 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">A stats provider implementation based on {@link https://prometheus.io/}.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.zookeeper">org.apache.bookkeeper.zookeeper</a></th>
+<td class="colLast">
+<div class="block">A simple retryable zookeeper wrapper provided in bookkeeper.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieImpl.</span><code><span class="memberNameLink"><a href="../../bookie/BookieImpl.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieResources.</span><code><span class="memberNameLink"><a href="../../bookie/BookieResources.html#createIndexDirsManager(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.util.DiskChecker,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.bookie.LedgerDirsManager)">createIndexDirsManager</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../../util/DiskChecker.html" title="class in org.apache.bookkeeper.util">DiskChecker</a>&nbsp;diskChecker,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                      <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;fallback)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieResources.</span><code><span class="memberNameLink"><a href="../../bookie/BookieResources.html#createLedgerDirsManager(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.util.DiskChecker,org.apache.bookkeeper.stats.StatsLogger)">createLedgerDirsManager</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                       <a href="../../util/DiskChecker.html" title="class in org.apache.bookkeeper.util">DiskChecker</a>&nbsp;diskChecker,
+                       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieResources.</span><code><span class="memberNameLink"><a href="../../bookie/BookieResources.html#createLedgerStorage(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">createLedgerStorage</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                   <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                   <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+                   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                   io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../meta/MetadataBookieDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataBookieDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieResources.</span><code><span class="memberNameLink"><a href="../../bookie/BookieResources.html#createMetadataDriver(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">createMetadataDriver</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                    <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">
+<div class="block">Instantiate the metadata driver for the Bookie.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">InterleavedLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/InterleavedLedgerStorage.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/LedgerStorage.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">
+<div class="block">Initialize the LedgerStorage implementation.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LocalBookieEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../bookie/LocalBookieEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
+          io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
+          <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SortedLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/SortedLedgerStorage.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">InterleavedLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/InterleavedLedgerStorage.html#initializeWithEntryLogger(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">initializeWithEntryLogger</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                         <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                         <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                         <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+                         <a href="../../bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
+                         <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">InterleavedLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/InterleavedLedgerStorage.html#initializeWithEntryLogListener(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initializeWithEntryLogListener</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                              <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+                              <a href="../../bookie/DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&nbsp;entryLogListener,
+                              <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                              io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/BookieImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.discover.RegistrationManager,org.apache.bookkeeper.bookie.LedgerStorage,org.apache.bookkeeper.util.DiskChecker,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator,java.util.function.Supplier)">BookieImpl</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&nbsp;registrationManager,
+          <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>&nbsp;storage,
+          <a href="../../util/DiskChecker.html" title="class in org.apache.bookkeeper.util">DiskChecker</a>&nbsp;diskChecker,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+          java.util.function.Supplier&lt;<a href="../../discover/BookieServiceInfo.html" title="class in org.apache.bookkeeper.discover">BookieServiceInfo</a>&gt;&nbsp;bookieServiceInfoProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/BookieStateManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.discover.RegistrationManager,java.util.List,java.util.function.Supplier,java.util.function.Supplier)">BookieStateManager</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                  <a href="../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&nbsp;rm,
+                  java.util.List&lt;java.io.File&gt;&nbsp;statusDirs,
+                  java.util.function.Supplier&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookieIdSupplier,
+                  java.util.function.Supplier&lt;<a href="../../discover/BookieServiceInfo.html" title="class in org.apache.bookkeeper.discover">BookieServiceInfo</a>&gt;&nbsp;bookieServiceInfoProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/BookieStateManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.discover.RegistrationManager,org.apache.bookkeeper.bookie.LedgerDirsManager,java.util.function.Supplier)">BookieStateManager</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                  <a href="../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&nbsp;rm,
+                  <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                  java.util.function.Supplier&lt;<a href="../../discover/BookieServiceInfo.html" title="class in org.apache.bookkeeper.discover">BookieServiceInfo</a>&gt;&nbsp;bookieServiceInfoProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/DefaultEntryLogger.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">DefaultEntryLogger</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                  <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                  <a href="../../bookie/DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&nbsp;listener,
+                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                  io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/EntryLogManagerForEntryLogPerLedger.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.EntryLoggerAllocator,java.util.List,org.apache.bookkeeper.bookie.DefaultEntryLogger.RecentEntryLogsStatus,org.apache.bookkeeper.stats.StatsLogger)">EntryLogManagerForEntryLogPerLedger</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                                   <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                                   <a href="../../bookie/EntryLoggerAllocator.html" title="class in org.apache.bookkeeper.bookie">EntryLoggerAllocator</a>&nbsp;entryLoggerAllocator,
+                                   java.util.List&lt;<a href="../../bookie/DefaultEntryLogger.EntryLogListener.html" title="interface in org.apache.bookkeeper.bookie">DefaultEntryLogger.EntryLogListener</a>&gt;&nbsp;listeners,
+                                   <a href="../../bookie/DefaultEntryLogger.RecentEntryLogsStatus.html" title="class in org.apache.bookkeeper.bookie">DefaultEntryLogger.RecentEntryLogsStatus</a>&nbsp;recentlyCreatedEntryLogsStatus,
+                                   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/EntryLogManagerForEntryLogPerLedger.EntryLogsPerLedgerCounter.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">EntryLogsPerLedgerCounter</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/EntryMemTable.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.CheckpointSource,org.apache.bookkeeper.stats.StatsLogger)">EntryMemTable</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+             <a href="../../bookie/CheckpointSource.html" title="interface in org.apache.bookkeeper.bookie">CheckpointSource</a>&nbsp;source,
+             <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">
+<div class="block">Constructor.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/EntryMemTableWithParallelFlusher.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.CheckpointSource,org.apache.bookkeeper.stats.StatsLogger)">EntryMemTableWithParallelFlusher</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                                <a href="../../bookie/CheckpointSource.html" title="interface in org.apache.bookkeeper.bookie">CheckpointSource</a>&nbsp;source,
+                                <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/GarbageCollectorThread.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger)">GarbageCollectorThread</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                      <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                      <a href="../../bookie/CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                      <a href="../../bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">
+<div class="block">Create a garbage collector thread.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/GarbageCollectorThread.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger,java.util.concurrent.ScheduledExecutorService)">GarbageCollectorThread</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                      <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                      <a href="../../bookie/CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                      <a href="../../bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                      java.util.concurrent.ScheduledExecutorService&nbsp;gcExecutor)</code></th>
+<td class="colLast">
+<div class="block">Create a garbage collector thread.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/IndexInMemPageMgr.html#%3Cinit%3E(int,int,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.IndexPersistenceMgr,org.apache.bookkeeper.stats.StatsLogger)">IndexInMemPageMgr</a></span>&#8203;(int&nbsp;pageSize,
+                 int&nbsp;entriesPerPage,
+                 <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 <a href="../../bookie/IndexPersistenceMgr.html" title="class in org.apache.bookkeeper.bookie">IndexPersistenceMgr</a>&nbsp;indexPersistenceManager,
+                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/IndexPersistenceMgr.html#%3Cinit%3E(int,int,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.util.SnapshotMap,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger)">IndexPersistenceMgr</a></span>&#8203;(int&nbsp;pageSize,
+                   int&nbsp;entriesPerPage,
+                   <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../../util/SnapshotMap.html" title="class in org.apache.bookkeeper.util">SnapshotMap</a>&lt;java.lang.Long,&#8203;java.lang.Boolean&gt;&nbsp;activeLedgers,
+                   <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/Journal.html#%3Cinit%3E(int,java.io.File,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">Journal</a></span>&#8203;(int&nbsp;journalIndex,
+       java.io.File&nbsp;journalDirectory,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+       io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/Journal.html#%3Cinit%3E(int,java.io.File,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.bookie.JournalAliveListener)">Journal</a></span>&#8203;(int&nbsp;journalIndex,
+       java.io.File&nbsp;journalDirectory,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+       io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+       <a href="../../bookie/JournalAliveListener.html" title="interface in org.apache.bookkeeper.bookie">JournalAliveListener</a>&nbsp;journalAliveListener)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/LedgerCacheImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.util.SnapshotMap,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger)">LedgerCacheImpl</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+               <a href="../../util/SnapshotMap.html" title="class in org.apache.bookkeeper.util">SnapshotMap</a>&lt;java.lang.Long,&#8203;java.lang.Boolean&gt;&nbsp;activeLedgers,
+               <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+               <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/LedgerDirsManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,java.io.File%5B%5D,org.apache.bookkeeper.util.DiskChecker,org.apache.bookkeeper.stats.StatsLogger)">LedgerDirsManager</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 java.io.File[]&nbsp;dirs,
+                 <a href="../../util/DiskChecker.html" title="class in org.apache.bookkeeper.util">DiskChecker</a>&nbsp;diskChecker,
+                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/ReadOnlyBookie.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.discover.RegistrationManager,org.apache.bookkeeper.bookie.LedgerStorage,org.apache.bookkeeper.util.DiskChecker,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator,java.util.function.Supplier)">ReadOnlyBookie</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+              <a href="../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a>&nbsp;registrationManager,
+              <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>&nbsp;storage,
+              <a href="../../util/DiskChecker.html" title="class in org.apache.bookkeeper.util">DiskChecker</a>&nbsp;diskChecker,
+              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+              <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+              io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+              java.util.function.Supplier&lt;<a href="../../discover/BookieServiceInfo.html" title="class in org.apache.bookkeeper.discover">BookieServiceInfo</a>&gt;&nbsp;bookieServiceInfoProvider)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/ScanAndCompareGarbageCollector.html#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.CompactableLedgerStorage,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">ScanAndCompareGarbageCollector</a></span>&#8203;(<a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                              <a href="../../bookie/CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">CompactableLedgerStorage</a>&nbsp;ledgerStorage,
+                              <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                              <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/SyncThread.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener,org.apache.bookkeeper.bookie.LedgerStorage,org.apache.bookkeeper.bookie.CheckpointSource,org.apache.bookkeeper.stats.StatsLogger)">SyncThread</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../bookie/LedgerDirsManager.LedgerDirsListener.html" title="interface in org.apache.bookkeeper.bookie">LedgerDirsManager.LedgerDirsListener</a>&nbsp;dirsListener,
+          <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>&nbsp;ledgerStorage,
+          <a href="../../bookie/CheckpointSource.html" title="interface in org.apache.bookkeeper.bookie">CheckpointSource</a>&nbsp;checkpointSource,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.datainteg">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/datainteg/DataIntegrityService.html#%3Cinit%3E(org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.bookie.datainteg.DataIntegrityCheck)">DataIntegrityService</a></span>&#8203;(<a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+                    <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                    <a href="../../bookie/datainteg/DataIntegrityCheck.html" title="interface in org.apache.bookkeeper.bookie.datainteg">DataIntegrityCheck</a>&nbsp;check)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> that return <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getStatsLogger()">getStatsLogger</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getStatsLogger()">getStatsLogger</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,int,int)">BookieStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+           int&nbsp;numJournalDirs,
+           int&nbsp;maxJournalQueueSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">EntryMemTableStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">GarbageCollectorStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeEntryLogCountSupplier,
+                     java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;activeEntryLogSpaceBytesSupplier,
+                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/IndexInMemPageMgrStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">IndexInMemPageMgrStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/IndexPersistenceMgrStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier)">IndexPersistenceMgrStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                        java.util.function.Supplier&lt;java.lang.Number&gt;&nbsp;writeFileInfoCacheSizeSupplier,
+                        java.util.function.Supplier&lt;java.lang.Number&gt;&nbsp;readFileInfoCacheSizeSupplier)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,long,java.util.function.Supplier)">JournalStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+            long&nbsp;maxJournalMemoryBytes,
+            java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;currentJournalMemoryBytes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.directentrylogger">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/storage/directentrylogger/package-summary.html">org.apache.bookkeeper.bookie.storage.directentrylogger</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/directentrylogger/DirectEntryLogger.html#%3Cinit%3E(java.io.File,org.apache.bookkeeper.bookie.storage.EntryLogIds,org.apache.bookkeeper.common.util.nativeio.NativeIO,io.netty.buffer.ByteBufAllocator,java.util.concurrent.ExecutorService,java.util.concurrent.ExecutorService,long,int,long,long,int,int,int,org.apache.bookkeeper.slogger.Slogger,org.apache.bookkeeper.stats.StatsLogger)">DirectEntryLogger</a></span>&#8203;(java.io.File&nbsp;ledgerDir,
+                 <a href="../../bookie/storage/EntryLogIds.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogIds</a>&nbsp;ids,
+                 <a href="../../common/util/nativeio/NativeIO.html" title="interface in org.apache.bookkeeper.common.util.nativeio">NativeIO</a>&nbsp;nativeIO,
+                 io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                 java.util.concurrent.ExecutorService&nbsp;writeExecutor,
+                 java.util.concurrent.ExecutorService&nbsp;flushExecutor,
+                 long&nbsp;maxFileSize,
+                 int&nbsp;maxSaneEntrySize,
+                 long&nbsp;totalWriteBufferSize,
+                 long&nbsp;totalReadBufferSize,
+                 int&nbsp;readBufferSize,
+                 int&nbsp;numReadThreads,
+                 int&nbsp;maxFdCacheTimeSeconds,
+                 <a href="../../slogger/Slogger.html" title="interface in org.apache.bookkeeper.slogger">Slogger</a>&nbsp;slogParent,
+                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/directentrylogger/DirectEntryLoggerStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">DirectEntryLoggerStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.ldb">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorage.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SingleDirectoryDbLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/SingleDirectoryDbLedgerStorage.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+          <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../bookie/storage/ldb/SingleDirectoryDbLedgerStorage.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">SingleDirectoryDbLedgerStorage</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorage.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorage.html#newSingleDirectoryDbLedgerStorage(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger,long,long,int,long)">newSingleDirectoryDbLedgerStorage</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                                 <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                                 <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                                 <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+                                 <a href="../../bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
+                                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                                 long&nbsp;writeCacheSize,
+                                 long&nbsp;readCacheSize,
+                                 int&nbsp;readAheadCacheBatchSize,
+                                 long&nbsp;readAheadCacheBatchBytesSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">DbLedgerStorageStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats,
+                    java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;writeCacheSizeSupplier,
+                    java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;writeCacheCountSupplier,
+                    java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;readCacheSizeSupplier,
+                    java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;readCacheCountSupplier)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/EntryLocationIndex.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory,java.lang.String,org.apache.bookkeeper.stats.StatsLogger)">EntryLocationIndex</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                  <a href="../../bookie/storage/ldb/KeyValueStorageFactory.html" title="interface in org.apache.bookkeeper.bookie.storage.ldb">KeyValueStorageFactory</a>&nbsp;storageFactory,
+                  java.lang.String&nbsp;basePath,
+                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/EntryLocationIndexStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier)">EntryLocationIndexStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                       java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;entriesCountSupplier)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/LedgerMetadataIndex.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory,java.lang.String,org.apache.bookkeeper.stats.StatsLogger)">LedgerMetadataIndex</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../../bookie/storage/ldb/KeyValueStorageFactory.html" title="interface in org.apache.bookkeeper.bookie.storage.ldb">KeyValueStorageFactory</a>&nbsp;storageFactory,
+                   java.lang.String&nbsp;basePath,
+                   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/LedgerMetadataIndexStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier)">LedgerMetadataIndexStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                        java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;ledgersCountSupplier)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/SingleDirectoryDbLedgerStorage.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.LedgerDirsManager,org.apache.bookkeeper.bookie.storage.EntryLogger,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator,long,long,int,long)">SingleDirectoryDbLedgerStorage</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                              <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;ledgerDirsManager,
+                              <a href="../../bookie/LedgerDirsManager.html" title="class in org.apache.bookkeeper.bookie">LedgerDirsManager</a>&nbsp;indexDirsManager,
+                              <a href="../../bookie/storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a>&nbsp;entryLogger,
+                              <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                              io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                              long&nbsp;writeCacheSize,
+                              long&nbsp;readCacheSize,
+                              int&nbsp;readAheadCacheBatchSize,
+                              long&nbsp;readAheadCacheBatchBytesSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -209,28 +855,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/DefaultEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/EnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -242,12 +888,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           boolean&nbsp;useHostnameResolveLocalNodePlacementPolicy,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -258,22 +904,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           boolean&nbsp;enforceMinNumRacksPerWriteQuorum,
           boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -285,14 +931,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           boolean&nbsp;useHostnameResolveLocalNodePlacementPolicy,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,boolean,int,int,boolean,int,int,boolean,boolean,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
@@ -303,7 +949,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           boolean&nbsp;enforceMinNumRacksPerWriteQuorum,
           boolean&nbsp;ignoreLocalNodeInPlacementPolicy,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">
 <div class="block">Initialize the policy.</div>
 </td>
@@ -311,41 +957,41 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RegionAwareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/ZoneawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/ZoneawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../client/BookKeeper.html#initializeEnsemblePlacementPolicy(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initializeEnsemblePlacementPolicy</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-                                 org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+                                 <a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
                                  io.netty.util.HashedWheelTimer&nbsp;timer,
                                  <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
                                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-                                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+                                 <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -381,8 +1027,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../client/BookieWatcherImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.client.EnsemblePlacementPolicy,org.apache.bookkeeper.discover.RegistrationClient,org.apache.bookkeeper.proto.BookieAddressResolver,org.apache.bookkeeper.stats.StatsLogger)">BookieWatcherImpl</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
                  <a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;placementPolicy,
-                 org.apache.bookkeeper.discover.RegistrationClient&nbsp;registrationClient,
-                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver,
+                 <a href="../../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a>&nbsp;registrationClient,
+                 <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver,
                  <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -392,7 +1038,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
           io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
-          org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+          <a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code></th>
 <td class="colLast">
@@ -470,6 +1116,624 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../client/impl/BookKeeperClientStatsImpl.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">BookKeeperClientStatsImpl</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.component">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../common/component/package-summary.html">org.apache.bookkeeper.common.component</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../common/component/package-summary.html">org.apache.bookkeeper.common.component</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractLifecycleComponent.</span><code><span class="memberNameLink"><a href="../../common/component/AbstractLifecycleComponent.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/component/package-summary.html">org.apache.bookkeeper.common.component</a> that return <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractLifecycleComponent.</span><code><span class="memberNameLink"><a href="../../common/component/AbstractLifecycleComponent.html#getStatsLogger()">getStatsLogger</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../common/component/package-summary.html">org.apache.bookkeeper.common.component</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../common/component/AbstractLifecycleComponent.html#%3Cinit%3E(java.lang.String,ConfT,org.apache.bookkeeper.stats.StatsLogger)">AbstractLifecycleComponent</a></span>&#8203;(java.lang.String&nbsp;componentName,
+                          <a href="../../common/component/AbstractLifecycleComponent.html" title="type parameter in AbstractLifecycleComponent">ConfT</a>&nbsp;conf,
+                          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../common/component/RxSchedulerLifecycleComponent.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.common.conf.ComponentConfiguration,org.apache.bookkeeper.stats.StatsLogger,io.reactivex.rxjava3.core.Scheduler,java.util.concurrent.ExecutorService)">RxSchedulerLifecycleComponent</a></span>&#8203;(java.lang.String&nbsp;componentName,
+                             <a href="../../common/conf/ComponentConfiguration.html" title="class in org.apache.bookkeeper.common.conf">ComponentConfiguration</a>&nbsp;conf,
+                             <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;stats,
+                             io.reactivex.rxjava3.core.Scheduler&nbsp;scheduler,
+                             java.util.concurrent.ExecutorService&nbsp;rxExecutor)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> that implement <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.MasterSlave.html" title="class in org.apache.bookkeeper.common.stats">BroadCastStatsLogger.MasterSlave</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html" title="class in org.apache.bookkeeper.common.stats">BroadCastStatsLogger.Two</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#first">first</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#second">second</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> that return <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.html#masterslave(org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.stats.StatsLogger)">masterslave</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;master,
+           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;slave)</code></th>
+<td class="colLast">
+<div class="block">Create a broadcast stats logger of two stats loggers <code>master</code> and <code>slave</code>.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.MasterSlave.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.MasterSlave.html#scope(java.lang.String)">scope</a></span>&#8203;(java.lang.String&nbsp;scope)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#scope(java.lang.String)">scope</a></span>&#8203;(java.lang.String&nbsp;scope)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.html#two(org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.stats.StatsLogger)">two</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;first,
+   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;second)</code></th>
+<td class="colLast">
+<div class="block">Create a broadcast stats logger of two stats loggers `<code>first</code>` and
+ `<code>second</code>`.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.html#masterslave(org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.stats.StatsLogger)">masterslave</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;master,
+           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;slave)</code></th>
+<td class="colLast">
+<div class="block">Create a broadcast stats logger of two stats loggers <code>master</code> and <code>slave</code>.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#removeScope(java.lang.String,org.apache.bookkeeper.stats.StatsLogger)">removeScope</a></span>&#8203;(java.lang.String&nbsp;scope,
+           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.html#two(org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.stats.StatsLogger)">two</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;first,
+   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;second)</code></th>
+<td class="colLast">
+<div class="block">Create a broadcast stats logger of two stats loggers `<code>first</code>` and
+ `<code>second</code>`.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.util">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../common/util/package-summary.html">org.apache.bookkeeper.common.util</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../common/util/package-summary.html">org.apache.bookkeeper.common.util</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OrderedExecutor.AbstractBuilder.</span><code><span class="memberNameLink"><a href="../../common/util/OrderedExecutor.AbstractBuilder.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/util/package-summary.html">org.apache.bookkeeper.common.util</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SingleThreadExecutor.</span><code><span class="memberNameLink"><a href="../../common/util/SingleThreadExecutor.html#registerMetrics(org.apache.bookkeeper.stats.StatsLogger)">registerMetrics</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../common/util/OrderedExecutor.AbstractBuilder.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor.AbstractBuilder</a>&lt;<a href="../../common/util/OrderedExecutor.AbstractBuilder.html" title="type parameter in OrderedExecutor.AbstractBuilder">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OrderedExecutor.AbstractBuilder.</span><code><span class="memberNameLink"><a href="../../common/util/OrderedExecutor.AbstractBuilder.html#statsLogger(org.apache.bookkeeper.stats.StatsLogger)">statsLogger</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../common/util/package-summary.html">org.apache.bookkeeper.common.util</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../common/util/OrderedExecutor.html#%3Cinit%3E(java.lang.String,int,java.util.concurrent.ThreadFactory,org.apache.bookkeeper.stats.StatsLogger,boolean,boolean,long,int,boolean,boolean)">OrderedExecutor</a></span>&#8203;(java.lang.String&nbsp;baseName,
+               int&nbsp;numThreads,
+               java.util.concurrent.ThreadFactory&nbsp;threadFactory,
+               <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+               boolean&nbsp;traceTaskExecution,
+               boolean&nbsp;preserveMdcForTaskExecution,
+               long&nbsp;warnTimeMicroSec,
+               int&nbsp;maxTasksInQueue,
+               boolean&nbsp;enableBusyWait,
+               boolean&nbsp;enableThreadScopedMetrics)</code></th>
+<td class="colLast">
+<div class="block">Constructs Safe executor.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/MetadataBookieDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataBookieDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataBookieDriver.</span><code><span class="memberNameLink"><a href="../../meta/MetadataBookieDriver.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">
+<div class="block">Initialize the metadata driver.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataClientDriver.</span><code><span class="memberNameLink"><a href="../../meta/MetadataClientDriver.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,java.util.Optional)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Initialize the metadata driver.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/MetadataBookieDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataBookieDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.</span><code><span class="memberNameLink"><a href="../../meta/NullMetadataBookieDriver.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/ZkLedgerAuditorManager.html#%3Cinit%3E(org.apache.zookeeper.ZooKeeper,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">ZkLedgerAuditorManager</a></span>&#8203;(org.apache.zookeeper.ZooKeeper&nbsp;zkc,
+                      <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta.zk">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/MetadataBookieDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataBookieDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataBookieDriver.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataBookieDriver.html#initialize(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">initialize</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataClientDriver.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataClientDriver.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,java.util.Optional)">initialize</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;optionalCtx)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.zookeeper.RetryPolicy,java.util.Optional)">initialize</a></span>&#8203;(<a href="../../conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+          <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          <a href="../../zookeeper/RetryPolicy.html" title="interface in org.apache.bookkeeper.zookeeper">RetryPolicy</a>&nbsp;zkRetryPolicy,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;optionalCtx)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/BookieClientImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,io.netty.channel.EventLoopGroup,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.common.util.OrderedExecutor,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">BookieClientImpl</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+                <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/BookieRequestProcessor.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.Bookie,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.tls.SecurityHandlerFactory,io.netty.buffer.ByteBufAllocator,io.netty.channel.group.ChannelGroup)">BookieRequestProcessor</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;serverCfg,
+                      <a href="../../bookie/Bookie.html" title="interface in org.apache.bookkeeper.bookie">Bookie</a>&nbsp;bookie,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                      <a href="../../tls/SecurityHandlerFactory.html" title="interface in org.apache.bookkeeper.tls">SecurityHandlerFactory</a>&nbsp;shFactory,
+                      io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                      io.netty.channel.group.ChannelGroup&nbsp;allChannels)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/BookieServer.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.bookie.Bookie,org.apache.bookkeeper.stats.StatsLogger,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.bookie.UncleanShutdownDetection)">BookieServer</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+            <a href="../../bookie/Bookie.html" title="interface in org.apache.bookkeeper.bookie">Bookie</a>&nbsp;bookie,
+            <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+            io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+            <a href="../../bookie/UncleanShutdownDetection.html" title="interface in org.apache.bookkeeper.bookie">UncleanShutdownDetection</a>&nbsp;uncleanShutdownDetection)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/PerChannelBookieClient.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.common.util.OrderedExecutor,io.netty.channel.EventLoopGroup,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.auth.ClientAuthProvider.Factory,com.google.protobuf.ExtensionRegistry,org.apache.bookkeeper.proto.PerChannelBookieClientPool,org.apache.bookkeeper.tls.SecurityHandlerFactory,org.apache.bookkeeper.proto.BookieAddressResolver)">PerChannelBookieClient</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                      <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                      io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                      io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                      <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;parentStatsLogger,
+                      <a href="../../auth/ClientAuthProvider.Factory.html" title="interface in org.apache.bookkeeper.auth">ClientAuthProvider.Factory</a>&nbsp;authProviderFactory,
+                      com.google.protobuf.ExtensionRegistry&nbsp;extRegistry,
+                      <a href="../../proto/PerChannelBookieClientPool.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientPool</a>&nbsp;pcbcPool,
+                      <a href="../../tls/SecurityHandlerFactory.html" title="interface in org.apache.bookkeeper.tls">SecurityHandlerFactory</a>&nbsp;shFactory,
+                      <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/PerChannelBookieClient.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.common.util.OrderedExecutor,io.netty.channel.EventLoopGroup,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.auth.ClientAuthProvider.Factory,com.google.protobuf.ExtensionRegistry,org.apache.bookkeeper.proto.PerChannelBookieClientPool,org.apache.bookkeeper.proto.BookieAddressResolver)">PerChannelBookieClient</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                      <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                      io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                      <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;parentStatsLogger,
+                      <a href="../../auth/ClientAuthProvider.Factory.html" title="interface in org.apache.bookkeeper.auth">ClientAuthProvider.Factory</a>&nbsp;authProviderFactory,
+                      com.google.protobuf.ExtensionRegistry&nbsp;extRegistry,
+                      <a href="../../proto/PerChannelBookieClientPool.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientPool</a>&nbsp;pcbcPool,
+                      <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/RequestStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">RequestStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getStatsLogger()">getStatsLogger</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../../client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Auditor.</span><code><span class="memberNameLink"><a href="../../replication/Auditor.html#createBookKeeperClient(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">createBookKeeperClient</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.client.BookKeeperAdmin,boolean,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../../client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+       boolean&nbsp;ownBkc,
+       <a href="../../client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+       boolean&nbsp;ownAdmin,
+       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../../client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+       boolean&nbsp;ownBkc,
+       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorElector.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,org.apache.bookkeeper.stats.StatsLogger,boolean)">AuditorElector</a></span>&#8203;(java.lang.String&nbsp;bookieId,
+              <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+              <a href="../../client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+              <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+              boolean&nbsp;ownBkc)</code></th>
+<td class="colLast">
+<div class="block">AuditorElector for performing the auditor election.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger)">AuditorStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AutoRecoveryMain.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">AutoRecoveryMain</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/ReplicationWorker.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.stats.StatsLogger)">ReplicationWorker</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 <a href="../../client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+                 boolean&nbsp;ownBkc,
+                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/ReplicationWorker.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.stats.StatsLogger)">ReplicationWorker</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                 <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">
+<div class="block">Replication worker for replicating the ledger fragments from
+ UnderReplicationManager to the targetBookie.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.component">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static java.util.List&lt;<a href="../../server/component/ServerLifecycleComponent.html" title="class in org.apache.bookkeeper.server.component">ServerLifecycleComponent</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ServerLifecycleComponent.</span><code><span class="memberNameLink"><a href="../../server/component/ServerLifecycleComponent.html#loadServerComponents(java.lang.String%5B%5D,org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger)">loadServerComponents</a></span>&#8203;(java.lang.String[]&nbsp;componentClassNames,
+                    <a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+                    <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static <a href="../../server/component/ServerLifecycleComponent.html" title="class in org.apache.bookkeeper.server.component">ServerLifecycleComponent</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ServerLifecycleComponent.</span><code><span class="memberNameLink"><a href="../../server/component/ServerLifecycleComponent.html#newComponent(java.lang.Class,org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger)">newComponent</a></span>&#8203;(java.lang.Class&lt;? extends <a href="../../server/component/ServerLifecycleComponent.html" title="class in org.apache.bookkeeper.server.component">ServerLifecycleComponent</a>&gt;&nbsp;theCls,
+            <a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+            <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/component/ServerLifecycleComponent.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger)">ServerLifecycleComponent</a></span>&#8203;(java.lang.String&nbsp;componentName,
+                        <a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+                        <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.service">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../server/service/package-summary.html">org.apache.bookkeeper.server.service</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../server/service/package-summary.html">org.apache.bookkeeper.server.service</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/service/AutoRecoveryService.html#%3Cinit%3E(org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger)">AutoRecoveryService</a></span>&#8203;(<a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+                   <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/service/BookieService.html#%3Cinit%3E(org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.bookie.Bookie,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler,org.apache.bookkeeper.bookie.UncleanShutdownDetection)">BookieService</a></span>&#8203;(<a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+             <a href="../../bookie/Bookie.html" title="interface in org.apache.bookkeeper.bookie">Bookie</a>&nbsp;bookie,
+             <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+             <a href="../../common/allocator/ByteBufAllocatorWithOomHandler.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorWithOomHandler</a>&nbsp;allocator,
+             <a href="../../bookie/UncleanShutdownDetection.html" title="interface in org.apache.bookkeeper.bookie">UncleanShutdownDetection</a>&nbsp;uncleanShutdownDetection)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/service/HttpService.html#%3Cinit%3E(org.apache.bookkeeper.server.http.BKHttpServiceProvider,org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.stats.StatsLogger)">HttpService</a></span>&#8203;(<a href="../../server/http/BKHttpServiceProvider.html" title="class in org.apache.bookkeeper.server.http">BKHttpServiceProvider</a>&nbsp;provider,
+           <a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+           <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/service/ScrubberService.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.server.conf.BookieConfiguration,org.apache.bookkeeper.bookie.LedgerStorage)">ScrubberService</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;logger,
+               <a href="../../server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a>&nbsp;conf,
+               <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>&nbsp;ledgerStorage)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -860,6 +2124,75 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.zookeeper">
+<!--   -->
+</a>
+<h3>Uses of <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a> in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a> declared as <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZooKeeperClient.Builder.</span><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperClient.Builder.html#statsLogger">statsLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../zookeeper/ZooKeeperClient.Builder.html" title="class in org.apache.bookkeeper.zookeeper">ZooKeeperClient.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZooKeeperClient.Builder.</span><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperClient.Builder.html#statsLogger(org.apache.bookkeeper.stats.StatsLogger)">statsLogger</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../zookeeper/package-summary.html">org.apache.bookkeeper.zookeeper</a> with parameters of type <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperClient.html#%3Cinit%3E(java.lang.String,int,org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase,org.apache.bookkeeper.zookeeper.RetryPolicy,org.apache.bookkeeper.zookeeper.RetryPolicy,org.apache.bookkeeper.stats.StatsLogger,int,double,boolean)">ZooKeeperClient</a></span>&#8203;(java.lang.String&nbsp;connectString,
+               int&nbsp;sessionTimeoutMs,
+               <a href="../../zookeeper/ZooKeeperWatcherBase.html" title="class in org.apache.bookkeeper.zookeeper">ZooKeeperWatcherBase</a>&nbsp;watcherManager,
+               <a href="../../zookeeper/RetryPolicy.html" title="interface in org.apache.bookkeeper.zookeeper">RetryPolicy</a>&nbsp;connectRetryPolicy,
+               <a href="../../zookeeper/RetryPolicy.html" title="interface in org.apache.bookkeeper.zookeeper">RetryPolicy</a>&nbsp;operationRetryPolicy,
+               <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+               int&nbsp;retryExecThreadCount,
+               double&nbsp;rate,
+               boolean&nbsp;allowReadOnlyMode)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperWatcherBase.html#%3Cinit%3E(int,java.util.Set,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+                    java.util.Set&lt;org.apache.zookeeper.Watcher&gt;&nbsp;childWatchers,
+                    <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../zookeeper/ZooKeeperWatcherBase.html#%3Cinit%3E(int,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+                    <a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -910,7 +2243,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

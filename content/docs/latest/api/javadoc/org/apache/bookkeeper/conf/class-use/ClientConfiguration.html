@@ -107,6 +107,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.auth">org.apache.bookkeeper.auth</a></th>
+<td class="colLast">
+<div class="block">Classes used to handle authentication in bookies and clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -130,11 +142,105 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Configurations used by bookkeeper.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta.zk">org.apache.bookkeeper.meta.zk</a></th>
+<td class="colLast">
+<div class="block">ZooKeeper based metadata implementation.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.sasl">org.apache.bookkeeper.sasl</a></th>
+<td class="colLast">
+<div class="block">SASL and JAAS Authentication classes.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.helpers">org.apache.bookkeeper.tools.cli.helpers</a></th>
+<td class="colLast">
+<div class="block">This classes provides some helper mixins for easily to add commands
+ to bookie shell.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.util">org.apache.bookkeeper.util</a></th>
+<td class="colLast">
+<div class="block">Bookkeeper utilities.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.auth">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../auth/package-summary.html">org.apache.bookkeeper.auth</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../auth/package-summary.html">org.apache.bookkeeper.auth</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ClientAuthProvider.Factory.</span><code><span class="memberNameLink"><a href="../../auth/ClientAuthProvider.Factory.html#init(org.apache.bookkeeper.conf.ClientConfiguration)">init</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">
+<div class="block">Initialize the factory with the client configuration
+ and protobuf message registry.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../auth/ClientAuthProvider.Factory.html" title="interface in org.apache.bookkeeper.auth">ClientAuthProvider.Factory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuthProviderFactoryFactory.</span><code><span class="memberNameLink"><a href="../../auth/AuthProviderFactoryFactory.html#newClientAuthProviderFactory(org.apache.bookkeeper.conf.ClientConfiguration)">newClientAuthProviderFactory</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LocalBookieEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../bookie/LocalBookieEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
+          io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
+          <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
+          <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -207,21 +313,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/DefaultEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/EnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">
 <div class="block">Initialize the policy.</div>
 </td>
@@ -229,51 +335,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/RackawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/RegionAwareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../client/ZoneawareEnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../client/ZoneawareEnsemblePlacementPolicyImpl.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../client/BookKeeper.html#initializeEnsemblePlacementPolicy(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.net.DNSToSwitchMapping,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initializeEnsemblePlacementPolicy</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-                                 org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+                                 <a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
                                  io.netty.util.HashedWheelTimer&nbsp;timer,
                                  <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
                                  <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-                                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+                                 <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -299,8 +405,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../client/BookieWatcherImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.client.EnsemblePlacementPolicy,org.apache.bookkeeper.discover.RegistrationClient,org.apache.bookkeeper.proto.BookieAddressResolver,org.apache.bookkeeper.stats.StatsLogger)">BookieWatcherImpl</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
                  <a href="../../client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;placementPolicy,
-                 org.apache.bookkeeper.discover.RegistrationClient&nbsp;registrationClient,
-                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver,
+                 <a href="../../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a>&nbsp;registrationClient,
+                 <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver,
                  <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -333,7 +439,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
           io.netty.buffer.ByteBufAllocator&nbsp;byteBufAllocator,
           <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;rootStatsLogger,
-          org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+          <a href="../../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
           <a href="../../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code></th>
 <td class="colLast">
@@ -827,7 +933,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ClientConfiguration.</span><code><span class="memberNameLink"><a href="../ClientConfiguration.html#setRegistrationClientClass(java.lang.Class)">setRegistrationClientClass</a></span>&#8203;(java.lang.Class&lt;? extends org.apache.bookkeeper.discover.RegistrationClient&gt;&nbsp;regClientClass)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ClientConfiguration.</span><code><span class="memberNameLink"><a href="../ClientConfiguration.html#setRegistrationClientClass(java.lang.Class)">setRegistrationClientClass</a></span>&#8203;(java.lang.Class&lt;? extends <a href="../../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a>&gt;&nbsp;regClientClass)</code></th>
 <td class="colLast">
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>
 <div class="deprecationComment">since 4.7.0</div>
@@ -1009,6 +1115,231 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataClientDriver.</span><code><span class="memberNameLink"><a href="../../meta/MetadataClientDriver.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,java.util.Optional)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+          <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Initialize the metadata driver.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static &lt;T&gt;&nbsp;T</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataDrivers.</span><code><span class="memberNameLink"><a href="../../meta/MetadataDrivers.html#runFunctionWithMetadataClientDriver(org.apache.bookkeeper.conf.ClientConfiguration,java.util.function.Function,java.util.concurrent.ScheduledExecutorService)">runFunctionWithMetadataClientDriver</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                                   java.util.function.Function&lt;<a href="../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a>,&#8203;T&gt;&nbsp;function,
+                                   java.util.concurrent.ScheduledExecutorService&nbsp;executorService)</code></th>
+<td class="colLast">
+<div class="block">Process the provided <i>function</i> with metadata client driver resolved
+ from the metadata service uri returned by <a href="../AbstractConfiguration.html#getMetadataServiceUri()"><code>AbstractConfiguration.getMetadataServiceUri()</code></a>.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta.zk">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> declared as <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataClientDriver.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataClientDriver.html#clientConf">clientConf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataClientDriver.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataClientDriver.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,java.util.Optional)">initialize</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+          <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;optionalCtx)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> declared as <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DefaultPerChannelBookieClientPool.</span><code><span class="memberNameLink"><a href="../../proto/DefaultPerChannelBookieClientPool.html#conf">conf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/BookieClientImpl.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,io.netty.channel.EventLoopGroup,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.common.util.OrderedExecutor,java.util.concurrent.ScheduledExecutorService,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">BookieClientImpl</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                java.util.concurrent.ScheduledExecutorService&nbsp;scheduler,
+                <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+                <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/DefaultPerChannelBookieClientPool.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.proto.PerChannelBookieClientFactory,org.apache.bookkeeper.net.BookieId,int)">DefaultPerChannelBookieClientPool</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                                 <a href="../../proto/PerChannelBookieClientFactory.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientFactory</a>&nbsp;factory,
+                                 <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;address,
+                                 int&nbsp;coreSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/PerChannelBookieClient.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.common.util.OrderedExecutor,io.netty.channel.EventLoopGroup,io.netty.buffer.ByteBufAllocator,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.auth.ClientAuthProvider.Factory,com.google.protobuf.ExtensionRegistry,org.apache.bookkeeper.proto.PerChannelBookieClientPool,org.apache.bookkeeper.tls.SecurityHandlerFactory,org.apache.bookkeeper.proto.BookieAddressResolver)">PerChannelBookieClient</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                      <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                      io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                      io.netty.buffer.ByteBufAllocator&nbsp;allocator,
+                      <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;parentStatsLogger,
+                      <a href="../../auth/ClientAuthProvider.Factory.html" title="interface in org.apache.bookkeeper.auth">ClientAuthProvider.Factory</a>&nbsp;authProviderFactory,
+                      com.google.protobuf.ExtensionRegistry&nbsp;extRegistry,
+                      <a href="../../proto/PerChannelBookieClientPool.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientPool</a>&nbsp;pcbcPool,
+                      <a href="../../tls/SecurityHandlerFactory.html" title="interface in org.apache.bookkeeper.tls">SecurityHandlerFactory</a>&nbsp;shFactory,
+                      <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../proto/PerChannelBookieClient.html#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.common.util.OrderedExecutor,io.netty.channel.EventLoopGroup,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.auth.ClientAuthProvider.Factory,com.google.protobuf.ExtensionRegistry,org.apache.bookkeeper.proto.PerChannelBookieClientPool,org.apache.bookkeeper.proto.BookieAddressResolver)">PerChannelBookieClient</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                      <a href="../../common/util/OrderedExecutor.html" title="class in org.apache.bookkeeper.common.util">OrderedExecutor</a>&nbsp;executor,
+                      io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+                      <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;parentStatsLogger,
+                      <a href="../../auth/ClientAuthProvider.Factory.html" title="interface in org.apache.bookkeeper.auth">ClientAuthProvider.Factory</a>&nbsp;authProviderFactory,
+                      com.google.protobuf.ExtensionRegistry&nbsp;extRegistry,
+                      <a href="../../proto/PerChannelBookieClientPool.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientPool</a>&nbsp;pcbcPool,
+                      <a href="../../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.sasl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../sasl/package-summary.html">org.apache.bookkeeper.sasl</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../sasl/package-summary.html">org.apache.bookkeeper.sasl</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SASLClientProviderFactory.</span><code><span class="memberNameLink"><a href="../../sasl/SASLClientProviderFactory.html#init(org.apache.bookkeeper.conf.ClientConfiguration)">init</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tools.cli.helpers">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../tools/cli/helpers/package-summary.html">org.apache.bookkeeper.tools.cli.helpers</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../tools/cli/helpers/package-summary.html">org.apache.bookkeeper.tools.cli.helpers</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ClientCommand.</span><code><span class="memberNameLink"><a href="../../tools/cli/helpers/ClientCommand.html#apply(org.apache.bookkeeper.conf.ClientConfiguration,ClientFlagsT)">apply</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+     <a href="../../tools/cli/helpers/ClientCommand.html" title="type parameter in ClientCommand">ClientFlagsT</a>&nbsp;cmdFlags)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DiscoveryCommand.</span><code><span class="memberNameLink"><a href="../../tools/cli/helpers/DiscoveryCommand.html#apply(org.apache.bookkeeper.conf.ClientConfiguration,DiscoveryFlagsT)">apply</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;clientConf,
+     <a href="../../tools/cli/helpers/DiscoveryCommand.html" title="type parameter in DiscoveryCommand">DiscoveryFlagsT</a>&nbsp;cmdFlags)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.util">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a> in <a href="../../util/package-summary.html">org.apache.bookkeeper.util</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../util/package-summary.html">org.apache.bookkeeper.util</a> with parameters of type <a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static io.netty.channel.EventLoopGroup</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EventLoopUtil.</span><code><span class="memberNameLink"><a href="../../util/EventLoopUtil.html#getClientEventLoopGroup(org.apache.bookkeeper.conf.ClientConfiguration,java.util.concurrent.ThreadFactory)">getClientEventLoopGroup</a></span>&#8203;(<a href="../ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+                       java.util.concurrent.ThreadFactory&nbsp;threadFactory)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -1059,7 +1390,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

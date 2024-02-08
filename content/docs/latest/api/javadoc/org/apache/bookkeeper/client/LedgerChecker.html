@@ -181,7 +181,7 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>org.apache.bookkeeper.proto.BookieClient</code></td>
+<td class="colFirst"><code><a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bookieClient">bookieClient</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -222,12 +222,12 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.proto.BookieClient,org.apache.bookkeeper.client.BookieWatcher)">LedgerChecker</a></span>&#8203;(org.apache.bookkeeper.proto.BookieClient&nbsp;client,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.proto.BookieClient,org.apache.bookkeeper.client.BookieWatcher)">LedgerChecker</a></span>&#8203;(<a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a>&nbsp;client,
              <a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;watcher)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.proto.BookieClient,org.apache.bookkeeper.client.BookieWatcher,int)">LedgerChecker</a></span>&#8203;(org.apache.bookkeeper.proto.BookieClient&nbsp;client,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.proto.BookieClient,org.apache.bookkeeper.client.BookieWatcher,int)">LedgerChecker</a></span>&#8203;(<a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a>&nbsp;client,
              <a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;watcher,
              int&nbsp;inFlightReadEntryNum)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -261,7 +261,7 @@ extends java.lang.Object</pre>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#checkLedger(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback)">checkLedger</a></span>&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</code></th>
+           <a href="../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</code></th>
 <td class="colLast">
 <div class="block">Check that all the fragments in the passed in ledger, and report those
  which are missing.</div>
@@ -270,7 +270,7 @@ extends java.lang.Object</pre>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#checkLedger(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback,long)">checkLedger</a></span>&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
+           <a href="../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
            long&nbsp;percentageOfLedgerFragmentToBeVerified)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -311,7 +311,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>bookieClient</h4>
-<pre>public final&nbsp;org.apache.bookkeeper.proto.BookieClient bookieClient</pre>
+<pre>public final&nbsp;<a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a> bookieClient</pre>
 </li>
 </ul>
 <a id="bookieWatcher">
@@ -357,7 +357,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>LedgerChecker</h4>
-<pre>public&nbsp;LedgerChecker&#8203;(org.apache.bookkeeper.proto.BookieClient&nbsp;client,
+<pre>public&nbsp;LedgerChecker&#8203;(<a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a>&nbsp;client,
                      <a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;watcher)</pre>
 </li>
 </ul>
@@ -377,7 +377,7 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>LedgerChecker</h4>
-<pre>public&nbsp;LedgerChecker&#8203;(org.apache.bookkeeper.proto.BookieClient&nbsp;client,
+<pre>public&nbsp;LedgerChecker&#8203;(<a href="../proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a>&nbsp;client,
                      <a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;watcher,
                      int&nbsp;inFlightReadEntryNum)</pre>
 </li>
@@ -425,7 +425,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>checkLedger</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;checkLedger&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                        org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</pre>
+                        <a href="../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</pre>
 <div class="block">Check that all the fragments in the passed in ledger, and report those
  which are missing.</div>
 </li>
@@ -437,7 +437,7 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>checkLedger</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;checkLedger&#8203;(<a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                        org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
+                        <a href="../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
                         long&nbsp;percentageOfLedgerFragmentToBeVerified)</pre>
 </li>
 </ul>
@@ -510,7 +510,7 @@ extends java.lang.Object</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

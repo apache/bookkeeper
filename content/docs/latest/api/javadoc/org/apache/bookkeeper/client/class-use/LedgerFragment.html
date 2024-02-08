@@ -112,6 +112,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -173,7 +179,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../LedgerFragmentReplicator.html#replicate(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,org.apache.zookeeper.AsyncCallback.VoidCallback,java.util.Set,java.util.function.BiConsumer)">replicate</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
          <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
          org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentMcb,
-         java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;targetBookieAddresses,
+         java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;targetBookieAddresses,
          java.util.function.BiConsumer&lt;java.lang.Long,&#8203;java.lang.Long&gt;&nbsp;onReadEntryFailureCallback)</code></th>
 <td class="colLast">
 <div class="block">This method replicate a ledger fragment which is a contiguous portion of
@@ -213,7 +219,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerChecker.</span><code><span class="memberNameLink"><a href="../LedgerChecker.html#checkLedger(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback)">checkLedger</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</code></th>
+           <a href="../../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb)</code></th>
 <td class="colLast">
 <div class="block">Check that all the fragments in the passed in ledger, and report those
  which are missing.</div>
@@ -222,7 +228,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerChecker.</span><code><span class="memberNameLink"><a href="../LedgerChecker.html#checkLedger(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback,long)">checkLedger</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
+           <a href="../../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
            long&nbsp;percentageOfLedgerFragmentToBeVerified)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -239,6 +245,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LedgerFragment.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerFragment,java.util.Set)">LedgerFragment</a></span>&#8203;(<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
               java.util.Set&lt;java.lang.Integer&gt;&nbsp;subset)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return types with arguments of type <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) java.util.Set&lt;<a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReplicationWorker.</span><code><span class="memberNameLink"><a href="../../replication/ReplicationWorker.html#getUnderreplicatedFragments(org.apache.bookkeeper.client.LedgerHandle,java.lang.Long)">getUnderreplicatedFragments</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                           java.lang.Long&nbsp;ledgerVerificationPercentage)</code></th>
+<td class="colLast">
+<div class="block">Gets the under replicated fragments.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -294,7 +325,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

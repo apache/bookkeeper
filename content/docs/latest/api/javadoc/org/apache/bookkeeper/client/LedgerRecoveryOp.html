@@ -133,12 +133,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></code>, <code><a href="AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></code>, <code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></dd>
+<dd><code><a href="AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></code>, <code><a href="AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></code>, <code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a></code></dd>
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">LedgerRecoveryOp</span>
 extends java.lang.Object
-implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener, <a href="AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></pre>
+implements <a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>, <a href="AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></pre>
 <div class="block">This class encapsulated the ledger recovery operation. It first does a read
  with entry-id of -1 (BookieProtocol.LAST_ADD_CONFIRMED) to all bookies. Then
  starting from the last confirmed entry (from hints in the ledger entries),
@@ -197,7 +197,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></td>
+<td class="colFirst"><code>(package private) <a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryListener">entryListener</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -308,7 +308,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryListener(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener)">setEntryListener</a></span>&#8203;(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;entryListener)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryListener(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener)">setEntryListener</a></span>&#8203;(<a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;entryListener)</code></th>
 <td class="colLast">
 <div class="block">Set an entry listener to listen on individual recovery reads during recovery procedure.</div>
 </td>
@@ -440,7 +440,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockListLast">
 <li class="blockList">
 <h4>entryListener</h4>
-<pre>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener entryListener</pre>
+<pre><a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a> entryListener</pre>
 </li>
 </ul>
 </li>
@@ -479,7 +479,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 <ul class="blockList">
 <li class="blockList">
 <h4>setEntryListener</h4>
-<pre class="methodSignature"><a href="LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a>&nbsp;setEntryListener&#8203;(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;entryListener)</pre>
+<pre class="methodSignature"><a href="LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a>&nbsp;setEntryListener&#8203;(<a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;entryListener)</pre>
 <div class="block">Set an entry listener to listen on individual recovery reads during recovery procedure.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -508,11 +508,11 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
                             <a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                             <a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry,
                             java.lang.Object&nbsp;ctx)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html#onEntryComplete(int,org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerEntry,java.lang.Object)">BookkeeperInternalCallbacks.ReadEntryListener</a></code></span></div>
 <div class="block">On given <i>entry</i> completed.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>onEntryComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></dd>
+<dd><code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html#onEntryComplete(int,org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerEntry,java.lang.Object)">onEntryComplete</a></code>&nbsp;in interface&nbsp;<code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>rc</code> - result code of reading this entry.</dd>
 <dd><code>lh</code> - ledger handle.</dd>
@@ -613,7 +613,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryList
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

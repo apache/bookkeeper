@@ -160,53 +160,63 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#batchReadEnabled">batchReadEnabled</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bookieFailureHistoryExpirationMSec">bookieFailureHistoryExpirationMSec</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#delayEnsembleChange">delayEnsembleChange</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../feature/Feature.html" title="interface in org.apache.bookkeeper.feature">Feature</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#disableEnsembleChangeFeature">disableEnsembleChangeFeature</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#enableBookieFailureTracking">enableBookieFailureTracking</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#enableParallelRecoveryRead">enableParallelRecoveryRead</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#enableReorderReadSequence">enableReorderReadSequence</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#enableStickyReads">enableStickyReads</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#enforceMinNumFaultDomainsForWrite">enforceMinNumFaultDomainsForWrite</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#explicitLacInterval">explicitLacInterval</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maxAllowedEnsembleChanges">maxAllowedEnsembleChanges</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#nettyMaxFrameSizeBytes">nettyMaxFrameSizeBytes</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -458,10 +468,28 @@ extends java.lang.Object</pre>
 <a id="enforceMinNumFaultDomainsForWrite">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>enforceMinNumFaultDomainsForWrite</h4>
 <pre>final&nbsp;boolean enforceMinNumFaultDomainsForWrite</pre>
+</li>
+</ul>
+<a id="batchReadEnabled">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>batchReadEnabled</h4>
+<pre>final&nbsp;boolean batchReadEnabled</pre>
+</li>
+</ul>
+<a id="nettyMaxFrameSizeBytes">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>nettyMaxFrameSizeBytes</h4>
+<pre>final&nbsp;int nettyMaxFrameSizeBytes</pre>
 </li>
 </ul>
 </li>
@@ -571,7 +599,7 @@ extends java.lang.Object</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

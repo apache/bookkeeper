@@ -124,10 +124,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
+<li><a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.ReadOpBase</a></li>
+<li>
+<ul class="inheritance">
 <li><a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.PendingReadOp</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.client.ListenerBasedPendingReadOp</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -138,7 +143,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Runnable</code>, <code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</code></dd>
+<dd><code>java.lang.Runnable</code>, <code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryCallback</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -165,7 +170,14 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 <!--   -->
 </a>
 <h3>Nested classes/interfaces inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></h3>
-<code><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>, <a href="PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a>, <a href="PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a></code></li>
+<code><a href="PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a>, <a href="PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a>, <a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="nested.classes.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Nested classes/interfaces inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a>, <a href="ReadOpBase.ReadContext.html" title="class in org.apache.bookkeeper.client">ReadOpBase.ReadContext</a></code></li>
 </ul>
 </li>
 </ul>
@@ -190,7 +202,7 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></td>
+<td class="colFirst"><code>(package private) <a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#listener">listener</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -200,7 +212,14 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 <!--   -->
 </a>
 <h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></h3>
-<code><a href="PendingReadOp.html#allowFailFast">allowFailFast</a>, <a href="PendingReadOp.html#clientCtx">clientCtx</a>, <a href="PendingReadOp.html#complete">complete</a>, <a href="PendingReadOp.html#endEntryId">endEntryId</a>, <a href="PendingReadOp.html#isRecoveryRead">isRecoveryRead</a>, <a href="PendingReadOp.html#lh">lh</a>, <a href="PendingReadOp.html#numPendingEntries">numPendingEntries</a>, <a href="PendingReadOp.html#parallelRead">parallelRead</a>, <a href="PendingReadOp.html#requestTimeNanos">requestTimeNanos</a>, <a href="PendingReadOp.html#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a>, <a href="PendingReadOp.html#seq">seq</a>, <a href="PendingReadOp.html#startEntryId">startEntryId</a></code></li>
+<code><a href="PendingReadOp.html#parallelRead">parallelRead</a>, <a href="PendingReadOp.html#seq">seq</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.html#allowFailFast">allowFailFast</a>, <a href="ReadOpBase.html#clientCtx">clientCtx</a>, <a href="ReadOpBase.html#complete">complete</a>, <a href="ReadOpBase.html#endEntryId">endEntryId</a>, <a href="ReadOpBase.html#future">future</a>, <a href="ReadOpBase.html#heardFromHosts">heardFromHosts</a>, <a href="ReadOpBase.html#heardFromHostsBitSet">heardFromHostsBitSet</a>, <a href="ReadOpBase.html#isRecoveryRead">isRecoveryRead</a>, <a href="ReadOpBase.html#lh">lh</a>, <a href="ReadOpBase.html#numPendingEntries">numPendingEntries</a>, <a href="ReadOpBase.html#requestTimeNanos">requestTimeNanos</a>, <a href="ReadOpBase.html#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a>, <a href="ReadOpBase.html#sentToHosts">sentToHosts</a>, <a href="ReadOpBase.html#speculativeTask">speculativeTask</a>, <a href="ReadOpBase.html#startEntryId">startEntryId</a></code></li>
 </ul>
 </li>
 </ul>
@@ -223,7 +242,7 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
                           <a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                           long&nbsp;startEntryId,
                           long&nbsp;endEntryId,
-                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
+                          <a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;listener,
                           java.lang.Object&nbsp;ctx,
                           boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -257,7 +276,14 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></h3>
-<code><a href="PendingReadOp.html#allowFailFastOnUnwritableChannel()">allowFailFastOnUnwritableChannel</a>, <a href="PendingReadOp.html#cancelSpeculativeTask(boolean)">cancelSpeculativeTask</a>, <a href="PendingReadOp.html#future()">future</a>, <a href="PendingReadOp.html#getLedgerMetadata()">getLedgerMetadata</a>, <a href="PendingReadOp.html#getSpeculativeTask()">getSpeculativeTask</a>, <a href="PendingReadOp.html#initiate()">initiate</a>, <a href="PendingReadOp.html#parallelRead(boolean)">parallelRead</a>, <a href="PendingReadOp.html#readEntryComplete(int,long,long,io.netty.buffer.ByteBuf,java.lang.Object)">readEntryComplete</a>, <a href="PendingReadOp.html#run()">run</a>, <a href="PendingReadOp.html#sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest)">sendReadTo</a>, <a href="PendingReadOp.html#submit()">submit</a></code></li>
+<code><a href="PendingReadOp.html#initiate()">initiate</a>, <a href="PendingReadOp.html#parallelRead(boolean)">parallelRead</a>, <a href="PendingReadOp.html#readEntryComplete(int,long,long,io.netty.buffer.ByteBuf,java.lang.Object)">readEntryComplete</a>, <a href="PendingReadOp.html#sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest)">sendReadTo</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.html#allowFailFastOnUnwritableChannel()">allowFailFastOnUnwritableChannel</a>, <a href="ReadOpBase.html#cancelSpeculativeTask(boolean)">cancelSpeculativeTask</a>, <a href="ReadOpBase.html#future()">future</a>, <a href="ReadOpBase.html#getLedgerMetadata()">getLedgerMetadata</a>, <a href="ReadOpBase.html#getSpeculativeTask()">getSpeculativeTask</a>, <a href="ReadOpBase.html#run()">run</a>, <a href="ReadOpBase.html#submit()">submit</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -288,7 +314,7 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 <ul class="blockList">
 <li class="blockList">
 <h4>listener</h4>
-<pre>final&nbsp;org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener listener</pre>
+<pre>final&nbsp;<a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a> listener</pre>
 </li>
 </ul>
 <a id="ctx">
@@ -320,7 +346,7 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
                            <a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                            long&nbsp;startEntryId,
                            long&nbsp;endEntryId,
-                           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
+                           <a href="../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;listener,
                            java.lang.Object&nbsp;ctx,
                            boolean&nbsp;isRecoveryRead)</pre>
 </li>
@@ -417,7 +443,7 @@ extends <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.clien
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

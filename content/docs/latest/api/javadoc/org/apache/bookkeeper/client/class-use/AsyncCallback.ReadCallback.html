@@ -147,6 +147,38 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncBatchReadEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncBatchReadEntries</a></span>&#8203;(long&nbsp;startEntry,
+                     int&nbsp;maxCount,
+                     long&nbsp;maxSize,
+                     <a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                     java.lang.Object&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries in asynchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncBatchReadEntriesInternal(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object,boolean)">asyncBatchReadEntriesInternal</a></span>&#8203;(long&nbsp;startEntry,
+                             int&nbsp;maxCount,
+                             long&nbsp;maxSize,
+                             <a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                             java.lang.Object&nbsp;ctx,
+                             boolean&nbsp;isRecoveryRead)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncBatchReadUnconfirmedEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncBatchReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;startEntry,
+                                int&nbsp;maxCount,
+                                long&nbsp;maxSize,
+                                <a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                                java.lang.Object&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncReadEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadEntries</a></span>&#8203;(long&nbsp;firstEntry,
                 long&nbsp;lastEntry,
                 <a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
@@ -155,7 +187,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncReadEntriesInternal(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object,boolean)">asyncReadEntriesInternal</a></span>&#8203;(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
@@ -164,19 +196,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncReadLastEntry(org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadLastEntry</a></span>&#8203;(<a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
                   java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../ReadOnlyLedgerHandle.html#asyncReadLastEntry(org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadLastEntry</a></span>&#8203;(<a href="../AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
                   java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#asyncReadUnconfirmedEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
                            long&nbsp;lastEntry,
@@ -240,7 +272,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -107,9 +107,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
 </td>
 </tr>
 </tbody>
@@ -117,6 +129,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a> in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with type arguments of type <a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LocalBookieEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../bookie/LocalBookieEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieToFreeSpaceMap)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -131,12 +165,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieInfoReader.</span><code><span class="memberNameLink"><a href="../BookieInfoReader.html#getBookieInfo()">getBookieInfo</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colFirst"><code>java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#getBookieInfo()">getBookieInfo</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Retrieves BookieInfo from all the bookies in the cluster.</div>
@@ -154,19 +188,43 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../DefaultEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../DefaultEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>default void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
 <td class="colLast">
 <div class="block">Send the bookie info details.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TopologyAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TopologyAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a> in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with parameters of type <a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperInternalCallbacks.GetBookieInfoCallback.</span><code><span class="memberNameLink"><a href="../../proto/BookkeeperInternalCallbacks.GetBookieInfoCallback.html#getBookieInfoComplete(int,org.apache.bookkeeper.client.BookieInfoReader.BookieInfo,java.lang.Object)">getBookieInfoComplete</a></span>&#8203;(int&nbsp;rc,
+                     <a href="../BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&nbsp;bInfo,
+                     java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -223,7 +281,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

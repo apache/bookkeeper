@@ -166,7 +166,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieId,&#8203;java.lang.Boolean&gt;</code></td>
+<td class="colFirst"><code>(package private) com.google.common.cache.Cache&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;java.lang.Boolean&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quarantinedBookies">quarantinedBookies</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -190,8 +190,8 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.conf.ClientConfiguration,org.apache.bookkeeper.client.EnsemblePlacementPolicy,org.apache.bookkeeper.discover.RegistrationClient,org.apache.bookkeeper.proto.BookieAddressResolver,org.apache.bookkeeper.stats.StatsLogger)">BookieWatcherImpl</a></span>&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
                  <a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;placementPolicy,
-                 org.apache.bookkeeper.discover.RegistrationClient&nbsp;registrationClient,
-                 org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver,
+                 <a href="../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a>&nbsp;registrationClient,
+                 <a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver,
                  <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -214,22 +214,22 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllBookies()">getAllBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>org.apache.bookkeeper.proto.BookieAddressResolver</code></td>
+<td class="colFirst"><code><a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBookieAddressResolver()">getBookieAddressResolver</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBookies()">getBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReadOnlyBookies()">getReadOnlyBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -242,13 +242,13 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isBookieUnavailable(org.apache.bookkeeper.net.BookieId)">isBookieUnavailable</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;id)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isBookieUnavailable(org.apache.bookkeeper.net.BookieId)">isBookieUnavailable</a></span>&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;id)</code></th>
 <td class="colLast">
 <div class="block">Determine if a bookie should be considered unavailable.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newEnsemble(int,int,int,java.util.Map)">newEnsemble</a></span>&#8203;(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
            int&nbsp;ackQuorumSize,
@@ -259,7 +259,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quarantineBookie(org.apache.bookkeeper.net.BookieId)">quarantineBookie</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quarantineBookie(org.apache.bookkeeper.net.BookieId)">quarantineBookie</a></span>&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie)</code></th>
 <td class="colLast">
 <div class="block">Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.</div>
 </td>
@@ -272,14 +272,14 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 </td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>org.apache.bookkeeper.net.BookieId</code></td>
+<td class="colFirst"><code><a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,int,java.util.Set)">replaceBookie</a></span>&#8203;(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
              java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-             java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;existingBookies,
+             java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;existingBookies,
              int&nbsp;bookieIdx,
-             java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)</code></th>
+             java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)</code></th>
 <td class="colLast">
 <div class="block">Choose a bookie to replace bookie <i>bookieIdx</i> in <i>existingBookies</i>.</div>
 </td>
@@ -314,7 +314,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockListLast">
 <li class="blockList">
 <h4>quarantinedBookies</h4>
-<pre>final&nbsp;com.google.common.cache.Cache&lt;org.apache.bookkeeper.net.BookieId,&#8203;java.lang.Boolean&gt; quarantinedBookies</pre>
+<pre>final&nbsp;com.google.common.cache.Cache&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;java.lang.Boolean&gt; quarantinedBookies</pre>
 </li>
 </ul>
 </li>
@@ -335,8 +335,8 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <h4>BookieWatcherImpl</h4>
 <pre>public&nbsp;BookieWatcherImpl&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
                          <a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;placementPolicy,
-                         org.apache.bookkeeper.discover.RegistrationClient&nbsp;registrationClient,
-                         org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver,
+                         <a href="../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a>&nbsp;registrationClient,
+                         <a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver,
                          <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
 </li>
 </ul>
@@ -356,8 +356,8 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>getBookies</h4>
-<pre class="methodSignature">public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;getBookies()
-                                                             throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre class="methodSignature">public&nbsp;java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;getBookies()
+                                   throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="BookieWatcher.html#getBookies()">getBookies</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -372,8 +372,8 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllBookies</h4>
-<pre class="methodSignature">public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;getAllBookies()
-                                                                throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre class="methodSignature">public&nbsp;java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;getAllBookies()
+                                      throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="BookieWatcher.html#getAllBookies()">getAllBookies</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -388,7 +388,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>getBookieAddressResolver</h4>
-<pre class="methodSignature">public&nbsp;org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;getBookieAddressResolver()</pre>
+<pre class="methodSignature">public&nbsp;<a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;getBookieAddressResolver()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="BookieWatcher.html#getBookieAddressResolver()">getBookieAddressResolver</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -401,8 +401,8 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>getReadOnlyBookies</h4>
-<pre class="methodSignature">public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;getReadOnlyBookies()
-                                                                     throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<pre class="methodSignature">public&nbsp;java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;getReadOnlyBookies()
+                                           throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="BookieWatcher.html#getReadOnlyBookies()">getReadOnlyBookies</a></code>&nbsp;in interface&nbsp;<code><a href="BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></code></dd>
@@ -417,7 +417,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>isBookieUnavailable</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;isBookieUnavailable&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;id)</pre>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isBookieUnavailable&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;id)</pre>
 <div class="block">Determine if a bookie should be considered unavailable.
  This does not require a network call because this class
  maintains a current view of readonly and writable bookies.
@@ -454,11 +454,11 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsemble</h4>
-<pre class="methodSignature">public&nbsp;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;newEnsemble&#8203;(int&nbsp;ensembleSize,
-                                                                      int&nbsp;writeQuorumSize,
-                                                                      int&nbsp;ackQuorumSize,
-                                                                      java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata)
-                                                               throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre class="methodSignature">public&nbsp;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;newEnsemble&#8203;(int&nbsp;ensembleSize,
+                                            int&nbsp;writeQuorumSize,
+                                            int&nbsp;ackQuorumSize,
+                                            java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata)
+                                     throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="BookieWatcher.html#newEnsemble(int,int,int,java.util.Map)">BookieWatcher</a></code></span></div>
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 <dl>
@@ -480,14 +480,14 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>replaceBookie</h4>
-<pre class="methodSignature">public&nbsp;org.apache.bookkeeper.net.BookieId&nbsp;replaceBookie&#8203;(int&nbsp;ensembleSize,
-                                                        int&nbsp;writeQuorumSize,
-                                                        int&nbsp;ackQuorumSize,
-                                                        java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-                                                        java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;existingBookies,
-                                                        int&nbsp;bookieIdx,
-                                                        java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)
-                                                 throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;replaceBookie&#8203;(int&nbsp;ensembleSize,
+                              int&nbsp;writeQuorumSize,
+                              int&nbsp;ackQuorumSize,
+                              java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
+                              java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;existingBookies,
+                              int&nbsp;bookieIdx,
+                              java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)
+                       throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="BookieWatcher.html#replaceBookie(int,int,int,java.util.Map,java.util.List,int,java.util.Set)">BookieWatcher</a></code></span></div>
 <div class="block">Choose a bookie to replace bookie <i>bookieIdx</i> in <i>existingBookies</i>.</div>
 <dl>
@@ -508,7 +508,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 <ul class="blockList">
 <li class="blockList">
 <h4>quarantineBookie</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;quarantineBookie&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;quarantineBookie&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie)</pre>
 <div class="block">Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
@@ -602,7 +602,7 @@ implements <a href="BookieWatcher.html" title="interface in org.apache.bookkeepe
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

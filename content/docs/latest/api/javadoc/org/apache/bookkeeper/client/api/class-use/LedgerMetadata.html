@@ -107,6 +107,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.datainteg">org.apache.bookkeeper.bookie.datainteg</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -118,11 +130,220 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a> in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with parameters of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieShell.</span><code><span class="memberNameLink"><a href="../../../bookie/BookieShell.html#printLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,boolean)">printLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;md,
+                   boolean&nbsp;printMeta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.datainteg">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a> in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> that return <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.LedgerResult.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html#getMetadata()">getMetadata</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> that return types with arguments of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;java.util.Map&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#getCachedOrReadMetadata(java.lang.String)">getCachedOrReadMetadata</a></span>&#8203;(java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) io.reactivex.rxjava3.core.Single&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#recoverLedger(long,java.lang.String)">recoverLedger</a></span>&#8203;(long&nbsp;ledgerId,
+             java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) io.reactivex.rxjava3.core.Maybe&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#recoverLedgerIfInLimbo(long,org.apache.bookkeeper.client.api.LedgerMetadata,java.lang.String)">recoverLedgerIfInLimbo</a></span>&#8203;(long&nbsp;ledgerId,
+                      <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;origMetadata,
+                      java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">
+<div class="block">Run ledger recovery on all a ledger if it has been marked as in limbo.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> with parameters of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) io.reactivex.rxjava3.core.Single&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#checkAndRecoverLedgerEntries(long,org.apache.bookkeeper.client.api.LedgerMetadata,java.lang.String)">checkAndRecoverLedgerEntries</a></span>&#8203;(long&nbsp;ledgerId,
+                            <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                            java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">
+<div class="block">Check whether the local storage has all the entries as specified in the metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#ensemblesContainBookie(org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.net.BookieId)">ensemblesContainBookie</a></span>&#8203;(<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                      <a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html" title="class in org.apache.bookkeeper.bookie.datainteg">DataIntegrityCheckImpl.LedgerResult</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.LedgerResult.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html#error(long,org.apache.bookkeeper.client.api.LedgerMetadata,java.lang.Throwable)">error</a></span>&#8203;(long&nbsp;ledgerId,
+     <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+     java.lang.Throwable&nbsp;t)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../bookie/datainteg/EntryCopier.Batch.html" title="interface in org.apache.bookkeeper.bookie.datainteg">EntryCopier.Batch</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryCopier.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/EntryCopier.html#newBatch(long,org.apache.bookkeeper.client.api.LedgerMetadata)">newBatch</a></span>&#8203;(long&nbsp;ledgerId,
+        <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">
+<div class="block">Start copying a new batch.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../bookie/datainteg/EntryCopier.Batch.html" title="interface in org.apache.bookkeeper.bookie.datainteg">EntryCopier.Batch</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryCopierImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/EntryCopierImpl.html#newBatch(long,org.apache.bookkeeper.client.api.LedgerMetadata)">newBatch</a></span>&#8203;(long&nbsp;ledgerId,
+        <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static <a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html" title="class in org.apache.bookkeeper.bookie.datainteg">DataIntegrityCheckImpl.LedgerResult</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.LedgerResult.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html#ok(long,org.apache.bookkeeper.client.api.LedgerMetadata)">ok</a></span>&#8203;(long&nbsp;ledgerId,
+  <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static com.google.common.collect.ImmutableSortedMap&lt;java.lang.Long,&#8203;com.google.common.collect.ImmutableList&lt;java.lang.Integer&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryCopierImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/EntryCopierImpl.html#preferredBookieIndices(org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.api.LedgerMetadata,java.util.Set,long)">preferredBookieIndices</a></span>&#8203;(<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                      java.util.Set&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;errorBookies,
+                      long&nbsp;seed)</code></th>
+<td class="colLast">
+<div class="block">Generate a map of preferred bookie indices.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) io.reactivex.rxjava3.core.Maybe&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#recoverLedgerIfInLimbo(long,org.apache.bookkeeper.client.api.LedgerMetadata,java.lang.String)">recoverLedgerIfInLimbo</a></span>&#8203;(long&nbsp;ledgerId,
+                      <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;origMetadata,
+                      java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">
+<div class="block">Run ledger recovery on all a ledger if it has been marked as in limbo.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> with type arguments of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;java.util.Set&lt;<a href="../../../bookie/datainteg/DataIntegrityCheckImpl.LedgerResult.html" title="class in org.apache.bookkeeper.bookie.datainteg">DataIntegrityCheckImpl.LedgerResult</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#checkAndRecoverLedgers(java.util.Map,java.lang.String)">checkAndRecoverLedgers</a></span>&#8203;(java.util.Map&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;ledgers,
+                      java.lang.String&nbsp;runId)</code></th>
+<td class="colLast">
+<div class="block">Check each ledger passed.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataAsyncIterator.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/MetadataAsyncIterator.html#forEach(java.util.function.BiFunction)">forEach</a></span>&#8203;(java.util.function.BiFunction&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>,&#8203;java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;&gt;&nbsp;consumer)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DataIntegrityCheckImpl.</span><code><span class="memberNameLink"><a href="../../../bookie/datainteg/DataIntegrityCheckImpl.html#updateMetadataCache(java.util.Map)">updateMetadataCache</a></span>&#8203;(java.util.Map&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;ledgers)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> with parameters of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/datainteg/EntryCopierImpl.BatchImpl.html#%3Cinit%3E(org.apache.bookkeeper.net.BookieId,long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.bookie.datainteg.EntryCopierImpl.SinBin)">BatchImpl</a></span>&#8203;(<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+         long&nbsp;ledgerId,
+         <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+         <a href="../../../bookie/datainteg/EntryCopierImpl.SinBin.html" title="class in org.apache.bookkeeper.bookie.datainteg">EntryCopierImpl.SinBin</a>&nbsp;sinBin)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -175,7 +396,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadOnlyLedgerHandle.MetadataUpdater.</span><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.MetadataUpdater.html#newMetadata">newMetadata</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -213,12 +434,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PendingReadOp.</span><code><span class="memberNameLink"><a href="../../PendingReadOp.html#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadLastConfirmedAndEntryOp.</span><code><span class="memberNameLink"><a href="../../ReadLastConfirmedAndEntryOp.html#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ReadLastConfirmedAndEntryOp.</span><code><span class="memberNameLink"><a href="../../ReadLastConfirmedAndEntryOp.html#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadOpBase.</span><code><span class="memberNameLink"><a href="../../ReadOpBase.html#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -237,7 +458,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.html#closeRecovered()">closeRecovered</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -248,16 +469,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>java.util.SortedMap&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../BookKeeperAdmin.html#getLedgersContainBookies(java.util.Set)">getLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookies)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../BookKeeperAdmin.html#getLedgersContainBookies(java.util.Set)">getLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookies)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#getVersionedLedgerMetadata()">getVersionedLedgerMetadata</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MetadataUpdateLoop.</span><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.html#run()">run</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -274,7 +495,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../BookKeeperAdmin.html#areEntriesOfLedgerStoredInTheBookie(long,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.api.LedgerMetadata)">areEntriesOfLedgerStoredInTheBookie</a></span>&#8203;(long&nbsp;ledgerId,
-                                   org.apache.bookkeeper.net.BookieId&nbsp;bookieAddress,
+                                   <a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieAddress,
                                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;ledgerMetadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -284,12 +505,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) static java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.Set&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataUtils.</span><code><span class="memberNameLink"><a href="../../LedgerMetadataUtils.html#getBookiesInThisLedger(org.apache.bookkeeper.client.api.LedgerMetadata)">getBookiesInThisLedger</a></span>&#8203;(<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) static java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.List&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataUtils.</span><code><span class="memberNameLink"><a href="../../LedgerMetadataUtils.html#getCurrentEnsemble(org.apache.bookkeeper.client.api.LedgerMetadata)">getCurrentEnsemble</a></span>&#8203;(<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -299,7 +520,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) static java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.List&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataUtils.</span><code><span class="memberNameLink"><a href="../../LedgerMetadataUtils.html#getLastEnsembleValue(org.apache.bookkeeper.client.api.LedgerMetadata)">getLastEnsembleValue</a></span>&#8203;(<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -327,11 +548,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) static java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.List&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EnsembleUtils.</span><code><span class="memberNameLink"><a href="../../EnsembleUtils.html#replaceBookiesInEnsemble(org.apache.bookkeeper.client.BookieWatcher,org.apache.bookkeeper.client.api.LedgerMetadata,java.util.List,java.util.Map,java.lang.String)">replaceBookiesInEnsemble</a></span>&#8203;(<a href="../../BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a>&nbsp;bookieWatcher,
                         <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
-                        java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;oldEnsemble,
-                        java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;failedBookies,
+                        java.util.List&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;oldEnsemble,
+                        java.util.Map&lt;java.lang.Integer,&#8203;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;failedBookies,
                         java.lang.String&nbsp;logContext)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -357,26 +578,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../BookKeeperAdmin.html#asyncGetLedgersContainBookies(java.util.Set,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback)">asyncGetLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;bookies,
-                             org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;java.util.SortedMap&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../BookKeeperAdmin.html#asyncGetLedgersContainBookies(java.util.Set,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback)">asyncGetLedgersContainBookies</a></span>&#8203;(java.util.Set&lt;<a href="../../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookies,
+                             <a href="../../../proto/BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;java.util.SortedMap&lt;java.lang.Long,&#8203;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;callback)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.html#onChanged(long,org.apache.bookkeeper.versioning.Versioned)">onChanged</a></span>&#8203;(long&nbsp;lid,
-         org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
+         <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">setLedgerMetadata</a></span>&#8203;(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../LedgerHandle.html#setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">setLedgerMetadata</a></span>&#8203;(<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
+                 <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataUpdateLoop.LocalValueUpdater.</span><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.LocalValueUpdater.html#updateValue(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">updateValue</a></span>&#8203;(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;oldValue,
-           org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newValue)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MetadataUpdateLoop.LocalValueUpdater.</span><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.LocalValueUpdater.html#updateValue(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">updateValue</a></span>&#8203;(<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;oldValue,
+           <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -391,7 +612,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../LedgerHandle.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,java.util.EnumSet)">LedgerHandle</a></span>&#8203;(<a href="../../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
             long&nbsp;ledgerId,
-            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+            <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
             <a href="../../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
             byte[]&nbsp;password,
             java.util.EnumSet&lt;<a href="../WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
@@ -400,25 +621,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../LedgerHandleAdv.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,java.util.EnumSet)">LedgerHandleAdv</a></span>&#8203;(<a href="../../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                long&nbsp;ledgerId,
-               org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
+               <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                <a href="../../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                byte[]&nbsp;password,
                java.util.EnumSet&lt;<a href="../WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.html#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater)">MetadataUpdateLoop</a></span>&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.html#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater)">MetadataUpdateLoop</a></span>&#8203;(<a href="../../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                   long&nbsp;ledgerId,
-                  java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                  java.util.function.Supplier&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                   <a href="../../MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                   <a href="../../MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                   <a href="../../MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.html#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater,com.google.common.util.concurrent.RateLimiter)">MetadataUpdateLoop</a></span>&#8203;(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../MetadataUpdateLoop.html#%3Cinit%3E(org.apache.bookkeeper.meta.LedgerManager,long,java.util.function.Supplier,org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate,org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform,org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater,com.google.common.util.concurrent.RateLimiter)">MetadataUpdateLoop</a></span>&#8203;(<a href="../../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;lm,
                   long&nbsp;ledgerId,
-                  java.util.function.Supplier&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
+                  java.util.function.Supplier&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                   <a href="../../MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                   <a href="../../MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                   <a href="../../MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue,
@@ -428,13 +649,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.MetadataUpdater.html#%3Cinit%3E(org.apache.bookkeeper.versioning.Versioned)">MetadataUpdater</a></span>&#8203;(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.MetadataUpdater.html#%3Cinit%3E(org.apache.bookkeeper.versioning.Versioned)">MetadataUpdater</a></span>&#8203;(<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../ReadOnlyLedgerHandle.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,boolean)">ReadOnlyLedgerHandle</a></span>&#8203;(<a href="../../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                     long&nbsp;ledgerId,
-                    org.apache.bookkeeper.versioning.Versioned&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
+                    <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                     <a href="../../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;password,
                     boolean&nbsp;watch)</code></th>
@@ -480,6 +701,277 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">
 <div class="block">Get ledger metadata of a given ledger id.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a> in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a> that return <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataSerDe.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerMetadataSerDe.html#parseConfig(byte%5B%5D,long,java.util.Optional)">parseConfig</a></span>&#8203;(byte[]&nbsp;bytes,
+           long&nbsp;ledgerId,
+           java.util.Optional&lt;java.lang.Long&gt;&nbsp;metadataStoreCtime)</code></th>
+<td class="colLast">
+<div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a> that return types with arguments of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;inputMetadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CleanupLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/CleanupLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;lid,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">
+<div class="block">Create a new ledger with provided ledger id and metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/MSLedgerManagerFactory.MsLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;lid,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/NullMetadataBookieDriver.NullLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#readLedgerMetadata(long)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#readLedgerMetadata(long,org.apache.zookeeper.Watcher)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                  org.apache.zookeeper.Watcher&nbsp;watcher)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CleanupLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/CleanupLedgerManager.html#readLedgerMetadata(long)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerManager.html#readLedgerMetadata(long)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
+<td class="colLast">
+<div class="block">Read ledger metadata of a specified ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/MSLedgerManagerFactory.MsLedgerManager.html#readLedgerMetadata(long)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/NullMetadataBookieDriver.NullLedgerManager.html#readLedgerMetadata(long)">readLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CleanupLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/CleanupLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">
+<div class="block">Write ledger metadata.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/MSLedgerManagerFactory.MsLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/NullMetadataBookieDriver.NullLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;inputMetadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CleanupLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/CleanupLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;lid,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">
+<div class="block">Create a new ledger with provided ledger id and metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/MSLedgerManagerFactory.MsLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;lid,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/NullMetadataBookieDriver.NullLedgerManager.html#createLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata)">createLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                    <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>byte[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataSerDe.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerMetadataSerDe.html#serialize(org.apache.bookkeeper.client.api.LedgerMetadata)">serialize</a></span>&#8203;(<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/AbstractZkLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CleanupLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/CleanupLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/LedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">
+<div class="block">Write ledger metadata.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/MSLedgerManagerFactory.MsLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManager.</span><code><span class="memberNameLink"><a href="../../../meta/NullMetadataBookieDriver.NullLedgerManager.html#writeLedgerMetadata(long,org.apache.bookkeeper.client.api.LedgerMetadata,org.apache.bookkeeper.versioning.Version)">writeLedgerMetadata</a></span>&#8203;(long&nbsp;ledgerId,
+                   <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;metadata,
+                   <a href="../../../versioning/Version.html" title="interface in org.apache.bookkeeper.versioning">Version</a>&nbsp;currentVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a> in <a href="../../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with type arguments of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperInternalCallbacks.LedgerMetadataListener.</span><code><span class="memberNameLink"><a href="../../../proto/BookkeeperInternalCallbacks.LedgerMetadataListener.html#onChanged(long,org.apache.bookkeeper.versioning.Versioned)">onChanged</a></span>&#8203;(long&nbsp;ledgerId,
+         <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata)</code></th>
+<td class="colLast">
+<div class="block">Triggered each time ledger metadata changed.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a> in <a href="../../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with type arguments of type <a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorPlacementPolicyCheckTask.</span><code><span class="memberNameLink"><a href="../../../replication/AuditorPlacementPolicyCheckTask.html#doPlacementPolicyCheck(java.lang.Long,org.apache.zookeeper.AsyncCallback.VoidCallback,org.apache.bookkeeper.versioning.Versioned)">doPlacementPolicyCheck</a></span>&#8203;(java.lang.Long&nbsp;ledgerId,
+                      org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;iterCallback,
+                      <a href="../../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadataVer)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -535,7 +1027,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

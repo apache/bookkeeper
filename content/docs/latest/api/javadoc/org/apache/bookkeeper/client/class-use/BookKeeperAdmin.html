@@ -107,16 +107,63 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.datainteg">org.apache.bookkeeper.bookie.datainteg</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
 </td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.http.service">org.apache.bookkeeper.server.http.service</a></th>
+<td class="colLast">
+<div class="block">Define the services running in bookkeeper admin http server.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.commands.autorecovery">org.apache.bookkeeper.tools.cli.commands.autorecovery</a></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.datainteg">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a> in <a href="../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a> with parameters of type <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/datainteg/DataIntegrityCheckImpl.html#%3Cinit%3E(org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.bookie.LedgerStorage,org.apache.bookkeeper.bookie.datainteg.EntryCopier,org.apache.bookkeeper.client.BookKeeperAdmin,io.reactivex.rxjava3.core.Scheduler)">DataIntegrityCheckImpl</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieId,
+                      <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                      <a href="../../bookie/LedgerStorage.html" title="interface in org.apache.bookkeeper.bookie">LedgerStorage</a>&nbsp;ledgerStorage,
+                      <a href="../../bookie/datainteg/EntryCopier.html" title="interface in org.apache.bookkeeper.bookie.datainteg">EntryCopier</a>&nbsp;entryCopier,
+                      <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+                      io.reactivex.rxjava3.core.Scheduler&nbsp;scheduler)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -132,6 +179,239 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../UpdateLedgerOp.html#%3Cinit%3E(org.apache.bookkeeper.client.BookKeeper,org.apache.bookkeeper.client.BookKeeperAdmin)">UpdateLedgerOp</a></span>&#8203;(<a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
               <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> declared as <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#admin">admin</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorTask.</span><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#getBookKeeperAdmin(org.apache.bookkeeper.client.BookKeeper)">getBookKeeperAdmin</a></span>&#8203;(<a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bookKeeper)</code></th>
+<td class="colLast">
+<div class="block">Get BookKeeper admin according to bookKeeper client.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> with parameters of type <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/Auditor.html#%3Cinit%3E(java.lang.String,org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeper,boolean,org.apache.bookkeeper.client.BookKeeperAdmin,boolean,org.apache.bookkeeper.stats.StatsLogger)">Auditor</a></span>&#8203;(java.lang.String&nbsp;bookieIdentifier,
+       <a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+       <a href="../BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bkc,
+       boolean&nbsp;ownBkc,
+       <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+       boolean&nbsp;ownAdmin,
+       <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorBookieCheckTask.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.replication.AuditorStats,org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.meta.LedgerUnderreplicationManager,org.apache.bookkeeper.replication.AuditorTask.ShutdownTaskHandler,org.apache.bookkeeper.replication.BookieLedgerIndexer,java.util.function.BiConsumer,java.util.function.BiConsumer)">AuditorBookieCheckTask</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a>&nbsp;auditorStats,
+                      <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+                      <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                      <a href="../../meta/LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a>&nbsp;ledgerUnderreplicationManager,
+                      <a href="../../replication/AuditorTask.ShutdownTaskHandler.html" title="interface in org.apache.bookkeeper.replication">AuditorTask.ShutdownTaskHandler</a>&nbsp;shutdownTaskHandler,
+                      <a href="../../replication/BookieLedgerIndexer.html" title="class in org.apache.bookkeeper.replication">BookieLedgerIndexer</a>&nbsp;bookieLedgerIndexer,
+                      java.util.function.BiConsumer&lt;java.util.concurrent.atomic.AtomicBoolean,&#8203;java.lang.Throwable&gt;&nbsp;hasAuditCheckTask,
+                      java.util.function.BiConsumer&lt;java.lang.Void,&#8203;java.lang.Throwable&gt;&nbsp;submitCheckTask)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorCheckAllLedgersTask.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.replication.AuditorStats,org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.meta.LedgerUnderreplicationManager,org.apache.bookkeeper.replication.AuditorTask.ShutdownTaskHandler,java.util.function.BiConsumer)">AuditorCheckAllLedgersTask</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                          <a href="../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a>&nbsp;auditorStats,
+                          <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+                          <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                          <a href="../../meta/LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a>&nbsp;ledgerUnderreplicationManager,
+                          <a href="../../replication/AuditorTask.ShutdownTaskHandler.html" title="interface in org.apache.bookkeeper.replication">AuditorTask.ShutdownTaskHandler</a>&nbsp;shutdownTaskHandler,
+                          java.util.function.BiConsumer&lt;java.util.concurrent.atomic.AtomicBoolean,&#8203;java.lang.Throwable&gt;&nbsp;hasAuditCheckTask)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorPlacementPolicyCheckTask.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.replication.AuditorStats,org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.meta.LedgerUnderreplicationManager,org.apache.bookkeeper.replication.AuditorTask.ShutdownTaskHandler,java.util.function.BiConsumer)">AuditorPlacementPolicyCheckTask</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                               <a href="../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a>&nbsp;auditorStats,
+                               <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+                               <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                               <a href="../../meta/LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a>&nbsp;ledgerUnderreplicationManager,
+                               <a href="../../replication/AuditorTask.ShutdownTaskHandler.html" title="interface in org.apache.bookkeeper.replication">AuditorTask.ShutdownTaskHandler</a>&nbsp;shutdownTaskHandler,
+                               java.util.function.BiConsumer&lt;java.util.concurrent.atomic.AtomicBoolean,&#8203;java.lang.Throwable&gt;&nbsp;hasAuditCheckTask)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorReplicasCheckTask.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.replication.AuditorStats,org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.meta.LedgerUnderreplicationManager,org.apache.bookkeeper.replication.AuditorTask.ShutdownTaskHandler,java.util.function.BiConsumer)">AuditorReplicasCheckTask</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                        <a href="../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a>&nbsp;auditorStats,
+                        <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+                        <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+                        <a href="../../meta/LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a>&nbsp;ledgerUnderreplicationManager,
+                        <a href="../../replication/AuditorTask.ShutdownTaskHandler.html" title="interface in org.apache.bookkeeper.replication">AuditorTask.ShutdownTaskHandler</a>&nbsp;shutdownTaskHandler,
+                        java.util.function.BiConsumer&lt;java.util.concurrent.atomic.AtomicBoolean,&#8203;java.lang.Throwable&gt;&nbsp;hasAuditCheckTask)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../replication/AuditorTask.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.replication.AuditorStats,org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManager,org.apache.bookkeeper.meta.LedgerUnderreplicationManager,org.apache.bookkeeper.replication.AuditorTask.ShutdownTaskHandler,java.util.function.BiConsumer)">AuditorTask</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+           <a href="../../replication/AuditorStats.html" title="class in org.apache.bookkeeper.replication">AuditorStats</a>&nbsp;auditorStats,
+           <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;admin,
+           <a href="../../meta/LedgerManager.html" title="interface in org.apache.bookkeeper.meta">LedgerManager</a>&nbsp;ledgerManager,
+           <a href="../../meta/LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a>&nbsp;ledgerUnderreplicationManager,
+           <a href="../../replication/AuditorTask.ShutdownTaskHandler.html" title="interface in org.apache.bookkeeper.replication">AuditorTask.ShutdownTaskHandler</a>&nbsp;shutdownTaskHandler,
+           java.util.function.BiConsumer&lt;java.util.concurrent.atomic.AtomicBoolean,&#8203;java.lang.Throwable&gt;&nbsp;hasAuditCheckTask)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.http.service">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a> in <a href="../../server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a> declared as <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DecommissionService.</span><code><span class="memberNameLink"><a href="../../server/http/service/DecommissionService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ListBookiesService.</span><code><span class="memberNameLink"><a href="../../server/http/service/ListBookiesService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LostBookieRecoveryDelayService.</span><code><span class="memberNameLink"><a href="../../server/http/service/LostBookieRecoveryDelayService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadLedgerEntryService.</span><code><span class="memberNameLink"><a href="../../server/http/service/ReadLedgerEntryService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RecoveryBookieService.</span><code><span class="memberNameLink"><a href="../../server/http/service/RecoveryBookieService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TriggerAuditService.</span><code><span class="memberNameLink"><a href="../../server/http/service/TriggerAuditService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">WhoIsAuditorService.</span><code><span class="memberNameLink"><a href="../../server/http/service/WhoIsAuditorService.html#bka">bka</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../server/http/service/package-summary.html">org.apache.bookkeeper.server.http.service</a> with parameters of type <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/ClusterInfoService.html#%3Cinit%3E(org.apache.bookkeeper.client.BookKeeperAdmin,org.apache.bookkeeper.meta.LedgerManagerFactory)">ClusterInfoService</a></span>&#8203;(@NonNull <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka,
+                  @NonNull <a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a>&nbsp;ledgerManagerFactory)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/DecommissionService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin,java.util.concurrent.ExecutorService)">DecommissionService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka,
+                   java.util.concurrent.ExecutorService&nbsp;executor)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/ListBookiesService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin)">ListBookiesService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                  <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/LostBookieRecoveryDelayService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin)">LostBookieRecoveryDelayService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                              <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/ReadLedgerEntryService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin)">ReadLedgerEntryService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                      <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/RecoveryBookieService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin,java.util.concurrent.ExecutorService)">RecoveryBookieService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                     <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka,
+                     java.util.concurrent.ExecutorService&nbsp;executor)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/TriggerAuditService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin)">TriggerAuditService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../server/http/service/WhoIsAuditorService.html#%3Cinit%3E(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.client.BookKeeperAdmin)">WhoIsAuditorService</a></span>&#8203;(<a href="../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf,
+                   <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tools.cli.commands.autorecovery">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a> in <a href="../../tools/cli/commands/autorecovery/package-summary.html">org.apache.bookkeeper.tools.cli.commands.autorecovery</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../tools/cli/commands/autorecovery/package-summary.html">org.apache.bookkeeper.tools.cli.commands.autorecovery</a> with parameters of type <a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../tools/cli/commands/autorecovery/WhoIsAuditorCommand.html#%3Cinit%3E(org.apache.bookkeeper.client.BookKeeperAdmin)">WhoIsAuditorCommand</a></span>&#8203;(<a href="../BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a>&nbsp;bka)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -188,7 +468,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

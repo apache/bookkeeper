@@ -118,6 +118,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client implementation package.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.streaming">org.apache.bookkeeper.streaming</a></th>
+<td class="colLast">
+<div class="block">A java io stream wrapper over bookkeeper ledgers.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -186,6 +198,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tbody>
+<tr class="altColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#batchReadEntries(long,int,long)">batchReadEntries</a></span>&#8203;(long&nbsp;startEntry,
+                int&nbsp;maxCount,
+                long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#batchReadUnconfirmedEntries(long,int,long)">batchReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
+                           int&nbsp;maxCount,
+                           long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+ This is the same of
+ <code>#asyncBatchReadUnconfirmedEntries(long, int, long, boolean, ReadCallback, Object)</code></div>
+</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SyncCounter.</span><code><span class="memberNameLink"><a href="../SyncCounter.html#getSequence()">getSequence</a></span>()</code></th>
@@ -342,6 +374,55 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a> in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a> with parameters of type <a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperInternalCallbacks.ReadEntryListener.</span><code><span class="memberNameLink"><a href="../../proto/BookkeeperInternalCallbacks.ReadEntryListener.html#onEntryComplete(int,org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerEntry,java.lang.Object)">onEntryComplete</a></span>&#8203;(int&nbsp;rc,
+               <a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+               <a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry,
+               java.lang.Object&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">On given <i>entry</i> completed.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.streaming">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a> in <a href="../../streaming/package-summary.html">org.apache.bookkeeper.streaming</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../streaming/package-summary.html">org.apache.bookkeeper.streaming</a> with type parameters of type <a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerInputStream.</span><code><span class="memberNameLink"><a href="../../streaming/LedgerInputStream.html#ledgerSeq">ledgerSeq</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -392,7 +473,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

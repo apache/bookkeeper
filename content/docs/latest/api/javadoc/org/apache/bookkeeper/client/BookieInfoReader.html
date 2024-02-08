@@ -215,17 +215,17 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#availableBookiesChanged(java.util.Set)">availableBookiesChanged</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;updatedBookiesList)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#availableBookiesChanged(java.util.Set)">availableBookiesChanged</a></span>&#8203;(java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;updatedBookiesList)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>(package private) java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBookieInfo()">getBookieInfo</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>(package private) java.util.Optional&lt;java.lang.Long&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFreeDiskSpace(org.apache.bookkeeper.net.BookieId)">getFreeDiskSpace</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFreeDiskSpace(org.apache.bookkeeper.net.BookieId)">getFreeDiskSpace</a></span>&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie)</code></th>
 <td class="colLast">
 <div class="block">Method to allow tests to block until bookie info is available.</div>
 </td>
@@ -308,7 +308,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>availableBookiesChanged</h4>
-<pre class="methodSignature">void&nbsp;availableBookiesChanged&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;updatedBookiesList)</pre>
+<pre class="methodSignature">void&nbsp;availableBookiesChanged&#8203;(java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;updatedBookiesList)</pre>
 </li>
 </ul>
 <a id="getFreeDiskSpace(org.apache.bookkeeper.net.BookieId)">
@@ -317,7 +317,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getFreeDiskSpace</h4>
-<pre class="methodSignature">java.util.Optional&lt;java.lang.Long&gt;&nbsp;getFreeDiskSpace&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie)</pre>
+<pre class="methodSignature">java.util.Optional&lt;java.lang.Long&gt;&nbsp;getFreeDiskSpace&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie)</pre>
 <div class="block">Method to allow tests to block until bookie info is available.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -353,9 +353,9 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getBookieInfo</h4>
-<pre class="methodSignature">java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;getBookieInfo()
-                                                                                           throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a>,
-                                                                                                  java.lang.InterruptedException</pre>
+<pre class="methodSignature">java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;getBookieInfo()
+                                                                 throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a>,
+                                                                        java.lang.InterruptedException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
@@ -432,7 +432,7 @@ extends java.lang.Object</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

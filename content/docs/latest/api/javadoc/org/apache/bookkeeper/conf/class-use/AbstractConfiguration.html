@@ -112,6 +112,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Configurations used by bookkeeper.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta.zk">org.apache.bookkeeper.meta.zk</a></th>
+<td class="colLast">
+<div class="block">ZooKeeper based metadata implementation.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.sasl">org.apache.bookkeeper.sasl</a></th>
+<td class="colLast">
+<div class="block">SASL and JAAS Authentication classes.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tls">org.apache.bookkeeper.tls</a></th>
+<td class="colLast">
+<div class="block">Security and TLS-related classes.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.util">org.apache.bookkeeper.util</a></th>
+<td class="colLast">
+<div class="block">Bookkeeper utilities.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -186,6 +216,398 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </table>
 </section>
 </li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> declared as <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManager.</span><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManager.html#conf">conf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FlatLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/FlatLedgerManagerFactory.html#conf">conf</a></span></code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LegacyHierarchicalLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/LegacyHierarchicalLedgerManagerFactory.html#conf">conf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.html#conf">conf</a></span></code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.MsLedgerManager.</span><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.MsLedgerManager.html#conf">conf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected static <a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManagerFactory.html#createNewLMFactory(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,java.lang.Class)">createNewLMFactory</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                  <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager,
+                  java.lang.Class&lt;? extends <a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a>&gt;&nbsp;factoryClass)</code></th>
+<td class="colLast">
+<div class="block">Creates the new layout and stores in zookeeper and returns the
+ LedgerManagerFactory instance.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManagerFactory.html#format(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">format</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+      <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/LedgerManagerFactory.html#format(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">format</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+      <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;lm)</code></th>
+<td class="colLast">
+<div class="block">Format the ledger metadata for LedgerManager.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.html#format(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">format</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+      <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager)</code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/NullMetadataBookieDriver.NullLedgerManagerFactory.html#format(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">format</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+      <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;lm)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FlatLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/FlatLedgerManagerFactory.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,int)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager,
+          int&nbsp;factoryVersion)</code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/LedgerManagerFactory.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,int)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager,
+          int&nbsp;factoryVersion)</code></th>
+<td class="colLast">
+<div class="block">Initialize a factory.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LegacyHierarchicalLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/LegacyHierarchicalLedgerManagerFactory.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,int)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;lm,
+          int&nbsp;factoryVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,int)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager,
+          int&nbsp;factoryVersion)</code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/NullMetadataBookieDriver.NullLedgerManagerFactory.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager,int)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+          <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager,
+          int&nbsp;factoryVersion)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManagerFactory.html#newLedgerManagerFactory(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">newLedgerManagerFactory</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+                       <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager)</code></th>
+<td class="colLast">
+<div class="block">Create new Ledger Manager Factory.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AbstractZkLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManagerFactory.html#validateAndNukeExistingCluster(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">validateAndNukeExistingCluster</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+                              <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/LedgerManagerFactory.html#validateAndNukeExistingCluster(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">validateAndNukeExistingCluster</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+                              <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;lm)</code></th>
+<td class="colLast">
+<div class="block">This method makes sure there are no unexpected znodes under ledgersRootPath
+ and then it proceeds with ledger metadata formatting and nuking the cluster
+ ZK state info.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MSLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.html#validateAndNukeExistingCluster(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">validateAndNukeExistingCluster</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+                              <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;layoutManager)</code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NullMetadataBookieDriver.NullLedgerManagerFactory.</span><code><span class="memberNameLink"><a href="../../meta/NullMetadataBookieDriver.NullLedgerManagerFactory.html#validateAndNukeExistingCluster(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.meta.LayoutManager)">validateAndNukeExistingCluster</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+                              <a href="../../meta/LayoutManager.html" title="interface in org.apache.bookkeeper.meta">LayoutManager</a>&nbsp;lm)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with parameters of type <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/AbstractHierarchicalLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">AbstractHierarchicalLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                                 org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">
+<div class="block">Constructor.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/AbstractZkLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">AbstractZkLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                       org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">
+<div class="block">ZooKeeper-based Ledger Manager Constructor.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/FlatLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">FlatLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                 org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">
+<div class="block">Constructor.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/HierarchicalLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">HierarchicalLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                         org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/LegacyHierarchicalLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">LegacyHierarchicalLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                               org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">
+<div class="block">Constructor.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/LongHierarchicalLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">LongHierarchicalLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                             org.apache.zookeeper.ZooKeeper&nbsp;zk)</code></th>
+<td class="colLast">
+<div class="block">Constructor.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/MSLedgerManagerFactory.MsLedgerManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper,org.apache.bookkeeper.metastore.MetaStore)">MsLedgerManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+               org.apache.zookeeper.ZooKeeper&nbsp;zk,
+               <a href="../../metastore/MetaStore.html" title="interface in org.apache.bookkeeper.metastore">MetaStore</a>&nbsp;metastore)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../meta/ZkLedgerUnderreplicationManager.html#%3Cinit%3E(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.zookeeper.ZooKeeper)">ZkLedgerUnderreplicationManager</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+                               org.apache.zookeeper.ZooKeeper&nbsp;zkc)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta.zk">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> declared as <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#conf">conf</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../meta/zk/package-summary.html">org.apache.bookkeeper.meta.zk</a> with parameters of type <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#initialize(org.apache.bookkeeper.conf.AbstractConfiguration,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.zookeeper.RetryPolicy,java.util.Optional)">initialize</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf,
+          <a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          <a href="../../zookeeper/RetryPolicy.html" title="interface in org.apache.bookkeeper.zookeeper">RetryPolicy</a>&nbsp;zkRetryPolicy,
+          java.util.Optional&lt;java.lang.Object&gt;&nbsp;optionalCtx)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static java.lang.String</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#resolveZkLedgersRootPath(org.apache.bookkeeper.conf.AbstractConfiguration)">resolveZkLedgersRootPath</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static java.lang.String</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZKMetadataDriverBase.</span><code><span class="memberNameLink"><a href="../../meta/zk/ZKMetadataDriverBase.html#resolveZkServers(org.apache.bookkeeper.conf.AbstractConfiguration)">resolveZkServers</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.sasl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../sasl/package-summary.html">org.apache.bookkeeper.sasl</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../sasl/package-summary.html">org.apache.bookkeeper.sasl</a> that return <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JAASCredentialsContainer.</span><code><span class="memberNameLink"><a href="../../sasl/JAASCredentialsContainer.html#getConfiguration()">getConfiguration</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SASLBookieAuthProviderFactory.</span><code><span class="memberNameLink"><a href="../../sasl/SASLBookieAuthProviderFactory.html#getConfiguration()">getConfiguration</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SASLClientProviderFactory.</span><code><span class="memberNameLink"><a href="../../sasl/SASLClientProviderFactory.html#getConfiguration()">getConfiguration</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tls">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../tls/package-summary.html">org.apache.bookkeeper.tls</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../tls/package-summary.html">org.apache.bookkeeper.tls</a> with parameters of type <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SecurityHandlerFactory.</span><code><span class="memberNameLink"><a href="../../tls/SecurityHandlerFactory.html#init(org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType,org.apache.bookkeeper.conf.AbstractConfiguration,io.netty.buffer.ByteBufAllocator)">init</a></span>&#8203;(<a href="../../tls/SecurityHandlerFactory.NodeType.html" title="enum in org.apache.bookkeeper.tls">SecurityHandlerFactory.NodeType</a>&nbsp;type,
+    <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+    io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TLSContextFactory.</span><code><span class="memberNameLink"><a href="../../tls/TLSContextFactory.html#init(org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType,org.apache.bookkeeper.conf.AbstractConfiguration,io.netty.buffer.ByteBufAllocator)">init</a></span>&#8203;(<a href="../../tls/SecurityHandlerFactory.NodeType.html" title="enum in org.apache.bookkeeper.tls">SecurityHandlerFactory.NodeType</a>&nbsp;type,
+    <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf,
+    io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.util">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../util/package-summary.html">org.apache.bookkeeper.util</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../util/package-summary.html">org.apache.bookkeeper.util</a> with parameters of type <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static java.util.List&lt;org.apache.zookeeper.data.ACL&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZkUtils.</span><code><span class="memberNameLink"><a href="../../util/ZkUtils.html#getACLs(org.apache.bookkeeper.conf.AbstractConfiguration)">getACLs</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">
+<div class="block">Compute ZooKeeper ACLs using actual configuration.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../util/EntryFormatter.html" title="class in org.apache.bookkeeper.util">EntryFormatter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryFormatter.</span><code><span class="memberNameLink"><a href="../../util/EntryFormatter.html#newEntryFormatter(java.lang.String,org.apache.bookkeeper.conf.AbstractConfiguration)">newEntryFormatter</a></span>&#8203;(java.lang.String&nbsp;opt,
+                 <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../util/EntryFormatter.html" title="class in org.apache.bookkeeper.util">EntryFormatter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryFormatter.</span><code><span class="memberNameLink"><a href="../../util/EntryFormatter.html#newEntryFormatter(org.apache.bookkeeper.conf.AbstractConfiguration)">newEntryFormatter</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../util/LedgerIdFormatter.html" title="class in org.apache.bookkeeper.util">LedgerIdFormatter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerIdFormatter.</span><code><span class="memberNameLink"><a href="../../util/LedgerIdFormatter.html#newLedgerIdFormatter(java.lang.String,org.apache.bookkeeper.conf.AbstractConfiguration)">newLedgerIdFormatter</a></span>&#8203;(java.lang.String&nbsp;opt,
+                    <a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../util/LedgerIdFormatter.html" title="class in org.apache.bookkeeper.util">LedgerIdFormatter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerIdFormatter.</span><code><span class="memberNameLink"><a href="../../util/LedgerIdFormatter.html#newLedgerIdFormatter(org.apache.bookkeeper.conf.AbstractConfiguration)">newLedgerIdFormatter</a></span>&#8203;(<a href="../AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;?&gt;&nbsp;conf)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 </ul>
 </li>
 </ul>
@@ -236,7 +658,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

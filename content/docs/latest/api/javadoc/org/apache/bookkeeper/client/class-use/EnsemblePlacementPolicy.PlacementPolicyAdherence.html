@@ -107,6 +107,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -117,6 +123,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a> in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> that return <a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LocalBookieEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../bookie/LocalBookieEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
+                                   int&nbsp;writeQuorumSize,
+                                   int&nbsp;ackQuorumSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -144,7 +174,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleBookiesList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleBookiesList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">
@@ -155,14 +185,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../DefaultEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">DefaultEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../DefaultEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>default <a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">
@@ -174,21 +204,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../RackawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../RackawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../RegionAwareEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">RegionAwareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../RegionAwareEnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../ZoneawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ZoneawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../ZoneawareEnsemblePlacementPolicyImpl.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -278,7 +308,7 @@ the order they are declared.</div>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

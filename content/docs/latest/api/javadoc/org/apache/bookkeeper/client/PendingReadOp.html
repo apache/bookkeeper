@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -124,7 +124,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
+<li><a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">org.apache.bookkeeper.client.ReadOpBase</a></li>
+<li>
+<ul class="inheritance">
 <li>org.apache.bookkeeper.client.PendingReadOp</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -133,7 +138,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Runnable</code>, <code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</code></dd>
+<dd><code>java.lang.Runnable</code>, <code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryCallback</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -141,8 +146,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>class <span class="typeNameLabel">PendingReadOp</span>
-extends java.lang.Object
-implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback, java.lang.Runnable</pre>
+extends <a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a>
+implements <a href="../proto/BookkeeperInternalCallbacks.ReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryCallback</a></pre>
 <div class="block">Sequence of entries of a ledger that represents a pending read operation.
  When all the data read has come back, the application callback is called.
  This class could be improved because we could start pushing data to the
@@ -169,20 +174,27 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a id="nested.classes.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Nested classes/interfaces inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadOpBase.LedgerEntryRequest</a>, <a href="ReadOpBase.ReadContext.html" title="class in org.apache.bookkeeper.client">ReadOpBase.ReadContext</a></code></li>
+</ul>
 </li>
 </ul>
 </section>
@@ -201,66 +213,23 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allowFailFast">allowFailFast</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clientCtx">clientCtx</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#complete">complete</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#endEntryId">endEntryId</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRecoveryRead">isRecoveryRead</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lh">lh</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numPendingEntries">numPendingEntries</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colFirst"><code>protected boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parallelRead">parallelRead</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#requestTimeNanos">requestTimeNanos</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>protected java.util.LinkedList&lt;<a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt;</code></td>
+<td class="colFirst"><code>protected java.util.LinkedList&lt;<a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#seq">seq</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#startEntryId">startEntryId</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a id="fields.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.html#allowFailFast">allowFailFast</a>, <a href="ReadOpBase.html#clientCtx">clientCtx</a>, <a href="ReadOpBase.html#complete">complete</a>, <a href="ReadOpBase.html#endEntryId">endEntryId</a>, <a href="ReadOpBase.html#future">future</a>, <a href="ReadOpBase.html#heardFromHosts">heardFromHosts</a>, <a href="ReadOpBase.html#heardFromHostsBitSet">heardFromHostsBitSet</a>, <a href="ReadOpBase.html#isRecoveryRead">isRecoveryRead</a>, <a href="ReadOpBase.html#lh">lh</a>, <a href="ReadOpBase.html#numPendingEntries">numPendingEntries</a>, <a href="ReadOpBase.html#requestTimeNanos">requestTimeNanos</a>, <a href="ReadOpBase.html#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a>, <a href="ReadOpBase.html#sentToHosts">sentToHosts</a>, <a href="ReadOpBase.html#speculativeTask">speculativeTask</a>, <a href="ReadOpBase.html#startEntryId">startEntryId</a></code></li>
+</ul>
 </li>
 </ul>
 </section>
@@ -305,40 +274,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allowFailFastOnUnwritableChannel()">allowFailFastOnUnwritableChannel</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code>protected void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cancelSpeculativeTask(boolean)">cancelSpeculativeTask</a></span>&#8203;(boolean&nbsp;mayInterruptIfRunning)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#future()">future</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code>protected <a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>java.util.concurrent.ScheduledFuture&lt;?&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSpeculativeTask()">getSpeculativeTask</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiate()">initiate</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parallelRead(boolean)">parallelRead</a></span>&#8203;(boolean&nbsp;enabled)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readEntryComplete(int,long,long,io.netty.buffer.ByteBuf,java.lang.Object)">readEntryComplete</a></span>&#8203;(int&nbsp;rc,
                  long&nbsp;ledgerId,
@@ -347,29 +291,26 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
                  java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#run()">run</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i9" class="rowColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest)">sendReadTo</a></span>&#8203;(int&nbsp;bookieIndex,
-          org.apache.bookkeeper.net.BookieId&nbsp;to,
-          <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&nbsp;entry)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest)">sendReadTo</a></span>&#8203;(int&nbsp;bookieIndex,
+          <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;to,
+          <a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a>&nbsp;entry)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#submit()">submit</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i11" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#submitCallback(int)">submitCallback</a></span>&#8203;(int&nbsp;code)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.ReadOpBase">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></h3>
+<code><a href="ReadOpBase.html#allowFailFastOnUnwritableChannel()">allowFailFastOnUnwritableChannel</a>, <a href="ReadOpBase.html#cancelSpeculativeTask(boolean)">cancelSpeculativeTask</a>, <a href="ReadOpBase.html#future()">future</a>, <a href="ReadOpBase.html#getLedgerMetadata()">getLedgerMetadata</a>, <a href="ReadOpBase.html#getSpeculativeTask()">getSpeculativeTask</a>, <a href="ReadOpBase.html#run()">run</a>, <a href="ReadOpBase.html#submit()">submit</a></code></li>
+</ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
@@ -393,112 +334,22 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <!--   -->
 </a>
 <h3>Field Detail</h3>
-<a id="seq">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>seq</h4>
-<pre>protected final&nbsp;java.util.LinkedList&lt;<a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt; seq</pre>
-</li>
-</ul>
-<a id="lh">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>lh</h4>
-<pre><a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a> lh</pre>
-</li>
-</ul>
-<a id="clientCtx">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>clientCtx</h4>
-<pre>final&nbsp;<a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a> clientCtx</pre>
-</li>
-</ul>
-<a id="numPendingEntries">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>numPendingEntries</h4>
-<pre>long numPendingEntries</pre>
-</li>
-</ul>
-<a id="startEntryId">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>startEntryId</h4>
-<pre>final&nbsp;long startEntryId</pre>
-</li>
-</ul>
-<a id="endEntryId">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>endEntryId</h4>
-<pre>final&nbsp;long endEntryId</pre>
-</li>
-</ul>
-<a id="requestTimeNanos">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>requestTimeNanos</h4>
-<pre>long requestTimeNanos</pre>
-</li>
-</ul>
-<a id="requiredBookiesMissingEntryForRecovery">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>requiredBookiesMissingEntryForRecovery</h4>
-<pre>final&nbsp;int requiredBookiesMissingEntryForRecovery</pre>
-</li>
-</ul>
-<a id="isRecoveryRead">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isRecoveryRead</h4>
-<pre>final&nbsp;boolean isRecoveryRead</pre>
-</li>
-</ul>
 <a id="parallelRead">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>parallelRead</h4>
-<pre>boolean parallelRead</pre>
+<pre>protected&nbsp;boolean parallelRead</pre>
 </li>
 </ul>
-<a id="complete">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>complete</h4>
-<pre>final&nbsp;java.util.concurrent.atomic.AtomicBoolean complete</pre>
-</li>
-</ul>
-<a id="allowFailFast">
+<a id="seq">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>allowFailFast</h4>
-<pre>boolean allowFailFast</pre>
+<h4>seq</h4>
+<pre>protected final&nbsp;java.util.LinkedList&lt;<a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a>&gt; seq</pre>
 </li>
 </ul>
 </li>
@@ -534,42 +385,6 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="future()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>future</h4>
-<pre class="methodSignature">java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;future()</pre>
-</li>
-</ul>
-<a id="getLedgerMetadata()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getLedgerMetadata</h4>
-<pre class="methodSignature">protected&nbsp;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;getLedgerMetadata()</pre>
-</li>
-</ul>
-<a id="cancelSpeculativeTask(boolean)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>cancelSpeculativeTask</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;cancelSpeculativeTask&#8203;(boolean&nbsp;mayInterruptIfRunning)</pre>
-</li>
-</ul>
-<a id="getSpeculativeTask()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getSpeculativeTask</h4>
-<pre class="methodSignature">public&nbsp;java.util.concurrent.ScheduledFuture&lt;?&gt;&nbsp;getSpeculativeTask()</pre>
-</li>
-</ul>
 <a id="parallelRead(boolean)">
 <!--   -->
 </a>
@@ -579,24 +394,6 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <pre class="methodSignature"><a href="PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a>&nbsp;parallelRead&#8203;(boolean&nbsp;enabled)</pre>
 </li>
 </ul>
-<a id="allowFailFastOnUnwritableChannel()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>allowFailFastOnUnwritableChannel</h4>
-<pre class="methodSignature">void&nbsp;allowFailFastOnUnwritableChannel()</pre>
-</li>
-</ul>
-<a id="submit()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>submit</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;submit()</pre>
-</li>
-</ul>
 <a id="initiate()">
 <!--   -->
 </a>
@@ -604,34 +401,9 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <li class="blockList">
 <h4>initiate</h4>
 <pre class="methodSignature">void&nbsp;initiate()</pre>
-</li>
-</ul>
-<a id="run()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>run</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;run()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>run</code>&nbsp;in interface&nbsp;<code>java.lang.Runnable</code></dd>
-</dl>
-</li>
-</ul>
-<a id="sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>sendReadTo</h4>
-<pre class="methodSignature">void&nbsp;sendReadTo&#8203;(int&nbsp;bookieIndex,
-                org.apache.bookkeeper.net.BookieId&nbsp;to,
-                <a href="PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&nbsp;entry)
-         throws java.lang.InterruptedException</pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.InterruptedException</code></dd>
+<dd><code><a href="ReadOpBase.html#initiate()">initiate</a></code>&nbsp;in class&nbsp;<code><a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -648,17 +420,37 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
                               java.lang.Object&nbsp;ctx)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>readEntryComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</code></dd>
+<dd><code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryCallback.html#readEntryComplete(int,long,long,io.netty.buffer.ByteBuf,java.lang.Object)">readEntryComplete</a></code>&nbsp;in interface&nbsp;<code><a href="../proto/BookkeeperInternalCallbacks.ReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryCallback</a></code></dd>
 </dl>
 </li>
 </ul>
 <a id="submitCallback(int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>submitCallback</h4>
 <pre class="methodSignature">protected&nbsp;void&nbsp;submitCallback&#8203;(int&nbsp;code)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ReadOpBase.html#submitCallback(int)">submitCallback</a></code>&nbsp;in class&nbsp;<code><a href="ReadOpBase.html" title="class in org.apache.bookkeeper.client">ReadOpBase</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="sendReadTo(int,org.apache.bookkeeper.net.BookieId,org.apache.bookkeeper.client.PendingReadOp.SingleLedgerEntryRequest)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>sendReadTo</h4>
+<pre class="methodSignature">void&nbsp;sendReadTo&#8203;(int&nbsp;bookieIndex,
+                <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;to,
+                <a href="PendingReadOp.SingleLedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SingleLedgerEntryRequest</a>&nbsp;entry)
+         throws java.lang.InterruptedException</pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.InterruptedException</code></dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -730,7 +522,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

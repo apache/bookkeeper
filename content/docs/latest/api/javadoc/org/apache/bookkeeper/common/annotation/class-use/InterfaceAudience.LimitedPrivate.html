@@ -118,6 +118,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.discover">org.apache.bookkeeper.discover</a></th>
+<td class="colLast">
+<div class="block">Classes related to service discovery.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -165,6 +177,61 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></span></code></th>
 <td class="colLast">
 <div class="block">Represents the client-side metadata of a ledger.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.discover">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceAudience.LimitedPrivate.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.LimitedPrivate</a> in <a href="../../../discover/package-summary.html">org.apache.bookkeeper.discover</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../discover/package-summary.html">org.apache.bookkeeper.discover</a> with annotations of type <a href="../InterfaceAudience.LimitedPrivate.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.LimitedPrivate</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a></span></code></th>
+<td class="colLast">
+<div class="block">A registration client, which the bookkeeper client will use to interact with registration service.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a></span></code></th>
+<td class="colLast">
+<div class="block">Registration manager interface, which a bookie server will use to do the registration process.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceAudience.LimitedPrivate.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.LimitedPrivate</a> in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with annotations of type <a href="../InterfaceAudience.LimitedPrivate.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.LimitedPrivate</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></span></code></th>
+<td class="colLast">
+<div class="block">Driver to manage all the metadata managers required by a bookkeeper client.</div>
 </td>
 </tr>
 </tbody>
@@ -221,7 +288,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

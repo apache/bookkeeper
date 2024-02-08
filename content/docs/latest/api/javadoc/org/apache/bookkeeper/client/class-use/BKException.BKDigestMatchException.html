@@ -96,7 +96,66 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="header">
 <h2 title="Uses of Class org.apache.bookkeeper.client.BKException.BKDigestMatchException" class="title">Uses of Class<br>org.apache.bookkeeper.client.BKException.BKDigestMatchException</h2>
 </div>
-<div class="classUseContainer">No usage of org.apache.bookkeeper.client.BKException.BKDigestMatchException</div>
+<div class="classUseContainer">
+<ul class="blockList">
+<li class="blockList">
+<table class="useSummary">
+<caption><span>Packages that use <a href="../BKException.BKDigestMatchException.html" title="class in org.apache.bookkeeper.client">BKException.BKDigestMatchException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Package</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto.checksum">org.apache.bookkeeper.proto.checksum</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper checksum.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList">
+<ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.proto.checksum">
+<!--   -->
+</a>
+<h3>Uses of <a href="../BKException.BKDigestMatchException.html" title="class in org.apache.bookkeeper.client">BKException.BKDigestMatchException</a> in <a href="../../proto/checksum/package-summary.html">org.apache.bookkeeper.proto.checksum</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../proto/checksum/package-summary.html">org.apache.bookkeeper.proto.checksum</a> that throw <a href="../BKException.BKDigestMatchException.html" title="class in org.apache.bookkeeper.client">BKException.BKDigestMatchException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DigestManager.</span><code><span class="memberNameLink"><a href="../../proto/checksum/DigestManager.html#verifyDigestAndReturnData(long,io.netty.buffer.ByteBuf)">verifyDigestAndReturnData</a></span>&#8203;(long&nbsp;entryId,
+                         io.netty.buffer.ByteBuf&nbsp;dataReceived)</code></th>
+<td class="colLast">
+<div class="block">Verify that the digest matches and returns the data in the entry.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DigestManager.</span><code><span class="memberNameLink"><a href="../../proto/checksum/DigestManager.html#verifyDigestAndReturnLac(io.netty.buffer.ByteBuf)">verifyDigestAndReturnLac</a></span>&#8203;(io.netty.buffer.ByteBuf&nbsp;dataReceived)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../proto/checksum/DigestManager.RecoveryData.html" title="class in org.apache.bookkeeper.proto.checksum">DigestManager.RecoveryData</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DigestManager.</span><code><span class="memberNameLink"><a href="../../proto/checksum/DigestManager.html#verifyDigestAndReturnLastConfirmed(io.netty.buffer.ByteBuf)">verifyDigestAndReturnLastConfirmed</a></span>&#8203;(io.netty.buffer.ByteBuf&nbsp;dataReceived)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+</ul>
+</li>
+</ul>
+</div>
 </main>
 <footer role="contentinfo">
 <nav role="navigation">
@@ -143,7 +202,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

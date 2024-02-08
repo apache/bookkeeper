@@ -112,6 +112,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.net">org.apache.bookkeeper.common.net</a></th>
+<td class="colLast">
+<div class="block">Classes for resolving service uris in bookkeeper.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.discover">org.apache.bookkeeper.discover</a></th>
+<td class="colLast">
+<div class="block">Classes related to service discovery.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.server.component">org.apache.bookkeeper.server.component</a></th>
+<td class="colLast">
+<div class="block">The lifecycle components that run on a bookie server.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -154,9 +178,112 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>interface&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;T extends org.apache.bookkeeper.net.Node&gt;</span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;T extends <a href="../../../net/Node.html" title="interface in org.apache.bookkeeper.net">Node</a>&gt;</span></code></th>
 <td class="colLast">
 <div class="block">Interface for topology aware ensemble placement policy.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.net">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a> in <a href="../../net/package-summary.html">org.apache.bookkeeper.common.net</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../net/package-summary.html">org.apache.bookkeeper.common.net</a> with annotations of type <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../net/ServiceURI.html" title="class in org.apache.bookkeeper.common.net">ServiceURI</a></span></code></th>
+<td class="colLast">
+<div class="block">ServiceURI represents service uri within bookkeeper cluster.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.discover">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a> in <a href="../../../discover/package-summary.html">org.apache.bookkeeper.discover</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../discover/package-summary.html">org.apache.bookkeeper.discover</a> with annotations of type <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../discover/RegistrationClient.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient</a></span></code></th>
+<td class="colLast">
+<div class="block">A registration client, which the bookkeeper client will use to interact with registration service.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../discover/RegistrationManager.html" title="interface in org.apache.bookkeeper.discover">RegistrationManager</a></span></code></th>
+<td class="colLast">
+<div class="block">Registration manager interface, which a bookie server will use to do the registration process.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a> in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../meta/package-summary.html">org.apache.bookkeeper.meta</a> with annotations of type <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../meta/MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></span></code></th>
+<td class="colLast">
+<div class="block">Driver to manage all the metadata managers required by a bookkeeper client.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.server.component">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a> in <a href="../../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../server/component/package-summary.html">org.apache.bookkeeper.server.component</a> with annotations of type <a href="../InterfaceStability.Evolving.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceStability.Evolving</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../server/component/ServerLifecycleComponent.html" title="class in org.apache.bookkeeper.server.component">ServerLifecycleComponent</a></span></code></th>
+<td class="colLast">
+<div class="block">A <a href="../../component/LifecycleComponent.html" title="interface in org.apache.bookkeeper.common.component"><code>LifecycleComponent</code></a> that runs on a bookie server.</div>
 </td>
 </tr>
 </tbody>
@@ -213,7 +340,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

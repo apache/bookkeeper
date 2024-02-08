@@ -107,9 +107,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.common">org.apache.bookkeeper.tools.common</a></th>
+<td class="colLast">
+<div class="block">Common classes used across multiple tools.</div>
 </td>
 </tr>
 </tbody>
@@ -117,6 +129,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceAudience.Private.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Private</a> in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></h3>
+<table class="useSummary">
+<caption><span>Classes in <a href="../../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a> with annotations of type <a href="../InterfaceAudience.Private.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Private</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static interface&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../bookie/BookieShell.Command.html" title="interface in org.apache.bookkeeper.bookie">BookieShell.Command</a></span></code></th>
+<td class="colLast">
+<div class="block">BookieShell command.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -139,9 +175,35 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>interface&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;T extends org.apache.bookkeeper.net.Node&gt;</span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy</a>&lt;T extends <a href="../../../net/Node.html" title="interface in org.apache.bookkeeper.net">Node</a>&gt;</span></code></th>
 <td class="colLast">
 <div class="block">Interface for topology aware ensemble placement policy.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.tools.common">
+<!--   -->
+</a>
+<h3>Uses of <a href="../InterfaceAudience.Private.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Private</a> in <a href="../../../tools/common/package-summary.html">org.apache.bookkeeper.tools.common</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../tools/common/package-summary.html">org.apache.bookkeeper.tools.common</a> with annotations of type <a href="../InterfaceAudience.Private.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Private</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BKCommand.</span><code><span class="memberNameLink"><a href="../../../tools/common/BKCommand.html#apply(java.lang.String,org.apache.commons.configuration.CompositeConfiguration,java.lang.String%5B%5D)">apply</a></span>&#8203;(java.lang.String&nbsp;commandName,
+     org.apache.commons.configuration.CompositeConfiguration&nbsp;conf,
+     java.lang.String[]&nbsp;args)</code></th>
+<td class="colLast">
+<div class="block">Made this as public for allowing old bookie shell use new cli command.</div>
 </td>
 </tr>
 </tbody>
@@ -198,7 +260,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

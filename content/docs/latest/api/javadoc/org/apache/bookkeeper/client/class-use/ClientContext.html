@@ -152,12 +152,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PendingReadOp.</span><code><span class="memberNameLink"><a href="../PendingReadOp.html#clientCtx">clientCtx</a></span></code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PendingWriteLacOp.</span><code><span class="memberNameLink"><a href="../PendingWriteLacOp.html#clientCtx">clientCtx</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PendingWriteLacOp.</span><code><span class="memberNameLink"><a href="../PendingWriteLacOp.html#clientCtx">clientCtx</a></span></code></th>
+<td class="colFirst"><code>protected <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadOpBase.</span><code><span class="memberNameLink"><a href="../ReadOpBase.html#clientCtx">clientCtx</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -189,7 +189,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>(package private) static <a href="../PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PendingAddOp.</span><code><span class="memberNameLink"><a href="../PendingAddOp.html#create(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,java.util.List,io.netty.buffer.ByteBuf,java.util.EnumSet,org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency,java.lang.Object)">create</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
       <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-      java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+      java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
       io.netty.buffer.ByteBuf&nbsp;payload,
       java.util.EnumSet&lt;<a href="../api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags,
       <a href="../AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
@@ -206,44 +206,53 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../BatchedReadOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,long,int,long,boolean)">BatchedReadOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+             <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
+             long&nbsp;startEntryId,
+             int&nbsp;maxCount,
+             long&nbsp;maxSize,
+             boolean&nbsp;isRecoveryRead)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext)">ExplicitLacFlushPolicyImpl</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                           <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LedgerHandle.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,java.util.EnumSet)">LedgerHandle</a></span>&#8203;(<a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
             long&nbsp;ledgerId,
-            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+            <a href="../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
             <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
             byte[]&nbsp;password,
             java.util.EnumSet&lt;<a href="../api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LedgerHandleAdv.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,java.util.EnumSet)">LedgerHandleAdv</a></span>&#8203;(<a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                long&nbsp;ledgerId,
-               org.apache.bookkeeper.versioning.Versioned&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
+               <a href="../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                byte[]&nbsp;password,
                java.util.EnumSet&lt;<a href="../api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LedgerRecoveryOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext)">LedgerRecoveryOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                 <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ListenerBasedPendingReadOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,long,long,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener,java.lang.Object,boolean)">ListenerBasedPendingReadOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                           <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                           long&nbsp;startEntryId,
                           long&nbsp;endEntryId,
-                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
+                          <a href="../../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;listener,
                           java.lang.Object&nbsp;ctx,
                           boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PendingReadOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,long,long,boolean)">PendingReadOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
              <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
              long&nbsp;startEntryId,
@@ -251,30 +260,38 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PendingWriteLacOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,java.util.List,org.apache.bookkeeper.client.AsyncCallback.AddLacCallback,java.lang.Object)">PendingWriteLacOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                  <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                 java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+                 java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                  <a href="../AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a>&nbsp;cb,
                  java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReadLastConfirmedAndEntryOp.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,java.util.List,org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback,long,long)">ReadLastConfirmedAndEntryOp</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                            <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
-                           java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+                           java.util.List&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                            <a href="../ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback</a>&nbsp;cb,
                            long&nbsp;prevEntryId,
                            long&nbsp;timeOutInMillis)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReadOnlyLedgerHandle.html#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,boolean)">ReadOnlyLedgerHandle</a></span>&#8203;(<a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                     long&nbsp;ledgerId,
-                    org.apache.bookkeeper.versioning.Versioned&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
+                    <a href="../../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="../api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                     <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;password,
                     boolean&nbsp;watch)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReadOpBase.html#%3Cinit%3E(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.ClientContext,long,long,boolean)">ReadOpBase</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+          <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
+          long&nbsp;startEntryId,
+          long&nbsp;endEntryId,
+          boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -282,7 +299,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               <a href="../ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
               long&nbsp;startEntryId,
               long&nbsp;endEntryId,
-              org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;cb,
+              <a href="../../proto/BookkeeperInternalCallbacks.ReadEntryListener.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryListener</a>&nbsp;cb,
               java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -340,7 +357,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

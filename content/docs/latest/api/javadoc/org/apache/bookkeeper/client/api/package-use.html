@@ -107,6 +107,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie">org.apache.bookkeeper.bookie</a></th>
+<td class="colLast">
+<div class="block">Provides a <i>Bookie</i> server that stores entries for clients.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.datainteg">org.apache.bookkeeper.bookie.datainteg</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -122,6 +134,75 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.meta">org.apache.bookkeeper.meta</a></th>
+<td class="colLast">
+<div class="block">Classes for interacting with bookkeeper ledgers and ledger metadata.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.proto">org.apache.bookkeeper.proto</a></th>
+<td class="colLast">
+<div class="block">Classes related to the Bookkeeper protocol.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.commands.client">org.apache.bookkeeper.tools.cli.commands.client</a></th>
+<td class="colLast">
+<div class="block">This package contains all client related commands.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.tools.cli.helpers">org.apache.bookkeeper.tools.cli.helpers</a></th>
+<td class="colLast">
+<div class="block">This classes provides some helper mixins for easily to add commands
+ to bookie shell.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.bookie">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../bookie/package-summary.html">org.apache.bookkeeper.bookie</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.bookie">LedgerMetadata</a></th>
+<td class="colLast">
+<div class="block">Represents the client-side metadata of a ledger.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.bookie.datainteg">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../bookie/datainteg/package-summary.html">org.apache.bookkeeper.bookie.datainteg</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.bookie.datainteg">LedgerMetadata</a></th>
+<td class="colLast">
+<div class="block">Represents the client-side metadata of a ledger.</div>
 </td>
 </tr>
 </tbody>
@@ -204,54 +285,60 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerEntry.html#org.apache.bookkeeper.client">LedgerEntry</a></th>
+<td class="colLast">
+<div class="block">An entry in a ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.client">LedgerMetadata</a></th>
 <td class="colLast">
 <div class="block">Represents the client-side metadata of a ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.State.html#org.apache.bookkeeper.client">LedgerMetadata.State</a></th>
 <td class="colLast">
 <div class="block">Possible metadata states.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/ListLedgersResultBuilder.html#org.apache.bookkeeper.client">ListLedgersResultBuilder</a></th>
 <td class="colLast">
 <div class="block">Builder-style interface to list exiting ledgers.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/OpBuilder.html#org.apache.bookkeeper.client">OpBuilder</a></th>
 <td class="colLast">
 <div class="block">Base interface for builders.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/OpenBuilder.html#org.apache.bookkeeper.client">OpenBuilder</a></th>
 <td class="colLast">
 <div class="block">Builder-style interface to open exiting ledgers.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/ReadHandle.html#org.apache.bookkeeper.client">ReadHandle</a></th>
 <td class="colLast">
 <div class="block">Provide read access to a ledger.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/WriteAdvHandle.html#org.apache.bookkeeper.client">WriteAdvHandle</a></th>
 <td class="colLast">
 <div class="block">Provide write access to a ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/WriteFlag.html#org.apache.bookkeeper.client">WriteFlag</a></th>
 <td class="colLast">
 <div class="block">Flags to specify the behaviour of writes.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/WriteHandle.html#org.apache.bookkeeper.client">WriteHandle</a></th>
 <td class="colLast">
 <div class="block">Provide write access to a ledger.</div>
@@ -460,6 +547,107 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 </li>
+<li class="blockList"><a id="org.apache.bookkeeper.meta">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../meta/package-summary.html">org.apache.bookkeeper.meta</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.meta">LedgerMetadata</a></th>
+<td class="colLast">
+<div class="block">Represents the client-side metadata of a ledger.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.proto">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../proto/package-summary.html">org.apache.bookkeeper.proto</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.proto">LedgerMetadata</a></th>
+<td class="colLast">
+<div class="block">Represents the client-side metadata of a ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/WriteFlag.html#org.apache.bookkeeper.proto">WriteFlag</a></th>
+<td class="colLast">
+<div class="block">Flags to specify the behaviour of writes.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/LedgerMetadata.html#org.apache.bookkeeper.replication">LedgerMetadata</a></th>
+<td class="colLast">
+<div class="block">Represents the client-side metadata of a ledger.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.tools.cli.commands.client">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../tools/cli/commands/client/package-summary.html">org.apache.bookkeeper.tools.cli.commands.client</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/BookKeeper.html#org.apache.bookkeeper.tools.cli.commands.client">BookKeeper</a></th>
+<td class="colLast">
+<div class="block">This is the entry point for BookKeeper client side API.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.bookkeeper.tools.cli.helpers">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.bookkeeper.client.api</a> used by <a href="../../tools/cli/helpers/package-summary.html">org.apache.bookkeeper.tools.cli.helpers</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/BookKeeper.html#org.apache.bookkeeper.tools.cli.helpers">BookKeeper</a></th>
+<td class="colLast">
+<div class="block">This is the entry point for BookKeeper client side API.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
 </ul>
 </div>
 </main>
@@ -508,7 +696,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -197,7 +197,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ParallelReadRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ParallelReadRequest</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                    long&nbsp;lId,
                    long&nbsp;eId)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -223,7 +223,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">logErrorAndReattemptRead</a></span>&#8203;(int&nbsp;bookieIndex,
-                        org.apache.bookkeeper.net.BookieId&nbsp;host,
+                        <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                         java.lang.String&nbsp;errMsg,
                         int&nbsp;rc)</code></th>
 <td class="colLast">
@@ -231,7 +231,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.net.BookieId</code></td>
+<td class="colFirst"><code>(package private) <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maybeSendSpeculativeRead(java.util.BitSet)">maybeSendSpeculativeRead</a></span>&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</code></th>
 <td class="colLast">
 <div class="block">Send to next replica speculatively, if required and possible.</div>
@@ -300,7 +300,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ParallelReadRequest</h4>
-<pre>ParallelReadRequest&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre>ParallelReadRequest&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                     long&nbsp;lId,
                     long&nbsp;eId)</pre>
 </li>
@@ -337,7 +337,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 <li class="blockList">
 <h4>logErrorAndReattemptRead</h4>
 <pre class="methodSignature">void&nbsp;logErrorAndReattemptRead&#8203;(int&nbsp;bookieIndex,
-                              org.apache.bookkeeper.net.BookieId&nbsp;host,
+                              <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                               java.lang.String&nbsp;errMsg,
                               int&nbsp;rc)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></span></div>
@@ -359,7 +359,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 <ul class="blockListLast">
 <li class="blockList">
 <h4>maybeSendSpeculativeRead</h4>
-<pre class="methodSignature">org.apache.bookkeeper.net.BookieId&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
+<pre class="methodSignature"><a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#maybeSendSpeculativeRead(java.util.BitSet)">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></span></div>
 <div class="block">Send to next replica speculatively, if required and possible.
  This returns the host we may have sent to for unit testing.</div>
@@ -442,7 +442,7 @@ extends <a href="ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title=
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

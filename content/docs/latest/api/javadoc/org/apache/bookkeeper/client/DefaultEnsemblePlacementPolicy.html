@@ -182,7 +182,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) static java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) static java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#EMPTY_SET">EMPTY_SET</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -233,18 +233,18 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">initialize</a></span>&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+          java.util.Optional&lt;<a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
           <a href="../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
           <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</code></th>
+          <a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</code></th>
 <td class="colLast">
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">isEnsembleAdheringToPlacementPolicy</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                    int&nbsp;writeQuorumSize,
                                    int&nbsp;ackQuorumSize)</code></th>
 <td class="colLast">
@@ -255,20 +255,20 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newEnsemble(int,int,int,java.util.Map,java.util.Set)">newEnsemble</a></span>&#8203;(int&nbsp;ensembleSize,
            int&nbsp;quorumSize,
            int&nbsp;ackQuorumSize,
            java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-           java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)</code></th>
+           java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)</code></th>
 <td class="colLast">
 <div class="block">Choose <i>numBookies</i> bookies for ensemble.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#onClusterChanged(java.util.Set,java.util.Set)">onClusterChanged</a></span>&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;writableBookies,
-                java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;readOnlyBookies)</code></th>
+<td class="colFirst"><code>java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#onClusterChanged(java.util.Set,java.util.Set)">onClusterChanged</a></span>&#8203;(java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;writableBookies,
+                java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;readOnlyBookies)</code></th>
 <td class="colLast">
 <div class="block">A consistent view of the cluster (what bookies are available as writable, what bookies are available as
  readonly) is updated when any changes happen in the cluster.</div>
@@ -276,7 +276,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">registerSlowBookie</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookieSocketAddress,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">registerSlowBookie</a></span>&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieSocketAddress,
                   long&nbsp;entryId)</code></th>
 <td class="colLast">
 <div class="block">Register a bookie as slow so that it is tried after available and read-only bookies.</div>
@@ -284,7 +284,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadLACSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadLACSequence</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadLACSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadLACSequence</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                       <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                       <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code></th>
 <td class="colLast">
@@ -293,7 +293,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadSequence</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderReadSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">reorderReadSequence</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                    <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code></th>
 <td class="colLast">
@@ -301,14 +301,14 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code><a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceBookie(int,int,int,java.util.Map,java.util.List,org.apache.bookkeeper.net.BookieId,java.util.Set)">replaceBookie</a></span>&#8203;(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
              java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-             java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;currentEnsemble,
-             org.apache.bookkeeper.net.BookieId&nbsp;bookieToReplace,
-             java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)</code></th>
+             java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;currentEnsemble,
+             <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieToReplace,
+             java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)</code></th>
 <td class="colLast">
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>.</div>
 </td>
@@ -322,7 +322,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
 <td class="colLast">
 <div class="block">Send the bookie info details.</div>
 </td>
@@ -373,7 +373,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockListLast">
 <li class="blockList">
 <h4>EMPTY_SET</h4>
-<pre>static final&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt; EMPTY_SET</pre>
+<pre>static final&nbsp;java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt; EMPTY_SET</pre>
 </li>
 </ul>
 </li>
@@ -411,12 +411,12 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsemble</h4>
-<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;&nbsp;newEnsemble&#8203;(int&nbsp;ensembleSize,
-                                                                                                               int&nbsp;quorumSize,
-                                                                                                               int&nbsp;ackQuorumSize,
-                                                                                                               java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-                                                                                                               java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)
-                                                                                                        throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;&nbsp;newEnsemble&#8203;(int&nbsp;ensembleSize,
+                                                                                     int&nbsp;quorumSize,
+                                                                                     int&nbsp;ackQuorumSize,
+                                                                                     java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
+                                                                                     java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)
+                                                                              throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#newEnsemble(int,int,int,java.util.Map,java.util.Set)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
  nodes, <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.
@@ -452,14 +452,14 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>replaceBookie</h4>
-<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;replaceBookie&#8203;(int&nbsp;ensembleSize,
-                                                                                                 int&nbsp;writeQuorumSize,
-                                                                                                 int&nbsp;ackQuorumSize,
-                                                                                                 java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
-                                                                                                 java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;currentEnsemble,
-                                                                                                 org.apache.bookkeeper.net.BookieId&nbsp;bookieToReplace,
-                                                                                                 java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;excludeBookies)
-                                                                                          throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a>&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;replaceBookie&#8203;(int&nbsp;ensembleSize,
+                                                                       int&nbsp;writeQuorumSize,
+                                                                       int&nbsp;ackQuorumSize,
+                                                                       java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;&nbsp;customMetadata,
+                                                                       java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;currentEnsemble,
+                                                                       <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieToReplace,
+                                                                       java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;excludeBookies)
+                                                                throws <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#replaceBookie(int,int,int,java.util.Map,java.util.List,org.apache.bookkeeper.net.BookieId,java.util.Set)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
  <a href="BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKNotEnoughBookiesException</code></a> is thrown.
@@ -491,8 +491,8 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>onClusterChanged</h4>
-<pre class="methodSignature">public&nbsp;java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;onClusterChanged&#8203;(java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;writableBookies,
-                                                                          java.util.Set&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;readOnlyBookies)</pre>
+<pre class="methodSignature">public&nbsp;java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;onClusterChanged&#8203;(java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;writableBookies,
+                                                java.util.Set&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;readOnlyBookies)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#onClusterChanged(java.util.Set,java.util.Set)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">A consistent view of the cluster (what bookies are available as writable, what bookies are available as
  readonly) is updated when any changes happen in the cluster.
@@ -518,7 +518,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>registerSlowBookie</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;registerSlowBookie&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookieSocketAddress,
+<pre class="methodSignature">public&nbsp;void&nbsp;registerSlowBookie&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieSocketAddress,
                                long&nbsp;entryId)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Register a bookie as slow so that it is tried after available and read-only bookies.</div>
@@ -537,7 +537,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>reorderReadSequence</h4>
-<pre class="methodSignature">public&nbsp;<a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadSequence&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre class="methodSignature">public&nbsp;<a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadSequence&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                                                          <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                                                          <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#reorderReadSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">EnsemblePlacementPolicy</a></code></span></div>
@@ -562,7 +562,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>reorderReadLACSequence</h4>
-<pre class="methodSignature">public&nbsp;<a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadLACSequence&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre class="methodSignature">public&nbsp;<a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadLACSequence&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                                                             <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                                                             <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#reorderReadLACSequence(java.util.List,org.apache.bookkeeper.client.BookiesHealthInfo,org.apache.bookkeeper.client.DistributionSchedule.WriteSet)">EnsemblePlacementPolicy</a></code></span></div>
@@ -588,11 +588,11 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <li class="blockList">
 <h4>initialize</h4>
 <pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a>&nbsp;initialize&#8203;(<a href="../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
-                                          java.util.Optional&lt;org.apache.bookkeeper.net.DNSToSwitchMapping&gt;&nbsp;optionalDnsResolver,
+                                          java.util.Optional&lt;<a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a>&gt;&nbsp;optionalDnsResolver,
                                           io.netty.util.HashedWheelTimer&nbsp;hashedWheelTimer,
                                           <a href="../feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider,
                                           <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
-                                          org.apache.bookkeeper.proto.BookieAddressResolver&nbsp;bookieAddressResolver)</pre>
+                                          <a href="../proto/BookieAddressResolver.html" title="interface in org.apache.bookkeeper.proto">BookieAddressResolver</a>&nbsp;bookieAddressResolver)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#initialize(org.apache.bookkeeper.conf.ClientConfiguration,java.util.Optional,io.netty.util.HashedWheelTimer,org.apache.bookkeeper.feature.FeatureProvider,org.apache.bookkeeper.stats.StatsLogger,org.apache.bookkeeper.proto.BookieAddressResolver)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Initialize the policy.</div>
 <dl>
@@ -613,7 +613,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockList">
 <li class="blockList">
 <h4>updateBookieInfo</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;updateBookieInfo&#8203;(java.util.Map&lt;org.apache.bookkeeper.net.BookieId,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;updateBookieInfo&#8203;(java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Send the bookie info details.</div>
 <dl>
@@ -645,7 +645,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 <ul class="blockListLast">
 <li class="blockList">
 <h4>isEnsembleAdheringToPlacementPolicy</h4>
-<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensembleList,
+<pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
                                                                                             int&nbsp;writeQuorumSize,
                                                                                             int&nbsp;ackQuorumSize)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">EnsemblePlacementPolicy</a></code></span></div>
@@ -740,7 +740,7 @@ implements <a href="EnsemblePlacementPolicy.html" title="interface in org.apache
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

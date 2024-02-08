@@ -464,34 +464,41 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#batchRead(long,int,long)">batchRead</a></span>&#8203;(long&nbsp;startEntry,
+         int&nbsp;maxCount,
+         long&nbsp;maxSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookKeeper.html" title="interface in org.apache.bookkeeper.client.api">BookKeeper</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperBuilder.</span><code><span class="memberNameLink"><a href="../BookKeeperBuilder.html#build()">build</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Start and initialize a new BookKeeper client.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#close()">close</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Close the client and release every resource.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Handle.</span><code><span class="memberNameLink"><a href="../Handle.html#close()">close</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Close this handle synchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../WriteHandle.html#close()">close</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Synchronous close the write handle, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#read(long,long)">read</a></span>&#8203;(long&nbsp;firstEntry,
     long&nbsp;lastEntry)</code></th>
@@ -499,14 +506,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries synchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readLastAddConfirmed()">readLastAddConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default <a href="../LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readLastAddConfirmedAndEntry(long,long,boolean)">readLastAddConfirmedAndEntry</a></span>&#8203;(long&nbsp;entryId,
                             long&nbsp;timeOutInMillis,
@@ -515,7 +522,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default <a href="../LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#readUnconfirmed(long,long)">readUnconfirmed</a></span>&#8203;(long&nbsp;firstEntry,
                long&nbsp;lastEntry)</code></th>
@@ -523,7 +530,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries synchronously.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../ReadHandle.html#tryReadLastAddConfirmed()">tryReadLastAddConfirmed</a></span>()</code></th>
 <td class="colLast">
@@ -531,7 +538,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  but it doesn't wait all the responses from the quorum.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../WriteAdvHandle.html#write(long,byte%5B%5D)">write</a></span>&#8203;(long&nbsp;entryId,
      byte[]&nbsp;data)</code></th>
@@ -539,7 +546,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../WriteAdvHandle.html#write(long,byte%5B%5D,int,int)">write</a></span>&#8203;(long&nbsp;entryId,
      byte[]&nbsp;data,
@@ -549,7 +556,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../WriteAdvHandle.html#write(long,io.netty.buffer.ByteBuf)">write</a></span>&#8203;(long&nbsp;entryId,
      io.netty.buffer.ByteBuf&nbsp;data)</code></th>
@@ -557,7 +564,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>default long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../WriteAdvHandle.html#write(long,java.nio.ByteBuffer)">write</a></span>&#8203;(long&nbsp;entryId,
      java.nio.ByteBuffer&nbsp;data)</code></th>
@@ -641,7 +648,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

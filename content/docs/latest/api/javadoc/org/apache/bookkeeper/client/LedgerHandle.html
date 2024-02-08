@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10,"i78":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10,"i78":10,"i79":10,"i80":10,"i81":10,"i82":10,"i83":10,"i84":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -196,7 +196,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) com.google.common.cache.LoadingCache&lt;org.apache.bookkeeper.net.BookieId,&#8203;java.lang.Long&gt;</code></td>
+<td class="colFirst"><code>(package private) com.google.common.cache.LoadingCache&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;java.lang.Long&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bookieFailureHistory">bookieFailureHistory</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -216,7 +216,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#delayedWriteFailedBookies">delayedWriteFailedBookies</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -297,7 +297,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.checksum.DigestManager</code></td>
+<td class="colFirst"><code>(package private) <a href="../proto/checksum/DigestManager.html" title="class in org.apache.bookkeeper.proto.checksum">DigestManager</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#macManager">macManager</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -307,33 +307,38 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#notSupportBatch">notSupportBatch</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicInteger</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numEnsembleChanges">numEnsembleChanges</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.Queue&lt;<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pendingAddOps">pendingAddOps</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pendingAddsSequenceHead">pendingAddsSequenceHead</a></span></code></th>
 <td class="colLast">
 <div class="block">Next entryId which is expected to move forward during <a href="#sendAddSuccessCallbacks()"><code>sendAddSuccessCallbacks()</code></a>.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) com.google.common.util.concurrent.RateLimiter</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#throttler">throttler</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.ScheduledFuture&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#timeoutFuture">timeoutFuture</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.EnumSet&lt;<a href="api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeFlags">writeFlags</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -358,7 +363,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.client.ClientContext,long,org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,java.util.EnumSet)">LedgerHandle</a></span>&#8203;(<a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
             long&nbsp;ledgerId,
-            org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+            <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
             <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
             byte[]&nbsp;password,
             java.util.EnumSet&lt;<a href="api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
@@ -503,20 +508,52 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncBatchReadEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncBatchReadEntries</a></span>&#8203;(long&nbsp;startEntry,
+                     int&nbsp;maxCount,
+                     long&nbsp;maxSize,
+                     <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                     java.lang.Object&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries in asynchronously.</div>
+</td>
+</tr>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncBatchReadEntriesInternal(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object,boolean)">asyncBatchReadEntriesInternal</a></span>&#8203;(long&nbsp;startEntry,
+                             int&nbsp;maxCount,
+                             long&nbsp;maxSize,
+                             <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                             java.lang.Object&nbsp;ctx,
+                             boolean&nbsp;isRecoveryRead)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncBatchReadUnconfirmedEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncBatchReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;startEntry,
+                                int&nbsp;maxCount,
+                                long&nbsp;maxSize,
+                                <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                                java.lang.Object&nbsp;ctx)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
+</td>
+</tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncClose(org.apache.bookkeeper.client.AsyncCallback.CloseCallback,java.lang.Object)">asyncClose</a></span>&#8203;(<a href="AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
           java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">
 <div class="block">Asynchronous close, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncCloseInternal(org.apache.bookkeeper.client.AsyncCallback.CloseCallback,java.lang.Object,int)">asyncCloseInternal</a></span>&#8203;(<a href="AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
                   java.lang.Object&nbsp;ctx,
                   int&nbsp;rc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadEntries</a></span>&#8203;(long&nbsp;firstEntry,
                 long&nbsp;lastEntry,
@@ -526,7 +563,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadEntriesInternal(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object,boolean)">asyncReadEntriesInternal</a></span>&#8203;(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
@@ -535,7 +572,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
                         boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadExplicitLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback,java.lang.Object)">asyncReadExplicitLastConfirmed</a></span>&#8203;(<a href="AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                               java.lang.Object&nbsp;ctx)</code></th>
@@ -544,7 +581,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  bookies.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback,java.lang.Object)">asyncReadLastConfirmed</a></span>&#8203;(<a href="AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                       java.lang.Object&nbsp;ctx)</code></th>
@@ -552,7 +589,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadLastConfirmedAndEntry(long,long,boolean,org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedAndEntryCallback,java.lang.Object)">asyncReadLastConfirmedAndEntry</a></span>&#8203;(long&nbsp;entryId,
                               long&nbsp;timeOutInMillis,
@@ -563,13 +600,13 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Asynchronous read next entry and the latest last add confirmed.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadLastEntry(org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadLastEntry</a></span>&#8203;(<a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
                   java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncReadUnconfirmedEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">asyncReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
                            long&nbsp;lastEntry,
@@ -579,7 +616,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncRecoveryAddEntry(byte%5B%5D,int,int,org.apache.bookkeeper.client.AsyncCallback.AddCallback,java.lang.Object)">asyncRecoveryAddEntry</a></span>&#8203;(byte[]&nbsp;data,
                      int&nbsp;offset,
@@ -590,7 +627,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Make a recovery add entry request.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback,java.lang.Object)">asyncTryReadLastConfirmed</a></span>&#8203;(<a href="AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                          java.lang.Object&nbsp;ctx)</code></th>
@@ -598,26 +635,55 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i27" class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#batchReadAsync(long,int,long)">batchReadAsync</a></span>&#8203;(long&nbsp;startEntry,
+              int&nbsp;maxCount,
+              long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries in asynchronously.</div>
+</td>
+</tr>
+<tr id="i28" class="altColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#batchReadEntries(long,int,long)">batchReadEntries</a></span>&#8203;(long&nbsp;startEntry,
+                int&nbsp;maxCount,
+                long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously.</div>
+</td>
+</tr>
+<tr id="i29" class="rowColor">
+<td class="colFirst"><code>java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#batchReadUnconfirmedEntries(long,int,long)">batchReadUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
+                           int&nbsp;maxCount,
+                           long&nbsp;maxSize)</code></th>
+<td class="colLast">
+<div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+ This is the same of
+ <code>#asyncBatchReadUnconfirmedEntries(long, int, long, boolean, ReadCallback, Object)</code></div>
+</td>
+</tr>
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#close()">close</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Synchronous close the write handle, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#closeAsync()">closeAsync</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Asynchronous close the write handle, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doAsyncAddEntry(org.apache.bookkeeper.client.PendingAddOp)">doAsyncAddEntry</a></span>&#8203;(<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doAsyncCloseInternal(org.apache.bookkeeper.client.AsyncCallback.CloseCallback,java.lang.Object,int)">doAsyncCloseInternal</a></span>&#8203;(<a href="AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
                     java.lang.Object&nbsp;ctx,
@@ -628,99 +694,99 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  add ops.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>(package private) java.util.List&lt;<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#drainPendingAddsAndAdjustLength()">drainPendingAddsAndAdjustLength</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ensembleChangeLoop(java.util.List,java.util.Map)">ensembleChangeLoop</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;origEnsemble,
-                  java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;failedBookies)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ensembleChangeLoop(java.util.List,java.util.Map)">ensembleChangeLoop</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;origEnsemble,
+                  java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;failedBookies)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#errorOutPendingAdds(int)">errorOutPendingAdds</a></span>&#8203;(int&nbsp;rc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#errorOutPendingAdds(int,java.util.List)">errorOutPendingAdds</a></span>&#8203;(int&nbsp;rc,
                    java.util.List&lt;<a href="PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&gt;&nbsp;ops)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeOrdered(java.lang.Runnable)">executeOrdered</a></span>&#8203;(java.lang.Runnable&nbsp;runnable)</code></th>
 <td class="colLast">
 <div class="block">Execute the callback in the thread pinned to the ledger.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#force()">force</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Enforce durability to the entries written by this handle.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>(package private) <a href="BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBookiesHealthInfo()">getBookiesHealthInfo</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the health info for bookies for this ledger.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCtime()">getCtime</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the ledger creation time.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
-<td class="colFirst"><code>(package private) java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<tr id="i42" class="altColor">
+<td class="colFirst"><code>(package private) java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCurrentEnsemble()">getCurrentEnsemble</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the current ensemble from the ensemble list.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>java.util.Map&lt;java.lang.String,&#8203;byte[]&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCustomMetadata()">getCustomMetadata</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get this ledger's customMetadata map.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.checksum.DigestManager</code></td>
+<tr id="i44" class="altColor">
+<td class="colFirst"><code>(package private) <a href="../proto/checksum/DigestManager.html" title="class in org.apache.bookkeeper.proto.checksum">DigestManager</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDigestManager()">getDigestManager</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the DigestManager.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDistributionSchedule()">getDistributionSchedule</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the Distribution Schedule.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getId()">getId</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the id of the current ledger.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastAddConfirmed()">getLastAddConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the last confirmed entry id on this ledger.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastAddPushed()">getLastAddPushed</a></span>()</code></th>
 <td class="colLast">
@@ -728,28 +794,28 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  may not have possibly been persisted to the ledger).</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>byte[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLedgerKey()">getLedgerKey</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the Ledger's key/password.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code><a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLedgerMetadata()">getLedgerMetadata</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the metadata of this ledger.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLength()">getLength</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the length of the ledger in bytes.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumBookies()">getNumBookies</a></span>()</code></th>
 <td class="colLast">
@@ -757,74 +823,74 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  by going over all the fragments of the ledger.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumFragments()">getNumFragments</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of fragments that makeup this ledger.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
+<tr id="i54" class="altColor">
+<td class="colFirst"><code>(package private) <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getVersionedLedgerMetadata()">getVersionedLedgerMetadata</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>java.util.EnumSet&lt;<a href="api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWriteFlags()">getWriteFlags</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>(package private) <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWriteSetForReadOperation(long)">getWriteSetForReadOperation</a></span>&#8203;(long&nbsp;entryId)</code></th>
 <td class="colLast">
 <div class="block">Return a <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule.WriteSet</code></a> suitable for reading a particular entry.</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#handleBookieFailure(java.util.Map)">handleBookieFailure</a></span>&#8203;(java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;failedBookies)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#handleBookieFailure(java.util.Map)">handleBookieFailure</a></span>&#8203;(java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;failedBookies)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#handleUnrecoverableErrorDuringAdd(int)">handleUnrecoverableErrorDuringAdd</a></span>&#8203;(int&nbsp;rc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasDelayedWriteFailedBookies()">hasDelayedWriteFailedBookies</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeWriteHandleState()">initializeWriteHandleState</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isClosed()">isClosed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns whether the ledger is sealed or not.</div>
 </td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isHandleWritable()">isHandleWritable</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maybeHandleDelayedWriteBookieFailure()">maybeHandleDelayedWriteBookieFailure</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#notifyWriteFailed(int,org.apache.bookkeeper.net.BookieId)">notifyWriteFailed</a></span>&#8203;(int&nbsp;index,
-                 org.apache.bookkeeper.net.BookieId&nbsp;addr)</code></th>
+                 <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readAsync(long,long)">readAsync</a></span>&#8203;(long&nbsp;firstEntry,
          long&nbsp;lastEntry)</code></th>
@@ -832,7 +898,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readEntries(long,long)">readEntries</a></span>&#8203;(long&nbsp;firstEntry,
            long&nbsp;lastEntry)</code></th>
@@ -840,19 +906,19 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Read a sequence of entries synchronously.</div>
 </td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readEntriesInternalAsync(long,long,boolean)">readEntriesInternalAsync</a></span>&#8203;(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
                         boolean&nbsp;isRecoveryRead)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExplicitLastConfirmed()">readExplicitLastConfirmed</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readLastAddConfirmedAndEntryAsync(long,long,boolean)">readLastAddConfirmedAndEntryAsync</a></span>&#8203;(long&nbsp;entryId,
                                  long&nbsp;timeOutInMillis,
@@ -861,26 +927,26 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
 </td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readLastAddConfirmedAsync()">readLastAddConfirmedAsync</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readLastConfirmed()">readLastConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code><a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readLastEntry()">readLastEntry</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readUnconfirmedAsync(long,long)">readUnconfirmedAsync</a></span>&#8203;(long&nbsp;firstEntry,
                     long&nbsp;lastEntry)</code></th>
@@ -888,7 +954,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readUnconfirmedEntries(long,long)">readUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
                       long&nbsp;lastEntry)</code></th>
@@ -898,36 +964,36 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  <a href="#asyncReadUnconfirmedEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)"><code>asyncReadUnconfirmedEntries(long, long, ReadCallback, Object)</code></a></div>
 </td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i75" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recordReadErrorOnBookie(int)">recordReadErrorOnBookie</a></span>&#8203;(int&nbsp;bookieIndex)</code></th>
 <td class="colLast">
 <div class="block">Notify the LedgerHandle that a read operation was failed on a particular bookie.</div>
 </td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i76" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerOperationFailureOnBookie(org.apache.bookkeeper.net.BookieId,long)">registerOperationFailureOnBookie</a></span>&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerOperationFailureOnBookie(org.apache.bookkeeper.net.BookieId,long)">registerOperationFailureOnBookie</a></span>&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie,
                                 long&nbsp;entryId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i71" class="rowColor">
+<tr id="i77" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendAddSuccessCallbacks()">sendAddSuccessCallbacks</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i72" class="altColor">
+<tr id="i78" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastAddConfirmed(long)">setLastAddConfirmed</a></span>&#8203;(long&nbsp;lac)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i73" class="rowColor">
+<tr id="i79" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">setLedgerMetadata</a></span>&#8203;(org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">setLedgerMetadata</a></span>&#8203;(<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
+                 <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i74" class="altColor">
+<tr id="i80" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Long&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tryReadLastAddConfirmedAsync()">tryReadLastAddConfirmedAsync</a></span>()</code></th>
 <td class="colLast">
@@ -935,26 +1001,26 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
  but it doesn't wait all the responses from the quorum.</div>
 </td>
 </tr>
-<tr id="i75" class="rowColor">
+<tr id="i81" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tryReadLastConfirmed()">tryReadLastConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i76" class="altColor">
+<tr id="i82" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unsetSuccessAndSendWriteRequest(java.util.List,java.util.Set)">unsetSuccessAndSendWriteRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unsetSuccessAndSendWriteRequest(java.util.List,java.util.Set)">unsetSuccessAndSendWriteRequest</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                                java.util.Set&lt;java.lang.Integer&gt;&nbsp;bookies)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i77" class="rowColor">
+<tr id="i83" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateLastConfirmed(long,long)">updateLastConfirmed</a></span>&#8203;(long&nbsp;lac,
                    long&nbsp;len)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i78" class="altColor">
+<tr id="i84" class="altColor">
 <td class="colFirst"><code>protected boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#waitForWritable(org.apache.bookkeeper.client.DistributionSchedule.WriteSet,int,long)">waitForWritable</a></span>&#8203;(<a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
                int&nbsp;allowedNonWritableCount,
@@ -974,7 +1040,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.api.<a href="api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></h3>
-<code><a href="api/ReadHandle.html#read(long,long)">read</a>, <a href="api/ReadHandle.html#readLastAddConfirmed()">readLastAddConfirmed</a>, <a href="api/ReadHandle.html#readLastAddConfirmedAndEntry(long,long,boolean)">readLastAddConfirmedAndEntry</a>, <a href="api/ReadHandle.html#readUnconfirmed(long,long)">readUnconfirmed</a>, <a href="api/ReadHandle.html#tryReadLastAddConfirmed()">tryReadLastAddConfirmed</a></code></li>
+<code><a href="api/ReadHandle.html#batchRead(long,int,long)">batchRead</a>, <a href="api/ReadHandle.html#read(long,long)">read</a>, <a href="api/ReadHandle.html#readLastAddConfirmed()">readLastAddConfirmed</a>, <a href="api/ReadHandle.html#readLastAddConfirmedAndEntry(long,long,boolean)">readLastAddConfirmedAndEntry</a>, <a href="api/ReadHandle.html#readUnconfirmed(long,long)">readUnconfirmed</a>, <a href="api/ReadHandle.html#tryReadLastAddConfirmed()">tryReadLastAddConfirmed</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.api.WriteHandle">
@@ -1053,6 +1119,15 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <pre>long lastAddPushed</pre>
 </li>
 </ul>
+<a id="notSupportBatch">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>notSupportBatch</h4>
+<pre>boolean notSupportBatch</pre>
+</li>
+</ul>
 <a id="lastAddConfirmed">
 <!--   -->
 </a>
@@ -1090,7 +1165,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>macManager</h4>
-<pre>final&nbsp;org.apache.bookkeeper.proto.checksum.DigestManager macManager</pre>
+<pre>final&nbsp;<a href="../proto/checksum/DigestManager.html" title="class in org.apache.bookkeeper.proto.checksum">DigestManager</a> macManager</pre>
 </li>
 </ul>
 <a id="distributionSchedule">
@@ -1117,7 +1192,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>bookieFailureHistory</h4>
-<pre>final&nbsp;com.google.common.cache.LoadingCache&lt;org.apache.bookkeeper.net.BookieId,&#8203;java.lang.Long&gt; bookieFailureHistory</pre>
+<pre>final&nbsp;com.google.common.cache.LoadingCache&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;java.lang.Long&gt; bookieFailureHistory</pre>
 </li>
 </ul>
 <a id="bookiesHealthInfo">
@@ -1153,7 +1228,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>delayedWriteFailedBookies</h4>
-<pre>final&nbsp;java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt; delayedWriteFailedBookies</pre>
+<pre>final&nbsp;java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt; delayedWriteFailedBookies</pre>
 </li>
 </ul>
 <a id="INVALID_ENTRY_ID">
@@ -1276,7 +1351,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <h4>LedgerHandle</h4>
 <pre>LedgerHandle&#8203;(<a href="ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
              long&nbsp;ledgerId,
-             org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+             <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
              <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
              byte[]&nbsp;password,
              java.util.EnumSet&lt;<a href="api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)
@@ -1431,7 +1506,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getVersionedLedgerMetadata</h4>
-<pre class="methodSignature">org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;getVersionedLedgerMetadata()</pre>
+<pre class="methodSignature"><a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;getVersionedLedgerMetadata()</pre>
 </li>
 </ul>
 <a id="setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned,org.apache.bookkeeper.versioning.Versioned)">
@@ -1440,8 +1515,8 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>setLedgerMetadata</h4>
-<pre class="methodSignature">boolean&nbsp;setLedgerMetadata&#8203;(org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
-                          org.apache.bookkeeper.versioning.Versioned&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
+<pre class="methodSignature">boolean&nbsp;setLedgerMetadata&#8203;(<a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
+                          <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
 </li>
 </ul>
 <a id="getCustomMetadata()">
@@ -1493,7 +1568,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getDigestManager</h4>
-<pre class="methodSignature">org.apache.bookkeeper.proto.checksum.DigestManager&nbsp;getDigestManager()</pre>
+<pre class="methodSignature"><a href="../proto/checksum/DigestManager.html" title="class in org.apache.bookkeeper.proto.checksum">DigestManager</a>&nbsp;getDigestManager()</pre>
 <div class="block">Get the DigestManager.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1748,6 +1823,31 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </dl>
 </li>
 </ul>
+<a id="batchReadEntries(long,int,long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>batchReadEntries</h4>
+<pre class="methodSignature">public&nbsp;java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;batchReadEntries&#8203;(long&nbsp;startEntry,
+                                                           int&nbsp;maxCount,
+                                                           long&nbsp;maxSize)
+                                                    throws java.lang.InterruptedException,
+                                                           <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<div class="block">Read a sequence of entries synchronously.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>startEntry</code> - start entry id</dd>
+<dd><code>maxCount</code> - the total entries count.</dd>
+<dd><code>maxSize</code> - the total entries size.</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.InterruptedException</code></dd>
+<dd><code><a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>#asyncBatchReadEntries(long, int, long, boolean, ReadCallback, Object)</code></dd>
+</dl>
+</li>
+</ul>
 <a id="readUnconfirmedEntries(long,long)">
 <!--   -->
 </a>
@@ -1775,6 +1875,31 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </dl>
 </li>
 </ul>
+<a id="batchReadUnconfirmedEntries(long,int,long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>batchReadUnconfirmedEntries</h4>
+<pre class="methodSignature">public&nbsp;java.util.Enumeration&lt;<a href="LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;batchReadUnconfirmedEntries&#8203;(long&nbsp;firstEntry,
+                                                                      int&nbsp;maxCount,
+                                                                      long&nbsp;maxSize)
+                                                               throws java.lang.InterruptedException,
+                                                                      <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+ This is the same of
+ <code>#asyncBatchReadUnconfirmedEntries(long, int, long, boolean, ReadCallback, Object)</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>firstEntry</code> - id of first entry of sequence (included)</dd>
+<dd><code>maxCount</code> - id of last entry of sequence (included)</dd>
+<dd><code>maxSize</code> - the total entries size</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.InterruptedException</code></dd>
+<dd><code><a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
+</dl>
+</li>
+</ul>
 <a id="asyncReadEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">
 <!--   -->
 </a>
@@ -1790,6 +1915,29 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>firstEntry</code> - id of first entry of sequence</dd>
 <dd><code>lastEntry</code> - id of last entry of sequence</dd>
+<dd><code>cb</code> - object implementing read callback interface</dd>
+<dd><code>ctx</code> - control object</dd>
+</dl>
+</li>
+</ul>
+<a id="asyncBatchReadEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>asyncBatchReadEntries</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;asyncBatchReadEntries&#8203;(long&nbsp;startEntry,
+                                  int&nbsp;maxCount,
+                                  long&nbsp;maxSize,
+                                  <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                                  java.lang.Object&nbsp;ctx)</pre>
+<div class="block">Read a sequence of entries in asynchronously.
+ It send an RPC to get all entries instead of send multi RPC to get all entries.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>startEntry</code> - id of first entry of sequence</dd>
+<dd><code>maxCount</code> - the entries count</dd>
+<dd><code>maxSize</code> - the total entries size</dd>
 <dd><code>cb</code> - object implementing read callback interface</dd>
 <dd><code>ctx</code> - control object</dd>
 </dl>
@@ -1830,6 +1978,29 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </dl>
 </li>
 </ul>
+<a id="asyncBatchReadUnconfirmedEntries(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>asyncBatchReadUnconfirmedEntries</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;asyncBatchReadUnconfirmedEntries&#8203;(long&nbsp;startEntry,
+                                             int&nbsp;maxCount,
+                                             long&nbsp;maxSize,
+                                             <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                                             java.lang.Object&nbsp;ctx)</pre>
+<div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+ It sends an RPC to get all entries instead of send multi RPC to get all entries.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>startEntry</code> - id of first entry of sequence</dd>
+<dd><code>maxCount</code> - the entries count</dd>
+<dd><code>maxSize</code> - the total entries size</dd>
+<dd><code>cb</code> - object implementing read callback interface</dd>
+<dd><code>ctx</code> - control object</dd>
+</dl>
+</li>
+</ul>
 <a id="readAsync(long,long)">
 <!--   -->
 </a>
@@ -1845,6 +2016,29 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>firstEntry</code> - id of first entry of sequence</dd>
 <dd><code>lastEntry</code> - id of last entry of sequence</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an handle to the result of the operation</dd>
+</dl>
+</li>
+</ul>
+<a id="batchReadAsync(long,int,long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>batchReadAsync</h4>
+<pre class="methodSignature">public&nbsp;java.util.concurrent.CompletableFuture&lt;<a href="api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;batchReadAsync&#8203;(long&nbsp;startEntry,
+                                                                            int&nbsp;maxCount,
+                                                                            long&nbsp;maxSize)</pre>
+<div class="block">Read a sequence of entries in asynchronously.
+ It sends an RPC to get all entries instead of send multi RPC to get all entries.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="api/ReadHandle.html#batchReadAsync(long,int,long)">batchReadAsync</a></code>&nbsp;in interface&nbsp;<code><a href="api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>startEntry</code> - id of first entry of sequence</dd>
+<dd><code>maxCount</code> - the entries count</dd>
+<dd><code>maxSize</code> - the total entries size</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result of the operation</dd>
 </dl>
@@ -1896,6 +2090,20 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
                               <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
                               java.lang.Object&nbsp;ctx,
                               boolean&nbsp;isRecoveryRead)</pre>
+</li>
+</ul>
+<a id="asyncBatchReadEntriesInternal(long,int,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>asyncBatchReadEntriesInternal</h4>
+<pre class="methodSignature">void&nbsp;asyncBatchReadEntriesInternal&#8203;(long&nbsp;startEntry,
+                                   int&nbsp;maxCount,
+                                   long&nbsp;maxSize,
+                                   <a href="AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
+                                   java.lang.Object&nbsp;ctx,
+                                   boolean&nbsp;isRecoveryRead)</pre>
 </li>
 </ul>
 <a id="asyncReadLastEntry(org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)">
@@ -2586,7 +2794,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <li class="blockList">
 <h4>notifyWriteFailed</h4>
 <pre class="methodSignature">void&nbsp;notifyWriteFailed&#8203;(int&nbsp;index,
-                       org.apache.bookkeeper.net.BookieId&nbsp;addr)</pre>
+                       <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr)</pre>
 </li>
 </ul>
 <a id="maybeHandleDelayedWriteBookieFailure()">
@@ -2604,7 +2812,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>handleBookieFailure</h4>
-<pre class="methodSignature">void&nbsp;handleBookieFailure&#8203;(java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;failedBookies)</pre>
+<pre class="methodSignature">void&nbsp;handleBookieFailure&#8203;(java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;failedBookies)</pre>
 </li>
 </ul>
 <a id="ensembleChangeLoop(java.util.List,java.util.Map)">
@@ -2613,8 +2821,8 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>ensembleChangeLoop</h4>
-<pre class="methodSignature">void&nbsp;ensembleChangeLoop&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;origEnsemble,
-                        java.util.Map&lt;java.lang.Integer,&#8203;org.apache.bookkeeper.net.BookieId&gt;&nbsp;failedBookies)</pre>
+<pre class="methodSignature">void&nbsp;ensembleChangeLoop&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;origEnsemble,
+                        java.util.Map&lt;java.lang.Integer,&#8203;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;failedBookies)</pre>
 </li>
 </ul>
 <a id="unsetSuccessAndSendWriteRequest(java.util.List,java.util.Set)">
@@ -2623,7 +2831,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>unsetSuccessAndSendWriteRequest</h4>
-<pre class="methodSignature">void&nbsp;unsetSuccessAndSendWriteRequest&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre class="methodSignature">void&nbsp;unsetSuccessAndSendWriteRequest&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                                      java.util.Set&lt;java.lang.Integer&gt;&nbsp;bookies)</pre>
 </li>
 </ul>
@@ -2633,7 +2841,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>registerOperationFailureOnBookie</h4>
-<pre class="methodSignature">void&nbsp;registerOperationFailureOnBookie&#8203;(org.apache.bookkeeper.net.BookieId&nbsp;bookie,
+<pre class="methodSignature">void&nbsp;registerOperationFailureOnBookie&#8203;(<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookie,
                                       long&nbsp;entryId)</pre>
 </li>
 </ul>
@@ -2643,7 +2851,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <ul class="blockList">
 <li class="blockList">
 <h4>getCurrentEnsemble</h4>
-<pre class="methodSignature">java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;getCurrentEnsemble()</pre>
+<pre class="methodSignature">java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;getCurrentEnsemble()</pre>
 <div class="block">Get the current ensemble from the ensemble list. The current ensemble
  is the last ensemble in the list. The ledger handle uses this ensemble when
  triggering operations which work on the end of the ledger, such as adding new
@@ -2754,7 +2962,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -216,7 +216,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
                   <a href="api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api">LedgerMetadata.State</a>&nbsp;state,
                   java.util.Optional&lt;java.lang.Long&gt;&nbsp;lastEntryId,
                   java.util.Optional&lt;java.lang.Long&gt;&nbsp;length,
-                  java.util.Map&lt;java.lang.Long,&#8203;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;&nbsp;ensembles,
+                  java.util.Map&lt;java.lang.Long,&#8203;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;&nbsp;ensembles,
                   java.util.Optional&lt;<a href="api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&gt;&nbsp;digestType,
                   java.util.Optional&lt;byte[]&gt;&nbsp;password,
                   long&nbsp;ctime,
@@ -261,7 +261,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>java.util.NavigableMap&lt;java.lang.Long,&#8203;? extends java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;</code></td>
+<td class="colFirst"><code>java.util.NavigableMap&lt;java.lang.Long,&#8203;? extends java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEnsembles()">getAllEnsembles</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns all the ensembles of this ledger.</div>
@@ -296,7 +296,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
 </td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEnsembleAt(long)">getEnsembleAt</a></span>&#8203;(long&nbsp;entryId)</code></th>
 <td class="colLast">
 <div class="block">Returns the ensemble at the given <code>entryId</code>.</div>
@@ -462,7 +462,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
                    <a href="api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api">LedgerMetadata.State</a>&nbsp;state,
                    java.util.Optional&lt;java.lang.Long&gt;&nbsp;lastEntryId,
                    java.util.Optional&lt;java.lang.Long&gt;&nbsp;length,
-                   java.util.Map&lt;java.lang.Long,&#8203;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;&nbsp;ensembles,
+                   java.util.Map&lt;java.lang.Long,&#8203;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;&nbsp;ensembles,
                    java.util.Optional&lt;<a href="api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&gt;&nbsp;digestType,
                    java.util.Optional&lt;byte[]&gt;&nbsp;password,
                    long&nbsp;ctime,
@@ -504,7 +504,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllEnsembles</h4>
-<pre class="methodSignature">public&nbsp;java.util.NavigableMap&lt;java.lang.Long,&#8203;? extends java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&gt;&nbsp;getAllEnsembles()</pre>
+<pre class="methodSignature">public&nbsp;java.util.NavigableMap&lt;java.lang.Long,&#8203;? extends java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&gt;&nbsp;getAllEnsembles()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="api/LedgerMetadata.html#getAllEnsembles()">LedgerMetadata</a></code></span></div>
 <div class="block">Returns all the ensembles of this ledger.</div>
 <dl>
@@ -714,7 +714,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
 <ul class="blockList">
 <li class="blockList">
 <h4>getEnsembleAt</h4>
-<pre class="methodSignature">public&nbsp;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;getEnsembleAt&#8203;(long&nbsp;entryId)</pre>
+<pre class="methodSignature">public&nbsp;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;getEnsembleAt&#8203;(long&nbsp;entryId)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="api/LedgerMetadata.html#getEnsembleAt(long)">LedgerMetadata</a></code></span></div>
 <div class="block">Returns the ensemble at the given <code>entryId</code>.</div>
 <dl>
@@ -922,7 +922,7 @@ implements <a href="api/LedgerMetadata.html" title="interface in org.apache.book
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -107,6 +107,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.stats">org.apache.bookkeeper.bookie.stats</a></th>
+<td class="colLast">
+<div class="block">Package of the classes for defining bookie stats.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.bookie.storage.ldb">org.apache.bookkeeper.bookie.storage.ldb</a></th>
+<td class="colLast">
+<div class="block">Classes related to DB based ledger storage.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client.</div>
@@ -116,6 +128,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></th>
 <td class="colLast">
 <div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.common.stats">org.apache.bookkeeper.common.stats</a></th>
+<td class="colLast">
+<div class="block">Stats Related Utils.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.bookkeeper.replication">org.apache.bookkeeper.replication</a></th>
+<td class="colLast">
+<div class="block">Classes for replicating Bookkeeper data.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -147,6 +171,115 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/stats/package-summary.html">org.apache.bookkeeper.bookie.stats</a> that return <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getActiveEntryLogCountGauge()">getActiveEntryLogCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getActiveEntryLogSpaceBytesGauge()">getActiveEntryLogSpaceBytesGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getActiveLedgerCountGauge()">getActiveLedgerCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getJournalDirsGauge()">getJournalDirsGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalMemoryMaxStats()">getJournalMemoryMaxStats</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalMemoryUsedStats()">getJournalMemoryUsedStats</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getJournalQueueMaxQueueSizeGauge()">getJournalQueueMaxQueueSizeGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Number&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexPersistenceMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexPersistenceMgrStats.html#getReadFileInfoCacheSizeGauge()">getReadFileInfoCacheSizeGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Number&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IndexPersistenceMgrStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/IndexPersistenceMgrStats.html#getWriteFileInfoCacheSizeGauge()">getWriteFileInfoCacheSizeGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.bookie.storage.ldb">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../bookie/storage/ldb/package-summary.html">org.apache.bookkeeper.bookie.storage.ldb</a> that return <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryLocationIndexStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/EntryLocationIndexStats.html#getEntriesCountGauge()">getEntriesCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LedgerMetadataIndexStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/LedgerMetadataIndexStats.html#getLedgersCountGauge()">getLedgersCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadCacheCountGauge()">getReadCacheCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getReadCacheSizeGauge()">getReadCacheSizeGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getWriteCacheCountGauge()">getWriteCacheCountGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Long&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DbLedgerStorageStats.</span><code><span class="memberNameLink"><a href="../../bookie/storage/ldb/DbLedgerStorageStats.html#getWriteCacheSizeGauge()">getWriteCacheSizeGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.bookkeeper.client">
 <!--   -->
@@ -205,6 +338,94 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../client/impl/BookKeeperClientStatsImpl.html#registerPendingAddsGauge(org.apache.bookkeeper.stats.Gauge)">registerPendingAddsGauge</a></span>&#8203;(<a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;&nbsp;gauge)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.common.stats">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../common/stats/package-summary.html">org.apache.bookkeeper.common.stats</a> with parameters of type <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Number&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.MasterSlave.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.MasterSlave.html#registerGauge(java.lang.String,org.apache.bookkeeper.stats.Gauge)">registerGauge</a></span>&#8203;(java.lang.String&nbsp;statName,
+             <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Number&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#registerGauge(java.lang.String,org.apache.bookkeeper.stats.Gauge)">registerGauge</a></span>&#8203;(java.lang.String&nbsp;statName,
+             <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Number&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.MasterSlave.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.MasterSlave.html#unregisterGauge(java.lang.String,org.apache.bookkeeper.stats.Gauge)">unregisterGauge</a></span>&#8203;(java.lang.String&nbsp;statName,
+               <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Number&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BroadCastStatsLogger.Two.</span><code><span class="memberNameLink"><a href="../../common/stats/BroadCastStatsLogger.Two.html#unregisterGauge(java.lang.String,org.apache.bookkeeper.stats.Gauge)">unregisterGauge</a></span>&#8203;(java.lang.String&nbsp;statName,
+               <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;T&gt;&nbsp;gauge)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.bookkeeper.replication">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a> in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../replication/package-summary.html">org.apache.bookkeeper.replication</a> that return <a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersHavingLessThanAQReplicasOfAnEntry()">getNumLedgersHavingLessThanAQReplicasOfAnEntry</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersHavingLessThanWQReplicasOfAnEntry()">getNumLedgersHavingLessThanWQReplicasOfAnEntry</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersHavingNoReplicaOfAnEntry()">getNumLedgersHavingNoReplicaOfAnEntry</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersNotAdheringToPlacementPolicy()">getNumLedgersNotAdheringToPlacementPolicy</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumLedgersSoftlyAdheringToPlacementPolicy()">getNumLedgersSoftlyAdheringToPlacementPolicy</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AuditorStats.</span><code><span class="memberNameLink"><a href="../../replication/AuditorStats.html#getNumUnderreplicatedLedgersElapsedRecoveryGracePeriod()">getNumUnderreplicatedLedgersElapsedRecoveryGracePeriod</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -419,7 +640,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

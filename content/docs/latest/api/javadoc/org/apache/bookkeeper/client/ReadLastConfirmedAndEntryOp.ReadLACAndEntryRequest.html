@@ -173,7 +173,7 @@ implements java.lang.AutoCloseable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;</code></td>
+<td class="colFirst"><code>(package private) java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ensemble">ensemble</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -225,7 +225,7 @@ implements java.lang.AutoCloseable</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ReadLACAndEntryRequest</a></span>&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,long,long)">ReadLACAndEntryRequest</a></span>&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                       long&nbsp;lId,
                       long&nbsp;eId)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -256,7 +256,7 @@ implements java.lang.AutoCloseable</pre>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#complete(int,org.apache.bookkeeper.net.BookieId,io.netty.buffer.ByteBuf,long)">complete</a></span>&#8203;(int&nbsp;bookieIndex,
-        org.apache.bookkeeper.net.BookieId&nbsp;host,
+        <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
         io.netty.buffer.ByteBuf&nbsp;buffer,
         long&nbsp;entryId)</code></th>
 <td class="colLast">
@@ -292,7 +292,7 @@ implements java.lang.AutoCloseable</pre>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#logErrorAndReattemptRead(int,org.apache.bookkeeper.net.BookieId,java.lang.String,int)">logErrorAndReattemptRead</a></span>&#8203;(int&nbsp;bookieIndex,
-                        org.apache.bookkeeper.net.BookieId&nbsp;host,
+                        <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                         java.lang.String&nbsp;errMsg,
                         int&nbsp;rc)</code></th>
 <td class="colLast">
@@ -300,7 +300,7 @@ implements java.lang.AutoCloseable</pre>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>(package private) abstract org.apache.bookkeeper.net.BookieId</code></td>
+<td class="colFirst"><code>(package private) abstract <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maybeSendSpeculativeRead(java.util.BitSet)">maybeSendSpeculativeRead</a></span>&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</code></th>
 <td class="colLast">
 <div class="block">Send to next replica speculatively, if required and possible.</div>
@@ -384,7 +384,7 @@ implements java.lang.AutoCloseable</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>ensemble</h4>
-<pre>final&nbsp;java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt; ensemble</pre>
+<pre>final&nbsp;java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt; ensemble</pre>
 </li>
 </ul>
 <a id="writeSet">
@@ -430,7 +430,7 @@ implements java.lang.AutoCloseable</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ReadLACAndEntryRequest</h4>
-<pre>ReadLACAndEntryRequest&#8203;(java.util.List&lt;org.apache.bookkeeper.net.BookieId&gt;&nbsp;ensemble,
+<pre>ReadLACAndEntryRequest&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensemble,
                        long&nbsp;lId,
                        long&nbsp;eId)</pre>
 </li>
@@ -484,7 +484,7 @@ implements java.lang.AutoCloseable</pre>
 <li class="blockList">
 <h4>complete</h4>
 <pre class="methodSignature">boolean&nbsp;complete&#8203;(int&nbsp;bookieIndex,
-                 org.apache.bookkeeper.net.BookieId&nbsp;host,
+                 <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                  io.netty.buffer.ByteBuf&nbsp;buffer,
                  long&nbsp;entryId)</pre>
 <div class="block">Complete the read request from <i>host</i>.</div>
@@ -522,7 +522,7 @@ implements java.lang.AutoCloseable</pre>
 <li class="blockList">
 <h4>logErrorAndReattemptRead</h4>
 <pre class="methodSignature">void&nbsp;logErrorAndReattemptRead&#8203;(int&nbsp;bookieIndex,
-                              org.apache.bookkeeper.net.BookieId&nbsp;host,
+                              <a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;host,
                               java.lang.String&nbsp;errMsg,
                               int&nbsp;rc)</pre>
 <div class="block">Log error <i>errMsg</i> and reattempt read from <i>host</i>.</div>
@@ -541,7 +541,7 @@ implements java.lang.AutoCloseable</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>maybeSendSpeculativeRead</h4>
-<pre class="methodSignature">abstract&nbsp;org.apache.bookkeeper.net.BookieId&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
+<pre class="methodSignature">abstract&nbsp;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;maybeSendSpeculativeRead&#8203;(java.util.BitSet&nbsp;heardFromHostsBitSet)</pre>
 <div class="block">Send to next replica speculatively, if required and possible.
  This returns the host we may have sent to for unit testing.</div>
 <dl>
@@ -662,7 +662,7 @@ implements java.lang.AutoCloseable</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

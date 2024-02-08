@@ -133,7 +133,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></dd>
+<dd><code><a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a></code></dd>
 </dl>
 <dl>
 <dt>Enclosing class:</dt>
@@ -142,7 +142,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>static class <span class="typeNameLabel">TopologyAwareEnsemblePlacementPolicy.DefaultResolver</span>
 extends java.lang.Object
-implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
+implements <a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a></pre>
 </li>
 </ul>
 </div>
@@ -234,8 +234,8 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.net.DNSToSwitchMapping">
 <!--   -->
 </a>
-<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.net.DNSToSwitchMapping</h3>
-<code>setBookieAddressResolver, useHostName</code></li>
+<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.net.<a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a></h3>
+<code><a href="../net/DNSToSwitchMapping.html#setBookieAddressResolver(org.apache.bookkeeper.proto.BookieAddressResolver)">setBookieAddressResolver</a>, <a href="../net/DNSToSwitchMapping.html#useHostName()">useHostName</a></code></li>
 </ul>
 </li>
 </ul>
@@ -298,7 +298,7 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <li class="blockList">
 <h4>resolve</h4>
 <pre class="methodSignature">public&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;resolve&#8203;(java.util.List&lt;java.lang.String&gt;&nbsp;names)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../net/DNSToSwitchMapping.html#resolve(java.util.List)">DNSToSwitchMapping</a></code></span></div>
 <div class="block">Resolves a list of DNS-names/IP-addresses and returns back a list of
  switch information (network paths). One-to-one correspondence must be
  maintained between the elements in the lists.
@@ -310,11 +310,11 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
  components in the network path.
 
  <p>If a name cannot be resolved to a rack, the implementation
- should return <code>NetworkTopology.DEFAULT_REGION_AND_RACK</code>. This
+ should return <a href="../net/NetworkTopology.html#DEFAULT_REGION_AND_RACK"><code>NetworkTopology.DEFAULT_REGION_AND_RACK</code></a>. This
  is what the bundled implementations do, though it is not a formal requirement</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>resolve</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></dd>
+<dd><code><a href="../net/DNSToSwitchMapping.html#resolve(java.util.List)">resolve</a></code>&nbsp;in interface&nbsp;<code><a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>names</code> - the list of hosts to resolve (can be empty)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -330,14 +330,14 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <li class="blockList">
 <h4>reloadCachedMappings</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;reloadCachedMappings()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../net/DNSToSwitchMapping.html#reloadCachedMappings()">DNSToSwitchMapping</a></code></span></div>
 <div class="block">Reload all of the cached mappings.
 
  <p>If there is a cache, this method will clear it, so that future accesses
  will get a chance to see the new data.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>reloadCachedMappings</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></dd>
+<dd><code><a href="../net/DNSToSwitchMapping.html#reloadCachedMappings()">reloadCachedMappings</a></code>&nbsp;in interface&nbsp;<code><a href="../net/DNSToSwitchMapping.html" title="interface in org.apache.bookkeeper.net">DNSToSwitchMapping</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -410,7 +410,7 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2011&#x2013;2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>
