@@ -34,4 +34,5 @@ mkdir -p "${BASE_DIR}"/tests/docker-images/all-versions-image/build
 ls -la ${BASE_DIR}bookkeeper-dist/server/build/distributions
 cp ${BASE_DIR}bookkeeper-dist/server/build/distributions/bookkeeper-server-${VERSION}-bin.tar.gz "${BASE_DIR}"/tests/docker-images/all-versions-image/build/
 TARBALL=build/bookkeeper-server-${VERSION}-bin.tar.gz
-docker build -t ${IMAGE_NAME} "${BASE_DIR}"tests/docker-images/all-versions-image --build-arg BK_TARBALL="${TARBALL}"
+docker build --build-arg UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}" --build-arg UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}" \
+  -t ${IMAGE_NAME} "${BASE_DIR}"tests/docker-images/all-versions-image --build-arg BK_TARBALL="${TARBALL}"

@@ -63,25 +63,32 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <compilerArgs>
-            <!-- Object.finalize() is deprecated at java 9 -->
-            <!-- <compilerArg>-Werror</compilerArg> -->
-            <compilerArg>-Xlint:deprecation</compilerArg>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-            <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-            <compilerArg>-Xpkginfo:always</compilerArg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
-        <version>${nar-maven-plugin.version}</version>
         <extensions>true</extensions>
+        <configuration>
+          <runtime>${nar.runtime}</runtime>
+          <output>circe-checksum</output>
+          <libraries>
+            <library>
+              <type>jni</type>
+              <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
+            </library>
+          </libraries>
+          <cpp>
+            <optionSet>${nar.cpp.optionSet}</optionSet>
+            <exceptions>false</exceptions>
+            <rtti>false</rtti>
+            <optimize>full</optimize>
+            <includes>
+              <include>**/*.cpp</include>
+            </includes>
+          </cpp>
+          <!-- skip by default, enabled in OS profiles -->
+          <skip>true</skip>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -121,7 +128,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <executions>
                <execution>
@@ -135,17 +141,8 @@
           <plugin>
              <groupId>org.apache.maven.plugins</groupId>
              <artifactId>maven-compiler-plugin</artifactId>
-             <version>${maven-compiler-plugin.version}</version>
              <configuration>
-                <source>1.8</source>
-                <target>1.8</target>
                 <compilerArgs>
-                  <!-- Object.finalize() is deprecated at java 9 -->
-                  <!-- <compilerArg>-Werror</compilerArg> -->
-                  <compilerArg>-Xlint:deprecation</compilerArg>
-                  <compilerArg>-Xlint:unchecked</compilerArg>
-                   <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-                  <compilerArg>-Xpkginfo:always</compilerArg>
                   <!-- add -h flag to javac -->
                   <compilerArg>-h</compilerArg>
                   <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
@@ -167,23 +164,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
             </configuration>
           </plugin>
         </plugins>
@@ -201,23 +184,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
               <linker>
                 <libSet>rt</libSet>
               </linker>
@@ -238,23 +207,9 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
-              <libraries>
-                <library>
-                  <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
-                </library>
-              </libraries>
-              <cpp>
-                <optionSet>${nar.cpp.optionSet}</optionSet>
-                <exceptions>false</exceptions>
-                <rtti>false</rtti>
-                <optimize>full</optimize>
-              </cpp>
+              <skip>false</skip>
               <linker>
                 <name>g++</name>
               </linker>
