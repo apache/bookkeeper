@@ -17,10 +17,8 @@
 # under the License.
 #
 
-FROM ubuntu:22.10
+FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
-
-ARG TARGETARCH
 
 ARG BK_VERSION=4.15.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
@@ -31,13 +29,18 @@ ENV BOOKIE_HTTP_PORT=8080
 EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
+ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
+    && sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
+     -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
+    && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
     && adduser "${BK_USER}" \
     && apt-get update \
+    && apt-get install -y ca-certificates apt-transport-https \
     && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
@@ -58,7 +61,10 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
-    && pip install zk-shell
+    && pip install zk-shell \
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 WORKDIR /opt/bookkeeper
 

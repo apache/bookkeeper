@@ -20,11 +20,14 @@
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_TAR_BALL
+ARG BK_VERSION=DOESNOTEXISTS
+ARG DISTRO_NAME=bookkeeper-dist-server-${BK_VERSION}-bin
+ARG PKG_NAME=bookkeeper-server-${BK_VERSION}
 
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
-EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
+ENV BOOKIE_GRPC_PORT=4181
+EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
 ENV DEBIAN_FRONTEND=noninteractive
@@ -42,6 +45,7 @@ RUN set -x \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
+    && apt-get -y install netcat dnsutils less procps iputils-ping \
     && apt-get -y --purge autoremove \
     && apt-get autoclean \
     && apt-get clean \
@@ -51,10 +55,21 @@ RUN set -x \
     && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
     && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
-RUN mkdir -pv /opt \
-    && cd /opt
-
-ADD ${BK_TAR_BALL} /opt
-RUN mv /opt/bookkeeper-server* /opt/bookkeeper
+# untar tarballs
+ADD target/${DISTRO_NAME}.tar.gz /opt
+RUN mv /opt/${PKG_NAME} /opt/bookkeeper
 
 WORKDIR /opt/bookkeeper
+
+COPY target/scripts /opt/bookkeeper/scripts
+COPY scripts/install-python-client.sh /opt/bookkeeper/scripts
+RUN chmod +x -R /opt/bookkeeper/scripts/
+
+# copy the python client
+ADD target/bookkeeper-client/ /opt/bookkeeper/bookkeeper-client
+RUN /opt/bookkeeper/scripts/install-python-client.sh
+
+ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
+CMD ["bookie"]
+
+#HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/scripts/healthcheck.sh

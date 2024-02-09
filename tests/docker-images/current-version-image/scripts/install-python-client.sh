@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,29 +18,7 @@
 # under the License.
 #
 
-name: Bot tests
-on:
-  issue_comment:
-    types: [created]
+set -x
 
-jobs:
-  bot:
-    name: Bot tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: clone repository
-        uses: actions/checkout@v4
-
-      - name: bot actions
-        uses: actions/github-script@v7
-        env:
-          PROVIDER: 'apache'
-          REPOSITORY: 'bookkeeper'
-          RERUN_CMD: 'rerun failure checks'
-        with:
-          github-token: ${{secrets.BKBOT_TOKEN}}
-          script: |
-            const path = require('path')
-            const scriptPath = path.resolve('.github/actions/bot/src/run.js')
-            require(scriptPath)({core}, {context}, {github})
+WHEEL_FILE=`ls /opt/bookkeeper/bookkeeper-client/*.whl`
+pip install ${WHEEL_FILE}

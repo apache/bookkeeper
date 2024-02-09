@@ -157,7 +157,17 @@ stop()
 
       if kill -0 $TARGET_PID > /dev/null 2>&1; then
         fileName=$location/$command.out
-        $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
+        # Check for the java to use
+        if [[ -z ${JAVA_HOME} ]]; then
+          JSTACK=$(which jstack)
+          if [ $? -ne 0 ]; then
+            echo "Error: JAVA_HOME not set, and no jstack executable found in $PATH." 1>&2
+            exit 1
+          fi
+        else
+          JSTACK=${JAVA_HOME}/bin/jstack
+        fi
+        $JSTACK $TARGET_PID > $fileName
         echo Thread dumps are taken for analysis at $fileName
         if [ "$1" == "-force" ]
         then
