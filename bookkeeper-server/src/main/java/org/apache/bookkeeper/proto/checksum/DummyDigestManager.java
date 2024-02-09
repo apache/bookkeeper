@@ -38,7 +38,12 @@ public class DummyDigestManager extends DigestManager {
     }
 
     @Override
-    int update(int digest, ByteBuf buffer, int offset, int len) {
+    int internalUpdate(int digest, ByteBuf buffer, int offset, int len) {
+        return 0;
+    }
+
+    @Override
+    int internalUpdate(int digest, byte[] buffer, int offset, int len) {
         return 0;
     }
 
@@ -47,6 +52,11 @@ public class DummyDigestManager extends DigestManager {
 
     @Override
     boolean isInt32Digest() {
+        return false;
+    }
+
+    @Override
+    boolean acceptsMemoryAddressBuffer() {
         return false;
     }
 }

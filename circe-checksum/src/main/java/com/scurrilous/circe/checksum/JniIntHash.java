@@ -51,4 +51,14 @@ public class JniIntHash implements IntHash {
             return hash.resume(current, buffer.slice(offset, len).nioBuffer());
         }
     }
+
+    @Override
+    public int resume(int current, byte[] buffer, int offset, int len) {
+        return hash.resume(current, buffer, offset, len);
+    }
+
+    @Override
+    public boolean acceptsMemoryAddressBuffer() {
+        return true;
+    }
 }
