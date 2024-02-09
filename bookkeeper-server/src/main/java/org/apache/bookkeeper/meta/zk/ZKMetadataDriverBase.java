@@ -65,6 +65,7 @@ import org.apache.zookeeper.data.Stat;
 public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
+    private static final int ZK_CLIENT_WAIT_FOR_SHUTDOWN_TIMEOUT_MS = 5000;
 
     public static String getZKServersFromServiceUri(URI uri) {
         String authority = uri.getAuthority();
@@ -338,7 +339,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         }
         if (ownZKHandle && null != zk) {
             try {
-                zk.close();
+                zk.close(ZK_CLIENT_WAIT_FOR_SHUTDOWN_TIMEOUT_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("Interrupted on closing zookeeper client", e);

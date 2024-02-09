@@ -42,7 +42,8 @@ cp "${BASE_DIR}"/stream/server/build/distributions/server-bin.tar.gz "${BASE_DIR
 cp "${BASE_DIR}"/docker/scripts/* "${BASE_DIR}"/tests/docker-images/statestore-image/scripts
 cp "${BASE_DIR}"/conf/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_conf
 cp "${BASE_DIR}"/bin/* "${BASE_DIR}"/tests/docker-images/statestore-image/temp_bin
-docker build -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/statestore-image
+docker build --build-arg UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}" --build-arg UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}" \
+  -t ${IMAGE_NAME} "${BASE_DIR}"/tests/docker-images/statestore-image
 
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/dist
 rm -rf "${BASE_DIR}"/tests/docker-images/statestore-image/scripts

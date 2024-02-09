@@ -20,6 +20,10 @@
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
+ARG BK_VERSION=DOESNOTEXISTS
+ARG DISTRO_NAME=bookkeeper-dist-server-${BK_VERSION}-bin
+ARG PKG_NAME=bookkeeper-server-${BK_VERSION}
+
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
 ENV BOOKIE_GRPC_PORT=4181
@@ -40,44 +44,32 @@ RUN set -x \
     && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && apt-get -y install netcat dnsutils less procps iputils-ping \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
+    && apt-get -y install netcat dnsutils less procps iputils-ping \
     && apt-get -y --purge autoremove \
     && apt-get autoclean \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && pip install zk-shell \
-    && mkdir -pv /opt \
     && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
     && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
     && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
+# untar tarballs
+ADD target/${DISTRO_NAME}.tar.gz /opt
+RUN mv /opt/${PKG_NAME} /opt/bookkeeper
+
 WORKDIR /opt/bookkeeper
-RUN mkdir /opt/bookkeeper/lib
-RUN mkdir /opt/bookkeeper/bin
-RUN mkdir /opt/bookkeeper/conf
-RUN mkdir /opt/bookkeeper/scripts
 
-### -----Copy Jars------###
-ADD ./dist/server-bin.tar.gz /opt/
-RUN mv /opt/server-bin/lib/*.jar /opt/bookkeeper/lib/
-### --------------------###
+COPY target/scripts /opt/bookkeeper/scripts
+COPY scripts/install-python-client.sh /opt/bookkeeper/scripts
+RUN chmod +x -R /opt/bookkeeper/scripts/
 
-### ----Copy scripts----------###
-COPY ./scripts/* /opt/bookkeeper/scripts/
-COPY ./temp_bin/* /opt/bookkeeper/bin/
-COPY ./bin/* /opt/bookkeeper/bin/
-### ----Copy scripts----------###
-
-### ----Copy conf-------------###
-COPY ./temp_conf/* /opt/bookkeeper/conf/
-COPY ./conf/* /opt/bookkeeper/conf/
-### ----Copy conf-------------###
-
-RUN chmod +x -R /opt/bookkeeper/scripts
-RUN chmod +x -R  /opt/bookkeeper/bin
+# copy the python client
+ADD target/bookkeeper-client/ /opt/bookkeeper/bookkeeper-client
+RUN /opt/bookkeeper/scripts/install-python-client.sh
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
 CMD ["bookie"]
 
-#HEALTHCHECK --interval=10s --timeout=50s CMD /bin/bash /opt/bookkeeper/scripts/healthcheck.sh
+#HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/scripts/healthcheck.sh

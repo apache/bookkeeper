@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
@@ -36,7 +37,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointResponse;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
 
 /**

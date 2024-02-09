@@ -60,7 +60,7 @@ depVersions = [
     jetty: "9.4.46.v20220331",
     jmh: "1.19",
     jmock: "2.8.2",
-    jna: "3.2.7",
+    jna: "5.13.0",
     jsr305: "3.0.2",
     junit: "4.12",
     junitFoundation: "11.0.0",
