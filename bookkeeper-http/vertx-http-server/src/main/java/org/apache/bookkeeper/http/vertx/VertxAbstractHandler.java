@@ -57,7 +57,7 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
             response = new ErrorHttpService().handle(request);
         }
         httpResponse.setStatusCode(response.getStatusCode());
-        if(response.getContentType() != null) {
+        if (response.getContentType() != null) {
             httpResponse.putHeader(HttpHeaderNames.CONTENT_TYPE, response.getContentType());
         }
         httpResponse.end(response.getBody());
