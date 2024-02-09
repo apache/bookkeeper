@@ -195,29 +195,6 @@
         </plugins>
       </build>
     </profile>
-    <profile>
-      <id>Windows</id>
-      <activation>
-        <os>
-          <family>Windows</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.maven-nar</groupId>
-            <artifactId>nar-maven-plugin</artifactId>
-            <extensions>true</extensions>
-            <configuration>
-              <skip>false</skip>
-              <linker>
-                <name>g++</name>
-              </linker>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
 
 </project>
