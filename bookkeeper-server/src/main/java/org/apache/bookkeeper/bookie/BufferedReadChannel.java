@@ -43,7 +43,7 @@ public class BufferedReadChannel extends BufferedChannelBase {
 
     long invocationCount = 0;
     long cacheHitCount = 0;
-    private long fileSize = -1;
+    private volatile long fileSize = -1;
     final boolean sealed;
 
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
@@ -75,7 +75,11 @@ public class BufferedReadChannel extends BufferedChannelBase {
     public long size() throws IOException {
         if (sealed) {
             if (fileSize == -1) {
-                fileSize = validateAndGetFileChannel().size();
+                synchronized (this) {
+                    if (fileSize == -1) {
+                        fileSize = validateAndGetFileChannel().size();
+                    }
+                }
             }
             return fileSize;
         } else {
