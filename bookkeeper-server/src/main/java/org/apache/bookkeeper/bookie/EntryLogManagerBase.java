@@ -161,6 +161,7 @@ abstract class EntryLogManagerBase implements EntryLogManager {
             logChannel.appendLedgersMap();
 
             BufferedLogChannel newLogChannel = entryLoggerAllocator.createNewLog(selectDirForNextEntryLog());
+            entryLoggerAllocator.setWritingLogId(newLogChannel.getLogId());
             setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
             log.info("Flushing entry logger {} back to filesystem, pending for syncing entry loggers : {}.",
                     logChannel.getLogId(), rotatedLogChannels);
@@ -168,8 +169,9 @@ abstract class EntryLogManagerBase implements EntryLogManager {
                 listener.onRotateEntryLog();
             }
         } else {
-            setCurrentLogForLedgerAndAddToRotate(ledgerId,
-                    entryLoggerAllocator.createNewLog(selectDirForNextEntryLog()));
+            BufferedLogChannel newLogChannel = entryLoggerAllocator.createNewLog(selectDirForNextEntryLog());
+            entryLoggerAllocator.setWritingLogId(newLogChannel.getLogId());
+            setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
         }
     }
 

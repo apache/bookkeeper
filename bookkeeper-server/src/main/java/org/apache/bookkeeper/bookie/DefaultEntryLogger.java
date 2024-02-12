@@ -587,6 +587,10 @@ public class DefaultEntryLogger implements EntryLogger {
         }
     }
 
+    void clearCompactingLogId() {
+        entryLoggerAllocator.clearCompactingLogId();
+    }
+
     /**
      * Flushes all rotated log channels. After log channels are flushed,
      * move leastUnflushedLogId ptr to current logId.
@@ -894,7 +898,8 @@ public class DefaultEntryLogger implements EntryLogger {
         }
     }
 
-    private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
+    @VisibleForTesting
+    BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
         BufferedReadChannel fc = getFromChannels(entryLogId);
         if (fc != null) {
             return fc;
@@ -910,7 +915,11 @@ public class DefaultEntryLogger implements EntryLogger {
         }
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
-        fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes());
+        if (entryLogManager instanceof EntryLogManagerForSingleEntryLog) {
+            fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), entryLoggerAllocator.isSealed(entryLogId));
+        } else {
+            fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), false);
+        }
         putInReadChannels(entryLogId, fc);
         return fc;
     }
