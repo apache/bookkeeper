@@ -262,6 +262,9 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
 
     @Override
     public DefaultEntryLogger.BufferedLogChannel createNewLogForCompaction() throws IOException {
-        return entryLoggerAllocator.createNewLogForCompaction(selectDirForNextEntryLog());
+        BufferedLogChannel newLogForCompaction = entryLoggerAllocator.createNewLogForCompaction(
+                selectDirForNextEntryLog());
+        entryLoggerAllocator.setWritingCompactingLogId(newLogForCompaction.getLogId());
+        return newLogForCompaction;
     }
 }

@@ -67,6 +67,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -152,6 +153,53 @@ public class DefaultEntryLogTest {
         // add the first entry will trigger file creation
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         assertEquals(0L, entryLogManager.getCurrentLogId());
+    }
+
+    @Test
+    public void testEntryLogIsSealedWithPerLedgerDisabled() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(false);
+        conf.setEntryLogFilePreAllocationEnabled(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
+        EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        entrylogManager.createNewLog(0);
+        BufferedReadChannel channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(1);
+        channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(2);
+        channel = entryLogger.getChannelForLogId(1);
+        assertTrue(channel.sealed);
+    }
+
+    @Test
+    public void testEntryLogIsSealedWithPerLedgerEnabled() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        //If entryLogPerLedgerEnabled is true, the buffer channel sealed flag always false.
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setEntryLogFilePreAllocationEnabled(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
+        EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        entrylogManager.createNewLog(0);
+        BufferedReadChannel channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(1);
+        channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(2);
+        channel = entryLogger.getChannelForLogId(1);
+        assertFalse(channel.sealed);
     }
 
     @Test
