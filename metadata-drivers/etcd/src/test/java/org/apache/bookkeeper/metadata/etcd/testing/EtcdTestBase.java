@@ -19,17 +19,27 @@
 package org.apache.bookkeeper.metadata.etcd.testing;
 
 import io.etcd.jetcd.Client;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import lombok.Cleanup;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.rules.Timeout;
 
 /**
@@ -41,28 +51,37 @@ public abstract class EtcdTestBase {
     @Rule
     public Timeout globalTimeout = Timeout.seconds(120);
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     protected static EtcdContainer etcdContainer;
 
     @BeforeClass
     public static void setupCluster() throws Exception {
-        etcdContainer = new EtcdContainer(RandomStringUtils.randomAlphabetic(8));
-        etcdContainer.start();
-        log.info("Successfully started etcd at {}", etcdContainer.getClientEndpoint());
+        if (null == etcdContainer) {
+            etcdContainer = new EtcdContainer(RandomStringUtils.randomAlphabetic(8), false);
+            etcdContainer.start();
+            log.info("Successfully started etcd at {}", etcdContainer.getClientEndpoint());
+        }
     }
 
     @AfterClass
     public static void teardownCluster() throws Exception {
         if (null != etcdContainer) {
             etcdContainer.stop();
+            etcdContainer = null;
             log.info("Successfully stopped etcd.");
         }
     }
 
     protected Client etcdClient;
 
+    @SneakyThrows
     protected static Client newEtcdClient() {
         Client client = Client.builder()
             .endpoints(etcdContainer.getClientEndpoint())
+            .sslContext(etcdContainer.getSslContext())
+            .authority(etcdContainer.getAuthority())
             .build();
         return client;
     }
@@ -93,4 +112,37 @@ public abstract class EtcdTestBase {
         }
     }
 
+    @SneakyThrows
+    protected static String getMetadataServiceConfig() {
+        if (!etcdContainer.isSecure()) {
+            return "";
+        }
+
+        Path config = Files.createTempFile("etcd", "conf");
+        String contents = "useTls=true"
+            + "\ntlsProvider=OPENSSL"
+            + "\ntlsTrustCertsFilePath="
+            + unpackSslResource("ca.pem").toString()
+            + "\ntlsKeyFilePath="
+            + unpackSslResource("client-key-pk8.pem").toString()
+            + "\ntlsCertificateFilePath="
+            + unpackSslResource("client.pem").toString()
+            + "\nauthority="
+            + etcdContainer.getAuthority();
+        Files.write(config, contents.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING);
+        return config.toString();
+    }
+
+    @SneakyThrows
+    protected static Path unpackSslResource(String name) {
+        @Cleanup
+        InputStream resource = EtcdTestBase.class.getClassLoader().getResourceAsStream("ssl/cert/" + name);
+        Path target = Files.createTempFile("bk", name);
+        @Cleanup
+        OutputStream out =
+                Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        IOUtils.copy(resource, out);
+        return target;
+    }
 }

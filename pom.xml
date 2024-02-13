@@ -1102,6 +1102,10 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- certificates -->
+            <exclude>**/*.csr</exclude>
+            <exclude>**/**.pem</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
