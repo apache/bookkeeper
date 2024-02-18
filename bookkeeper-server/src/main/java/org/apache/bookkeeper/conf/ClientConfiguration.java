@@ -2084,7 +2084,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         setProperty(BATCH_READ_ENABLED, enable);
         return this;
     }
-    
+
     public boolean isBatchReadEnabled() {
         return getBoolean(BATCH_READ_ENABLED, true);
     }
