@@ -115,6 +115,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     protected static final String STICKY_READS_ENABLED = "stickyReadSEnabled";
+    protected static final String RECOVERY_BATCH_READ_ENABLED = "recoveryBatchReadEnabled";
     // Add Parameters
     protected static final String OPPORTUNISTIC_STRIPING = "opportunisticStriping";
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
@@ -1204,6 +1205,23 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * If recovery batch read enabled or not.
+     * @return
+     */
+    public boolean isRecoveryBatchReadEnabled() {
+        return getBoolean(RECOVERY_BATCH_READ_ENABLED, false);
+    }
+
+    /**
+     * Enable/disable recovery batch read.
+     * @param enabled
+     * @return
+     */
+    public ClientConfiguration setRecoveryBatchReadEnabled(boolean enabled) {
+        setProperty(RECOVERY_BATCH_READ_ENABLED, enabled);
+        return this;
+    }
+    /**
      * Get Ensemble Placement Policy Class.
      *
      * @return ensemble placement policy class.
@@ -2082,6 +2100,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     public boolean isBatchReadEnabled() {
         return getBoolean(BATCH_READ_ENABLED, true);
+    }
+
+    public ClientConfiguration setBatchReadEnabled(boolean enabled) {
+        setProperty(BATCH_READ_ENABLED, enabled);
+        return this;
     }
 
     @Override
