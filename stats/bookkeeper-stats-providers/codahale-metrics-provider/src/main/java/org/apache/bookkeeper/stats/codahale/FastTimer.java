@@ -289,7 +289,7 @@ public class FastTimer extends Timer {
         // initialize buckets
         int bucketCnt = 0;
         for (int i = 0; bucketSpec != null && i < bucketSpec.length; i++) {
-            bucketCnt += bucketSpec[i][BS_NUMBUCKETS];
+            bucketCnt += (int) bucketSpec[i][BS_NUMBUCKETS];
         }
         numBuckets = (bucketCnt > 0 ? bucketCnt + 1 : 0);
         if (numBuckets > 0) {
@@ -349,7 +349,7 @@ public class FastTimer extends Timer {
             if (duration <= bucketBounds[i]) {
                 return bucket + (int) ((duration - lowbound - 1) / bucketSpec[i][BS_RESOLUTION]);
             } else {
-                bucket += bucketSpec[i][BS_NUMBUCKETS];
+                bucket += (int) bucketSpec[i][BS_NUMBUCKETS];
                 lowbound = bucketBounds[i];
             }
         }
@@ -371,7 +371,7 @@ public class FastTimer extends Timer {
             if (b < bucket + bucketSpec[i][BS_NUMBUCKETS]) {
                 return lowbound + ((long) ((b + 1) - bucket)) * bucketSpec[i][BS_RESOLUTION];
             } else {
-                bucket += bucketSpec[i][BS_NUMBUCKETS];
+                bucket += (int) bucketSpec[i][BS_NUMBUCKETS];
                 lowbound = bucketBounds[i];
             }
         }

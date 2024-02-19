@@ -352,7 +352,7 @@ public class LedgerMetadataIndex implements Closeable {
     }
 
     private ReentrantLock lockForLedger(long ledgerId) {
-        return locks[Math.abs((int) ledgerId) % locks.length];
+        return locks[(int) (Math.abs(ledgerId) % locks.length)];
     }
 
     int getStorageStateFlags() throws IOException {
