@@ -114,6 +114,7 @@ public class BenchReadThroughputLatency {
                     while (entries.hasMoreElements()) {
                         LedgerEntry e = entries.nextElement();
                         entriesRead++;
+                        lastRead = e.getEntryId();
                         if ((entriesRead % 10000) == 0) {
                             LOG.info("{} entries read from ledger {}", entriesRead, ledgerId);
                         }

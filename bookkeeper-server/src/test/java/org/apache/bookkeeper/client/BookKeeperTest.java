@@ -629,7 +629,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 }
                 try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                     assertEquals(numEntries - 1, lh.readLastConfirmed());
-                    //V2 protocol not support batch read. In theory, it will throw UnsupportedOperationException.
+                    //V3 protocol not support batch read. In theory, it will throw UnsupportedOperationException.
                     try {
                         lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
                         fail("Should throw UnsupportedOperationException.");
@@ -684,7 +684,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 }
                 try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                     assertEquals(numEntries - 1, lh.readLastConfirmed());
-                    //V2 protocol not support batch read, it will throw UnsupportedOperationException.
+                    //V3 protocol not support batch read, it will throw UnsupportedOperationException.
                     try {
                         lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
                         fail("Should throw UnsupportedOperationException.");
