@@ -80,6 +80,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     static void updateMyRack(String rack) throws Exception {
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
+        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getCanonicalHostName(), rack);
         BookieSocketAddress bookieAddress = new BookieSocketAddress(
             InetAddress.getLocalHost().getHostAddress(), 0);
         StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getHostName(), rack);
