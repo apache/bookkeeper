@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
@@ -67,9 +68,14 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
         @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
         private int numEntries = 100;
 
+        @VisibleForTesting
+        public static Flags newFlags(){
+            return new Flags();
+        }
+
     }
     public SimpleTestCommand() {
-        this(new Flags());
+        this(Flags.newFlags());
     }
 
     public SimpleTestCommand(Flags flags) {
@@ -78,6 +84,11 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .withDescription(DESC)
             .withFlags(flags)
             .build());
+    }
+
+    @VisibleForTesting
+    public static SimpleTestCommand newSimpleTestCommand(Flags flags) {
+        return new SimpleTestCommand(flags);
     }
 
     @Override

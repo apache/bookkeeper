@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -34,7 +33,6 @@ import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -44,15 +42,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Test for class {@link LedgersIndexRebuildOp}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ LedgersIndexRebuildTest.class, MetadataDrivers.class })
+@RunWith(MockitoJUnitRunner.class)
 public class LedgersIndexRebuildTest {
 
     private final BookieId bookieAddress = BookieId.parse(UUID.randomUUID().toString());
@@ -129,11 +124,6 @@ public class LedgersIndexRebuildTest {
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-
-        PowerMockito.whenNew(ServerConfiguration.class).withNoArguments().thenReturn(conf);
-
-        PowerMockito.whenNew(BookieId.class).withParameterTypes(String.class).withArguments(anyString())
-                .thenReturn(bookieAddress);
 
         DbLedgerStorage ledgerStorage = new DbLedgerStorage();
         ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,

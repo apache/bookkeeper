@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookies;
 
+import static org.apache.bookkeeper.client.BookKeeperAdmin.newBookKeeperAdmin;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.beust.jcommander.Parameter;
@@ -152,7 +153,7 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         LOG.info("Constructing admin");
         conf.setReplicationRateByBytes(replicateRate);
         ClientConfiguration adminConf = new ClientConfiguration(conf);
-        BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
+        BookKeeperAdmin admin = newBookKeeperAdmin(adminConf);
         LOG.info("Construct admin : {}", admin);
         try {
             if (query) {

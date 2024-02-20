@@ -630,17 +630,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     // journal entry queue to commit
     final BatchedBlockingQueue<QueueEntry> queue;
-    final BatchedBlockingQueue<ForceWriteRequest> forceWriteRequests;
+    BatchedBlockingQueue<ForceWriteRequest> forceWriteRequests;
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
     private final ByteBufAllocator allocator;
-    private final MemoryLimitController memoryLimitController;
 
     // Expose Stats
     private final JournalStats journalStats;
 
     private JournalAliveListener journalAliveListener;
+
+    private MemoryLimitController memoryLimitController;
+
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) {
@@ -722,6 +724,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                    ByteBufAllocator allocator, JournalAliveListener journalAliveListener) {
         this(journalIndex, journalDirectory, conf, ledgerDirsManager, statsLogger, allocator);
         this.journalAliveListener = journalAliveListener;
+    }
+
+    @VisibleForTesting
+    static Journal newJournal(int journalIndex, File journalDirectory, ServerConfiguration conf,
+                                     LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger,
+                                     ByteBufAllocator allocator, JournalAliveListener journalAliveListener) {
+        return new Journal(journalIndex, journalDirectory, conf, ledgerDirsManager, statsLogger, allocator,
+                journalAliveListener);
     }
 
     JournalStats getJournalStats() {
@@ -923,6 +933,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return queue.size();
     }
 
+    @VisibleForTesting
+    JournalChannel newLogFile(long logId, Long replaceLogId) throws IOException {
+        return new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
+                journalAlignmentSize, removePagesFromCache,
+                journalFormatVersionToWrite, getBufferedChannelBuilder(),
+                conf, fileChannelProvider, replaceLogId);
+    }
+
     /**
      * A thread used for persisting journal entries to journal files.
      *
@@ -991,10 +1009,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                         ? journalIds.get(0) : null;
 
                     journalCreationWatcher.reset().start();
-                    logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
-                                        journalAlignmentSize, removePagesFromCache,
-                                        journalFormatVersionToWrite, getBufferedChannelBuilder(),
-                                        conf, fileChannelProvider, replaceLogId);
+                    logFile = newLogFile(logId, replaceLogId);
 
                     journalStats.getJournalCreationStats().registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -1274,5 +1289,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     long getMemoryUsage() {
         return memoryLimitController.currentUsage();
+    }
+
+    @VisibleForTesting
+    void setMemoryLimitController(MemoryLimitController memoryLimitController) {
+        this.memoryLimitController = memoryLimitController;
+    }
+
+    @VisibleForTesting
+    public void setForceWriteRequests(BatchedBlockingQueue<ForceWriteRequest> forceWriteRequests) {
+        this.forceWriteRequests = forceWriteRequests;
     }
 }

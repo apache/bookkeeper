@@ -19,6 +19,10 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand.newLastMarkCommand;
+import static org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand.newClusterInfoCommand;
+import static org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand.newListBookiesCommand;
+import static org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.newSimpleTestCommand;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -1007,13 +1011,13 @@ public class BookieShell implements Tool {
             int ackQuorum = getOptionIntValue(cmdLine, "ackQuorum", 2);
             int numEntries = getOptionIntValue(cmdLine, "numEntries", 1000);
 
-            SimpleTestCommand.Flags flags = new SimpleTestCommand.Flags()
+            SimpleTestCommand.Flags flags = SimpleTestCommand.Flags.newFlags()
                 .ensembleSize(ensemble)
                 .writeQuorumSize(writeQuorum)
                 .ackQuorumSize(ackQuorum)
                 .numEntries(numEntries);
 
-            SimpleTestCommand command = new SimpleTestCommand(flags);
+            SimpleTestCommand command = newSimpleTestCommand(flags);
 
             command.apply(bkConf, flags);
             return 0;
@@ -1292,7 +1296,7 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine c) throws Exception {
-            LastMarkCommand command = new LastMarkCommand();
+            LastMarkCommand command = newLastMarkCommand();
             command.apply(bkConf, new CliFlags());
             return 0;
         }
@@ -1351,12 +1355,12 @@ public class BookieShell implements Tool {
                 return 1;
             }
 
-            ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
+            ListBookiesCommand.Flags flags = ListBookiesCommand.Flags.newFlags()
                 .readwrite(readwrite)
                 .readonly(readonly)
                 .all(all);
 
-            ListBookiesCommand command = new ListBookiesCommand(flags);
+            ListBookiesCommand command = newListBookiesCommand(flags);
 
             command.apply(bkConf, flags);
             return 0;
@@ -2552,7 +2556,7 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            ClusterInfoCommand cmd = new ClusterInfoCommand();
+            ClusterInfoCommand cmd = newClusterInfoCommand();
             cmd.apply(bkConf, new CliFlags());
             return 0;
         }

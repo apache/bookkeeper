@@ -55,7 +55,6 @@ import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationClient.WatchTask;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.MockZooKeeperTestCase;
@@ -71,16 +70,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test of {@link RegistrationClient}.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({ ZKRegistrationClient.class, ZkUtils.class })
+@RunWith(MockitoJUnitRunner.Silent.class)
 @Slf4j
 public abstract class AbstractTestZkRegistrationClient extends MockZooKeeperTestCase {
 
@@ -129,7 +124,9 @@ public abstract class AbstractTestZkRegistrationClient extends MockZooKeeperTest
     }
 
     @After
-    public void teardown() {
+    public void teardown() throws Exception{
+        super.teardown();
+
         if (null != zkRegistrationClient) {
             zkRegistrationClient.close();
         }
