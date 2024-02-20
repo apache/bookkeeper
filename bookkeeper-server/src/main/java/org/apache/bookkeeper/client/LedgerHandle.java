@@ -651,7 +651,7 @@ public class LedgerHandle implements WriteHandle {
      *          the total entries count.
      * @param maxSize
      *          the total entries size.
-     * @see #asyncBatchReadEntries(long, int, long, boolean, ReadCallback, Object)
+     * @see #asyncBatchReadEntries(long, int, long, ReadCallback, Object)
      */
     public Enumeration<LedgerEntry> batchReadEntries(long startEntry, int maxCount, long maxSize)
             throws InterruptedException, BKException {
@@ -688,7 +688,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
      * This is the same of
-     * {@link #asyncBatchReadUnconfirmedEntries(long, int, long, boolean, ReadCallback, Object) }
+     * {@link #asyncBatchReadUnconfirmedEntries(long, int, long, ReadCallback, Object) }
      *
      * @param firstEntry
      *          id of first entry of sequence (included)

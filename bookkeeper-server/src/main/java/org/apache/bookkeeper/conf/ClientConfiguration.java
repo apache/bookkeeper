@@ -2098,6 +2098,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
     }
 
+    public ClientConfiguration setBatchReadEnabled(boolean enable) {
+        setProperty(BATCH_READ_ENABLED, enable);
+        return this;
+    }
+
     public boolean isBatchReadEnabled() {
         return getBoolean(BATCH_READ_ENABLED, true);
     }

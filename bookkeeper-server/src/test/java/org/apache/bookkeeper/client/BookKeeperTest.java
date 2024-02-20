@@ -610,6 +610,185 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test
+    public void testBatchReadFailBackToSingleRead1() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(2, 2, 2,
+                        digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    //V3 protocol not support batch read. In theory, it will throw UnsupportedOperationException.
+                    try {
+                        lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
+                        fail("Should throw UnsupportedOperationException.");
+                    } catch (UnsupportedOperationException e) {
+                        assertEquals("Unsupported batch read entry operation for v3 protocol.", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(3, 2, 2,
+                        digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    //The ledger ensemble is not equals write quorum, so failback to single read, it also can
+                    //read data successfully.
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testBatchReadFailBackToSingleRead2() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(2, 2, 2,
+                        digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    //V3 protocol not support batch read, it will throw UnsupportedOperationException.
+                    try {
+                        lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
+                        fail("Should throw UnsupportedOperationException.");
+                    } catch (UnsupportedOperationException e) {
+                        assertEquals("Unsupported batch read entry operation for v3 protocol.", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        conf.setBatchReadEnabled(false);
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(2, 2, 2,
+                        digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    //We config disable the batch read, so failback to single read, it also can
+                    //read data successfully.
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testBatchReadWithV2Protocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(true);
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(2, 2, 2, digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    int entries = 0;
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, numEntries, 5 * 1024 * 1024);
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                        entries++;
+                    }
+                    assertEquals(numEntries, entries);
+
+                    //The maxCount is 0, the result is only limited by maxSize.
+                    entries = 0;
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, 0, 5 * 1024 * 1024);
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                        entries++;
+                    }
+                    assertEquals(numEntries, entries);
+
+                    // one entry size = 8(ledgerId) + 8(entryId) + 8(lac) + 8(length) + 8(digest) + payload size
+                    long entrySize = 8 + 8 + 8 + 8 + 8 + data.length;
+                    //response header size.
+                    int headerSize = 24 + 8 + 4;
+                    //The maxCount is 0, the result is only limited by maxSize.
+                    entries = 0;
+                    int expectEntriesNum = 5;
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, 0,
+                            expectEntriesNum * entrySize + headerSize + (expectEntriesNum * 4));
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                        entries++;
+                    }
+                    assertEquals(expectEntriesNum, entries);
+
+                    //The maxCount is 100, the result entries reach maxSize limit.
+                    entries = 0;
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, 20,
+                            expectEntriesNum * entrySize + headerSize + (expectEntriesNum * 4));
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                        entries++;
+                    }
+                    assertEquals(expectEntriesNum, entries);
+                }
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     public void testReadEntryReleaseByteBufs() throws Exception {
