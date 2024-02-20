@@ -437,6 +437,69 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     }
 
+    @Test
+    public void testMultipleLedgerReplicationWithReplicationWorkerBatchRead() throws Exception {
+        LedgerHandle lh1 = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        for (int i = 0; i < 200; ++i) {
+            lh1.addEntry(data);
+        }
+        BookieId replicaToKillFromFirstLedger = lh1.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+
+        LedgerHandle lh2 = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        for (int i = 0; i < 200; ++i) {
+            lh2.addEntry(data);
+        }
+
+        BookieId replicaToKillFromSecondLedger = lh2.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+
+        LOG.info("Killing Bookie : {}", replicaToKillFromFirstLedger);
+        killBookie(replicaToKillFromFirstLedger);
+        lh1.close();
+
+        LOG.info("Killing Bookie : {}", replicaToKillFromSecondLedger);
+        killBookie(replicaToKillFromSecondLedger);
+        lh2.close();
+
+        BookieId newBkAddr = startNewBookieAndReturnBookieId();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+
+        if (replicaToKillFromFirstLedger != replicaToKillFromSecondLedger) {
+            BookieId newBkAddr2 = startNewBookieAndReturnBookieId();
+            LOG.info("New Bookie addr : {}", newBkAddr2);
+        }
+
+        ClientConfiguration clientConfiguration = new ClientConfiguration(baseClientConf);
+        clientConfiguration.setUseV2WireProtocol(true);
+        clientConfiguration.setRecoveryBatchReadEnabled(true);
+        clientConfiguration.setBatchReadEnabled(true);
+        clientConfiguration.setRereplicationEntryBatchSize(100);
+        clientConfiguration.setReplicationRateByBytes(3 * 1024);
+        ReplicationWorker rw = new ReplicationWorker(new ServerConfiguration(clientConfiguration));
+
+        rw.start();
+        try {
+            // Mark ledger1 and ledger2 as underreplicated
+            underReplicationManager.markLedgerUnderreplicated(lh1.getId(), replicaToKillFromFirstLedger.toString());
+            underReplicationManager.markLedgerUnderreplicated(lh2.getId(), replicaToKillFromSecondLedger.toString());
+
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh1.getId(), basePath)) {
+                Thread.sleep(100);
+            }
+
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh2.getId(), basePath)) {
+                Thread.sleep(100);
+            }
+
+            killAllBookies(lh1, newBkAddr);
+
+            // Should be able to read the entries from 0-99
+            verifyRecoveredLedgers(lh1, 0, 199);
+            verifyRecoveredLedgers(lh2, 0, 199);
+        } finally {
+            rw.shutdown();
+        }
+    }
+
     /**
      * Tests that ReplicationWorker should fence the ledger and release ledger
      * lock after timeout. Then replication should happen normally.
