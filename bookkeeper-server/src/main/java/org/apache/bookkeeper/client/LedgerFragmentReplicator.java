@@ -469,7 +469,9 @@ public class LedgerFragmentReplicator {
                         LOG.error("BK error reading ledger entries: {} - {}",
                                 startEntryId, endEntryId, BKException.create(rc));
                         onReadEntryFailureCallback.accept(lh.getId(), startEntryId);
-                        ledgerFragmentMcb.processResult(rc, null, null);
+                        for (int i = 0; i < entriesToReplicateCnt; i++) {
+                            ledgerFragmentMcb.processResult(rc, null, null);
+                        }
                         return;
                     }
                     long lastEntryId = startEntryId;
@@ -534,14 +536,15 @@ public class LedgerFragmentReplicator {
                         }
                         toSend.release();
                     }
-                    if (lastEntryId == endEntryId) {
-                        ledgerFragmentMcb.processResult(BKException.Code.OK, null, null);
-                    } else {
+                    if (lastEntryId != endEntryId) {
                         try {
                             batchRecoverLedgerFragmentEntry(lastEntryId + 1, endEntryId, lh,
                                     ledgerFragmentMcb, newBookies, onReadEntryFailureCallback);
                         } catch (InterruptedException e) {
-                            ledgerFragmentMcb.processResult(BKException.Code.InterruptedException, null, null);
+                            int remainingEntries = (int) (endEntryId - lastEntryId);
+                            for (int i = 0; i < remainingEntries; i++) {
+                                ledgerFragmentMcb.processResult(BKException.Code.InterruptedException, null, null);
+                            }
                         }
                     }
                 }
