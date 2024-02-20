@@ -27,6 +27,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,15 +54,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Test LedgerDirsManager.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(LedgerDirsMonitor.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LedgerDirsManagerTest {
 
     ServerConfiguration conf;
@@ -79,6 +79,7 @@ public class LedgerDirsManagerTest {
     // Thread used by monitor
     ScheduledExecutorService executor;
     MockExecutorController executorController;
+    MockedStatic<Executors> executorsMockedStatic;
 
     File createTempDir(String prefix, String suffix) throws IOException {
         File dir = IOUtils.createTempDir(prefix, suffix);
@@ -88,7 +89,7 @@ public class LedgerDirsManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.mockStatic(Executors.class);
+        executorsMockedStatic = mockStatic(Executors.class);
 
         File tmpDir = createTempDir("bkTest", ".dir");
         curDir = BookieImpl.getCurrentDirectory(tmpDir);
@@ -101,11 +102,10 @@ public class LedgerDirsManagerTest {
         conf.setIsForceGCAllowWhenNoSpace(true);
         conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE);
 
-        executor = PowerMockito.mock(ScheduledExecutorService.class);
+        executor = mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
             .controlScheduleAtFixedRate(executor, 10);
-        PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any()))
-            .thenReturn(executor);
+        executorsMockedStatic.when(()->Executors.newSingleThreadScheduledExecutor(any())).thenReturn(executor);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
         statsProvider = new TestStatsProvider();
@@ -119,6 +119,7 @@ public class LedgerDirsManagerTest {
 
     @After
     public void tearDown() throws Exception {
+        executorsMockedStatic.close();
         ledgerMonitor.shutdown();
         for (File dir : tempDirs) {
             FileUtils.deleteDirectory(dir);

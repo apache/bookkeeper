@@ -108,6 +108,17 @@ public class BookieServer {
         this.nettyServer.setRequestProcessor(this.requestProcessor);
     }
 
+    @VisibleForTesting
+    public static BookieServer newBookieServer(ServerConfiguration conf,
+                                               Bookie bookie,
+                                               StatsLogger statsLogger,
+                                               ByteBufAllocator allocator,
+                                               UncleanShutdownDetection uncleanShutdownDetection)
+            throws CompatibilityException, UnavailableException, SecurityException, IOException,
+            InterruptedException, KeeperException, BookieException {
+        return new BookieServer(conf, bookie, statsLogger, allocator, uncleanShutdownDetection);
+    }
+
     /**
      * Currently the uncaught exception handler is used for DeathWatcher to notify
      * lifecycle management that a bookie is dead for some reasons.

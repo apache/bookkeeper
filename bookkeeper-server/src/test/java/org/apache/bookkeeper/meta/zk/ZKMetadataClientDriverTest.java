@@ -24,7 +24,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -34,22 +36,16 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test {@link ZKMetadataClientDriver}.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({ ZKMetadataDriverBase.class, ZooKeeperClient.class, ZKMetadataClientDriver.class })
+@RunWith(MockitoJUnitRunner.class)
 public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
 
     private ZKMetadataClientDriver driver;
@@ -60,7 +56,7 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         this.conf = new ClientConfiguration();
         super.setup(conf);
 
-        driver = new ZKMetadataClientDriver();
+        driver = spy(new ZKMetadataClientDriver());
     }
 
     @Test
@@ -72,19 +68,17 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         assertSame(mockExecutor, driver.scheduler);
         assertNull(driver.regClient);
 
-        ZKRegistrationClient mockRegClient = PowerMockito.mock(ZKRegistrationClient.class);
+        ZKRegistrationClient mockRegClient = mock(ZKRegistrationClient.class);
 
-        PowerMockito.whenNew(ZKRegistrationClient.class)
-            .withParameterTypes(ZooKeeper.class, String.class, ScheduledExecutorService.class, Boolean.TYPE)
-            .withArguments(any(ZooKeeper.class), anyString(), any(ScheduledExecutorService.class), anyBoolean())
-            .thenReturn(mockRegClient);
+        doReturn(mockRegClient).when(driver).newZKRegistrationClient(any(ZooKeeper.class),
+                anyString(), any(ScheduledExecutorService.class), anyBoolean());
 
         RegistrationClient client = driver.getRegistrationClient();
         assertSame(mockRegClient, client);
         assertSame(mockRegClient, driver.regClient);
 
-        PowerMockito.verifyNew(ZKRegistrationClient.class, times(1))
-            .withArguments(eq(mockZkc), eq(ledgersRootPath), eq(mockExecutor), anyBoolean());
+        verify(driver, times(1)).newZKRegistrationClient(eq(mockZkc),
+                eq(ledgersRootPath), eq(mockExecutor), anyBoolean());
 
         driver.close();
         verify(mockRegClient, times(1)).close();

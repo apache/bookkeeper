@@ -22,6 +22,10 @@ package org.apache.bookkeeper.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.File;
@@ -34,7 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,19 +67,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * LedgerStorageCheckpointTest.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(SyncThread.class)
-@PowerMockIgnore({"java.*", "javax.*", "org.slf4j.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LedgerStorageCheckpointTest {
     private static final Logger LOG = LoggerFactory
             .getLogger(LedgerStorageCheckpointTest.class);
@@ -92,11 +91,13 @@ public class LedgerStorageCheckpointTest {
 
     // ScheduledExecutorService used by SyncThread
     MockExecutorController executorController;
+    private MockedStatic<SyncThread> syncThreadMockedStatic;
+    private MockedStatic<GarbageCollectorThread> garbageCollectorThreadMockedStatic;
+    private MockedStatic<SortedLedgerStorage> sortedLedgerStorageMockedStatic;
 
     @Before
     public void setUp() throws Exception {
         LOG.info("Setting up test {}", getClass());
-        PowerMockito.mockStatic(Executors.class);
 
         try {
             // start zookeeper service
@@ -106,17 +107,33 @@ public class LedgerStorageCheckpointTest {
             throw e;
         }
 
-        ScheduledExecutorService scheduledExecutorService = PowerMockito.mock(ScheduledExecutorService.class);
+        sortedLedgerStorageMockedStatic = mockStatic(SortedLedgerStorage.class);
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
                 .controlSubmit(scheduledExecutorService)
+                .controlExecute(scheduledExecutorService)
                 .controlScheduleAtFixedRate(scheduledExecutorService, 10);
-        PowerMockito.when(scheduledExecutorService.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any())).thenReturn(scheduledExecutorService);
+        when(scheduledExecutorService.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
+        sortedLedgerStorageMockedStatic.when(() -> SortedLedgerStorage.newScheduledExecutorService())
+                .thenReturn(scheduledExecutorService);
+
+        syncThreadMockedStatic = mockStatic(SyncThread.class, CALLS_REAL_METHODS);
+        syncThreadMockedStatic.when(() -> SyncThread.newExecutor())
+                .thenReturn(scheduledExecutorService);
+
+        garbageCollectorThreadMockedStatic = mockStatic(GarbageCollectorThread.class);
+        garbageCollectorThreadMockedStatic.when(() -> GarbageCollectorThread.newExecutor())
+                .thenReturn(scheduledExecutorService);
     }
 
     @After
     public void tearDown() throws Exception {
         LOG.info("TearDown");
+
+        sortedLedgerStorageMockedStatic.close();
+        syncThreadMockedStatic.close();
+        garbageCollectorThreadMockedStatic.close();
+
         Exception tearDownException = null;
         // stop zookeeper service
         try {

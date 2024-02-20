@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,6 +50,12 @@ public class LegacyCookieValidation implements CookieValidation {
                                   RegistrationManager registrationManager) {
         this.conf = conf;
         this.registrationManager = registrationManager;
+    }
+
+    @VisibleForTesting
+    public static LegacyCookieValidation newLegacyCookieValidation(ServerConfiguration conf,
+                                                                   RegistrationManager registrationManager) {
+        return new LegacyCookieValidation(conf, registrationManager);
     }
 
     @Override

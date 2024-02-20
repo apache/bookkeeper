@@ -56,6 +56,11 @@ public class ClusterInfoCommand extends BookieCommand<CliFlags> {
                 .build());
     }
 
+    @VisibleForTesting
+    public static ClusterInfoCommand newClusterInfoCommand() {
+        return new ClusterInfoCommand();
+    }
+
     /**
      * POJO definition for the cluster info response.
      */

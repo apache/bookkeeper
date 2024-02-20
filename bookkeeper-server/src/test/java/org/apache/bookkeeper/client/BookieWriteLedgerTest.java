@@ -84,7 +84,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1045,7 +1044,7 @@ public class BookieWriteLedgerTest extends
         lh.asyncAddEntry(10, entry1.array(), 0, entry1.capacity(), this, syncObj1);
 
         // Make sure entry-10 goes to the bookies and gets response.
-        java.util.Queue<PendingAddOp> myPendingAddOps = Whitebox.getInternalState(lh, "pendingAddOps");
+        java.util.Queue<PendingAddOp> myPendingAddOps = lh.getPendingAddOps();
         PendingAddOp addOp = null;
         boolean pendingAddOpReceived = false;
 

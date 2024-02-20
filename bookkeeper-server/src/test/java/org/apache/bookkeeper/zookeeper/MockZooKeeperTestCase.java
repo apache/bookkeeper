@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import com.google.common.collect.Maps;
 import java.util.HashSet;
@@ -47,7 +48,7 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
 
 /**
  * A test base that provides mocked zookeeper.
@@ -58,11 +59,12 @@ public abstract class MockZooKeeperTestCase {
     protected ZooKeeper mockZk;
     protected ScheduledExecutorService zkCallbackExecutor;
     protected MockExecutorController zkCallbackController;
+    private MockedStatic<ZkUtils> zkUtilsMockedStatic;
 
     protected void setup() throws Exception {
         this.mockZk = mock(ZooKeeper.class);
 
-        PowerMockito.mockStatic(ZkUtils.class);
+        this.zkUtilsMockedStatic = mockStatic(ZkUtils.class);
 
         this.zkCallbackExecutor = mock(ScheduledExecutorService.class);
         this.zkCallbackController = new MockExecutorController()
@@ -70,6 +72,10 @@ public abstract class MockZooKeeperTestCase {
             .controlSubmit(zkCallbackExecutor)
             .controlSchedule(zkCallbackExecutor)
             .controlScheduleAtFixedRate(zkCallbackExecutor, 10);
+    }
+
+    protected void teardown() throws Exception {
+        zkUtilsMockedStatic.close();
     }
 
     private void addWatcher(String path, Watcher watcher) {
@@ -104,26 +110,22 @@ public abstract class MockZooKeeperTestCase {
         int retCode,
         String retCreatedZnodeName
     ) throws Exception {
-
-        PowerMockito.doAnswer(invocationOnMock -> {
+        zkUtilsMockedStatic.when(() -> ZkUtils.asyncCreateFullPathOptimistic(
+                eq(mockZk),
+                eq(expectedLedgerPath),
+                any(byte[].class),
+                anyList(),
+                eq(expectedCreateMode),
+                any(StringCallback.class),
+                any())).thenAnswer(invocationOnMock -> {
             String path = invocationOnMock.getArgument(1);
             StringCallback callback = invocationOnMock.getArgument(5);
             Object ctx = invocationOnMock.getArgument(6);
 
             callback.processResult(
-                retCode, path, ctx, retCreatedZnodeName);
+                    retCode, path, ctx, retCreatedZnodeName);
             return null;
-        }).when(
-            ZkUtils.class,
-            "asyncCreateFullPathOptimistic",
-            eq(mockZk),
-            eq(expectedLedgerPath),
-            any(byte[].class),
-            anyList(),
-            eq(expectedCreateMode),
-            any(StringCallback.class),
-            any());
-
+        });
     }
 
     protected void mockZkDelete(
@@ -155,23 +157,19 @@ public abstract class MockZooKeeperTestCase {
         int expectedZnodeVersion,
         int retCode
     ) throws Exception {
-
-        PowerMockito.doAnswer(invocationOnMock -> {
+        zkUtilsMockedStatic.when(() -> ZkUtils.asyncDeleteFullPathOptimistic(
+                eq(mockZk),
+                eq(expectedLedgerPath),
+                eq(expectedZnodeVersion),
+                any(VoidCallback.class),
+                eq(expectedLedgerPath))).thenAnswer(invocationOnMock -> {
             String path = invocationOnMock.getArgument(1);
             VoidCallback callback = invocationOnMock.getArgument(3);
 
             callback.processResult(
                 retCode, path, null);
             return null;
-        }).when(
-            ZkUtils.class,
-            "asyncDeleteFullPathOptimistic",
-            eq(mockZk),
-            eq(expectedLedgerPath),
-            eq(expectedZnodeVersion),
-            any(VoidCallback.class),
-            eq(expectedLedgerPath));
-
+        });
     }
 
     protected void mockZkGetData(

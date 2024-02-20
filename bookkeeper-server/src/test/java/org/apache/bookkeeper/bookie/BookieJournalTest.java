@@ -24,6 +24,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -47,21 +52,15 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test the bookie journal.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({JournalChannel.class, FileChannelProvider.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
-    "com.sun.org.apache.xerces.*", "javax.naming.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class BookieJournalTest {
     private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
@@ -870,17 +869,14 @@ public class BookieJournalTest {
                 .setMetadataServiceUri(null);
 
         Journal.JournalScanner journalScanner = new DummyJournalScan();
-        BookieFileChannel bookieFileChannel = PowerMockito.mock(BookieFileChannel.class);
-        FileChannel fileChannel = PowerMockito.mock(FileChannel.class);
-        FileChannelProvider fileChannelProvider = PowerMockito.mock(FileChannelProvider.class);
+        BookieFileChannel bookieFileChannel = mock(BookieFileChannel.class);
+        FileChannelProvider fileChannelProvider = mock(FileChannelProvider.class);
 
-        PowerMockito.when(fileChannel.position(Mockito.anyLong()))
-                .thenThrow(new IOException());
-
-        PowerMockito.mockStatic(FileChannelProvider.class);
-        PowerMockito.when(FileChannelProvider.newProvider(Mockito.any())).thenReturn(fileChannelProvider);
-        Mockito.when(fileChannelProvider.open(Mockito.any(), Mockito.any())).thenReturn(bookieFileChannel);
-        Mockito.when(bookieFileChannel.getFileChannel()).thenReturn(fileChannel);
+        @Cleanup
+        MockedStatic<FileChannelProvider> fileChannelProviderMockedStatic = mockStatic(FileChannelProvider.class);
+        fileChannelProviderMockedStatic.when(() -> FileChannelProvider.newProvider(any()))
+                .thenReturn(fileChannelProvider);
+        doReturn(bookieFileChannel).when(fileChannelProvider).open(any(), any());
 
         BookieImpl b = new TestBookieImpl(conf);
 

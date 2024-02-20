@@ -25,13 +25,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * Unit test of {@link ZKMetadataDriverBase}.
@@ -43,6 +43,7 @@ public abstract class ZKMetadataDriverTestBase {
     protected String metadataServiceUri;
     protected ZooKeeperClient.Builder mockZkBuilder;
     protected ZooKeeperClient mockZkc;
+    protected MockedStatic<ZooKeeperClient> zooKeeperClientMockedStatic;
 
     public void setup(AbstractConfiguration<?> conf) throws Exception {
         ledgersRootPath = "/path/to/ledgers";
@@ -64,9 +65,12 @@ public abstract class ZKMetadataDriverTestBase {
 
         when(mockZkBuilder.build()).thenReturn(mockZkc);
 
-        mockStatic(ZooKeeperClient.class);
-        PowerMockito.when(ZooKeeperClient.class, "newBuilder")
-            .thenReturn(mockZkBuilder);
+        zooKeeperClientMockedStatic = Mockito.mockStatic(ZooKeeperClient.class);
+        zooKeeperClientMockedStatic.when(() -> ZooKeeperClient.newBuilder()).thenReturn(mockZkBuilder);
+    }
+
+    public void teardown() {
+        zooKeeperClientMockedStatic.close();
     }
 
 }

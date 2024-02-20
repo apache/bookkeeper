@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.clients;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -129,15 +130,20 @@ public class StorageClientImpl extends AbstractAutoAsyncCloseable implements Sto
                         "Can't open a non-table storage entity : " + props.getStreamConf().getStorageType())
                     );
                 }
-                return new PByteBufTableImpl(
-                    tableName,
-                    props,
-                    serverManager,
-                    scheduler.chooseThread(props.getStreamId()),
-                    settings.backoffPolicy()
-                ).initialize();
+                return newPByteBufTableImpl(tableName, props).initialize();
             }),
             future
+        );
+    }
+
+    @VisibleForTesting
+    PByteBufTableImpl newPByteBufTableImpl(String tableName, StreamProperties props) {
+        return new PByteBufTableImpl(
+                tableName,
+                props,
+                serverManager,
+                scheduler.chooseThread(props.getStreamId()),
+                settings.backoffPolicy()
         );
     }
 

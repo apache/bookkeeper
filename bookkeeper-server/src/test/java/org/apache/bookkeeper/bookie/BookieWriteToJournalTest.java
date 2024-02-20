@@ -26,9 +26,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.mockStatic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -49,19 +51,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Test the bookie journal.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({BookieImpl.class})
-@PowerMockIgnore({"jdk.internal.loader.*", "javax.naming.*", "javax.xml.*",
-    "com.sun.org.apache.xerces.*", "org.w3c.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.Silent.class)
 @Slf4j
 public class BookieWriteToJournalTest {
 
@@ -120,7 +118,10 @@ public class BookieWriteToJournalTest {
             return null;
         }).when(journal).joinThread();
 
-        whenNew(Journal.class).withAnyArguments().thenReturn(journal);
+        @Cleanup
+        MockedStatic<Journal> journalMockedStatic = mockStatic(Journal.class);
+        journalMockedStatic.when(() -> Journal.newJournal(anyInt(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(journal);
 
         Bookie b = new NoOpJournalReplayBookie(conf);
         b.start();

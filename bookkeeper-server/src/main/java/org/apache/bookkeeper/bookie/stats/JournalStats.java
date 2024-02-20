@@ -43,6 +43,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SYNC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_WRITE_BYTES;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
@@ -150,7 +151,7 @@ public class JournalStats {
         name = JOURNAL_NUM_FLUSH_MAX_OUTSTANDING_BYTES,
         help = "The number of journal flushes triggered by MAX_OUTSTANDING_BYTES"
     )
-    private final Counter flushMaxOutstandingBytesCounter;
+    private Counter flushMaxOutstandingBytesCounter;
     @StatsDoc(
         name = JOURNAL_NUM_FLUSH_EMPTY_QUEUE,
         help = "The number of journal flushes triggered when journal queue becomes empty"
@@ -220,6 +221,11 @@ public class JournalStats {
             }
         };
         statsLogger.registerGauge(JOURNAL_MEMORY_USED, journalMemoryUsedStats);
+    }
+
+    @VisibleForTesting
+    public void setFlushMaxOutstandingBytesCounter(Counter flushMaxOutstandingBytesCounter) {
+        this.flushMaxOutstandingBytesCounter = flushMaxOutstandingBytesCounter;
     }
 
 }
