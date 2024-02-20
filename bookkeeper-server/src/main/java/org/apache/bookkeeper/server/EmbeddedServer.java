@@ -25,6 +25,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+import static org.apache.bookkeeper.bookie.BookieImpl.newBookieImpl;
+import static org.apache.bookkeeper.bookie.LegacyCookieValidation.newLegacyCookieValidation;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
@@ -50,7 +52,6 @@ import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.CookieValidation;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.ScrubberStats;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
@@ -403,8 +404,8 @@ public class EmbeddedServer {
                         registrationManager, integCheck);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
             } else {
-                CookieValidation cookieValidation =
-                        new LegacyCookieValidation(conf.getServerConf(), registrationManager);
+                CookieValidation cookieValidation = newLegacyCookieValidation(conf.getServerConf(),
+                        registrationManager);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
                 // storage should be created after legacy validation or it will fail (it would find ledger dirs)
                 storage = BookieResources.createLedgerStorage(conf.getServerConf(), ledgerManager,
@@ -419,7 +420,7 @@ public class EmbeddedServer {
                         bookieStats, allocator,
                         bookieServiceInfoProvider);
             } else {
-                bookie = new BookieImpl(conf.getServerConf(), registrationManager, storage,
+                bookie = newBookieImpl(conf.getServerConf(), registrationManager, storage,
                         diskChecker,
                         ledgerDirsManager, indexDirsManager,
                         bookieStats, allocator,

@@ -90,7 +90,7 @@ public class GarbageCollectorThread implements Runnable {
 
     // Entry Logger Handle
     final EntryLogger entryLogger;
-    final AbstractLogCompactor compactor;
+    AbstractLogCompactor compactor;
 
     // Stats loggers for garbage collection operations
     private final GarbageCollectorStats gcStats;
@@ -138,8 +138,12 @@ public class GarbageCollectorThread implements Runnable {
                                   final CompactableLedgerStorage ledgerStorage,
                                   EntryLogger entryLogger,
                                   StatsLogger statsLogger) throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger,
-                Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread")));
+        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger, newExecutor());
+    }
+
+    @VisibleForTesting
+    static ScheduledExecutorService newExecutor() {
+        return Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
     }
 
     /**

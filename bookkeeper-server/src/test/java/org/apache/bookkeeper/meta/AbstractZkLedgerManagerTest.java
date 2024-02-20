@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -77,17 +78,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test of {@link AbstractZkLedgerManager}.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({ AbstractZkLedgerManager.class, ZkUtils.class })
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
     private ClientConfiguration conf;
@@ -96,21 +93,22 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
     private MockExecutorController schedulerController;
     private LedgerMetadata metadata;
     private LedgerMetadataSerDe serDe;
+    private MockedStatic<Executors> executorsMockedStatic;
 
     @Before
     public void setup() throws Exception {
-        PowerMockito.mockStatic(Executors.class);
+        executorsMockedStatic = mockStatic(Executors.class, CALLS_REAL_METHODS);
 
         super.setup();
 
-        this.scheduler = PowerMockito.mock(ScheduledExecutorService.class);
+        this.scheduler = mock(ScheduledExecutorService.class);
         this.schedulerController = new MockExecutorController()
             .controlSubmit(scheduler)
             .controlSchedule(scheduler)
             .controlExecute(scheduler)
             .controlScheduleAtFixedRate(scheduler, 10);
-        PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any()))
-            .thenReturn(scheduler);
+
+        executorsMockedStatic.when(() -> Executors.newSingleThreadScheduledExecutor(any())).thenReturn(scheduler);
 
         this.conf = new ClientConfiguration();
         this.ledgerManager = mock(
@@ -152,6 +150,10 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
     @After
     public void teardown() throws Exception {
+        super.teardown();
+
+        executorsMockedStatic.close();
+
         if (null != ledgerManager) {
             ledgerManager.close();
 
@@ -340,8 +342,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         lm.removeLedgerMetadata(ledgerId, version).get();
 
-        PowerMockito.verifyStatic(
-            ZkUtils.class, times(1));
         ZkUtils.asyncDeleteFullPathOptimistic(
             eq(mockZk), eq(ledgerStr), eq(1234), any(VoidCallback.class), eq(ledgerStr));
 

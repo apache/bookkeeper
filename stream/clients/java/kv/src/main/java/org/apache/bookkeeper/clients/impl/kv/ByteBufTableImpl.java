@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.clients.impl.kv;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.PTable;
@@ -38,6 +39,11 @@ import org.apache.bookkeeper.api.kv.result.RangeResult;
 public class ByteBufTableImpl implements Table<ByteBuf, ByteBuf> {
 
     private final PTable<ByteBuf, ByteBuf> underlying;
+
+    @VisibleForTesting
+    public PTable<ByteBuf, ByteBuf> getUnderlying() {
+        return underlying;
+    }
 
     public ByteBufTableImpl(PTable<ByteBuf, ByteBuf> underlying) {
         this.underlying = underlying;

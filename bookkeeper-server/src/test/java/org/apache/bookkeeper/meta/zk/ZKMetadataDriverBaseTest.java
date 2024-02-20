@@ -30,32 +30,29 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import java.util.Optional;
+import lombok.Cleanup;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test of {@link ZKMetadataDriverBase}.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({ ZKMetadataDriverBase.class, ZooKeeperClient.class, AbstractZkLedgerManagerFactory.class })
+@RunWith(MockitoJUnitRunner.class)
 public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
     private ZKMetadataDriverBase driver;
@@ -66,6 +63,11 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         super.setup(new ClientConfiguration());
         driver = mock(ZKMetadataDriverBase.class, CALLS_REAL_METHODS);
         retryPolicy = mock(RetryPolicy.class);
+    }
+
+    @After
+    public void teardown() {
+        super.teardown();
     }
 
     @Test
@@ -80,7 +82,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
         String readonlyPath = "/path/to/ledgers/" + AVAILABLE_NODE + "/" + READONLY;
         assertSame(mockZkc, driver.zk);
-        verifyStatic(ZooKeeperClient.class, times(1));
+
         ZooKeeperClient.newBuilder();
         verify(mockZkBuilder, times(1)).build();
         verify(mockZkc, times(1))
@@ -108,7 +110,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
         String readonlyPath = "/path/to/ledgers/" + AVAILABLE_NODE;
         assertSame(anotherZk, driver.zk);
-        verifyStatic(ZooKeeperClient.class, times(0));
+
         ZooKeeperClient.newBuilder();
         verify(mockZkBuilder, times(0)).build();
         verify(mockZkc, times(0))
@@ -127,18 +129,17 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         driver.initialize(
             conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
 
-        mockStatic(AbstractZkLedgerManagerFactory.class);
+        @Cleanup
+        MockedStatic<AbstractZkLedgerManagerFactory> abstractZkLedgerManagerFactoryMockedStatic =
+                mockStatic(AbstractZkLedgerManagerFactory.class);
         LedgerManagerFactory factory = mock(LedgerManagerFactory.class);
-        PowerMockito.when(
-            AbstractZkLedgerManagerFactory.class,
-            "newLedgerManagerFactory",
-            same(conf),
-            same(driver.layoutManager))
-            .thenReturn(factory);
+        abstractZkLedgerManagerFactoryMockedStatic.when(() ->
+                        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(same(conf), same(driver.layoutManager)))
+                .thenReturn(factory);
 
         assertSame(factory, driver.getLedgerManagerFactory());
         assertSame(factory, driver.lmFactory);
-        verifyStatic(AbstractZkLedgerManagerFactory.class, times(1));
+
         AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             same(conf),
             same(driver.layoutManager));

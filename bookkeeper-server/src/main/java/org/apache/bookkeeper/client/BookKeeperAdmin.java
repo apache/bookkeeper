@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -171,6 +172,12 @@ public class BookKeeperAdmin implements AutoCloseable {
         ownsBK = true;
         this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE, conf);
         this.mFactory = bkc.ledgerManagerFactory;
+    }
+
+    @VisibleForTesting
+    public static BookKeeperAdmin newBookKeeperAdmin(ClientConfiguration conf)
+            throws IOException, InterruptedException, BKException {
+        return new BookKeeperAdmin(conf);
     }
 
     /**

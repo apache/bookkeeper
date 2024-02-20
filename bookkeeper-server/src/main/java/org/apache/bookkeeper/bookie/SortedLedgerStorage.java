@@ -92,10 +92,15 @@ public class SortedLedgerStorage
             statsLogger,
             allocator);
 
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(
+        this.scheduler = newScheduledExecutorService();
+    }
+
+    @VisibleForTesting
+    static ScheduledExecutorService newScheduledExecutorService() {
+        return Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
-                .setNameFormat("SortedLedgerStorage-%d")
-                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
+                        .setNameFormat("SortedLedgerStorage-%d")
+                        .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
     }
 
     @Override

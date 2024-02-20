@@ -2367,4 +2367,8 @@ public class LedgerHandle implements WriteHandle {
         executor.execute(runnable);
     }
 
+    @VisibleForTesting
+    public Queue<PendingAddOp> getPendingAddOps() {
+        return pendingAddOps;
+    }
 }

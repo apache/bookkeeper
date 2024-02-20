@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Set;
 import lombok.Setter;
@@ -48,7 +49,7 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
     private static final Logger LOG = LoggerFactory.getLogger(ListBookiesCommand.class);
 
     public ListBookiesCommand() {
-        this(new Flags());
+        this(Flags.newFlags());
     }
 
     public ListBookiesCommand(Flags flags) {
@@ -57,6 +58,11 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
             .withDescription(DESC)
             .withFlags(flags)
             .build());
+    }
+
+    @VisibleForTesting
+    public static ListBookiesCommand newListBookiesCommand(Flags flags) {
+        return new ListBookiesCommand(flags);
     }
 
     /**
@@ -72,6 +78,11 @@ public class ListBookiesCommand extends DiscoveryCommand<Flags> {
         private boolean readonly = false;
         @Parameter(names = { "-a", "--all" }, description = "Print all bookies")
         private boolean all = false;
+
+        @VisibleForTesting
+        public static Flags newFlags(){
+            return new Flags();
+        }
 
     }
 

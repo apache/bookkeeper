@@ -433,7 +433,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // instantiate the journals
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
-            journals.add(new Journal(i, journalDirectories.get(i),
+            journals.add(Journal.newJournal(i, journalDirectories.get(i),
                     conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator, journalAliveListener));
         }
 
@@ -494,6 +494,21 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // Expose Stats
         this.bookieStats = new BookieStats(statsLogger, journalDirectories.size(), conf.getJournalQueueSize());
+    }
+
+    @VisibleForTesting
+    public static BookieImpl newBookieImpl(ServerConfiguration conf,
+                                           RegistrationManager registrationManager,
+                                           LedgerStorage storage,
+                                           DiskChecker diskChecker,
+                                           LedgerDirsManager ledgerDirsManager,
+                                           LedgerDirsManager indexDirsManager,
+                                           StatsLogger statsLogger,
+                                           ByteBufAllocator allocator,
+                                           Supplier<BookieServiceInfo> bookieServiceInfoProvider)
+            throws IOException, InterruptedException, BookieException {
+        return new BookieImpl(conf, registrationManager, storage, diskChecker,
+                ledgerDirsManager, indexDirsManager, statsLogger, allocator, bookieServiceInfoProvider);
     }
 
     StateManager initializeStateManager() throws IOException {
