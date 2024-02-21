@@ -169,7 +169,7 @@ public class Main {
             }
 
             if (cmdLine.hasOption('j')) {
-                String[] sJournalDirs = cmdLine.getOptionValue('j');
+                String[] sJournalDirs = cmdLine.getOptionValues('j');
                 log.info("Get cmdline journal dirs: ");
                 for (String journal : sJournalDirs) {
                     log.info("journalDir : {}", journal);
