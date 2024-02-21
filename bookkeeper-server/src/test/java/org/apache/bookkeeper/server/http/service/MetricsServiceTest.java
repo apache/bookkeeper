@@ -26,6 +26,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import io.prometheus.client.exporter.common.TextFormat;
 import java.io.IOException;
 import java.io.Writer;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -89,7 +90,7 @@ public class MetricsServiceTest {
         HttpServiceResponse response = service.handle(request);
 
         assertEquals(StatusCode.OK.getValue(), response.getStatusCode());
-        assertEquals(MetricsService.PROMETHEUS_CONTENT_TYPE_004, response.getContentType());
+        assertEquals(TextFormat.CONTENT_TYPE_004, response.getContentType());
         assertEquals(content, response.getBody());
     }
 
