@@ -87,7 +87,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements a bookie.
  */
-public class BookieImpl extends BookieCriticalThread implements Bookie {
+public class BookieImpl implements Bookie {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
@@ -118,6 +118,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             ConcurrentLongHashMap.<byte[]>newBuilder().autoShrink(true).build();
 
     protected StateManager stateManager;
+
+    private BookieCriticalThread bookieThread;
 
     // Expose Stats
     final StatsLogger statsLogger;
@@ -390,7 +392,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                       ByteBufAllocator allocator,
                       Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, InterruptedException, BookieException {
-        super("Bookie-" + conf.getBookiePort());
         this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         this.statsLogger = statsLogger;
         this.conf = conf;
@@ -656,7 +657,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     @Override
     public synchronized void start() {
-        setDaemon(true);
+        bookieThread = new BookieCriticalThread(() -> run(), "Bookie-" + conf.getBookiePort());
+        bookieThread.setDaemon(true);
+
         ThreadRegistry.register("BookieThread", 0);
         if (LOG.isDebugEnabled()) {
             LOG.debug("I'm starting a bookie with journal directories {}",
@@ -717,7 +720,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         syncThread.start();
 
         // start bookie thread
-        super.start();
+        bookieThread.start();
 
         // After successful bookie startup, register listener for disk
         // error/full notifications.
@@ -739,6 +742,20 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             LOG.error("Couldn't register bookie with zookeeper, shutting down : ", e);
             shutdown(ExitCode.ZK_REG_FAIL);
         }
+    }
+
+    @Override
+    public void join() throws InterruptedException {
+        if (bookieThread != null) {
+            bookieThread.join();
+        }
+    }
+
+    public boolean isAlive() {
+        if (bookieThread == null) {
+            return false;
+        }
+        return bookieThread.isAlive();
     }
 
     /*
@@ -824,7 +841,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return stateManager.isRunning();
     }
 
-    @Override
     public void run() {
         // start journals
         for (Journal journal: journals) {

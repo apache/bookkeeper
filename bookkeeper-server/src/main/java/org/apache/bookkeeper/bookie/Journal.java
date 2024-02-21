@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
@@ -66,12 +67,14 @@ import org.slf4j.LoggerFactory;
 /**
  * Provide journal related management.
  */
-public class Journal extends BookieCriticalThread implements CheckpointSource {
+public class Journal implements CheckpointSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(Journal.class);
 
     private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler =
         new RecyclableArrayList.Recycler<QueueEntry>();
+
+    private BookieCriticalThread thread;
 
     /**
      * Filter to pickup journals.
@@ -461,13 +464,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         volatile boolean running = true;
         // This holds the queue entries that should be notified after a
         // successful force write
-        Thread threadToNotifyOnEx;
+        Consumer<Void> threadToNotifyOnEx;
 
         // should we group force writes
         private final boolean enableGroupForceWrites;
         private final Counter forceWriteThreadTime;
 
-        public ForceWriteThread(Thread threadToNotifyOnEx,
+        public ForceWriteThread(Consumer<Void> threadToNotifyOnEx,
                                 boolean enableGroupForceWrites,
                                 StatsLogger statsLogger) {
             super("ForceWriteThread");
@@ -531,7 +534,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // Regardless of what caused us to exit, we should notify the
             // the parent thread as it should either exit or be in the process
             // of exiting else we will have write requests hang
-            threadToNotifyOnEx.interrupt();
+            threadToNotifyOnEx.accept(null);
         }
 
         private void syncJournal(ForceWriteRequest lastRequest) throws IOException {
@@ -652,8 +655,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator) {
-        super(journalThreadName + "-" + conf.getBookiePort());
-        this.setPriority(Thread.MAX_PRIORITY);
         this.allocator = allocator;
 
         StatsLogger journalStatsLogger = statsLogger.scopeLabel("journalIndex", String.valueOf(journalIndex));
@@ -678,8 +679,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
         this.syncData = conf.getJournalSyncData();
         this.maxBackupJournals = conf.getMaxBackupJournals();
-        this.forceWriteThread = new ForceWriteThread(this, conf.getJournalAdaptiveGroupWrites(),
-                journalStatsLogger);
+        this.forceWriteThread = new ForceWriteThread((__) -> this.interruptThread(),
+                conf.getJournalAdaptiveGroupWrites(), journalStatsLogger);
         this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
         this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
@@ -956,7 +957,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * </p>
      * @see org.apache.bookkeeper.bookie.SyncThread
      */
-    @Override
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
         ThreadRegistry.register(journalThreadName, 0);
@@ -1255,8 +1255,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             forceWriteThread.shutdown();
 
             running = false;
-            this.interrupt();
-            this.join();
+            this.interruptThread();
+            this.joinThread();
             LOG.info("Finished Shutting down Journal thread");
         } catch (IOException | InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -1284,7 +1284,21 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     @VisibleForTesting
     public void joinThread() throws InterruptedException {
-        join();
+        if (thread != null) {
+            thread.join();
+        }
+    }
+
+    public void interruptThread() {
+        if (thread != null) {
+            thread.interrupt();
+        }
+    }
+
+    public synchronized void start() {
+        thread = new BookieCriticalThread(() -> run(), journalThreadName + "-" + conf.getBookiePort());
+        thread.setPriority(Thread.MAX_PRIORITY);
+        thread.start();
     }
 
     long getMemoryUsage() {

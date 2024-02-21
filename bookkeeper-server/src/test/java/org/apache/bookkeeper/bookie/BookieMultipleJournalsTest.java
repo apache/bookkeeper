@@ -74,7 +74,7 @@ public class BookieMultipleJournalsTest extends BookKeeperClusterTestCase {
         Field journalList = bookie.getClass().getDeclaredField("journals");
         journalList.setAccessible(true);
         List<Journal> journals = (List<Journal>) journalList.get(bookie);
-        journals.get(0).interrupt();
+        journals.get(0).interruptThread();
         Awaitility.await().untilAsserted(() -> assertFalse(bookie.isRunning()));
     }
 
@@ -92,7 +92,7 @@ public class BookieMultipleJournalsTest extends BookKeeperClusterTestCase {
         Field journalList = bookie.getClass().getDeclaredField("journals");
         journalList.setAccessible(true);
         List<Journal> journals = (List<Journal>) journalList.get(bookie);
-        journals.get(0).interrupt();
+        journals.get(0).interruptThread();
         bookie.shutdown(ExitCode.OK);
         Awaitility.await().untilAsserted(() -> assertFalse(bookie.isRunning()));
     }
