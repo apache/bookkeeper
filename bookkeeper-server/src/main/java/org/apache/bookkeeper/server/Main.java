@@ -85,7 +85,7 @@ public class Main {
         String footer = "Here is an example:\n"
             + "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers "
             + " -p 3181 "
-            + " -j \"/mnt/journal1 /mnt/journal2 \" "
+            + " -j \"/mnt/journal1 /mnt/journal2\" "
             + " -i \"/mnt/index1 /mnt/index2\" "
             + " -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
         hf.printHelp("BookieServer [options]\n", header, BK_OPTS, footer, true);
