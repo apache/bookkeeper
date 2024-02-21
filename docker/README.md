@@ -157,7 +157,7 @@ $ docker run --name bookie1 -d \
     -v $(local_configure_dir):/opt/bookkeeper/conf/ \   < == use 2nd approach, mount dir contains config_files
     -e BK_bookiePort=3181 \                             < == use 1st approach, set bookiePort
     -e BK_zkServers=zk-server1:2181,zk-server2:2181 \   < == use 1st approach, set zookeeper servers
-    -e BK_journalPreAllocSizeMB=32 \                    < == use 1st approach, set journalPreAllocSizeMB in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf)
+    -e BK_journalPreAllocSizeMB=32 \                    < == use 1st approach, set journalPreAllocSizeMB in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf)
     apache/bookkeeper
 ```
 
@@ -214,7 +214,7 @@ Default value is empty - " ". so ledgers dir in zookeeper will be at "/ledgers" 
 #### `BK_DATA_DIR`
 This variable allows you to specify where to store data in docker instance.
 
-This could be override by env vars "BK_journalDirectory", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectory`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This could be override by env vars "BK_journalDirectories", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectories`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledgers` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
 

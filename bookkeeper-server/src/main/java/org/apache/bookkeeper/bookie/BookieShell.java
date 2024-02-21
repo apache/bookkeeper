@@ -1417,12 +1417,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories.";
+            return "List the files in JournalDirectories/LedgerDirectories/IndexDirectories.";
         }
 
         @Override
         String getUsage() {
-            return "listfilesondisc      List the files in JournalDirectory/LedgerDirectories/IndexDirectories \n"
+            return "listfilesondisc      List the files in JournalDirectories/LedgerDirectories/IndexDirectories \n"
                     + "             Usage: listfilesondisc [options]\n"
                     + "             Options:\n"
                     + "               -txn, --journal\n"

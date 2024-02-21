@@ -34,12 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Command to list the files in JournalDirectory/LedgerDirectories/IndexDirectories.
+ * Command to list the files in JournalDirectories/LedgerDirectories/IndexDirectories.
  */
 public class ListFilesOnDiscCommand extends BookieCommand<ListFilesOnDiscCommand.LFODFlags > {
 
     private static final String NAME = "listfilesondisc";
-    private static final String DESC = "List the files in JournalDirectory/LedgerDirectories/IndexDirectories.";
+    private static final String DESC = "List the files in JournalDirectories/LedgerDirectories/IndexDirectories.";
     private static final Logger LOG = LoggerFactory.getLogger(ListFilesOnDiscCommand.class);
 
     public ListFilesOnDiscCommand() {
