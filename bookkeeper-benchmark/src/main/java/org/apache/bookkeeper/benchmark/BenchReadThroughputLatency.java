@@ -194,7 +194,7 @@ public class BenchReadThroughputLatency {
         }
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-    
+
         String genLedgerWay = cmd.getOptionValue("genLedgerWay", "flat");
         String nodepath;
         if ("flat".equals(genLedgerWay)) {
