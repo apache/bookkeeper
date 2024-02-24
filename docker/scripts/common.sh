@@ -36,7 +36,7 @@ export BK_metadataServiceUri=${BK_metadataServiceUri:-"zk://${BK_zkServers}${BK_
 export BK_bookiePort=${BK_bookiePort:-${PORT0}}
 export BK_httpServerEnabled=${BK_httpServerEnabled:-"true"}
 export BK_httpServerPort=${BK_httpServerPort:-${BOOKIE_HTTP_PORT}}
-export BK_journalDirectories=${BK_journalDirectories:-${BK_DATA_DIR}/journal}
+export BK_journalDirectories=${BK_journalDirectories:-${BK_journalDirectory:-${BK_DATA_DIR}/journal}}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_ledgerDirectories}}
 # dlog
