@@ -103,7 +103,7 @@ public class BenchReadThroughputLatency {
                 long starttime = System.nanoTime();
 
                 while (entriesRead < lastConfirmed) {
-                    long nextLimit = lastRead + 10;
+                    long nextLimit = lastRead + 100000;
                     Enumeration<LedgerEntry> entries;
                     if (batchEntries <= 0) {
                         long readTo = Math.min(nextLimit, lastConfirmed);
