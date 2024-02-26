@@ -78,7 +78,7 @@ public class BenchReadThroughputLatency {
         BookKeeper bk = null;
         long time = 0;
         long entriesRead = 0;
-        long lastRead = 0;
+        long lastRead = -1;
         int nochange = 0;
 
         long absoluteLimit = 5000000;
@@ -103,7 +103,7 @@ public class BenchReadThroughputLatency {
                 long starttime = System.nanoTime();
 
                 while (entriesRead < lastConfirmed) {
-                    long nextLimit = lastRead + 100000;
+                    long nextLimit = lastRead + 10;
                     Enumeration<LedgerEntry> entries;
                     if (batchEntries <= 0) {
                         long readTo = Math.min(nextLimit, lastConfirmed);
