@@ -154,8 +154,8 @@ public class BenchReadThroughputLatency {
         Options options = new Options();
         options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. "
                           + " Cannot be used with -listen");
-        //How to generate ledger id
-        options.addOption("genLedgerWay", true, "The way of generating ledgerId. "
+        //How to generate ledger node path.
+        options.addOption("ledgerManagerType", true, "The ledger manager type. "
                 + "The optional value: flat, hierarchical, legacyHierarchical, longHierarchical. Default: flat");
         options.addOption("listen", true, "Listen for creation of <arg> ledgers, and read each one fully");
         options.addOption("password", true, "Password used to access ledgers (default 'benchPasswd')");
@@ -195,18 +195,18 @@ public class BenchReadThroughputLatency {
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
-        String genLedgerWay = cmd.getOptionValue("genLedgerWay", "flat");
+        String ledgerManagerType = cmd.getOptionValue("ledgerManagerType", "flat");
         String nodepath;
-        if ("flat".equals(genLedgerWay)) {
+        if ("flat".equals(ledgerManagerType)) {
             nodepath = String.format("/ledgers/L%010d", ledger.get());
-        } else if ("hierarchical".equals(genLedgerWay)) {
+        } else if ("hierarchical".equals(ledgerManagerType)) {
             nodepath = String.format("/ledgers%s", StringUtils.getHybridHierarchicalLedgerPath(ledger.get()));
-        } else if ("legacyHierarchical".equals(genLedgerWay)) {
+        } else if ("legacyHierarchical".equals(ledgerManagerType)) {
             nodepath = String.format("/ledgers%s", StringUtils.getShortHierarchicalLedgerPath(ledger.get()));
-        } else if ("longHierarchical".equals(genLedgerWay)) {
+        } else if ("longHierarchical".equals(ledgerManagerType)) {
             nodepath = String.format("/ledgers%s", StringUtils.getLongHierarchicalLedgerPath(ledger.get()));
         } else {
-            LOG.warn("Unknown genLedgerWay: {}, use flat as the value", genLedgerWay);
+            LOG.warn("Unknown ledger manager type: {}, use flat as the value", ledgerManagerType);
             nodepath = String.format("/ledgers/L%010d", ledger.get());
         }
 
