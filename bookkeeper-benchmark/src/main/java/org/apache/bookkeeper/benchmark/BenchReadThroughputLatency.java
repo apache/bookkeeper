@@ -89,7 +89,7 @@ public class BenchReadThroughputLatency {
                 lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32,
                                              passwd);
                 long lastConfirmed = Math.min(lh.getLastAddConfirmed(), absoluteLimit);
-                if (lastConfirmed <= lastRead) {
+                if (lastConfirmed <= lastRead + 1) {
                     nochange++;
                     if (nochange == 10) {
                         break;
