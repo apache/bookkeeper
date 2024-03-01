@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -159,6 +160,9 @@ public class BenchReadThroughputLatency {
         Options options = new Options();
         options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. "
                           + " Cannot be used with -listen");
+        //How to generate ledger node path.
+        options.addOption("ledgerManagerType", true, "The ledger manager type. "
+                + "The optional value: flat, hierarchical, legacyHierarchical, longHierarchical. Default: flat");
         options.addOption("listen", true, "Listen for creation of <arg> ledgers, and read each one fully");
         options.addOption("password", true, "Password used to access ledgers (default 'benchPasswd')");
         options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
@@ -199,7 +203,21 @@ public class BenchReadThroughputLatency {
         }
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        final String nodepath = String.format("/ledgers/L%010d", ledger.get());
+
+        String ledgerManagerType = cmd.getOptionValue("ledgerManagerType", "flat");
+        String nodepath;
+        if ("flat".equals(ledgerManagerType)) {
+            nodepath = String.format("/ledgers/L%010d", ledger.get());
+        } else if ("hierarchical".equals(ledgerManagerType)) {
+            nodepath = String.format("/ledgers%s", StringUtils.getHybridHierarchicalLedgerPath(ledger.get()));
+        } else if ("legacyHierarchical".equals(ledgerManagerType)) {
+            nodepath = String.format("/ledgers%s", StringUtils.getShortHierarchicalLedgerPath(ledger.get()));
+        } else if ("longHierarchical".equals(ledgerManagerType)) {
+            nodepath = String.format("/ledgers%s", StringUtils.getLongHierarchicalLedgerPath(ledger.get()));
+        } else {
+            LOG.warn("Unknown ledger manager type: {}, use flat as the value", ledgerManagerType);
+            nodepath = String.format("/ledgers/L%010d", ledger.get());
+        }
 
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(sockTimeout).setZkServers(servers);
