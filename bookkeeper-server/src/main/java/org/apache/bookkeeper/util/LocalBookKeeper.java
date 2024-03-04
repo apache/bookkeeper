@@ -333,6 +333,10 @@ public class LocalBookKeeper implements AutoCloseable {
      * @throws IOException
      */
     private void serializeLocalBookieConfig(ServerConfiguration localBookieConfig, String fileName) throws IOException {
+        if (!fileName.endsWith(".conf")) {
+            throw new IllegalArgumentException("File name should end with .conf");
+        }
+
         File localBookieConfFile = new File(localBookiesConfigDir, fileName);
         if (localBookieConfFile.exists() && !localBookieConfFile.delete()) {
             throw new IOException(
