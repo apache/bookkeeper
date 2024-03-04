@@ -35,7 +35,6 @@ import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServer.ApiType;
 import org.apache.bookkeeper.http.HttpServiceProvider;
-import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
@@ -91,16 +90,12 @@ public class BookieHttpServiceServlet extends HttpServlet {
         return;
       }
       response = httpEndpointService.handle(request);
-    } catch (Throwable e) {
-      LOG.error("Error while service Bookie API request " + uri, e);
-      response = new ErrorHttpService().handle(request);
-    }
-    if (response != null) {
       httpResponse.setStatus(response.getStatusCode());
       try (Writer out = httpResponse.getWriter()) {
         out.write(response.getBody());
       }
-    } else {
+    } catch (Throwable e) {
+      LOG.error("Error while service Bookie API request {}", uri, e);
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
   }
