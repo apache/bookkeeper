@@ -368,6 +368,10 @@ public class MavenClassLoader implements AutoCloseable {
             TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) debInputStream.getNextEntry()) != null) {
                 final File outputFile = new File(outputDir, entry.getName());
+                if (!outputFile.toPath().normalize().startsWith(outputDir.toPath())) {
+                    throw new IOException("Bad zip entry");
+                }
+
                 if (!outputFile.getParentFile().exists()) {
                     outputFile.getParentFile().mkdirs();
                 }

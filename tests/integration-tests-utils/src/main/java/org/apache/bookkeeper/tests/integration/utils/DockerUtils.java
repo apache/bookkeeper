@@ -137,7 +137,11 @@ public class DockerUtils {
             TarArchiveEntry entry = stream.getNextTarEntry();
             while (entry != null) {
                 if (entry.isFile()) {
-                    File output = new File(getTargetDirectory(containerId), entry.getName().replace("/", "-"));
+                    File targetDir = getTargetDirectory(containerId);
+                    File output = new File(targetDir, entry.getName().replace("/", "-"));
+                    if (!output.toPath().normalize().startsWith(targetDir.toPath())) {
+                        throw new IOException("Bad zip entry");
+                    }
                     try (FileOutputStream os = new FileOutputStream(output)) {
                         byte[] block = new byte[readBlockSize];
                         int read = stream.read(block, 0, readBlockSize);
