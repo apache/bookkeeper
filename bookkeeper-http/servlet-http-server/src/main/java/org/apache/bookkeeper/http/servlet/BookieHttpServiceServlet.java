@@ -91,16 +91,12 @@ public class BookieHttpServiceServlet extends HttpServlet {
         return;
       }
       response = httpEndpointService.handle(request);
-    } catch (Throwable e) {
-      LOG.error("Error while service Bookie API request " + uri, e);
-      response = new ErrorHttpService().handle(request);
-    }
-    if (response != null) {
       httpResponse.setStatus(response.getStatusCode());
       try (Writer out = httpResponse.getWriter()) {
         out.write(response.getBody());
       }
-    } else {
+    } catch (Throwable e) {
+      LOG.error("Error while service Bookie API request " + uri, e);
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
   }
