@@ -58,6 +58,7 @@ import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -333,7 +334,7 @@ public class LocalBookKeeper implements AutoCloseable {
      * @throws IOException
      */
     private void serializeLocalBookieConfig(ServerConfiguration localBookieConfig, String fileName) throws IOException {
-        if (!fileName.endsWith(".conf")) {
+        if (StringUtils.isBlank(fileName) || !fileName.endsWith(".conf")) {
             throw new IllegalArgumentException("File name should end with .conf");
         }
 
