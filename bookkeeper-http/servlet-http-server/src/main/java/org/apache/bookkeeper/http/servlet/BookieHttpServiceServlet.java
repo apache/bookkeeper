@@ -96,7 +96,7 @@ public class BookieHttpServiceServlet extends HttpServlet {
         out.write(response.getBody());
       }
     } catch (Throwable e) {
-      LOG.error("Error while service Bookie API request " + uri, e);
+      LOG.error("Error while service Bookie API request {}", uri, e);
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
   }
