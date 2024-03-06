@@ -540,10 +540,13 @@ public class LedgerDirsManagerTest {
         configuration.setDiskLowWaterMarkUsageThreshold(0.80f);
         configuration.setLedgerDirNames(new String[]{tmpDir1.toString()});
 
-        MockDiskChecker diskChecker = new MockDiskChecker(configuration.getDiskUsageThreshold(), configuration.getDiskUsageWarnThreshold());
+        MockDiskChecker diskChecker = new MockDiskChecker(
+            configuration.getDiskUsageThreshold(), configuration.getDiskUsageWarnThreshold());
 
-        LedgerDirsManager ldm = new LedgerDirsManager(configuration, configuration.getLedgerDirs(), diskChecker, statsLogger);
-        LedgerDirsMonitor ldmMonitor = new LedgerDirsMonitor(configuration, diskChecker, Collections.singletonList(ldm));
+        LedgerDirsManager ldm = new LedgerDirsManager(
+            configuration, configuration.getLedgerDirs(), diskChecker, statsLogger);
+        LedgerDirsMonitor ldmMonitor = new LedgerDirsMonitor(
+            configuration, diskChecker, Collections.singletonList(ldm));
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         mockLedgerDirsListener.readOnly = true;
         ldm.addLedgerDirsListener(mockLedgerDirsListener);
