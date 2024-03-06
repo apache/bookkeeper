@@ -51,6 +51,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Field;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -112,7 +113,6 @@ import org.apache.zookeeper.data.Stat;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.LoggingEvent;
@@ -819,7 +819,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * Create LifecycleComponent for BookieServer and start it.
          */
         LifecycleComponent server = Main.buildBookieServer(bkConf);
-        Whitebox.setInternalState(server, "name", "bookie-server-1");
+        Field field = server.getClass().getDeclaredField("name");
+        field.setAccessible(true);
+        field.set(server, "bookie-server-1");
         CompletableFuture<Void> startFuture = ComponentStarter.startComponent(server);
 
         /*
@@ -865,7 +867,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          * Create LifecycleComponent for BookieServer and start it.
          */
         LifecycleComponent server2 = Main.buildBookieServer(bkConf2);
-        Whitebox.setInternalState(server2, "name", "bookie-server-2");
+        Field field2 = server2.getClass().getDeclaredField("name");
+        field2.setAccessible(true);
+        field2.set(server2, "bookie-server-2");
         CompletableFuture<Void> startFuture2 = ComponentStarter.startComponent(server2);
 
         /*
