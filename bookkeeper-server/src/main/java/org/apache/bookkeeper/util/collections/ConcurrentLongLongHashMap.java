@@ -387,6 +387,8 @@ public class ConcurrentLongLongHashMap {
     private static final class Section extends StampedLock {
         // Keys and values are stored interleaved in the table array
         private volatile long[] table;
+        // each item takes 2 elements of the table
+        public static final int ITEM_SIZE = 2;
 
         private volatile int capacity;
         private final int initCapacity;
@@ -404,7 +406,7 @@ public class ConcurrentLongLongHashMap {
                 float expandFactor, float shrinkFactor) {
             this.capacity = alignToPowerOfTwo(capacity);
             this.initCapacity = this.capacity;
-            this.table = new long[2 * this.capacity];
+            this.table = new long[ITEM_SIZE * this.capacity];
             this.size = 0;
             this.usedBuckets = 0;
             this.autoShrink = autoShrink;
@@ -420,13 +422,13 @@ public class ConcurrentLongLongHashMap {
         long get(long key, int keyHash) {
             long stamp = tryOptimisticRead();
             boolean acquiredLock = false;
-            int bucket = signSafeMod(keyHash, capacity);
+            int bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
 
             try {
                 while (true) {
                     // First try optimistic locking
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (!acquiredLock && validate(stamp)) {
                         // The values we have read are consistent
@@ -442,9 +444,9 @@ public class ConcurrentLongLongHashMap {
                             stamp = readLock();
                             acquiredLock = true;
 
-                            bucket = signSafeMod(keyHash, capacity);
-                            storedKey = table[bucket];
-                            storedValue = table[bucket + 1];
+                            bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
+                            storedKey = table[bucketIndex];
+                            storedValue = table[bucketIndex + 1];
                         }
 
                         if (key == storedKey) {
@@ -455,7 +457,7 @@ public class ConcurrentLongLongHashMap {
                         }
                     }
 
-                    bucket = (bucket + 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
                 }
             } finally {
                 if (acquiredLock) {
@@ -466,20 +468,20 @@ public class ConcurrentLongLongHashMap {
 
         long put(long key, long value, int keyHash, boolean onlyIfAbsent, LongLongFunction valueProvider) {
             long stamp = writeLock();
-            int bucket = signSafeMod(keyHash, capacity);
+            int bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
 
             // Remember where we find the first available spot
             int firstDeletedKey = -1;
 
             try {
                 while (true) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (key == storedKey) {
                         if (!onlyIfAbsent) {
                             // Over written an old value for same key
-                            table[bucket + 1] = value;
+                            table[bucketIndex + 1] = value;
                             return storedValue;
                         } else {
                             return storedValue;
@@ -488,7 +490,7 @@ public class ConcurrentLongLongHashMap {
                         // Found an empty bucket. This means the key is not in the map. If we've already seen a deleted
                         // key, we should write at that position
                         if (firstDeletedKey != -1) {
-                            bucket = firstDeletedKey;
+                            bucketIndex = firstDeletedKey;
                         } else {
                             ++usedBuckets;
                         }
@@ -497,18 +499,18 @@ public class ConcurrentLongLongHashMap {
                             value = valueProvider.apply(key);
                         }
 
-                        table[bucket] = key;
-                        table[bucket + 1] = value;
+                        table[bucketIndex] = key;
+                        table[bucketIndex + 1] = value;
                         ++size;
                         return valueProvider != null ? value : ValueNotFound;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
                         if (firstDeletedKey == -1) {
-                            firstDeletedKey = bucket;
+                            firstDeletedKey = bucketIndex;
                         }
                     }
 
-                    bucket = (bucket + 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
                 }
             } finally {
                 if (usedBuckets > resizeThresholdUp) {
@@ -527,22 +529,22 @@ public class ConcurrentLongLongHashMap {
 
         long addAndGet(long key, long delta, int keyHash) {
             long stamp = writeLock();
-            int bucket = signSafeMod(keyHash, capacity);
+            int bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
 
             // Remember where we find the first available spot
             int firstDeletedKey = -1;
 
             try {
                 while (true) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (key == storedKey) {
                         // Over written an old value for same key
                         long newValue = storedValue + delta;
                         checkBiggerEqualZero(newValue);
 
-                        table[bucket + 1] = newValue;
+                        table[bucketIndex + 1] = newValue;
                         return newValue;
                     } else if (storedKey == EmptyKey) {
                         // Found an empty bucket. This means the key is not in the map. If we've already seen a deleted
@@ -550,23 +552,23 @@ public class ConcurrentLongLongHashMap {
                         checkBiggerEqualZero(delta);
 
                         if (firstDeletedKey != -1) {
-                            bucket = firstDeletedKey;
+                            bucketIndex = firstDeletedKey;
                         } else {
                             ++usedBuckets;
                         }
 
-                        table[bucket] = key;
-                        table[bucket + 1] = delta;
+                        table[bucketIndex] = key;
+                        table[bucketIndex + 1] = delta;
                         ++size;
                         return delta;
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
                         if (firstDeletedKey == -1) {
-                            firstDeletedKey = bucket;
+                            firstDeletedKey = bucketIndex;
                         }
                     }
 
-                    bucket = (bucket + 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
                 }
             } finally {
                 if (usedBuckets > resizeThresholdUp) {
@@ -585,15 +587,15 @@ public class ConcurrentLongLongHashMap {
 
         boolean compareAndSet(long key, long currentValue, long newValue, int keyHash) {
             long stamp = writeLock();
-            int bucket = signSafeMod(keyHash, capacity);
+            int bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
 
             // Remember where we find the first available spot
             int firstDeletedKey = -1;
 
             try {
                 while (true) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (key == storedKey) {
                         if (storedValue != currentValue) {
@@ -601,19 +603,19 @@ public class ConcurrentLongLongHashMap {
                         }
 
                         // Over write an old value for same key
-                        table[bucket + 1] = newValue;
+                        table[bucketIndex + 1] = newValue;
                         return true;
                     } else if (storedKey == EmptyKey) {
                         // Found an empty bucket. This means the key is not in the map.
                         if (currentValue == -1) {
                             if (firstDeletedKey != -1) {
-                                bucket = firstDeletedKey;
+                                bucketIndex = firstDeletedKey;
                             } else {
                                 ++usedBuckets;
                             }
 
-                            table[bucket] = key;
-                            table[bucket + 1] = newValue;
+                            table[bucketIndex] = key;
+                            table[bucketIndex + 1] = newValue;
                             ++size;
                             return true;
                         } else {
@@ -622,11 +624,11 @@ public class ConcurrentLongLongHashMap {
                     } else if (storedKey == DeletedKey) {
                         // The bucket contained a different deleted key
                         if (firstDeletedKey == -1) {
-                            firstDeletedKey = bucket;
+                            firstDeletedKey = bucketIndex;
                         }
                     }
 
-                    bucket = (bucket + 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
                 }
             } finally {
                 if (usedBuckets > resizeThresholdUp) {
@@ -645,17 +647,17 @@ public class ConcurrentLongLongHashMap {
 
         private long remove(long key, long value, int keyHash) {
             long stamp = writeLock();
-            int bucket = signSafeMod(keyHash, capacity);
+            int bucketIndex = signSafeMod(keyHash, capacity) * ITEM_SIZE;
 
             try {
                 while (true) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
                     if (key == storedKey) {
                         if (value == ValueNotFound || value == storedValue) {
                             --size;
 
-                            cleanBucket(bucket);
+                            cleanBucketIndex(bucketIndex);
                             return storedValue;
                         } else {
                             return ValueNotFound;
@@ -665,7 +667,7 @@ public class ConcurrentLongLongHashMap {
                         return ValueNotFound;
                     }
 
-                    bucket = (bucket + 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
                 }
 
             } finally {
@@ -696,15 +698,15 @@ public class ConcurrentLongLongHashMap {
             int removedCount = 0;
             try {
                 // Go through all the buckets for this section
-                for (int bucket = 0; size > 0 && bucket < table.length; bucket += 2) {
-                    long storedKey = table[bucket];
+                for (int bucketIndex = 0; size > 0 && bucketIndex < table.length; bucketIndex += ITEM_SIZE) {
+                    long storedKey = table[bucketIndex];
 
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
                         if (filter.test(storedKey)) {
                             // Removing item
                             --size;
                             ++removedCount;
-                            cleanBucket(bucket);
+                            cleanBucketIndex(bucketIndex);
                         }
                     }
                 }
@@ -734,16 +736,16 @@ public class ConcurrentLongLongHashMap {
             int removedCount = 0;
             try {
                 // Go through all the buckets for this section
-                for (int bucket = 0; size > 0 && bucket < table.length; bucket += 2) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                for (int bucketIndex = 0; size > 0 && bucketIndex < table.length; bucketIndex += ITEM_SIZE) {
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
                         if (filter.test(storedKey, storedValue)) {
                             // Removing item
                             --size;
                             ++removedCount;
-                            cleanBucket(bucket);
+                            cleanBucketIndex(bucketIndex);
                         }
                     }
                 }
@@ -767,25 +769,25 @@ public class ConcurrentLongLongHashMap {
             }
         }
 
-        private void cleanBucket(int bucket) {
-            int nextInArray = (bucket + 2) & (table.length - 1);
+        private void cleanBucketIndex(int bucketIndex) {
+            int nextInArray = (bucketIndex + ITEM_SIZE) & (table.length - 1);
             if (table[nextInArray] == EmptyKey) {
-                table[bucket] = EmptyKey;
-                table[bucket + 1] = ValueNotFound;
+                table[bucketIndex] = EmptyKey;
+                table[bucketIndex + 1] = ValueNotFound;
                 --usedBuckets;
 
                 // Cleanup all the buckets that were in `DeletedKey` state, so that we can reduce unnecessary expansions
-                bucket = (bucket - 2) & (table.length - 1);
-                while (table[bucket] == DeletedKey) {
-                    table[bucket] = EmptyKey;
-                    table[bucket + 1] = ValueNotFound;
+                bucketIndex = (bucketIndex - ITEM_SIZE) & (table.length - 1);
+                while (table[bucketIndex] == DeletedKey) {
+                    table[bucketIndex] = EmptyKey;
+                    table[bucketIndex + 1] = ValueNotFound;
                     --usedBuckets;
 
-                    bucket = (bucket - 2) & (table.length - 1);
+                    bucketIndex = (bucketIndex - ITEM_SIZE) & (table.length - 1);
                 }
             } else {
-                table[bucket] = DeletedKey;
-                table[bucket + 1] = ValueNotFound;
+                table[bucketIndex] = DeletedKey;
+                table[bucketIndex + 1] = ValueNotFound;
             }
         }
 
@@ -822,17 +824,17 @@ public class ConcurrentLongLongHashMap {
                 }
 
                 // Go through all the buckets for this section
-                for (int bucket = 0; bucket < table.length; bucket += 2) {
-                    long storedKey = table[bucket];
-                    long storedValue = table[bucket + 1];
+                for (int bucketIndex = 0; bucketIndex < table.length; bucketIndex += ITEM_SIZE) {
+                    long storedKey = table[bucketIndex];
+                    long storedValue = table[bucketIndex + 1];
 
                     if (!acquiredReadLock && !validate(stamp)) {
                         // Fallback to acquiring read lock
                         stamp = readLock();
                         acquiredReadLock = true;
 
-                        storedKey = table[bucket];
-                        storedValue = table[bucket + 1];
+                        storedKey = table[bucketIndex];
+                        storedValue = table[bucketIndex + 1];
                     }
 
                     if (storedKey != DeletedKey && storedKey != EmptyKey) {
@@ -848,11 +850,11 @@ public class ConcurrentLongLongHashMap {
 
         private void rehash(int newCapacity) {
             // Expand the hashmap
-            long[] newTable = new long[2 * newCapacity];
+            long[] newTable = new long[ITEM_SIZE * newCapacity];
             Arrays.fill(newTable, EmptyKey);
 
             // Re-hash table
-            for (int i = 0; i < table.length; i += 2) {
+            for (int i = 0; i < table.length; i += ITEM_SIZE) {
                 long storedKey = table[i];
                 long storedValue = table[i + 1];
                 if (storedKey != EmptyKey && storedKey != DeletedKey) {
@@ -870,7 +872,7 @@ public class ConcurrentLongLongHashMap {
         }
 
         private void shrinkToInitCapacity() {
-            long[] newTable = new long[2 * initCapacity];
+            long[] newTable = new long[ITEM_SIZE * initCapacity];
             Arrays.fill(newTable, EmptyKey);
 
             table = newTable;
@@ -884,19 +886,19 @@ public class ConcurrentLongLongHashMap {
         }
 
         private static void insertKeyValueNoLock(long[] table, int capacity, long key, long value) {
-            int bucket = signSafeMod(hash(key), capacity);
+            int bucketIndex = signSafeMod(hash(key), capacity) * ITEM_SIZE;
 
             while (true) {
-                long storedKey = table[bucket];
+                long storedKey = table[bucketIndex];
 
                 if (storedKey == EmptyKey) {
                     // The bucket is empty, so we can use it
-                    table[bucket] = key;
-                    table[bucket + 1] = value;
+                    table[bucketIndex] = key;
+                    table[bucketIndex + 1] = value;
                     return;
                 }
 
-                bucket = (bucket + 2) & (table.length - 1);
+                bucketIndex = (bucketIndex + ITEM_SIZE) & (table.length - 1);
             }
         }
     }
@@ -911,8 +913,14 @@ public class ConcurrentLongLongHashMap {
         return hash;
     }
 
-    static final int signSafeMod(long n, int max) {
-        return (int) (n & (max - 1)) << 1;
+    static final int signSafeMod(long dividend, int divisor) {
+        int mod = (int) (dividend % divisor);
+
+        if (mod < 0) {
+            mod += divisor;
+        }
+
+        return mod;
     }
 
     private static int alignToPowerOfTwo(int n) {
