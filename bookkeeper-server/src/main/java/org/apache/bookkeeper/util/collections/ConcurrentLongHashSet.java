@@ -303,7 +303,11 @@ public class ConcurrentLongHashSet {
         boolean contains(long item, int hash) {
             long stamp = tryOptimisticRead();
             boolean acquiredLock = false;
-            int bucket = signSafeMod(hash, capacity);
+
+            // add local variable here, so OutOfBound won't happen
+            long[] table = this.table;
+            // calculate table.length as capacity to avoid rehash changing capacity
+            int bucket = signSafeMod(hash, table.length);
 
             try {
                 while (true) {
@@ -324,7 +328,9 @@ public class ConcurrentLongHashSet {
                             stamp = readLock();
                             acquiredLock = true;
 
-                            bucket = signSafeMod(hash, capacity);
+                            // update local variable
+                            table = this.table;
+                            bucket = signSafeMod(hash, table.length);
                             storedItem = table[bucket];
                         }
 
