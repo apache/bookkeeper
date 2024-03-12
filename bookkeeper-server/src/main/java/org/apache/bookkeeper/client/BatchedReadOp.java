@@ -83,7 +83,7 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             LOG.error(
                     "Batch read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
                             + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, startEntryId + maxCount, sentToHosts, heardFromHosts, heardFromHostsBitSet,
+                    lh.getId(), startEntryId, startEntryId + maxCount - 1, sentToHosts, heardFromHosts, heardFromHostsBitSet,
                     BKException.getMessage(code), startEntryId, code);
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
