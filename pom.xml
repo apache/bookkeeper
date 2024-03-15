@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.17.0-SNAPSHOT</version>
+  <version>4.18.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -1181,7 +1181,7 @@
                   <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
                   <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
                   <formatPreferences>
-                    <pretty/>
+                    <pretty />
                   </formatPreferences>
                 </configuration>
               </execution>
