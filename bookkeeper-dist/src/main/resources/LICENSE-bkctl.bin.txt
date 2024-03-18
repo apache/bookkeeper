@@ -257,8 +257,6 @@ Apache Software License, Version 2.
 - lib/io.grpc-grpc-protobuf-1.54.1.jar [32]
 - lib/io.grpc-grpc-protobuf-lite-1.54.1.jar [32]
 - lib/io.grpc-grpc-services-1.54.1.jar [32]
-- lib/io.grpc-grpc-servlet-1.54.1.jar[33]
-- lib/io.grpc-grpc-servlet-jakarta-1.54.1.jar[33]
 - lib/io.grpc-grpc-stub-1.54.1.jar [32]
 - lib/io.grpc-grpc-testing-1.54.1.jar [32]
 - lib/io.grpc-grpc-xds-1.54.1.jar [32]
