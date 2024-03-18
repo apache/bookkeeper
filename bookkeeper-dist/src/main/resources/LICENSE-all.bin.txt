@@ -262,26 +262,30 @@ Apache Software License, Version 2.
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [26]
-- lib/com.google.api.grpc-proto-google-common-protos-2.0.1.jar [28]
-- lib/com.google.code.gson-gson-2.8.6.jar [29]
+- lib/com.google.api.grpc-proto-google-common-protos-2.9.0.jar [28]
+- lib/com.google.code.gson-gson-2.9.0.jar [29]
 - lib/io.opencensus-opencensus-api-0.28.0.jar [30]
-- lib/io.opencensus-opencensus-contrib-http-util-0.24.0.jar [30]
 - lib/io.opencensus-opencensus-proto-0.2.0.jar [30]
-- lib/io.grpc-grpc-all-1.42.1.jar [33]
-- lib/io.grpc-grpc-alts-1.42.1.jar [33]
-- lib/io.grpc-grpc-api-1.42.1.jar [33]
-- lib/io.grpc-grpc-auth-1.42.1.jar [33]
-- lib/io.grpc-grpc-context-1.42.1.jar [33]
-- lib/io.grpc-grpc-core-1.42.1.jar [33]
-- lib/io.grpc-grpc-grpclb-1.42.1.jar [33]
-- lib/io.grpc-grpc-netty-1.42.1.jar [33]
-- lib/io.grpc-grpc-protobuf-1.42.1.jar [33]
-- lib/io.grpc-grpc-protobuf-lite-1.42.1.jar [33]
-- lib/io.grpc-grpc-services-1.42.1.jar [33]
-- lib/io.grpc-grpc-stub-1.42.1.jar [33]
-- lib/io.grpc-grpc-testing-1.42.1.jar [33]
-- lib/io.grpc-grpc-xds-1.42.1.jar [33]
-- lib/io.grpc-grpc-rls-1.42.1.jar[33]
+- lib/io.opencensus-opencensus-contrib-http-util-0.28.0.jar [30]
+- lib/io.grpc-grpc-all-1.54.1.jar [33]
+- lib/io.grpc-grpc-alts-1.54.1.jar [33]
+- lib/io.grpc-grpc-api-1.54.1.jar [33]
+- lib/io.grpc-grpc-auth-1.54.1.jar [33]
+- lib/io.grpc-grpc-context-1.54.1.jar [33]
+- lib/io.grpc-grpc-core-1.54.1.jar [33]
+- lib/io.grpc-grpc-grpclb-1.54.1.jar [33]
+- lib/io.grpc-grpc-netty-1.54.1.jar [33]
+- lib/io.grpc-grpc-protobuf-1.54.1.jar [33]
+- lib/io.grpc-grpc-protobuf-lite-1.54.1.jar [33]
+- lib/io.grpc-grpc-services-1.54.1.jar [33]
+- lib/io.grpc-grpc-servlet-1.54.1.jar[33]
+- lib/io.grpc-grpc-servlet-jakarta-1.54.1.jar[33]
+- lib/io.grpc-grpc-stub-1.54.1.jar [33]
+- lib/io.grpc-grpc-testing-1.54.1.jar [33]
+- lib/io.grpc-grpc-xds-1.54.1.jar [33]
+- lib/io.grpc-grpc-rls-1.54.1.jar[33]
+- lib/io.grpc-grpc-servlet-1.54.1.jar[33]
+- lib/io.grpc-grpc-servlet-jakarta-1.54.1.jar[33]
 - lib/org.apache.curator-curator-client-5.1.0.jar [34]
 - lib/org.apache.curator-curator-framework-5.1.0.jar [34]
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [34]
@@ -293,16 +297,16 @@ Apache Software License, Version 2.
 - lib/org.apache.httpcomponents-httpcore-4.4.13.jar [40]
 - lib/org.apache.thrift-libthrift-0.14.2.jar [41]
 - lib/com.google.android-annotations-4.1.1.4.jar [42]
-- lib/com.google.http-client-google-http-client-1.38.0.jar [43]
-- lib/com.google.http-client-google-http-client-jackson2-1.38.0.jar [43]
-- lib/com.google.auto.value-auto-value-annotations-1.7.4.jar [44]
+- lib/com.google.http-client-google-http-client-1.41.0.jar [43]
+- lib/com.google.http-client-google-http-client-gson-1.41.0.jar [43]
+- lib/com.google.auto.value-auto-value-annotations-1.9.jar [44]
 - lib/com.google.j2objc-j2objc-annotations-1.3.jar [45]
-- lib/com.google.re2j-re2j-1.5.jar [46]
+- lib/com.google.re2j-re2j-1.6.jar [46]
 - lib/io.dropwizard.metrics-metrics-core-3.2.5.jar [47]
 - lib/io.dropwizard.metrics-metrics-graphite-3.2.5.jar [47]
 - lib/io.dropwizard.metrics-metrics-jvm-3.2.5.jar [47]
-- lib/io.perfmark-perfmark-api-0.23.0.jar [48]
-- lib/org.conscrypt-conscrypt-openjdk-uber-2.5.1.jar [49]
+- lib/io.perfmark-perfmark-api-0.25.0.jar [48]
+- lib/org.conscrypt-conscrypt-openjdk-uber-2.5.2.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.7.jar [50]
 - lib/org.slf4j-slf4j-api-1.7.36.jar [51]
 - lib/org.slf4j-slf4j-reload4j-1.7.36.jar [51]
@@ -627,13 +631,13 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.19.6.jar
-Source available at https://github.com/google/protobuf/tree/v3.19.6
+  - lib/com.google.protobuf-protobuf-java-3.21.9.jar
+Source available at https://github.com/google/protobuf/tree/v3.21.9
 For details, see deps/protobuf-3.14.0/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.19.6.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.19.6
+  - lib/com.google.protobuf-protobuf-java-util-3.21.9.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.21.9
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
@@ -643,12 +647,12 @@ Bundled as lib/javax.servlet-javax.servlet-api-4.0.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/4.0.0
 ------------------------------------------------------------------------------------
 This product bundles the Google Auth Library, which is available under a "3-clause BSD"
-license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
+license. For details, see deps/google-auth-library-credentials-1.4.0/LICENSE
 
 Bundled as
-  - lib/com.google.auth-google-auth-library-credentials-0.22.2.jar
-  - lib/com.google.auth-google-auth-library-oauth2-http-0.22.2.jar
-Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v0.22.2
+  - lib/com.google.auth-google-auth-library-credentials-1.4.0.jar
+  - lib/com.google.auth-google-auth-library-oauth2-http-1.4.0.jar
+Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v1.4.0
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library.
 For license details, see deps/bouncycastle-1.0.2/LICENSE.html
