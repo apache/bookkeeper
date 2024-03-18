@@ -35,6 +35,8 @@ import org.apache.bookkeeper.stats.StatsProvider;
  */
 public class MetricsService implements HttpEndpointService {
 
+    public static final String PROMETHEUS_CONTENT_TYPE_004 = "text/plain; version=0.0.4; charset=utf-8";
+
     private final ServerConfiguration conf;
     private final StatsProvider statsProvider;
 
@@ -65,6 +67,7 @@ public class MetricsService implements HttpEndpointService {
             statsProvider.writeAllMetrics(writer);
             writer.flush();
             response.setCode(StatusCode.OK);
+            response.setContentType(PROMETHEUS_CONTENT_TYPE_004);
             response.setBody(writer.getBuffer().toString());
         } catch (UnsupportedOperationException uoe) {
             response.setCode(StatusCode.INTERNAL_ERROR);
