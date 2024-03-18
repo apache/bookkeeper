@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.http.vertx;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -57,6 +58,9 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
             response = new ErrorHttpService().handle(request);
         }
         httpResponse.setStatusCode(response.getStatusCode());
+        if (response.getContentType() != null) {
+            httpResponse.putHeader(HttpHeaderNames.CONTENT_TYPE, response.getContentType());
+        }
         httpResponse.end(response.getBody());
     }
 
