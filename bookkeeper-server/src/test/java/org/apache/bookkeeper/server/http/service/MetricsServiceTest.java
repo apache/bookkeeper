@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
@@ -55,6 +56,7 @@ public class MetricsServiceTest {
         HttpServiceRequest request = new HttpServiceRequest().setMethod(Method.PUT);
         HttpServiceResponse response = service.handle(request);
         assertEquals(StatusCode.FORBIDDEN.getValue(), response.getStatusCode());
+        assertNull(response.getContentType());
         assertEquals(
             "PUT is forbidden. Should be GET method",
             response.getBody());
@@ -66,6 +68,7 @@ public class MetricsServiceTest {
         HttpServiceRequest request = new HttpServiceRequest().setMethod(Method.GET);
         HttpServiceResponse response = service.handle(request);
         assertEquals(StatusCode.INTERNAL_ERROR.getValue(), response.getStatusCode());
+        assertNull(response.getContentType());
         assertEquals(
             "Stats provider is not enabled. Please enable it by set statsProviderClass"
                 + " on bookie configuration",
@@ -86,6 +89,7 @@ public class MetricsServiceTest {
         HttpServiceResponse response = service.handle(request);
 
         assertEquals(StatusCode.OK.getValue(), response.getStatusCode());
+        assertEquals(MetricsService.PROMETHEUS_CONTENT_TYPE_004, response.getContentType());
         assertEquals(content, response.getBody());
     }
 
@@ -98,6 +102,7 @@ public class MetricsServiceTest {
         HttpServiceResponse response = service.handle(request);
 
         assertEquals(StatusCode.INTERNAL_ERROR.getValue(), response.getStatusCode());
+        assertNull(response.getContentType());
         assertEquals("Exceptions are thrown when exporting metrics : write-metrics-exception",
             response.getBody());
     }
@@ -111,6 +116,7 @@ public class MetricsServiceTest {
         HttpServiceResponse response = service.handle(request);
 
         assertEquals(StatusCode.INTERNAL_ERROR.getValue(), response.getStatusCode());
+        assertNull(response.getContentType());
         assertEquals("Currently stats provider doesn't support exporting metrics in http service",
             response.getBody());
     }
