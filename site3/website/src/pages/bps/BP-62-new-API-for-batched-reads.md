@@ -44,24 +44,19 @@ that takes into account the expected count and size of entries.
 ## BookKeeper Client API
 1. The new APIs will be added to BookieClient.java
 ```java
-default void readEntries(BookieId address, long ledgerId, long startEntryId,
+default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
         int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
         int flags) {
-        readEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, null);
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, null);
         }
-default void readEntries(BookieId address, long ledgerId, long startEntryId,
+default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
         int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
         int flags, byte[] masterKey) {
-        readEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, masterKey, false);
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, masterKey, false);
         }
-        
-        void readEntries(BookieId address, long ledgerId, long startEntryId,
+        void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
         int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
         int flags, byte[] masterKey, boolean allowFastFail);
-        
-        void readEntiesWithFallback(BookieId address, long ledgerId, long startEntryId,
-        int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
-        int flags, byte[] masterKey, boolean allowFastFail) 
 ```
 2. The new class BatchedReadEntryCallback will be added to BookkeeperInternalCallbacks.java
 ```java
@@ -71,17 +66,17 @@ public interface BatchedReadEntryCallback {
 ```
 3. The new APIs will be added to ReadHandle.java
 ```java
-CompletableFuture<LedgerEntries> readAsync(long startEntry, int maxCount, long maxSize);
-
-default LedgerEntries read(long startEntry, int maxCount, long maxSize) throws BKException, InterruptedException {
-        return FutureUtils.result(readAsync(startEntry, maxCount, maxSize),
-        BKException.HANDLER);
+    default CompletableFuture<LedgerEntries> batchReadAsync(long startEntry, int maxCount, long maxSize);
+    
+default LedgerEntries batchRead(long startEntry, int maxCount, long maxSize)
+        throws BKException, InterruptedException {
+        return FutureUtils.result(batchReadAsync(startEntry, maxCount, maxSize), BKException.HANDLER);
         }
 ```
 ## Wire protocol changes
 
 In BookKeeper, the V2 protocol uses a custom encoding format. So we need to handle the data encoding and decoding. 
-The V3 protocol uses the ProtoBuf for encoding and decoding.
+The V3 protocol uses the ProtoBuf for encoding and decoding.(Not support now)
 
 ### V2 Protocol
 
