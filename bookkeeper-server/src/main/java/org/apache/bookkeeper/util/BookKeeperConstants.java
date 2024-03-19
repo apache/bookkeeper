@@ -48,6 +48,7 @@ public class BookKeeperConstants {
     public static final String DEFAULT_ZK_LEDGERS_ROOT_PATH = "/ledgers";
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
+    public static final String INSTANCEID_LOCK = "INSTANCEID_LOCK";
 
     /**
      * Set the max log size limit to 1GB. It makes extra room for entry log file before
