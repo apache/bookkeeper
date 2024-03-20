@@ -95,6 +95,12 @@ public class BufferedReadChannel extends BufferedChannelBase {
         if (pos >= eof) {
             return -1;
         }
+
+        // protect negative position read
+        if (pos < 0) {
+            throw new IllegalArgumentException("Negative position pos:" + pos);
+        }
+
         while (length > 0) {
             // Check if the data is in the buffer, if so, copy it.
             if (readBufferStartPosition <= currentPosition
@@ -109,14 +115,25 @@ public class BufferedReadChannel extends BufferedChannelBase {
                 // here we reached eof.
                 break;
             } else {
-                // We don't have it in the buffer, so put necessary data in the buffer
-                readBufferStartPosition = currentPosition;
                 int readBytes = 0;
-                if ((readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
-                        currentPosition)) <= 0) {
+                try {
+                    // We don't have it in the buffer, so put necessary data in the buffer
+                    readBufferStartPosition = currentPosition;
+                    readBytes = validateAndGetFileChannel()
+                            .read(readBuffer.internalNioBuffer(0, readCapacity), readBufferStartPosition);
+
+                    readBuffer.writerIndex(readBytes);
+                } catch (Exception e) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
+                    throw e;
+                }
+
+                if (readBytes < 0) {
+                    readBufferStartPosition = Long.MIN_VALUE;
+                    readBuffer.clear();
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
-                readBuffer.writerIndex(readBytes);
             }
         }
         return (int) (currentPosition - pos);
