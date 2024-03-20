@@ -92,9 +92,18 @@ echo 'RC_TAG                    = $RC_TAG'
 echo
 echo 'Before executing any release scripts, PLEASE configure your git to cache your github password:'
 echo
+echo ' // take a backup of ~/.gitconfig, remember to restore it after the release process'
+echo ' \$ cp ~/.gitconfig ~/.gitconfig.bak.\$(date -I)'
+echo ' // remove any previous credential helper configuration'
+echo ' \$ git config --global -l --name-only | grep credential | uniq | xargs -i{} git config --global --unset-all {}'
+echo ' // fix permission warning with git in docker on MacOS'
+echo ' \$ git config --global safe.directory $PWD'
 echo ' // configure credential helper to cache your github password for 1 hr during the whole release process '
 echo ' \$ git config --global credential.helper \"cache --timeout=3600\" '
-echo ' \$ git push apache --dry-run '
+echo ' // in another terminal get a GitHub token to be used as a password for the release process, assuming you are using GitHub CLI.'
+echo ' \$ gh auth token '
+echo ' // attempt to push to apache remote to cache your password'
+echo ' \$ git push apache HEAD:test --dry-run '
 echo
 bash
 "
