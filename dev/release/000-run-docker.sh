@@ -50,7 +50,8 @@ fi
 docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
 FROM --platform=linux/amd64 ${IMAGE_NAME}
 RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
-  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}
+  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME} && \
+  mkdir -p /gpg && chown ${USER_ID}:${GROUP_ID} /gpg && chmod 700 /gpg
 ENV  HOME /home/${USER_NAME}
 UserSpecificDocker
 
@@ -72,7 +73,13 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
 RC_TAG="v${VERSION}-rc${RC_NUM}"
 
 CMD="
-gpg-agent --daemon --pinentry-program /usr/bin/pinentry --homedir \$HOME/.gnupg --use-standard-socket
+# copy ~/.gnupg to /gpg in the container to workaround issue with permissions
+cp -Rdp \$HOME/.gnupg /gpg
+# remove any previous sockets
+rm -rf /gpg/.gnupg/S.*
+# set GNUPGHOME to /gpg/.gnupg
+export GNUPGHOME=/gpg/.gnupg
+gpg-agent --daemon --pinentry-program /usr/bin/pinentry
 echo
 echo 'Welcome to Apache BookKeeper Release Build Env'
 echo
