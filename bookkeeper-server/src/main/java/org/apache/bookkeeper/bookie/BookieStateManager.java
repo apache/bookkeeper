@@ -130,6 +130,12 @@ public class BookieStateManager implements StateManager {
         this.rm = rm;
         if (this.rm != null) {
             rm.addRegistrationListener(() -> {
+                LOG.info("Received registration expired event");
+                if (conf.getRegistrationSessionExpiredPolicy() == RegistrationSessionExpiredPolicy.shutdown) {
+                    LOG.warn("The session with registration service was lost. Shutting down.");
+                    shutdownHandler.shutdown(ExitCode.BOOKIE_EXCEPTION);
+                    return;
+                }
                 log.info("Trying to re-register the bookie");
                 forceToUnregistered();
                 // schedule a re-register operation
