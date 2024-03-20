@@ -303,8 +303,12 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected void resumeBookieWriteAcks(BookieId address) {
-        suspendedBookiesForForceLedgerAcks.remove(address);
-        List<Runnable> pendingResponses = deferredBookieForceLedgerResponses.remove(address);
+        List<Runnable> pendingResponses;
+        synchronized (address) {
+            suspendedBookiesForForceLedgerAcks.remove(address);
+            pendingResponses = deferredBookieForceLedgerResponses.remove(address);
+        }
+
         if (pendingResponses != null) {
             pendingResponses.forEach(Runnable::run);
         }
@@ -656,11 +660,16 @@ public abstract class MockBookKeeperTestCase {
                     callback.forceLedgerComplete(BKException.Code.OK, ledgerId, bookieSocketAddress, ctx);
                 });
             };
-            if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
-                List<Runnable> queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
-                        (k) -> new CopyOnWriteArrayList<>());
-                queue.add(activity);
-            } else {
+            List<Runnable> queue = null;
+            synchronized (bookieSocketAddress) {
+                if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
+                    queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
+                            (k) -> new CopyOnWriteArrayList<>());
+                    queue.add(activity);
+                }
+            }
+
+            if (queue == null) {
                 activity.run();
             }
             return null;
