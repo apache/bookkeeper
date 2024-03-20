@@ -99,7 +99,13 @@ public class DNS {
             throw new NamingException("PTR attribute value is null");
         }
 
-        return ptrAttr.get().toString();
+        String ptr = ptrAttr.get().toString();
+        int ptrLen = ptr.length();
+        if (ptr.charAt(ptrLen - 1) == '.') {
+            ptr = ptr.substring(0, ptrLen - 1);
+        }
+
+        return ptr;
     }
 
     /**
@@ -234,8 +240,12 @@ public class DNS {
         Vector<String> hosts = new Vector<String>();
         for (int ctr = 0; ctr < ips.length; ctr++) {
             try {
-                hosts.add(reverseDns(InetAddress.getByName(ips[ctr]),
-                        nameserver));
+                InetAddress inetAddress = InetAddress.getByName(ips[ctr]);
+                if (inetAddress.isLoopbackAddress()) {
+                    hosts.add(inetAddress.getHostName());
+                } else {
+                    hosts.add(reverseDns(inetAddress, nameserver));
+                }
             } catch (UnknownHostException ignored) {
             } catch (NamingException ignored) {
             }
