@@ -304,6 +304,9 @@ public abstract class MockBookKeeperTestCase {
 
     protected void resumeBookieWriteAcks(BookieId address) {
         List<Runnable> pendingResponses;
+
+        // why use the BookieId instance as the object monitor? there is a date race problem if not
+        // see https://github.com/apache/bookkeeper/issues/4200
         synchronized (address) {
             suspendedBookiesForForceLedgerAcks.remove(address);
             pendingResponses = deferredBookieForceLedgerResponses.remove(address);
@@ -661,6 +664,7 @@ public abstract class MockBookKeeperTestCase {
                 });
             };
             List<Runnable> queue = null;
+
             synchronized (bookieSocketAddress) {
                 if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
                     queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
