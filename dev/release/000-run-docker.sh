@@ -79,8 +79,7 @@ cp -Rdp \$HOME/.gnupg /gpg
 rm -rf /gpg/.gnupg/S.*
 # set GNUPGHOME to /gpg/.gnupg
 export GNUPGHOME=/gpg/.gnupg
-echo 'pinentry-mode loopback' >> /gpg/.gnupg/gpg.conf
-gpg-agent --daemon --pinentry-program /usr/bin/pinentry --allow-loopback-pinentry
+gpg-agent --daemon --pinentry-program /usr/bin/pinentry --allow-loopback-pinentry --default-cache-ttl 3600
 echo
 echo 'Welcome to Apache BookKeeper Release Build Env'
 echo
@@ -112,6 +111,8 @@ echo ' // in another terminal get a GitHub token to be used as a password for th
 echo ' \$ gh auth token '
 echo ' // attempt to push to apache remote to cache your password'
 echo ' \$ git push apache HEAD:test --dry-run '
+echo ' // cache gpg password by signing a dummy file'
+echo ' \$ echo dummy > /tmp/dummy && gpg -sa /tmp/dummy'
 echo
 bash
 "
