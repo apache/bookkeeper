@@ -79,7 +79,8 @@ cp -Rdp \$HOME/.gnupg /gpg
 rm -rf /gpg/.gnupg/S.*
 # set GNUPGHOME to /gpg/.gnupg
 export GNUPGHOME=/gpg/.gnupg
-gpg-agent --daemon --pinentry-program /usr/bin/pinentry
+echo 'pinentry-mode loopback' >> /gpg/.gnupg/gpg.conf
+gpg-agent --daemon --pinentry-program /usr/bin/pinentry --allow-loopback-pinentry
 echo
 echo 'Welcome to Apache BookKeeper Release Build Env'
 echo
