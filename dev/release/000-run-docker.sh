@@ -50,7 +50,9 @@ fi
 docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
 FROM --platform=linux/amd64 ${IMAGE_NAME}
 RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
-  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}
+  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME} && \
+  ([ "$(dirname "$HOME")" -eq "/home" ] || ln -s /home $(dirname "$HOME")) && \
+  mkdir -p /gpg && chown ${USER_ID}:${GROUP_ID} /gpg && chmod 700 /gpg
 ENV  HOME /home/${USER_NAME}
 UserSpecificDocker
 
@@ -72,7 +74,13 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
 RC_TAG="v${VERSION}-rc${RC_NUM}"
 
 CMD="
-gpg-agent --daemon --pinentry-program /usr/bin/pinentry --homedir \$HOME/.gnupg --use-standard-socket
+# copy ~/.gnupg to /gpg in the container to workaround issue with permissions
+cp -Rdp \$HOME/.gnupg /gpg
+# remove any previous sockets
+rm -rf /gpg/.gnupg/S.*
+# set GNUPGHOME to /gpg/.gnupg
+export GNUPGHOME=/gpg/.gnupg
+gpg-agent --daemon --pinentry-program /usr/bin/pinentry --allow-loopback-pinentry --default-cache-ttl 3600
 echo
 echo 'Welcome to Apache BookKeeper Release Build Env'
 echo
@@ -92,9 +100,21 @@ echo 'RC_TAG                    = $RC_TAG'
 echo
 echo 'Before executing any release scripts, PLEASE configure your git to cache your github password:'
 echo
+echo ' // take a backup of ~/.gitconfig, remember to restore it after the release process'
+echo ' \$ cp ~/.gitconfig ~/.gitconfig.bak.\$(date -I)'
+echo ' // remove any previous credential helper configuration'
+echo ' \$ git config --global -l --name-only | grep credential | uniq | xargs -i{} git config --global --unset-all {}'
+echo ' // fix permission warning with git in docker on MacOS'
+echo ' \$ git config --global --add safe.directory $PWD'
+echo ' \$ git config --global --add safe.directory \$PWD'
 echo ' // configure credential helper to cache your github password for 1 hr during the whole release process '
 echo ' \$ git config --global credential.helper \"cache --timeout=3600\" '
-echo ' \$ git push apache --dry-run '
+echo ' // in another terminal get a GitHub token to be used as a password for the release process, assuming you are using GitHub CLI.'
+echo ' \$ gh auth token '
+echo ' // attempt to push to apache remote to cache your password'
+echo ' \$ git push apache HEAD:test --dry-run '
+echo ' // cache gpg password by signing a dummy file'
+echo ' \$ echo dummy > /tmp/dummy && gpg -sa /tmp/dummy'
 echo
 bash
 "
