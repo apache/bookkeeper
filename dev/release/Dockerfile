@@ -18,6 +18,8 @@
 #
 
 FROM --platform=linux/amd64 maven:3.9.0-eclipse-temurin-8
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+  apt-get dist-upgrade -y && \
+  apt-get install -y g++ cmake gnupg2 vim subversion less zip unzip
 
-RUN apt-get update
-RUN apt-get install -y g++ cmake gnupg2 vim subversion
