@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>bookkeeper-dist-server</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Apache BookKeeper :: Dist (Server)</name>
 
   <dependencies>

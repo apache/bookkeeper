@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>bkctl</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Apache BookKeeper :: Dist (Bkctl)</name>
 
   <dependencies>

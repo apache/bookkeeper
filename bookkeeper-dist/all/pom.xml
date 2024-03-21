@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>bookkeeper-dist-all</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Apache BookKeeper :: Dist (All)</name>
 
   <dependencies>
