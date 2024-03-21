@@ -51,6 +51,7 @@ docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
 FROM --platform=linux/amd64 ${IMAGE_NAME}
 RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
   useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME} && \
+  ([ "$(dirname "$HOME")" -eq "/home" ] || ln -s /home $(dirname "$HOME")) && \
   mkdir -p /gpg && chown ${USER_ID}:${GROUP_ID} /gpg && chmod 700 /gpg
 ENV  HOME /home/${USER_NAME}
 UserSpecificDocker
@@ -104,7 +105,8 @@ echo ' \$ cp ~/.gitconfig ~/.gitconfig.bak.\$(date -I)'
 echo ' // remove any previous credential helper configuration'
 echo ' \$ git config --global -l --name-only | grep credential | uniq | xargs -i{} git config --global --unset-all {}'
 echo ' // fix permission warning with git in docker on MacOS'
-echo ' \$ git config --global safe.directory $PWD'
+echo ' \$ git config --global --add safe.directory $PWD'
+echo ' \$ git config --global --add safe.directory \$PWD'
 echo ' // configure credential helper to cache your github password for 1 hr during the whole release process '
 echo ' \$ git config --global credential.helper \"cache --timeout=3600\" '
 echo ' // in another terminal get a GitHub token to be used as a password for the release process, assuming you are using GitHub CLI.'
