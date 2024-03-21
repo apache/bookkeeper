@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>bkctl</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Apache BookKeeper :: Dist (Bkctl)</name>
 
   <dependencies>
@@ -49,8 +49,8 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <finalName>bkctl-${project.version}</finalName>
           <attach>true</attach>
@@ -72,7 +72,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>${maven-deploy-plugin.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>
