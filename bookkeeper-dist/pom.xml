@@ -37,8 +37,8 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
         <executions>
           <execution>
             <id>default-jar</id>
@@ -47,8 +47,8 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <finalName>bookkeeper-${project.version}</finalName>
           <descriptors>

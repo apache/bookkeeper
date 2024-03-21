@@ -52,13 +52,11 @@
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
-        <version>${nar-maven-plugin.version}</version>
         <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -103,7 +101,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <executions>
                <execution>
@@ -140,7 +137,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
@@ -175,7 +171,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
@@ -212,7 +207,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>

@@ -58,7 +58,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -119,8 +118,8 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
         <configuration>
           <filesets>
             <fileset>
