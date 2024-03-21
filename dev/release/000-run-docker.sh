@@ -56,7 +56,7 @@ UserSpecificDocker
 
 BOOKKEEPER_ROOT=${SCRIPT_DIR}/../..
 
-VERSION=`cd $BOOKKEEPER_ROOT && mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | sed 's/^\(.*\)-SNAPSHOT/\1/'`
+VERSION=`cd $BOOKKEEPER_ROOT && mvn initialize help:evaluate -Dexpression=project.version -pl . -q -DforceStdout | grep -Ev '(^\[|Download\w+:)' | sed 's/^\(.*\)-SNAPSHOT/\1/'`
 versions_list=(`echo $VERSION | tr '.' ' '`)
 major_version=${versions_list[0]}
 minor_version=${versions_list[1]}
