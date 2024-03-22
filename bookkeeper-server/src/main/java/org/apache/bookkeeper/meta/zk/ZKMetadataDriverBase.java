@@ -165,7 +165,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     protected void initialize(AbstractConfiguration<?> conf,
                               StatsLogger statsLogger,
                               RetryPolicy zkRetryPolicy,
-                              Optional<Object> optionalCtx) throws MetadataException {
+                              Optional<Object> optionalCtx,
+                              boolean zkRetryExpired) throws MetadataException {
         this.conf = conf;
         this.acls = ZkUtils.getACLs(conf);
 
@@ -213,6 +214,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     .operationRetryPolicy(zkRetryPolicy)
                     .requestRateLimit(conf.getZkRequestRateLimit())
                     .statsLogger(statsLogger)
+                    .retryExpired(zkRetryExpired)
                     .build();
 
                 if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {

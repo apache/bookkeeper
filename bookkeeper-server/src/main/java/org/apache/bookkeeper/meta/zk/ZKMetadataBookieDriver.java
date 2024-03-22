@@ -59,7 +59,8 @@ public class ZKMetadataBookieDriver
             statsLogger.scope(BOOKIE_SCOPE),
             new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
                         conf.getZkRetryBackoffMaxMs(), conf.getZkRetryBackoffMaxRetries()),
-            Optional.empty());
+            Optional.empty(),
+            false);
         this.serverConf = conf;
         this.statsLogger = statsLogger;
         return this;

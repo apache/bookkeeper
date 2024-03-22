@@ -77,6 +77,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
     private final String connectString;
     private final int sessionTimeoutMs;
     private final boolean allowReadOnlyMode;
+    private final boolean retryExpired;
 
     // state for the zookeeper client
     private final AtomicReference<ZooKeeper> zk = new AtomicReference<ZooKeeper>();
@@ -173,6 +174,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
         int retryExecThreadCount = DEFAULT_RETRY_EXECUTOR_THREAD_COUNT;
         double requestRateLimit = 0;
         boolean allowReadOnlyMode = false;
+        boolean retryExpired = true;
 
         private Builder() {}
 
@@ -221,6 +223,11 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
             return this;
         }
 
+        public Builder retryExpired(boolean retryExpired) {
+            this.retryExpired = retryExpired;
+            return this;
+        }
+
         public ZooKeeperClient build() throws IOException, KeeperException, InterruptedException {
             checkNotNull(connectString);
             checkArgument(sessionTimeoutMs > 0);
@@ -253,7 +260,8 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                     statsLogger,
                     retryExecThreadCount,
                     requestRateLimit,
-                    allowReadOnlyMode
+                    allowReadOnlyMode,
+                    retryExpired
             );
             // Wait for connection to be established.
             try {
@@ -282,11 +290,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                     StatsLogger statsLogger,
                     int retryExecThreadCount,
                     double rate,
-                    boolean allowReadOnlyMode) throws IOException {
+                    boolean allowReadOnlyMode,
+                    boolean retryExpired) throws IOException {
         super(connectString, sessionTimeoutMs, watcherManager, allowReadOnlyMode);
         this.connectString = connectString;
         this.sessionTimeoutMs = sessionTimeoutMs;
         this.allowReadOnlyMode =  allowReadOnlyMode;
+        this.retryExpired = retryExpired;
         this.watcherManager = watcherManager;
         this.connectRetryPolicy = connectRetryPolicy;
         this.operationRetryPolicy = operationRetryPolicy;
@@ -356,6 +366,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
         logger.info("ZooKeeper session {} is expired from {}.",
                 Long.toHexString(getSessionId()), connectString);
+
+        if (!retryExpired) {
+            logger.warn("ZooKeeper session expired retries have been disabled");
+            return;
+        }
+
+
         try {
             connectExecutor.submit(clientCreator);
         } catch (RejectedExecutionException ree) {

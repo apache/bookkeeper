@@ -67,7 +67,8 @@ public class ZKMetadataClientDriver
                 conf.getZkTimeout(),
                 conf.getZkTimeout(),
                 conf.getZkRetryBackoffMaxRetries()),
-            optionalCtx);
+            optionalCtx,
+            true);
         this.statsLogger = statsLogger;
         this.clientConf = conf;
         this.scheduler = scheduler;
