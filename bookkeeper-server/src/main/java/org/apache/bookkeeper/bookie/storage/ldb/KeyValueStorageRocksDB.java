@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.rocksdb.BlockBasedTableConfig;
@@ -74,6 +76,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
     private final RocksDB db;
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private volatile boolean closed = false;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
 
@@ -285,41 +291,57 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void close() throws IOException {
-        db.close();
-        if (cache != null) {
-            cache.close();
+        writeLock.lock();
+        try {
+            closed = true;
+            db.close();
+            if (cache != null) {
+                cache.close();
+            }
+            if (options != null) {
+                options.close();
+            }
+            optionSync.close();
+            optionDontSync.close();
+            optionCache.close();
+            optionDontCache.close();
+            emptyBatch.close();
+        } finally {
+            writeLock.unlock();
         }
-        if (options != null) {
-            options.close();
-        }
-        optionSync.close();
-        optionDontSync.close();
-        optionCache.close();
-        optionDontCache.close();
-        emptyBatch.close();
     }
 
     @Override
     public void put(byte[] key, byte[] value) throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             db.put(optionDontSync, key, value);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB put", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public byte[] get(byte[] key) throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             return db.get(key);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB get", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public int get(byte[] key, byte[] value) throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             int res = db.get(key, value);
             if (res == RocksDB.NOT_FOUND) {
                 return -1;
@@ -330,19 +352,27 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             }
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB get", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getFloor(byte[] key) throws IOException {
-        try (Slice upperBound = new Slice(key);
+        readLock.lock();
+        try {
+            throwIfClosed();
+            try (Slice upperBound = new Slice(key);
                  ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
                  RocksIterator iterator = db.newIterator(option)) {
-            iterator.seekToLast();
-            if (iterator.isValid()) {
-                return new EntryWrapper(iterator.key(), iterator.value());
+                iterator.seekToLast();
+                if (iterator.isValid()) {
+                    return new EntryWrapper(iterator.key(), iterator.value());
+                }
             }
+        } finally {
+            readLock.unlock();
         }
         return null;
     }
@@ -350,24 +380,34 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public Entry<byte[], byte[]> getCeil(byte[] key) throws IOException {
-        try (RocksIterator iterator = db.newIterator(optionCache)) {
-            // Position the iterator on the record whose key is >= to the supplied key
-            iterator.seek(key);
+        readLock.lock();
+        try {
+            throwIfClosed();
+            try (RocksIterator iterator = db.newIterator(optionCache)) {
+                // Position the iterator on the record whose key is >= to the supplied key
+                iterator.seek(key);
 
-            if (iterator.isValid()) {
-                return new EntryWrapper(iterator.key(), iterator.value());
-            } else {
-                return null;
+                if (iterator.isValid()) {
+                    return new EntryWrapper(iterator.key(), iterator.value());
+                } else {
+                    return null;
+                }
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public void delete(byte[] key) throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             db.delete(optionDontSync, key);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB delete", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -378,15 +418,20 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void compact(byte[] firstKey, byte[] lastKey) throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             db.compactRange(firstKey, lastKey);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB compact", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public void compact() throws IOException {
+        readLock.lock();
         try {
             final long start = System.currentTimeMillis();
             final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
@@ -403,6 +448,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                     db.getName(), end - start, oriRocksDBSize - rocksDBSize, rocksDBFileCount, rocksDBSize);
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB compact", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -417,109 +464,195 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void sync() throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             db.write(optionSync, emptyBatch);
         } catch (RocksDBException e) {
             throw new IOException(e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
-    public CloseableIterator<byte[]> keys() {
-        final RocksIterator iterator = db.newIterator(optionCache);
-        iterator.seekToFirst();
+    public CloseableIterator<byte[]> keys() throws IOException {
+        readLock.lock();
+        try {
+            throwIfClosed();
+            final RocksIterator iterator = db.newIterator(optionCache);
+            iterator.seekToFirst();
 
-        return new CloseableIterator<byte[]>() {
-            @Override
-            public boolean hasNext() {
-                return iterator.isValid();
-            }
+            return new CloseableIterator<byte[]>() {
+                @Override
+                public boolean hasNext() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        return iterator.isValid();
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public byte[] next() {
-                checkState(iterator.isValid());
-                byte[] key = iterator.key();
-                iterator.next();
-                return key;
-            }
+                @Override
+                public byte[] next() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        checkState(iterator.isValid());
+                        byte[] key = iterator.key();
+                        iterator.next();
+                        return key;
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public void close() {
-                iterator.close();
-            }
-        };
+                @Override
+                public void close() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        iterator.close();
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
+            };
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
-    public CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) {
-        final Slice upperBound = new Slice(lastKey);
-        final ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
-        final RocksIterator iterator = db.newIterator(option);
-        iterator.seek(firstKey);
+    public CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) throws IOException {
+        readLock.lock();
+        try {
+            throwIfClosed();
+            final Slice upperBound = new Slice(lastKey);
+            final ReadOptions option = new ReadOptions(optionCache).setIterateUpperBound(upperBound);
+            final RocksIterator iterator = db.newIterator(option);
+            iterator.seek(firstKey);
 
-        return new CloseableIterator<byte[]>() {
-            @Override
-            public boolean hasNext() {
-                return iterator.isValid();
-            }
+            return new CloseableIterator<byte[]>() {
+                @Override
+                public boolean hasNext() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        return iterator.isValid();
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public byte[] next() {
-                checkState(iterator.isValid());
-                byte[] key = iterator.key();
-                iterator.next();
-                return key;
-            }
+                @Override
+                public byte[] next() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        checkState(iterator.isValid());
+                        byte[] key = iterator.key();
+                        iterator.next();
+                        return key;
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public void close() {
-                iterator.close();
-                option.close();
-                upperBound.close();
-            }
-        };
+                @Override
+                public void close() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        iterator.close();
+                        option.close();
+                        upperBound.close();
+                    } finally {
+                        readLock.unlock();
+                    }
+
+                }
+            };
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
-    public CloseableIterator<Entry<byte[], byte[]>> iterator() {
-        final RocksIterator iterator = db.newIterator(optionDontCache);
-        iterator.seekToFirst();
-        final EntryWrapper entryWrapper = new EntryWrapper();
+    public CloseableIterator<Entry<byte[], byte[]>> iterator() throws IOException {
+        readLock.lock();
+        try {
+            throwIfClosed();
+            final RocksIterator iterator = db.newIterator(optionDontCache);
+            iterator.seekToFirst();
+            final EntryWrapper entryWrapper = new EntryWrapper();
 
-        return new CloseableIterator<Entry<byte[], byte[]>>() {
-            @Override
-            public boolean hasNext() {
-                return iterator.isValid();
-            }
+            return new CloseableIterator<Entry<byte[], byte[]>>() {
+                @Override
+                public boolean hasNext() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        return iterator.isValid();
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public Entry<byte[], byte[]> next() {
-                checkState(iterator.isValid());
-                entryWrapper.key = iterator.key();
-                entryWrapper.value = iterator.value();
-                iterator.next();
-                return entryWrapper;
-            }
+                @Override
+                public Entry<byte[], byte[]> next() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        checkState(iterator.isValid());
+                        entryWrapper.key = iterator.key();
+                        entryWrapper.value = iterator.value();
+                        iterator.next();
+                        return entryWrapper;
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
 
-            @Override
-            public void close() {
-                iterator.close();
-            }
-        };
+                @Override
+                public void close() throws IOException {
+                    readLock.lock();
+                    try {
+                        throwIfClosed();
+                        iterator.close();
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
+            };
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public long count() throws IOException {
+        readLock.lock();
         try {
+            throwIfClosed();
             return db.getLongProperty("rocksdb.estimate-num-keys");
         } catch (RocksDBException e) {
             throw new IOException("Error in getting records count", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public Batch newBatch() {
-        return new RocksDBBatch(writeBatchMaxSize);
+        readLock.lock();
+        try {
+            return new RocksDBBatch(writeBatchMaxSize);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     private class RocksDBBatch implements Batch {
@@ -532,44 +665,68 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         }
 
         @Override
-        public void close() {
-            writeBatch.close();
-            batchCount = 0;
+        public void close() throws IOException {
+            readLock.lock();
+            try {
+                throwIfClosed();
+                writeBatch.close();
+                batchCount = 0;
+            } finally {
+                readLock.unlock();
+            }
         }
 
         @Override
         public void put(byte[] key, byte[] value) throws IOException {
+            readLock.lock();
             try {
+                throwIfClosed();
                 writeBatch.put(key, value);
                 countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
+            } finally {
+                readLock.unlock();
             }
         }
 
         @Override
         public void remove(byte[] key) throws IOException {
+            readLock.lock();
             try {
+                throwIfClosed();
                 writeBatch.delete(key);
                 countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
+            } finally {
+                readLock.unlock();
             }
         }
 
         @Override
-        public void clear() {
-            writeBatch.clear();
-            batchCount = 0;
+        public void clear() throws IOException {
+            readLock.lock();
+            try {
+                throwIfClosed();
+                writeBatch.clear();
+                batchCount = 0;
+            } finally {
+                readLock.unlock();
+            }
         }
 
         @Override
         public void deleteRange(byte[] beginKey, byte[] endKey) throws IOException {
+            readLock.lock();
             try {
+                throwIfClosed();
                 writeBatch.deleteRange(beginKey, endKey);
                 countBatchAndFlushIfNeeded();
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
+            } finally {
+                readLock.unlock();
             }
         }
 
@@ -587,10 +744,14 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
         @Override
         public void flush() throws IOException {
+            readLock.lock();
             try {
+                throwIfClosed();
                 db.write(optionSync, writeBatch);
             } catch (RocksDBException e) {
                 throw new IOException("Failed to flush RocksDB batch", e);
+            } finally {
+                readLock.unlock();
             }
         }
     }
@@ -637,6 +798,12 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     RocksObject getOptions() {
         return options;
+    }
+
+    private void throwIfClosed() throws IOException {
+        if (closed) {
+            throw new IOException("Attempted to use KeyValueStorageRocksDB after it was closed");
+        }
     }
 
     private static final Logger log = LoggerFactory.getLogger(KeyValueStorageRocksDB.class);

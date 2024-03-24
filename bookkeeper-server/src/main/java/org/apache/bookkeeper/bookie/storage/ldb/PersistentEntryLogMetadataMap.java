@@ -131,8 +131,9 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     @Override
     public void forEach(BiConsumer<Long, EntryLogMetadata> action) throws EntryLogMetadataMapException {
         throwIfClosed();
-        CloseableIterator<Entry<byte[], byte[]>> iterator = metadataMapDB.iterator();
+        CloseableIterator<Entry<byte[], byte[]>> iterator = null;
         try {
+            iterator = metadataMapDB.iterator();
             while (iterator.hasNext()) {
                 if (isClosed.get()) {
                     break;
@@ -151,7 +152,9 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
             throw new EntryLogMetadataMapException(e);
         } finally {
             try {
-                iterator.close();
+                if (iterator != null) {
+                    iterator.close();
+                }
             } catch (IOException e) {
                 log.error("Failed to close entry-log metadata-map rocksDB iterator {}", e.getMessage(), e);
             }

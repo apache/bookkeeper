@@ -122,7 +122,7 @@ public interface KeyValueStorage extends Closeable {
      *
      * @return
      */
-    CloseableIterator<byte[]> keys();
+    CloseableIterator<byte[]> keys() throws IOException;
 
     /**
      * Get an iterator over to scan sequentially through all the keys within a
@@ -134,13 +134,13 @@ public interface KeyValueStorage extends Closeable {
      *            the lastKey in the range (not included)
      *
      */
-    CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey);
+    CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) throws IOException ;
 
     /**
      * Return an iterator object that can be used to sequentially scan through all
      * the entries in the database.
      */
-    CloseableIterator<Entry<byte[], byte[]>> iterator();
+    CloseableIterator<Entry<byte[], byte[]>> iterator() throws IOException;
 
     /**
      * Commit all pending write to durable storage.
@@ -163,7 +163,7 @@ public interface KeyValueStorage extends Closeable {
         T next() throws IOException;
     }
 
-    Batch newBatch();
+    Batch newBatch() throws IOException;
 
     /**
      * Interface for a batch to be written in the storage.
@@ -175,7 +175,7 @@ public interface KeyValueStorage extends Closeable {
 
         void deleteRange(byte[] beginKey, byte[] endKey) throws IOException;
 
-        void clear();
+        void clear() throws IOException;
 
         void flush() throws IOException;
 
