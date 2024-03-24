@@ -433,6 +433,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     public void compact() throws IOException {
         readLock.lock();
         try {
+            throwIfClosed();
             final long start = System.currentTimeMillis();
             final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
             final long oriRocksDBSize = getRocksDBSize();
@@ -646,9 +647,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     }
 
     @Override
-    public Batch newBatch() {
+    public Batch newBatch() throws IOException {
         readLock.lock();
         try {
+            throwIfClosed();
             return new RocksDBBatch(writeBatchMaxSize);
         } finally {
             readLock.unlock();
