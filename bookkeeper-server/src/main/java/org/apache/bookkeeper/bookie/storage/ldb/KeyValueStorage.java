@@ -134,7 +134,7 @@ public interface KeyValueStorage extends Closeable {
      *            the lastKey in the range (not included)
      *
      */
-    CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) throws IOException ;
+    CloseableIterator<byte[]> keys(byte[] firstKey, byte[] lastKey) throws IOException;
 
     /**
      * Return an iterator object that can be used to sequentially scan through all
