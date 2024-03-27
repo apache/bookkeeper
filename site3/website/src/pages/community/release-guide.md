@@ -167,16 +167,26 @@ in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10
 
 ### Review Release Notes in Github
 
-> Github does not automatically generates Release Notes based on the `Milestone` field applied to issues.
-> We can use [github-changelog-generator](https://github.com/skywinder/github-changelog-generator) to generate a ChangeLog for a milestone in future.
+From GitHub, verify the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
 
-For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
+For each release, you should verify that all the PRs have the correct label assigned (release:x.y.z), otherwise they won't appear in the release notes.
+To compare, you can use the following link from GitHub:
+* PR filter: https://github.com/apache/bookkeeper/pulls?q=is%3Apr+is%3Amerged+label%3Arelease%2F4.16.5
+* Commits: https://github.com/apache/bookkeeper/compare/release-4.16.4...branch-4.16
+
 
 #### Prepare Release Notes
 
-After review the release notes on both Github, you should write a the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
+After reviewing the release notes on both GitHub, you should write the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
 
-[4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
+To export the PR descriptions, you can use the [GitHub CLI](https://cli.github.com/).
+After the setup, you can run this command to get the list of changes. Then they can be copied in the release notes file:
+```
+gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}'
+```
+
+After copying the list, you will have to manually split them into bugs, features and dependency upgrades.
+Internal changes (CI, tests) that don't modify the production code can be omitted (if not relevant for users).
 
 ### Prepare release branch
 
