@@ -169,7 +169,7 @@ in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10
 
 From GitHub, verify the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
 
-For patch releases, you should verify that all the PRs have the correct label assigned (release:x.y.z), otherwise they won't appear in the release notes.
+For each release, you should verify that all the PRs have the correct label assigned (release:x.y.z), otherwise they won't appear in the release notes.
 To compare, you can use the following link from GitHub:
 * PR filter: https://github.com/apache/bookkeeper/pulls?q=is%3Apr+is%3Amerged+label%3Arelease%2F4.16.5
 * Commits: https://github.com/apache/bookkeeper/compare/release-4.16.4...branch-4.16
