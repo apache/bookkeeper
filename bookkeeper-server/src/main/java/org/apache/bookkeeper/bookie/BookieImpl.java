@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BASE_METRIC_MONITOR_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
@@ -128,6 +129,12 @@ public class BookieImpl implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
+
+    private boolean baseMetricMonitorEnabled;
+
+    BaseMetricMonitor baseMetricMonitor;
+
+    private static final BaseMetric DEFAULT_BASE_METRIC = new BaseMetric();
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -318,6 +325,13 @@ public class BookieImpl implements Bookie {
         return getLedgerDirsManager().getTotalFreeSpace(ledgerDirsManager.getAllLedgerDirs());
     }
 
+    public BaseMetric getBaseMetric() {
+        if (!baseMetricMonitorEnabled || baseMetricMonitor == null) {
+            return DEFAULT_BASE_METRIC;
+        }
+        return baseMetricMonitor.getBaseMetric();
+    }
+
     public static File getCurrentDirectory(File dir) {
         return new File(dir, BookKeeperConstants.CURRENT_DIR);
     }
@@ -495,6 +509,10 @@ public class BookieImpl implements Bookie {
 
         // Expose Stats
         this.bookieStats = new BookieStats(statsLogger, journalDirectories.size(), conf.getJournalQueueSize());
+        this.baseMetricMonitorEnabled = conf.isBaseMetricMonitorEnabled();
+        if (this.baseMetricMonitorEnabled) {
+            initBaseMetricMonitor(statsLogger.scope(BASE_METRIC_MONITOR_SCOPE));
+        }
     }
 
     @VisibleForTesting
@@ -667,6 +685,10 @@ public class BookieImpl implements Bookie {
         }
         //Start DiskChecker thread
         dirsMonitor.start();
+
+        if (baseMetricMonitorEnabled && baseMetricMonitor != null) {
+            baseMetricMonitor.start();
+        }
 
         // replay journals
         try {
@@ -905,6 +927,10 @@ public class BookieImpl implements Bookie {
 
                 //Shutdown disk checker
                 dirsMonitor.shutdown();
+
+                if (baseMetricMonitorEnabled && baseMetricMonitor != null) {
+                    baseMetricMonitor.shutdown();
+                }
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -1320,5 +1346,15 @@ public class BookieImpl implements Bookie {
     @VisibleForTesting
     public List<Journal> getJournals() {
         return this.journals;
+    }
+
+
+    private void initBaseMetricMonitor(StatsLogger statsLogger) {
+        try {
+            this.baseMetricMonitor = new BaseMetricMonitor(conf, journalDirectories,
+                    ledgerDirsManager.getAllLedgerDirs(), statsLogger, bookieStats);
+        } catch (IOException e) {
+            LOG.warn("Bookie gets exception while initBaseMetricMonitor", e);
+        }
     }
 }
