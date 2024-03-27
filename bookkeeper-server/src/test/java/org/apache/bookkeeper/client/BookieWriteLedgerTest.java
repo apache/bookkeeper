@@ -37,6 +37,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -1538,7 +1540,142 @@ public class BookieWriteLedgerTest extends
         lh.close();
     }
 
+    @Test
+    public void testToDelayEnsembleReplacementAndRewriteEntry() throws Exception {
+        lh = bkc.createLedger(4, 2, digestType, ledgerPassword);
+
+        // Put Bookie0 to sleep.
+        List<BookieId> currentEnsemble = lh.getLedgerMetadata()
+                .getAllEnsembles().entrySet().iterator().next().getValue();
+        CountDownLatch bookie0Latch = new CountDownLatch(1);
+        sleepBookie(currentEnsemble.get(0), bookie0Latch);
+
+        // Write entry0,1,2,3 to Bookie.
+        int sendCount = 7;
+        CountDownLatch addCompleteLatch = new CountDownLatch(sendCount);
+        for (int count = 0; count < 4; count++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(count);
+            entry.position(0);
+            entries1.add(entry.array());
+
+            lh.asyncAddEntry(entry.array(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    CountDownLatch addCompleteLatch = (CountDownLatch) ctx;
+                    addCompleteLatch.countDown();
+                }
+            }, addCompleteLatch);
+        }
+
+        // Expected state of entries.
+        //  entry: 0(Bookie0, Bookie1) -> Waiting for successful write to Bookie0.
+        //  entry: 1(Bookie1, Bookie2) -> Writing to Bookie1,2 was successful, but its completion is pending.
+        //  entry: 2(Bookie2, Bookie3) -> Writing to Bookie2,3 was successful, but its completion is pending.
+        //  entry: 3(Bookie3, Bookie0) -> Waiting for successful write to Bookie0.
+        Field fieldPendingAddOps = lh.getClass().getDeclaredField("pendingAddOps");
+        fieldPendingAddOps.setAccessible(true);
+        int completedCount;
+        do {
+            Thread.sleep(100);
+
+            completedCount = 0;
+            for (PendingAddOp pendingAddOp : (Queue<PendingAddOp>) fieldPendingAddOps.get(lh)) {
+                if (pendingAddOp.completed) {
+                    completedCount++;
+                }
+            }
+        } while (completedCount != 2);
+
+        // Kill Bookie2,3 and start a new Bookie.
+        killBookie(currentEnsemble.get(2));
+        killBookie(currentEnsemble.get(3));
+        startNewBookie();
+
+        // Put ZK cluster to sleep to delay ensemble replacement.
+        CountDownLatch zkLatch = new CountDownLatch(1);
+        sleepZKCluster(zkLatch);
+
+        // Write entry4,5,6 to Bookie.
+        for (int count = 4; count < sendCount; count++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(count);
+            entry.position(0);
+            entries1.add(entry.array());
+
+            lh.asyncAddEntry(entry.array(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    CountDownLatch addCompleteLatch = (CountDownLatch) ctx;
+                    addCompleteLatch.countDown();
+                }
+            }, addCompleteLatch);
+        }
+
+        // Expected state of entries.
+        //  entry: 0(Bookie0, Bookie1) -> Waiting for successful write to Bookie0.
+        //  entry: 1(Bookie1, Bookie2) -> Writing to Bookie1,2 was successful, but its completion is pending.
+        //  entry: 2(Bookie2, Bookie3) -> Writing to Bookie2,3 was successful, but its completion is pending.
+        //  entry: 3(Bookie3, Bookie0) -> Waiting for successful write to Bookie0.
+        //  entry: 4(Bookie0, Bookie1) -> Waiting for successful write to Bookie0.
+        //  entry: 5(Bookie1, Bookie2) -> Failed to write to Bookie2.
+        //  entry: 6(Bookie2, Bookie3) -> Failed to write to Bookie2,3.
+        Field fieldChangingEnsemble = lh.getClass().getDeclaredField("changingEnsemble");
+        fieldChangingEnsemble.setAccessible(true);
+        boolean changingEnsemble;
+        do {
+            Thread.sleep(100);
+
+            changingEnsemble = (boolean) fieldChangingEnsemble.get(lh);
+        } while (!changingEnsemble);
+
+        // Bookie0 is wake up, write to Bookie0 is successful.
+        //
+        // Expected state of entries.
+        //  entry: 0(Bookie0, Bookie1) -> Writing to Bookie0,1 was successful, but its completion is pending.
+        //  entry: 1(Bookie1, Bookie2) -> Writing to Bookie1,2 was successful, but its completion is pending.
+        //  entry: 2(Bookie2, Bookie3) -> Writing to Bookie2,3 was successful, but its completion is pending.
+        //  entry: 3(Bookie3, Bookie0) -> Writing to Bookie3,0 was successful, but its completion is pending.
+        //  entry: 4(Bookie0, Bookie1) -> Writing to Bookie0,1 was successful, but its completion is pending.
+        //  entry: 5(Bookie1, Bookie2) -> Failed to write to Bookie2.
+        //  entry: 6(Bookie2, Bookie3) -> Failed to write to Bookie2,3.
+        bookie0Latch.countDown();
+        do {
+            Thread.sleep(100);
+
+            completedCount = 0;
+            for (PendingAddOp pendingAddOp : (Queue<PendingAddOp>) fieldPendingAddOps.get(lh)) {
+                if (pendingAddOp.completed) {
+                    completedCount++;
+                }
+            }
+        } while (completedCount != 5);
+
+        // ZK cluster is wake up, then ensemble replacement is completed.
+        //
+        // Expected state of entries.
+        //  entry: 0(Bookie0, Bookie1) -> Entry write is completed.
+        //  entry: 1(Bookie1, Bookie4) -> Write to Bookie4.
+        //  entry: 2(Bookie4, Bookie5) -> Write to Bookie4,5.
+        //  entry: 3(Bookie5, Bookie0) -> Write to Bookie5.
+        //  entry: 4(Bookie0, Bookie1) -> Writing to Bookie0,1 was successful, but its completion is pending.
+        //  entry: 5(Bookie1, Bookie4) -> Write to Bookie4.
+        //  entry: 6(Bookie4, Bookie5) -> Write to Bookie4,5.
+        zkLatch.countDown();
+
+        // Waiting for all Entry writes to complete.
+        addCompleteLatch.await();
+
+        readEntries(lh, entries1, sendCount);
+        lh.close();
+    }
+
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {
+        readEntries(lh, entries, numEntriesToWrite);
+    }
+
+    private void readEntries(LedgerHandle lh, List<byte[]> entries, int numEntriesToWrite)
+            throws InterruptedException, BKException {
         ls = lh.readEntries(0, numEntriesToWrite - 1);
         int index = 0;
         while (ls.hasMoreElements()) {
