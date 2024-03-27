@@ -186,7 +186,7 @@ gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,num
 ```
 
 After copying, the list you will have to manually split into bugs, features and dependency upgrades.
-Internal changes (CI, tests) that doesn't modify the production code can be omitted (if not relevant for users).
+Internal changes (CI, tests) that don't modify the production code can be omitted (if not relevant for users).
 
 ### Prepare release branch
 
