@@ -180,7 +180,7 @@ To compare, you can use the following link from GitHub:
 After review the release notes on both GitHub, you should write the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
 
 To export the PR descriptions, you can use the [GitHub CLI](https://cli.github.com/).
-After the setup, you can run this command to get an already formatted changes that can be copied in the release notes file:
+After the setup, you can run this command to get the lit of changes. Then they can be copied in the release notes file:
 ```
 gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}'
 ```
