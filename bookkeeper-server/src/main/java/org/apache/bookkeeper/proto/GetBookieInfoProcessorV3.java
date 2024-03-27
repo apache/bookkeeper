@@ -22,6 +22,7 @@ package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.bookie.BaseMetric;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -70,9 +71,19 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 totalDiskSpace = requestProcessor.getBookie().getTotalDiskSpace();
                 getBookieInfoResponse.setTotalDiskCapacity(totalDiskSpace);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("FreeDiskSpace info is " + freeDiskSpace + " totalDiskSpace is: " + totalDiskSpace);
-            }
+            BaseMetric baseMetric = requestProcessor.getBookie().getBaseMetric();
+            int journalIoUtil = baseMetric.getJournalIoUtil();
+            getBookieInfoResponse.setJournalIoUtil(journalIoUtil);
+            int ledgerIoUtil = baseMetric.getLedgerIoUtil();
+            getBookieInfoResponse.setLedgerIoUtil(ledgerIoUtil);
+            int cpuUsedRate = baseMetric.getCpuUsedRate();
+            getBookieInfoResponse.setCpuUsedRate(cpuUsedRate);
+            long writeBytePerSecond = baseMetric.getWriteBytePerSecond();
+            getBookieInfoResponse.setWriteBytePerSecond(writeBytePerSecond);
+            LOG.debug("FreeDiskSpace info {} totalDiskSpace {} journalIoUtil {} ledgerIoUtil {}" +
+                " cpuUsedRate {} writeBytePerSecond {}",
+                freeDiskSpace, totalDiskSpace, journalIoUtil, ledgerIoUtil,
+                    cpuUsedRate, writeBytePerSecond);
             requestProcessor.getRequestStats().getGetBookieInfoStats()
                     .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         } catch (IOException e) {
