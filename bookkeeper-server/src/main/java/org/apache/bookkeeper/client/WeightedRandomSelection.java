@@ -24,6 +24,7 @@ import java.util.Map;
 interface WeightedRandomSelection<T> {
     interface WeightedObject {
         long getWeight();
+        int getLoad();
     }
 
     void updateMap(Map<T, WeightedObject> map);
@@ -33,4 +34,6 @@ interface WeightedRandomSelection<T> {
     T getNextRandom(Collection<T> selectedNodes);
 
     void setMaxProbabilityMultiplier(int max);
+
+    int getSize();
 }
