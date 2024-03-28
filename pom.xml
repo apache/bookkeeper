@@ -28,7 +28,7 @@
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
   <url>http://bookkeeeper.apache.org</url>
-  <inceptionYear>2011</inceptionYear>
+  <inceptionYear>2012</inceptionYear>
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
