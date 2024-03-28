@@ -60,6 +60,11 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
                 }
                 stateManager.transitionToWritableMode().get();
             } else if (!stateManager.isReadOnly() && inState.isReadOnly()) {
+                if (!stateManager.isReadOnlyModeEnabled()) {
+                    response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                    response.setBody("Bookie is disabled ReadOnly mode, cannot transit to readOnly mode");
+                    return response;
+                }
                 stateManager.transitionToReadOnlyMode().get();
             }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
