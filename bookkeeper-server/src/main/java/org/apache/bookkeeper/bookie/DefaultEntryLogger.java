@@ -989,12 +989,18 @@ public class DefaultEntryLogger implements EntryLogger {
         // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
         ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
         BufferedReadChannel bc;
+        boolean throwExceptionWhenGetChannel = false;
         // Get the BufferedChannel for the current entry log file
         try {
             bc = getChannelForLogId(entryLogId);
         } catch (IOException e) {
             LOG.warn("Failed to get channel to scan entry log: " + entryLogId + ".log");
+            throwExceptionWhenGetChannel = true;
             throw e;
+        } finally {
+            if (throwExceptionWhenGetChannel) {
+                headerBuffer.release();
+            }
         }
         // Start the read position in the current entry log file to be after
         // the header where all of the ledger entries are.
@@ -1048,6 +1054,7 @@ public class DefaultEntryLogger implements EntryLogger {
                 pos += entrySize;
             }
         } finally {
+            ReferenceCountUtil.release(headerBuffer);
             ReferenceCountUtil.release(data);
         }
     }
