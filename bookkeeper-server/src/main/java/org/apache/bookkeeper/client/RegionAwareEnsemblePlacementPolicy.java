@@ -78,6 +78,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected boolean enforceDurabilityInReplace = false;
     protected Feature disableDurabilityFeature;
     private int lastRegionIndex = 0;
+    protected ClientConfiguration conf;
 
     RegionAwareEnsemblePlacementPolicy() {
         super();
@@ -141,7 +142,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
                                 this.ignoreLocalNodeInPlacementPolicy,
-                                this.useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver)
+                                this.useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver, conf)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
 
@@ -204,7 +205,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
                                                 this.ignoreLocalNodeInPlacementPolicy,
                                                 this.useHostnameResolveLocalNodePlacementPolicy, statsLogger,
-                                                bookieAddressResolver)
+                                                bookieAddressResolver, conf)
                                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
                                 perRegionPlacement.put(newRegion, newRegionPlacement);
                             }
@@ -217,6 +218,14 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             });
         } finally {
             rwLock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateBookieInfo(Map<BookieId, BookieInfoReader.BookieInfo> bookieInfoMap) {
+        super.updateBookieInfo(bookieInfoMap);
+        for (TopologyAwareEnsemblePlacementPolicy policy: perRegionPlacement.values()) {
+            policy.updateBookieInfo(bookieInfoMap);
         }
     }
 
@@ -245,7 +254,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
                                 this.ignoreLocalNodeInPlacementPolicy, this.useHostnameResolveLocalNodePlacementPolicy,
-                                statsLogger, bookieAddressResolver)
+                                statsLogger, bookieAddressResolver, conf)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY,
@@ -269,6 +278,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         conf.getString(REPP_DISABLE_DURABILITY_FEATURE_NAME,
                                 BookKeeperConstants.FEATURE_REPP_DISABLE_DURABILITY_ENFORCEMENT));
         }
+        this.conf = conf;
         return this;
     }
 
@@ -285,7 +295,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
         }
 
-        return selectRandomInternal(availableBookies,  numBookies, excludeBookies, predicate, ensemble);
+        return selectRandomInternal(availableBookies,  numBookies, excludeBookies, predicate, ensemble, true);
     }
 
 

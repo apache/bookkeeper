@@ -165,4 +165,8 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         throw new UnsupportedOperationException("getNextRandom is not implemented for WeightedRandomSelectionImpl");
     }
 
+    @Override
+    public int getSize() {
+        return cummulativeMap.size();
+    }
 }

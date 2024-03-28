@@ -220,6 +220,10 @@ message GetBookieInfoResponse {
     required StatusCode status = 1;
     optional int64 totalDiskCapacity = 2;
     optional int64 freeDiskSpace = 3;
+    optional int32 journalIoUtil = 4;
+    optional int32 ledgerIoUtil = 5;
+    optional int32 cpuUsedRate = 6;
+    optional int64 writeBytePerSecond = 7;
 }
 
 message GetListOfEntriesOfLedgerResponse {

@@ -62,12 +62,39 @@ public class BookieInfoReader {
     public static class BookieInfo implements WeightedObject {
         private final long freeDiskSpace;
         private final long totalDiskSpace;
+        private int journalIoUtil = -1;
+        private int ledgerIoUtil = -1;
+        private int cpuUsedRate = -1;
+        private long writeBytePerSecond = -1L;
+        private boolean hasLoadInfo = false;
+        private long loadWeight = -1;
+
         public BookieInfo() {
             this(0L, 0L);
         }
         public BookieInfo(long totalDiskSpace, long freeDiskSpace) {
             this.totalDiskSpace = totalDiskSpace;
             this.freeDiskSpace = freeDiskSpace;
+        }
+
+        public BookieInfo(long totalDiskSpace, long freeDiskSpace, int journalIoUtil,
+                          int ledgerIoUtil, int cpuUsedRate, long writeBytePerSecond) {
+            this.totalDiskSpace = totalDiskSpace;
+            this.freeDiskSpace = freeDiskSpace;
+            this.journalIoUtil = journalIoUtil;
+            this.ledgerIoUtil = ledgerIoUtil;
+            this.cpuUsedRate = cpuUsedRate;
+            this.writeBytePerSecond = writeBytePerSecond;
+            this.hasLoadInfo = true;
+
+            // calculate the load weight in BookieInfo constructor.
+            // Thus, we do not need to calculate in getWeight() each time.
+
+            // currently, consider writeBytePerSecond as bookie's weight.
+            if (writeBytePerSecond >= 0) {
+                long writeByte1MB = 1024 * 1024;
+                loadWeight = writeBytePerSecond / writeByte1MB;
+            }
         }
         public long getFreeDiskSpace() {
             return freeDiskSpace;
@@ -76,12 +103,22 @@ public class BookieInfoReader {
             return totalDiskSpace;
         }
         @Override
+        public int getLoad() {
+            // currently, consider journal IOUtil as bookie's load
+            return journalIoUtil;
+        }
+        @Override
         public long getWeight() {
+            if (hasLoadInfo) {
+                return loadWeight;
+            }
             return freeDiskSpace;
         }
         @Override
         public String toString() {
-            return "FreeDiskSpace: " + this.freeDiskSpace + " TotalDiskCapacity: " + this.totalDiskSpace;
+            return "FreeDiskSpace: " + this.freeDiskSpace + " TotalDiskCapacity: " + this.totalDiskSpace
+                    + " WriteBytePerSecond: " + this.writeBytePerSecond + " JournalIoUtil: " + this.journalIoUtil
+                    + " LedgerIoUtil: " + this.ledgerIoUtil + " CpuUsedRate: " + this.cpuUsedRate;
         }
     }
 

@@ -67,6 +67,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     // Initialize to empty set
     protected ImmutableSet<BookieId> readOnlyBookies = ImmutableSet.of();
     boolean isWeighted;
+    boolean isLoadWeighted;
     protected WeightedRandomSelection<BookieNode> weightedSelection;
     // for now, we just maintain the writable bookies' topology
     protected NetworkTopology topology;
@@ -664,7 +665,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             }
             handleBookiesThatLeft(leftBookies);
             handleBookiesThatJoined(joinedBookies);
-            if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
+            if ((this.isWeighted || this.isLoadWeighted) && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
                 this.weightedSelection.updateMap(this.bookieInfoMap);
             }
             if (!readOnlyBookies.isEmpty()) {
@@ -687,7 +688,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 BookieNode node = knownBookies.remove(addr);
                 if (null != node) {
                     topology.remove(node);
-                    if (this.isWeighted) {
+                    if (this.isWeighted || this.isLoadWeighted) {
                         this.bookieInfoMap.remove(node);
                     }
 
@@ -720,7 +721,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 topology.add(node);
                 knownBookies.put(addr, node);
                 historyBookies.put(addr, node);
-                if (this.isWeighted) {
+                if (this.isWeighted || this.isLoadWeighted) {
                     this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
                 }
 
@@ -784,8 +785,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     @Override
     public void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
-        if (!isWeighted) {
-            LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
+        if (!isWeighted && !isLoadWeighted) {
+            LOG.info("bookieInfo callback called even without weighted placement policy being used.");
             return;
         }
         rwLock.writeLock().lock();

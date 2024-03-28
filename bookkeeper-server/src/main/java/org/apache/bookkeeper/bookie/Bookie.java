@@ -54,6 +54,8 @@ public interface Bookie {
     long getTotalDiskSpace() throws IOException;
     long getTotalFreeSpace() throws IOException;
 
+    BaseMetric getBaseMetric();
+
     // TODO: Shouldn't this be async?
     ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException, BookieException;

@@ -162,4 +162,9 @@ class DynamicWeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T
     public void setMaxProbabilityMultiplier(int max) {
         this.maxProbabilityMultiplier = max;
     }
+
+    @Override
+    public int getSize() {
+        return weightMap.size();
+    }
 }

@@ -2202,9 +2202,27 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             int rc = convertStatus(status, BKException.Code.ReadException);
-            cb.getBookieInfoComplete(rc,
-                                     new BookieInfo(totalDiskSpace,
-                                                    freeDiskSpace), ctx);
+            BookieInfo bInfo;
+            if (conf.getLoadWeightBasedPlacementEnabled()) {
+                int journalIoUtil = getBookieInfoResponse.hasJournalIoUtil() ?
+                    getBookieInfoResponse.getJournalIoUtil() : -1;
+                int ledgerIoUtil = getBookieInfoResponse.hasLedgerIoUtil() ?
+                    getBookieInfoResponse.getLedgerIoUtil() : -1;
+                int cpuUsedRate = getBookieInfoResponse.hasCpuUsedRate() ?
+                    getBookieInfoResponse.getCpuUsedRate() : -1;
+                long writeBytePerSecond = getBookieInfoResponse.hasWriteBytePerSecond() ?
+                    getBookieInfoResponse.getWriteBytePerSecond() : -1L;
+
+                if (LOG.isDebugEnabled()) {
+                    logResponse(status, "journalIoUtil", journalIoUtil, "ledgerIoUtil", ledgerIoUtil,
+                            "cpuUsedRate", cpuUsedRate, "writeBytePerSecond", writeBytePerSecond);
+                }
+                bInfo = new BookieInfo(totalDiskSpace, freeDiskSpace,
+                    journalIoUtil, ledgerIoUtil, cpuUsedRate, writeBytePerSecond);
+            } else {
+                bInfo = new BookieInfo(totalDiskSpace, freeDiskSpace);
+            }
+            cb.getBookieInfoComplete(rc, bInfo, ctx);
         }
     }
 

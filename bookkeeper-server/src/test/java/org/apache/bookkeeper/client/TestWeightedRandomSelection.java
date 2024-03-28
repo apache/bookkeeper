@@ -61,6 +61,11 @@ public class TestWeightedRandomSelection {
         public long getWeight() {
             return val;
         }
+
+        @Override
+        public int getLoad() {
+            return -1;
+        }
     }
 
     Class<? extends WeightedRandomSelection> weightedRandomSelectionClass;

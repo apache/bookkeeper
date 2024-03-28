@@ -511,8 +511,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
                 scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
 
-        if (conf.getDiskWeightBasedPlacementEnabled()) {
-            LOG.info("Weighted ledger placement enabled");
+        if (conf.getDiskWeightBasedPlacementEnabled() || conf.getLoadWeightBasedPlacementEnabled()) {
+            LOG.info("Weighted ledger placement enabled. DiskWeight: {}, LoadWeight: {}",
+                    conf.getDiskWeightBasedPlacementEnabled(), conf.getLoadWeightBasedPlacementEnabled());
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
                     .setNameFormat("BKClientMetaDataPollScheduler-%d");
             this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());

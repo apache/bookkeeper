@@ -91,6 +91,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected boolean enforceMinNumRacksPerWriteQuorum;
     protected boolean ignoreLocalNodeInPlacementPolicy;
     protected boolean useHostnameResolveLocalNodePlacementPolicy;
+    protected int loadThreshold = 70;
+    protected double lowLoadBookieRatio = 0.5;
 
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
@@ -177,7 +179,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
             reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
             enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy,
-            false, statsLogger, bookieAddressResolver);
+            false, statsLogger, bookieAddressResolver, new ClientConfiguration());
     }
 
     /**
@@ -198,7 +200,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               boolean ignoreLocalNodeInPlacementPolicy,
                                                               boolean useHostnameResolveLocalNodePlacementPolicy,
                                                               StatsLogger statsLogger,
-                                                              BookieAddressResolver bookieAddressResolver) {
+                                                              BookieAddressResolver bookieAddressResolver,
+                                                              ClientConfiguration conf) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
         this.bookieAddressResolver = bookieAddressResolver;
@@ -233,6 +236,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.enforceMinNumRacksPerWriteQuorum = enforceMinNumRacksPerWriteQuorum;
         this.ignoreLocalNodeInPlacementPolicy = ignoreLocalNodeInPlacementPolicy;
         this.useHostnameResolveLocalNodePlacementPolicy = useHostnameResolveLocalNodePlacementPolicy;
+        this.loadThreshold = conf.getLoadThreshold();
+        this.lowLoadBookieRatio = conf.getLowLoadBookieRatio();
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -259,7 +264,12 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 dnsResolver.getClass().getName());
 
         this.isWeighted = isWeighted;
-        if (this.isWeighted) {
+        this.isLoadWeighted = conf.getLoadWeightBasedPlacementEnabled();
+        if (this.isLoadWeighted) {
+            this.weightedSelection = new LoadWeightedSelectionImpl<>(this.loadThreshold, this.lowLoadBookieRatio);
+            LOG.info("Load Weight based placement with loadThreshold:{}  lowLoadBookieRatio:{}",
+                    this.loadThreshold, this.lowLoadBookieRatio);
+        } else if (this.isWeighted) {
             this.maxWeightMultiple = maxWeightMultiple;
             this.weightedSelection = new WeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
             LOG.info("Weight based placement with max multiple of " + this.maxWeightMultiple);
@@ -345,7 +355,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getIgnoreLocalNodeInPlacementPolicy(),
                 conf.getUseHostnameResolveLocalNodePlacementPolicy(),
                 statsLogger,
-                bookieAddressResolver);
+                bookieAddressResolver,
+                conf);
     }
 
     @Override
@@ -643,7 +654,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
 
         try {
-            return selectRandomInternal(knownNodes, 1, fullExclusionBookiesList, predicate, ensemble).get(0);
+            return selectRandomInternal(knownNodes, 1, fullExclusionBookiesList, predicate, ensemble, false).get(0);
         } catch (BKNotEnoughBookiesException e) {
             if (!fallbackToRandom) {
                 LOG.error(
@@ -660,8 +671,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
     }
 
-    private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves) {
-        // create a map of bookieNode->freeDiskSpace for this rack. The assumption is that
+    private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves,
+                                                                            boolean isLoadWeight) {
+        // create a map of bookieNode->weight for this rack. The assumption is that
         // the number of nodes in a rack is of the order of 40, so it shouldn't be too bad
         // to build it every time during a ledger creation
         Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
@@ -680,8 +692,39 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             return null;
         }
 
-        WeightedRandomSelection<BookieNode> wRSelection = new WeightedRandomSelectionImpl<BookieNode>(
-                maxWeightMultiple);
+        WeightedRandomSelection<BookieNode> wRSelection;
+        if (isLoadWeight) {
+            wRSelection = new LoadWeightedSelectionImpl<>(this.loadThreshold, this.lowLoadBookieRatio);
+        } else {
+            wRSelection = new WeightedRandomSelectionImpl<>(maxWeightMultiple);
+        }
+        wRSelection.updateMap(rackMap);
+        return wRSelection;
+    }
+
+    private WeightedRandomSelection<BookieNode> prepareForBookieWeightedSelection(List<BookieNode> leaves,
+                                                                                  boolean isLoadWeight) {
+        // create a map of bookieNode->weight for this rack. The assumption is that
+        // the number of nodes in a rack is of the order of 40, so it shouldn't be too bad
+        // to build it every time during a ledger creation
+        Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+        for (BookieNode bookie : leaves) {
+            if (this.bookieInfoMap.containsKey(bookie)) {
+                rackMap.put(bookie, this.bookieInfoMap.get(bookie));
+            } else {
+                rackMap.put(bookie, new BookieInfo());
+            }
+        }
+        if (rackMap.size() == 0) {
+            return null;
+        }
+
+        WeightedRandomSelection<BookieNode> wRSelection;
+        if (isLoadWeight) {
+            wRSelection = new LoadWeightedSelectionImpl<>(this.loadThreshold, this.lowLoadBookieRatio);
+        } else {
+            wRSelection = new WeightedRandomSelectionImpl<>(maxWeightMultiple);
+        }
         wRSelection.updateMap(rackMap);
         return wRSelection;
     }
@@ -703,23 +746,39 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Ensemble<BookieNode> ensemble) throws BKNotEnoughBookiesException {
         WeightedRandomSelection<BookieNode> wRSelection = null;
         List<Node> leaves = new ArrayList<Node>(topology.getLeaves(netPath));
-        if (!this.isWeighted) {
-            Collections.shuffle(leaves);
-        } else {
+        if (this.isLoadWeighted) {
             if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
                 throw new BKNotEnoughBookiesException();
             }
-            wRSelection = prepareForWeightedSelection(leaves);
+            wRSelection = prepareForWeightedSelection(leaves, true);
             if (wRSelection == null) {
                 throw new BKNotEnoughBookiesException();
             }
+        } else if (this.isWeighted) {
+            if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
+                throw new BKNotEnoughBookiesException();
+            }
+            wRSelection = prepareForWeightedSelection(leaves, false);
+            if (wRSelection == null) {
+                throw new BKNotEnoughBookiesException();
+            }
+        } else {
+            Collections.shuffle(leaves);
         }
 
         Iterator<Node> it = leaves.iterator();
         Set<Node> bookiesSeenSoFar = new HashSet<Node>();
         while (true) {
             Node n;
-            if (isWeighted) {
+            if (isLoadWeighted) {
+                // TODO: enhance loop maybe executed too long
+                if (bookiesSeenSoFar.size() == wRSelection.getSize()) {
+                    // Don't loop infinitely.
+                    break;
+                }
+                n = wRSelection.getNextRandom();
+                bookiesSeenSoFar.add(n);
+            } else if (isWeighted) {
                 if (bookiesSeenSoFar.size() == leaves.size()) {
                     // Don't loop infinitely.
                     break;
@@ -767,22 +826,40 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                             Predicate<BookieNode> predicate,
                                             Ensemble<BookieNode> ensemble)
             throws BKNotEnoughBookiesException {
-        return selectRandomInternal(null,  numBookies, excludeBookies, predicate, ensemble);
+        // can be regard as the last random select.
+        // so isLastRandomSelect is always true.
+        return selectRandomInternal(null,  numBookies, excludeBookies, predicate, ensemble, true);
     }
 
+    // 1. last random select for RegionAware
+    // 2. last random select for RackAware
+    // 3. normal random select for RackAware
     protected List<BookieNode> selectRandomInternal(List<BookieNode> bookiesToSelectFrom,
                                                     int numBookies,
                                                     Set<Node> excludeBookies,
                                                     Predicate<BookieNode> predicate,
-                                                    Ensemble<BookieNode> ensemble)
+                                                    Ensemble<BookieNode> ensemble,
+                                                    boolean isLastRandomSelect)
         throws BKNotEnoughBookiesException {
+        // If this is the last random select in placementPolicy
+        // when previous select throws BKNotEnoughBookiesException,
+        // we'd better not add LoadWeightSelect strategy, just let it randomly select in whole cluster.
+        // Therefore, add 'isLastRandomSelect' to indicate whether is the last random select.
         WeightedRandomSelection<BookieNode> wRSelection = null;
         if (bookiesToSelectFrom == null) {
             // If the list is null, we need to select from the entire knownBookies set
             wRSelection = this.weightedSelection;
             bookiesToSelectFrom = new ArrayList<BookieNode>(knownBookies.values());
         }
-        if (isWeighted) {
+        if (isLoadWeighted && !isLastRandomSelect) {
+            if (CollectionUtils.subtract(bookiesToSelectFrom, excludeBookies).size() < numBookies) {
+                throw new BKNotEnoughBookiesException();
+            }
+            wRSelection = prepareForBookieWeightedSelection(bookiesToSelectFrom, true);
+            if (wRSelection == null) {
+                throw new BKNotEnoughBookiesException();
+            }
+        } else if (isWeighted) {
             if (CollectionUtils.subtract(bookiesToSelectFrom, excludeBookies).size() < numBookies) {
                 throw new BKNotEnoughBookiesException();
             }
@@ -811,7 +888,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         Iterator<BookieNode> it = bookiesToSelectFrom.iterator();
         Set<BookieNode> bookiesSeenSoFar = new HashSet<BookieNode>();
         while (numBookies > 0) {
-            if (isWeighted) {
+            if (isLoadWeighted && !isLastRandomSelect) {
+                if (bookiesSeenSoFar.size() == wRSelection.getSize()) {
+                    break;
+                }
+                bookie = wRSelection.getNextRandom();
+                bookiesSeenSoFar.add(bookie);
+            } else if (isWeighted) {
                 if (bookiesSeenSoFar.size() == bookiesToSelectFrom.size()) {
                     // If we have gone through the whole available list of bookies,
                     // and yet haven't been able to satisfy the ensemble request, bail out.
@@ -1326,23 +1409,38 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             WeightedRandomSelection<BookieNode> wRSelection = null;
 
             final List<Node> leaves = new ArrayList<>(topology.getLeaves(condition.getLeft()));
-            if (!isWeighted) {
-                Collections.shuffle(leaves);
-            } else {
+            if (isLoadWeighted) {
                 if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
                     throw new BKNotEnoughBookiesException();
                 }
-                wRSelection = prepareForWeightedSelection(leaves);
+                wRSelection = prepareForWeightedSelection(leaves, true);
                 if (wRSelection == null) {
                     throw new BKNotEnoughBookiesException();
                 }
+            } else if (isWeighted) {
+                if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
+                    throw new BKNotEnoughBookiesException();
+                }
+                wRSelection = prepareForWeightedSelection(leaves, false);
+                if (wRSelection == null) {
+                    throw new BKNotEnoughBookiesException();
+                }
+            } else {
+                Collections.shuffle(leaves);
             }
 
             final Iterator<Node> it = leaves.iterator();
             final Set<Node> bookiesSeenSoFar = new HashSet<>();
             while (true) {
                 Node n;
-                if (isWeighted) {
+                if (isLoadWeighted) {
+                    if (bookiesSeenSoFar.size() == wRSelection.getSize()) {
+                        // Don't loop infinitely.
+                        break;
+                    }
+                    n = wRSelection.getNextRandom();
+                    bookiesSeenSoFar.add(n);
+                } else if (isWeighted) {
                     if (bookiesSeenSoFar.size() == leaves.size()) {
                         // Don't loop infinitely.
                         break;
