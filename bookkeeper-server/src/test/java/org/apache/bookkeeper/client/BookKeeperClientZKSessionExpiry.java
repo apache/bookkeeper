@@ -51,7 +51,7 @@ public class BookKeeperClientZKSessionExpiry extends BookKeeperClusterTestCase {
                             byte[] sessionPasswd = bkc.getZkHandle().getSessionPasswd();
 
                             try {
-                                ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000);
+                                ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000, false);
                                 ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
                                                              watcher, sessionId, sessionPasswd);
                                 zk.close();
