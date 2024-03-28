@@ -228,7 +228,8 @@ public class LegacyCookieValidation implements CookieValidation {
         }
     }
 
-    private static void stampNewCookie(ServerConfiguration conf,
+    @VisibleForTesting
+    public static void stampNewCookie(ServerConfiguration conf,
                                        Cookie masterCookie,
                                        RegistrationManager rm,
                                        Version version,

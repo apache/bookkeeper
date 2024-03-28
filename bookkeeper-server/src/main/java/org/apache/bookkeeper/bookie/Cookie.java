@@ -50,7 +50,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,14 +137,20 @@ public class Cookie {
     }
 
     private boolean verifyIndexDirs(Cookie c, boolean checkIfSuperSet) {
-        // compatible logic:  existed node's cookie has no indexDirs, the indexDirs's default value is ledgerDirs.
-        String indexDirsInConfig = StringUtils.isNotBlank(indexDirs) ? indexDirs : ledgerDirs;
-        String indexDirsInCookie = StringUtils.isNotBlank(c.indexDirs) ? c.indexDirs : c.ledgerDirs;
-
+        // compatible logic:  version 5 introduce `indexDirs`, we shouldn't check `indexDirs` with the before version.
+        if (this.layoutVersion >= 5 && c.layoutVersion < 5) {
+            return true;
+        }
+        if (indexDirs == null && c.indexDirs == null) {
+            return true;
+        }
+        if (indexDirs == null || c.indexDirs == null) {
+            return false;
+        }
         if (!checkIfSuperSet) {
-            return indexDirsInConfig.equals(indexDirsInCookie);
+            return indexDirs.equals(c.indexDirs);
         } else {
-            return isSuperSet(decodeDirPathFromCookie(indexDirsInConfig), decodeDirPathFromCookie(indexDirsInCookie));
+            return isSuperSet(decodeDirPathFromCookie(indexDirs), decodeDirPathFromCookie(c.indexDirs));
         }
     }
 
@@ -194,7 +199,7 @@ public class Cookie {
         }
 
         StringBuilder b = new StringBuilder();
-        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
+        b.append(layoutVersion).append("\n");
         b.append(builder.build());
         return b.toString();
     }
