@@ -276,8 +276,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
@@ -291,8 +290,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of read only bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
