@@ -188,6 +188,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
 
     protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
+    protected static final String REPLICATION_ACQUIRE_TASK_PER_SECOND = "replicationAcquireTaskPerSecond";
 
     protected AbstractConfiguration() {
         super();
@@ -1233,6 +1234,24 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setReplicationRateByBytes(int rate) {
         this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
+        return getThis();
+    }
+
+    /**
+     * get the max tasks can be acquired per second of re-replication.
+     * @return max tasks can be acquired per second of re-replication.
+     */
+    public double getReplicationAcquireTaskPerSecond() {
+        return getDouble(REPLICATION_ACQUIRE_TASK_PER_SECOND, 1.0);
+    }
+
+    /**
+     * set the max tasks can be acquired per second of re-replication.
+     * @param replicationAcquireTaskPerSecond
+     * @return ClientConfiguration
+     */
+    public T setReplicationAcquireTaskPerSecond(double replicationAcquireTaskPerSecond) {
+        setProperty(REPLICATION_ACQUIRE_TASK_PER_SECOND, replicationAcquireTaskPerSecond);
         return getThis();
     }
 
