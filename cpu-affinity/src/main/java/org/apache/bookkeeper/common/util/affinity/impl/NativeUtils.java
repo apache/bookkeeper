@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.common.util.affinity.impl;
 
-import com.google.common.base.Preconditions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -49,13 +48,13 @@ public class NativeUtils {
             value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
             justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     public static void loadLibraryFromJar(String path) throws Exception {
-        Preconditions.checkArgument(path.startsWith("/"), "absolute path must start with /");
+        checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
-        Preconditions.checkArgument(parts.length > 0, "absolute path must contain file name");
+        checkArgument(parts.length > 0, "absolute path must contain file name");
 
         String filename = parts[parts.length - 1];
-        Preconditions.checkArgument(path.startsWith("/"), "absolute path must start with /");
+        checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         Path dir = Files.createTempDirectory("native");
         dir.toFile().deleteOnExit();
@@ -81,5 +80,11 @@ public class NativeUtils {
         }
 
         System.load(temp.getAbsolutePath());
+    }
+
+    private static void checkArgument(boolean expression, @NonNull Object errorMessage) {
+        if (!expression) {
+            throw new IllegalArgumentException(String.valueOf(errorMessage));
+        }
     }
 }
