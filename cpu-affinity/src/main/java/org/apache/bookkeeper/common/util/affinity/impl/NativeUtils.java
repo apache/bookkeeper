@@ -27,6 +27,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -51,12 +53,9 @@ public class NativeUtils {
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
 
-        File dir = File.createTempFile("native", "");
-        if (!(dir.mkdir())) {
-            throw new IOException("Failed to create temp directory " + dir.getAbsolutePath());
-        }
-        dir.deleteOnExit();
-        File temp = new File(dir, filename);
+        Path dir = Files.createTempDirectory("native");
+        dir.toFile().deleteOnExit();
+        File temp = new File(dir.toString(), filename);
         temp.deleteOnExit();
 
         byte[] buffer = new byte[1024];
