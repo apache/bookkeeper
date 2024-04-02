@@ -83,6 +83,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
                 requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                onSendResponseFinished(false);
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
@@ -92,6 +93,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
             channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
+                    onSendResponseFinished(future.isSuccess());
                     long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                     if (!future.isSuccess()) {
                         requestProcessor.getRequestStats().getChannelWriteStats()
@@ -110,6 +112,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         } else {
             log.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+            onSendResponseFinished(false);
         }
     }
 
@@ -128,6 +131,11 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         header.setOperation(request.getHeader().getOperation());
         header.setTxnId(request.getHeader().getTxnId());
         return header.build();
+    }
+
+
+    protected void onSendResponseFinished(boolean success) {
+        // no-op
     }
 
     @Override

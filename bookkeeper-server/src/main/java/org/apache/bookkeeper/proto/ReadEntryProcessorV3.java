@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
@@ -51,6 +51,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected final ReadRequest readRequest;
     protected final long ledgerId;
     protected final long entryId;
+
+    private volatile ByteBuf body;
 
     // Stats
     protected final OpStatsLogger readStats;
@@ -92,8 +94,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     /**
      * Handle read result for fence read.
      *
-     * @param entryBody
-     *          read result
      * @param readResponseBuilder
      *          read response builder
      * @param entryId
@@ -102,7 +102,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
      *          timer for the read request
      */
     protected void handleReadResultForFenceRead(
-        final ByteBuf entryBody,
         final ReadResponse.Builder readResponseBuilder,
         final long entryId,
         final Stopwatch startTimeSw) {
@@ -112,14 +111,14 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             fenceResult.whenCompleteAsync(new FutureEventListener<Boolean>() {
                 @Override
                 public void onSuccess(Boolean result) {
-                    sendFenceResponse(readResponseBuilder, entryBody, result, startTimeSw);
+                    sendFenceResponse(readResponseBuilder, body, result, startTimeSw);
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
                     LOG.error("Fence request for ledgerId {} entryId {} encountered exception",
                             ledgerId, entryId, t);
-                    sendFenceResponse(readResponseBuilder, entryBody, false, startTimeSw);
+                    sendFenceResponse(readResponseBuilder, body, false, startTimeSw);
                 }
             }, fenceThreadPool);
         } else {
@@ -130,7 +129,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 LOG.error("Fence request for ledgerId {} entryId {} encountered exception : ",
                         readRequest.getLedgerId(), readRequest.getEntryId(), t);
             }
-            sendFenceResponse(readResponseBuilder, entryBody, success, startTimeSw);
+            sendFenceResponse(readResponseBuilder, body, success, startTimeSw);
         }
     }
 
@@ -170,25 +169,21 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
         throws IOException, BookieException {
-        ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
+        body = requestProcessor.getBookie().readEntry(ledgerId, entryId);
         if (null != fenceResult) {
-            handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
+            handleReadResultForFenceRead(readResponseBuilder, entryId, startTimeSw);
             return null;
         } else {
-            try {
-                readResponseBuilder.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
-                if (readLACPiggyBack) {
-                    readResponseBuilder.setEntryId(entryId);
-                } else {
-                    long knownLAC = requestProcessor.getBookie().readLastAddConfirmed(ledgerId);
-                    readResponseBuilder.setMaxLAC(knownLAC);
-                }
-                registerSuccessfulEvent(readStats, startTimeSw);
-                readResponseBuilder.setStatus(StatusCode.EOK);
-                return readResponseBuilder.build();
-            } finally {
-                ReferenceCountUtil.release(entryBody);
+            readResponseBuilder.setBody(UnsafeByteOperations.unsafeWrap(body.nioBuffer()));
+            if (readLACPiggyBack) {
+                readResponseBuilder.setEntryId(entryId);
+            } else {
+                long knownLAC = requestProcessor.getBookie().readLastAddConfirmed(ledgerId);
+                readResponseBuilder.setMaxLAC(knownLAC);
             }
+            registerSuccessfulEvent(readStats, startTimeSw);
+            readResponseBuilder.setStatus(StatusCode.EOK);
+            return readResponseBuilder.build();
         }
     }
 
@@ -287,12 +282,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
-            readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+            readResponse.setBody(UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer()));
             registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
-        }
-
-        if (null != entryBody) {
-            ReferenceCountUtil.release(entryBody);
         }
 
         readResponse.setStatus(status);
@@ -347,6 +338,14 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             statsLogger.registerFailedEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         } else {
             statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+        }
+    }
+
+
+    @Override
+    protected void onSendResponseFinished(boolean success) {
+        if (null != body) {
+            ReferenceCountUtil.release(body);
         }
     }
 
