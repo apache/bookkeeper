@@ -38,6 +38,7 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Marker;
+import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
 import org.slf4j.event.LoggingEvent;
 
@@ -108,11 +109,6 @@ public class LoggerOutput implements TestRule {
             }
 
             @Override
-            public Marker getMarker() {
-                return null;
-            }
-
-            @Override
             public String getLoggerName() {
                 return log4jEvent.getLoggerName();
             }
@@ -123,6 +119,11 @@ public class LoggerOutput implements TestRule {
             }
 
             @Override
+            public List<Object> getArguments() {
+                return null;
+            }
+
+            @Override
             public String getThreadName() {
                 return log4jEvent.getThreadName();
             }
@@ -130,6 +131,16 @@ public class LoggerOutput implements TestRule {
             @Override
             public Object[] getArgumentArray() {
                 return new Object[0];
+            }
+
+            @Override
+            public List<Marker> getMarkers() {
+                return null;
+            }
+
+            @Override
+            public List<KeyValuePair> getKeyValuePairs() {
+                return null;
             }
 
             @Override
