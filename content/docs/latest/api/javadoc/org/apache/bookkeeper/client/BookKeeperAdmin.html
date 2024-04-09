@@ -835,8 +835,7 @@ implements java.lang.AutoCloseable</pre>
 <pre class="methodSignature">public&nbsp;void&nbsp;watchWritableBookiesChanged&#8203;(<a href="../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)
                                  throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Notify when the available list of bookies changes.
- This is a one-shot notification. To receive subsequent notifications
- the listener must be registered again.</div>
+ Once registered, the listener will be notified when the list of available bookies changes.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>listener</code> - the listener to notify</dd>
@@ -854,8 +853,7 @@ implements java.lang.AutoCloseable</pre>
 <pre class="methodSignature">public&nbsp;void&nbsp;watchReadOnlyBookiesChanged&#8203;(<a href="../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)
                                  throws <a href="BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Notify when the available list of read only bookies changes.
- This is a one-shot notification. To receive subsequent notifications
- the listener must be registered again.</div>
+ Once registered, the listener will be notified when the list of available bookies changes.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>listener</code> - the listener to notify</dd>
