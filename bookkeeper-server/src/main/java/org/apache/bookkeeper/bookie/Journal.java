@@ -628,7 +628,6 @@ public class Journal implements CheckpointSource {
     private final String lastMarkFileName;
 
     private final Counter callbackTime;
-    private final Counter journalTime;
     private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
@@ -689,9 +688,6 @@ public class Journal implements CheckpointSource {
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         this.journalReuseFiles = conf.getJournalReuseFiles();
         this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
-
-        this.journalTime = journalStatsLogger.getThreadScopedCounter("journal-thread-time");
-
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
         this.flushWhenQueueEmpty = maxGroupWaitInNanos <= 0 || conf.getJournalFlushWhenQueueEmpty();
