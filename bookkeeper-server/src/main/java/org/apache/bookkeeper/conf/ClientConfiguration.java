@@ -143,6 +143,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     // Bookie info poll interval
     protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
+    protected static final String LOAD_WEIGHT_BASED_PLACEMENT_ENABLED = "loadWeightBasedPlacementEnabled";
     protected static final String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
     protected static final String GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS = "getBookieInfoRetryIntervalSeconds";
     protected static final String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT =
@@ -150,6 +151,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
     protected static final String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
     protected static final String TLS_HOSTNAME_VERIFICATION_ENABLED = "tlsHostnameVerificationEnabled";
+
+    // load weight based placement setting
+    protected static final String LOAD_THRESHOLD = "LoadThreshold";
+    protected static final String LOW_LOAD_BOOKIE_RATIO = "lowLoadBookieRatio";
 
     // Number of Threads
     protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -1556,6 +1561,16 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
+     * Return whether load weight based placement policy is enabled.
+     * If enable, load weight based placement policy would cover disk weight based placement policy.
+     * Then disk weight based placement policy would be disable.
+     * @return
+     */
+    public boolean getLoadWeightBasedPlacementEnabled() {
+        return getBoolean(LOAD_WEIGHT_BASED_PLACEMENT_ENABLED, false);
+    }
+
+    /**
      * Returns the max multiple to use for nodes with very high weight.
      * @return max multiple
      */
@@ -1587,6 +1602,19 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setDiskWeightBasedPlacementEnabled(boolean isEnabled) {
         setProperty(DISK_WEIGHT_BASED_PLACEMENT_ENABLED, isEnabled);
+        return this;
+    }
+
+    /**
+     * Set whether or not load weight based placement is enabled.
+     * If enable, load weight based placement policy would cover disk weight based placement policy.
+     * Then disk weight based placement policy would be disable.
+     *
+     * @param isEnabled - boolean indicating enabled or not
+     * @return client configuration
+     */
+    public ClientConfiguration setLoadWeightBasedPlacementEnabled(boolean isEnabled) {
+        setProperty(LOAD_WEIGHT_BASED_PLACEMENT_ENABLED, isEnabled);
         return this;
     }
 
@@ -2105,6 +2133,48 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     public boolean isBatchReadEnabled() {
         return getBoolean(BATCH_READ_ENABLED, true);
+    }
+
+    /**
+     * Set the load threshold, which is regard as high load.
+     *
+     * @param value
+     * @return client configuration.
+     */
+    public ClientConfiguration setLoadThreshold(int value) {
+        setProperty(LOAD_THRESHOLD, value);
+        return this;
+    }
+
+    /**
+     * Get the load threshold, which would be considered as high load if upon the threshold.
+     * default is 70%
+     *
+     * @return load weight threshold.
+     */
+    public int getLoadThreshold() {
+        return getInt(LOAD_THRESHOLD, 70);
+    }
+
+    /**
+     * Set low load bookie ratio.
+     *
+     * @param value
+     * @return client configuration.
+     */
+    public ClientConfiguration setLowLoadBookieRatio(double value) {
+        setProperty(LOW_LOAD_BOOKIE_RATIO, value);
+        return this;
+    }
+
+    /**
+     * Get the low load Bookie ratio. if low-load-bookie's number < all-selected-bookie's number * ratio,
+     * fallback to random select of all bookies. ratio default is 0.5.
+     *
+     * @return low load bookie ratio.
+     */
+    public double getLowLoadBookieRatio() {
+        return getDouble(LOW_LOAD_BOOKIE_RATIO, 0.5);
     }
 
     @Override

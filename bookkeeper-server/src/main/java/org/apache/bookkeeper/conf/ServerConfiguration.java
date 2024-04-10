@@ -347,6 +347,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_BATCH_READ_SIZE = "maxBatchReadSize";
     protected static final int DEFAULT_MAX_BATCH_READ_SIZE = 5 * 1024 * 1024; // 5MB
 
+    protected static final String BASE_METRIC_MONITOR_ENABLED = "baseMetricMonitorEnabled";
+
+    protected static final String BASE_METRIC_MONITOR_STAT_INTERVAL_MS = "baseMetricMonitorStatIntervalMs";
+
+    protected static final long VALUE_BASE_METRIC_MONITOR_STAT_INTERVAL_MS_DEFAULT = 1000;
+
+    protected static final String BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE = "baseMetricMonitorMetricSlideWindowSize";
+
+    protected static final int VALUE_BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE_DEFAULT = 3;
+
+    protected static final int VALUE_BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE_MIN = 1;
+
     /**
      * Construct a default configuration object.
      */
@@ -4148,5 +4160,76 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getMaxBatchReadSize() {
         return this.getLong(MAX_BATCH_READ_SIZE, DEFAULT_MAX_BATCH_READ_SIZE);
+    }
+
+    /**
+     * Get whether to start base metric monitor or not.
+     *
+     * @return true - if base metric monitor should start
+     */
+    public boolean isBaseMetricMonitorEnabled() {
+        return getBoolean(BASE_METRIC_MONITOR_ENABLED, false);
+    }
+
+    /**
+     * Set whether to start base metric monitor or not.
+     *
+     * @param enabled
+     *            - true if we should start base metric monitor
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setBaseMetricMonitorEnabled(boolean enabled) {
+        setProperty(BASE_METRIC_MONITOR_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get base metric monitor stat interval. Default value is 1 second
+     *
+     * @return stat interval
+     */
+    public long getBaseMetricMonitorStatIntervalMs() {
+        long intervalMs = this.getLong(BASE_METRIC_MONITOR_STAT_INTERVAL_MS, VALUE_BASE_METRIC_MONITOR_STAT_INTERVAL_MS_DEFAULT);
+        if (intervalMs < VALUE_BASE_METRIC_MONITOR_STAT_INTERVAL_MS_DEFAULT) {
+            intervalMs = VALUE_BASE_METRIC_MONITOR_STAT_INTERVAL_MS_DEFAULT;
+        }
+        return intervalMs;
+    }
+
+    /**
+     * Set base metric monitor stat interval.
+     *
+     * @param statInterval
+     *          stat Interval
+     * @return server configuration
+     */
+    public ServerConfiguration setBaseMetricMonitorStatIntervalMs(long statInterval) {
+        this.setProperty(BASE_METRIC_MONITOR_STAT_INTERVAL_MS, Long.toString(statInterval));
+        return this;
+    }
+
+    /**
+     * Get base metric monitor metric slide window size. Default value is 1 second
+     *
+     * @return metric slide window size
+     */
+    public int getBaseMetricMonitorMetricSlideWindowSize() {
+        int metricSlideWindowSize = this.getInt(BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE, VALUE_BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE_DEFAULT);
+        if (metricSlideWindowSize < VALUE_BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE_MIN) {
+            metricSlideWindowSize = VALUE_BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE_MIN;
+        }
+        return metricSlideWindowSize;
+    }
+
+    /**
+     * Set base metric monitor metric slide window size.
+     *
+     * @param metricSlideWindowSize
+     *          metric slide window size
+     * @return server configuration
+     */
+    public ServerConfiguration setBaseMetricMonitorMetricSlideWindowSize(int metricSlideWindowSize) {
+        this.setProperty(BASE_METRIC_MONITOR_METRIC_SLICE_WINDOW_SIZE, Integer.toString(metricSlideWindowSize));
+        return this;
     }
 }

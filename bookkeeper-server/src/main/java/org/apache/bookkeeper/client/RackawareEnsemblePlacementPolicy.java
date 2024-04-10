@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
@@ -57,11 +58,12 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           int minNumRacksPerWriteQuorum,
                                                           boolean enforceMinNumRacksPerWriteQuorum,
                                                           boolean ignoreLocalNodeInPlacementPolicy,
-            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
+                                                          StatsLogger statsLogger,
+                                                          BookieAddressResolver bookieAddressResolver) {
         return initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
             reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
             enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy, false,
-            statsLogger, bookieAddressResolver);
+            statsLogger, bookieAddressResolver, new ClientConfiguration());
     }
 
     @Override
@@ -76,22 +78,24 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           boolean enforceMinNumRacksPerWriteQuorum,
                                                           boolean ignoreLocalNodeInPlacementPolicy,
                                                           boolean useHostnameResolveLocalNodePlacementPolicy,
-            StatsLogger statsLogger, BookieAddressResolver bookieAddressResolver) {
+                                                          StatsLogger statsLogger,
+                                                          BookieAddressResolver bookieAddressResolver,
+                                                          ClientConfiguration conf) {
         if (stabilizePeriodSeconds > 0) {
             super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
                     maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum,
                     ignoreLocalNodeInPlacementPolicy, useHostnameResolveLocalNodePlacementPolicy,
-                statsLogger, bookieAddressResolver);
+                statsLogger, bookieAddressResolver, conf);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
                     enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy,
-                    useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver);
+                    useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver, conf);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
                     reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
                     enforceMinNumRacksPerWriteQuorum, ignoreLocalNodeInPlacementPolicy,
-                    useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver);
+                    useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver, conf);
             slave = null;
         }
         return this;
