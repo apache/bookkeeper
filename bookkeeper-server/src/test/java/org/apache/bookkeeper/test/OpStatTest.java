@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.function.BiConsumer;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
