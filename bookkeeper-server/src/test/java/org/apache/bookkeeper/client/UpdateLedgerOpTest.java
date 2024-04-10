@@ -35,12 +35,12 @@ import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.MathUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(UpdateLedgerOpTest.class);
-    private DigestType digestType = DigestType.CRC32;
+    private final DigestType digestType = DigestType.CRC32;
     private static final String PASSWORD = "testPasswd";
     private static final int printprogress = 5;
 
