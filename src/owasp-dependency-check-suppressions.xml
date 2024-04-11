@@ -194,7 +194,6 @@
      <sha1>9b78a289a3aa34eb47fac8c432f664fc140387df</sha1>
      <cve>CVE-2021-28165</cve>
   </suppress>
-<<<<<<< HEAD
 <!--    Netty false positive https://github.com/netty/netty-tcnative/issues/710 -->
     <suppress>
         <notes><![CDATA[
