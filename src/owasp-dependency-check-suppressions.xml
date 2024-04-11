@@ -334,6 +334,7 @@ file name: netty-tcnative-boringssl-static-2.0.50.Final-windows-x86_64.jar
 ]]></notes>
         <sha1>b6211fb3224bfd2dadf10273a15211f592174652</sha1>
         <cve>CVE-2015-1205</cve>
+    </suppress>
     <!-- https://github.com/jeremylong/DependencyCheck/issues/4487 -->
     <suppress>
         <notes><![CDATA[
