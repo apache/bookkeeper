@@ -109,25 +109,24 @@
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <redirectTestOutputToFile>true</redirectTestOutputToFile>
-    <testRetryCount>2</testRetryCount>
     <src.dir>src/main/java</src.dir>
-    <test.additional.args />
-
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
     <arquillian-junit.version>1.8.0.Final</arquillian-junit.version>
+    <assertj-core.version>3.25.3</assertj-core.version>
+    <awaitility.version>4.2.0</awaitility.version>
+    <bouncycastle.version>1.0.2.4</bouncycastle.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.2</commons-cli.version>
-    <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
-    <commons-configuration.version>1.10</commons-configuration.version>
+    <commons-collections4.version>4.1</commons-collections4.version>
     <commons-compress.version>1.26.0</commons-compress.version>
+    <commons-configuration.version>1.10</commons-configuration.version>
+    <commons-io.version>2.7</commons-io.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
-    <commons-io.version>2.7</commons-io.version>
-    <bouncycastle.version>1.0.2.4</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
+    <datasketches.version>0.8.3</datasketches.version>
     <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
     <etcd.version>0.5.11</etcd.version>
@@ -136,52 +135,53 @@
     <google.errorprone.version>2.9.0</google.errorprone.version>
     <grpc.version>1.56.0</grpc.version>
     <guava.version>32.0.1-jre</guava.version>
-    <kerby.version>1.1.1</kerby.version>
     <hadoop.version>3.3.5</hadoop.version>
+    <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
+    <hppc.version>0.9.1</hppc.version>
+    <httpclient.version>4.5.13</httpclient.version>
+    <httpcore.version>4.4.15</httpcore.version>
     <jackson.version>2.13.4.20221013</jackson.version>
+    <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <jcommander.version>1.82</jcommander.version>
+    <jctools.version>2.1.2</jctools.version>
     <jetty.version>9.4.53.v20231009</jetty.version>
     <jmh.version>1.37</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jsoup.version>1.15.3</jsoup.version>
     <junit.version>4.13.2</junit.version>
-    <hamcrest.version>1.3</hamcrest.version>
     <junit5.version>5.10.2</junit5.version>
-    <assertj-core.version>3.25.3</assertj-core.version>
-    <awaitility.version>4.2.0</awaitility.version>
+    <kerby.version>1.1.1</kerby.version>
     <libthrift.version>0.14.2</libthrift.version>
-    <lombok.version>1.18.32</lombok.version>
     <log4j.version>2.23.1</log4j.version>
+    <lombok.version>1.18.32</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.108.Final</netty.version>
     <netty-iouring.version>0.0.25.Final</netty-iouring.version>
+    <netty.version>4.1.108.Final</netty.version>
     <ostrich.version>9.1.3</ostrich.version>
+    <otel.version>1.26.0</otel.version>
     <prometheus.version>0.15.0</prometheus.version>
-    <datasketches.version>0.8.3</datasketches.version>
-    <httpclient.version>4.5.13</httpclient.version>
-    <httpcore.version>4.4.15</httpcore.version>
     <protobuf.version>3.22.3</protobuf.version>
-    <protoc3.version>3.22.3</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
+    <protoc3.version>3.22.3</protoc3.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>7.9.2</rocksdb.version>
+    <rxjava.version>3.0.1</rxjava.version>
+    <servlet-api.version>4.0.0</servlet-api.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
     <snakeyaml.version>2.0</snakeyaml.version>
+    <snappy.version>1.1.10.5</snappy.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
-    <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.19.4</testcontainers.version>
     <vertx.version>4.5.7</vertx.version>
     <zookeeper.version>3.8.4</zookeeper.version>
-    <snappy.version>1.1.10.5</snappy.version>
-    <jctools.version>2.1.2</jctools.version>
-    <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
     <coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
+    <dependency-check-maven.version>8.0.2</dependency-check-maven.version>
     <dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
     <download-maven-plugin.version>1.6.8</download-maven-plugin.version>
     <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
@@ -191,16 +191,17 @@
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-    <dependency-check-maven.version>8.0.2</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
+    <!-- surefire plugin args -->
     <forkCount.variable>1</forkCount.variable>
-    <servlet-api.version>4.0.0</servlet-api.version>
-    <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.26.0</otel.version>
+    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+    <testRetryCount>2</testRetryCount>
+    <test.additional.args />
+    <!-- ubuntu mirror -->
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
