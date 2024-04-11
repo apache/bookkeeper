@@ -128,6 +128,7 @@
     <commons-io.version>2.7</commons-io.version>
     <bouncycastle.version>1.0.2.4</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
+    <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
     <etcd.version>0.5.11</etcd.version>
     <freebuilder.version>2.8.0</freebuilder.version>
@@ -254,6 +255,11 @@
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-slf4j2-impl</artifactId>
         <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.lmax</groupId>
+        <artifactId>disruptor</artifactId>
+        <version>${disruptor.version}</version>
       </dependency>
 
       <!-- commons dependencies -->

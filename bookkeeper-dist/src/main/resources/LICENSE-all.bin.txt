@@ -349,6 +349,7 @@ Apache Software License, Version 2.
 - lib/org.jetbrains.kotlin-kotlin-stdlib-common-1.6.20.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-jdk7-1.6.20.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-jdk8-1.6.20.jar [56]
+- lib/com.lmax-disruptor-4.0.0.jar [57]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.13.4
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.13.4
@@ -401,6 +402,7 @@ Apache Software License, Version 2.
 [54] Source available at https://github.com/square/okio/releases/tag/parent-3.2.0
 [55] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.26.0
 [56] Source available at https://github.com/JetBrains/kotlin/releases/tag/v1.6.20
+[57] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.108.Final.jar bundles some 3rd party dependencies

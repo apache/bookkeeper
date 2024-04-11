@@ -292,6 +292,7 @@ Apache Software License, Version 2.
 - lib/org.xerial.snappy-snappy-java-1.1.10.5.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/com.carrotsearch-hppc-0.9.1.jar [52]
+- lib/com.lmax-disruptor-4.0.0.jar [53]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.13.4
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.13.4
@@ -332,6 +333,7 @@ Apache Software License, Version 2.
 [50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.5
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
+[53] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.108.Final.jar bundles some 3rd party dependencies
