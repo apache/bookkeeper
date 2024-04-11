@@ -1774,7 +1774,7 @@ reduces the number of open file descriptors and the amount of random IOs can occ
 
 #### Metadata API
 
-New serviceUri based metadata API is introduced as [BP-29](http://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
+New serviceUri based metadata API is introduced as [BP-29](https://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
 abstraction over ledger manager, registration service, allowing plugin different type of data stores as the metadata service.
 
 #### Performance
@@ -1798,7 +1798,7 @@ There are are multiple new commands are added in BookieShell. Here are a few hig
 - `metaformat` is deprecated with two new commands `initnewcluster` and `nukeexistingcluster`. This separation provides better operability and reduces mistakes.
 - `initbookie` command is introduced for initializing a new bookie. `bookieformat` keeps serving as the purpose of reformatting a bookie.
 
-A new BookKeeper CLI is proposed in [BP-27](http://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
+A new BookKeeper CLI is proposed in [BP-27](https://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
 The full list of shell commands will be fully ported to new bookkeeper CLI in next release.
 
 #### ReadOnly Mode Support

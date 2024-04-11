@@ -2,7 +2,7 @@ Is this a question, feature request, bug report, or bookkeeper proposal?
 
 **QUESTION**
 
-Have you checked our documentation at http://bookkeeper.apache.org/ , If you could not find an answer there, please consider asking your question in our community forum at user@bookkeeper.apache.org, as it would benefit other members of our community.
+Have you checked our documentation at https://bookkeeper.apache.org/ , If you could not find an answer there, please consider asking your question in our community forum at user@bookkeeper.apache.org, as it would benefit other members of our community.
 
 
 **FEATURE REQUEST**
