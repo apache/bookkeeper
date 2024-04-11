@@ -8,7 +8,7 @@ assignees: ''
 
 **QUESTION**
 
-Have you checked our documentation at http://bookkeeper.apache.org/?
+Have you checked our documentation at https://bookkeeper.apache.org/?
 If you could not find an answer there, please consider asking your question
 in our community mailing list at user@bookkeeper.apache.org, as it would benefit
 other members of our community.

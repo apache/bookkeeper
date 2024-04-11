@@ -27,12 +27,12 @@
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
-  <url>http://bookkeeeper.apache.org</url>
+  <url>https://bookkeeeper.apache.org</url>
   <inceptionYear>2011</inceptionYear>
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -92,16 +92,16 @@
       <subscribe>commits-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>commits@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
     </mailingList>
   </mailingLists>
   <developers>
     <developer>
       <name>The Apache BookKeeper Team</name>
       <email>dev@bookkeeper.apache.org</email>
-      <url>http://bookkeeper.apache.org</url>
+      <url>https://bookkeeper.apache.org</url>
       <organization>Apache Software Foundation</organization>
-      <organizationUrl>http://www.apache.org</organizationUrl>
+      <organizationUrl>https://www.apache.org</organizationUrl>
     </developer>
   </developers>
   <properties>

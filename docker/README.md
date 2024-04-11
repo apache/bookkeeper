@@ -3,7 +3,7 @@
 
 Apache Bookkeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
 
-> [Apache Bookkeeper](http://bookkeeper.apache.org/)
+> [Apache Bookkeeper](https://bookkeeper.apache.org/)
 
 
 # How to use this image

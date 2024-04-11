@@ -49,7 +49,7 @@ Slack channels are great for quick questions or discussions on specialized topic
 
 To avoid potential frustration during the code review cycle, we encourage you to clearly scope and design non-trivial contributions with the BookKeeper community before you start coding.
 
-We are using [BookKeeper Proposals](http://bookkeeper.apache.org/community/bookkeeper-proposals/) for managing major changes to BookKeeper.
+We are using [BookKeeper Proposals](https://bookkeeper.apache.org/community/bookkeeper-proposals/) for managing major changes to BookKeeper.
 
 ## Code
 
