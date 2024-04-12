@@ -27,10 +27,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -280,11 +281,15 @@ public class ConfigDefTest {
 
     @Test
     public void testSaveConfigDef() throws IOException  {
-        byte[] confData;
-        try (InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_conf_2.conf")) {
-            confData = new byte[is.available()];
-            ByteStreams.readFully(is, confData);
+        StringBuilder sb = new StringBuilder();
+        try (InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_conf_2.conf");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append(System.lineSeparator());
+            }
         }
+        String confData = sb.toString();
 
         ConfigDef configDef = ConfigDef.of(TestConfig2.class);
         String readConf;
@@ -294,7 +299,7 @@ public class ConfigDefTest {
             log.info("\n{}", readConf);
         }
 
-        assertEquals(new String(confData, UTF_8), readConf);
+        assertEquals(confData, readConf);
     }
 
 }
