@@ -72,5 +72,11 @@
       <artifactId>sketches-core</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
