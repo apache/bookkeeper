@@ -52,7 +52,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected final long ledgerId;
     protected final long entryId;
 
-    private volatile ByteBuf body;
+    private volatile ByteBuf entryBody;
 
     // Stats
     protected final OpStatsLogger readStats;
@@ -111,14 +111,14 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             fenceResult.whenCompleteAsync(new FutureEventListener<Boolean>() {
                 @Override
                 public void onSuccess(Boolean result) {
-                    sendFenceResponse(readResponseBuilder, body, result, startTimeSw);
+                    sendFenceResponse(readResponseBuilder, entryBody, result, startTimeSw);
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
                     LOG.error("Fence request for ledgerId {} entryId {} encountered exception",
                             ledgerId, entryId, t);
-                    sendFenceResponse(readResponseBuilder, body, false, startTimeSw);
+                    sendFenceResponse(readResponseBuilder, entryBody, false, startTimeSw);
                 }
             }, fenceThreadPool);
         } else {
@@ -129,7 +129,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 LOG.error("Fence request for ledgerId {} entryId {} encountered exception : ",
                         readRequest.getLedgerId(), readRequest.getEntryId(), t);
             }
-            sendFenceResponse(readResponseBuilder, body, success, startTimeSw);
+            sendFenceResponse(readResponseBuilder, entryBody, success, startTimeSw);
         }
     }
 
@@ -169,12 +169,12 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
         throws IOException, BookieException {
-        body = requestProcessor.getBookie().readEntry(ledgerId, entryId);
+        entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
         if (null != fenceResult) {
             handleReadResultForFenceRead(readResponseBuilder, entryId, startTimeSw);
             return null;
         } else {
-            readResponseBuilder.setBody(UnsafeByteOperations.unsafeWrap(body.nioBuffer()));
+            readResponseBuilder.setBody(UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer()));
             if (readLACPiggyBack) {
                 readResponseBuilder.setEntryId(entryId);
             } else {
@@ -343,9 +343,18 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
 
     @Override
-    protected void onSendResponseFinished(boolean success) {
-        if (null != body) {
-            ReferenceCountUtil.release(body);
+    protected void onSendResponseFailure() {
+        super.onSendResponseFailure();
+        if (null != entryBody) {
+            ReferenceCountUtil.release(entryBody);
+        }
+    }
+
+    @Override
+    protected void onSendResponseSuccess() {
+        super.onSendResponseSuccess();
+        if (null != entryBody) {
+            ReferenceCountUtil.release(entryBody);
         }
     }
 
