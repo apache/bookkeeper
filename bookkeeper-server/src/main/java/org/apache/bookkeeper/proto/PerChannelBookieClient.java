@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -700,14 +701,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
-        ByteString body;
-        if (toSend.hasArray()) {
-            body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
-        } else if (toSend.size() == 1) {
-            body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
-        } else {
-            body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
-        }
+        ByteString body = byteBufListToByteString(toSend);
+        toSend.retain();
+        Runnable cleanupActionFailedBeforeWrite = toSend::release;
+        Runnable cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
         WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
                 .setLedgerId(ledgerId)
                 .setLac(lac)
@@ -718,7 +715,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setHeader(headerBuilder)
                 .setWriteLacRequest(writeLacBuilder)
                 .build();
-        writeAndFlush(channel, completionKey, writeLacRequest);
+        writeAndFlush(channel, completionKey, writeLacRequest, false, cleanupActionFailedBeforeWrite,
+                cleanupActionAfterWrite);
     }
 
     void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx) {
@@ -777,6 +775,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                   Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
         CompletionKey completionKey = null;
+        Runnable cleanupActionFailedBeforeWrite = null;
+        Runnable cleanupActionAfterWrite = null;
         if (useV2WireProtocol) {
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
                 LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
@@ -786,9 +786,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
 
             if (toSend instanceof ByteBuf) {
-                request = ((ByteBuf) toSend).retainedDuplicate();
+                ByteBuf byteBuf = ((ByteBuf) toSend).retainedDuplicate();
+                request = byteBuf;
+                cleanupActionFailedBeforeWrite = byteBuf::release;
             } else {
-                request = ByteBufList.clone((ByteBufList) toSend);
+                ByteBufList byteBufList = ByteBufList.clone((ByteBufList) toSend);
+                request = byteBufList;
+                cleanupActionFailedBeforeWrite = byteBufList::release;
             }
         } else {
             final long txnId = getTxnId();
@@ -803,19 +807,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
-            ByteString body = null;
             ByteBufList bufToSend = (ByteBufList) toSend;
-
-            if (bufToSend.hasArray()) {
-                body = UnsafeByteOperations.unsafeWrap(bufToSend.array(), bufToSend.arrayOffset(),
-                        bufToSend.readableBytes());
-            } else {
-                for (int i = 0; i < bufToSend.size(); i++) {
-                    ByteString piece = UnsafeByteOperations.unsafeWrap(bufToSend.getBuffer(i).nioBuffer());
-                    // use ByteString.concat to avoid byte[] allocation when toSend has multiple ByteBufs
-                    body = (body == null) ? piece : body.concat(piece);
-                }
-            }
+            ByteString body = byteBufListToByteString(bufToSend);
+            bufToSend.retain();
+            cleanupActionFailedBeforeWrite = bufToSend::release;
+            cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
@@ -840,17 +836,39 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         putCompletionKeyValue(completionKey,
                               acquireAddCompletion(completionKey,
                                                    cb, ctx, ledgerId, entryId));
-        final Channel c = channel;
-        if (c == null) {
-            // Manually release the binary data(variable "request") that we manually created when it can not be sent out
-            // because the channel is switching.
-            errorOut(completionKey);
-            ReferenceCountUtil.release(request);
-            return;
-        } else {
-            // addEntry times out on backpressure
-            writeAndFlush(c, completionKey, request, allowFastFail);
+        // addEntry times out on backpressure
+        writeAndFlush(channel, completionKey, request, allowFastFail, cleanupActionFailedBeforeWrite,
+                cleanupActionAfterWrite);
+    }
+
+    /**
+     * Wrap the internal buffers of a ByteBufList into a single ByteString.
+     * The lifecycle of the wrapped ByteString is tied to the ByteBufList.
+     *
+     * @param bufList ByteBufList to wrap
+     * @return ByteString wrapping the internal buffers of the ByteBufList
+     */
+    private static ByteString byteBufListToByteString(ByteBufList bufList) {
+        ByteString aggregated = null;
+        for (int i = 0; i < bufList.size(); i++) {
+            ByteBuf buffer = bufList.getBuffer(i);
+            ByteString piece;
+            if (buffer.nioBufferCount() > 1) {
+                for (ByteBuffer nioBuffer : buffer.nioBuffers()) {
+                    piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
+                    aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
+                }
+            } else {
+                if (buffer.hasArray()) {
+                    piece = UnsafeByteOperations.unsafeWrap(buffer.array(), buffer.arrayOffset(),
+                            buffer.readableBytes());
+                } else {
+                    piece = UnsafeByteOperations.unsafeWrap(buffer.nioBuffer());
+                }
+                aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
+            }
         }
+        return aggregated != null ? aggregated : ByteString.EMPTY;
     }
 
     public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
@@ -1005,7 +1023,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId);
         putCompletionKeyValue(completionKey, readCompletion);
 
-        writeAndFlush(channel, completionKey, request, allowFastFail);
+        writeAndFlush(channel, completionKey, request, allowFastFail, null, null);
     }
 
     public void batchReadEntries(final long ledgerId,
@@ -1048,7 +1066,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 completionKey, cb, ctx, ledgerId, startEntryId);
         putCompletionKeyValue(completionKey, readCompletion);
 
-        writeAndFlush(channel, completionKey, request, allowFastFail);
+        writeAndFlush(channel, completionKey, request, allowFastFail, null, null);
     }
 
     public void getBookieInfo(final long requested, GetBookieInfoCallback cb, Object ctx) {
@@ -1170,17 +1188,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private void writeAndFlush(final Channel channel,
                                final CompletionKey key,
                                final Object request) {
-        writeAndFlush(channel, key, request, false);
+        writeAndFlush(channel, key, request, false, null, null);
     }
 
     private void writeAndFlush(final Channel channel,
                            final CompletionKey key,
                            final Object request,
-                           final boolean allowFastFail) {
+                               final boolean allowFastFail, final Runnable cleanupActionFailedBeforeWrite,
+                               final Runnable cleanupActionAfterWrite) {
         if (channel == null) {
             LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
             errorOut(key);
-            ReferenceCountUtil.release(request);
+            if (cleanupActionFailedBeforeWrite != null) {
+                cleanupActionFailedBeforeWrite.run();
+            }
             return;
         }
 
@@ -1195,7 +1216,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
-            ReferenceCountUtil.release(request);
+            if (cleanupActionFailedBeforeWrite != null) {
+                cleanupActionFailedBeforeWrite.run();
+            }
             return;
         }
 
@@ -1203,23 +1226,29 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             final long startTime = MathUtils.nowInNano();
 
             ChannelPromise promise = channel.newPromise().addListener(future -> {
-                if (future.isSuccess()) {
-                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                    CompletionValue completion = completionObjects.get(key);
-                    if (completion != null) {
-                        completion.setOutstanding();
+                try {
+                    if (future.isSuccess()) {
+                        nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                        CompletionValue completion = completionObjects.get(key);
+                        if (completion != null) {
+                            completion.setOutstanding();
+                        }
+                    } else {
+                        nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                     }
-                } else {
-                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                } finally {
+                    if (cleanupActionAfterWrite != null) {
+                        cleanupActionAfterWrite.run();
+                    }
                 }
             });
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
-            // If the request goes into the writeAndFlush, it should be handled well by Netty. So all the exceptions we
-            // get here, we can release the request.
-            ReferenceCountUtil.release(request);
+            if (cleanupActionFailedBeforeWrite != null) {
+                cleanupActionFailedBeforeWrite.run();
+            }
         }
     }
 
