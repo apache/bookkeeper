@@ -38,16 +38,20 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -59,6 +63,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
+import org.apache.bookkeeper.proto.BookieProtoEncoding;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -83,6 +88,7 @@ import org.junit.Test;
 /**
  * Test the bookie client.
  */
+@Slf4j
 public class BookieClientTest {
     BookieServer bs;
     File tmpDir;
@@ -751,71 +757,125 @@ public class BookieClientTest {
         }
     }
 
-    public void testDataRefCnfWhenReconnect(BookieClientImpl client) throws Exception {
-        long ledgerId = 1;
-        long entryId = 1;
+    public void testDataRefCnfWhenReconnect(boolean useV2WireProtocol, boolean smallPayload,
+                                            boolean withDelayReconnect, boolean withDelayAddEntry,
+                                            int tryTimes) throws Exception {
+        final long ledgerId = 1;
+        final BookieId addr = bs.getBookieId();
+        // Build passwd.
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
-        BookieId addr = bs.getBookieId();
-        ResultStruct arc = new ResultStruct();
+        // Build digest manager.
+        DigestManager digestManager = DigestManager.instantiate(1, passwd,
+                BookKeeper.DigestType.toProtoDigestType(BookKeeper.DigestType.DUMMY),
+                PooledByteBufAllocator.DEFAULT, useV2WireProtocol);
+        // Build client.
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setUseV2WireProtocol(useV2WireProtocol);
+        BookieClientImpl client = new BookieClientImpl(clientConf, eventLoopGroup,
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
+        // Inject a reconnect event.
+        // 1. Get the channel that will be used.
+        // 2. Call add entry.
+        // 3. Another thread close the channel that is using.
+        for (int i = 0; i < tryTimes; i++) {
+            long entryId = i + 1;
+            long lac = i;
+            // Build payload.
+            int payloadLen;
+            ByteBuf payload;
+            if (smallPayload) {
+                payloadLen = 1;
+                payload = PooledByteBufAllocator.DEFAULT.buffer(1);
+                payload.writeByte(1);
+            } else {
+                payloadLen = BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD;
+                payload = PooledByteBufAllocator.DEFAULT.buffer();
+                byte[] bs = new byte[payloadLen];
+                payload.writeBytes(bs);
+            }
 
-        ByteBuf internalBB = PooledByteBufAllocator.DEFAULT.buffer(4 + 24);
-        internalBB.writeLong(ledgerId);
-        internalBB.writeLong(entryId);
-        internalBB.writeLong(entryId - 1);
-        internalBB.writeInt(1);
-        ByteBufList bb = ByteBufList.get(internalBB);
+            // Digest.
+            ReferenceCounted bb = digestManager.computeDigestAndPackageForSending(entryId, lac,
+                    payloadLen * entryId, payload, passwd, BookieProtocol.FLAG_NONE);
+            log.info("Before send. bb.refCnf: {}", bb.refCnt());
 
-        for (int i = 0; i < 30; i++) {
-            // Inject a reconnect event.
-            // 1. Get the channel will be used.
-            // 2. Call add entry.
-            // 3. Another thread close the channel that is using.
+            // Step: get the channel that will be used.
             PerChannelBookieClientPool perChannelBookieClientPool = client.lookupClient(addr);
             AtomicReference<PerChannelBookieClient> perChannelBookieClient = new AtomicReference<>();
             perChannelBookieClientPool.obtain((rc, result) -> perChannelBookieClient.set(result), ledgerId);
             Awaitility.await().untilAsserted(() -> {
                 assertNotNull(perChannelBookieClient.get());
             });
+
+            // Step: Inject a reconnect event.
+            final int delayMillis = i;
             new Thread(() -> {
+                if (withDelayReconnect) {
+                    sleep(delayMillis);
+                }
                 Channel channel = WhiteboxImpl.getInternalState(perChannelBookieClient.get(), "channel");
-                channel.close();
+                if (channel != null) {
+                    channel.close();
+                }
             }).start();
-            client.addEntry(addr, ledgerId, passwd, entryId, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false,
+            if (withDelayAddEntry) {
+                sleep(delayMillis);
+            }
+
+            // Step: add entry.
+            AtomicBoolean callbackExecuted = new AtomicBoolean();
+            WriteCallback callback = (rc, lId, eId, socketAddr, ctx) -> {
+                log.info("Writing is finished. rc: {}, withDelayReconnect: {}, withDelayAddEntry: {}, ledgerId: {},"
+                                + " entryId: {}, socketAddr: {}, ctx: {}",
+                        rc, withDelayReconnect, withDelayAddEntry, lId, eId, socketAddr, ctx);
+                callbackExecuted.set(true);
+            };
+            client.addEntry(addr, ledgerId, passwd, entryId, bb, callback, i, BookieProtocol.FLAG_NONE, false,
                     WriteFlag.NONE);
-            Awaitility.await().untilAsserted(() -> {
+            // Wait for adding entry is finish.
+            Awaitility.await().untilAsserted(() -> assertTrue(callbackExecuted.get()));
+            // Check the ref count.
+            Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
                 assertEquals(1, bb.refCnt());
-                assertEquals(1, internalBB.refCnt());
+                // V2 will release this original data if it is a small.
+                if (!useV2WireProtocol && !smallPayload) {
+                    assertEquals(1, payload.refCnt());
+                }
             });
+            bb.release();
+            // V2 will release this original data if it is a small.
+            if (!useV2WireProtocol && !smallPayload) {
+                payload.release();
+            }
         }
         // cleanup.
-        bb.release();
+        client.close();
+    }
+
+    private void sleep(int milliSeconds) {
+        try {
+            if (milliSeconds > 0) {
+                Thread.sleep(1);
+            }
+        } catch (InterruptedException e) {
+            log.warn("Error occurs", e);
+        }
     }
 
     @Test
     public void testDataRefCnfWhenReconnectV2() throws Exception {
-        // test.
-        ClientConfiguration clientConf = new ClientConfiguration();
-        clientConf.setUseV2WireProtocol(true);
-        BookieClientImpl client = new BookieClientImpl(clientConf, eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
-                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        testDataRefCnfWhenReconnect(client);
-        // cleanup.
-        client.close();
+        testDataRefCnfWhenReconnect(true, false, false, false, 10);
+        testDataRefCnfWhenReconnect(true, false, true, false, 10);
+        testDataRefCnfWhenReconnect(true, false, false, true, 10);
     }
 
     @Test
     public void testDataRefCnfWhenReconnectV3() throws Exception {
-        // test.
-        ClientConfiguration clientConf = new ClientConfiguration();
-        clientConf.setUseV2WireProtocol(false);
-        BookieClientImpl client = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
-                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        testDataRefCnfWhenReconnect(client);
-        // cleanup.
-        client.close();
+        testDataRefCnfWhenReconnect(false, true,false, false, 10);
+        testDataRefCnfWhenReconnect(false, true,  true, false, 10);
+        testDataRefCnfWhenReconnect(false, true, false, true, 10);
     }
 }
