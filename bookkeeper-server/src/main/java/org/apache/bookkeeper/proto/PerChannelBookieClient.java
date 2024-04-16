@@ -845,7 +845,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // usually checked in writeAndFlush, but we have extra check
             // because we need to release toSend.
             errorOut(completionKey);
-            ReferenceCountUtil.release(toSend);
+            ReferenceCountUtil.release(request);
             return;
         } else {
             // addEntry times out on backpressure

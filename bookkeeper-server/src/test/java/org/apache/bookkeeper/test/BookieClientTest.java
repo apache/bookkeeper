@@ -29,6 +29,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCounted;
@@ -64,6 +65,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.proto.PerChannelBookieClient;
+import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
@@ -71,6 +74,7 @@ import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.IOUtils;
 import org.awaitility.Awaitility;
+import org.awaitility.reflect.WhiteboxImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -744,5 +748,41 @@ public class BookieClientTest {
             byte[] bytes = ByteBufUtil.getBytes(byteBuf);
             assertTrue(Arrays.equals(kbData, bytes));
         }
+    }
+
+    @Test
+    public void testDataRefCnfWhenReconnect() throws Exception {
+        long ledgerId = 1;
+        byte[] passwd = new byte[20];
+        Arrays.fill(passwd, (byte) 'a');
+        BookieId addr = bs.getBookieId();
+        ResultStruct arc = new ResultStruct();
+
+        BookieClientImpl client = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        ByteBufList bb = createByteBuffer(1, 1, 1);
+        for (int i = 0; i < 30; i++) {
+            // Inject a reconnect event.
+            // 1. Get the channel will be used.
+            // 2. Call add entry.
+            // 3. Another thread close the channel that is using.
+            PerChannelBookieClientPool perChannelBookieClientPool = client.lookupClient(addr);
+            AtomicReference<PerChannelBookieClient> perChannelBookieClient = new AtomicReference<>();
+            perChannelBookieClientPool.obtain((rc, result) -> perChannelBookieClient.set(result), ledgerId);
+            Awaitility.await().untilAsserted(() -> {
+                assertNotNull(perChannelBookieClient.get());
+            });
+            new Thread(() -> {
+                Channel channel = WhiteboxImpl.getInternalState(perChannelBookieClient.get(), "channel");
+                channel.close();
+            }).start();
+            client.addEntry(addr, ledgerId, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+            Awaitility.await().untilAsserted(() -> {
+                assertEquals(1, bb.refCnt());
+            });
+        }
+        // cleanup.
+        bb.release();
     }
 }
