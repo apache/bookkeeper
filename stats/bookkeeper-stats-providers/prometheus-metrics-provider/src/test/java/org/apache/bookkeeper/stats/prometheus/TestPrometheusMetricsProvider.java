@@ -132,15 +132,16 @@ public class TestPrometheusMetricsProvider {
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_PORT, 0);
         config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ADDRESS, "127.0.0.1");
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.directBuffer(25);
         PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
         try {
             provider.start(config);
             assertNotNull(provider.server);
+            ByteBuf byteBuf = ByteBufAllocator.DEFAULT.directBuffer(25);
             StringWriter writer = new StringWriter();
             provider.writeAllMetrics(writer);
             String s = writer.toString();
-            String[] split = s.split(System.lineSeparator());
+            // prometheus network string uses '\n' in all platform
+            String[] split = s.split("\n");
             HashMap<String, String> map = new HashMap<>();
             for (String str : split) {
                 String[] aux = str.split(" ");
