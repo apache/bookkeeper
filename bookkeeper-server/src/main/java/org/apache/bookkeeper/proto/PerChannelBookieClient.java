@@ -1180,6 +1180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (channel == null) {
             LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
             errorOut(key);
+            ReferenceCountUtil.release(request);
             return;
         }
 
@@ -1194,9 +1195,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
+            ReferenceCountUtil.release(request);
             return;
         }
 
+        boolean calledWrite = false;
         try {
             final long startTime = MathUtils.nowInNano();
 
@@ -1211,10 +1214,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
             });
+            calledWrite = true;
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
+            if (!calledWrite) {
+                ReferenceCountUtil.release(request);
+            }
         }
     }
 

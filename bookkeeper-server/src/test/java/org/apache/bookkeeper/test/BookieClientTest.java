@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -750,18 +751,22 @@ public class BookieClientTest {
         }
     }
 
-    @Test
-    public void testDataRefCnfWhenReconnect() throws Exception {
+    public void testDataRefCnfWhenReconnect(BookieClientImpl client) throws Exception {
         long ledgerId = 1;
+        long entryId = 1;
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         BookieId addr = bs.getBookieId();
         ResultStruct arc = new ResultStruct();
 
-        BookieClientImpl client = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
-                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
-                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        ByteBufList bb = createByteBuffer(1, 1, 1);
+
+        ByteBuf internalBB = PooledByteBufAllocator.DEFAULT.buffer(4 + 24);
+        internalBB.writeLong(ledgerId);
+        internalBB.writeLong(entryId);
+        internalBB.writeLong(entryId - 1);
+        internalBB.writeInt(1);
+        ByteBufList bb = ByteBufList.get(internalBB);
+
         for (int i = 0; i < 30; i++) {
             // Inject a reconnect event.
             // 1. Get the channel will be used.
@@ -777,12 +782,40 @@ public class BookieClientTest {
                 Channel channel = WhiteboxImpl.getInternalState(perChannelBookieClient.get(), "channel");
                 channel.close();
             }).start();
-            client.addEntry(addr, ledgerId, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+            client.addEntry(addr, ledgerId, passwd, entryId, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false,
+                    WriteFlag.NONE);
             Awaitility.await().untilAsserted(() -> {
                 assertEquals(1, bb.refCnt());
+                assertEquals(1, internalBB.refCnt());
             });
         }
         // cleanup.
         bb.release();
+    }
+
+    @Test
+    public void testDataRefCnfWhenReconnectV2() throws Exception {
+        // test.
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setUseV2WireProtocol(true);
+        BookieClientImpl client = new BookieClientImpl(clientConf, eventLoopGroup,
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        testDataRefCnfWhenReconnect(client);
+        // cleanup.
+        client.close();
+    }
+
+    @Test
+    public void testDataRefCnfWhenReconnectV3() throws Exception {
+        // test.
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setUseV2WireProtocol(false);
+        BookieClientImpl client = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup,
+                UnpooledByteBufAllocator.DEFAULT, executor, scheduler, NullStatsLogger.INSTANCE,
+                BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        testDataRefCnfWhenReconnect(client);
+        // cleanup.
+        client.close();
     }
 }
