@@ -842,8 +842,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                    cb, ctx, ledgerId, entryId));
         final Channel c = channel;
         if (c == null) {
-            // usually checked in writeAndFlush, but we have extra check
-            // because we need to release toSend.
+            // Manually release the binary data(variable "request") that we manually created when can not be sent out
+            // because the channel is switching.
             errorOut(completionKey);
             ReferenceCountUtil.release(request);
             return;
