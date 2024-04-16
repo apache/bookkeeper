@@ -1199,7 +1199,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        boolean calledWrite = false;
         try {
             final long startTime = MathUtils.nowInNano();
 
@@ -1214,14 +1213,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
             });
-            calledWrite = true;
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
-            if (!calledWrite) {
-                ReferenceCountUtil.release(request);
-            }
+            // If the request goes into the writeAndFlush, it should be handled well by Netty. So all the exceptions we
+            // get here, we can release the request.
+            ReferenceCountUtil.release(request);
         }
     }
 
