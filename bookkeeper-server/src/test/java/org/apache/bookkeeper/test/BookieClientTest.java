@@ -757,6 +757,20 @@ public class BookieClientTest {
         }
     }
 
+    /**
+     * Explain the stacks of "BookieClientImpl.addEntry" here
+     * 1.`BookieClientImpl.addEntry`.
+     *   a.Retain the `ByteBuf` before get `PerChannelBookieClient`. We call this `ByteBuf` as `toSend` in the
+     *     following sections. `toSend.recCnf` is `2` now.
+     * 2.`Get PerChannelBookieClient`.
+     * 3.`ChannelReadyForAddEntryCallback.operationComplete`
+     *   a.`PerChannelBookieClient.addEntry`
+     *     a-1.Build a new ByteBuf for request command. We call this `ByteBuf` new as `request` in the following
+     *       sections.
+     *     a-2.`channle.writeAndFlush(request)` or release the ByteBuf when `channel` is switching.
+     *       Note the callback will be called immediately if the channel is switching.
+     *   b.Release the `ByteBuf` since it has been retained at `step 1`. `toSend.recCnf` should be `1` now.
+     */
     public void testDataRefCnfWhenReconnect(boolean useV2WireProtocol, boolean smallPayload,
                                             boolean withDelayReconnect, boolean withDelayAddEntry,
                                             int tryTimes) throws Exception {
@@ -837,8 +851,12 @@ public class BookieClientTest {
                     WriteFlag.NONE);
             // Wait for adding entry is finish.
             Awaitility.await().untilAsserted(() -> assertTrue(callbackExecuted.get()));
+            // The steps have be explained on the method description.
+            // Since the step "3-a-2" always runs before the step "3-b", so the "callbackExecuted" will be finished
+            // before the step "3-b". Add a sleep to wait the step "3-a-2" is finish.
+            Thread.sleep(100);
             // Check the ref count.
-            Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            Awaitility.await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
                 assertEquals(1, bb.refCnt());
                 // V2 will release this original data if it is a small.
                 if (!useV2WireProtocol && !smallPayload) {
@@ -865,16 +883,36 @@ public class BookieClientTest {
         }
     }
 
+    /**
+     * Relate to https://github.com/apache/bookkeeper/pull/4289.
+     */
     @Test
     public void testDataRefCnfWhenReconnectV2() throws Exception {
+        // Large payload.
+        // Run this test may not reproduce the issue, you can reproduce the issue this way:
+        // 1. Add two break points.
+        //   a. At the line "Channel c = channel" in the method PerChannelBookieClient.addEntry.
+        //   b. At the line "channel = null" in the method "PerChannelBookieClient.channelInactive".
+        // 2. Make the break point b to run earlier than the break point a during debugging.
         testDataRefCnfWhenReconnect(true, false, false, false, 10);
         testDataRefCnfWhenReconnect(true, false, true, false, 10);
         testDataRefCnfWhenReconnect(true, false, false, true, 10);
+
+        // Small payload.
+        // There is no issue without https://github.com/apache/bookkeeper/pull/4289, just add a test for this scenario.
+        testDataRefCnfWhenReconnect(true, true, false, false, 10);
+        testDataRefCnfWhenReconnect(true, true, true, false, 10);
+        testDataRefCnfWhenReconnect(true, true, false, true, 10);
     }
 
+    /**
+     * Please see the comment of the scenario "Large payload" in the {@link #testDataRefCnfWhenReconnectV2()} if you
+     * can not reproduce the issue when running this test.
+     * Relate to https://github.com/apache/bookkeeper/pull/4289.
+     */
     @Test
     public void testDataRefCnfWhenReconnectV3() throws Exception {
-        testDataRefCnfWhenReconnect(false, true,false, false, 10);
+        testDataRefCnfWhenReconnect(false, true, false, false, 10);
         testDataRefCnfWhenReconnect(false, true,  true, false, 10);
         testDataRefCnfWhenReconnect(false, true, false, true, 10);
     }
