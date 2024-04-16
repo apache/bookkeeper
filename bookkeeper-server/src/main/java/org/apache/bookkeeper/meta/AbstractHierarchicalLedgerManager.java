@@ -67,7 +67,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                     finalCb.processResult(successRc, null, context);
                     return;
                 } else if (rc != Code.OK.intValue()) {
-                    LOG.error("Error syncing path " + path + " when getting its chidren: ",
+                    LOG.error("Error syncing path " + path + " when getting its children: ",
                               KeeperException.create(KeeperException.Code.get(rc), path));
                     finalCb.processResult(failureRc, null, context);
                     return;
@@ -99,7 +99,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
     }
 
     /**
-     * Process list one by one in asynchronize way. Process will be stopped immediately
+     * Process list one by one in asynchronous way. Process will be stopped immediately
      * when error occurred.
      */
     private static class AsyncListProcessor<T> {
