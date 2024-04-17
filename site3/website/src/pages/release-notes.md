@@ -64,6 +64,7 @@ No breaking changes. Some defaults are different, but overall there are no compa
 * Fix auditor elector executor block problem. [PR #4165](https://github.com/apache/bookkeeper/pull/4165) 
 * Fix the autorecovery failed replicate by add entry fenced error [PR #4163](https://github.com/apache/bookkeeper/pull/4163) 
 * Fix auditor thread leak problem. [PR #4162](https://github.com/apache/bookkeeper/pull/4162) 
+* AutoRecovery supports batch read [PR #4211](https://github.com/apache/bookkeeper/pull/4211)
 
 #### Others
 * Added CLI command to start state store service without a bookie [PR #2648](https://github.com/apache/bookkeeper/pull/2648)
@@ -93,6 +94,32 @@ Upgraded notable dependencies and address CVEs, including:
 
 ### Details
 https://github.com/apache/bookkeeper/pulls?q=is%3Apr+milestone%3A4.17.0+is%3Aclosed
+
+
+## 4.16.5
+
+Release 4.16.5 includes multiple bug fixes and few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.5 if you are using 4.16.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fixed creation of temporary dir in NativeUtils [PR #4262](https://github.com/apache/bookkeeper/pull/4262) 
+* Fix error stack track may expose to external user [PR #4223](https://github.com/apache/bookkeeper/pull/4223)
+* Add filename check for unTar [PR #4222](https://github.com/apache/bookkeeper/pull/4222)
+* Fix uncontrolled data used in path expression [PR #4221](https://github.com/apache/bookkeeper/pull/4221)
+* Set metrics endpoint content-type [PR #4208](https://github.com/apache/bookkeeper/pull/4208)
+* Fix checksum calculation bug when the payload is a CompositeByteBuf with readerIndex > 0 [PR #4205](https://github.com/apache/bookkeeper/pull/4205)
+* Fix yaml and dockerfile [PR #4186](https://github.com/apache/bookkeeper/pull/4186)
+
+#### Dependency updates
+* Bump org.apache.commons:commons-compress from 1.21 to 1.26.0 [PR #4214](https://github.com/apache/bookkeeper/pull/4214)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.5+is%3Amerged+
 
 ## 4.16.4
 
@@ -1841,7 +1868,7 @@ reduces the number of open file descriptors and the amount of random IOs can occ
 
 #### Metadata API
 
-New serviceUri based metadata API is introduced as [BP-29](http://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
+New serviceUri based metadata API is introduced as [BP-29](https://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
 abstraction over ledger manager, registration service, allowing plugin different type of data stores as the metadata service.
 
 #### Performance
@@ -1865,7 +1892,7 @@ There are are multiple new commands are added in BookieShell. Here are a few hig
 - `metaformat` is deprecated with two new commands `initnewcluster` and `nukeexistingcluster`. This separation provides better operability and reduces mistakes.
 - `initbookie` command is introduced for initializing a new bookie. `bookieformat` keeps serving as the purpose of reformatting a bookie.
 
-A new BookKeeper CLI is proposed in [BP-27](http://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
+A new BookKeeper CLI is proposed in [BP-27](https://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
 The full list of shell commands will be fully ported to new bookkeeper CLI in next release.
 
 #### ReadOnly Mode Support

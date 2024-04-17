@@ -49,6 +49,7 @@ import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
 import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
 import org.apache.bookkeeper.common.collections.RecyclableArrayList;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.MemoryLimitController;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -60,7 +61,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -628,7 +628,6 @@ public class Journal implements CheckpointSource {
     private final String lastMarkFileName;
 
     private final Counter callbackTime;
-    private final Counter journalTime;
     private static final String journalThreadName = "BookieJournal";
 
     // journal entry queue to commit
@@ -689,9 +688,6 @@ public class Journal implements CheckpointSource {
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
         this.journalReuseFiles = conf.getJournalReuseFiles();
         this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
-
-        this.journalTime = journalStatsLogger.getThreadScopedCounter("journal-thread-time");
-
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
         this.flushWhenQueueEmpty = maxGroupWaitInNanos <= 0 || conf.getJournalFlushWhenQueueEmpty();
