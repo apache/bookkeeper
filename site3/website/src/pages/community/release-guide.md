@@ -182,7 +182,13 @@ After reviewing the release notes on both GitHub, you should write the release n
 To export the PR descriptions, you can use the [GitHub CLI](https://cli.github.com/).
 After the setup, you can run this command to get the list of changes. Then they can be copied in the release notes file:
 ```
-gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}'
+
+# for a milestone release
+gh pr list -R apache/bookkeeper -S "milestone:4.17.0 is:closed " --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 500
+
+# for a path release
+gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 1000
+
 ```
 
 After copying the list, you will have to manually split them into bugs, features and dependency upgrades.
