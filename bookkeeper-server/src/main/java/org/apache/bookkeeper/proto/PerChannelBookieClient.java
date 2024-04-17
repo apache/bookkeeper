@@ -842,10 +842,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                    cb, ctx, ledgerId, entryId));
         final Channel c = channel;
         if (c == null) {
-            // usually checked in writeAndFlush, but we have extra check
-            // because we need to release toSend.
+            // Manually release the binary data(variable "request") that we manually created when it can not be sent out
+            // because the channel is switching.
             errorOut(completionKey);
-            ReferenceCountUtil.release(toSend);
+            ReferenceCountUtil.release(request);
             return;
         } else {
             // addEntry times out on backpressure
@@ -1180,6 +1180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (channel == null) {
             LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
             errorOut(key);
+            ReferenceCountUtil.release(request);
             return;
         }
 
@@ -1194,6 +1195,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     StringUtils.requestToString(request));
 
             errorOut(key, BKException.Code.TooManyRequestsException);
+            ReferenceCountUtil.release(request);
             return;
         }
 
@@ -1215,6 +1217,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
+            // If the request goes into the writeAndFlush, it should be handled well by Netty. So all the exceptions we
+            // get here, we can release the request.
+            ReferenceCountUtil.release(request);
         }
     }
 
