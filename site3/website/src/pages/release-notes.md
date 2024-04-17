@@ -33,7 +33,6 @@ No breaking changes. Some defaults are different, but overall there are no compa
 * Skip sync the RocksDB when no changes [PR #3904](https://github.com/apache/bookkeeper/pull/3904) 
 * Enable PCBC completionObjects autoShrink to reduce memory usage and gc [PR #3913](https://github.com/apache/bookkeeper/pull/3913) 
 * [Fix] Recycle dropping read-write requests when various exceptions happened [PR #3912](https://github.com/apache/bookkeeper/pull/3912) 
-* Fix isWritable incorrect problem. [PR #3918](https://github.com/apache/bookkeeper/pull/3918) 
 * Fix ledger replicated failed blocks bookie decommission process [PR #3917](https://github.com/apache/bookkeeper/pull/3917) 
 * Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956) 
 * Avoid compaction to trigger extra flushes DbLedgerStorage [PR #3959](https://github.com/apache/bookkeeper/pull/3959) 
