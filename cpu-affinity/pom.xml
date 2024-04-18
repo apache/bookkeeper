@@ -53,6 +53,9 @@
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <skipTests>${skipTests}</skipTests>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

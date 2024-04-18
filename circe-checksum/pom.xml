@@ -86,6 +86,7 @@
               <include>**/*.cpp</include>
             </includes>
           </cpp>
+          <skipTests>${skipTests}</skipTests>
           <!-- skip by default, enabled in OS profiles -->
           <skip>true</skip>
         </configuration>
