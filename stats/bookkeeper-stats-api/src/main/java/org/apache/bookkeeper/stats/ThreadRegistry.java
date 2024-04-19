@@ -52,7 +52,10 @@ public class ThreadRegistry {
     public static void register(String threadPool, int threadPoolThread, long threadId) {
         ThreadPoolThread tpt = new ThreadPoolThread(threadPool, threadPoolThread, threadId);
         ThreadPoolThread previous = threadPoolMap.put(threadId, tpt);
-        assert previous == null : "Thread " + threadId + " was already registered in thread pool " + previous.threadPool + " as thread " + previous.ordinal;
+        if (previous != null) {
+            throw new IllegalStateException("Thread " + threadId + " was already registered in thread pool "
+                    + previous.threadPool + " as thread " + previous.ordinal);
+        }
     }
 
     /*
