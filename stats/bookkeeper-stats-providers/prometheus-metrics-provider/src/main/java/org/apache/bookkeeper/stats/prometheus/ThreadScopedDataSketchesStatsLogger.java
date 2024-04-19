@@ -96,7 +96,9 @@ public class ThreadScopedDataSketchesStatsLogger implements OpStatsLogger {
             ThreadRegistry.ThreadPoolThread tpt = ThreadRegistry.get();
             if (tpt == null) {
                 statsLoggers.set(defaultStatsLogger);
-                provider.opStats.put(new ScopeContext(scopeContext.getScope(), originalLabels), defaultStatsLogger);
+                DataSketchesOpStatsLogger previous = provider.opStats.put(new ScopeContext(scopeContext.getScope(), originalLabels), defaultStatsLogger);
+                // If we overwrite a logger, metrics will not be collected correctly
+                assert previous == null;
                 return defaultStatsLogger;
             } else {
                 Map<String, String> threadScopedlabels = new HashMap<>(originalLabels);
@@ -104,7 +106,9 @@ public class ThreadScopedDataSketchesStatsLogger implements OpStatsLogger {
                 threadScopedlabels.put("thread", String.valueOf(tpt.getOrdinal()));
 
                 statsLogger.initializeThread(threadScopedlabels);
-                provider.opStats.put(new ScopeContext(scopeContext.getScope(), threadScopedlabels), statsLogger);
+                DataSketchesOpStatsLogger previous = provider.opStats.put(new ScopeContext(scopeContext.getScope(), threadScopedlabels), statsLogger);
+                // If we overwrite a logger, metrics will not be collected correctly
+                assert previous == null;
             }
         }
 
