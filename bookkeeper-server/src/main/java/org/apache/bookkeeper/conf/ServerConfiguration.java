@@ -3706,6 +3706,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return http server trustStore password
      */
     public String getHttpServerTrustStorePassword() {
+        String serverTrustStorePassword = getString(HTTP_SERVER_TRUST_STORE_PASSWORD);
+        if (serverTrustStorePassword != null) {
+            return serverTrustStorePassword;
+        }
+        // mistake introduced in https://github.com/apache/bookkeeper/pull/2995
+        // will remove in next major version
         return getString(HTTP_SERVER_KEY_STORE_PASSWORD);
     }
 
