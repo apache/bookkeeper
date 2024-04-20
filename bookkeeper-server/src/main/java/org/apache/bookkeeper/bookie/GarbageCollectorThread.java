@@ -62,12 +62,12 @@ public class GarbageCollectorThread implements Runnable {
     private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
-    private EntryLogMetadataMap entryLogMetaMap;
+    private final EntryLogMetadataMap entryLogMetaMap;
 
     private final ScheduledExecutorService gcExecutor;
     Future<?> scheduledFuture = null;
 
-    // This is how often we want to run the Garbage Collector Thread (in milliseconds).
+    // This is the fixed delay in milliseconds before running the Garbage Collector Thread again.
     final long gcWaitTime;
 
     // Compaction parameters
@@ -374,7 +374,7 @@ public class GarbageCollectorThread implements Runnable {
             scheduledFuture.cancel(false);
         }
         long initialDelay = getModInitialDelay();
-        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
+        scheduledFuture = gcExecutor.scheduleWithFixedDelay(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
     }
 
     /**
