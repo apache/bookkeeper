@@ -18,11 +18,14 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +177,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             handleReadResultForFenceRead(readResponseBuilder, entryId, startTimeSw);
             return null;
         } else {
-            readResponseBuilder.setBody(UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer()));
+            readResponseBuilder.setBody(parseToByteString(entryBody));
             if (readLACPiggyBack) {
                 readResponseBuilder.setEntryId(entryId);
             } else {
@@ -282,7 +285,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
-            readResponse.setBody(UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer()));
+            readResponse.setBody(parseToByteString(entryBody));
             registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         }
 
@@ -339,6 +342,26 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } else {
             statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         }
+    }
+
+    ByteString parseToByteString(ByteBuf entryBody) {
+        ByteString aggregated = null;
+        ByteString piece;
+        if (entryBody.nioBufferCount() > 1) {
+            for (ByteBuffer nioBuffer : entryBody.nioBuffers()) {
+                piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
+                aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
+            }
+        } else {
+            if (entryBody.hasArray()) {
+                piece = UnsafeByteOperations.unsafeWrap(entryBody.array(), entryBody.arrayOffset(),
+                        entryBody.readableBytes());
+            } else {
+                piece = UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer());
+            }
+            aggregated = piece;
+        }
+        return aggregated;
     }
 
 
