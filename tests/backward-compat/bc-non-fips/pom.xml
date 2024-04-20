@@ -28,9 +28,6 @@
   <artifactId>bc-non-fips</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test Bouncy Castle Provider load non FIPS version</name>
-  <properties>
-    <bc-non-fips.version>1.75</bc-non-fips.version>
-  </properties>
 
   <dependencies>
     <dependency>
