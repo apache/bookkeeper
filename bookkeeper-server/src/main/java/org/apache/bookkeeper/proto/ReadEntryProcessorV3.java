@@ -20,7 +20,6 @@ package org.apache.bookkeeper.proto;
 import com.google.common.base.Stopwatch;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
-import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
@@ -177,7 +176,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             handleReadResultForFenceRead(readResponseBuilder, entryId, startTimeSw);
             return null;
         } else {
-            readResponseBuilder.setBody(parseToByteString(entryBody));
+            readResponseBuilder.setBody(unsafeWrapAsByteString(entryBody));
             if (readLACPiggyBack) {
                 readResponseBuilder.setEntryId(entryId);
             } else {
@@ -285,7 +284,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
-            readResponse.setBody(parseToByteString(entryBody));
+            readResponse.setBody(unsafeWrapAsByteString(entryBody));
             registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         }
 
@@ -344,22 +343,30 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         }
     }
 
-    ByteString parseToByteString(ByteBuf entryBody) {
+    /**
+     * Wrap the entry body as a ByteString.
+     * <p>
+     * This method is used to wrap the entry body as a ByteString. It tries to avoid copying the entry body.
+     *
+     * @param entryBody
+     *          entry body
+     * @return entry body as a ByteString, the lifetime of the returned ByteString is managed by the entryBody.
+     */
+    ByteString unsafeWrapAsByteString(ByteBuf entryBody) {
         ByteString aggregated = null;
-        ByteString piece;
         if (entryBody.nioBufferCount() > 1) {
+            ByteString piece;
             for (ByteBuffer nioBuffer : entryBody.nioBuffers()) {
                 piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
                 aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
             }
         } else {
             if (entryBody.hasArray()) {
-                piece = UnsafeByteOperations.unsafeWrap(entryBody.array(), entryBody.arrayOffset(),
+                aggregated = UnsafeByteOperations.unsafeWrap(entryBody.array(), entryBody.arrayOffset(),
                         entryBody.readableBytes());
             } else {
-                piece = UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer());
+                aggregated = UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer());
             }
-            aggregated = piece;
         }
         return aggregated;
     }
