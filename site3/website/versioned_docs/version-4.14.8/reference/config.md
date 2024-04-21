@@ -255,7 +255,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | Parameter | Description | Default
 | --------- | ----------- | ------- | 
 | enableStatistics | Whether statistics are enabled for the bookie. | true | 
-| statsProviderClass | Stats provider class.<br />Options:<br /> - Prometheus    : org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider<br /> - Codahale     : org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider<br /> - Twitter Finagle  : org.apache.bookkeeper.stats.twitter.finagle.FinagleStatsProvider<br /> - Twitter Ostrich  : org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider<br /> - Twitter Science  : org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider<br /> | org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider | 
+| statsProviderClass | Stats provider class.<br />Options:<br /> - Prometheus    : org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider<br /> - Codahale     : org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider<br /> | org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider | 
 | limitStatsLogging | option to limit stats logging | false | 
 
 
@@ -278,22 +278,6 @@ The table below lists parameters that you can set to configure bookies. All conf
 | codahaleStatsCSVEndpoint | the directory for reporting stats in csv format. see [csv reporter](//metrics.dropwizard.io/3.1.0/manual/core/#csv) for more details. | null | 
 | codahaleStatsSlf4jEndpoint | the slf4j endpoint for reporting stats. see [slf4j reporter](//metrics.dropwizard.io/3.1.0/manual/core/#slf4j) for more details. | null | 
 | codahaleStatsJmxEndpoint | the jmx endpoint for reporting stats. see [jmx reporter](//metrics.dropwizard.io/3.1.0/manual/core/#jmx) for more details. |  | 
-
-
-## Twitter Ostrich Metrics Provider
-
-| Parameter | Description | Default
-| --------- | ----------- | ------- | 
-| statsExport | Flag to control whether to expose ostrich metrics via a http endpoint configured by `statsHttpPort`. | false | 
-| statsHttpPort | The http port of exposing ostrich stats if `statsExport` is set to true | 9002 | 
-
-
-## Twitter Science Metrics Provider
-
-| Parameter | Description | Default
-| --------- | ----------- | ------- | 
-| statsExport | Flag to control whether to expose metrics via a http endpoint configured by `statsHttpPort`. | false | 
-| statsHttpPort | The http port of exposing stats if `statsExport` is set to true | 9002 | 
 
 
 ## AutoRecovery general settings
