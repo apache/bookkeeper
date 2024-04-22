@@ -480,7 +480,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         boolean inserted = false;
 
-        // If the stamp is 0, the lock is already acquired, validation will fail, and we can skip this put.
+        // If the stamp is 0, the lock was exclusively acquired, validation will fail, and we can skip this put.
         if (stamp != 0) {
             inserted = writeCache.put(ledgerId, entryId, entry);
         }
