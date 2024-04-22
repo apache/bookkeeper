@@ -345,7 +345,9 @@ public class BookkeeperVerifier {
         void onLastWriteComplete(
                 Consumer<Integer> cb,
                 Consumer<Consumer<Integer>> newOnLastWrite) {
-            assert (onLastWrite == null);
+            if (onLastWrite != null) {
+                throw new IllegalStateException("onLastWrite already set");
+            }
             onLastWrite = newOnLastWrite;
             checkWriteComplete(cb);
         }

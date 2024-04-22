@@ -571,7 +571,9 @@ class IndexInMemPageMgr {
         LedgerEntryPage lep = null;
         try {
             lep = getLedgerEntryPage(ledger, pageEntry);
-            assert lep != null;
+            if (lep == null) {
+                throw new Bookie.NoLedgerException(ledger);
+            }
             lep.setOffset(offset, offsetInPage * LedgerEntryPage.getIndexEntrySize());
         } catch (FileInfo.FileInfoDeletedException e) {
             throw new Bookie.NoLedgerException(ledger);
