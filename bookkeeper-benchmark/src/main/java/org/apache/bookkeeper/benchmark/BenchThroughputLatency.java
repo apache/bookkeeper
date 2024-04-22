@@ -420,14 +420,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     private static double percentile(long[] latency, int percentile) {
         int size = latency.length;
         double percent = (double) percentile / 100;
-        int sampleSize = (int) (size * percent);
-        long total = 0;
-        int count = 0;
-        for (int i = 0; i < sampleSize; i++) {
-            total += latency[i];
-            count++;
-        }
-        return ((double) total / (double) count) / 1000000.0;
+        int index = (int) (size * percent);
+        double lat = index > 0 ? (double) latency[index - 1] / 1000000.0 : 0.0;
+        return lat;
     }
 
     /**
