@@ -69,7 +69,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -701,7 +700,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
-        ByteString body = byteBufListToByteString(toSend);
+        ByteString body = ByteStringUtil.byteBufListToByteString(toSend);
         toSend.retain();
         Runnable cleanupActionFailedBeforeWrite = toSend::release;
         Runnable cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
@@ -808,7 +807,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             ByteBufList bufToSend = (ByteBufList) toSend;
-            ByteString body = byteBufListToByteString(bufToSend);
+            ByteString body = ByteStringUtil.byteBufListToByteString(bufToSend);
             bufToSend.retain();
             cleanupActionFailedBeforeWrite = bufToSend::release;
             cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
@@ -839,36 +838,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // addEntry times out on backpressure
         writeAndFlush(channel, completionKey, request, allowFastFail, cleanupActionFailedBeforeWrite,
                 cleanupActionAfterWrite);
-    }
-
-    /**
-     * Wrap the internal buffers of a ByteBufList into a single ByteString.
-     * The lifecycle of the wrapped ByteString is tied to the ByteBufList.
-     *
-     * @param bufList ByteBufList to wrap
-     * @return ByteString wrapping the internal buffers of the ByteBufList
-     */
-    private static ByteString byteBufListToByteString(ByteBufList bufList) {
-        ByteString aggregated = null;
-        for (int i = 0; i < bufList.size(); i++) {
-            ByteBuf buffer = bufList.getBuffer(i);
-            ByteString piece;
-            if (buffer.nioBufferCount() > 1) {
-                for (ByteBuffer nioBuffer : buffer.nioBuffers()) {
-                    piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
-                    aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
-                }
-            } else {
-                if (buffer.hasArray()) {
-                    piece = UnsafeByteOperations.unsafeWrap(buffer.array(), buffer.arrayOffset(),
-                            buffer.readableBytes());
-                } else {
-                    piece = UnsafeByteOperations.unsafeWrap(buffer.nioBuffer());
-                }
-                aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
-            }
-        }
-        return aggregated != null ? aggregated : ByteString.EMPTY;
     }
 
     public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
