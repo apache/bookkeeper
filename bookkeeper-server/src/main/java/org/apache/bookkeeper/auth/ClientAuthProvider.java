@@ -37,7 +37,7 @@ public interface ClientAuthProvider {
         /**
          * Initialize the factory with the client configuration
          * and protobuf message registry. Implementors must
-         * add any extention messages which contain the auth
+         * add any extension messages which contain the auth
          * payload, so that the client can decode auth messages
          * it receives from the server.
          */
