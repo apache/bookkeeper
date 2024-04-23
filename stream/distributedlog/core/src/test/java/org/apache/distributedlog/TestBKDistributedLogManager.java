@@ -187,7 +187,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         long lastTxId = -1;
         while (null != record) {
             DLMTestUtil.verifyLogRecord(record);
-            assert (lastTxId < record.getTransactionId());
+            assertTrue(lastTxId < record.getTransactionId());
             lastTxId = record.getTransactionId();
             numTrans++;
             record = reader.readNext(false);
@@ -465,7 +465,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         long lastTxId = -1;
         while (!recordList.isEmpty()) {
             for (LogRecord record : recordList) {
-                assert (lastTxId < record.getTransactionId());
+                assertTrue(lastTxId < record.getTransactionId());
                 lastTxId = record.getTransactionId();
                 DLMTestUtil.verifyLogRecord(record);
                 numTrans++;
@@ -792,7 +792,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             long lastTxId = -1;
             while (null != record) {
                 DLMTestUtil.verifyLogRecord(record);
-                assert (lastTxId < record.getTransactionId());
+                assertTrue(lastTxId < record.getTransactionId());
                 lastTxId = record.getTransactionId();
                 numTrans++;
                 record = reader.readNext(false);
@@ -874,7 +874,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
 
         LogReader reader = dlm.getInputStream(1);
         LogRecord record = reader.readNext(false);
-        assert (null != record);
+        assertNotNull(record);
         DLMTestUtil.verifyLogRecord(record);
         long lastTxId = record.getTransactionId();
 
@@ -885,7 +885,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             record = reader.readNext(false);
             while (null != record) {
                 DLMTestUtil.verifyLogRecord(record);
-                assert (lastTxId < record.getTransactionId());
+                assertTrue(lastTxId < record.getTransactionId());
                 lastTxId = record.getTransactionId();
                 record = reader.readNext(false);
             }
@@ -1247,26 +1247,26 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         for (LogSegmentMetadata segment: cachedSegments) {
             if (segment.getLastDLSN().compareTo(truncDLSN) < 0) {
                 assertTrue(segment.isTruncated());
-                assertTrue(!segment.isPartiallyTruncated());
+                assertFalse(segment.isPartiallyTruncated());
             } else if (segment.getFirstDLSN().compareTo(truncDLSN) < 0) {
-                assertTrue(!segment.isTruncated());
+                assertFalse(segment.isTruncated());
                 assertTrue(segment.isPartiallyTruncated());
             } else {
-                assertTrue(!segment.isTruncated());
-                assertTrue(!segment.isPartiallyTruncated());
+                assertFalse(segment.isTruncated());
+                assertFalse(segment.isPartiallyTruncated());
             }
         }
 
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
                 LogMetadata.getLogSegmentsPath(uri, name, conf.getUnpartitionedStreamName()));
 
-        assertTrue(segmentList.get(truncDLSN.getLogSegmentSequenceNo())
-                .getMinActiveDLSN().compareTo(truncDLSN) == 0);
+        assertEquals(0, segmentList.get(truncDLSN.getLogSegmentSequenceNo())
+                .getMinActiveDLSN().compareTo(truncDLSN));
 
         {
             LogReader reader = dlm.getInputStream(DLSN.InitialDLSN);
             LogRecordWithDLSN record = reader.readNext(false);
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(truncDLSN, record.getDlsn());
             reader.close();
         }
@@ -1274,7 +1274,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             LogReader reader = dlm.getInputStream(1);
             LogRecordWithDLSN record = reader.readNext(false);
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(truncDLSN, record.getDlsn());
             reader.close();
         }
@@ -1282,7 +1282,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             AsyncLogReader reader = dlm.getAsyncLogReader(DLSN.InitialDLSN);
             LogRecordWithDLSN record = Utils.ioResult(reader.readNext());
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(truncDLSN, record.getDlsn());
             Utils.close(reader);
         }
@@ -1291,7 +1291,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             LogReader reader = dlm.getInputStream(beyondTruncDLSN);
             LogRecordWithDLSN record = reader.readNext(false);
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(beyondTruncDLSN, record.getDlsn());
             reader.close();
         }
@@ -1299,7 +1299,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             LogReader reader = dlm.getInputStream(beyondTruncTxId);
             LogRecordWithDLSN record = reader.readNext(false);
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(beyondTruncDLSN, record.getDlsn());
             assertEquals(beyondTruncTxId, record.getTransactionId());
             reader.close();
@@ -1308,7 +1308,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             AsyncLogReader reader = dlm.getAsyncLogReader(beyondTruncDLSN);
             LogRecordWithDLSN record = Utils.ioResult(reader.readNext());
-            assertTrue(record != null);
+            assertNotNull(record);
             assertEquals(beyondTruncDLSN, record.getDlsn());
             Utils.close(reader);
         }
