@@ -465,7 +465,7 @@ public class DbLedgerStorage implements LedgerStorage {
             LedgerLoggerProcessor processor) throws IOException {
 
         checkNotNull(serverConf, "ServerConfiguration can't be null");
-        checkNotNull(processor, "LedgerLoggger info processor can't null");
+        checkNotNull(processor, "LedgerLogger info processor can't null");
 
         DiskChecker diskChecker = new DiskChecker(serverConf.getDiskUsageThreshold(),
                 serverConf.getDiskUsageWarnThreshold());

@@ -287,7 +287,7 @@ public class DirectEntryLogger implements EntryLogger {
                 f.get();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                throw new IOException("Interruped while flushing", ie);
+                throw new IOException("Interrupted while flushing", ie);
             } catch (ExecutionException ee) {
                 if (ee.getCause() instanceof IOException) {
                     throw (IOException) ee.getCause();

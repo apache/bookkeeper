@@ -131,7 +131,7 @@ class Buffer {
      */
     int readInt(int offset) throws IOException {
         if (!hasData(offset, Integer.BYTES)) {
-            throw new IOException(exMsg("Buffer cannot satify int read")
+            throw new IOException(exMsg("Buffer cannot satisfy int read")
                                   .kv("offset", offset)
                                   .kv("bufferSize", bufferSize).toString());
         }
@@ -150,7 +150,7 @@ class Buffer {
      */
     long readLong(int offset) throws IOException {
         if (!hasData(offset, Long.BYTES)) {
-            throw new IOException(exMsg("Buffer cannot satify long read")
+            throw new IOException(exMsg("Buffer cannot satisfy long read")
                                   .kv("offset", offset)
                                   .kv("bufferSize", bufferSize).toString());
         }
@@ -166,7 +166,7 @@ class Buffer {
 
     /**
      * Read a bytebuf of size from the buffer at the given offset.
-     * If there are not enough bytes in the buffer to satify the read, some of the bytes are read
+     * If there are not enough bytes in the buffer to satisfy the read, some of the bytes are read
      * into the byte buffer and the number of bytes read is returned.
      */
     int readByteBuf(ByteBuf buffer, int offset, int size) throws IOException {
