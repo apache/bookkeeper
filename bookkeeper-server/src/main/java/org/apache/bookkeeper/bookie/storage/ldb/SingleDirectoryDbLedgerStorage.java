@@ -652,7 +652,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         return entry;
     }
 
-    private void fillReadAheadCache(long orginalLedgerId, long firstEntryId, long firstEntryLocation) {
+    private void fillReadAheadCache(long originalLedgerId, long firstEntryId, long firstEntryLocation) {
         long readAheadStartNano = MathUtils.nowInNano();
         int count = 0;
         long size = 0;
@@ -663,20 +663,20 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             long currentEntryLocation = firstEntryLocation;
 
             while (chargeReadAheadCache(count, size) && currentEntryLogId == firstEntryLogId) {
-                ByteBuf entry = entryLogger.readEntry(orginalLedgerId,
+                ByteBuf entry = entryLogger.readEntry(originalLedgerId,
                         firstEntryId, currentEntryLocation);
 
                 try {
                     long currentEntryLedgerId = entry.getLong(0);
                     long currentEntryId = entry.getLong(8);
 
-                    if (currentEntryLedgerId != orginalLedgerId) {
+                    if (currentEntryLedgerId != originalLedgerId) {
                         // Found an entry belonging to a different ledger, stopping read-ahead
                         break;
                     }
 
                     // Insert entry in read cache
-                    readCache.put(orginalLedgerId, currentEntryId, entry);
+                    readCache.put(originalLedgerId, currentEntryId, entry);
 
                     count++;
                     firstEntryId++;
@@ -690,7 +690,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
-                log.debug("Exception during read ahead for ledger: {}: e", orginalLedgerId, e);
+                log.debug("Exception during read ahead for ledger: {}: e", originalLedgerId, e);
             }
         } finally {
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
@@ -720,7 +720,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             ByteBuf entry = writeCache.getLastEntry(ledgerId);
             if (entry != null) {
                 if (log.isDebugEnabled()) {
-                    long foundLedgerId = entry.readLong(); // ledgedId
+                    long foundLedgerId = entry.readLong(); // ledgerId
                     long entryId = entry.readLong();
                     entry.resetReaderIndex();
                     if (log.isDebugEnabled()) {
@@ -737,7 +737,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             entry = writeCacheBeingFlushed.getLastEntry(ledgerId);
             if (entry != null) {
                 if (log.isDebugEnabled()) {
-                    entry.readLong(); // ledgedId
+                    entry.readLong(); // ledgerId
                     long entryId = entry.readLong();
                     entry.resetReaderIndex();
                     if (log.isDebugEnabled()) {
@@ -856,7 +856,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             dbLedgerStorageStats.getFlushSizeStats().registerSuccessfulValue(sizeToFlush);
         } catch (IOException e) {
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
-            // Leave IOExecption as it is
+            // Leave IOException as it is
             throw e;
         } finally {
             try {
