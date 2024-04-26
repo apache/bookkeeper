@@ -1031,7 +1031,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             super(connectString, sessionTimeoutMs, watcher,
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0),
-                    NullStatsLogger.INSTANCE, 1, 0, false);
+                    NullStatsLogger.INSTANCE, 1, 0, false, true);
             this.connectString = connectString;
             this.sessionTimeoutMs = sessionTimeoutMs;
             this.watcherManager = watcher;

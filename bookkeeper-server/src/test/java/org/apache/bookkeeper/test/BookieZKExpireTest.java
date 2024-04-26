@@ -68,7 +68,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1) {
+                if (threads[i].getName().contains("SendThread")) {
                     threadset.add(threads[i]);
                 }
             }
@@ -92,7 +92,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
+                if (threads[i].getName().contains("SendThread")
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
@@ -112,7 +112,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             assertTrue("Bookie Server should not shutdown on zk timeout", server.isRunning());
         } finally {
             System.clearProperty("zookeeper.request.timeout");
-            server.shutdown();
+            if (server != null) {
+                server.shutdown();
+            }
         }
     }
 
@@ -138,7 +140,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1) {
+                if (threads[i].getName().contains("SendThread")) {
                     threadset.add(threads[i]);
                 }
             }
@@ -162,7 +164,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
+                if (threads[i].getName().contains("SendThread")
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
@@ -176,13 +178,15 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             log.info("Resuming threads");
             sendthread.resume();
 
-            // allow watcher thread to run
-            Thread.sleep(3000);
+            // allow client.waitForConnection() timeout
+            Thread.sleep(10000);
             assertFalse("Bookie should shutdown on losing zk session", server.isBookieRunning());
             assertFalse("Bookie Server should shutdown on losing zk session", server.isRunning());
         } finally {
             System.clearProperty("zookeeper.request.timeout");
-            server.shutdown();
+            if (server != null) {
+                server.shutdown();
+            }
         }
     }
 

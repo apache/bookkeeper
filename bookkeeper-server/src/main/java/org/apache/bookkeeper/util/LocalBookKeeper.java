@@ -148,6 +148,7 @@ public class LocalBookKeeper implements AutoCloseable {
         try (ZooKeeperClient zkc = ZooKeeperClient.newBuilder()
                     .connectString(zkHost + ":" + zkPort)
                     .sessionTimeoutMs(zkSessionTimeOut)
+                    .retryExpired(false)
                     .build()) {
             String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf);
             ZkUtils.createFullPathOptimistic(zkc, zkLedgersRootPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
