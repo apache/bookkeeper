@@ -356,11 +356,9 @@ public class ConcurrentLongHashMap<V> {
                     int capacity = this.capacity;
                     bucket = signSafeMod(bucket, capacity);
 
-                    // First try optimistic locking
-                    long storedKey = keys[bucket];
-                    V storedValue = values[bucket];
-
                     if (!acquiredLock && validate(stamp)) {
+                        long storedKey = keys[bucket];
+                        V storedValue = values[bucket];
                         // The values we have read are consistent
                         if (storedKey == key) {
                             return storedValue != DeletedValue ? storedValue : null;
@@ -373,8 +371,6 @@ public class ConcurrentLongHashMap<V> {
                         if (!acquiredLock) {
                             stamp = readLock();
                             acquiredLock = true;
-                            storedKey = keys[bucket];
-                            storedValue = values[bucket];
                         }
 
                         if (capacity != this.capacity) {
@@ -382,6 +378,9 @@ public class ConcurrentLongHashMap<V> {
                             bucket = keyHash;
                             continue;
                         }
+
+                        long storedKey = keys[bucket];
+                        V storedValue = values[bucket];
 
                         if (storedKey == key) {
                             return storedValue != DeletedValue ? storedValue : null;
