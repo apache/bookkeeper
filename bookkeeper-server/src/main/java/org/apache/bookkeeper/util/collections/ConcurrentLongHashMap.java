@@ -346,56 +346,19 @@ public class ConcurrentLongHashMap<V> {
         }
 
         V get(long key, int keyHash) {
-            int bucket = keyHash;
-
-            long stamp = tryOptimisticRead();
-            boolean acquiredLock = false;
-
+            long stamp = readLock();
             try {
-                while (true) {
-                    int capacity = this.capacity;
-                    bucket = signSafeMod(bucket, capacity);
-
-                    if (!acquiredLock && validate(stamp)) {
-                        long storedKey = keys[bucket];
-                        V storedValue = values[bucket];
-                        // The values we have read are consistent
-                        if (storedKey == key) {
-                            return storedValue != DeletedValue ? storedValue : null;
-                        } else if (storedValue == EmptyValue) {
-                            // Not found
-                            return null;
-                        }
-                    } else {
-                        // Fallback to acquiring read lock
-                        if (!acquiredLock) {
-                            stamp = readLock();
-                            acquiredLock = true;
-                        }
-
-                        if (capacity != this.capacity) {
-                            // There has been a rehashing. We need to restart the search
-                            bucket = keyHash;
-                            continue;
-                        }
-
-                        long storedKey = keys[bucket];
-                        V storedValue = values[bucket];
-
-                        if (storedKey == key) {
-                            return storedValue != DeletedValue ? storedValue : null;
-                        } else if (storedValue == EmptyValue) {
-                            // Not found
-                            return null;
-                        }
-                    }
-
-                    ++bucket;
+                int bucket = signSafeMod(keyHash, this.capacity);
+                long storeKey = keys[bucket];
+                V storeValue = values[bucket];
+                if (storeKey == key) {
+                    return storeValue != DeletedValue ? storeValue : null;
+                } else if (storeValue == EmptyValue) {
+                    return null;
                 }
+                return null;
             } finally {
-                if (acquiredLock) {
-                    unlockRead(stamp);
-                }
+                unlockRead(stamp);
             }
         }
 
