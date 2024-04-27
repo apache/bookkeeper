@@ -347,9 +347,10 @@ public class ConcurrentLongHashMap<V> {
 
         V get(long key, int keyHash) {
             long stamp = readLock();
-            int bucket = signSafeMod(keyHash, this.capacity);
+            int bucket = keyHash;
             try {
                 while (true) {
+                    bucket = signSafeMod(bucket, capacity);
                     long storeKey = keys[bucket];
                     V storeValue = values[bucket];
                     if (storeKey == key) {
