@@ -45,12 +45,15 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * TestDirectEntryLoggerCompat.
  */
+@DisabledOnOs(OS.WINDOWS)
 public class TestDirectEntryLoggerCompat {
     private final Slogger slog = Slogger.CONSOLE;
 
@@ -60,7 +63,7 @@ public class TestDirectEntryLoggerCompat {
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
     }
