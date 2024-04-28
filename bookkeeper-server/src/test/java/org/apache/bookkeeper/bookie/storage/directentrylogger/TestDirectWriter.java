@@ -207,7 +207,8 @@ public class TestDirectWriter {
 
     @Test
     public void testWriteBlocksFlush() throws Exception {
-        try(ExecutorService flushExecutor = Executors.newSingleThreadExecutor()) {
+        ExecutorService flushExecutor = Executors.newSingleThreadExecutor();
+        try {
             File ledgerDir = tmpDirs.createNew("blockWrite", "logs");
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
                  LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
@@ -239,6 +240,8 @@ public class TestDirectWriter {
                     assertThat((int) contents.readByte(), equalTo(0));
                 }
             }
+        } finally {
+            flushExecutor.shutdown();
         }
     }
 
