@@ -1179,7 +1179,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             try {
                 BookieId replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null,
                         ensemble, bookieToReplace, excludedAddrs).getResult();
-                assert (replacedBookie.equals(replacedBookieExpected));
+                assertEquals(replacedBookieExpected, replacedBookie);
                 assertEquals(3, getNumRegionsInEnsemble(ensemble));
             } catch (BKNotEnoughBookiesException bnebe) {
                 fail("Should not get not enough bookies exception even there is only one rack.");
