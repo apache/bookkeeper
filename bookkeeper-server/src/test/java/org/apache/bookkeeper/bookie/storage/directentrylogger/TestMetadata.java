@@ -35,17 +35,19 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
+@DisabledOnOs(OS.WINDOWS)
 public class TestMetadata {
-    private static final Slogger slog = Slogger.CONSOLE;
     private final OpStatsLogger opLogger = NullStatsLogger.INSTANCE.getOpStatsLogger("null");
 
     private final TmpDirs tmpDirs = new TmpDirs();
     private final ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
         writeExecutor.shutdownNow();
