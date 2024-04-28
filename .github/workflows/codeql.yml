@@ -92,7 +92,7 @@ jobs:
     - name: Validate pull request
       if: steps.check_changes.outputs.docs_only != 'true'
       run: |
-        mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests
 
     - name: Perform CodeQL Analysis
       if: steps.check_changes.outputs.docs_only != 'true'
