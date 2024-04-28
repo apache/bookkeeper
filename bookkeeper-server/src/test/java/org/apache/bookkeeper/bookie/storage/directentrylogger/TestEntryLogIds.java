@@ -27,7 +27,7 @@ import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.newLegacyEn
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
@@ -39,8 +39,8 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * TestEntryLogIds.
@@ -50,7 +50,7 @@ public class TestEntryLogIds {
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
     }
