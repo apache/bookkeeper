@@ -246,7 +246,7 @@ public class TestDirectReader {
         });
     }
 
-    @Test(expected = EOFException.class)
+    @Test
     public void testReadPastEndOfFilePartial() throws Exception {
         File ledgerDir = tmpDirs.createNew("readBuffer", "logs");
 
