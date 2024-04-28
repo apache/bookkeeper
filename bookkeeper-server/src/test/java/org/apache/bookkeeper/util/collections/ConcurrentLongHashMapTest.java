@@ -221,7 +221,7 @@ public class ConcurrentLongHashMapTest {
             });
         }
 
-        assertNull(map.put(1,"v1"));
+        assertNull(map.put(1, "v1"));
         future = executor.submit(() -> {
             try {
                 barrier.await();

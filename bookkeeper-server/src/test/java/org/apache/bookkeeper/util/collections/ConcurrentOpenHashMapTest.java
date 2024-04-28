@@ -217,7 +217,7 @@ public class ConcurrentOpenHashMapTest {
             });
         }
 
-        assertNull(map.put("k1","v1"));
+        assertNull(map.put("k1", "v1"));
         future = executor.submit(() -> {
             try {
                 barrier.await();

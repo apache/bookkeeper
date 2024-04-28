@@ -38,7 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.LongLongFunction;
 import org.junit.Test;
 
