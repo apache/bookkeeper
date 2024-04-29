@@ -398,12 +398,6 @@ public class GarbageCollectorThread implements Runnable {
         boolean suspendMinor = suspendMinorCompaction.get();
 
         runWithFlags(force, suspendMajor, suspendMinor);
-
-        if (force) {
-            // only set force to false if it had been true when the garbage
-            // collection cycle started
-            forceGarbageCollection.set(false);
-        }
     }
 
     public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {
