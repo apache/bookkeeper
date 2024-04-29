@@ -236,6 +236,11 @@ public class BookieStateManager implements StateManager {
     }
 
     @Override
+    public boolean isReadOnlyModeEnabled() {
+        return conf.isReadOnlyModeEnabled();
+    }
+
+    @Override
     public boolean isAvailableForHighPriorityWrites() {
         return availableForHighPriorityWrites;
     }

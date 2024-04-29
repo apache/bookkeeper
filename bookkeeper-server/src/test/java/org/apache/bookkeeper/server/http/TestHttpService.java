@@ -1023,11 +1023,43 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertFalse(readOnlyState.isReadOnly());
 
         //forceReadonly to writable
-        baseConf.setForceReadOnlyBookie(true);
-        baseConf.setReadOnlyModeEnabled(true);
-        restartBookies();
+        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                baseConf, NullStatsLogger.INSTANCE);
+        restartBookies(c -> {
+            c.setForceReadOnlyBookie(true);
+            c.setReadOnlyModeEnabled(true);
+            return c;
+        });
+        // the old bkHttpServiceProvider has an old bookie instance who has been shutdown
+        // so we need create a new bkHttpServiceProvider2 to contains a new bookie which has created by restart.
+        BKHttpServiceProvider bkHttpServiceProvider2 = new BKHttpServiceProvider.Builder()
+                .setBookieServer(serverByIndex(numberOfBookies - 1))
+                .setServerConfiguration(baseConf)
+                .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
+                .build();
+        HttpEndpointService bookieReadOnlyService2 = bkHttpServiceProvider2
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE_READONLY);
+
         request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(false)), HttpServer.Method.PUT,  null);
-        response = bookieReadOnlyService.handle(request);
+        response = bookieReadOnlyService2.handle(request);
+        assertEquals(400, response.getStatusCode());
+
+        // disable readOnly mode
+        restartBookies(c -> {
+            c.setForceReadOnlyBookie(false);
+            c.setReadOnlyModeEnabled(false);
+            return c;
+        });
+        bkHttpServiceProvider2 = new BKHttpServiceProvider.Builder()
+                .setBookieServer(serverByIndex(numberOfBookies - 1))
+                .setServerConfiguration(baseConf)
+                .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
+                .build();
+        bookieReadOnlyService2 = bkHttpServiceProvider2
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE_READONLY);
+
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(true)), HttpServer.Method.PUT,  null);
+        response = bookieReadOnlyService2.handle(request);
         assertEquals(400, response.getStatusCode());
     }
 
