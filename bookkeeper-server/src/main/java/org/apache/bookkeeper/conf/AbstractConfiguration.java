@@ -84,6 +84,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
+    protected static final String ZK_REPLICATION_TASK_RATE_LIMIT = "zkReplicationTaskRateLimit";
     protected static final String AVAILABLE_NODE = "available";
     protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
@@ -188,7 +189,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
 
     protected static final String REPLICATION_RATE_BY_BYTES = "replicationRateByBytes";
-    protected static final String REPLICATION_ACQUIRE_TASK_PER_SECOND = "replicationAcquireTaskPerSecond";
 
     protected AbstractConfiguration() {
         super();
@@ -1241,17 +1241,19 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * get the max tasks can be acquired per second of re-replication.
      * @return max tasks can be acquired per second of re-replication.
      */
-    public double getReplicationAcquireTaskPerSecond() {
-        return getDouble(REPLICATION_ACQUIRE_TASK_PER_SECOND, 0);
+    public double getZkReplicationTaskRateLimit() {
+        return getDouble(ZK_REPLICATION_TASK_RATE_LIMIT, 0);
     }
 
     /**
-     * set the max tasks can be acquired per second of re-replication.
-     * @param replicationAcquireTaskPerSecond
+     * set the max tasks can be acquired per second of re-replication, default is 0, which means no limit.
+     * Value greater than 0 will enable the rate limiting. Decimal value is allowed.
+     * For example, 0.5 means 1 task per 2 seconds.
+     * @param zkReplicationTaskRateLimit
      * @return ClientConfiguration
      */
-    public T setReplicationAcquireTaskPerSecond(double replicationAcquireTaskPerSecond) {
-        setProperty(REPLICATION_ACQUIRE_TASK_PER_SECOND, replicationAcquireTaskPerSecond);
+    public T setZkReplicationTaskRateLimit(double zkReplicationTaskRateLimit) {
+        setProperty(ZK_REPLICATION_TASK_RATE_LIMIT, zkReplicationTaskRateLimit);
         return getThis();
     }
 

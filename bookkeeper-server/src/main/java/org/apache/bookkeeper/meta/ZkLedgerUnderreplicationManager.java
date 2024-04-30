@@ -130,10 +130,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws UnavailableException, InterruptedException, ReplicationException.CompatibilityException {
         this.conf = conf;
-        if (conf.getReplicationAcquireTaskPerSecond() > 0) {
+        if (conf.getZkReplicationTaskRateLimit() > 0) {
             LOG.info("Throttling acquire task rate is configured to {} permits per second",
-                    conf.getReplicationAcquireTaskPerSecond());
-            rateLimiter = RateLimiter.create(conf.getReplicationAcquireTaskPerSecond());
+                    conf.getZkReplicationTaskRateLimit());
+            rateLimiter = RateLimiter.create(conf.getZkReplicationTaskRateLimit());
         } else {
             LOG.info("Throttling acquire task rate is disabled");
             rateLimiter = null;
