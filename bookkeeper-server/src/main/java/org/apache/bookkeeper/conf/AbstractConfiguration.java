@@ -1242,7 +1242,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return max tasks can be acquired per second of re-replication.
      */
     public double getReplicationAcquireTaskPerSecond() {
-        return getDouble(REPLICATION_ACQUIRE_TASK_PER_SECOND, 1.0);
+        return getDouble(REPLICATION_ACQUIRE_TASK_PER_SECOND, 0);
     }
 
     /**
