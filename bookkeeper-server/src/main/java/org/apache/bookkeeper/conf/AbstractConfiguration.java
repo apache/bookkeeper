@@ -1248,7 +1248,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * set the max tasks can be acquired per second of re-replication, default is 0, which means no limit.
      * Value greater than 0 will enable the rate limiting. Decimal value is allowed.
-     * For example, 0.5 means 1 task per 2 seconds.
+     * For example, 0.5 means 1 task per 2 seconds, 1 means 1 task per second.
      * @param zkReplicationTaskRateLimit
      * @return ClientConfiguration
      */
