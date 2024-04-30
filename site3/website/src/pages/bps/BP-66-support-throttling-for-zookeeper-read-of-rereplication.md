@@ -12,13 +12,15 @@ If we decommission one bookie, the read latency of zookeeper will increase to mi
 ### Configuration
 add the following configuration:
 ```
-replicationAcquireTaskPerSecond
+zkReplicationTaskRateLimit
 ```
-
+default value is 0, which means no limit.
+Value greater than 0 will enable the rate limit, and the value is the number of tasks that can be acquired per second.
+Decimals are allowed too, for example, 0.5 means 1 task every 2 seconds, 1 means 1 task per second, 2 means 2 tasks per second, and so on.
 
 ### Proposed Changes
 
-Add a new configuration `replicationAcquireTaskPerSecond` to control the rate of zookeeper read of re-replication.
+Add a new configuration `zkReplicationTaskRateLimit` to control the rate of zookeeper read of re-replication.
 
 
 ### Compatibility, Deprecation, and Migration Plan
