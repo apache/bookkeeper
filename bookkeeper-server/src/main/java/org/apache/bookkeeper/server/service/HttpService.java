@@ -27,6 +27,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServerLoader;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -77,7 +78,7 @@ public class HttpService extends ServerLifecycleComponent {
         if (conf.getServerConf().isHttpServerEnabled()) {
             EndpointInfo endpoint = new EndpointInfo("httpserver",
                     conf.getServerConf().getHttpServerPort(),
-                    "0.0.0.0",
+                    conf.getServerConf().getHttpServerHost(),
                     "http", null, null);
             componentInfoPublisher.publishEndpoint(endpoint);
         }
