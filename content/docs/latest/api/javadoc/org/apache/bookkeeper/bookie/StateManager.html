@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -238,45 +238,52 @@ extends java.lang.AutoCloseable</pre>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isReadOnlyModeEnabled()">isReadOnlyModeEnabled</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Check is readOnlyModeEnabled.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRunning()">isRunning</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Check is Running.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShuttingDown()">isShuttingDown</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Check is Shutting down.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerBookie(boolean)">registerBookie</a></span>&#8203;(boolean&nbsp;throwException)</code></th>
 <td class="colLast">
 <div class="block">Register the bookie to RegistrationManager.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHighPriorityWritesAvailability(boolean)">setHighPriorityWritesAvailability</a></span>&#8203;(boolean&nbsp;available)</code></th>
 <td class="colLast">
 <div class="block">Enable/Disable the availability for high priority writes.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setShutdownHandler(org.apache.bookkeeper.bookie.StateManager.ShutdownHandler)">setShutdownHandler</a></span>&#8203;(<a href="StateManager.ShutdownHandler.html" title="interface in org.apache.bookkeeper.bookie">StateManager.ShutdownHandler</a>&nbsp;handler)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToReadOnlyMode()">transitionToReadOnlyMode</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Change the state of bookie to ReadOnly mode.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToWritableMode()">transitionToWritableMode</a></span>()</code></th>
 <td class="colLast">
@@ -356,6 +363,16 @@ extends java.lang.AutoCloseable</pre>
 <h4>isForceReadOnly</h4>
 <pre class="methodSignature">boolean&nbsp;isForceReadOnly()</pre>
 <div class="block">Check is forceReadOnly.</div>
+</li>
+</ul>
+<a id="isReadOnlyModeEnabled()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isReadOnlyModeEnabled</h4>
+<pre class="methodSignature">boolean&nbsp;isReadOnlyModeEnabled()</pre>
+<div class="block">Check is readOnlyModeEnabled.</div>
 </li>
 </ul>
 <a id="isRunning()">

@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -319,51 +319,58 @@ implements <a href="StateManager.html" title="interface in org.apache.bookkeeper
 </td>
 </tr>
 <tr id="i12" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isReadOnlyModeEnabled()">isReadOnlyModeEnabled</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Check is readOnlyModeEnabled.</div>
+</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRegistered()">isRegistered</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRunning()">isRunning</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Check is Running.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShuttingDown()">isShuttingDown</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Check is Shutting down.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerBookie(boolean)">registerBookie</a></span>&#8203;(boolean&nbsp;throwException)</code></th>
 <td class="colLast">
 <div class="block">Register the bookie to RegistrationManager.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHighPriorityWritesAvailability(boolean)">setHighPriorityWritesAvailability</a></span>&#8203;(boolean&nbsp;available)</code></th>
 <td class="colLast">
 <div class="block">Enable/Disable the availability for high priority writes.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setShutdownHandler(org.apache.bookkeeper.bookie.StateManager.ShutdownHandler)">setShutdownHandler</a></span>&#8203;(<a href="StateManager.ShutdownHandler.html" title="interface in org.apache.bookkeeper.bookie">StateManager.ShutdownHandler</a>&nbsp;handler)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToReadOnlyMode()">transitionToReadOnlyMode</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Change the state of bookie to ReadOnly mode.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToWritableMode()">transitionToWritableMode</a></span>()</code></th>
 <td class="colLast">
@@ -562,6 +569,21 @@ implements <a href="StateManager.html" title="interface in org.apache.bookkeeper
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="StateManager.html#isForceReadOnly()">isForceReadOnly</a></code>&nbsp;in interface&nbsp;<code><a href="StateManager.html" title="interface in org.apache.bookkeeper.bookie">StateManager</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="isReadOnlyModeEnabled()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isReadOnlyModeEnabled</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isReadOnlyModeEnabled()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="StateManager.html#isReadOnlyModeEnabled()">StateManager</a></code></span></div>
+<div class="block">Check is readOnlyModeEnabled.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="StateManager.html#isReadOnlyModeEnabled()">isReadOnlyModeEnabled</a></code>&nbsp;in interface&nbsp;<code><a href="StateManager.html" title="interface in org.apache.bookkeeper.bookie">StateManager</a></code></dd>
 </dl>
 </li>
 </ul>
