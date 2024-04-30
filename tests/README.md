@@ -61,21 +61,21 @@ docker images | grep apachebookkeeper
 
 ```bash
 # Run metadata driver tests
-mvn -f metadata-drivers/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+mvn -f metadata-drivers/pom.xml test -DintegrationTests -DredirectTestOutputToFile=false -DtestRetryCount=0
 
 # Run all integration tests
-mvn -f tests/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+mvn -f tests/pom.xml test -DintegrationTests -DredirectTestOutputToFile=false -DtestRetryCount=0
 ```
 
 ### Running backward compatibility tests
 
 ```bash
 # Test current server with old clients
-mvn -DbackwardCompatTests -pl :backward-compat-current-server-old-clients test -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+mvn -DbackwardCompatTests -pl :backward-compat-current-server-old-clients test -DredirectTestOutputToFile=false -DtestRetryCount=0
 
 # Test progressive upgrade
-mvn -DbackwardCompatTests -pl :upgrade test -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+mvn -DbackwardCompatTests -pl :upgrade test -DredirectTestOutputToFile=false -DtestRetryCount=0
 
 # Other backward compat tests
-mvn -DbackwardCompatTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+mvn -DbackwardCompatTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test -DredirectTestOutputToFile=false -DtestRetryCount=0
 ```

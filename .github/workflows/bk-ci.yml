@@ -82,8 +82,8 @@ jobs:
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
-          mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
-          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+          mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests
+          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests
 
       - name: Check license files
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -234,14 +234,14 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu clean install -Pdocker -DskipTests
 
       - name: Run metadata driver tests
-        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |
-          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO -DredirectTestOutputToFile=false -DtestRetryCount=0
+          mvn -B -nsu -f tests/pom.xml test -DintegrationTests -DredirectTestOutputToFile=false -DtestRetryCount=0
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
@@ -319,7 +319,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn -B -nsu clean install -Pdocker -DskipTests
 
       - name: Test current server with old clients
         run: mvn -B -nsu -DbackwardCompatTests -pl :backward-compat-current-server-old-clients test
@@ -471,7 +471,7 @@ jobs:
           java-version: ${{ matrix.jdk_version }}
 
       - name: Build with Maven
-        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
+        run: mvn clean package -B -nsu -DskipBookKeeperServerTests
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
