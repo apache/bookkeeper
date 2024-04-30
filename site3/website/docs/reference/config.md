@@ -270,7 +270,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | zkRetryBackoffMaxMs | The Zookeeper client backoff retry max time in millis. | 10000 | 
 | zkRequestRateLimit | The Zookeeper request limit. It is only enabled when setting a postivie value. |  | 
 | zkEnableSecurity | Set ACLs on every node written on ZooKeeper, this way only allowed users will be able to read and write BookKeeper metadata stored on ZooKeeper. In order to make ACLs work you need to setup ZooKeeper JAAS authentication all the bookies and Client need to share the same user, and this is usually done using Kerberos authentication. See ZooKeeper documentation | false | 
-
+| zkReplicationTaskRateLimit | The rate limit for the replication task, used to relieve the pressure on ZooKeeper in AutoRecovery. | 0 |
 
 ## Statistics
 
