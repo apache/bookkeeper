@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
+import static org.apache.bookkeeper.server.BookkeeperStarter.storageDirectoriesFromConf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 

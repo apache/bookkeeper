@@ -32,7 +32,7 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.Version;
@@ -70,7 +70,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
 
         conf = newServerConfiguration();
         LegacyCookieValidation validation = new LegacyCookieValidation(conf, rm);
-        validation.checkCookies(Main.storageDirectoriesFromConf(conf));
+        validation.checkCookies(BookkeeperStarter.storageDirectoriesFromConf(conf));
     }
 
     @Override
@@ -112,7 +112,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         // start bookie to ensure everything works fine
         conf.setUseHostNameAsBookieID(false);
         LegacyCookieValidation validation = new LegacyCookieValidation(conf, rm);
-        validation.checkCookies(Main.storageDirectoriesFromConf(conf));
+        validation.checkCookies(BookkeeperStarter.storageDirectoriesFromConf(conf));
     }
 
     /**

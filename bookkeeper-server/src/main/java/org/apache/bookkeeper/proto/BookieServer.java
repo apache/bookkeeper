@@ -43,7 +43,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
@@ -297,7 +297,7 @@ public class BookieServer {
      * Legacy Method to run bookie server.
      */
     public static void main(String[] args) {
-        Main.main(args);
+        BookkeeperStarter.main(args);
     }
 
     @Override

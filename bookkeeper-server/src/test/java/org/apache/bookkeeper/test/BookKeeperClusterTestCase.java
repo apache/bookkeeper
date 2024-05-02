@@ -74,7 +74,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationWorker;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.PortManager;
@@ -852,7 +852,7 @@ public abstract class BookKeeperClusterTestCase {
 
             LegacyCookieValidation cookieValidation = new LegacyCookieValidation(
                     conf, registrationManager);
-            cookieValidation.checkCookies(Main.storageDirectoriesFromConf(conf));
+            cookieValidation.checkCookies(BookkeeperStarter.storageDirectoriesFromConf(conf));
 
             DiskChecker diskChecker = BookieResources.createDiskChecker(conf);
             LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(

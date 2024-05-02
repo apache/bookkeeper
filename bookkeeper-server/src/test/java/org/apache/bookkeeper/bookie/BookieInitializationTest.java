@@ -94,7 +94,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationStats;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
@@ -801,7 +801,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         /*
          * Create LifecycleComponent for BookieServer and start it.
          */
-        LifecycleComponent server = Main.buildBookieServer(bkConf);
+        LifecycleComponent server = BookkeeperStarter.buildBookieServer(bkConf);
         CompletableFuture<Void> startFuture = ComponentStarter.startComponent(server);
 
         /*
@@ -1553,7 +1553,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setHttpServerPort(nextFreePort);
 
         // 1. building the component stack:
-        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        LifecycleComponent server = BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
         // 2. start the server
         CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
         while (server.lifecycleState() != Lifecycle.State.STARTED) {
@@ -1671,7 +1671,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setJournalDirsName(journalDirs);
         conf.setLedgerDirNames(new String[] { tmpLedgerDir.getPath() });
 
-        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        LifecycleComponent server = BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
         server.start();
 
         final BookieId bookieAddress = BookieImpl.getBookieId(conf);
@@ -1686,7 +1686,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         rmCookie.getValue().deleteFromRegistrationManager(rm, conf, rmCookie.getVersion());
 
         try {
-            Main.buildBookieServer(new BookieConfiguration(conf));
+            BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
             fail("Bookie should not have been buildable. Cookie no present in metadata store.");
         } catch (Exception e) {
             LOG.info("As expected Bookie fails to be built without a cookie in metadata store.");
@@ -1753,7 +1753,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     public void testBookieIdChange() throws Exception {
         // By default, network info is set as Bookie Id and it is stored in the Cookie.
         final ServerConfiguration conf = newServerConfiguration();
-        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        LifecycleComponent server = BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
         server.start();
         server.stop();
 
@@ -1762,7 +1762,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         String customBookieId = "customId";
         conf.setBookieId(customBookieId);
         try {
-            Main.buildBookieServer(new BookieConfiguration(conf));
+            BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
         } catch (BookieException.InvalidCookieException e) {
             // This is the expected case, as the customBookieId prevails over the default one.
         } catch (Exception e) {

@@ -81,7 +81,7 @@ public class TestBookieBoot extends BookKeeperClusterTestCase {
         CompletableFuture<Integer> promise = new CompletableFuture<>();
         Thread t = new Thread(() -> {
             try {
-                int ret = Main.doMain(new String[] {"-c", confFile.toString()});
+                int ret = BookkeeperStarter.doMain(new String[] {"-c", confFile.toString()});
                 promise.complete(ret);
             } catch (Exception e) {
                 promise.completeExceptionally(e);

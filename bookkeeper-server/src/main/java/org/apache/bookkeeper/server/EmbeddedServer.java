@@ -29,7 +29,7 @@ import static org.apache.bookkeeper.bookie.BookieImpl.newBookieImpl;
 import static org.apache.bookkeeper.bookie.LegacyCookieValidation.newLegacyCookieValidation;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
-import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
+import static org.apache.bookkeeper.server.BookkeeperStarter.storageDirectoriesFromConf;
 import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
 
 import com.google.common.base.Ticker;

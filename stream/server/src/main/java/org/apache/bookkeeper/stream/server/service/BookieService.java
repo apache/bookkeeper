@@ -46,7 +46,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -104,7 +104,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);
-        cookieValidation.checkCookies(Main.storageDirectoriesFromConf(serverConf));
+        cookieValidation.checkCookies(BookkeeperStarter.storageDirectoriesFromConf(serverConf));
 
         Bookie bookie;
         if (serverConf.isForceReadOnlyBookie()) {

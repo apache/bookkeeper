@@ -49,7 +49,7 @@ import org.apache.commons.configuration.ConfigurationException;
  * replacing the legacy server {@link org.apache.bookkeeper.proto.BookieServer}.
  */
 @Slf4j
-public class Main {
+public class BookkeeperStarter {
     static final Options BK_OPTS = new Options();
     static {
         BK_OPTS.addOption("c", "conf", true, "Configuration for Bookie Server");
@@ -161,8 +161,8 @@ public class Main {
             if (cmdLine.hasOption("httpport")) {
                 String sPort = cmdLine.getOptionValue("httpport");
                 log.info("Get cmdline http port: {}", sPort);
-                Integer iPort = Integer.parseInt(sPort);
-                conf.setHttpServerPort(iPort.intValue());
+                int iPort = Integer.parseInt(sPort);
+                conf.setHttpServerPort(iPort);
             }
 
             if (cmdLine.hasOption('j')) {
@@ -295,7 +295,7 @@ public class Main {
         if (journalDirs != null) {
             for (File j : journalDirs) {
                 File cur = BookieImpl.getCurrentDirectory(j);
-                if (!dirs.stream().anyMatch(f -> f.equals(cur))) {
+                if (dirs.stream().noneMatch(f -> f.equals(cur))) {
                     BookieImpl.checkDirectoryStructure(cur);
                     dirs.add(cur);
                 }
@@ -306,7 +306,7 @@ public class Main {
         if (ledgerDirs != null) {
             for (File l : ledgerDirs) {
                 File cur = BookieImpl.getCurrentDirectory(l);
-                if (!dirs.stream().anyMatch(f -> f.equals(cur))) {
+                if (dirs.stream().noneMatch(f -> f.equals(cur))) {
                     BookieImpl.checkDirectoryStructure(cur);
                     dirs.add(cur);
                 }

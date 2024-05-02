@@ -68,7 +68,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.server.Main;
+import org.apache.bookkeeper.server.BookkeeperStarter;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -191,7 +191,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 confOfExistingBookie, NullStatsLogger.INSTANCE);
              RegistrationManager rm = driver.createRegistrationManager()) {
             CookieValidation cookieValidation = new LegacyCookieValidation(confOfExistingBookie, rm);
-            cookieValidation.checkCookies(Main.storageDirectoriesFromConf(confOfExistingBookie));
+            cookieValidation.checkCookies(BookkeeperStarter.storageDirectoriesFromConf(confOfExistingBookie));
             rm.registerBookie(bookieId, false /* readOnly */, BookieServiceInfo.EMPTY);
             Assert.assertFalse(
                     "initBookie shouldn't have succeeded, since bookie is still running with that configuration",
@@ -696,7 +696,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 .setBookiePort(PortManager.nextFreePort())
                 .setMetadataServiceUri(metadataServiceUri);
 
-        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        LifecycleComponent server = BookkeeperStarter.buildBookieServer(new BookieConfiguration(conf));
         // 2. start the server
         CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
         while (server.lifecycleState() != Lifecycle.State.STARTED) {
