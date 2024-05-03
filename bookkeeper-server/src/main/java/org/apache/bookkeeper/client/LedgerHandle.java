@@ -2331,7 +2331,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Return a {@link WriteSet} suitable for reading a particular entry.
-     * This will include all bookies that are cotna
+     * This will include all bookies that are part of the ensemble for the entry.
      */
     WriteSet getWriteSetForReadOperation(long entryId) {
         if (stickyBookieIndex != STICKY_READ_BOOKIE_INDEX_UNSET) {

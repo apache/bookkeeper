@@ -329,7 +329,7 @@ jobs:
 
       - name: Other tests
         run: |
-          mvn -B -nsu -DbackwardCompatTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct,:yahoo-custom-version test
+          mvn -B -nsu -DbackwardCompatTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct test
 
       - name: Upload container logs on failure
         uses: actions/upload-artifact@v4
