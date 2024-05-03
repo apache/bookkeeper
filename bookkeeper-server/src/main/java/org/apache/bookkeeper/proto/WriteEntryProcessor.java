@@ -81,7 +81,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             }
         } catch (OperationRejectedException e) {
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
-            // Avoid to log each occurence of this exception as this can happen when the ledger storage is
+            // Avoid to log each occurrence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Operation rejected while writing {}", request, e);
@@ -91,7 +91,8 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             LOG.error("Error writing {}", request, e);
             rc = BookieProtocol.EIO;
         } catch (BookieException.LedgerFencedException lfe) {
-            LOG.error("Attempt to write to fenced ledger", lfe);
+            LOG.warn("Write attempt on fenced ledger {} by client {}", request.getLedgerId(),
+                    requestHandler.ctx().channel().remoteAddress());
             rc = BookieProtocol.EFENCED;
         } catch (BookieException e) {
             LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
