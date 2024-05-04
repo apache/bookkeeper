@@ -314,7 +314,7 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
-            bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
+            bootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
             if (eventLoopGroup instanceof IOUringEventLoopGroup){
