@@ -37,7 +37,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledForJreRange;
 import org.junit.jupiter.api.condition.JRE;
 
@@ -71,7 +71,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1) {
+                if (threads[i].getName().contains("SendThread")) {
                     threadset.add(threads[i]);
                 }
             }
@@ -95,7 +95,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
+                if (threads[i].getName().contains("SendThread")
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
