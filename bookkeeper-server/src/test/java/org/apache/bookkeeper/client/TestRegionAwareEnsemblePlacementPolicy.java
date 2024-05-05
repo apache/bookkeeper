@@ -27,6 +27,10 @@ import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.RE
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_REGIONS_TO_WRITE;
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -45,7 +49,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -58,14 +61,18 @@ import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test a region-aware ensemble placement policy.
  */
-public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
+public class TestRegionAwareEnsemblePlacementPolicy {
 
     static final Logger LOG = LoggerFactory.getLogger(TestRegionAwareEnsemblePlacementPolicy.class);
 
@@ -89,9 +96,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack("localhost", rack);
     }
 
-    @Override
+    @BeforeEach
     protected void setUp() throws Exception {
-        super.setUp();
         StaticDNSResolver.reset();
         updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
         LOG.info("Set up static DNS Resolver.");
@@ -123,10 +129,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
     }
 
-    @Override
+    @AfterEach
     protected void tearDown() throws Exception {
         repp.uninitalize();
-        super.tearDown();
     }
 
     static BookiesHealthInfo getBookiesHealthInfo() {
@@ -190,7 +195,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         LOG.info("reorder set : {}", reorderSet);
         LOG.info("expected set : {}", expectedSet);
         LOG.info("reorder equals {}", reorderSet.equals(writeSet));
-        assertFalse(reorderSet.equals(writeSet));
+        assertNotEquals(reorderSet, writeSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -234,7 +239,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 ensemble, getBookiesHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -264,7 +269,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 ensemble, getBookiesHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -294,7 +299,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -326,7 +331,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 2, 0, 1);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -355,7 +360,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                 ensemble, getBookiesHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 2, 0, 1);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -386,7 +391,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 2, 0, 1);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -420,7 +425,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
+        assertNotEquals(reorderSet, origWriteSet);
         assertEquals(expectedSet, reorderSet);
     }
 
@@ -472,7 +477,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null,
                 new ArrayList<BookieId>(), addr2.toBookieId(), excludedAddrs).getResult();
 
-        assertFalse(addr1.toBookieId().equals(replacedBookie));
+        assertNotEquals(addr1.toBookieId(), replacedBookie);
         assertTrue(addr3.toBookieId().equals(replacedBookie)
                 || addr4.toBookieId().equals(replacedBookie));
     }
@@ -506,6 +511,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
+    @EnabledForJreRange(max = JRE.JAVA_11)
     public void testNewEnsembleBookieWithOneEmptyRegion() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -1422,8 +1428,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                                                                        .resolve(address).getHostName()));
             }
             BookieId remoteAddress = ensemble.get(readSet.get(k));
-            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver
-                                                                        .resolve(remoteAddress).getHostName())));
+            assertNotEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                    .resolve(remoteAddress).getHostName()));
             k++;
             BookieId localAddress = ensemble.get(readSet.get(k));
             assertEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver
@@ -1431,8 +1437,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             k++;
             for (; k < ensembleSize; k++) {
                 BookieId address = ensemble.get(readSet.get(k));
-                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(repp.bookieAddressResolver
-                                                                        .resolve(address).getHostName())));
+                assertNotEquals(myRegion, StaticDNSResolver.getRegion(repp.bookieAddressResolver
+                        .resolve(address).getHostName()));
             }
         }
     }
@@ -1734,12 +1740,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             List<BookieId> ensemble2 = repp.newEnsemble(3, 3, 2,
                 null, new HashSet<>()).getResult();
             ensemble1.retainAll(ensemble2);
-            assert(ensemble1.size() >= 1);
+            assert(!ensemble1.isEmpty());
 
             List<BookieId> ensemble3 = repp.newEnsemble(3, 3, 2,
                 null, new HashSet<>()).getResult();
             ensemble2.removeAll(ensemble3);
-            assert(ensemble2.size() >= 1);
+            assert(!ensemble2.isEmpty());
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
