@@ -82,7 +82,7 @@ public interface BookKeeper extends AutoCloseable {
     CompletableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId);
 
     /**
-     * Return driver metadata service is available
+     * Return driver metadata service is available.
      *
      * @return the metadata service is available.
      */

@@ -116,7 +116,7 @@ public interface MetadataClientDriver extends AutoCloseable {
     }
 
     /**
-     * Return driver metadata service is available
+     * Return driver metadata service is available.
      *
      * @return the metadata service is available.
      */
