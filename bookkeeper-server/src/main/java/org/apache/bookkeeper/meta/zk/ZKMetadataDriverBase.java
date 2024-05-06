@@ -218,7 +218,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     .operationRetryPolicy(zkRetryPolicy)
                     .requestRateLimit(conf.getZkRequestRateLimit())
                     .watchers(Collections.singleton(watchedEvent -> {
-                        log.info("Got ZK session watch event: {}", watchedEvent);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Got ZK session watch event: {}", watchedEvent);
+                        }
                         handleState(watchedEvent.getState());
                     }))
                     .statsLogger(statsLogger)
@@ -265,7 +267,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
             default:
                 this.metadataServiceAvailable = true;
-                break;
         }
     }
 

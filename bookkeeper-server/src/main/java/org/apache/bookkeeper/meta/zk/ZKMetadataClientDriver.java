@@ -113,7 +113,7 @@ public class ZKMetadataClientDriver
         });
     }
 
-    public CompletableFuture<Boolean> isMetadataServiceAvailable() {
+    public synchronized CompletableFuture<Boolean> isMetadataServiceAvailable() {
         return CompletableFuture.completedFuture(metadataServiceAvailable);
     }
 }
