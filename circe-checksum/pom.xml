@@ -187,9 +187,6 @@
             <extensions>true</extensions>
             <configuration>
               <skip>false</skip>
-              <linker>
-                <libSet>rt</libSet>
-              </linker>
             </configuration>
           </plugin>
         </plugins>
