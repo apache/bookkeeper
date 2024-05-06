@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -64,6 +66,8 @@ import org.apache.zookeeper.data.Stat;
 public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
+
+    protected volatile boolean metadataServiceAvailable;
     private static final int ZK_CLIENT_WAIT_FOR_SHUTDOWN_TIMEOUT_MS = 5000;
 
     public static String getZKServersFromServiceUri(URI uri) {
@@ -179,6 +183,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             // if an external zookeeper is added, use the zookeeper instance
             this.zk = (ZooKeeper) (optionalCtx.get());
             this.ownZKHandle = false;
+            this.metadataServiceAvailable = true;
         } else {
             final String metadataServiceUriStr;
             try {
@@ -212,6 +217,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     .sessionTimeoutMs(conf.getZkTimeout())
                     .operationRetryPolicy(zkRetryPolicy)
                     .requestRateLimit(conf.getZkRequestRateLimit())
+                    .watchers(Collections.singleton(watchedEvent -> {
+                        log.info("Got ZK session watch event: {}", watchedEvent);
+                        handleState(watchedEvent.getState());
+                    }))
                     .statsLogger(statsLogger)
                     .build();
 
@@ -245,6 +254,19 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             zk,
             ledgersRootPath,
             acls);
+    }
+
+    private synchronized void handleState(Watcher.Event.KeeperState zkClientState) {
+        switch (zkClientState) {
+            case Expired:
+            case Disconnected:
+                this.metadataServiceAvailable = false;
+                break;
+
+            default:
+                this.metadataServiceAvailable = true;
+                break;
+        }
     }
 
     public LayoutManager getLayoutManager() {
