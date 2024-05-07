@@ -446,6 +446,8 @@ jobs:
             jdk_version: 11
           - step_name: Compatibility Check Java17
             jdk_version: 17
+          - step_name: Compatibility Check Java21
+            jdk_version: 21
 
     steps:
       - name: checkout
