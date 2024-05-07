@@ -68,6 +68,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     protected static final String SCHEME = "zk";
 
     protected volatile boolean metadataServiceAvailable;
+
     private static final int ZK_CLIENT_WAIT_FOR_SHUTDOWN_TIMEOUT_MS = 5000;
 
     public static String getZKServersFromServiceUri(URI uri) {

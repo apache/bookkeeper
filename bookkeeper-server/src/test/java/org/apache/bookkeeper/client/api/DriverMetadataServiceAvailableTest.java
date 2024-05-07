@@ -40,7 +40,6 @@ public class DriverMetadataServiceAvailableTest extends BookKeeperClusterTestCas
     @Test
     public void testDriverMetadataServiceAvailable()
             throws Exception {
-
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setZkTimeout(3000);
