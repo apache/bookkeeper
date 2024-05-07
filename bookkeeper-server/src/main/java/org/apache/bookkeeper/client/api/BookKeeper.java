@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.impl.BookKeeperBuilderImpl;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
@@ -86,7 +87,9 @@ public interface BookKeeper extends AutoCloseable {
      *
      * @return the metadata service is available.
      */
-    CompletableFuture<Boolean> isDriverMetadataServiceAvailable();
+    default CompletableFuture<Boolean> isDriverMetadataServiceAvailable() {
+        return FutureUtils.value(true);
+    }
 
     /**
      * Close the client and release every resource.
