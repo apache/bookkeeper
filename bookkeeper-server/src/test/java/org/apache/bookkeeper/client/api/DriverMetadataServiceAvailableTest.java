@@ -32,7 +32,6 @@ import org.junit.Test;
  */
 public class DriverMetadataServiceAvailableTest extends BookKeeperClusterTestCase {
 
-
     public DriverMetadataServiceAvailableTest() {
         super(3);
     }
