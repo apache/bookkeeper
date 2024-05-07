@@ -259,7 +259,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             acls);
     }
 
-    private synchronized void handleState(Watcher.Event.KeeperState zkClientState) {
+    private void handleState(Watcher.Event.KeeperState zkClientState) {
         switch (zkClientState) {
             case Expired:
             case Disconnected:
