@@ -302,23 +302,6 @@ The table below lists parameters that you can set to configure bookies. All conf
 | codahaleStatsSlf4jEndpoint | the slf4j endpoint for reporting stats. see [slf4j reporter](//metrics.dropwizard.io/3.1.0/manual/core/#slf4j) for more details. | null | 
 | codahaleStatsJmxEndpoint | the jmx endpoint for reporting stats. see [jmx reporter](//metrics.dropwizard.io/3.1.0/manual/core/#jmx) for more details. |  | 
 
-
-## Twitter Ostrich Metrics Provider
-
-| Parameter | Description | Default
-| --------- | ----------- | ------- | 
-| statsExport | Flag to control whether to expose ostrich metrics via a http endpoint configured by `statsHttpPort`. | false | 
-| statsHttpPort | The http port of exposing ostrich stats if `statsExport` is set to true | 9002 | 
-
-
-## Twitter Science Metrics Provider
-
-| Parameter | Description | Default
-| --------- | ----------- | ------- | 
-| statsExport | Flag to control whether to expose metrics via a http endpoint configured by `statsHttpPort`. | false | 
-| statsHttpPort | The http port of exposing stats if `statsExport` is set to true | 9002 | 
-
-
 ## AutoRecovery general settings
 
 | Parameter | Description | Default

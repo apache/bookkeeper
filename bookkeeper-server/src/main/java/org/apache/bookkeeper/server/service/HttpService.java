@@ -77,7 +77,7 @@ public class HttpService extends ServerLifecycleComponent {
         if (conf.getServerConf().isHttpServerEnabled()) {
             EndpointInfo endpoint = new EndpointInfo("httpserver",
                     conf.getServerConf().getHttpServerPort(),
-                    "0.0.0.0",
+                    conf.getServerConf().getHttpServerHost(),
                     "http", null, null);
             componentInfoPublisher.publishEndpoint(endpoint);
         }

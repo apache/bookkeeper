@@ -39,7 +39,7 @@ public interface BookieAuthProvider {
         /**
          * Initialize the factory with the server configuration
          * and protobuf message registry. Implementors must
-         * add any extention messages which contain the auth
+         * add any extension messages which contain the auth
          * payload, so that the server can decode auth messages
          * it receives from the client.
          */

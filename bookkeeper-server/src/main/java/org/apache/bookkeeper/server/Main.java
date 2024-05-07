@@ -109,11 +109,12 @@ public class Main {
             BasicParser parser = new BasicParser();
             CommandLine cmdLine = parser.parse(BK_OPTS, args);
 
-            if (cmdLine.hasOption('h')) {
-                throw new IllegalArgumentException();
-            }
-
             ServerConfiguration conf = new ServerConfiguration();
+
+            if (cmdLine.hasOption('h')) {
+                conf.setProperty("help", true);
+                return conf;
+            }
 
             if (cmdLine.hasOption('c')) {
                 String confFile = cmdLine.getOptionValue("c");
@@ -210,6 +211,11 @@ public class Main {
             return ExitCode.INVALID_CONF;
         }
 
+        if (conf.getBoolean("help", false)) {
+            printUsage();
+            return ExitCode.OK;
+        }
+
         // 1. building the component stack:
         LifecycleComponent server;
         try {
@@ -244,6 +250,11 @@ public class Main {
             printUsage();
             throw iae;
         }
+
+        if (conf.getBoolean("help", false)) {
+            return conf;
+        }
+
         String hello = String.format(
             "Hello, I'm your bookie, bookieId is %1$s, listening on port %2$s. Metadata service uri is %3$s."
                 + " Journals are in %4$s. Ledgers are stored in %5$s. Indexes are stored in %6$s.",
