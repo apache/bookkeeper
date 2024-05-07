@@ -57,6 +57,7 @@ public abstract class ZKMetadataDriverTestBase {
         when(mockZkBuilder.operationRetryPolicy(any(RetryPolicy.class)))
             .thenReturn(mockZkBuilder);
         when(mockZkBuilder.requestRateLimit(anyDouble())).thenReturn(mockZkBuilder);
+        when(mockZkBuilder.watchers(any())).thenReturn(mockZkBuilder);
         when(mockZkBuilder.statsLogger(any(StatsLogger.class))).thenReturn(mockZkBuilder);
 
         this.mockZkc = mock(ZooKeeperClient.class);
