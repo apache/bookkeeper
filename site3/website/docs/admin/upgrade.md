@@ -58,9 +58,413 @@ For each Bookie:
 
 ## Upgrade Guides
 
-We describes the general upgrade method in Apache BookKeeper as above. We will cover the details for individual versions.
+We describe the general upgrade method in Apache BookKeeper as above. We will cover the details for individual versions.
 
-### 4.6.x to 4.7.0 upgrade
+### 4.16.x to 4.17.x upgrade
+
+4.17.x includes multiple important features, improvements, bug fixes and some dependencies CVE fixes.Some dependencies
+has been upgrade:
+
+* bc-fips
+* commons-codec
+* commons-compress
+* datasketches
+* grpc and protobuf
+* guava
+* jetty
+* netty
+* rocksdb
+* snappy-java
+* zookeeper
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new setting in 4.17.0
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.17.0.
+
+##### Changed Settings
+
+There are no setting changed in 4.17.0
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.17.0
+
+##### Changed Settings
+
+There are no changed setting in 4.17.0
+
+#### Client Configuration Changes
+
+##### New Settings
+
+There are no new setting in 4.17.0
+
+### 4.15.x to 4.16.x upgrade
+
+4.16.x includes multiple important features, improvements, bug fixes and some dependencies CVE fixes.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+| Name               | Description                                         |
+|--------------------|-----------------------------------------------------|
+| Counter.addLatency | count the time and convert the time to milliseconds |
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.16.0.
+
+##### Changed Settings
+
+| Old_Name                             | New_name                     | Notes                                                                                                                      |
+|--------------------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| Counter.add                          | Counter.addCount             |                                                                                                                            |
+| bookkeeper_server_ADD_ENTRY_REQUEST  | bookkeeper_server_ADD_ENTRY  | When using V2 protocol, the bookkeeper_server_ADD_ENTRY_REQUEST and bookkeeper_server_READ_ENTRY_REQUEST stats do not work |
+| bookkeeper_server_READ_ENTRY_REQUEST | bookkeeper_server_READ_ENTRY | When using V2 protocol, the bookkeeper_server_ADD_ENTRY_REQUEST and bookkeeper_server_READ_ENTRY_REQUEST stats do not work |
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.16.0
+
+##### Changed Settings
+
+There are no changed setting in 4.16.0
+
+#### Client Configuration Changes
+
+##### New Settings
+
+There are no new setting in 4.16.0
+
+### 4.14.x to 4.15.x upgrade
+
+4.15.x includes many upgrades to third party libraries marked with CVEs,
+adds more configuration options, extends REST API,
+adds an option to run without journal, improves memory utilization and stability.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+| Name                                                    | Description                                                       |
+|---------------------------------------------------------|-------------------------------------------------------------------|
+| clientTcpUserTimeoutMillis                              | Add TCP_USER_TIMEOUT to Epoll channel config                      |
+| auditorMaxNumberOfConcurrentOpenLedgerOperations        | Add auditor get ledger throttle to avoid auto recovery zk session |
+| auditorAcquireConcurrentOpenLedgerOperationsTimeOutMSec | Add auditor get ledger throttle to avoid auto recovery zk session |
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.15.0.
+
+##### Changed Settings
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.15.0
+
+##### Changed Settings
+
+There are no changed setting in 4.15.0
+
+#### Client Configuration Changes
+
+##### New Settings
+
+| Name                  | Description                                                               |
+|-----------------------|---------------------------------------------------------------------------|
+| ledgerMetaDataVersion | Bookkeeper-Client config to write ledger metadata with configured version |
+
+### 4.13.x to 4.14.x upgrade
+
+4.14.x adds FIPS compliance, improves compaction logic and the Stream Storage,
+improves data reliability in the recovery scenarios,
+fixes multiple bugs and brings critical dependencies up-to-date. The Bookkeeper FIPS compliant has been made by default.
+Some dependencies have been upgraded:
+
+- lombok (required for Java 16 support)
+- netty
+- rocksdb
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings at 4.14.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.14.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.14.0.
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.14.0
+
+##### Changed Settings
+
+There are no changed setting in 4.14.0
+
+#### Client Configuration Changes
+
+There are no client configuration changes in 4.14.0
+
+### 4.12.x to 4.13.x upgrade
+
+The new version 4.13 improves reliability of the Stream Storage,
+brings additional configuration options for the Stream Storage and Prometheus HTTP Server,
+fixes multiple bugs and brings critical dependencies up-to-date. Some dependencies have been upgraded: the protobuf has
+been upgraded to 3.14.0,GRPC has been upgraded to 1.33,Netty has been upgraded to 4.1.50Final and dropwizard has been
+upgraded to 3.2.5
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings at 4.13.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.13.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.13.0.
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.13.0
+
+##### Changed Settings
+
+There are no changed setting in 4.13.0
+
+#### Client Configuration Changes
+
+There are no client configuration changes in 4.13.0
+
+### 4.11.x to 4.12.x upgrade
+
+There are no changes making on the wire protocol, on metadata and on persisted data on disks by default during the
+upgrade of 4.12.0.
+With BookKeeper 4.12.0 we are making a step toward better deployment on environments with dynamic network addresses with
+BP-41.
+We are also enhancing the new Client API by adding features that were still missing, like the ability of queryng for
+ledger metadata.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings at 4.12.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.12.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.12.x.
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.12.0
+
+##### Changed Settings
+
+There are no changed setting in 4.12.0
+
+#### Client Configuration Changes
+
+There are no client configuration changes in 4.12.0
+
+### 4.10.x to 4.11.x upgrade
+
+4.11.x brings a trove of enhancements over the previous version, this update includes a multitude of bug fixes,
+performance improvements, and new features that are set to elevate the bookkeeper experience. The version of Zookkeeper
+has been upgraded from 3.14.13 to 3.5.7, and the bookkeeper-server now relies on the org.apache.httpcomponents-http-core
+version 4.4.9 for improved HTTP functionalities.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings at 4.11.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.11.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.11.0.
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no setting deprecated in 4.11.0
+
+##### Changed Settings
+
+The default values of following settings are changed since 4.11.0.
+
+There are no changed setting in 4.11.0
+
+#### Client Configuration Changes
+
+There are no client configuration changes in 4.11.0
+
+### 4.9.x to 4.10.x upgrade
+
+In 4.10.x some significant updates have been made to handle the ledger metadata to enhance data consistency and access
+efficiency. The default bookie script JDK version has been set to 11 and some bugs has been fixed
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings at 4.10.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.10.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.10.0.
+
+#### Server Configuration Changes
+
+##### Deprecated Settings
+
+There are no deprecated setting at 4.10.0
+
+##### New Setting
+
+Following settings are added since 4.10.0.
+
+| Name                | Description                                      |
+|---------------------|--------------------------------------------------|
+| flushWhenQueueEmpty | control when data is flushed from memory to disk |
+
+##### Changed Settings
+
+The default values of following settings are changed since 4.10.0.
+
+There are no changed setting in 4.10.0
+
+#### Client Configuration Changes
+
+There are no client configuration changes in 4.10.0
+
+### 4.8.x to 4.9.x upgrade
+
+In 4.9.x some significant updates have been made to handle the ledger metadata to enhance data consistency and access
+efficiency. Consequently, the current journal format version has been upgraded to 6, and the FileInfo header version has
+been upgraded to 1. However, since the default configuration values of 'journalFormatVersionToWrite' and '
+fileInfoFormatVersionToWrite' are set to older versions, this feature is off by default. To enable this feature, those
+config values should be set to the current versions. Once this is enabled, you cannot roll back to previous Bookie
+versions (4.8.x and older), as the older version code would not be able to deal with the explicitLac entry in the
+Journal file while replaying the journal and reading the header of Index files / FileInfo would fail reading Index files
+with the newer FileInfo version. So, in summary, it is a non-rollbackable feature, and it applies even if explicitLac is
+not in used.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+There are no new settings deprecated at 4.9.0.
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.9.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.9.0.
+
+#### Server Configuration Changes
+
+##### New Settings
+
+Following settings are added since 4.9.0.
+
+| Name               | Description                                     |
+|--------------------|-------------------------------------------------|
+| serverNumIOThreads | configures the number of IO threads for bookies |
+
+##### Changed Settings
+
+The default values of following settings are changed since 4.9.0.
+
+| Name                         | Old Default Value | New Default Value | Notes |
+|------------------------------|-------------------|-------------------|-------|
+| fileInfoFormatVersionToWrite | 0                 | 1                 |       |
+| journalFormatVersionToWrite  | 5                 | 6                 |       |
+
+#### Client Configuration Changes
+
+##### New Settings
+
+Following settings are newly added in 4.9.0.
+
+| Name         | Default Value                               | Description                                    |
+|--------------|---------------------------------------------|------------------------------------------------|
+| numIoThreads | 2 * Runtime.getRunTime().availableProcessed | configures the number of IO threads for client |
+
+### 4.7.x to 4.8.x upgrade
+
+In 4.8.x a new feature is added to persist explicitLac in FileInfo and explicitLac entry in Journal. (Note: Currently
+this feature is not available if your ledgerStorageClass is DbLedgerStorage, ISSUE #1533 is going to address it) Hence
+current journal format version is bumped to 6 and current FileInfo header version is bumped to 1. But since default
+config values of 'journalFormatVersionToWrite' and 'fileInfoFormatVersionToWrite' are set to older versions, this
+feature is off by default. To enable this feature those config values should be set to current versions. Once this is
+enabled then we cannot rollback to previous Bookie versions (4.7.x and older), since older version code would not be
+able to deal with explicitLac entry in Journal file while replaying journal and also reading Header of Index files /
+FileInfo would fail reading Index files with newer FileInfo version. So in summary, it is a non-rollbackable feature and
+it applies even if explicitLac is not being used.
+
+### 4.6.x to 4.7.x upgrade
 
 There isn't any protocol related backward compabilities changes in 4.7.0. So you can follow the general upgrade sequence to upgrade from 4.6.x to 4.7.0.
 
@@ -154,10 +558,6 @@ The default values of following settings are changed since 4.7.0.
 | Name | Old Default Value | New Default Value | Notes |
 |------|-------------------|-------------------|-------|
 | enableDigestTypeAutodetection | false | true | Autodetect the digest type and passwd when opening a ledger. It will ignore the provided digest type, but still verify the provided passwd. |
-
-### 4.7.x to 4.8.X upgrade
-
-In 4.8.x a new feature is added to persist explicitLac in FileInfo and explicitLac entry in Journal. (Note: Currently this feature is not available if your ledgerStorageClass is DbLedgerStorage, ISSUE #1533 is going to address it) Hence current journal format version is bumped to 6 and current FileInfo header version is bumped to 1. But since default config values of 'journalFormatVersionToWrite' and 'fileInfoFormatVersionToWrite' are set to older versions, this feature is off by default. To enable this feature those config values should be set to current versions. Once this is enabled then we cannot rollback to previous Bookie versions (4.7.x and older), since older version code would not be able to deal with explicitLac entry in Journal file while replaying journal and also reading Header of Index files / FileInfo would fail reading Index files with newer FileInfo version. So in summary, it is a non-rollbackable feature and it applies even if explicitLac is not being used.
 
 ### 4.5.x to 4.6.x upgrade
 
