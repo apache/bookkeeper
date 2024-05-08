@@ -51,9 +51,10 @@ github:
           - Build with macos on JDK 11
           - Build with windows on JDK 11
           - Client Tests
+          - Compatibility Check Java8
           - Compatibility Check Java11
           - Compatibility Check Java17
-          - Compatibility Check Java8
+          - Compatibility Check Java21
           - Integration Tests
           - Remaining Tests
           - Replication Tests
