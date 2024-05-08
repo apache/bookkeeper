@@ -265,7 +265,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             case Disconnected:
                 this.metadataServiceAvailable = false;
                 break;
-
             default:
                 this.metadataServiceAvailable = true;
         }
