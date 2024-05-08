@@ -891,7 +891,7 @@ public class BookieWriteLedgerTest extends
     @Test
     public void testAsyncWritesWithMultipleFailuresInLastEnsemble()
             throws Exception {
-        // Create ledgers
+        // Create ledgers123
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
         lh2 = bkc.createLedger(5, 4, digestType, ledgerPassword);
 
