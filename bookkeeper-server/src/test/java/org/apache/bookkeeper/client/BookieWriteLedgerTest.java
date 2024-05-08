@@ -90,6 +90,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Testing ledger write entry cases.
  */
+//当类被@RunWith注解修饰，或者类继承了一个被该注解修饰的类，JUnit将会使用这个注解所指明的运行器（runner）来运行测试，而不使用JUnit默认的运行器。
+//要进行参数化测试，需要在类上面指定如下的运行器：@RunWith(Parameterized.class)
 @RunWith(Parameterized.class)
 public class BookieWriteLedgerTest extends
     BookKeeperClusterTestCase implements AddCallback {
@@ -97,6 +99,7 @@ public class BookieWriteLedgerTest extends
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
 
+    //在提供数据的方法上加上一个@Parameters注解，这个方法必须是静态static的，并且返回一个集合Collection。
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
@@ -104,9 +107,11 @@ public class BookieWriteLedgerTest extends
         });
     }
 
+    //first data value (0) is default，不能为 private
     @Parameterized.Parameter(0)
     public boolean useV2;
 
+    //不能为 private
     @Parameterized.Parameter(1)
     public boolean writeJournal;
 
@@ -135,6 +140,7 @@ public class BookieWriteLedgerTest extends
     @Override
     @Before
     public void setUp() throws Exception {
+        System.out.println("开始进行方法单元测试=======================");
         baseConf.setJournalWriteData(writeJournal);
         baseClientConf.setUseV2WireProtocol(useV2);
 
@@ -162,12 +168,17 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify write when few bookie failures in last ensemble and forcing
      * ensemble reformation.
+     * 验证在写最后一个ensemble时，少数失败并不影响写入的最终效果
+     *
      */
     @Test
     public void testWithMultipleBookieFailuresInLastEnsemble() throws Exception {
         // Create a ledger
+        //创建一个写5副本，至少4个算成功的Ledger
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
         LOG.info("Ledger ID: " + lh.getId());
+
+        //循环往里面写入100次数据
         for (int i = 0; i < numEntriesToWrite; i++) {
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
@@ -887,11 +898,12 @@ public class BookieWriteLedgerTest extends
 
     /**
      * Verify asynchronous writing when few bookie failures in last ensemble.
+     * 测试异步写最后一条消息失败的场景
      */
     @Test
     public void testAsyncWritesWithMultipleFailuresInLastEnsemble()
             throws Exception {
-        // Create ledgers123
+        // Create ledgers
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
         lh2 = bkc.createLedger(5, 4, digestType, ledgerPassword);
 

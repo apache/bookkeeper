@@ -90,6 +90,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A class runs several bookie servers for testing.
+ *
+ * 这个类会启动几台bookie用于测试
  */
 public abstract class BookKeeperClusterTestCase {
 
@@ -157,6 +159,7 @@ public abstract class BookKeeperClusterTestCase {
         }
     }
 
+    //每个方法执行前会启动这个
     @Before
     public void setUp() throws Exception {
         setUp("/ledgers");
@@ -187,6 +190,7 @@ public abstract class BookKeeperClusterTestCase {
         return zkUtil.getMetadataServiceUri(ledgersRootPath);
     }
 
+    //每个方法执行结束会执行这个
     @After
     public void tearDown() throws Exception {
         boolean failed = false;
