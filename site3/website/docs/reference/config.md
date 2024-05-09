@@ -185,6 +185,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | compactionRateByBytes | Set the rate at which compaction will read entries. The unit is bytes added per second. | 1000000 | 
 | useTransactionalCompaction | Flag to enable/disable transactional compaction. If it is set to true, it will use transactional compaction, which uses<br />new entry log files to store entries after compaction; otherwise, it will use normal compaction, which shares same entry<br />log file with normal add operations.<br /> | false | 
 
+
 ## Garbage collection settings
 
 | Parameter | Description | Default
