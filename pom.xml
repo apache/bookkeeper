@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>29</version>
+    <version>31</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
@@ -78,14 +78,14 @@
       <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>user@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/user@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Dev</name>
       <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>dev@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Commits</name>
@@ -140,7 +140,7 @@
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>3.3.5</hadoop.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
-    <jackson.version>2.13.4.20221013</jackson.version>
+    <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
     <jetty.version>9.4.53.v20231009</jetty.version>
     <jmh.version>1.37</jmh.version>
