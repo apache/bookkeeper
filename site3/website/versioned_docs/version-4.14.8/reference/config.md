@@ -167,6 +167,8 @@ The table below lists parameters that you can set to configure bookies. All conf
 | compactionMaxOutstandingRequests | Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means more memory will be used for offsets. Each offset consists of 3 longs. This parameter should *not* be modified unless you know what you're doing. | 100000 | 
 | majorCompactionThreshold | Threshold of major compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a major compaction. Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled. | 0.8 | 
 | majorCompactionInterval | Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled. | 86400 | 
+| minorCompactionMaxTimeMillis | Maximum milliseconds to run minor Compaction. | -1 to run indefinitely. | 
+| majorCompactionMaxTimeMillis | Maximum milliseconds to run major Compaction. | -1 to run indefinitely. |
 | isThrottleByBytes | Throttle compaction by bytes or by entries. | false | 
 | compactionRateByEntries | Set the rate at which compaction will read entries. The unit is adds per second. | 1000 | 
 | compactionRateByBytes | Set the rate at which compaction will read entries. The unit is bytes added per second. | 1000000 | 
