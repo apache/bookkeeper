@@ -100,11 +100,11 @@ public class VertxHttpServer implements HttpServer {
                     JksOptions keyStoreOptions = new JksOptions();
                     keyStoreOptions.setPath(httpServerConfiguration.getKeyStorePath());
                     keyStoreOptions.setPassword(httpServerConfiguration.getKeyStorePassword());
-                    httpServerOptions.setKeyStoreOptions(keyStoreOptions);
+                    httpServerOptions.setKeyCertOptions(keyStoreOptions);
                     JksOptions trustStoreOptions = new JksOptions();
                     trustStoreOptions.setPath(httpServerConfiguration.getTrustStorePath());
                     trustStoreOptions.setPassword(httpServerConfiguration.getTrustStorePassword());
-                    httpServerOptions.setTrustStoreOptions(trustStoreOptions);
+                    httpServerOptions.setTrustOptions(trustStoreOptions);
                 }
                 LOG.info("Starting Vertx HTTP server on port {}", port);
                 vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(port, host, future::complete);
