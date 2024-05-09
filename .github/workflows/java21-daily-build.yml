@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  jdk21-daily-build:
     name: Build on JDK 21
     runs-on: ubuntu-latest
     steps:
