@@ -271,7 +271,6 @@ The table below lists parameters that you can set to configure bookies. All conf
 | zkRequestRateLimit | The Zookeeper request limit. It is only enabled when setting a postivie value. |  | 
 | zkEnableSecurity | Set ACLs on every node written on ZooKeeper, this way only allowed users will be able to read and write BookKeeper metadata stored on ZooKeeper. In order to make ACLs work you need to setup ZooKeeper JAAS authentication all the bookies and Client need to share the same user, and this is usually done using Kerberos authentication. See ZooKeeper documentation | false | 
 
-
 ## Statistics
 
 | Parameter | Description | Default
@@ -352,6 +351,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | openLedgerRereplicationGracePeriod | The grace period, in milliseconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure. | 30000 | 
 | lockReleaseOfFailedLedgerGracePeriod | Set the grace period, in milliseconds, which the replication worker has to wait before releasing the lock after it failed to replicate a ledger. For the first ReplicationWorker.NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS failures it will do exponential backoff then it will bound at lockReleaseOfFailedLedgerGracePeriod. | 300000 | 
 | rwRereplicateBackoffMs | The time to backoff when replication worker encounters exceptions on replicating a ledger, in milliseconds. | 5000 | 
+| zkReplicationTaskRateLimit | The rate limit for the replication task, used to relieve the pressure on ZooKeeper in AutoRecovery. | 0 |
 
 
 ## Memory allocator settings
