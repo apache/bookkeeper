@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>29</version>
+    <version>32</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
@@ -78,14 +78,14 @@
       <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>user@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/user@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Dev</name>
       <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>dev@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Commits</name>
