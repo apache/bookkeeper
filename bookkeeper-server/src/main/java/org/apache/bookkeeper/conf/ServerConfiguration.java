@@ -1738,7 +1738,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *           The number of milliseconds to run compaction.
      */
     public long getMajorCompactionMaxTimeMillis() {
-        return getLong(MAJOR_COMPACTION_MAX_TIME_MILLIS, -1);
+        return getLong(MAJOR_COMPACTION_MAX_TIME_MILLIS, 3600);
     }
 
     /**
@@ -1815,7 +1815,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *           The number of milliseconds to run compaction.
      */
     public long getMinorCompactionMaxTimeMillis() {
-        return getLong(MINOR_COMPACTION_MAX_TIME_MILLIS, -1);
+        return getLong(MINOR_COMPACTION_MAX_TIME_MILLIS, 3600000);
     }
 
     /**
