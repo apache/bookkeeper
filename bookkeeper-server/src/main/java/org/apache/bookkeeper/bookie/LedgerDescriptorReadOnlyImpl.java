@@ -34,19 +34,16 @@ public class LedgerDescriptorReadOnlyImpl extends LedgerDescriptorImpl {
 
     @Override
     boolean setFenced() throws IOException {
-        assert false;
         throw new IOException("Invalid action on read only descriptor");
     }
 
     @Override
     long addEntry(ByteBuf entry) throws IOException {
-        assert false;
         throw new IOException("Invalid action on read only descriptor");
     }
 
     @Override
     void checkAccess(byte[] masterKey) throws BookieException, IOException {
-        assert false;
         throw new IOException("Invalid action on read only descriptor");
     }
 }

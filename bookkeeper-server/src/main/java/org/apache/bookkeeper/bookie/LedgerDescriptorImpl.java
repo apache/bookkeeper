@@ -40,10 +40,10 @@ import org.slf4j.LoggerFactory;
 public class LedgerDescriptorImpl extends LedgerDescriptor {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptorImpl.class);
     final LedgerStorage ledgerStorage;
-    private long ledgerId;
+    private final long ledgerId;
     final byte[] masterKey;
 
-    private AtomicBoolean fenceEntryPersisted = new AtomicBoolean();
+    private final AtomicBoolean fenceEntryPersisted = new AtomicBoolean();
     private CompletableFuture<Boolean> logFenceResult = null;
 
     LedgerDescriptorImpl(byte[] masterKey,
