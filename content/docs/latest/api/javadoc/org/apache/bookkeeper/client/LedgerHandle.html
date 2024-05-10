@@ -2878,7 +2878,7 @@ implements <a href="api/WriteHandle.html" title="interface in org.apache.bookkee
 <h4>getWriteSetForReadOperation</h4>
 <pre class="methodSignature"><a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;getWriteSetForReadOperation&#8203;(long&nbsp;entryId)</pre>
 <div class="block">Return a <a href="DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule.WriteSet</code></a> suitable for reading a particular entry.
- This will include all bookies that are cotna</div>
+ This will include all bookies that are part of the ensemble for the entry.</div>
 </li>
 </ul>
 <a id="executeOrdered(java.lang.Runnable)">
