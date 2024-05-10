@@ -507,11 +507,6 @@ jobs:
         with:
           java-version: 11
 
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
-
       - name: run "clean install verify" to trigger dependency check
         # excluding dlfs because it includes hadoop lib with
         # CVEs that we cannot patch up anyway
