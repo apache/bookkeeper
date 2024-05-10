@@ -2111,10 +2111,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
         /*
-         * since addr2 has to be replaced, the remaining bookies weight are - 50, 100, 200, 500 (10*50)
-         * So the median calculated by WeightedRandomSelection is (100 + 200) / 2 = 150
+         * Even though addr2 has to be replaced, but being excluded bookie weight is not excluded in the choose list.
+         * All the bookies weight are - 50, 100, 100, 200, 500 (10*50)
+         * So the median calculated by WeightedRandomSelection is 100
          */
-        double medianWeight = 150;
+        double medianWeight = 100;
         double medianSelectionCounts = (double) (medianWeight / bookieInfoMap.get(addr1.toBookieId()).getWeight())
             * selectionCounts.get(addr1.toBookieId());
         double observedMultiple1 = ((double) selectionCounts.get(addr4.toBookieId())
