@@ -161,15 +161,15 @@ The table below lists parameters that you can set to configure bookies. All conf
 
 | Parameter | Description | Default
 | --------- | ----------- | ------- | 
-| compactionRate | The rate at which compaction will read entries. The unit is adds per second. | 1000 | 
-| minorCompactionThreshold | Threshold of minor compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a minor compaction. If it is set to less than zero, the minor compaction is disabled. | 0.2 | 
-| minorCompactionInterval | Interval to run minor compaction, in seconds. If it is set to less than zero, the minor compaction is disabled. | 3600 | 
-| compactionMaxOutstandingRequests | Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means more memory will be used for offsets. Each offset consists of 3 longs. This parameter should *not* be modified unless you know what you're doing. | 100000 | 
-| majorCompactionThreshold | Threshold of major compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a major compaction. Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled. | 0.8 | 
-| majorCompactionInterval | Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled. | 86400 | 
 | isThrottleByBytes | Throttle compaction by bytes or by entries. | false | 
+| compactionRate | The rate at which compaction will read entries. The unit is adds per second. | 1000 | 
 | compactionRateByEntries | Set the rate at which compaction will read entries. The unit is adds per second. | 1000 | 
 | compactionRateByBytes | Set the rate at which compaction will read entries. The unit is bytes added per second. | 1000000 | 
+| compactionMaxOutstandingRequests | Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means more memory will be used for offsets. Each offset consists of 3 longs. This parameter should *not* be modified unless you know what you're doing. | 100000 | 
+| minorCompactionThreshold | Threshold of minor compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a minor compaction. If it is set to less than zero, the minor compaction is disabled. | 0.2 | 
+| majorCompactionThreshold | Threshold of major compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a major compaction. Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled. | 0.8 | 
+| minorCompactionInterval | Interval to run minor compaction, in seconds. If it is set to less than zero, the minor compaction is disabled. | 3600 | 
+| majorCompactionInterval | Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled. | 86400 | 
 | useTransactionalCompaction | Flag to enable/disable transactional compaction. If it is set to true, it will use transactional compaction, which uses<br />new entry log files to store entries after compaction; otherwise, it will use normal compaction, which shares same entry<br />log file with normal add operations.<br /> | false | 
 
 
