@@ -18,9 +18,9 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -35,7 +35,7 @@ import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test of bookie decommission operations.
@@ -149,7 +149,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
         startNewBookie();
 
-        assertEquals("Number of Available Bookies", NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size());
+        assertEquals(NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size(), "Number of Available Bookies");
 
         BookieId killedBookieId = getBookie(0);
         log.warn("Killing bookie {}", killedBookieId);
@@ -224,12 +224,12 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
         startNewBookie();
 
-        assertEquals("Number of Available Bookies", NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size());
+        assertEquals(NUM_OF_BOOKIES + 1, bkAdmin.getAvailableBookies().size(), "Number of Available Bookies");
 
         BookieId killedBookieId = getBookie(0);
         log.warn("Killing bookie {}", killedBookieId);
         killBookie(0);
-        assertEquals("Number of Available Bookies", NUM_OF_BOOKIES, bkAdmin.getAvailableBookies().size());
+        assertEquals(NUM_OF_BOOKIES, bkAdmin.getAvailableBookies().size(), "Number of Available Bookies");
 
         bkAdmin.decommissionBookie(killedBookieId);
         bkAdmin.triggerAudit();
