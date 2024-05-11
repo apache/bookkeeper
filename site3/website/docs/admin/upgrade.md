@@ -222,6 +222,13 @@ There are no common settings whose default value are changed at 4.14.0.
 
 #### Server Configuration Changes
 
+##### New Settings
+
+| Name                         | Description                                   |
+|------------------------------|-----------------------------------------------|
+| minorCompactionMaxTimeMillis | Maximum milliseconds to run minor Compaction. |
+| majorCompactionMaxTimeMillis | Maximum milliseconds to run major Compaction. |
+
 ##### Deprecated Settings
 
 There are no setting deprecated in 4.14.0
