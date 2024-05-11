@@ -84,11 +84,6 @@ jobs:
         distribution: 'temurin'
         java-version: 11
 
-    - name: Set up Maven
-      uses: apache/pulsar-test-infra/setup-maven@master
-      with:
-        maven-version: 3.8.7
-
     - name: Validate pull request
       if: steps.check_changes.outputs.docs_only != 'true'
       run: |
