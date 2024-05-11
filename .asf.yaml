@@ -21,8 +21,12 @@ github:
   description: "Apache BookKeeper - a scalable, fault tolerant and low latency storage service optimized for append-only workloads"
   homepage: https://bookkeeper.apache.org/
   labels:
+    - apache
     - bookkeeper
     - big-data
+    - distributed-log
+    - distributed-systems
+    - wal
   features:
     # Enable wiki for documentation
     wiki: false
