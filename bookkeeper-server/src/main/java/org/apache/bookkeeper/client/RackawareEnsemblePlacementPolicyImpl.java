@@ -737,9 +737,6 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
             Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
             for (BookieNode n : bookiesToSelectFrom) {
-                if (excludeBookies.contains(n)) {
-                    continue;
-                }
                 if (this.bookieInfoMap.containsKey(n)) {
                     rackMap.put(n, this.bookieInfoMap.get(n));
                 } else {
