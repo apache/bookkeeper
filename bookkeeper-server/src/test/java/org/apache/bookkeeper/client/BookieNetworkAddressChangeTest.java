@@ -20,8 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
@@ -32,8 +32,8 @@ import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests of the main BookKeeper client and the BP-41 bookieAddressTracking feature.
@@ -85,7 +85,7 @@ public class BookieNetworkAddressChangeTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    @Ignore("PLSR-1850 Seems like restart of the bookie always comes up on same port hence failing this test")
+    @Disabled("PLSR-1850 Seems like restart of the bookie always comes up on same port hence failing this test")
     public void testFollowBookieAddressChangeTrckingDisabled() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
