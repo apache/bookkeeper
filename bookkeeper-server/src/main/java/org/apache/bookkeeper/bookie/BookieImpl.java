@@ -25,9 +25,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -55,6 +52,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -626,7 +626,9 @@ public class BookieImpl implements Bookie {
      * @throws IOException
      */
     private void replay(Journal journal, JournalScanner scanner) throws IOException {
+        //从文件进行Journal磁盘文件进行恢复
         final LogMark markedLog = journal.getLastLogMark().getCurMark();
+        //列出所有符合要求的Journal标识，markedLog是上次标记的点，也就是恢复从标记点后写入的Journal文件
         List<Long> logs = Journal.listJournalIds(journal.getJournalDirectory(), journalId ->
             journalId >= markedLog.getLogFileId());
         // last log mark may be missed due to no sync up before
@@ -647,10 +649,12 @@ public class BookieImpl implements Bookie {
                 logPosition = markedLog.getLogFileOffset();
             }
             LOG.info("Replaying journal {} from position {}", id, logPosition);
+            //获取当前Journal文件所写到的地方
             long scanOffset = journal.scanJournal(id, logPosition, scanner, conf.isSkipReplayJournalInvalidRecord());
             // Update LastLogMark after completely replaying journal
             // scanOffset will point to EOF position
             // After LedgerStorage flush, SyncThread should persist this to disk
+            //更新最新日志的标识
             journal.setLastLogMark(id, scanOffset);
         }
     }
@@ -670,6 +674,7 @@ public class BookieImpl implements Bookie {
 
         // replay journals
         try {
+            //恢复Journal
             readJournal();
         } catch (IOException | BookieException ioe) {
             LOG.error("Exception while replaying journals, shutting down", ioe);
@@ -679,6 +684,7 @@ public class BookieImpl implements Bookie {
 
         // Do a fully flush after journal replay
         try {
+            //在Journal恢复后，进行一次刷新动作
             syncThread.requestFlush().get();
         } catch (InterruptedException e) {
             LOG.warn("Interrupting the fully flush after replaying journals : ", e);
@@ -717,9 +723,11 @@ public class BookieImpl implements Bookie {
          * checkpoint which reduce the chance that we need to replay journals
          * again if bookie restarted again before finished journal replays.
          */
+        //启动同步线程，这样可以定期做检查点，否则再次重启的话又要重新进行恢复
         syncThread.start();
 
         // start bookie thread
+        //启动bookie线程，这个线程没有什么用
         bookieThread.start();
 
         // After successful bookie startup, register listener for disk
@@ -729,11 +737,13 @@ public class BookieImpl implements Bookie {
             indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         }
 
+        //启动Ledger存储
         ledgerStorage.start();
 
         // check the bookie status to start with, and set running.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
+        //初始化状态机
         stateManager.initState();
 
         try {

@@ -21,6 +21,7 @@ import java.io.IOException;
 
 /**
  * Interface to communicate checkpoint progress.
+ * 获取检查点进度的接口
  */
 public interface CheckpointSource {
 

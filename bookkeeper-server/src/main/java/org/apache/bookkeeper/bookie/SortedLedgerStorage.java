@@ -20,9 +20,6 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.RateLimiter;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
@@ -33,6 +30,9 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -48,12 +48,16 @@ import org.slf4j.LoggerFactory;
  * is comprised of two {@code MemTable}s and a {@code InterleavedLedgerStorage}. All the
  * entries will be first added into a {@code MemTable}, and then be flushed back to the
  * {@code InterleavedLedgerStorage} when the {@code MemTable} becomes full.
+ *
+ * SortedLedgerStorage 是InterleavedLedgerStorage的拓展，它是由MemTable和InterleavedLedgerStorage构成
+ * 所有的entries会先被写到MemTable，写满后会刷回到InterleavedLedgerStorage
  */
 public class SortedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher,
             CompactableLedgerStorage, DefaultEntryLogger.EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
+    //内存表
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
@@ -294,6 +298,7 @@ public class SortedLedgerStorage
 
     @Override
     public void flush() throws IOException {
+        //为啥要刷新，不是刚启动吗
         memTable.flush(this, Checkpoint.MAX);
         interleavedLedgerStorage.flush();
     }

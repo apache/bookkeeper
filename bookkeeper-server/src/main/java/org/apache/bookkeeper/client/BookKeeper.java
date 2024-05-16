@@ -23,8 +23,6 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
@@ -44,6 +42,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -414,6 +414,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             throws IOException, InterruptedException, BKException {
         this.conf = conf;
         // initialize feature provider
+        // 初始化特性
         if (null == featureProvider) {
             this.featureProvider = SettableFeatureProvider.DISABLE_ALL;
         } else {
@@ -508,6 +509,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 this.statsLogger.scope(WATCHER_SCOPE));
 
         // initialize bookie client
+        // 初始化bookkeeper客户端
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
                 scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
 

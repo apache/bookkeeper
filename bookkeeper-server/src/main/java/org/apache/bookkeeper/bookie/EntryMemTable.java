@@ -44,11 +44,15 @@ import org.slf4j.LoggerFactory;
  * When asked to flush, current EntrySkipList is moved to snapshot and is cleared.
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
+ *
+ * EntryMemTable中保存还没被flush的entries数据，在被要求flush时，EntrySkipList会被移到快照并被释放空间
+ * 此时会继续在新的EntrySkipList提供添加数据服务，知道数据被刷盘成功，快照才会被释放
  */
 public class EntryMemTable implements AutoCloseable{
     private static Logger logger = LoggerFactory.getLogger(EntryMemTable.class);
     /**
      * Entry skip list.
+     * EntryMemTable通过跳表进行数据的存储
      */
     static class EntrySkipList extends ConcurrentSkipListMap<EntryKey, EntryKeyValue> {
         final Checkpoint cp;
@@ -85,12 +89,15 @@ public class EntryMemTable implements AutoCloseable{
         }
     }
 
+    //存数据的跳表
     volatile EntrySkipList kvmap;
 
     // Snapshot of EntryMemTable.  Made for flusher.
+    //存镜像的跳表
     volatile EntrySkipList snapshot;
 
     final ServerConfiguration conf;
+
     final CheckpointSource checkpointSource;
 
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -98,7 +105,9 @@ public class EntryMemTable implements AutoCloseable{
     // Used to track own data size
     final AtomicLong size;
 
+    //跳表大小限制
     final long skipListSizeLimit;
+
     final Semaphore skipListSemaphore;
 
     SkipListArena allocator;
@@ -159,6 +168,7 @@ public class EntryMemTable implements AutoCloseable{
      * Snapshot current EntryMemTable. if given <i>oldCp</i> is older than current checkpoint,
      * we don't do any snapshot. If snapshot happened, we return the checkpoint of the snapshot.
      *
+     *  针对当前EntryMemTable组作镜像
      * @param oldCp
      *          checkpoint
      * @return checkpoint of the snapshot, null means no snapshot
@@ -300,6 +310,7 @@ public class EntryMemTable implements AutoCloseable{
         boolean success = false;
         try {
             if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
+                //如果当前跳表大小已经写满了，则触发一次写镜像，释放空间用于新的数据写入
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
                     cb.onSizeLimitReached(cp);
@@ -317,7 +328,9 @@ public class EntryMemTable implements AutoCloseable{
 
             this.lock.readLock().lock();
             try {
+                //封装下要写入的数据
                 EntryKeyValue toAdd = cloneWithAllocator(ledgerId, entryId, entry);
+                //进行数据写入
                 size = internalAdd(toAdd);
                 if (size == 0) {
                     skipListSemaphore.release(len);
@@ -345,6 +358,7 @@ public class EntryMemTable implements AutoCloseable{
     */
     private long internalAdd(final EntryKeyValue toAdd) throws IOException {
         long sizeChange = 0;
+        //将新写的数据，写到跳表中
         if (kvmap.putIfAbsent(toAdd, toAdd) == null) {
             sizeChange = toAdd.getLength();
             size.addAndGet(sizeChange);

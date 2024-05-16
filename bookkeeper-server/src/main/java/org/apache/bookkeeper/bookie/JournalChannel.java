@@ -160,6 +160,7 @@ class JournalChannel implements Closeable {
         this.configuration = conf;
 
         boolean reuseFile = false;
+        //打开之前的文件
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
         if (toReplaceLogId != null && logId != toReplaceLogId && provider.supportReuseFile()) {
             File toReplaceFile = new File(journalDirectory, Long.toHexString(toReplaceLogId) + ".txn");
@@ -191,6 +192,7 @@ class JournalChannel implements Closeable {
             formatVersion = formatVersionToWrite;
             writeHeader(bcBuilder, writeBufferSize);
         } else {  // open an existing file to read.
+            //打开之前存在的文件进行读取
             fc = channel.getFileChannel();
             bc = null; // readonly
 

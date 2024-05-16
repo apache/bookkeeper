@@ -21,10 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.carrotsearch.hppc.ObjectHashSet;
-import com.carrotsearch.hppc.procedures.ObjectProcedure;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -43,6 +39,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import com.carrotsearch.hppc.ObjectHashSet;
+import com.carrotsearch.hppc.procedures.ObjectProcedure;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
@@ -594,24 +594,32 @@ public class Journal implements CheckpointSource {
     // write buffer size for the journal files
     final int journalWriteBufferSize;
     // number journal files kept before marked journal
+    // Journal最大备份数量
     final int maxBackupJournals;
 
     final File journalDirectory;
     final ServerConfiguration conf;
+    //强制写数据的线程
     final ForceWriteThread forceWriteThread;
+    //实现类是DefaultFileChannel，负责以随机读写方式打开文件
     final FileChannelProvider fileChannelProvider;
 
     // Time after which we will stop grouping and issue the flush
+    //为实现分组而对日志写入施加的最大延迟。默认为 2ms。
     private final long maxGroupWaitInNanos;
     // Threshold after which we flush any buffered journal entries
+    //对日志写入进行缓冲以实现分组的最大条目数。
     private final long bufferedEntriesThreshold;
     // Threshold after which we flush any buffered journal writes
+    //为实现分组，日志写入时需要缓冲的最大字节数。
     private final long bufferedWritesThreshold;
     // should we flush if the queue is empty
     private final boolean flushWhenQueueEmpty;
     // should we hint the filesystem to remove pages from cache after force write
     private final boolean removePagesFromCache;
+    //获取格式化版本
     private final int journalFormatVersionToWrite;
+    //所有日志写入和提交都应按照给定大小对齐。如果不对齐，将填充零，使其与给定大小对齐。
     private final int journalAlignmentSize;
     // control PageCache flush interval when syncData disabled to reduce disk io util
     private final long journalPageCacheFlushIntervalMSec;
@@ -619,6 +627,7 @@ public class Journal implements CheckpointSource {
     private final boolean journalReuseFiles;
 
     // Should data be fsynced on disk before triggering the callback
+    // 是否在触发回调前在磁盘上同步数据
     private final boolean syncData;
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
@@ -636,7 +645,7 @@ public class Journal implements CheckpointSource {
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
-    private final ByteBufAllocator allocator;
+    private final ByteBufAllocator allocator;   //负责分配缓冲区
 
     // Expose Stats
     private final JournalStats journalStats;
@@ -654,10 +663,13 @@ public class Journal implements CheckpointSource {
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator) {
+        //负责分配缓冲区
         this.allocator = allocator;
 
+        //操作状态记录器
         StatsLogger journalStatsLogger = statsLogger.scopeLabel("journalIndex", String.valueOf(journalIndex));
 
+        //是否开启繁忙等待，这个参数需要查阅api文档
         if (conf.isBusyWaitEnabled()) {
             // To achieve lower latency, use busy-wait blocking queue implementation
             queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
@@ -668,43 +680,65 @@ public class Journal implements CheckpointSource {
         }
 
         // Adjust the journal max memory in case there are multiple journals configured.
+        // 因为每个bookie可能会对应多个Journal，因此内存限制要重新计算
         long journalMaxMemory = conf.getJournalMaxMemorySizeMb() / conf.getJournalDirNames().length * 1024 * 1024;
+        //memoryLimitController专门用于控制内容使用情况
         this.memoryLimitController = new MemoryLimitController(journalMaxMemory);
+        //负责Ledger目录管理
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
+        //负责Journal目录管理
         this.journalDirectory = journalDirectory;
+        //Journal文件的最大限制
         this.maxJournalSize = conf.getMaxJournalSizeMB() * MB;
+        //Journal预分配大小
         this.journalPreAllocSize = conf.getJournalPreAllocSizeMB() * MB;
+        //Journal写缓冲大小
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
+        //是否在触发回调前在磁盘上同步数据
         this.syncData = conf.getJournalSyncData();
+        // Journal最大备份数量
         this.maxBackupJournals = conf.getMaxBackupJournals();
+        //强制写数据的线程
         this.forceWriteThread = new ForceWriteThread((__) -> this.interruptThread(),
                 conf.getJournalAdaptiveGroupWrites(), journalStatsLogger);
+        //为实现分组而对日志写入施加的最大延迟。默认为 2ms。
         this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
+        //为实现分组，日志写入时需要缓冲的最大字节数。
         this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
+        //对日志写入进行缓冲以实现分组的最大条目数。
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
+        //获取格式化版本
         this.journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
+        //所有日志写入和提交都应按照给定大小对齐。如果不对齐，将填充零，使其与给定大小对齐。
         this.journalAlignmentSize = conf.getJournalAlignmentSize();
+        // journal 页缓存刷新间隔
         this.journalPageCacheFlushIntervalMSec = conf.getJournalPageCacheFlushIntervalMSec();
+        //允许重复使用journal文件
         this.journalReuseFiles = conf.getJournalReuseFiles();
+        //统计线程调用次数
         this.callbackTime = journalStatsLogger.getThreadScopedCounter("callback-time");
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
+        // 在队列空时触发flush一次
         this.flushWhenQueueEmpty = maxGroupWaitInNanos <= 0 || conf.getJournalFlushWhenQueueEmpty();
-
+        //在强制写后，是否要将页从页缓存中进行移除
         this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
+        // 读取最新日志的标记
         if (conf.getJournalDirs().length == 1) {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME;
         } else {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
         }
+        //打开最近一次写的文件
         lastLogMark.readLog();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
         }
 
         try {
+            //实现类是DefaultFileChannel，负责以随机读写方式打开文件
             this.fileChannelProvider = FileChannelProvider.newProvider(conf.getJournalChannelProvider());
         } catch (IOException e) {
             LOG.error("Failed to initiate file channel provider: {}", conf.getJournalChannelProvider());
@@ -712,6 +746,7 @@ public class Journal implements CheckpointSource {
         }
 
         // Expose Stats
+        // 记录状态
         this.journalStats = new JournalStats(journalStatsLogger, journalMaxMemory,
                 () -> memoryLimitController.currentUsage());
     }
@@ -818,6 +853,7 @@ public class Journal implements CheckpointSource {
             recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize,
                     journalPos, conf, fileChannelProvider);
         }
+        //获取当前Journal版本
         int journalVersion = recLog.getFormatVersion();
         try {
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
