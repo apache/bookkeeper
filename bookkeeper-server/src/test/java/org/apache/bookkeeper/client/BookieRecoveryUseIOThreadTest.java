@@ -18,14 +18,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Assert;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 /**
  * Tests for Bookie recovery use IO threads.
  */
@@ -33,14 +33,9 @@ public class BookieRecoveryUseIOThreadTest extends BookKeeperClusterTestCase {
 
     public BookieRecoveryUseIOThreadTest() {
         super(1);
-    }
-
-    @Override
-    public void setUp() throws Exception {
         baseConf.setNumAddWorkerThreads(0);
         baseConf.setNumReadWorkerThreads(0);
         baseConf.setNumHighPriorityWorkerThreads(0);
-        super.setUp();
     }
 
     @Test
@@ -75,6 +70,6 @@ public class BookieRecoveryUseIOThreadTest extends BookKeeperClusterTestCase {
                 }, null);
             latch.await();
         }
-        Assert.assertEquals(finalRc.get(), org.apache.bookkeeper.client.api.BKException.Code.OK);
+        assertEquals(finalRc.get(), org.apache.bookkeeper.client.api.BKException.Code.OK);
     }
 }
