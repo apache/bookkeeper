@@ -21,13 +21,7 @@
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <!-- add suppressions for known vulnerabilities detected by OWASP Dependency Check -->
-
     <!-- jetcd higher version requires jdk 11 -->
-    <suppress>
-        <notes>CVE-2020-15113</notes>
-        <filePath regex="true">.*jetcd.*\.jar</filePath>
-        <cve>CVE-2020-15113</cve>
-    </suppress>
     <suppress>
         <notes><![CDATA[
            file name: jetcd-grpc-0.7.7.jar
