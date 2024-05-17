@@ -22,21 +22,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <!-- add supressions for known vulnerabilities detected by OWASP Dependency Check -->
 
-    <!-- matches BK's http server against apache's http server CVEs -->
-    <suppress>
-        <notes><![CDATA[
-   file name: org.apache.bookkeeper.http:http-server:4.15.0-SNAPSHOT
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/http\-server@.*$</packageUrl>
-        <cpe>cpe:/a:apache:http_server</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: org.apache.bookkeeper.http:vertx-http-server:4.15.0-SNAPSHOT
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/vertx\-http\-server@.*$</packageUrl>
-        <cve>CVE-2009-1890</cve>
-    </suppress>
     <suppress>
         <notes>CVE-2021-43045 affects only .NET distro, see https://github.com/apache/avro/pull/1357</notes>
         <gav regex="true">org\.apache\.avro:.*</gav>
@@ -171,16 +156,6 @@
         <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
         <cve>CVE-2021-26291</cve>
     </suppress>
-
-  <suppress>
-    <notes>fredsmith utils library is not used at all. CVE-2021-4277 is a false positive.</notes>
-    <cve>CVE-2021-4277</cve>
-  </suppress>
-
-  <suppress>
-    <notes>yaml_project is not used at all. Any CVEs reported for yaml_project are false positives.</notes>
-    <cpe>cpe:/a:yaml_project:yaml</cpe>
-  </suppress>
 
   <suppress>
     <notes><![CDATA[
