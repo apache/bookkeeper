@@ -38,14 +38,12 @@ import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests for BookKeeper open ledger operations.
  */
-@RunWith(Parameterized.class)
 public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
 
     private static final int ensembleSize = 3;
@@ -58,11 +56,10 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
 
     private boolean withRecovery;
 
-    public BookKeeperBuildersOpenLedgerTest(boolean withRecovery) {
+    public void initBookKeeperBuildersOpenLedgerTest(boolean withRecovery) {
         this.withRecovery = withRecovery;
     }
 
-    @Parameterized.Parameters(name = "withRecovery:({0})")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {true},
@@ -70,8 +67,9 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
         });
     }
 
-    @Test
-    public void testOpenLedger() throws Exception {
+    @MethodSource("data")
+    @ParameterizedTest(name = "withRecovery:({0})")
+    public void testOpenLedger(boolean withRecovery) throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
@@ -91,8 +89,9 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @Test
-    public void testOpenLedgerWithTimeoutEx() throws Exception {
+    @MethodSource("data")
+    @ParameterizedTest(name = "withRecovery:({0})")
+    public void testOpenLedgerWithTimeoutEx(boolean withRecovery) throws Exception {
         mockReadEntryTimeout();
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
                 writeQuorumSize, ackQuorumSize, password, customMetadata);

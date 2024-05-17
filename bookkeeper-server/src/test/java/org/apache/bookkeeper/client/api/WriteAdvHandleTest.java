@@ -35,18 +35,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.bookkeeper.client.extension.TestContextExtension;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit test for {@link WriteAdvHandle}.
  */
 public class WriteAdvHandleTest {
 
-    @Rule
-    public final TestName runtime = new TestName();
+    @RegisterExtension
+    TestContextExtension testContextExtension = new TestContextExtension();
 
     private final long entryId;
     private final WriteAdvHandle handle = mock(WriteAdvHandle.class);
@@ -67,7 +67,7 @@ public class WriteAdvHandleTest {
 
     @Test
     public void testAppendBytes() throws Exception {
-        byte[] testData = runtime.getMethodName().getBytes(UTF_8);
+        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
         handle.writeAsync(entryId, testData);
 
         ByteBuf buffer = entryQueue.take();
@@ -78,7 +78,7 @@ public class WriteAdvHandleTest {
 
     @Test
     public void testAppendBytes2() throws Exception {
-        byte[] testData = runtime.getMethodName().getBytes(UTF_8);
+        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
         handle.writeAsync(entryId, testData, 1, testData.length / 2);
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);
@@ -91,7 +91,7 @@ public class WriteAdvHandleTest {
 
     @Test
     public void testAppendByteBuffer() throws Exception {
-        byte[] testData = runtime.getMethodName().getBytes(UTF_8);
+        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
         handle.writeAsync(entryId, ByteBuffer.wrap(testData, 1, testData.length / 2));
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);
