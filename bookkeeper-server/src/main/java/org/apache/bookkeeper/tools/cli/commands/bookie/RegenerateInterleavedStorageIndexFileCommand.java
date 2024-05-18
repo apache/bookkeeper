@@ -79,7 +79,7 @@ public class RegenerateInterleavedStorageIndexFileCommand
             description = "The password in base64 encoding, for cases where the password is not UTF-8.")
         private String b64Password = DEFAULT;
 
-        @Parameter(names = { "-d", "--dryrun" }, description = "Process the entryLogger, but don't write anthing.")
+        @Parameter(names = { "-d", "--dryrun" }, description = "Process the entryLogger, but don't write anything.")
         private boolean dryRun;
 
         @Parameter(names = { "-l", "--ledgerids" },

@@ -1298,7 +1298,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 }
             }
 
-            // update last dlsn before satisifying future
+            // update last dlsn before satisfying future
             if (BKException.Code.OK == transmitResultUpdater.get(this)) {
                 DLSN lastDLSNInPacket = recordSet.finalizeTransmit(
                         logSegmentSequenceNumber, entryId);

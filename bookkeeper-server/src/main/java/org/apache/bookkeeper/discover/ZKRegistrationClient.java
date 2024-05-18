@@ -369,7 +369,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                         .collect(bookieInfoUpdated)
                         .whenComplete((List<Versioned<BookieServiceInfo>> info, Throwable error) -> {
                             // we are ignoring errors intentionally
-                            // there could be bookies that publish unparseable information
+                            // there could be bookies that publish unparsable information
                             // or other temporary/permanent errors
                             future.complete(new Versioned<>(bookies, version));
                         });

@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Uses the specified amount of memory and pairs it with a hashmap.
  *
- * <p>The memory is splitted in multiple segments that are used in a
+ * <p>The memory is split in multiple segments that are used in a
  * ring-buffer fashion. When the read cache is full, the oldest segment
  * is cleared and rotated to make space for new entries to be added to
  * the read cache.

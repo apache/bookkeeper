@@ -200,7 +200,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             .setLedgerId(ledgerId)
             .setEntryId(entryId);
         try {
-            // handle fence reqest
+            // handle fence request
             if (RequestUtils.isFenceRequest(readRequest)) {
                 LOG.info("Ledger fence request received for ledger: {} from address: {}", ledgerId,
                     channel.remoteAddress());

@@ -31,7 +31,7 @@ public interface MetaStore {
     String getName();
 
     /**
-     * Get the plugin verison.
+     * Get the plugin version.
      *
      * @return the plugin version.
      */

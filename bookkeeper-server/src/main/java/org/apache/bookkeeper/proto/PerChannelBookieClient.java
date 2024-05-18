@@ -588,7 +588,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         // In the netty pipeline, we need to split packets based on length, so we
-        // use the {@link LengthFieldBasedFramDecoder}. Other than that all actions
+        // use the {@link LengthFieldBasedFrameDecoder}. Other than that all actions
         // are carried out in this class, e.g., making sense of received messages,
         // prepending the length to outgoing packets etc.
         bootstrap.handler(new ChannelInitializer<Channel>() {
@@ -2373,7 +2373,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    // visable for testing
+    // visible for testing
     CompletionKey newCompletionKey(long txnId, OperationType operationType) {
         return new TxnCompletionKey(txnId, operationType);
     }

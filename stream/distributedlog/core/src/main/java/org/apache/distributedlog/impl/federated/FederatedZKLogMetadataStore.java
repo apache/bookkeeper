@@ -139,7 +139,7 @@ public class FederatedZKLogMetadataStore
                     try {
                         oldLogs = FutureUtils.result(logsFuture);
                     } catch (Exception e) {
-                        logger.error("Unexpected exception when getting logs from a satisified future of {} : ",
+                        logger.error("Unexpected exception when getting logs from a satisfied future of {} : ",
                                 uri, e);
                     }
                     logsFuture = new CompletableFuture<Set<String>>();

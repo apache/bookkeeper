@@ -73,7 +73,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper implementation of underreplication manager.
- * This is implemented in a heirarchical fashion, so it'll work with
+ * This is implemented in a hierarchical fashion, so it'll work with
  * FlatLedgerManagerFactory and HierarchicalLedgerManagerFactory.
  *
  * <p>Layout is:
@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
  *                         locks/(ledgerId)
  *
  * <p>The hierarchical path is created by splitting the ledger into 4 2byte
- * segments which are represented in hexidecimal.
+ * segments which are represented in hexadecimal.
  * e.g. For ledger id 0xcafebeef0000feed, the path is
  *  cafe/beef/0000/feed/
  */

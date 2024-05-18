@@ -409,7 +409,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get Garbage collection wait time. Default value is 10 minutes.
      * The guideline is not to set a too low value for this, if using zookeeper based
-     * ledger manager. And it would be nice to align with the average lifecyle time of
+     * ledger manager. And it would be nice to align with the average lifecycle time of
      * ledgers in the system.
      *
      * @return gc wait time
@@ -1223,7 +1223,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Configure the bookie to advertise a specific BookieId.
      *
      * <p>By default, a bookie will advertise a BookieId computed
-     * from the primary network endpoint addresss.
+     * from the primary network endpoint address.
      *
      * @see #getBookieId()
      * @see #setAdvertisedAddress(java.lang.String)

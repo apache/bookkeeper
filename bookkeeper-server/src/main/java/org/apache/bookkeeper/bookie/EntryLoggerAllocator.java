@@ -137,8 +137,8 @@ class EntryLoggerAllocator {
         }
     }
 
-    void setWritingLogId(long lodId) {
-        this.writingLogId = lodId;
+    void setWritingLogId(long logId) {
+        this.writingLogId = logId;
     }
 
     void setWritingCompactingLogId(long logId) {

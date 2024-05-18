@@ -980,7 +980,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read requests.
+     * Multiplier to use when determining time between successive speculative read requests.
      *
      * @return speculative read timeout backoff multiplier.
      */
@@ -989,10 +989,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read requests.
+     * Set the multiplier to use when determining time between successive speculative read requests.
      *
      * @param speculativeReadTimeoutBackoffMultiplier
-     *          multipler to use when determining time between successive speculative read requests.
+     *          multiplier to use when determining time between successive speculative read requests.
      * @return client configuration.
      */
     public ClientConfiguration setSpeculativeReadTimeoutBackoffMultiplier(
@@ -1002,7 +1002,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read LAC requests.
+     * Multiplier to use when determining time between successive speculative read LAC requests.
      *
      * @return speculative read LAC timeout backoff multiplier.
      */
@@ -1011,10 +1011,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read LAC requests.
+     * Set the multiplier to use when determining time between successive speculative read LAC requests.
      *
      * @param speculativeReadLACTimeoutBackoffMultiplier
-     *          multipler to use when determining time between successive speculative read LAC requests.
+     *          multiplier to use when determining time between successive speculative read LAC requests.
      * @return client configuration.
      */
     public ClientConfiguration setSpeculativeReadLACTimeoutBackoffMultiplier(
@@ -1193,7 +1193,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * preference) to read all entries for a ledger.
      *
      * <p>Having all the read to one bookie will increase the chances that
-     * a read request will be fullfilled by Bookie read cache (or OS file
+     * a read request will be fulfilled by Bookie read cache (or OS file
      * system cache) when doing sequential reads.
      *
      * @param enabled the flag to enable/disable sticky reads.

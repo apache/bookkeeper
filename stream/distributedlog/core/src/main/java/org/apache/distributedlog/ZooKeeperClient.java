@@ -212,7 +212,7 @@ public class ZooKeeperClient {
                     + name + " failed on establishing zookeeper connection", ioe);
         }
 
-        // This indicates that the client was explictly closed
+        // This indicates that the client was explicitly closed
         if (closed) {
             throw new ZooKeeperConnectionException("Client " + name + " has already been closed");
         }

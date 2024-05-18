@@ -488,7 +488,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
                     if (MSException.Code.BadVersion.getCode() == rc) {
-                        LOG.info("Bad version provided to updat metadata for ledger {}", ledgerId);
+                        LOG.info("Bad version provided to update metadata for ledger {}", ledgerId);
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
@@ -761,7 +761,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         try {
             MetastoreUtils.cleanTable(ledgerTable, conf.getMetastoreMaxEntriesPerScan());
         } catch (MSException mse) {
-            throw new IOException("Exception when cleanning up table " + TABLE_NAME, mse);
+            throw new IOException("Exception when cleaning up table " + TABLE_NAME, mse);
         }
         LOG.info("Finished cleaning up table {}.", TABLE_NAME);
         // Delete and recreate the LAYOUT information.

@@ -152,7 +152,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
          * 'expiry duration' and 'maximumSize' will be set to
          * entryLogPerLedgerCounterLimitsMultFactor times of
          * 'ledgerIdEntryLogMap' cache limits. This is needed because entries
-         * from 'ledgerIdEntryLogMap' can be removed from cache becasue of
+         * from 'ledgerIdEntryLogMap' can be removed from cache because of
          * accesstime expiry or cache size limits, but to know the actual number
          * of entrylogs per ledger, we should maintain this count for long time.
          */

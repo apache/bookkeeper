@@ -51,8 +51,8 @@ public class ZooKeeperClientBuilder {
     private String name = "default";
     // sessionTimeoutMs
     private int sessionTimeoutMs = -1;
-    // conectionTimeoutMs
-    private int conectionTimeoutMs = -1;
+    // connectionTimeoutMs
+    private int connectionTimeoutMs = -1;
     // zkServers
     private String zkServers = null;
     // retry policy
@@ -92,8 +92,8 @@ public class ZooKeeperClientBuilder {
      */
     public synchronized ZooKeeperClientBuilder sessionTimeoutMs(int sessionTimeoutMs) {
         this.sessionTimeoutMs = sessionTimeoutMs;
-        if (this.conectionTimeoutMs <= 0) {
-            this.conectionTimeoutMs = 2 * sessionTimeoutMs;
+        if (this.connectionTimeoutMs <= 0) {
+            this.connectionTimeoutMs = 2 * sessionTimeoutMs;
         }
         return this;
     }
@@ -116,7 +116,7 @@ public class ZooKeeperClientBuilder {
      * @return builder
      */
     public synchronized ZooKeeperClientBuilder connectionTimeoutMs(int connectionTimeoutMs) {
-        this.conectionTimeoutMs = connectionTimeoutMs;
+        this.connectionTimeoutMs = connectionTimeoutMs;
         return this;
     }
 
@@ -191,8 +191,8 @@ public class ZooKeeperClientBuilder {
 
     private void validateParameters() {
         checkNotNull(zkServers, "No zk servers provided.");
-        checkArgument(conectionTimeoutMs > 0,
-                "Invalid connection timeout : %d", conectionTimeoutMs);
+        checkArgument(connectionTimeoutMs > 0,
+                "Invalid connection timeout : %d", connectionTimeoutMs);
         checkArgument(sessionTimeoutMs > 0,
                 "Invalid session timeout : %d", sessionTimeoutMs);
         checkNotNull(statsLogger, "No stats logger provided.");
@@ -222,7 +222,7 @@ public class ZooKeeperClientBuilder {
         return new ZooKeeperClient(
                 name,
                 sessionTimeoutMs,
-                conectionTimeoutMs,
+                connectionTimeoutMs,
                 zkServers,
                 retryPolicy,
                 statsLogger,
