@@ -20,10 +20,6 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
@@ -34,6 +30,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
@@ -70,6 +70,7 @@ public class LedgerMetadataIndex implements Closeable {
 
     public LedgerMetadataIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
+        //新建
         ledgersDb = storageFactory.newKeyValueStorage(basePath, "ledgers", DbConfigType.LedgerMetadata, conf);
 
         ledgers = ConcurrentLongHashMap.<LedgerData>newBuilder().build();

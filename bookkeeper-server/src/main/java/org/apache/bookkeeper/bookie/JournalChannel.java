@@ -170,6 +170,7 @@ class JournalChannel implements Closeable {
                 reuseFile = true;
             }
         }
+        //针对这个文件创建读写通道
         channel = provider.open(fn, configuration);
 
         if (formatVersionToWrite < V4) {
@@ -191,11 +192,13 @@ class JournalChannel implements Closeable {
             fc = channel.getFileChannel();
             formatVersion = formatVersionToWrite;
             writeHeader(bcBuilder, writeBufferSize);
-        } else {  // open an existing file to read.
+        } else {
+            // open an existing file to read.
             //打开之前存在的文件进行读取
             fc = channel.getFileChannel();
             bc = null; // readonly
 
+            //读取文件头部元数据，4个字节的魔数和4个字节的版本
             ByteBuffer bb = ByteBuffer.allocate(VERSION_HEADER_SIZE);
             int c = fc.read(bb);
             bb.flip();
@@ -204,6 +207,7 @@ class JournalChannel implements Closeable {
                 byte[] first4 = new byte[4];
                 bb.get(first4);
 
+                //判断前4个字节是否是魔数
                 if (Arrays.equals(first4, magicWord)) {
                     formatVersion = bb.getInt();
                 } else {

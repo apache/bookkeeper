@@ -311,6 +311,7 @@ public class Journal implements CheckpointSource {
         static QueueEntry create(ByteBuf entry, boolean ackBeforeSync, long ledgerId, long entryId,
                 WriteCallback cb, Object ctx, long enqueueTime, OpStatsLogger journalAddEntryStats,
                 Counter callbackTime) {
+            //从对象池获取QueueEntry对象
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
             qe.ackBeforeSync = ackBeforeSync;
@@ -368,9 +369,13 @@ public class Journal implements CheckpointSource {
      */
     @VisibleForTesting
     public static class ForceWriteRequest {
+        //负责强制写入的对象
+
+        //关联一个文件
         private JournalChannel logFile;
         private RecyclableArrayList<QueueEntry> forceWriteWaiters;
         private boolean shouldClose;
+        //最近一次刷新的位置
         private long lastFlushedPosition;
         private long logId;
         private boolean flushed;
@@ -499,6 +504,7 @@ public class Journal implements CheckpointSource {
                 try {
                     int numEntriesInLastForceWrite = 0;
 
+                    //将需要刷盘的数据拷贝到localRequests数组中
                     int requestsCount = forceWriteRequests.takeAll(localRequests);
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
@@ -624,6 +630,7 @@ public class Journal implements CheckpointSource {
     // control PageCache flush interval when syncData disabled to reduce disk io util
     private final long journalPageCacheFlushIntervalMSec;
     // Whether reuse journal files, it will use maxBackupJournal as the journal file pool.
+    //是否复用Journal文件
     private final boolean journalReuseFiles;
 
     // Should data be fsynced on disk before triggering the callback
@@ -993,6 +1000,7 @@ public class Journal implements CheckpointSource {
         LOG.info("Starting journal on {}", journalDirectory);
         ThreadRegistry.register(journalThreadName, 0);
 
+        //如果配置开启了繁忙等待，则开启CPU亲和
         if (conf.isBusyWaitEnabled()) {
             try {
                 CpuAffinity.acquireCore();
@@ -1001,6 +1009,7 @@ public class Journal implements CheckpointSource {
             }
         }
 
+        //给予本地线程栈实现的对象池
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
         int numEntriesToFlush = 0;
         ByteBuf lenBuff = Unpooled.buffer(4);
@@ -1009,11 +1018,14 @@ public class Journal implements CheckpointSource {
 
         BufferedChannel bc = null;
         JournalChannel logFile = null;
+        //强制写数据
         forceWriteThread.start();
+        //监听器，监听Journal创建以及刷新等操作
         Stopwatch journalCreationWatcher = Stopwatch.createUnstarted();
         Stopwatch journalFlushWatcher = Stopwatch.createUnstarted();
         long batchSize = 0;
         try {
+            //列出目录下Journal的标识列表
             List<Long> journalIds = listJournalIds(journalDirectory, null);
             // Should not use MathUtils.now(), which use System.nanoTime() and
             // could only be used to measure elapsed time.
@@ -1032,6 +1044,7 @@ public class Journal implements CheckpointSource {
             QueueEntry qe = null;
             while (true) {
                 // new journal file to write
+                // 如果当前logFile是空，则新建一个文件进行数据写入
                 if (null == logFile) {
                     logId = logId + 1;
                     journalIds = listJournalIds(journalDirectory, null);
@@ -1040,7 +1053,9 @@ public class Journal implements CheckpointSource {
                         && journalIds.get(0) < lastLogMark.getCurMark().getLogFileId()
                         ? journalIds.get(0) : null;
 
+                    //重置监听创建的Watcher
                     journalCreationWatcher.reset().start();
+                    //创建新的文件
                     logFile = newLogFile(logId, replaceLogId);
 
                     journalStats.getJournalCreationStats().registerSuccessfulEvent(
@@ -1063,6 +1078,7 @@ public class Journal implements CheckpointSource {
                     if (numEntriesToFlush == 0) {
                         // There are no entries pending. We can wait indefinitely until the next
                         // one is available
+                        //将队列queue中的数据都拷贝到localQueueEntries数组中
                         localQueueEntriesLen = queue.takeAll(localQueueEntries);
                     } else {
                         // There are already some entries pending. We must adjust
@@ -1080,11 +1096,14 @@ public class Journal implements CheckpointSource {
                     dequeueStartTime = MathUtils.nowInNano();
 
                     if (localQueueEntriesLen > 0) {
+                        //从数组中取出第一个元素给qe，并将数组中这个元素清空，同时将下标localQueueEntriesIdx往右移动一位
+                        //localQueueEntries的数据又是哪里来的
                         qe = localQueueEntries[localQueueEntriesIdx];
                         localQueueEntries[localQueueEntriesIdx++] = null;
                     }
                 }
 
+                //如果存在需要刷盘的数据，则判断是否触发flush动作
                 if (numEntriesToFlush > 0) {
                     boolean shouldFlush = false;
                     // We should issue a forceWrite if any of the three conditions below holds good
@@ -1122,6 +1141,7 @@ public class Journal implements CheckpointSource {
                     }
 
                     // toFlush is non null and not empty so should be safe to access getFirst
+                    // 符合条件时，触发刷盘动作
                     if (shouldFlush) {
                         if (journalFormatVersionToWrite >= JournalChannel.V5) {
                             writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
@@ -1129,6 +1149,7 @@ public class Journal implements CheckpointSource {
                         journalFlushWatcher.reset().start();
                         bc.flush();
 
+                        //每一条数据都被包装成一个独立线程，此时进行并行异步刷盘
                         for (int i = 0; i < toFlush.size(); i++) {
                             QueueEntry entry = toFlush.get(i);
                             if (entry != null && (!syncData || entry.ackBeforeSync)) {
@@ -1141,6 +1162,7 @@ public class Journal implements CheckpointSource {
                                 entry.run();
                             }
                         }
+                        //进行刷盘并释放空间
                         writeHandlers.forEach(
                                 (ObjectProcedure<? super BookieRequestHandler>)
                                         BookieRequestHandler::flushPendingResponse);
@@ -1164,6 +1186,7 @@ public class Journal implements CheckpointSource {
                             .registerSuccessfulValue(numEntriesToFlush);
                         journalStats.getForceWriteBatchBytesStats()
                             .registerSuccessfulValue(batchSize);
+                        //判断是否要回滚Journal
                         boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
                         // Trigger data sync to disk in the "Force-Write" thread.
                         // Trigger data sync to disk has three situations:

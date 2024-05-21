@@ -22,13 +22,8 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 
 import static com.google.common.base.Preconditions.checkState;
-//CHECKSTYLE.OFF: IllegalImport
-//CHECKSTYLE.OFF: ImportOrder
 import static io.netty.util.internal.PlatformDependent.maxDirectMemory;
-//CHECKSTYLE.ON: IllegalImport
-//CHECKSTYLE.ON: ImportOrder
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -38,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.rocksdb.BlockBasedTableConfig;
@@ -65,6 +61,11 @@ import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//CHECKSTYLE.OFF: IllegalImport
+//CHECKSTYLE.OFF: ImportOrder
+//CHECKSTYLE.ON: IllegalImport
+//CHECKSTYLE.ON: ImportOrder
+
 /**
  * RocksDB based implementation of the KeyValueStorage.
  */
@@ -73,6 +74,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
             new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
+    //真正存放数据的RocksDB对象
     private final RocksDB db;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
@@ -111,6 +113,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                                   boolean readOnly)
             throws IOException {
         try {
+            //加载相关依赖库
             RocksDB.loadLibrary();
         } catch (Throwable t) {
             throw new IOException("Failed to load RocksDB JNI library", t);

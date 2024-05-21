@@ -23,11 +23,6 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -48,6 +43,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -92,20 +92,27 @@ import org.slf4j.LoggerFactory;
 public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage {
     private final EntryLogger entryLogger;
 
+    //存放Ledger信息的RocksDB
     private final LedgerMetadataIndex ledgerIndex;
+    //存放Entry索引信息的RocksDB
     private final EntryLocationIndex entryLocationIndex;
 
+    //暂时的Ledger信息
     private final ConcurrentLongHashMap<TransientLedgerInfo> transientLedgerInfoCache;
 
+    //GC线程
     private final GarbageCollectorThread gcThread;
 
     // Write cache where all new entries are inserted into
+    //写缓存
     protected volatile WriteCache writeCache;
 
     // Write cache that is used to swap with writeCache during flushes
+    //写缓存(这应该是双buffer设计)
     protected volatile WriteCache writeCacheBeingFlushed;
 
     // Cache where we insert entries for speculative reading
+    //读缓存
     private final ReadCache readCache;
 
     private final StampedLock writeCacheRotationLock = new StampedLock();
@@ -120,13 +127,16 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             new DefaultThreadFactory(dbStoragerExecutorName));
 
     // Executor used to for db index cleanup
+    // 用于清理索引数据
     private final ScheduledExecutorService cleanupExecutor = Executors
             .newSingleThreadScheduledExecutor(new DefaultThreadFactory("db-storage-cleanup"));
 
+    //用于记录待删的Ledger信息
     private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists
             .newCopyOnWriteArrayList();
 
     private CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
+    //记录最近一次检查点的信息
     private Checkpoint lastCheckpoint = Checkpoint.MIN;
 
     private final long writeCacheMaxSize;
@@ -154,6 +164,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
+        //将Ledger的索引信息放到第一个Ledger目录下
         String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
@@ -188,17 +199,22 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 DEFAULT_MAX_THROTTLE_TIME_MILLIS);
         maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 
+        //创建读缓存对象
         readCache = new ReadCache(allocator, readCacheMaxSize);
 
+        //创建索引对象
         ledgerIndex = new LedgerMetadataIndex(conf,
                 KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
+        //创建索引对象
         entryLocationIndex = new EntryLocationIndex(conf,
                 KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
 
+        //这是跳表的实现吗？作用是什么
         transientLedgerInfoCache = ConcurrentLongHashMap.<TransientLedgerInfo>newBuilder()
                 .expectedItems(16 * 1024)
                 .concurrencyLevel(Runtime.getRuntime().availableProcessors() * 2)
                 .build();
+        //定期清理线程
         cleanupExecutor.scheduleAtFixedRate(this::cleanupStaleTransientLedgerInfo,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
