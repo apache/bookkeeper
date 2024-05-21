@@ -22,7 +22,7 @@
  * that is used to proportionally control what features are enabled for the system.
  *
  * <p>In other words, it is a way of altering the control in a system without restarting it.
- * It can be used during all stages of developement, its most visible use case is on production.
+ * It can be used during all stages of development, its most visible use case is on production.
  * For instance, during a production release, you can enable or disable individual features,
  * control the data flow through the system, thereby minimizing risk of system failures
  * in real time.

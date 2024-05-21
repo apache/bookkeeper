@@ -17,6 +17,6 @@
  */
 
 /**
- * Tne default implementation of metadata storage.
+ * The default implementation of metadata storage.
  */
 package org.apache.bookkeeper.stream.storage.impl.metadata;
