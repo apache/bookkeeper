@@ -15,4 +15,4 @@ The `Ledger API` provides direct access to ledgers and thus enables you to use B
 
 However, in most of use cases, if you want a `log stream`-like abstraction, it requires you to manage things like tracking list of ledgers,
 managing rolling ledgers and data retention on your own. In such cases, you are recommended to use [DistributedLog API](distributedlog-api),
-with semantics resembling continous log streams from the standpoint of applications.
+with semantics resembling continuous log streams from the standpoint of applications.

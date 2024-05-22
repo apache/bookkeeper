@@ -5,13 +5,13 @@
 DistributedLog is an extension of Apache BookKeeper, which offers *reopenable* log streams as its storage primitives.
 It is tightly built over bookkeeper ledgers, and provides an easier-to-use abstraction and api to use. Applications
 can use *named* log streams rather than *numbered* ledgers to store their data. For example, users can use log streams
-as files to storge objects, checkpoints and other more general filesystem related use cases.
+as files to storage objects, checkpoints and other more general filesystem related use cases.
 
 Moving the distributedlog core library as part of bookkeeper would have following benefits:
 
 - It provides more generic "reopenable" log abstraction. It lowers the barrier for people to use bookkeeper to store
   data, and bring in more use cases into bookkeeper ecosystem.
-- Using ledgers to build continous log stream has been a pattern that been reimplemented multiple times at multiple places,
+- Using ledgers to build continuous log stream has been a pattern that been reimplemented multiple times at multiple places,
   from older projects like HDFS namenode log manager, Hedwig to the newer projects like DistributedLog and Pulsar.
 - Most of the distributedlog usage is using the distributedlog library which only depends Apache BookKeeper and there is no
   additional components introduced. To simplify those usages, it is better to release distributedlog library along with

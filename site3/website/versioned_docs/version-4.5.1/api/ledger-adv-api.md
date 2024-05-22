@@ -15,7 +15,7 @@ It allows user passing in an `entryId` when adding an entry.
 
 ### Creating advanced ledgers
 
-Here's an exmaple:
+Here's an example:
 
 ```java
 byte[] passwd = "some-passwd".getBytes();

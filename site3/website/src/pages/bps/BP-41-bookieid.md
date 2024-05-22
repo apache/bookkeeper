@@ -51,7 +51,7 @@ The serialized representation of a BookieSocketAddress, both for LedgerMetadata 
 
 It is simply a pure refactor of Java interfaces.
 
-We have to introduce an internal API, **BookieAddressResolver**, that maps a *BookieId* to a *BookieSocketAddress*: the client connectes to a Bookie it looks up the **current network address** using BookieAddressResolver.
+We have to introduce an internal API, **BookieAddressResolver**, that maps a *BookieId* to a *BookieSocketAddress*: the client connects to a Bookie it looks up the **current network address** using BookieAddressResolver.
 
 ```
 interface BookieAddressResolver {
@@ -147,7 +147,7 @@ All of the tools that deal with LedgerMetadata will use BookieId instead of Book
 instead of hostname:port pairs (we had validations on tools that helped the user to use always BookieIds in hostname:port form).
 
 #### REST API Changes
-In the REST API we will deal with BookieIds and not with BookieSocketAddresses anymore, the change will be straighforward and compatible with current API.
+In the REST API we will deal with BookieIds and not with BookieSocketAddresses anymore, the change will be straightforward and compatible with current API.
 When new custom BookieIDs will be used then they will appear on the REST API as well, but this will be expected by users.
 
 
@@ -158,7 +158,7 @@ The Bookie by default will continue to use as BookieID a compatible value comput
 Incompatibility will start as soon as you enable custom BookieIDs on the bookies, from that point clients and old Auditors won't be able to deal with new bookies.
 New clients will always be able to connect and use legacy bookies.
 
-Custom EnsemblePlacementPolicies must be adapted to the new interfaces but the change will usually as simple as just replacing BookieSocketAdress with BookieId.
+Custom EnsemblePlacementPolicies must be adapted to the new interfaces but the change will usually as simple as just replacing BookieSocketAddress with BookieId.
 No need to change address to rack mapping scripts, as they will still deal with raw DNS hostnames and not with BookieIds.
 
 ### Test Plan

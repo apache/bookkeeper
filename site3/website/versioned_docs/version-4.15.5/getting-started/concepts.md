@@ -193,7 +193,7 @@ For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, a
 
 ### Flat ledger manager
 
-> deprecated since 4.7.0, not recommand now.
+> deprecated since 4.7.0, not recommend now.
 
 The *flat ledger manager*, implemented in the [`FlatLedgerManager`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/meta/FlatLedgerManager.html) class, stores all ledgers' metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates [sequential nodes](https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming) to ensure the uniqueness of the ledger ID and prefixes all nodes with `L`. Bookie servers manage their own active ledgers in a hash map so that it's easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.
 
