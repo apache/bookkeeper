@@ -5,8 +5,7 @@
 Compaction mechanism is a critical part of the system. It is responsible for compacting the entry log file to reclaim disk space.
 But it is a IO intensive operation. While compaction is running, it need to copy the valid data to a new file and delete the old file.
 While the system is under heavy load, it is not a good idea to run compaction as it will consume more IO and CPU resources.
-So, it is better to skip compaction at busy times.
-For many use cases, the busy time is predictable, we can skip compaction at those times.
+So, it is better to skip compaction at busy times. For many use cases, the busy time is predictable, we can skip compaction at those times.
 
 ### Configuration
 
