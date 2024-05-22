@@ -42,6 +42,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.mockito.stubbing.Answer;
 
 /**
@@ -172,6 +173,10 @@ public class MockExecutorController {
 
     private static Answer<Future<?>> answerNow() {
         return invocationOnMock -> {
+           // this method executes everything in the caller thread
+           // this messes up assertions that verify
+           // that a thread is part of only a threadpool
+           ThreadRegistry.forceClearRegistrationForTests(Thread.currentThread().getId());
 
            Runnable task = invocationOnMock.getArgument(0);
            task.run();

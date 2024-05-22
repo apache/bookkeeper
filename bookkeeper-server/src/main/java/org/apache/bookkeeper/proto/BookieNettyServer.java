@@ -79,6 +79,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.zookeeper.KeeperException;
@@ -122,7 +123,12 @@ class BookieNettyServer {
 
         if (!conf.isDisableServerSocketBind()) {
             this.eventLoopGroup = EventLoopUtil.getServerEventLoopGroup(conf,
-                    new DefaultThreadFactory("bookie-io"));
+                    new DefaultThreadFactory("bookie-io") {
+                        @Override
+                        protected Thread newThread(Runnable r, String name) {
+                            return super.newThread(ThreadRegistry.registerThread(r, "bookie-id"), name);
+                        }
+                    });
             this.acceptorGroup = EventLoopUtil.getServerAcceptorGroup(conf,
                     new DefaultThreadFactory("bookie-acceptor"));
             allChannels = new CleanupChannelGroup(eventLoopGroup);

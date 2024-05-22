@@ -660,7 +660,7 @@ public class BookieImpl implements Bookie {
         bookieThread = new BookieCriticalThread(() -> run(), "Bookie-" + conf.getBookiePort());
         bookieThread.setDaemon(true);
 
-        ThreadRegistry.register("BookieThread");
+        ThreadRegistry.register("BookieThread", true);
         if (LOG.isDebugEnabled()) {
             LOG.debug("I'm starting a bookie with journal directories {}",
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
