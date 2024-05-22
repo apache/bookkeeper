@@ -619,7 +619,7 @@ public class TestLedgerUnderreplicationManager {
                 if (event.getType() == EventType.NodeCreated) {
                     znodeLatch.countDown();
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Recieved node creation event for the zNodePath:"
+                        LOG.debug("Received node creation event for the zNodePath:"
                                 + event.getPath());
                     }
                 }

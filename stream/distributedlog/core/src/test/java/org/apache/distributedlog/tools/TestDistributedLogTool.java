@@ -199,7 +199,7 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         cmd.setUri(defaultUri);
         cmd.setLedgerId(99999999);
 
-        // Too hard to predict ledger entry id. Settle for basicaly
+        // Too hard to predict ledger entry id. Settle for basically
         // correct functionality.
         try {
             cmd.runCmd();

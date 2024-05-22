@@ -49,7 +49,7 @@ import org.junit.runners.Parameterized;
  * the payload is a CompositeByteBuf and this buffer has a reader index state other than 0.
  * The reader index state gets lost in the unwrapping process.
  *
- * There were at least 2 different bugs. One that occured when the
+ * There were at least 2 different bugs. One that occurred when the
  * payload was >= BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD and the other when
  * it was < BookieProtoEncoding.SMALL_ENTRY_SIZE_THRESHOLD.
  * This test covers both useV2Protocol=true and useV2Protocol=false since the bug was triggered differently.

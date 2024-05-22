@@ -184,7 +184,7 @@ public class ClusterControllerLeaderImplTest {
         // but since there is no servers available, the storage controller will not compute any ideal state
         // for the assignment and `lastSuccessfulAssignmentAt` will remain negative.
         assertFalse(coordSem.tryAcquire(1, TimeUnit.SECONDS));
-        assertTrue(clusterController.getLastSuccessfulAssigmentAt() < 0);
+        assertTrue(clusterController.getLastSuccessfulAssignmentAt() < 0);
 
         // notify the registration client that a new host is added
         Set<BookieId> cluster = Sets.newSet(BookieId.parse("127.0.0.1:4181"));
@@ -194,14 +194,14 @@ public class ClusterControllerLeaderImplTest {
         // the cluster controller will be notified with cluster change and storage controller will compute
         // the assignment state. cluster metadata store should be used for updating cluster assignment data.
         coordSem.acquire();
-        assertTrue(clusterController.getLastSuccessfulAssigmentAt() > 0);
-        long lastSuccessfulAssignmentAt = clusterController.getLastSuccessfulAssigmentAt();
+        assertTrue(clusterController.getLastSuccessfulAssignmentAt() > 0);
+        long lastSuccessfulAssignmentAt = clusterController.getLastSuccessfulAssignmentAt();
 
         // notify the cluster controller with same cluster, cluster controller should not attempt to update
         // the assignment
         regListenerRef.get().onBookiesChanged(new Versioned<>(cluster, version));
         assertFalse(coordSem.tryAcquire(200, TimeUnit.MILLISECONDS));
-        assertEquals(lastSuccessfulAssignmentAt, clusterController.getLastSuccessfulAssigmentAt());
+        assertEquals(lastSuccessfulAssignmentAt, clusterController.getLastSuccessfulAssignmentAt());
 
         // multiple hosts added and removed
         cluster.add(BookieId.parse("127.0.0.1:4182"));
@@ -213,14 +213,14 @@ public class ClusterControllerLeaderImplTest {
         regListenerRef.get().onBookiesChanged(new Versioned<>(cluster, version));
         // the cluster controller should update assignment data if cluster is changed
         coordSem.acquire();
-        assertTrue(clusterController.getLastSuccessfulAssigmentAt() > lastSuccessfulAssignmentAt);
-        lastSuccessfulAssignmentAt = clusterController.getLastSuccessfulAssigmentAt();
+        assertTrue(clusterController.getLastSuccessfulAssignmentAt() > lastSuccessfulAssignmentAt);
+        lastSuccessfulAssignmentAt = clusterController.getLastSuccessfulAssignmentAt();
 
         // if cluster information is changed to empty, cluster controller should not be eager to change
         // the assignment.
         regListenerRef.get().onBookiesChanged(new Versioned<>(Collections.emptySet(), new LongVersion(2L)));
         assertFalse(coordSem.tryAcquire(1, TimeUnit.SECONDS));
-        assertEquals(lastSuccessfulAssignmentAt, clusterController.getLastSuccessfulAssigmentAt());
+        assertEquals(lastSuccessfulAssignmentAt, clusterController.getLastSuccessfulAssignmentAt());
     }
 
 }

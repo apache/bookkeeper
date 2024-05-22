@@ -104,7 +104,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testOpenPTableDiffernetNamespace() throws Exception {
+    public void testOpenPTableDifferentNamespace() throws Exception {
         StreamProperties tableProps1 = StreamProperties.newBuilder(STREAM_PROPERTIES)
             .setStreamName("table1")
             .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)

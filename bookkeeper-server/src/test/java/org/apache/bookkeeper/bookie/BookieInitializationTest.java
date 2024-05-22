@@ -324,7 +324,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 "Bookie registration node doesn't exists!",
                 rm.isBookieRegistered(bookieId));
 
-            // test register bookie again if the registeration node is created by itself.
+            // test register bookie again if the registration node is created by itself.
             manager.registerBookie(true).get();
             assertTrue(
                 "Bookie registration node doesn't exists!",
@@ -742,11 +742,11 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * OutOfMemoryError.
      */
     public static class MockInterleavedLedgerStorage extends InterleavedLedgerStorage {
-        AtomicInteger atmoicInt = new AtomicInteger(0);
+        AtomicInteger atomicInt = new AtomicInteger(0);
 
         @Override
         public long addEntry(ByteBuf entry) throws IOException {
-            if (atmoicInt.incrementAndGet() == 10) {
+            if (atomicInt.incrementAndGet() == 10) {
                 throw new OutOfMemoryError("Some Injected Exception");
             }
             return super.addEntry(entry);
@@ -1676,7 +1676,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final BookieId bookieAddress = BookieImpl.getBookieId(conf);
 
-        // Read cookie from registation manager
+        // Read cookie from registration manager
         Versioned<Cookie> rmCookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
 
         // Shutdown bookie

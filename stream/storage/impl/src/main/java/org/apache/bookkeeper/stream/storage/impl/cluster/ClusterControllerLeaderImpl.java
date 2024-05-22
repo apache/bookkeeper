@@ -64,7 +64,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
 
     // last successful assignment happened at (timestamp)
     @Getter(AccessLevel.PACKAGE)
-    private long lastSuccessfulAssigmentAt;
+    private long lastSuccessfulAssignmentAt;
 
     // the min interval that controller is scheduled to assign containers
     private final Duration scheduleDuration;
@@ -77,7 +77,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         this.scController = scController;
         this.regClient = regClient;
         this.performServerChangesPermits = new Semaphore(0);
-        this.lastSuccessfulAssigmentAt = -1L;
+        this.lastSuccessfulAssignmentAt = -1L;
         this.scheduleDuration = scheduleDuration;
     }
 
@@ -162,7 +162,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         // check if the leader can perform server changes
         performServerChangesPermits.acquire();
 
-        long elapsedMs = System.currentTimeMillis() - lastSuccessfulAssigmentAt;
+        long elapsedMs = System.currentTimeMillis() - lastSuccessfulAssignmentAt;
         long remainingMs = scheduleDuration.toMillis() - elapsedMs;
         if (remainingMs > 0) {
             log.info("Waiting {} milliseconds for controller to assign containers", remainingMs);
@@ -175,7 +175,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         Set<BookieId> availableServersSnapshot = availableServers;
         if (null == availableServersSnapshot || availableServersSnapshot.isEmpty()) {
             // haven't received any servers from registration service, wait for 200ms and retry.
-            if (lastSuccessfulAssigmentAt < 0) {
+            if (lastSuccessfulAssignmentAt < 0) {
                 log.info("No servers is alive yet. Backoff 200ms and retry.");
                 TimeUnit.MILLISECONDS.sleep(200);
                 performServerChangesPermits.release();
@@ -204,7 +204,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
             }
         } else {
             // update the assignment state
-            lastSuccessfulAssigmentAt = System.currentTimeMillis();
+            lastSuccessfulAssignmentAt = System.currentTimeMillis();
             clusterMetadataStore.updateClusterAssignmentData(newState);
         }
     }

@@ -171,7 +171,7 @@ public class HandleFailuresTest {
     }
 
     @Test(timeout = 30000)
-    public void testHandlingFailuresMultipleBookieFailImmediatelyNotEnoughToReplace() throws Exception {
+    public void testHandlingFailuresMultipleBookieFailImmediatelyNotEnoughoReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -197,7 +197,7 @@ public class HandleFailuresTest {
     }
 
     @Test(timeout = 30000)
-    public void testHandlingFailuresMultipleBookieFailAfterOneEntryNotEnoughToReplace() throws Exception {
+    public void testHandlingFailuresMultipleBookieFailAfterOneEntryNotEnoughoReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()

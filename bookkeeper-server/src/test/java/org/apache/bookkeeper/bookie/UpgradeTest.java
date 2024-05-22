@@ -185,7 +185,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         return ledgerDir;
     }
 
-    private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir, String indexDir)
+    private static void testUpgradeProcedure(String zkServers, String journalDir, String ledgerDir, String indexDir)
             throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri("zk://" + zkServers + "/ledgers");
@@ -250,7 +250,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     public void testUpgradeV1toCurrent() throws Exception {
         File journalDir = initV1JournalDirectory(tmpDirs.createNew("bookie", "journal"));
         File ledgerDir = initV1LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+        testUpgradeProcedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
                 ledgerDir.getPath(), ledgerDir.getPath());
     }
 
@@ -260,7 +260,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         File indexDir = tmpDirs.createNew("bookie", "index");
         File ledgerDir = initV1LedgerDirectoryWithIndexDir(
                 tmpDirs.createNew("bookie", "ledger"), indexDir);
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+        testUpgradeProcedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
                 ledgerDir.getPath(), indexDir.getPath());
     }
 
@@ -269,7 +269,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         File journalDir = initV2JournalDirectory(tmpDirs.createNew("bookie", "journal"));
         File ledgerDir = initV2LedgerDirectory(tmpDirs.createNew("bookie", "ledger"));
         File indexDir = tmpDirs.createNew("bookie", "index");
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+        testUpgradeProcedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
                 ledgerDir.getPath(), indexDir.getPath());
     }
 
@@ -279,7 +279,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         File indexDir = tmpDirs.createNew("bookie", "index");
         File ledgerDir = initV2LedgerDirectoryWithIndexDir(
                 tmpDirs.createNew("bookie", "ledger"), indexDir);
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+        testUpgradeProcedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
                 ledgerDir.getPath(), indexDir.getPath());
     }
 
@@ -304,7 +304,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             initV2LedgerDirectory(ledgerDir);
         }
 
-        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
+        testUpgradeProcedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(),
                 ledgerDir.getPath(), indexDir.getPath());
 
         // Upgrade again
