@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v2.4.0">
 <title data-rh="true">BP-35: 128 bits support | Apache BookKeeper</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://bookkeeper.apache.org/bps/BP-35-128-bits-support"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="BP-35: 128 bits support | Apache BookKeeper"><meta data-rh="true" name="description" content="Motivation"><meta data-rh="true" property="og:description" content="Motivation"><link data-rh="true" rel="icon" href="/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support" hreflang="en"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.49914aab.css">
-<link rel="preload" href="/assets/js/runtime~main.52fc1f34.js" as="script">
+<link rel="preload" href="/assets/js/runtime~main.42cf7c0d.js" as="script">
 <link rel="preload" href="/assets/js/main.3c90c5ad.js" as="script">
 </head>
 <body class="navigation-with-keyboard">
@@ -48,8 +48,8 @@ keys.</p><h6 class="anchor anchorWithStickyNavbar_LWe7" id="dbledgerstorage">DBL
 locations for each entry.</p><p>Similar as <code>SortedLedgerStorage</code> and <code>InterleavedLedgerStorage</code>, for ledgers whose
 <code>ledgerScopeId</code> is 0, they will be using existing scheme for storing their entry locations.</p><p>For ledgers whose <code>ledgerScopeId</code> is not 0, they will be stored in a new rocksdb,
 whose index key will be <code>&lt;ledgerScopeId, ledgerId, entryId&gt;</code>.</p><h4 class="anchor anchorWithStickyNavbar_LWe7" id="metadata-store">Metadata Store<a href="#metadata-store" class="hash-link" aria-label="Direct link to Metadata Store" title="Direct link to Metadata Store">​</a></h4><h5 class="anchor anchorWithStickyNavbar_LWe7" id="ledgermanager">LedgerManager<a href="#ledgermanager" class="hash-link" aria-label="Direct link to LedgerManager" title="Direct link to LedgerManager">​</a></h5><p>All the interfaces should be updated with accepting <code>ledgerScopeId</code>.</p><p>The actual implementation should decide how to store metadata
-for <code>&lt;ledgerScopeId, ledgerId&gt;</code>. </p><h6 class="anchor anchorWithStickyNavbar_LWe7" id="zookeeper-ledger-manager">ZooKeeper Ledger Manager<a href="#zookeeper-ledger-manager" class="hash-link" aria-label="Direct link to ZooKeeper Ledger Manager" title="Direct link to ZooKeeper Ledger Manager">​</a></h6><p>We need to introduce a LongLongHierchicalLedgerManager for storing metadata
-indexing by <code>&lt;ledgerScopeId, ledgerId&gt;</code>.</p><p>If <code>ledgerScopeId</code> is 0, then it will be falling back to <code>LongHierachicalLedgerManager</code>.
+for <code>&lt;ledgerScopeId, ledgerId&gt;</code>. </p><h6 class="anchor anchorWithStickyNavbar_LWe7" id="zookeeper-ledger-manager">ZooKeeper Ledger Manager<a href="#zookeeper-ledger-manager" class="hash-link" aria-label="Direct link to ZooKeeper Ledger Manager" title="Direct link to ZooKeeper Ledger Manager">​</a></h6><p>We need to introduce a LongLongHierarchicalLedgerManager for storing metadata
+indexing by <code>&lt;ledgerScopeId, ledgerId&gt;</code>.</p><p>If <code>ledgerScopeId</code> is 0, then it will be falling back to <code>LongHierarchicalLedgerManager</code>.
 So no behavior is changed.</p><p>If <code>ledgerScopeId</code> is not 0, those ledgers will be indexed in new hierarchy
 (possible under a different znode).</p><h6 class="anchor anchorWithStickyNavbar_LWe7" id="ledger-id-generation">Ledger ID generation<a href="#ledger-id-generation" class="hash-link" aria-label="Direct link to Ledger ID generation" title="Direct link to Ledger ID generation">​</a></h6><p>When upgrading from 64bit to 128bits, we probably don&#x27;t need any centralized mechanism
 for generating ledger id. It can be implemented using UUID generation.</p><p>Especially since we are supporting 128bits by introducing <code>ledgerScopeId</code>. That means
@@ -59,11 +59,11 @@ then breaks the 128 bits UUID into two parts, one serves as <code>ledgerScopeId<
 one serves as <code>ledgerId</code>.</p><h6 class="anchor anchorWithStickyNavbar_LWe7" id="etcd">Etcd<a href="#etcd" class="hash-link" aria-label="Direct link to Etcd" title="Direct link to Etcd">​</a></h6><p>Since Etcd has a better key/value presentation, we can basically just combine
 <code>&lt;ledgerScopeId, ledgerId&gt;</code> as the index key for storing ledger metadata in Etcd.
 Nothing is needed for special consideration.</p><h3 class="anchor anchorWithStickyNavbar_LWe7" id="performance-concerns">Performance Concerns<a href="#performance-concerns" class="hash-link" aria-label="Direct link to Performance Concerns" title="Direct link to Performance Concerns">​</a></h3><p>There shouldn&#x27;t be any performance difference when not using 128 bit ledger id
-(<code>ledgerScopeId</code> is omitted).</p><p>Performance concerns can be arised in following areas:</p><ul><li><strong>Wire Protocol</strong>: additional 9 bytes will be added per entry, one byte for version
+(<code>ledgerScopeId</code> is omitted).</p><p>Performance concerns can be arisen in following areas:</p><ul><li><strong>Wire Protocol</strong>: additional 9 bytes will be added per entry, one byte for version
 and 8 bytes for the msb of 128 bit ledger id</li><li><strong>Journal</strong>: additional 9 bytes will be added per entry (same as wire protocol). </li><li><strong>EntryLogger</strong>: additional 9 bytes will be added per entry (same as wire protocol)</li><li><strong>Memtable</strong>: additional 8 bytes will be added per indexed entry.</li><li><strong>FileInfo</strong>: there is no change to the index file format itself.</li><li><strong>IndexPersistenceManager</strong>: Files will be organized in more directory hierarchy.
 It shouldn&#x27;t be a big deal. </li><li><strong>IndexInMemoryManager (LedgerCache)</strong>: additional 8 bytes per index page.</li><li><strong>DbLedgerStorage</strong>: additional 8 bytes per entry for entry location.</li><li><strong>Metadata</strong>: on zookeeper, we need a 128 bit ledger manager, that means more znode
 hierarchy than 64 bit ledger manager. Etcd like key/value metadata store is probably
-more preferrable for 128 bit ledger manager.</li></ul><p>However increasing ledger id from 64 bits to 128 bits can get rid of the only remaining
+more preferable for 128 bit ledger manager.</li></ul><p>However increasing ledger id from 64 bits to 128 bits can get rid of the only remaining
 central point, since we don&#x27;t need to use zookeeper for ledger id generation. The id
 generation can become decentralized. </p><h3 class="anchor anchorWithStickyNavbar_LWe7" id="proposed-changes">Proposed Changes<a href="#proposed-changes" class="hash-link" aria-label="Direct link to Proposed Changes" title="Direct link to Proposed Changes">​</a></h3><p>All the required changes are described above. In summary, the changes can
 happen in following 2 phases:</p><ol><li>Ensure all components have <code>ledgerScopeId</code> added (both wire protocol, storage and such).
@@ -85,7 +85,7 @@ The new application can activate the feature by starting using <code>ledgerScope
         </div>
       </footer>
       </div></div></div></footer></div>
-<script src="/assets/js/runtime~main.52fc1f34.js"></script>
+<script src="/assets/js/runtime~main.42cf7c0d.js"></script>
 <script src="/assets/js/main.3c90c5ad.js"></script>
 </body>
 </html>

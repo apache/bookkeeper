@@ -132,22 +132,33 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clear()">clear</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor,java.lang.Object)">addRepeatedField</a></span>&#8203;(com.google.protobuf.Descriptors.FieldDescriptor&nbsp;field,
+                java.lang.Object&nbsp;value)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clear()">clear</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearAddResponse()">clearAddResponse</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><code>optional .AddResponse addResponse = 101;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearAuthResponse()">clearAuthResponse</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><code>optional .AuthMessage authResponse = 102;</code></div>
 </td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearField(com.google.protobuf.Descriptors.FieldDescriptor)">clearField</a></span>&#8203;(com.google.protobuf.Descriptors.FieldDescriptor&nbsp;field)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
@@ -179,12 +190,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearOneof(com.google.protobuf.Descriptors.OneofDescriptor)">clearOneof</a></span>&#8203;(com.google.protobuf.Descriptors.OneofDescriptor&nbsp;oneof)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearReadLacResponse()">clearReadLacResponse</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><code>optional .ReadLacResponse readLacResponse = 104;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearReadResponse()">clearReadResponse</a></span>()</code></th>
 <td class="colLast">
@@ -192,14 +208,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  Response</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearStartTLSResponse()">clearStartTLSResponse</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><code>optional .StartTLSResponse startTLSResponse = 106;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearStatus()">clearStatus</a></span>()</code></th>
 <td class="colLast">
@@ -207,12 +223,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  EOK if the underlying request succeeded.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clearWriteLacResponse()">clearWriteLacResponse</a></span>()</code></th>
 <td class="colLast">
 <div class="block"><code>optional .WriteLacResponse writeLacResponse = 103;</code></div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#clone()">clone</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
@@ -356,75 +377,81 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setField(com.google.protobuf.Descriptors.FieldDescriptor,java.lang.Object)">setField</a></span>&#8203;(com.google.protobuf.Descriptors.FieldDescriptor&nbsp;field,
+        java.lang.Object&nbsp;value)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setForceLedgerResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerResponse)">setForceLedgerResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ForceLedgerResponse.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ForceLedgerResponse</a>&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .ForceLedgerResponse forceLedgerResponse = 107;</code></div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setForceLedgerResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerResponse.Builder)">setForceLedgerResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ForceLedgerResponse.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ForceLedgerResponse.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .ForceLedgerResponse forceLedgerResponse = 107;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setGetBookieInfoResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse)">setGetBookieInfoResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.GetBookieInfoResponse.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.GetBookieInfoResponse</a>&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .GetBookieInfoResponse getBookieInfoResponse = 105;</code></div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setGetBookieInfoResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse.Builder)">setGetBookieInfoResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.GetBookieInfoResponse.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.GetBookieInfoResponse.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .GetBookieInfoResponse getBookieInfoResponse = 105;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setGetListOfEntriesOfLedgerResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerResponse)">setGetListOfEntriesOfLedgerResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.GetListOfEntriesOfLedgerResponse.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.GetListOfEntriesOfLedgerResponse</a>&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = 108;</code></div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setGetListOfEntriesOfLedgerResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerResponse.Builder)">setGetListOfEntriesOfLedgerResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.GetListOfEntriesOfLedgerResponse.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.GetListOfEntriesOfLedgerResponse.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = 108;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setHeader(org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader)">setHeader</a></span>&#8203;(<a href="../BookkeeperProtocol.BKPacketHeader.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.BKPacketHeader</a>&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block"><code>required .BKPacketHeader header = 1;</code></div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setHeader(org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader.Builder)">setHeader</a></span>&#8203;(<a href="../BookkeeperProtocol.BKPacketHeader.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.BKPacketHeader.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block"><code>required .BKPacketHeader header = 1;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setReadLacResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse)">setReadLacResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ReadLacResponse.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ReadLacResponse</a>&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .ReadLacResponse readLacResponse = 104;</code></div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setReadLacResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse.Builder)">setReadLacResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ReadLacResponse.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ReadLacResponse.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block"><code>optional .ReadLacResponse readLacResponse = 104;</code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setReadResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse)">setReadResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ReadResponse.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ReadResponse</a>&nbsp;value)</code></th>
 <td class="colLast">
@@ -432,13 +459,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  Response</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setReadResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse.Builder)">setReadResponse</a></span>&#8203;(<a href="../BookkeeperProtocol.ReadResponse.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.ReadResponse.Builder</a>&nbsp;builderForValue)</code></th>
 <td class="colLast">
 <div class="block">
  Response</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.Response.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.Response.Builder.html#setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor,int,java.lang.Object)">setRepeatedField</a></span>&#8203;(com.google.protobuf.Descriptors.FieldDescriptor&nbsp;field,
+                int&nbsp;index,
+                java.lang.Object&nbsp;value)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.Response.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.Response.Builder</a></code></td>
