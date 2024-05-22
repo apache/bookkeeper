@@ -45,7 +45,7 @@ DOCKER_ORG="${DOCKER_ORG:-apachebookkeeper}"
 
 docker login ${DOCKER_REGISTRY} -u="${DOCKER_USER}" -p="${DOCKER_PASSWORD}"
 if [ $? -ne 0 ]; then
-    echo "Failed to loging to Docker Hub"
+    echo "Failed to login to Docker Hub"
     exit 1
 fi
 
