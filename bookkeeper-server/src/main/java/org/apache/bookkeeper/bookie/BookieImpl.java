@@ -642,7 +642,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
     @Override
     public synchronized void start() {
         setDaemon(true);
-        ThreadRegistry.register("BookieThread", 0);
+        ThreadRegistry.register("BookieThread", true);
         if (LOG.isDebugEnabled()) {
             LOG.debug("I'm starting a bookie with journal directories {}",
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
