@@ -118,7 +118,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private static String dbStoragerExecutorName = "db-storage";
     private final ExecutorService executor = Executors.newSingleThreadExecutor(
-            new DefaultThreadFactory(dbStoragerExecutorName));
+            new DefaultThreadFactory(dbStoragerExecutorName) {
+                @Override
+                protected Thread newThread(Runnable r, String name) {
+                    return super.newThread(ThreadRegistry.registerThread(r, dbStoragerExecutorName), name);
+                }
+            });
 
     // Executor used to for db index cleanup
     private final ScheduledExecutorService cleanupExecutor = Executors
@@ -201,7 +206,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         flushExecutorTime = ledgerDirStatsLogger.getThreadScopedCounter("db-storage-thread-time");
 
         executor.submit(() -> {
-            ThreadRegistry.register(dbStoragerExecutorName, 0);
             // ensure the metric gets registered on start-up as this thread only executes
             // when the write cache is full which may not happen or not for a long time
             flushExecutorTime.add(0);

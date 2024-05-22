@@ -215,4 +215,9 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
             }
         };
     }
+
+    @Override
+    public String toString() {
+        return "DataSketchesOpStatsLogger{labels=" + labels + ", id=" + System.identityHashCode(this) + "}";
+    }
 }

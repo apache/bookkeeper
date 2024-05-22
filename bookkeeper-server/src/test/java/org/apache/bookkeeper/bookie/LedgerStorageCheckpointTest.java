@@ -56,6 +56,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
@@ -98,6 +99,7 @@ public class LedgerStorageCheckpointTest {
 
     @Before
     public void setUp() throws Exception {
+        ThreadRegistry.clear();
         LOG.info("Setting up test {}", getClass());
         PowerMockito.mockStatic(Executors.class);
 
@@ -119,6 +121,7 @@ public class LedgerStorageCheckpointTest {
 
     @After
     public void tearDown() throws Exception {
+        ThreadRegistry.clear();
         LOG.info("TearDown");
         Exception tearDownException = null;
         // stop zookeeper service
