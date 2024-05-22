@@ -82,7 +82,7 @@ class SyncThread implements Checkpointer {
         this.checkpointSource = checkpointSource;
         this.executor = newExecutor();
         this.syncExecutorTime = statsLogger.getThreadScopedCounter("sync-thread-time");
-        this.executor.submit(() -> ThreadRegistry.register(executorName, 0));
+        this.executor.submit(() -> ThreadRegistry.register(executorName));
     }
 
     @VisibleForTesting

@@ -218,7 +218,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         flushExecutorTime = ledgerIndexDirStatsLogger.getThreadScopedCounter("db-storage-thread-time");
 
         executor.submit(() -> {
-            ThreadRegistry.register(dbStoragerExecutorName, 0);
+            ThreadRegistry.register(dbStoragerExecutorName);
             // ensure the metric gets registered on start-up as this thread only executes
             // when the write cache is full which may not happen or not for a long time
             flushExecutorTime.addLatency(0, TimeUnit.NANOSECONDS);

@@ -482,7 +482,7 @@ public class Journal implements CheckpointSource {
         @Override
         public void run() {
             LOG.info("ForceWrite Thread started");
-            ThreadRegistry.register(super.getName(), 0);
+            ThreadRegistry.register(super.getName());
 
             if (conf.isBusyWaitEnabled()) {
                 try {
@@ -955,7 +955,7 @@ public class Journal implements CheckpointSource {
      */
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
-        ThreadRegistry.register(journalThreadName, 0);
+        ThreadRegistry.register(journalThreadName);
 
         if (conf.isBusyWaitEnabled()) {
             try {

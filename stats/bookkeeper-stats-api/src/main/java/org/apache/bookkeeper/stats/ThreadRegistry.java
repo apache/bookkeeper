@@ -26,6 +26,17 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ThreadRegistry {
     private static ConcurrentMap<Long, ThreadPoolThread> threadPoolMap = new ConcurrentHashMap<>();
+    private static ConcurrentMap<String, Integer> threadPoolThreadMap = new ConcurrentHashMap<>();
+
+    /*
+    Threads can register themselves as their first act before carrying out
+    any work. By calling this method, the ThreadPoolThread is incremented
+    for the given thread pool.
+    */
+    public static void register(String threadPool) {
+        Integer threadPoolThread = threadPoolThreadMap.compute(threadPool, (k, v) -> v == null ? 0 : v + 1);
+        register(threadPool, threadPoolThread, Thread.currentThread().getId());
+    }
 
     /*
         Threads can register themselves as their first act before carrying out
@@ -49,6 +60,7 @@ public class ThreadRegistry {
      */
     public static void clear() {
         threadPoolMap.clear();
+        threadPoolThreadMap.clear();
     }
 
     /*
