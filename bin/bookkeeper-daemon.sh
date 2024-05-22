@@ -206,9 +206,9 @@ case $startStop in
     if [ "$?" == 0 ]
     then
       sleep 3
-      paramaters="$*"
-      startParamaters=${paramaters//-force/}
-      start "$startParamaters"
+      parameters="$*"
+      startParameters=${parameters//-force/}
+      start "$startParameters"
     else
       echo "WARNNING :  $command failed restart, for $command is not stopped completely."
     fi

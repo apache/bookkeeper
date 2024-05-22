@@ -77,7 +77,7 @@ def test_wrap_stream_okay():
     assert responses == expected_responses
 
 
-def test_wrap_stream_iterable_iterface():
+def test_wrap_stream_iterable_interface():
     response_iter = mock.create_autospec(grpc.Call, instance=True)
     callable_ = mock.Mock(spec=['__call__'], return_value=response_iter)
 

@@ -16,9 +16,9 @@ from bookkeeper.common.future import _helpers
 
 
 @mock.patch('threading.Thread', autospec=True)
-def test_start_deamon_thread(unused_thread):
-    deamon_thread = _helpers.start_daemon_thread(target=mock.sentinel.target)
-    assert deamon_thread.daemon is True
+def test_start_daemon_thread(unused_thread):
+    daemon_thread = _helpers.start_daemon_thread(target=mock.sentinel.target)
+    assert daemon_thread.daemon is True
 
 
 def test_safe_invoke_callback():
