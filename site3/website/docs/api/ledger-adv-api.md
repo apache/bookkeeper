@@ -15,7 +15,7 @@ It allows user passing in an `entryId` when adding an entry.
 
 ### Creating advanced ledgers
 
-Here's an exmaple:
+Here's an example:
 
 ```java
 byte[] passwd = "some-passwd".getBytes();
@@ -61,7 +61,7 @@ LedgerHandleAdv handle = bkClient.createLedgerAdv(
 > If a ledger already exists when users try to create an advanced ledger with same ledger id,
 > a [LedgerExistsException]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/BKException.BKLedgerExistException.html) is thrown by the bookkeeper client.
 
-Creating advanced ledgers can be done throught a fluent API since 4.6.
+Creating advanced ledgers can be done through a fluent API since 4.6.
 
 ```java
 BookKeeper bk = ...;

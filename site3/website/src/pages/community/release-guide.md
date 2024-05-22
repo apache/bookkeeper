@@ -301,7 +301,7 @@ Set up a few environment variables to simplify Maven commands that follow. This 
 ./dev/release/000-run-docker.sh ${RC_NUM}
 ```
 
-After the docker process is lauched, use `cache` credential helper to cache github credentials during releasing process.
+After the docker process is launched, use `cache` credential helper to cache github credentials during releasing process.
 
 ```shell
 $ git config --global credential.helper "cache --timeout=3600"

@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * A lightweight stats library implemention based on <i>Codahale</i> metrics library.
+ * A lightweight stats library implementation based on <i>Codahale</i> metrics library.
  */
 package org.apache.bookkeeper.stats.codahale;

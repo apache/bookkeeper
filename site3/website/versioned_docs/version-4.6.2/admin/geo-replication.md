@@ -17,6 +17,6 @@ Let's say that you want to set up geo-replication across clusters in regions A, 
 
 The crucial difference between using cluster-specific ZooKeeper and global ZooKeeper is that bookies is that you need to point all bookies to use the global ZooKeeper setup.
 
-## Region-aware placement polocy
+## Region-aware placement policy
 
 ## Autorecovery
