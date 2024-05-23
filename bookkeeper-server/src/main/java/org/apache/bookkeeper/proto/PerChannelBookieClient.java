@@ -789,7 +789,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 request = byteBuf;
                 cleanupActionFailedBeforeWrite = byteBuf::release;
             } else {
-                ByteBufList byteBufList = ByteBufList.clone((ByteBufList) toSend);
+                ByteBufList byteBufList = (ByteBufList) toSend;
+                byteBufList.retain();
                 request = byteBufList;
                 cleanupActionFailedBeforeWrite = byteBufList::release;
             }
