@@ -62,7 +62,7 @@ public class ByteStringUtil {
         } else {
             ByteString piece;
             if (byteBuf.hasArray()) {
-                piece = UnsafeByteOperations.unsafeWrap(byteBuf.array(), byteBuf.arrayOffset(),
+                piece = UnsafeByteOperations.unsafeWrap(byteBuf.array(), byteBuf.arrayOffset() + byteBuf.readerIndex(),
                         byteBuf.readableBytes());
             } else {
                 piece = UnsafeByteOperations.unsafeWrap(byteBuf.nioBuffer());
