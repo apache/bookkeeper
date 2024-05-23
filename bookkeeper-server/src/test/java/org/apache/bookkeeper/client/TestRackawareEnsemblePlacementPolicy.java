@@ -159,7 +159,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
-    public void testInitalize() throws Exception{
+    public void testInitialize() throws Exception {
         String dnsResolverName = conf.getString(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
         DNSToSwitchMapping dnsResolver = ReflectionUtils.newInstance(dnsResolverName, DNSToSwitchMapping.class);
         AbstractDNSToSwitchMapping tmp = (AbstractDNSToSwitchMapping) dnsResolver;
@@ -2347,13 +2347,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
-        DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(bookieFailures, new HashMap<>()), writeSet);
-        LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr1.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(0)), addr3.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(1)), addr4.toBookieId());
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals(ensemble.get(reorderSet.get(2)), addr1.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(3)), addr2.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(0)), addr3.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(1)), addr4.toBookieId());
     }
 
     @Test

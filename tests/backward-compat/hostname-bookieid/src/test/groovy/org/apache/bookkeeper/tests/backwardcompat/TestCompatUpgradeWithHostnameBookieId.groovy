@@ -59,7 +59,7 @@ class TestCompatUpgradeWithHostnameBookieId {
     }
 
     /**
-     * Test compatability between version old version and the current version.
+     * Test compatibility between version old version and the current version.
      * - 4.1.0 server restarts with useHostNameAsBookieID=true.
      * - Write ledgers with old and new clients
      * - Read ledgers written by old clients.

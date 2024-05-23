@@ -162,7 +162,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
         boolean add(Node n) {
             if (!isAncestor(n)) {
                 throw new IllegalArgumentException(n.getName() + ", which is located at " + n.getNetworkLocation()
-                        + ", is not a decendent of " + getPath(this));
+                        + ", is not a descendent of " + getPath(this));
             }
             if (isParent(n)) {
                 // this node is the parent of n; add n directly

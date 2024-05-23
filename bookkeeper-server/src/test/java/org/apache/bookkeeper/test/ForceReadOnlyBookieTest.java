@@ -60,7 +60,7 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
             ledger.addEntry("data".getBytes());
         }
         ledger.close();
-        LOG.info("successed prepare");
+        LOG.info("prepare succeeded");
 
         // start bookie 1 as readonly
         confByIndex(1).setReadOnlyModeEnabled(true);
@@ -70,7 +70,7 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         assertTrue("Bookie should be running and in readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());
-        LOG.info("successed force start ReadOnlyBookie");
+        LOG.info("force start ReadOnlyBookie succeeded");
 
         // Check new bookie with readonly mode enabled.
         File[] ledgerDirs = confByIndex(1).getLedgerDirs();
@@ -85,13 +85,13 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
             assertEquals("Entry should contain correct data", "data",
                     new String(entry.getEntry()));
         }
-        LOG.info("successed read entry from ReadOnlyBookie");
+        LOG.info("read entry from ReadOnlyBookie succeeded");
 
         // test will not transfer to Writable mode.
         LedgerDirsManager ledgerDirsManager = ((BookieImpl) bookie).getLedgerDirsManager();
         ledgerDirsManager.addToWritableDirs(new File(ledgerDirs[0], "current"), true);
         assertTrue("Bookie should be running and in readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());
-        LOG.info("successed: bookie still readonly");
+        LOG.info("bookie still readonly");
     }
 }

@@ -163,7 +163,7 @@ public class GenerateCookieCommandIndexTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-without-instance-id");
         String journalDir = "/path/to/journal";
         String ledgersDir = "/path/to/ledgers";
-        String indexDir = "/path/to/indexs";
+        String indexDir = "/path/to/indices";
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
@@ -202,7 +202,7 @@ public class GenerateCookieCommandIndexTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-with-instance-id");
         String journalDir = "/path/to/journal";
         String ledgersDir = "/path/to/ledgers";
-        String indexsDir = "/path/to/indexs";
+        String indexesDir = "/path/to/indices";
         String instanceId = "test-instance-id";
 
         Cookie cookie = Cookie.newBuilder()
@@ -210,7 +210,7 @@ public class GenerateCookieCommandIndexTest extends CookieCommandTestBase {
             .setInstanceId(instanceId)
             .setJournalDirs(journalDir)
             .setLedgerDirs(Cookie.encodeDirPaths(ledgersDir.split(",")))
-            .setIndexDirs(Cookie.encodeDirPaths(indexsDir.split(",")))
+            .setIndexDirs(Cookie.encodeDirPaths(indexesDir.split(",")))
             .build();
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);
@@ -218,7 +218,7 @@ public class GenerateCookieCommandIndexTest extends CookieCommandTestBase {
             getConsoleOutput(),
             runCommand(new String[] {
                 "-l", ledgersDir,
-                "-ix", indexsDir,
+                "-ix", indexesDir,
                 "-j", journalDir,
                 "-o", cookieFile.getPath(),
                 "-i", instanceId,
@@ -242,7 +242,7 @@ public class GenerateCookieCommandIndexTest extends CookieCommandTestBase {
         File cookieFile = testFolder.newFile("cookie-with-instance-id");
         String journalDir = "/path/to/journal";
         String ledgerDirs = "/path/to/ledgers,/path/to/more/ledgers";
-        String indexDirs = "/path/to/indexs,/path/to/more/indexs";
+        String indexDirs = "/path/to/indexes,/path/to/more/indexes";
         String instanceId = "test-instance-id";
 
         when(rm.getClusterInstanceId()).thenReturn(instanceId);

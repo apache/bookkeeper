@@ -218,7 +218,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         final AtomicInteger result = new AtomicInteger(0);
         final CountDownLatch counter = new CountDownLatch(1);
 
-        // Try to write, we shoud get and error callback but not an exception
+        // Try to write, we should get and error callback but not an exception
         lh.asyncAddEntry("test".getBytes(), new AddCallback() {
             public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
                 result.set(rc);
@@ -398,7 +398,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 // without readUnconfirmedEntries we are not able to read all of the entries
                 try {
                     rlh.readEntries(0, numOfEntries - 1);
-                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
+                    fail("should not be able to read up to " + (numOfEntries - 1) + " with readEntries");
                 } catch (BKException.BKReadException expected) {
                 }
 
@@ -480,7 +480,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 // without readUnconfirmedEntries we are not able to read all of the entries
                 try {
                     rlh.readEntries(0, numOfEntries - 1);
-                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
+                    fail("should not be able to read up to " + (numOfEntries - 1) + " with readEntries");
                 } catch (BKException.BKReadException expected) {
                 }
 

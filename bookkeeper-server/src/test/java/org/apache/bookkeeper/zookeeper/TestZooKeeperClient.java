@@ -157,7 +157,7 @@ public abstract class TestZooKeeperClient extends TestCase {
     }
 
     @Test
-    public void testReconnectAfterExipred() throws Exception {
+    public void testReconnectAfterExpired() throws Exception {
         final CountDownLatch expireLatch = new CountDownLatch(1);
         Watcher testWatcher = new Watcher() {
 

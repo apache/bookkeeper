@@ -466,7 +466,7 @@ public class TestZoneawareEnsemblePlacementPolicy extends TestCase {
              * of writeQuorum 6 is expected to fail.
              */
             zepp.newEnsemble(6, 6, 2, null, new HashSet<>());
-            fail("newEnsemble is expected to fail because writeQuorum cannt be created with insufficient UDs");
+            fail("newEnsemble is expected to fail because writeQuorum cannot be created with insufficient UDs");
         } catch (BKException.BKNotEnoughBookiesException bkne) {
             // expected NotEnoughBookiesException
         }

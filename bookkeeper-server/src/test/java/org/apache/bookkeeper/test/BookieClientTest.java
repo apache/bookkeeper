@@ -767,7 +767,7 @@ public class BookieClientTest {
      *   a.`PerChannelBookieClient.addEntry`
      *     a-1.Build a new ByteBuf for request command. We call this `ByteBuf` new as `request` in the following
      *       sections.
-     *     a-2.`channle.writeAndFlush(request)` or release the ByteBuf when `channel` is switching.
+     *     a-2.`channel.writeAndFlush(request)` or release the ByteBuf when `channel` is switching.
      *       Note the callback will be called immediately if the channel is switching.
      *   b.Release the `ByteBuf` since it has been retained at `step 1`. `toSend.recCnf` should be `1` now.
      */

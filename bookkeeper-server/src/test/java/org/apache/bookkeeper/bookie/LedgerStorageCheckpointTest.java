@@ -264,7 +264,7 @@ public class LedgerStorageCheckpointTest {
         LogMark curMarkAfterFirstSetOfAdds = lastLogMarkAfterFirstSetOfAdds.getCurMark();
 
         File lastMarkFile = new File(ledgerDir, "lastMark");
-        // lastMark file should be zero, because checkpoint hasn't happenend
+        // lastMark file should be zero, because checkpoint hasn't happened
         LogMark logMarkFileBeforeCheckpoint = readLastMarkFile(lastMarkFile);
         Assert.assertEquals("lastMarkFile before checkpoint should be zero", 0,
                 logMarkFileBeforeCheckpoint.compare(new LogMark()));
@@ -285,7 +285,7 @@ public class LedgerStorageCheckpointTest {
         LogMark curMarkAfterCheckpoint = lastLogMarkAfterCheckpoint.getCurMark();
 
         LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
-        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happenend", 0,
+        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happened", 0,
                 rolledLogMark.compare(new LogMark()));
         /*
          * Curmark should be equal before and after checkpoint, because we didnt
@@ -561,7 +561,7 @@ public class LedgerStorageCheckpointTest {
         executorController.advance(Duration.ofMillis(conf.getFlushInterval()));
 
         /*
-         * since checkpoint happenend, there shouldn't be any logChannelsToFlush
+         * since checkpoint happened, there shouldn't be any logChannelsToFlush
          * and bytesWrittenSinceLastFlush should be zero.
          */
         List<DefaultEntryLogger.BufferedLogChannel> copyOfRotatedLogChannels = entryLogManager.getRotatedLogChannels();
@@ -676,7 +676,7 @@ public class LedgerStorageCheckpointTest {
         Assert.assertTrue("lastMark file must be existing, because checkpoint should have happened",
                 lastMarkFile.exists());
         LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
-        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happenend", 0,
+        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happened", 0,
                 rolledLogMark.compare(new LogMark()));
 
         bkClient.close();

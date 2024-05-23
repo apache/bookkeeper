@@ -146,7 +146,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForceWillAdvanceLacOnlyUpToLastAcknoledgedWrite() throws Exception {
+    public void testForceWillAdvanceLacOnlyUpToLastAcknowledgedWrite() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)

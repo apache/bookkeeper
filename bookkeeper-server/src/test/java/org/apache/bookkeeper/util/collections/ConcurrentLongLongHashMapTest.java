@@ -612,7 +612,7 @@ public class ConcurrentLongLongHashMapTest {
     }
 
     @Test
-    public void testIvalidKeys() {
+    public void testInvalidKeys() {
         ConcurrentLongLongHashMap map = ConcurrentLongLongHashMap.newBuilder()
                 .expectedItems(16)
                 .concurrencyLevel(1)

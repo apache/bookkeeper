@@ -715,7 +715,7 @@ public class RocksCheckpointerTest {
             fail("expected RuntimeException");
         } catch (RuntimeException se) {
             // noop
-            // in real life case ths is simply crash,
+            // in real life case this is simply crash,
             // so "finally" at the checkpoint() won't run either
         }
 

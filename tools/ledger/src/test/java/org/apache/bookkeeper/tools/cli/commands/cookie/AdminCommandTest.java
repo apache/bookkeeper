@@ -86,13 +86,13 @@ public class AdminCommandTest extends BookieCommandTestBase {
 
         mockUpdateBookieIdInCookie();
         mockVerifyCookie();
-        mockInitDirecotory();
+        mockInitDirectory();
         mockExpandStorage();
         mockListOrDeleteCookies();
 
     }
 
-    private void mockInitDirecotory() throws IOException {
+    private void mockInitDirectory() throws IOException {
         File[] files = new File[1];
         files[0] = testDir.getRoot();
         testDir.newFile(BookKeeperConstants.VERSION_FILENAME);
