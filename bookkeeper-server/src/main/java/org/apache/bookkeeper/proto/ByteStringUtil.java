@@ -36,7 +36,10 @@ public class ByteStringUtil {
     public static ByteString byteBufListToByteString(ByteBufList bufList) {
         ByteString aggregated = null;
         for (int i = 0; i < bufList.size(); i++) {
-            aggregated = byteBufToByteString(aggregated, bufList.getBuffer(i));
+            ByteBuf buffer = bufList.getBuffer(i);
+            if (buffer.readableBytes() > 0) {
+                aggregated = byteBufToByteString(aggregated, buffer);
+            }
         }
         return aggregated != null ? aggregated : ByteString.EMPTY;
     }
@@ -54,6 +57,9 @@ public class ByteStringUtil {
 
     // internal method to aggregate a ByteBuf into a single aggregated ByteString
     private static ByteString byteBufToByteString(ByteString aggregated, ByteBuf byteBuf) {
+        if (byteBuf.readableBytes() == 0) {
+            return ByteString.EMPTY;
+        }
         if (byteBuf.nioBufferCount() > 1) {
             for (ByteBuffer nioBuffer : byteBuf.nioBuffers()) {
                 ByteString piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
