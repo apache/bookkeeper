@@ -263,9 +263,9 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 numRecords, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
             DLSN dlsn = dlsns.get(i);
-            assertEquals("Incorrent ledger sequence number",
+            assertEquals("Incorrect ledger sequence number",
                     0L, dlsn.getLogSegmentSequenceNo());
-            assertEquals("Incorrent entry id",
+            assertEquals("Incorrect entry id",
                     0L, dlsn.getEntryId());
             assertEquals("Inconsistent slot id",
                     i, dlsn.getSlotId());
@@ -572,9 +572,9 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 numRecords, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
             DLSN dlsn = dlsns.get(i);
-            assertEquals("Incorrent ledger sequence number",
+            assertEquals("Incorrect ledger sequence number",
                     0L, dlsn.getLogSegmentSequenceNo());
-            assertEquals("Incorrent entry id",
+            assertEquals("Incorrect entry id",
                     0L, dlsn.getEntryId());
             assertEquals("Inconsistent slot id",
                     i, dlsn.getSlotId());
@@ -643,17 +643,17 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 numRecords + 1, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
             DLSN dlsn = dlsns.get(i);
-            assertEquals("Incorrent ledger sequence number",
+            assertEquals("Incorrect ledger sequence number",
                     0L, dlsn.getLogSegmentSequenceNo());
-            assertEquals("Incorrent entry id",
+            assertEquals("Incorrect entry id",
                     0L, dlsn.getEntryId());
             assertEquals("Inconsistent slot id",
                     i, dlsn.getSlotId());
         }
         DLSN dlsn = dlsns.get(numRecords);
-        assertEquals("Incorrent ledger sequence number",
+        assertEquals("Incorrect ledger sequence number",
                 0L, dlsn.getLogSegmentSequenceNo());
-        assertEquals("Incorrent entry id",
+        assertEquals("Incorrect entry id",
                 1L, dlsn.getEntryId());
         assertEquals("Inconsistent slot id",
                 0L, dlsn.getSlotId());

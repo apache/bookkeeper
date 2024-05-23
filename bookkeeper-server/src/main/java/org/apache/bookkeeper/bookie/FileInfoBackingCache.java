@@ -66,7 +66,7 @@ class FileInfoBackingCache {
                 // and if it is called (and succeeds) the fi will have been
                 // removed from fileInfos at the same time, so we should not
                 // have been able to get a reference to it here.
-                // The caller of loadFileInfo owns the refence, and is
+                // The caller of loadFileInfo owns the reference, and is
                 // responsible for calling the corresponding #release().
                 return tryRetainFileInfo(fi);
             }

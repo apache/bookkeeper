@@ -69,7 +69,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     }
 
     /**
-     * Remove ledger using lm syncronously.
+     * Remove ledger using lm synchronously.
      *
      * @param lm
      * @param ledgerId
@@ -80,7 +80,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     }
 
     /**
-     * Create ledger using lm syncronously.
+     * Create ledger using lm synchronously.
      *
      * @param lm
      * @param ledgerId

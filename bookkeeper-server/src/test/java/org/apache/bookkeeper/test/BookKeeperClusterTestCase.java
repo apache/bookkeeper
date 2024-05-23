@@ -76,6 +76,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.zookeeper.KeeperException;
@@ -240,6 +241,11 @@ public abstract class BookKeeperClusterTestCase {
         if (tearDownException != null) {
             throw tearDownException;
         }
+    }
+
+    @After
+    public void clearMetricsThreadRegistry() throws Exception {
+        ThreadRegistry.clear();
     }
 
     /**

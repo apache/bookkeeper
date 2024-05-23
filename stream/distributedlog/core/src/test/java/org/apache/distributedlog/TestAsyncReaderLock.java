@@ -277,7 +277,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
                 ns1.getNamespaceDriver()).getWriterZKC(), zkServers, 1000);
 
         // The result of expireSession is somewhat non-deterministic with this lock.
-        // It may fail with LockingException or it may succesfully reacquire, so for
+        // It may fail with LockingException or it may successfully reacquire, so for
         // the moment rather than make it deterministic we accept either result.
         boolean success = false;
         try {

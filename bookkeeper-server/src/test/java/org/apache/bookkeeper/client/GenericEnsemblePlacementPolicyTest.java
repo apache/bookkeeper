@@ -113,7 +113,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     }
 
     @Test
-    public void testNewEnsembleWithNotEnoughtBookies() throws Exception {
+    public void testNewEnsembleWithNotEnoughBookies() throws Exception {
         numBookies = 0;
         try {
             startBKCluster(zkUtil.getMetadataServiceUri());

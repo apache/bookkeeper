@@ -190,7 +190,7 @@ Navigate to the [BookKeeper GitHub Repo](https://github.com/apache/bookkeeper) t
 
 	Issue <Github-issue-#> <Title of the pull request>
 
-Please include a descriptive pull request message to help make the comitter’s job easier when reviewing. It’s fine to refer to existing design docs or the contents of the associated JIRA as appropriate.
+Please include a descriptive pull request message to help make the committer’s job easier when reviewing. It’s fine to refer to existing design docs or the contents of the associated JIRA as appropriate.
 
 If you know a good committer to review your pull request, please make a comment like the following. If not, don’t worry -- a committer will pick it up.
 

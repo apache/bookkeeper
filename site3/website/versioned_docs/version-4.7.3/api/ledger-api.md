@@ -668,7 +668,7 @@ ReadHandle rh = bk.newOpenLedgerOp()
 If you are opening a ledger in "Recovery" mode, it will basically fence and seal the ledger -- no more entries are allowed
 to be appended to it. The writer which is currently appending entries to the ledger will fail with [`LedgerFencedException`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BKException.Code#LedgerFencedException).
 
-In constrat, opening a ledger in "NoRecovery" mode, it will not fence and seal the ledger. "NoRecovery" mode is usually used by applications to tailing-read from a ledger.
+In constraint, opening a ledger in "NoRecovery" mode, it will not fence and seal the ledger. "NoRecovery" mode is usually used by applications to tailing-read from a ledger.
 
 ### Read entries from ledgers
 

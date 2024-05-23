@@ -488,8 +488,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientReadEntry() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
@@ -548,8 +548,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientReadLac() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             final BookkeeperInternalCallbacks.ReadLacCallback callback =
@@ -593,8 +593,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientAddEntry() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookkeeperInternalCallbacks.WriteCallback callback = (BookkeeperInternalCallbacks.WriteCallback) args[5];
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
@@ -650,8 +650,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientForceLedger() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             BookkeeperInternalCallbacks.ForceLedgerCallback callback =

@@ -225,7 +225,7 @@ public class LedgerCacheTest {
         // create ledger cache
         newLedgerCache();
         try {
-            // create serveral ledgers
+            // create several ledgers
             for (int i = 1; i <= numLedgers; i++) {
                 ledgerCache.setMasterKey((long) i, masterKey);
                 ledgerCache.putEntryOffset(i, 0, i * 8);
@@ -237,7 +237,7 @@ public class LedgerCacheTest {
             // flush all
             ledgerCache.flushLedger(true);
 
-            // delete serveral ledgers
+            // delete several ledgers
             for (int i = 1; i <= numLedgers / 2; i++) {
                 ledgerCache.deleteLedger(i);
             }
