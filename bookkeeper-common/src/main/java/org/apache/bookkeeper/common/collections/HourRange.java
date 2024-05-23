@@ -1,5 +1,6 @@
 package org.apache.bookkeeper.common.collections;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,12 +12,18 @@ import java.util.List;
  * <p> we require that the start hour is less than or equal to the end hour.
  */
 public class HourRange {
+    private static final String RANGE_SEPARATOR = ",";
+    private static final String RANGE_PART_SEPARATOR = "-";
     private List<Range> ranges;
 
     public HourRange(String range) {
-        String[] parts = range.split(",");
+        ranges = new ArrayList<>();
+        if (range == null || range.isEmpty()) {
+            return;
+        }
+        String[] parts = range.split(RANGE_SEPARATOR);
         for (String part : parts) {
-            String[] rangeParts = part.split("-");
+            String[] rangeParts = part.split(RANGE_PART_SEPARATOR);
             if (rangeParts.length != 2) {
                 throw new IllegalArgumentException("Invalid range: " + part);
             }
