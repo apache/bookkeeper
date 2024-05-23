@@ -862,7 +862,7 @@ public class CreateNewLogTest {
         /*
          * In a new thread, create newlog for 'firstLedgerId' and then set
          * 'newLogCreated' to true. Since this is the first createNewLog call,
-         * it is going to be blocked untill latch is countdowned to 0.
+         * it is going to be blocked until latch is countdowned to 0.
          */
         new Thread() {
             @Override

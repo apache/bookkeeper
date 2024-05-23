@@ -487,7 +487,7 @@ public class ConcurrentLongLongPairHashMapTest {
     }
 
     @Test
-    public void testIvalidKeys() {
+    public void testInvalidKeys() {
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
                 .expectedItems(16)
                 .concurrencyLevel(1)

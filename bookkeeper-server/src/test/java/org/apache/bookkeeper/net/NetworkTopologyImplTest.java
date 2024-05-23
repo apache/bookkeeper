@@ -155,14 +155,14 @@ public class NetworkTopologyImplTest {
           networkTopology.add(bookieRack0ScopeNode);
           fail();
       } catch (IllegalArgumentException e) {
-          assertEquals("bookieIdScopeRack0, which is located at , is not a decendent of /", e.getMessage());
+          assertEquals("bookieIdScopeRack0, which is located at , is not a descendent of /", e.getMessage());
       }
 
       try {
           networkTopology.add(bookieRack1ScopeNode);
           fail();
       } catch (IllegalArgumentException e) {
-          assertEquals("bookieIdScopeRack1, which is located at , is not a decendent of /", e.getMessage());
+          assertEquals("bookieIdScopeRack1, which is located at , is not a descendent of /", e.getMessage());
       }
 
   }

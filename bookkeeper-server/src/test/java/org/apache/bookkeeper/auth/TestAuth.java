@@ -273,7 +273,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
             fail("Shouldn't get this far");
         } catch (BKException.BKUnauthorizedAccessException bke) {
             // bookie should have sent a negative response before
-            // breaking the conneciton
+            // breaking the connection
         }
         assertFalse(ledgerId.get() == -1);
         assertEquals("Shouldn't have entry", 0, entryCount(ledgerId.get(), bookieConf, clientConf));
@@ -300,7 +300,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
             fail("Shouldn't get this far");
         } catch (BKException.BKUnauthorizedAccessException bke) {
             // bookie should have sent a negative response before
-            // breaking the conneciton
+            // breaking the connection
             assertEquals(ProtocolVersion.ProtocolV3, protocolVersion);
         } catch (BKException.BKNotEnoughBookiesException nebe) {
             // With V2 we don't get the authorization error, but rather just
@@ -316,7 +316,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * doesn't implement the interface, we fail predictably.
      */
     @Test
-    public void testExistantButNotValidPlugin() throws Exception {
+    public void testExistentButNotValidPlugin() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
                 "java.lang.String");
@@ -351,14 +351,14 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * break.
      */
     @Test
-    public void testNonExistantPlugin() throws Exception {
+    public void testNonExistentPlugin() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
-                "NonExistantClassNameForTestingAuthPlugins");
+                "NonExistentClassNameForTestingAuthPlugins");
 
         ClientConfiguration clientConf = newClientConfiguration();
         clientConf.setClientAuthProviderFactoryClass(
-                "NonExistantClassNameForTestingAuthPlugins");
+                "NonExistentClassNameForTestingAuthPlugins");
         try {
             startAndStoreBookie(bookieConf);
             fail("Shouldn't get this far");

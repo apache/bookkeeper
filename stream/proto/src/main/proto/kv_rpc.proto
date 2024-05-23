@@ -210,7 +210,7 @@ message DeleteRangeRequest {
   bytes range_end = 2;
 
   // If prev_kv is set, etcd gets the previous key-value pairs before deleting it.
-  // The previous key-value pairs will be returned in the delte response.
+  // The previous key-value pairs will be returned in the delete response.
   bool prev_kv = 3;
 
   // header

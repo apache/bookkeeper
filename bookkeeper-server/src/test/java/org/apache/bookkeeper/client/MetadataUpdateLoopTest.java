@@ -98,7 +98,7 @@ public class MetadataUpdateLoopTest {
     }
 
     /**
-     * Test that when 2 update loops conflict when making diffent updates to the metadata,
+     * Test that when 2 update loops conflict when making different updates to the metadata,
      * both will eventually succeed, and both updates will be reflected in the final metadata.
      */
     @Test
@@ -446,7 +446,7 @@ public class MetadataUpdateLoopTest {
                 .whenComplete((written, exception) -> {
                         synchronized (DeferCallbacksMockLedgerManager.this) {
                             if (writeCount++ < numToDefer) {
-                                LOG.info("Added to deferals");
+                                LOG.info("Added to deferrals");
                                 deferred.add(Triple.of(promise, written, exception));
                             } else {
                                 LOG.info("Completing {}", numToDefer);

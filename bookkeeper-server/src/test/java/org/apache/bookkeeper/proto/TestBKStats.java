@@ -31,7 +31,7 @@ import org.junit.Test;
 public class TestBKStats {
 
     /**
-     * Tests that updatLatency should not fail with
+     * Tests that updateLatency should not fail with
      * ArrayIndexOutOfBoundException when latency time coming as negative.
      */
     @Test
