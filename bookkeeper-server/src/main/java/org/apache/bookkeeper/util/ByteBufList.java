@@ -291,7 +291,7 @@ public class ByteBufList extends AbstractReferenceCounted {
                     // release the ByteBufList after the write operation is completed
                     ReferenceCountUtil.safeRelease(b);
                     // complete the promise passed as an argument unless it's a void promise
-                    if (!promise.isVoid()) {
+                    if (promise != null && !promise.isVoid()) {
                         if (future.isSuccess()) {
                             promise.setSuccess();
                         } else {
