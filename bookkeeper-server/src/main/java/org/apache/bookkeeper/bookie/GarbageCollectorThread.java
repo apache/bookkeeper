@@ -29,6 +29,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -97,6 +98,7 @@ public class GarbageCollectorThread implements Runnable {
 
     private volatile long totalEntryLogSize;
     private volatile int numActiveEntryLogs;
+    private volatile double entryLogCompactRatio;
 
     final CompactableLedgerStorage ledgerStorage;
 
@@ -172,12 +174,14 @@ public class GarbageCollectorThread implements Runnable {
 
         this.numActiveEntryLogs = 0;
         this.totalEntryLogSize = 0L;
+        this.entryLogCompactRatio = 0.0;
         this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage, conf, statsLogger);
         this.gcStats = new GarbageCollectorStats(
             statsLogger,
             () -> numActiveEntryLogs,
             () -> totalEntryLogSize,
-            () -> garbageCollector.getNumActiveLedgers()
+            () -> garbageCollector.getNumActiveLedgers(),
+            () -> entryLogCompactRatio
         );
 
         this.garbageCleaner = ledgerId -> {
@@ -411,14 +415,20 @@ public class GarbageCollectorThread implements Runnable {
         try {
             // gc inactive/deleted ledgers
             // this is used in extractMetaFromEntryLogs to calculate the usage of entry log
+            long gcLedgersStart = MathUtils.nowInNano();
             doGcLedgers();
+            gcStats.getGcLedgerRuntime()
+                    .registerSuccessfulEvent(MathUtils.nowInNano() - gcLedgersStart, TimeUnit.NANOSECONDS);
 
             // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
+            long extractMetaStart = MathUtils.nowInNano();
             extractMetaFromEntryLogs();
 
             // gc entry logs
             doGcEntryLogs();
+            gcStats.getExtractMetaRuntime()
+                    .registerSuccessfulEvent(MathUtils.nowInNano() - extractMetaStart, TimeUnit.NANOSECONDS);
 
             if (suspendMajor) {
                 LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
@@ -428,11 +438,13 @@ public class GarbageCollectorThread implements Runnable {
             }
 
             long curTime = System.currentTimeMillis();
+            long compactStart = MathUtils.nowInNano();
             if (((isForceMajorCompactionAllow && force) || (enableMajorCompaction
                     && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
                     && (!suspendMajor)) {
                 // enter major compaction
-                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+                LOG.info("Enter major compaction, suspendMajor {}, lastMajorCompactionTime {}", suspendMajor,
+                        lastMajorCompactionTime);
                 majorCompacting.set(true);
                 try {
                     doCompactEntryLogs(majorCompactionThreshold, majorCompactionMaxTimeMillis);
@@ -447,7 +459,8 @@ public class GarbageCollectorThread implements Runnable {
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
                     && (!suspendMinor)) {
                 // enter minor compaction
-                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+                LOG.info("Enter minor compaction, suspendMinor {}, lastMinorCompactionTime {}", suspendMinor,
+                        lastMinorCompactionTime);
                 minorCompacting.set(true);
                 try {
                     doCompactEntryLogs(minorCompactionThreshold, minorCompactionMaxTimeMillis);
@@ -457,11 +470,15 @@ public class GarbageCollectorThread implements Runnable {
                     minorCompacting.set(false);
                 }
             }
+            gcStats.getCompactRuntime()
+                    .registerSuccessfulEvent(MathUtils.nowInNano() - compactStart, TimeUnit.NANOSECONDS);
             gcStats.getGcThreadRuntime().registerSuccessfulEvent(
                     MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
         } catch (EntryLogMetadataMapException e) {
             LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
                     e.getMessage(), e);
+            gcStats.getExtractMetaRuntime()
+                    .registerFailedEvent(MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
             gcStats.getGcThreadRuntime().registerFailedEvent(
                     MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
         } finally {
@@ -649,9 +666,11 @@ public class GarbageCollectorThread implements Runnable {
                 LOG.debug("Compaction ran for {}ms but was limited by {}ms", timeDiff, maxTimeMillis);
             }
         }
-        LOG.info(
-                "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}, compacted {}",
-                entryLogUsageBuckets, compactedBuckets);
+        int totalEntryLogNum = Arrays.stream(entryLogUsageBuckets).sum();
+        int compactedEntryLogNum = Arrays.stream(compactedBuckets).sum();
+        this.entryLogCompactRatio = totalEntryLogNum == 0 ? 0 : (double) compactedEntryLogNum / totalEntryLogNum;
+        LOG.info("Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}, compacted {}, "
+                + "compacted entry log ratio {}", entryLogUsageBuckets, compactedBuckets, entryLogCompactRatio);
     }
 
     /**
