@@ -355,7 +355,7 @@ class AuthHandler {
                         super.write(ctx, msg, promise);
                         super.flush(ctx);
                     } else {
-                        waitingForAuth.add(msg);
+                        addMsgAndPromiseToQueue(msg, promise);
                     }
                 } else if (msg instanceof BookieProtocol.Request) {
                     // let auth messages through, queue the rest
@@ -364,13 +364,23 @@ class AuthHandler {
                         super.write(ctx, msg, promise);
                         super.flush(ctx);
                     } else {
-                        waitingForAuth.add(msg);
+                        addMsgAndPromiseToQueue(msg, promise);
                     }
                 } else if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
-                    waitingForAuth.add(msg);
+                    addMsgAndPromiseToQueue(msg, promise);
                 } else {
                     LOG.info("[{}] dropping write of message {}", ctx.channel(), msg);
                 }
+            }
+        }
+
+        // Add the message and the associated promise to the queue.
+        // The promise is added to the same queue as the message without an additional wrapper object so
+        // that object allocations can be avoided. A similar solution is used in Netty codebase.
+        private void addMsgAndPromiseToQueue(Object msg, ChannelPromise promise) {
+            waitingForAuth.add(msg);
+            if (promise != null && !promise.isVoid()) {
+                waitingForAuth.add(promise);
             }
         }
 
@@ -433,10 +443,19 @@ class AuthHandler {
                 if (rc == BKException.Code.OK) {
                     synchronized (this) {
                         authenticated = true;
-                        Object msg = waitingForAuth.poll();
-                        while (msg != null) {
-                            NettyChannelUtil.writeAndFlushWithVoidPromise(ctx, msg);
-                            msg = waitingForAuth.poll();
+                        while (true) {
+                            Object msg = waitingForAuth.poll();
+                            if (msg == null) {
+                                break;
+                            }
+                            ChannelPromise promise;
+                            // check if the message has an associated promise as the next element in the queue
+                            if (waitingForAuth.peek() instanceof ChannelPromise) {
+                                promise = (ChannelPromise) waitingForAuth.poll();
+                            } else {
+                                promise = ctx.voidPromise();
+                            }
+                            ctx.writeAndFlush(msg, promise);
                         }
                     }
                 } else {
