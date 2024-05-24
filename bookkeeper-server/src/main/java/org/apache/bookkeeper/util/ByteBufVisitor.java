@@ -162,12 +162,6 @@ public class ByteBufVisitor {
                     handleArray(visitBuffer.array(), visitBuffer.arrayOffset() + visitIndex, visitLength);
                 } else if (visitBuffer.hasMemoryAddress() && callback.acceptsMemoryAddress(callbackContext)) {
                     callback.visitBuffer(callbackContext, visitBuffer, visitIndex, visitLength);
-                } else if (callback.acceptsMemoryAddress(callbackContext) && visitBuffer.isDirect()
-                        && visitBuffer.alloc().isDirectBufferPooled()) {
-                    // read-only buffers need to be copied before they can be directly accessed
-                    ByteBuf copyBuffer = visitBuffer.copy(visitIndex, visitLength);
-                    callback.visitBuffer(callbackContext, copyBuffer, 0, visitLength);
-                    copyBuffer.release();
                 } else {
                     // fallback to reading the visited buffer into the copy buffer in a loop
                     byte[] copyBuffer = TL_COPY_BUFFER.get();
