@@ -149,7 +149,11 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         // verify appends
         verify(wh, times(10)).append(eq(data));
 
-        verify(rh, times(1)).read(anyLong(), anyLong());
+        // verify close ledger handle.
+        verify(wh, times(1)).close();
+
+        // verify read entry 0-9
+        verify(rh, times(1)).read(0, 9);
     }
 
 }
