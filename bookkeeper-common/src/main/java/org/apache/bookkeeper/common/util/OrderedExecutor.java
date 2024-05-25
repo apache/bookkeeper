@@ -391,6 +391,10 @@ public class OrderedExecutor implements ExecutorService {
             ExecutorService thread = createSingleThreadExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                     .setThreadFactory(threadFactory).build());
+            SingleThreadExecutor ste = null;
+            if (thread instanceof SingleThreadExecutor) {
+                ste = (SingleThreadExecutor) thread;
+            }
 
             if (traceTaskExecution || preserveMdcForTaskExecution) {
                 thread = addExecutorDecorators(thread);
@@ -425,48 +429,8 @@ public class OrderedExecutor implements ExecutorService {
                 throw new RuntimeException("Couldn't start thread " + i, e);
             }
 
-            if (thread instanceof SingleThreadExecutor) {
-                SingleThreadExecutor ste = (SingleThreadExecutor) thread;
+            if (ste != null) {
                 ste.registerMetrics(statsLogger);
-            } else if (thread instanceof ThreadPoolExecutor) {
-                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) thread;
-                // Register gauges
-                statsLogger.scopeLabel("thread", String.valueOf(idx))
-                        .registerGauge(String.format("%s-queue", name), new Gauge<Number>() {
-                            @Override
-                            public Number getDefaultValue() {
-                                return 0;
-                            }
-
-                            @Override
-                            public Number getSample() {
-                                return threadPoolExecutor.getQueue().size();
-                            }
-                        });
-                statsLogger.scopeLabel("thread", String.valueOf(idx))
-                        .registerGauge(String.format("%s-completed-tasks", name), new Gauge<Number>() {
-                            @Override
-                            public Number getDefaultValue() {
-                                return 0;
-                            }
-
-                            @Override
-                            public Number getSample() {
-                                return threadPoolExecutor.getCompletedTaskCount();
-                            }
-                        });
-                statsLogger.scopeLabel("thread", String.valueOf(idx))
-                        .registerGauge(String.format("%s-total-tasks", name), new Gauge<Number>() {
-                            @Override
-                            public Number getDefaultValue() {
-                                return 0;
-                            }
-
-                            @Override
-                            public Number getSample() {
-                                return threadPoolExecutor.getTaskCount();
-                            }
-                        });
             }
         }
 
