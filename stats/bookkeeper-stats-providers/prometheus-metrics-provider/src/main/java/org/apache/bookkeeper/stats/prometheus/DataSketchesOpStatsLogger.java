@@ -145,12 +145,12 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
         current = replacement;
         replacement = local;
 
-        final DoublesUnion aggregateSuccesss = new DoublesUnionBuilder().build();
+        final DoublesUnion aggregateSuccess = new DoublesUnionBuilder().build();
         final DoublesUnion aggregateFail = new DoublesUnionBuilder().build();
         local.map.forEach((localData, b) -> {
             long stamp = localData.lock.writeLock();
             try {
-                aggregateSuccesss.update(localData.successSketch);
+                aggregateSuccess.update(localData.successSketch);
                 localData.successSketch.reset();
                 aggregateFail.update(localData.failSketch);
                 localData.failSketch.reset();
@@ -159,7 +159,7 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
             }
         });
 
-        successResult = aggregateSuccesss.getResultAndReset();
+        successResult = aggregateSuccess.getResultAndReset();
         failResult = aggregateFail.getResultAndReset();
     }
 

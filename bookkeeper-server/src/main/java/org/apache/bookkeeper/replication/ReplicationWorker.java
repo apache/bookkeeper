@@ -558,7 +558,7 @@ public class ReplicationWorker implements Runnable {
      *
      * <p>To avoid this situation, we need to check if bookies in the final open ensemble
      * are unavailable, and take action if so. The action to take is to close the ledger,
-     * after a grace period as the writting client may replace the faulty bookie on its
+     * after a grace period as the writing client may replace the faulty bookie on its
      * own.
      *
      * <p>Missing bookies in closed ledgers are fine, as we know the last confirmed add, so

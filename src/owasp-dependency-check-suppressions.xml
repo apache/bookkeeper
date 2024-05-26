@@ -20,7 +20,7 @@
 
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- add supressions for known vulnerabilities detected by OWASP Dependency Check -->
+    <!-- add suppressions for known vulnerabilities detected by OWASP Dependency Check -->
 
     <suppress>
         <notes>CVE-2021-43045 affects only .NET distro, see https://github.com/apache/avro/pull/1357</notes>

@@ -124,13 +124,13 @@ class LedgerDirsMonitor {
             }
         }
 
-        List<File> fullfilledDirs = new ArrayList<File>(ldm.getFullFilledLedgerDirs());
+        List<File> fulfilledDirs = new ArrayList<File>(ldm.getFullFilledLedgerDirs());
         boolean makeWritable = ldm.hasWritableLedgerDirs();
 
         // When bookie is in READONLY mode, i.e there are no writableLedgerDirs:
-        // - Update fullfilledDirs disk usage.
+        // - Update fulfilledDirs disk usage.
         // - If the total disk usage is below DiskLowWaterMarkUsageThreshold
-        // add fullfilledDirs back to writableLedgerDirs list if their usage is < conf.getDiskUsageThreshold.
+        // add fulfilledDirs back to writableLedgerDirs list if their usage is < conf.getDiskUsageThreshold.
         try {
             if (!makeWritable) {
                 float totalDiskUsage = diskChecker.getTotalDiskUsage(ldm.getAllLedgerDirs());
@@ -144,7 +144,7 @@ class LedgerDirsMonitor {
                 }
             }
             // Update all full-filled disk space usage
-            for (File dir : fullfilledDirs) {
+            for (File dir : fulfilledDirs) {
                 try {
                     diskUsages.put(dir, diskChecker.checkDir(dir));
                     if (makeWritable) {
@@ -254,7 +254,7 @@ class LedgerDirsMonitor {
 
     private void validateThreshold(float diskSpaceThreshold, float diskSpaceLwmThreshold) {
         if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceLwmThreshold - diskSpaceThreshold > 1e-6) {
-            throw new IllegalArgumentException("Disk space threashold: "
+            throw new IllegalArgumentException("Disk space threshold: "
                     + diskSpaceThreshold + " and lwm threshold: " + diskSpaceLwmThreshold
                     + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceLwmThreshold");
         }

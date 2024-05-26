@@ -49,7 +49,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
 
     /**
      * Mark a ledger as underreplicated with missing bookies. The replication should then
-     * check which fragements are underreplicated and rereplicate them.
+     * check which fragments are underreplicated and rereplicate them.
      *
      * @param ledgerId ledger id
      * @param missingReplicas missing replicas

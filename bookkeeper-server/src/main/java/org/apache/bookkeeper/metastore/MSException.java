@@ -40,7 +40,7 @@ public abstract class MSException extends Exception {
         InterruptedException (-100, "Operation interrupted"),
         IllegalOp (-101, "Illegal operation"),
         ServiceDown (-102, "Metadata service is down"),
-        OperationFailure(-103, "Operaion failed on metadata storage server side");
+        OperationFailure(-103, "Operation failed on metadata storage server side");
 
         private static final Map<Integer, Code> codes = new HashMap<Integer, Code>();
 

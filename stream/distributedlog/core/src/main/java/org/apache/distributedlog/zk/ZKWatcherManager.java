@@ -82,9 +82,9 @@ public class ZKWatcherManager implements Watcher {
     private final StatsLogger statsLogger;
     // Gauges and their labels
     private final Gauge<Number> totalWatchesGauge;
-    private static final String totalWatchesGauageLabel = "total_watches";
+    private static final String totalWatchesGaugeLabel = "total_watches";
     private final Gauge<Number> numChildWatchesGauge;
-    private static final String numChildWatchesGauageLabel = "num_child_watches";
+    private static final String numChildWatchesGaugeLabel = "num_child_watches";
 
     protected final ConcurrentMap<String, Set<Watcher>> childWatches;
     protected final LongAdder allWatchesGauge;
@@ -112,7 +112,7 @@ public class ZKWatcherManager implements Watcher {
                 return allWatchesGauge.sum();
             }
         };
-        this.statsLogger.registerGauge(totalWatchesGauageLabel, totalWatchesGauge);
+        this.statsLogger.registerGauge(totalWatchesGaugeLabel, totalWatchesGauge);
 
         numChildWatchesGauge = new Gauge<Number>() {
             @Override
@@ -126,7 +126,7 @@ public class ZKWatcherManager implements Watcher {
             }
         };
 
-        this.statsLogger.registerGauge(numChildWatchesGauageLabel, numChildWatchesGauge);
+        this.statsLogger.registerGauge(numChildWatchesGaugeLabel, numChildWatchesGauge);
     }
 
     public Watcher registerChildWatcher(String path, Watcher watcher) {
@@ -169,8 +169,8 @@ public class ZKWatcherManager implements Watcher {
     }
 
     public void unregisterGauges() {
-        this.statsLogger.unregisterGauge(totalWatchesGauageLabel, totalWatchesGauge);
-        this.statsLogger.unregisterGauge(numChildWatchesGauageLabel, numChildWatchesGauge);
+        this.statsLogger.unregisterGauge(totalWatchesGaugeLabel, totalWatchesGauge);
+        this.statsLogger.unregisterGauge(numChildWatchesGaugeLabel, numChildWatchesGauge);
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
 
 /**
- * Provided utilites for parsing network addresses, ledger-id from node paths
+ * Provided utilities for parsing network addresses, ledger-id from node paths
  * etc.
  *
  */
@@ -163,7 +163,7 @@ public class StringUtils {
     }
 
     /**
-     * Builds string representation of teh request without extra (i.e. binary) data
+     * Builds string representation of the request without extra (i.e. binary) data
      *
      * @param request
      * @return string representation of request

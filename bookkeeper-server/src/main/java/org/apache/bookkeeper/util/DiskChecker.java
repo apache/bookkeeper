@@ -276,7 +276,7 @@ public class DiskChecker {
 
     private void validateThreshold(float diskSpaceThreshold, float diskSpaceWarnThreshold) {
         if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceWarnThreshold - diskSpaceThreshold > 1e-6) {
-            throw new IllegalArgumentException("Disk space threashold: "
+            throw new IllegalArgumentException("Disk space threshold: "
                     + diskSpaceThreshold + " and warn threshold: " + diskSpaceWarnThreshold
                     + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceWarnThreshold");
         }

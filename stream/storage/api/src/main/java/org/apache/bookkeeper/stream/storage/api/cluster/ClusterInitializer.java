@@ -31,10 +31,10 @@ public interface ClusterInitializer {
      * return <tt>true</tt> if they understand the subprotocol specified in the URI and
      * <tt>false</tt> if they do not.
      *
-     * @param metatadataServiceUri the metadata service uri
+     * @param metadataServiceUri the metadata service uri
      * @return <tt>true</tt> if the implementation understands the given URI; <tt>false</tt> otherwise.
      */
-    boolean acceptsURI(URI metatadataServiceUri);
+    boolean acceptsURI(URI metadataServiceUri);
 
     /**
      * Create a new cluster under metadata service specified by {@code metadataServiceUri}.

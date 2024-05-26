@@ -28,16 +28,16 @@ public class SettableFeature extends FixedValueFeature {
         super(name, initialAvailability);
     }
 
-    public SettableFeature(String name, boolean isAvailabile) {
-        super(name, isAvailabile);
+    public SettableFeature(String name, boolean isAvailable) {
+        super(name, isAvailable);
     }
 
     public void set(int availability) {
         this.availability = availability;
     }
 
-    public void set(boolean isAvailabile) {
-        this.availability = isAvailabile ? FEATURE_AVAILABILITY_MAX_VALUE : 0;
+    public void set(boolean isAvailable) {
+        this.availability = isAvailable ? FEATURE_AVAILABILITY_MAX_VALUE : 0;
     }
 
 }

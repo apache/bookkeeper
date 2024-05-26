@@ -33,7 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
  *
  * <p>Implementation is aimed at storing PerChannelBookieClient completions when there
  * are duplicates. If the key is a pooled object, it must not exist once the value
- * has been removed from the map, which can happen with guava multimap implemenations.
+ * has been removed from the map, which can happen with guava multimap implementations.
  *
  * <p>With this map is implemented with pretty heavy locking, but this shouldn't be an
  * issue as the multimap only needs to be used in rare cases, i.e. when a user tries

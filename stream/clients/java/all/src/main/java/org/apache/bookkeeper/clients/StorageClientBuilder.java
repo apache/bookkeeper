@@ -67,7 +67,7 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
      * <p>The namespace name will be used for building the stream client for interacting with streams
      * within the namespace.
      *
-     * @param colName colletion name
+     * @param colName collection name
      * @return stream client builder.
      * @see #build()
      */

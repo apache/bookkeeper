@@ -144,7 +144,7 @@ public class PerfClient implements Runnable {
             names = {
                 "-b", "--benchmarks"
             },
-            description = "List of benchamrks to run")
+            description = "List of benchmarks to run")
         public List<String> benchmarks;
 
     }

@@ -139,7 +139,7 @@ public interface Namespace extends AutoCloseable{
      *
      * <p>This method allows the caller to override global configuration settings by
      * supplying log configuration overrides. Log config overrides come in two flavors,
-     * static and dynamic. Static config never changes in the lifecyle of <code>DistributedLogManager</code>,
+     * static and dynamic. Static config never changes in the lifecycle of <code>DistributedLogManager</code>,
      * dynamic config changes by reloading periodically and safe to access from any context.</p>
      *
      * @param logName

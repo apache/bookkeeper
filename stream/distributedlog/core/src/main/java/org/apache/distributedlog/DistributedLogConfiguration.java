@@ -782,7 +782,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
     //
 
     /**
-     * Get BK's zookeeper session timout in milliseconds.
+     * Get BK's zookeeper session timeout in milliseconds.
      *
      * <p>This is the session timeout applied for zookeeper client used by bookkeeper client.
      * Use {@link #getZKSessionTimeoutMilliseconds()} for zookeeper client used
@@ -1399,7 +1399,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * Get timeout for shutting down schedulers in dl manager, in milliseconds.
      * By default, it is 5 seconds.
      *
-     * @return timeout for shutting down schedulers in dl manager, in miliseconds.
+     * @return timeout for shutting down schedulers in dl manager, in milliseconds.
      */
     public int getSchedulerShutdownTimeoutMs() {
         return getInt(BKDL_SCHEDULER_SHUTDOWN_TIMEOUT_MS, BKDL_SCHEDULER_SHUTDOWN_TIMEOUT_MS_DEFAULT);
@@ -1647,7 +1647,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * </ul>
      * By default it is 1.
      *
-     * @return log segment name verison.
+     * @return log segment name version.
      */
     public int getLogSegmentNameVersion() {
         return getInt(BKDL_LOGSEGMENT_NAME_VERSION, BKDL_LOGSEGMENT_NAME_VERSION_DEFAULT);
@@ -3264,7 +3264,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Enable check existence of a log if quering local cache of a federated namespace missed.
+     * Enable check existence of a log if querying local cache of a federated namespace missed.
      *
      * @param enabled
      *          flag to enable/disable this feature.
@@ -3585,7 +3585,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
         long readerIdleWarnThresholdMs = getReaderIdleWarnThresholdMillis();
         if (readerIdleWarnThresholdMs > 0) { // NOTE: some test cases set the idle warn threshold to 0
             checkArgument(readerIdleWarnThresholdMs > 2 * getReadLACLongPollTimeout(),
-                    "Invalid configuration: ReaderIdleWarnThreshold should be 2x larget than readLACLongPollTimeout");
+                    "Invalid configuration: ReaderIdleWarnThreshold should be 2x larger than readLACLongPollTimeout");
         }
     }
 
