@@ -483,6 +483,14 @@ jobs:
         if: cancelled()
         run: ./dev/ci-tool print_thread_dumps
 
+  typo-check:
+    name: Typo Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check typos
+        uses: crate-ci/typos@master
+
   owasp-dependency-check:
     name: OWASP Dependency Check
     runs-on: ubuntu-latest

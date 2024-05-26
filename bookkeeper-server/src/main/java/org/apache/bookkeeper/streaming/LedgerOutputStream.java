@@ -89,7 +89,7 @@ public class LedgerOutputStream extends OutputStream {
             try {
                 lh.addEntry(b);
             } catch (InterruptedException ie) {
-                LOG.warn("Interrupted while flusing " + ie);
+                LOG.warn("Interrupted while flushing " + ie);
                 Thread.currentThread().interrupt();
             } catch (BKException bke) {
                 LOG.warn("BookKeeper exception ", bke);

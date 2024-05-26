@@ -200,20 +200,20 @@ public class LedgerDirsManager {
 
     List<File> getDirsAboveUsableThresholdSize(long thresholdSize, boolean loggingNoWritable)
             throws NoWritableLedgerDirException {
-        List<File> fullLedgerDirsToAccomodate = new ArrayList<File>();
+        List<File> fullLedgerDirsToAccommodate = new ArrayList<File>();
         for (File dir: this.ledgerDirectories) {
             // Pick dirs which can accommodate little more than thresholdSize
             if (dir.getUsableSpace() > thresholdSize) {
-                fullLedgerDirsToAccomodate.add(dir);
+                fullLedgerDirsToAccommodate.add(dir);
             }
         }
 
-        if (!fullLedgerDirsToAccomodate.isEmpty()) {
+        if (!fullLedgerDirsToAccommodate.isEmpty()) {
             if (loggingNoWritable) {
                 LOG.info("No writable ledger dirs below diskUsageThreshold. "
-                    + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
+                    + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccommodate);
             }
-            return fullLedgerDirsToAccomodate;
+            return fullLedgerDirsToAccommodate;
         }
 
         // We will reach here when we find no ledgerDir which has atleast

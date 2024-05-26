@@ -706,7 +706,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * cheap to compute but does not protect against byzantine bookies (i.e., a
      * bookie might report fake bytes and a matching CRC32). The MAC code is more
      * expensive to compute, but is protected by a password, i.e., a bookie can't
-     * report fake bytes with a mathching MAC unless it knows the password.
+     * report fake bytes with a matching MAC unless it knows the password.
      * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
      * Legacy DigestType for backward compatibility. If we want to add new DigestType,
      * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.

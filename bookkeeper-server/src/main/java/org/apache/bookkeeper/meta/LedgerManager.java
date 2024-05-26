@@ -97,7 +97,7 @@ public interface LedgerManager extends Closeable {
      * @param currentVersion
      *          The version of the metadata we expect to be overwriting.
      * @return Future which, when completed, contains the newly written metadata.
-     *         Comleted with an exceptione:<ul>
+     *         Completed with an exception:<ul>
      *          <li>{@link org.apache.bookkeeper.client.BKException.BKMetadataVersionException}
      *          if version in metadata doesn't match</li>
      *          <li>{@link org.apache.bookkeeper.client.BKException.ZKException} for other issue</li>
@@ -130,9 +130,9 @@ public interface LedgerManager extends Closeable {
      * Loop to process all ledgers.
      * <p>
      * <ul>
-     * After all ledgers were processed, finalCb will be triggerred:
+     * After all ledgers were processed, finalCb will be triggered:
      * <li> if all ledgers are processed done with OK, success rc will be passed to finalCb.
-     * <li> if some ledgers are prcoessed failed, failure rc will be passed to finalCb.
+     * <li> if some ledgers are processed failed, failure rc will be passed to finalCb.
      * </ul>
      * </p>
      *
@@ -145,7 +145,7 @@ public interface LedgerManager extends Closeable {
      * @param successRc
      *          Success RC code passed to finalCb when callback
      * @param failureRc
-     *          Failure RC code passed to finalCb when exceptions occured.
+     *          Failure RC code passed to finalCb when exceptions occurred.
      */
     void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
                                     Object context, int successRc, int failureRc);

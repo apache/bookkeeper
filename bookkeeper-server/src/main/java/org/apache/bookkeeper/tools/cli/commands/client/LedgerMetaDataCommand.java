@@ -137,7 +137,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
                             throw be;
                         }
                         m.writeLedgerMetadata(flag.ledgerId, md, new LongVersion(-1L)).join();
-                        LOG.info("successsfully updated ledger metadata {}", flag.ledgerId);
+                        LOG.info("successfully updated ledger metadata {}", flag.ledgerId);
                     }
                 } else {
                     printLedgerMetadata(flag.ledgerId, m.readLedgerMetadata(flag.ledgerId).get().getValue(), true);

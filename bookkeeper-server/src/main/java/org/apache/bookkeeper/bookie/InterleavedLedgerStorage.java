@@ -569,7 +569,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // for interleaved ledger storage, we request a checkpoint when rotating a entry log file.
         // the checkpoint represent the point that all the entries added before this point are already
         // in ledger storage and ready to be synced to disk.
-        // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
+        // TODO: we could consider remove checkpointSource and checkpointSource#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
         // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
         Checkpoint checkpoint = checkpointSource.newCheckpoint();

@@ -75,7 +75,7 @@ public final class Retries {
      * @param task           a task to execute.
      * @param scheduler      scheduler to schedule the task and complete the futures.
      * @param key            the submit key for the scheduler.
-     * @param <ReturnT>      the return tye.
+     * @param <ReturnT>      the return type.
      * @return future represents the result of the task with retries.
      */
     public static <ReturnT> CompletableFuture<ReturnT> run(

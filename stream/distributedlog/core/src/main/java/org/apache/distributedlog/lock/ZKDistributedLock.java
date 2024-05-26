@@ -313,7 +313,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     /**
      * Check if lock is held.
      * If not, error out and do not reacquire. Use this in cases where there are many waiters by default
-     * and reacquire is unlikley to succeed.
+     * and reacquire is unlikely to succeed.
      *
      * @throws LockingException     if the lock attempt fails
      */
