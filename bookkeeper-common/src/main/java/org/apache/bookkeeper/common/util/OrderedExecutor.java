@@ -391,9 +391,9 @@ public class OrderedExecutor implements ExecutorService {
             ExecutorService thread = createSingleThreadExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                     .setThreadFactory(threadFactory).build());
-            SingleThreadExecutor ste = null;
             if (thread instanceof SingleThreadExecutor) {
-                ste = (SingleThreadExecutor) thread;
+                SingleThreadExecutor ste = (SingleThreadExecutor) thread;
+                ste.registerMetrics(statsLogger, name, i);
             }
 
             if (traceTaskExecution || preserveMdcForTaskExecution) {
@@ -427,10 +427,6 @@ public class OrderedExecutor implements ExecutorService {
                 throw new RuntimeException("Couldn't start thread " + i, e);
             } catch (ExecutionException e) {
                 throw new RuntimeException("Couldn't start thread " + i, e);
-            }
-
-            if (ste != null) {
-                ste.registerMetrics(statsLogger);
             }
         }
 

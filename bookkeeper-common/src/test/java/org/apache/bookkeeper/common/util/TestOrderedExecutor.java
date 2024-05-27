@@ -47,12 +47,11 @@ public class TestOrderedExecutor {
                 .name("test").numThreads(1).traceTaskExecution(isTraceTaskExecution).build();
 
         TestStatsProvider.TestStatsLogger testStatsLogger = (TestStatsProvider.TestStatsLogger)
-                bookieStats.scope("thread_test_OrderedExecutor_0_0");
+                bookieStats.scope("thread_0");
 
-        Assert.assertNotNull(testStatsLogger.getGauge("thread_executor_queue").getSample());
-        Assert.assertNotNull(testStatsLogger.getGauge("thread_executor_completed").getSample());
-        Assert.assertNotNull(testStatsLogger.getGauge("thread_executor_tasks_completed").getSample());
-        Assert.assertNotNull(testStatsLogger.getGauge("thread_executor_tasks_rejected").getSample());
-        Assert.assertNotNull(testStatsLogger.getGauge("thread_executor_tasks_failed").getSample());
+        Assert.assertNotNull(testStatsLogger.getGauge("test-queue").getSample());
+        Assert.assertNotNull(testStatsLogger.getGauge("test-rejected-tasks").getSample());
+        Assert.assertNotNull(testStatsLogger.getGauge("test-failed-tasks").getSample());
+        Assert.assertNotNull(testStatsLogger.getGauge("test-completed-tasks").getSample());
     }
 }
