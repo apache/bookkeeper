@@ -1,0 +1,94 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+name: Docs Pass Workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+      - branch-*
+  push:
+    branches:
+      - master
+      - branch-*
+  workflow_dispatch:
+
+jobs:
+  compatibility-check-java8:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Compatibility Check Java8
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  compatibility-check-java11:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Compatibility Check Java11
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  compatibility-check-java17:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Compatibility Check Java17
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  compatibility-check-java21:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Compatibility Check Java21
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  bookie-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Bookie Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  client-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Client Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  remaining-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Remaining Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  replication-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: Replication Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  stream-storage-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: StreamStorage Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
+  tls-tests:
+    if: ${{ needs.build-and-license-check.outputs.docs_only == 'true' }}
+    name: TLS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No action required"'
