@@ -539,15 +539,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [
-      'build-and-license-check',
-      'unit-tests',
-      'integration-tests',
       'backward-compatibility-tests',
-      'windows-build',
-      'macos-build',
+      'build-and-license-check',
+      'integration-tests',
       'jdk-compatibility-checks',
+      'macos-build',
+      'owasp-dependency-check',
       'typo-check',
-      'owasp-dependency-check'
+      'unit-tests',
+      'windows-build'
     ]
     steps:
       - name: Check build-and-license-check and typo-check success
@@ -563,12 +563,12 @@ jobs:
         if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
         run: |
           if [[ ! ( \
-                   "${{ needs.unit-tests.result }}" == "success" \
+                   "${{ needs.backward-compatibility-tests.result }}" == "success" \
                 && "${{ needs.integration-tests.result }}" == "success" \
-                && "${{ needs.backward-compatibility-tests.result }}" == "success" \
-                && "${{ needs.windows-build.result }}" == "success" \
-                && "${{ needs.macos-build.result }}" == "success" \
                 && "${{ needs.jdk-compatibility-checks.result }}" == "success" \
+                && "${{ needs.macos-build.result }}" == "success" \
+                && "${{ needs.unit-tests.result }}" == "success" \
+                && "${{ needs.windows-build.result }}" == "success" \
                ) ]]; then
             echo "Required jobs haven't been completed successfully."
             exit 1
