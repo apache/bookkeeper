@@ -1118,6 +1118,18 @@
               </execution>
             </executions>
           </plugin>
+          <!-- skip maven source plugin due to
+          Error: Failed to execute goal org.apache.maven.plugins:maven-source-plugin:3.3.0:jar-no-fork (attach-sources) on project buildtools:
+          Presumably you have configured maven-source-plugin to execute twice times in your build.
+          You have to configure a classifier for at least on of them.
+          -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+              <skipSource>true</skipSource>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
       <reporting>
