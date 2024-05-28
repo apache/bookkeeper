@@ -175,6 +175,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.WriteOnReadOnlyBookieException));
     private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
+    static final String CONSOLIDATION_HANDLER_NAME = "consolidation";
 
     final BookieId bookieId;
     final BookieAddressResolver bookieAddressResolver;
@@ -595,7 +596,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addLast("consolidation", new FlushConsolidationHandler(1024, true));
+                pipeline.addLast(CONSOLIDATION_HANDLER_NAME, new FlushConsolidationHandler(1024, true));
                 pipeline.addLast("bytebufList", ByteBufList.ENCODER);
                 pipeline.addLast("lengthbasedframedecoder",
                         new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
@@ -1573,8 +1574,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         } else {
             throw new RuntimeException("Unexpected socket address type");
         }
+        LOG.info("Starting TLS handshake with {}:{}", address.getHostString(), address.getPort());
         SslHandler handler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
-        channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
+        channel.pipeline()
+                .addAfter(CONSOLIDATION_HANDLER_NAME, parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> future) throws Exception {

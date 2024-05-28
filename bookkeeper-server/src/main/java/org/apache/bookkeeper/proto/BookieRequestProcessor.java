@@ -580,9 +580,10 @@ public class BookieRequestProcessor implements RequestProcessor {
             response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
             writeAndFlush(c, response.build());
         } else {
+            LOG.info("Starting TLS handshake with client on channel {}", c);
             // there is no need to execute in a different thread as this operation is light
             SslHandler sslHandler = shFactory.newTLSHandler();
-            c.pipeline().addFirst("tls", sslHandler);
+            c.pipeline().addAfter(BookieNettyServer.CONSOLIDATION_HANDLER_NAME, "tls", sslHandler);
 
             response.setStatus(BookkeeperProtocol.StatusCode.EOK);
             BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
