@@ -533,6 +533,7 @@ jobs:
           name: dependency report
           path: target/dependency-check-report.html
           retention-days: 7
+
   bookkeeper-ci-checks-completed:
     name: "BookKeeper CI checks completed"
     if: ${{ always() && ((github.event_name != 'schedule') || (github.repository == 'apache/bookkeeper')) }}
