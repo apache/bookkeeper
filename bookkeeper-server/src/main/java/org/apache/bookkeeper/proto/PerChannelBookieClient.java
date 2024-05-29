@@ -1575,10 +1575,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             throw new RuntimeException("Unexpected socket address type");
         }
         LOG.info("Starting TLS handshake with {}:{}", address.getHostString(), address.getPort());
-        SslHandler handler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
-        channel.pipeline()
-                .addAfter(CONSOLIDATION_HANDLER_NAME, parentObj.shFactory.getHandlerName(), handler);
-        handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+        SslHandler sslHandler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
+        String sslHandlerName = parentObj.shFactory.getHandlerName();
+        if (channel.pipeline().names().contains(CONSOLIDATION_HANDLER_NAME)) {
+            channel.pipeline().addAfter(CONSOLIDATION_HANDLER_NAME, sslHandlerName, sslHandler);
+        } else {
+            // local transport doesn't contain FlushConsolidationHandler
+            channel.pipeline().addFirst(sslHandlerName, sslHandler);
+        }
+        sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> future) throws Exception {
                     int rc;
