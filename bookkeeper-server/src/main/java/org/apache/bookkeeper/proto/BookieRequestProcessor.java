@@ -66,6 +66,7 @@ import org.slf4j.MDC;
 public class BookieRequestProcessor implements RequestProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
+    public static final String TLS_HANDLER_NAME = "tls";
 
     /**
      * The server configuration. We use this for getting the number of add and read
@@ -580,9 +581,15 @@ public class BookieRequestProcessor implements RequestProcessor {
             response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
             writeAndFlush(c, response.build());
         } else {
+            LOG.info("Starting TLS handshake with client on channel {}", c);
             // there is no need to execute in a different thread as this operation is light
             SslHandler sslHandler = shFactory.newTLSHandler();
-            c.pipeline().addFirst("tls", sslHandler);
+            if (c.pipeline().names().contains(BookieNettyServer.CONSOLIDATION_HANDLER_NAME)) {
+                c.pipeline().addAfter(BookieNettyServer.CONSOLIDATION_HANDLER_NAME, TLS_HANDLER_NAME, sslHandler);
+            } else {
+                // local transport doesn't contain FlushConsolidationHandler
+                c.pipeline().addFirst(TLS_HANDLER_NAME, sslHandler);
+            }
 
             response.setStatus(BookkeeperProtocol.StatusCode.EOK);
             BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
