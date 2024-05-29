@@ -90,7 +90,7 @@ jobs:
         if: steps.check_changes.outputs.docs_only != 'true'
         run: dev/check-all-licenses
 
-      - name:  Generate Javadoc
+      - name: Generate Javadoc
         if: steps.check_changes.outputs.docs_only != 'true'
         run: mvn -B -nsu -am -pl bookkeeper-common,bookkeeper-server,:bookkeeper-stats-api,:bookkeeper-stats-providers,:codahale-metrics-provider,:prometheus-metrics-provider javadoc:aggregate -DskipTests -Pdelombok -Dchesktyle.skip -Dspotbugs.skip
     outputs:
@@ -533,3 +533,44 @@ jobs:
           name: dependency report
           path: target/dependency-check-report.html
           retention-days: 7
+
+  bookkeeper-ci-checks-completed:
+    name: "BookKeeper CI checks completed"
+    if: ${{ always() && ((github.event_name != 'schedule') || (github.repository == 'apache/bookkeeper')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [
+      'backward-compatibility-tests',
+      'build-and-license-check',
+      'integration-tests',
+      'jdk-compatibility-checks',
+      'macos-build',
+      'owasp-dependency-check',
+      'typo-check',
+      'unit-tests',
+      'windows-build'
+    ]
+    steps:
+      - name: Check build-and-license-check and typo-check success
+        run: |
+          if [[ ! ( \
+                   "${{ needs.build-and-license-check.result }}" == "success" \
+                && "${{ needs.typo-check.result }}" == "success" \
+               ) ]]; then
+            echo "Required jobs haven't been completed successfully."
+            exit 1
+          fi
+      - name: Check that other required jobs were completed successfully
+        if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
+        run: |
+          if [[ ! ( \
+                   "${{ needs.backward-compatibility-tests.result }}" == "success" \
+                && "${{ needs.integration-tests.result }}" == "success" \
+                && "${{ needs.jdk-compatibility-checks.result }}" == "success" \
+                && "${{ needs.macos-build.result }}" == "success" \
+                && "${{ needs.unit-tests.result }}" == "success" \
+                && "${{ needs.windows-build.result }}" == "success" \
+               ) ]]; then
+            echo "Required jobs haven't been completed successfully."
+            exit 1
+          fi
