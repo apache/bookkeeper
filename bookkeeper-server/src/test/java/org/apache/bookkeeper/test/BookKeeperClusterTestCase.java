@@ -318,7 +318,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     protected ClientConfiguration newClientConfiguration() {
-        return new ClientConfiguration(baseConf);
+        return new ClientConfiguration(baseClientConf);
     }
 
     protected ServerConfiguration newServerConfiguration(int port, File journalDir, File[] ledgerDirs) {
