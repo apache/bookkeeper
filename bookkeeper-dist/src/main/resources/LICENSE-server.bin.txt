@@ -320,9 +320,9 @@ Apache Software License, Version 2.
 - lib/org.xerial.snappy-snappy-java-1.1.10.5.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/com.carrotsearch-hppc-0.9.1.jar [52]
-- lib/com.squareup.okhttp3-okhttp-4.11.0.jar [53]
-- lib/com.squareup.okio-okio-3.2.0.jar [53]
-- lib/com.squareup.okio-okio-jvm-3.2.0.jar [53]
+- lib/com.squareup.okhttp3-okhttp-4.12.0.jar [53]
+- lib/com.squareup.okio-okio-3.6.0.jar [53]
+- lib/com.squareup.okio-okio-jvm-3.6.0.jar [53]
 - lib/io.opentelemetry-opentelemetry-api-1.26.0.jar [54]
 - lib/io.opentelemetry-opentelemetry-api-events-1.26.0-alpha.jar [54]
 - lib/io.opentelemetry-opentelemetry-api-logs-1.26.0-alpha.jar [54]
@@ -344,10 +344,10 @@ Apache Software License, Version 2.
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-semconv-1.26.0-alpha.jar [54]
 - lib/io.opentelemetry.instrumentation-opentelemetry-runtime-metrics-1.26.0-alpha.jar [54]
 - lib/org.jetbrains-annotations-13.0.jar [55]
-- lib/org.jetbrains.kotlin-kotlin-stdlib-1.6.20.jar [55]
-- lib/org.jetbrains.kotlin-kotlin-stdlib-common-1.6.20.jar [55]
-- lib/org.jetbrains.kotlin-kotlin-stdlib-jdk7-1.6.20.jar [55]
-- lib/org.jetbrains.kotlin-kotlin-stdlib-jdk8-1.6.20.jar [55]
+- lib/org.jetbrains.kotlin-kotlin-stdlib-1.8.21.jar [55]
+- lib/org.jetbrains.kotlin-kotlin-stdlib-common-1.8.21.jar [55]
+- lib/org.jetbrains.kotlin-kotlin-stdlib-jdk7-1.8.21.jar [55]
+- lib/org.jetbrains.kotlin-kotlin-stdlib-jdk8-1.8.21.jar [55]
 - lib/com.lmax-disruptor-4.0.0.jar [56]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.17.1
@@ -397,9 +397,9 @@ Apache Software License, Version 2.
 [50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.5
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
-[53] Source available at https://github.com/square/okio/releases/tag/parent-3.2.0
+[53] Source available at https://github.com/square/okio/releases/tag/parent-3.6.0
 [54] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.26.0
-[55] Source available at https://github.com/JetBrains/kotlin/releases/tag/v1.6.20
+[55] Source available at https://github.com/JetBrains/kotlin/releases/tag/v1.8.21
 [56] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 
 ------------------------------------------------------------------------------------

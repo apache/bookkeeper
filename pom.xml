@@ -413,6 +413,21 @@
         <scope>import</scope>
       </dependency>
 
+      <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-bom</artifactId>
+        <version>4.12.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- okhttp 4.12.0 use kotlin stdlib 1.8.21 -->
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-common</artifactId>
+        <version>1.8.21</version>
+      </dependency>
+
       <!-- rocksdb dependencies -->
       <dependency>
         <groupId>org.rocksdb</groupId>
@@ -1118,6 +1133,18 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <!-- skip maven source plugin due to
+          Error: Failed to execute goal org.apache.maven.plugins:maven-source-plugin:3.3.0:jar-no-fork (attach-sources) on project buildtools:
+          Presumably you have configured maven-source-plugin to execute twice times in your build.
+          You have to configure a classifier for at least on of them.
+          -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+              <skipSource>true</skipSource>
+            </configuration>
           </plugin>
         </plugins>
       </build>
