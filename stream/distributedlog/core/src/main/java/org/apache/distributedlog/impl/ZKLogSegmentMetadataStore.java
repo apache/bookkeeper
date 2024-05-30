@@ -427,7 +427,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         if (null != listener) {
             getLogSegmentNamesResult.whenComplete(new ReadLogSegmentsTask(logSegmentsPath, this));
         }
-        return zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
+        return getLogSegmentNamesResult;
     }
 
     @Override
