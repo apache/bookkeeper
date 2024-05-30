@@ -20,227 +20,82 @@
 
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- add supressions for known vulnerabilities detected by OWASP Dependency Check -->
+    <!-- add suppressions for known vulnerabilities detected by OWASP Dependency Check -->
 
-    <!-- jetcd matched against ETCD server CVEs-->
+    <!-- jetcd higher version requires jdk 11 -->
     <suppress>
-        <notes><![CDATA[
-       file name: jetcd-core-0.5.11.jar
-       ]]></notes>
-        <sha1>c85851ca3ea8128d480d3f75c568a37e64e8a77b</sha1>
-        <cve>CVE-2020-15106</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-       file name: jetcd-core-0.5.11.jar
-       ]]></notes>
-        <sha1>c85851ca3ea8128d480d3f75c568a37e64e8a77b</sha1>
-        <cve>CVE-2020-15112</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-       file name: jetcd-core-0.5.11.jar
-       ]]></notes>
-        <sha1>c85851ca3ea8128d480d3f75c568a37e64e8a77b</sha1>
+        <notes>CVE-2020-15113</notes>
+        <filePath regex="true">.*jetcd.*\.jar</filePath>
         <cve>CVE-2020-15113</cve>
     </suppress>
-
     <suppress>
         <notes><![CDATA[
-       file name: jetcd-common-0.5.11.jar
-       ]]></notes>
-        <sha1>6dac6efe035a2be9ba299fbf31be5f903401869f</sha1>
-        <cve>CVE-2020-15106</cve>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2023-44487</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-       file name: jetcd-common-0.5.11.jar
-       ]]></notes>
-        <sha1>6dac6efe035a2be9ba299fbf31be5f903401869f</sha1>
-        <cve>CVE-2020-15112</cve>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2017-8359</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-       file name: jetcd-common-0.5.11.jar
-       ]]></notes>
-        <sha1>6dac6efe035a2be9ba299fbf31be5f903401869f</sha1>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2023-33953</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
         <cve>CVE-2020-15113</cve>
     </suppress>
-    <!-- matches BK's http server against apache's http server CVEs -->
     <suppress>
         <notes><![CDATA[
-   file name: org.apache.bookkeeper.http:http-server:4.15.0-SNAPSHOT
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/http\-server@.*$</packageUrl>
-        <cpe>cpe:/a:apache:http_server</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: org.apache.bookkeeper.http:vertx-http-server:4.15.0-SNAPSHOT
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.bookkeeper\.http/vertx\-http\-server@.*$</packageUrl>
-        <cve>CVE-2009-1890</cve>
-    </suppress>
-    <suppress>
-        <notes>CVE-2021-43045 affects only .NET distro, see https://github.com/apache/avro/pull/1357</notes>
-        <gav regex="true">org\.apache\.avro:.*</gav>
-        <cve>CVE-2021-43045</cve>
-    </suppress>
-    <suppress>
-        <notes>CVE-2011-1797 FP, see https://github.com/jeremylong/DependencyCheck/issues/4154</notes>
-        <filePath regex="true">.*netty-tcnative-boringssl-static.*\.jar</filePath>
-        <cve>CVE-2011-1797</cve>
-    </suppress>
-    <suppress base="true">
-        <notes><![CDATA[
-        False positive
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</packageUrl>
-        <cpe>cpe:/a:netty:netty</cpe>
-    </suppress>
-    <!-- matches against docker CVEs -->
-    <suppress>
-        <notes><![CDATA[
-   file name: arquillian-cube-docker-1.18.2.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.arquillian\.cube/arquillian\-cube\-docker@.*$</packageUrl>
-        <cpe>cpe:/a:docker:docker</cpe>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2020-7768</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: arquillian-cube-docker-1.18.2.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.arquillian\.cube/arquillian\-cube\-docker@.*$</packageUrl>
-        <cpe>cpe:/a:redhat:docker</cpe>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2017-7861</cve>
     </suppress>
-  <suppress>
-<!--    Zookkeeper false positive about Jetty and commons-io-->
-<!--    https://github.com/apache/zookeeper/pull/1824-->
-    <notes><![CDATA[
-   file name: zookeeper-3.8.0.jar
-   ]]></notes>
-    <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
-    <cve>CVE-2021-28164</cve>
-  </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: zookeeper-3.8.0.jar
-   ]]></notes>
-        <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
-        <cve>CVE-2021-28165</cve>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2017-9431</cve>
     </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-3.8.0.jar
-   ]]></notes>
-    <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
-    <cve>CVE-2021-29425</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-3.8.0.jar
-   ]]></notes>
-    <sha1>e395c1d8a71557b7569cc6a83487b2e30e2e58fe</sha1>
-    <cve>CVE-2021-34429</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-prometheus-metrics-3.8.0.jar
-   ]]></notes>
-    <sha1>849e8ece2845cb0185d721233906d487a7f1e4cf</sha1>
-    <cve>CVE-2021-28164</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-prometheus-metrics-3.8.0.jar
-   ]]></notes>
-    <sha1>849e8ece2845cb0185d721233906d487a7f1e4cf</sha1>
-    <cve>CVE-2021-29425</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-prometheus-metrics-3.8.0.jar
-   ]]></notes>
-    <sha1>849e8ece2845cb0185d721233906d487a7f1e4cf</sha1>
-    <cve>CVE-2021-34429</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-jute-3.8.0.jar
-   ]]></notes>
-    <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
-    <cve>CVE-2021-28164</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-jute-3.8.0.jar
-   ]]></notes>
-    <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
-    <cve>CVE-2021-28165</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-jute-3.8.0.jar
-   ]]></notes>
-    <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
-    <cve>CVE-2021-29425</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-jute-3.8.0.jar
-   ]]></notes>
-    <sha1>6560f966bcf1aa78d27bcfa75fb6c4463a72c6c5</sha1>
-    <cve>CVE-2021-34429</cve>
-  </suppress>
-  <suppress>
-    <notes><![CDATA[
-   file name: zookeeper-3.8.0-tests.jar
-   ]]></notes>
-     <sha1>9b78a289a3aa34eb47fac8c432f664fc140387df</sha1>
-     <cve>CVE-2021-28165</cve>
-  </suppress>
-    <!-- https://github.com/jeremylong/DependencyCheck/issues/4487 -->
     <suppress>
         <notes><![CDATA[
-   file name: google-http-client-gson-1.41.0.jar
-   ]]></notes>
-        <sha1>1a754a5dd672218a2ac667d7ff2b28df7a5a240e</sha1>
-        <cve>CVE-2022-25647</cve>
-    </suppress>
-    <!-- only use maven-settings for integration-test -->
-    <suppress>
-        <notes><![CDATA[
-   file name: maven-settings-3.3.9.jar
-   ]]></notes>
-        <sha1>68d4180c51468ae8f45869f8f9c569092262fcca</sha1>
-        <cve>CVE-2021-26291</cve>
+           file name: jetcd-grpc-0.7.7.jar
+           ]]></notes>
+        <sha1>0fa26f72729edb39b506efa96e119f953f59c5a3</sha1>
+        <cve>CVE-2017-7860</cve>
     </suppress>
 
-  <suppress>
-    <notes>fredsmith utils library is not used at all. CVE-2021-4277 is a false positive.</notes>
-    <cve>CVE-2021-4277</cve>
-  </suppress>
+    <suppress>
+        <notes>CVE-2023-46120</notes>
+        <filePath regex="true">.*amqp-client.*\.jar</filePath>
+        <cve>CVE-2023-46120</cve>
+    </suppress>
 
-  <suppress>
-    <notes>yaml_project is not used at all. Any CVEs reported for yaml_project are false positives.</notes>
-    <cpe>cpe:/a:yaml_project:yaml</cpe>
-  </suppress>
-
-  <suppress>
-    <notes><![CDATA[
-    snakeyaml is not "fixing" CVE-2022-1471.
-    see: https://bitbucket.org/snakeyaml/snakeyaml/wiki/CVE%20&%20NIST.md
-         https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-    <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
-  </suppress>
-
-  <suppress>
-    <notes><![CDATA[
+    <suppress>
+        <notes><![CDATA[
    file name: testng-7.5.jar
    ]]></notes>
-    <sha1>1416a607fae667c14e390b484e8d02b5824c0674</sha1>
-    <vulnerabilityName>CVE-2022-4065</vulnerabilityName>
-  </suppress>
+        <sha1>1416a607fae667c14e390b484e8d02b5824c0674</sha1>
+        <vulnerabilityName>CVE-2022-4065</vulnerabilityName>
+    </suppress>
 </suppressions>
