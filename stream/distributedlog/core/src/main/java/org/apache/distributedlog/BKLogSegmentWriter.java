@@ -1192,7 +1192,11 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
         lastEntryId = entryId;
 
-        assert (ctx instanceof BKTransmitPacket);
+        if (!(ctx instanceof BKTransmitPacket)) {
+            LOG.error("Log segment {} received addComplete with invalid context {}",
+                    fullyQualifiedLogSegment, ctx);
+            return;
+        }
         final BKTransmitPacket transmitPacket = (BKTransmitPacket) ctx;
 
         // Time from transmit until receipt of addComplete callback
