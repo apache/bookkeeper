@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
@@ -44,7 +43,7 @@ import org.junit.jupiter.api.Test;
 public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
     private static final int NUM_OF_BOOKIES = 6;
-    private static DigestType digestType = DigestType.CRC32;
+    private static final DigestType digestType = DigestType.CRC32;
     private static final String PASSWORD = "testPasswd";
 
     public BookieDecommissionTest() {
@@ -53,7 +52,6 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         setAutoRecoveryEnabled(true);
     }
 
-    @FlakyTest("https://github.com/apache/bookkeeper/issues/502")
     @Test
     public void testDecommissionBookie() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
