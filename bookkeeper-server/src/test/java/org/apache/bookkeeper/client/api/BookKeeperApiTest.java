@@ -63,6 +63,15 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     @Rule
     public LoggerOutput loggerOutput = new LoggerOutput();
 
+    private static void checkEntries(LedgerEntries entries, byte[] data)
+            throws InterruptedException, BKException {
+        Iterator<LedgerEntry> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            LedgerEntry entry = iterator.next();
+            assertArrayEquals(data, entry.getEntryBytes());
+        }
+    }
+
     @Test
     public void testWriteHandle() throws Exception {
         try (WriteHandle writer = result(newCreateLedgerOp()
@@ -177,7 +186,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
      */
     @Test
     public void testLedgerDigests() throws Exception {
-        for (DigestType type: DigestType.values()) {
+        for (DigestType type : DigestType.values()) {
             long lId;
             try (WriteHandle writer = result(newCreateLedgerOp()
                     .withAckQuorumSize(1)
@@ -202,7 +211,6 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             result(newDeleteLedgerOp().withLedgerId(lId).execute());
         }
     }
-
 
     @Test
     public void testOpenLedgerDigestUnmatchedWhenAutoDetectionEnabled() throws Exception {
@@ -231,10 +239,10 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             assertEquals(-1L, writer.getLastAddPushed());
         }
         try (ReadHandle ignored = result(newOpenLedgerOp()
-            .withDigestType(DigestType.CRC32)
-            .withPassword(password)
-            .withLedgerId(lId)
-            .execute())) {
+                .withDigestType(DigestType.CRC32)
+                .withPassword(password)
+                .withLedgerId(lId)
+                .execute())) {
             if (!autodetection) {
                 fail("Should fail to open read handle if digest type auto detection is disabled.");
             }
@@ -285,10 +293,10 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         }
 
         try (ReadHandle reader = result(newOpenLedgerOp()
-            .withPassword(password)
-            .withRecovery(false)
-            .withLedgerId(lId)
-            .execute())) {
+                .withPassword(password)
+                .withRecovery(false)
+                .withLedgerId(lId)
+                .execute())) {
             assertTrue(reader.isClosed());
             assertEquals(2, reader.getLastAddConfirmed());
             assertEquals(3 * data.length, reader.getLength());
@@ -299,7 +307,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
             // test readLastAddConfirmedAndEntry
             LastConfirmedAndEntry lastConfirmedAndEntry =
-                reader.readLastAddConfirmedAndEntry(0, 999, false);
+                    reader.readLastAddConfirmedAndEntry(0, 999, false);
             assertEquals(2L, lastConfirmedAndEntry.getLastAddConfirmed());
             assertArrayEquals(data, lastConfirmedAndEntry.getEntry().getEntryBytes());
             lastConfirmedAndEntry.close();
@@ -414,9 +422,9 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                 }
                 i.set(0);
                 entries.forEach((e) -> {
-                        assertEquals(i.getAndIncrement(), e.getEntryId());
-                        assertArrayEquals(data, e.getEntryBytes());
-                    });
+                    assertEquals(i.getAndIncrement(), e.getEntryId());
+                    assertArrayEquals(data, e.getEntryBytes());
+                });
             }
         }
     }
@@ -435,14 +443,5 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         assertEquals("1: Unexpected condition", BKException.codeLogger(1).toString());
         assertEquals("123: Unexpected condition", BKException.codeLogger(123).toString());
         assertEquals("-201: Unexpected condition", BKException.codeLogger(-201).toString());
-    }
-
-    private static void checkEntries(LedgerEntries entries, byte[] data)
-        throws InterruptedException, BKException {
-        Iterator<LedgerEntry> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            LedgerEntry entry = iterator.next();
-            assertArrayEquals(data, entry.getEntryBytes());
-        }
     }
 }

@@ -35,22 +35,20 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.bookkeeper.client.extension.TestContextExtension;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.TestInfo;
 
 /**
  * Unit test for {@link WriteAdvHandle}.
  */
 public class WriteAdvHandleTest {
 
-    @RegisterExtension
-    TestContextExtension testContextExtension = new TestContextExtension();
-
     private final long entryId;
     private final WriteAdvHandle handle = mock(WriteAdvHandle.class);
     private final LinkedBlockingQueue<ByteBuf> entryQueue;
+    private String testName;
 
     public WriteAdvHandleTest() {
         this.entryId = System.currentTimeMillis();
@@ -65,9 +63,14 @@ public class WriteAdvHandleTest {
         when(handle.writeAsync(anyLong(), any(ByteBuffer.class))).thenCallRealMethod();
     }
 
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        testName = testInfo.getDisplayName();
+    }
+
     @Test
     public void testAppendBytes() throws Exception {
-        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
+        byte[] testData = testName.getBytes(UTF_8);
         handle.writeAsync(entryId, testData);
 
         ByteBuf buffer = entryQueue.take();
@@ -78,7 +81,7 @@ public class WriteAdvHandleTest {
 
     @Test
     public void testAppendBytes2() throws Exception {
-        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
+        byte[] testData = testName.getBytes(UTF_8);
         handle.writeAsync(entryId, testData, 1, testData.length / 2);
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);
@@ -91,7 +94,7 @@ public class WriteAdvHandleTest {
 
     @Test
     public void testAppendByteBuffer() throws Exception {
-        byte[] testData = testContextExtension.getMethodName().getBytes(UTF_8);
+        byte[] testData = testName.getBytes(UTF_8);
         handle.writeAsync(entryId, ByteBuffer.wrap(testData, 1, testData.length / 2));
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);

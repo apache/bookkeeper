@@ -193,7 +193,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withDigestType(null)
                     .withPassword(password)
                     .execute());
-            fail("shoud not be able to create a ledger with such specs");
+            fail("should not be able to create a ledger with such specs");
         });
     }
 
@@ -204,7 +204,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             result(newCreateLedgerOp()
                     .withPassword(password)
                     .execute());
-            fail("shoud not be able to create a ledger, client is closed");
+            fail("should not be able to create a ledger, client is closed");
         });
     }
 
@@ -335,7 +335,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .withLedgerId(-2)
                     .execute());
-            fail("shoud not be able to create a ledger with such specs");
+            fail("should not be able to create a ledger with such specs");
         });
     }
 

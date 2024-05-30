@@ -27,8 +27,6 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doAnswer;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BKException;
@@ -39,7 +37,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Tests for BookKeeper open ledger operations.
@@ -54,21 +52,8 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
     private static final byte[] password = new byte[3];
     private static final byte[] entryData = new byte[32];
 
-    private boolean withRecovery;
-
-    public void initBookKeeperBuildersOpenLedgerTest(boolean withRecovery) {
-        this.withRecovery = withRecovery;
-    }
-
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {true},
-                {false}
-        });
-    }
-
-    @MethodSource("data")
-    @ParameterizedTest(name = "withRecovery:({0})")
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     public void testOpenLedger(boolean withRecovery) throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
@@ -89,8 +74,8 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @MethodSource("data")
-    @ParameterizedTest(name = "withRecovery:({0})")
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     public void testOpenLedgerWithTimeoutEx(boolean withRecovery) throws Exception {
         mockReadEntryTimeout();
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
