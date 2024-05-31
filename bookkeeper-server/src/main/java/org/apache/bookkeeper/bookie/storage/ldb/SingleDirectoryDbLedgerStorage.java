@@ -898,14 +898,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             writeCacheBeingFlushed = writeCache;
             writeCache = tmp;
 
+            // Set to true before updating hasFlushBeenTriggered to false.
+            isFlushOngoing.set(true);
             // since the cache is switched, we can allow flush to be triggered
             hasFlushBeenTriggered.set(false);
         } finally {
-            try {
-                isFlushOngoing.set(true);
-            } finally {
-                writeCacheRotationLock.unlockWrite(stamp);
-            }
+            writeCacheRotationLock.unlockWrite(stamp);
         }
     }
 
