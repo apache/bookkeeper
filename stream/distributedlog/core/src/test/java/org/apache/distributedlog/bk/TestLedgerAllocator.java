@@ -354,8 +354,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
 
     @Test(timeout = 60000)
     public void testConcurrentAllocation() throws Exception {
-        String allcationPath = "/" + runtime.getMethodName();
-        SimpleLedgerAllocator allocator = createAllocator(allcationPath);
+        String allocationPath = "/" + runtime.getMethodName();
+        SimpleLedgerAllocator allocator = createAllocator(allocationPath);
         allocator.allocate();
         ZKTransaction txn1 = newTxn();
         CompletableFuture<LedgerHandle> obtainFuture1 = allocator.tryObtain(txn1, NULL_LISTENER);

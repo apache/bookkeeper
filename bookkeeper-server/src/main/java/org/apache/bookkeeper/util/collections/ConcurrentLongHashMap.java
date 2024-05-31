@@ -346,15 +346,18 @@ public class ConcurrentLongHashMap<V> {
         }
 
         V get(long key, int keyHash) {
-            int bucket = keyHash;
 
             long stamp = tryOptimisticRead();
             boolean acquiredLock = false;
 
+            // add local variable here, so OutOfBound won't happen
+            long[] keys = this.keys;
+            V[] values = this.values;
+            // calculate table.length as capacity to avoid rehash changing capacity
+            int bucket = signSafeMod(keyHash, values.length);
+
             try {
                 while (true) {
-                    int capacity = this.capacity;
-                    bucket = signSafeMod(bucket, capacity);
 
                     // First try optimistic locking
                     long storedKey = keys[bucket];
@@ -373,14 +376,13 @@ public class ConcurrentLongHashMap<V> {
                         if (!acquiredLock) {
                             stamp = readLock();
                             acquiredLock = true;
+
+                            // update local variable
+                            keys = this.keys;
+                            values = this.values;
+                            bucket = signSafeMod(keyHash, values.length);
                             storedKey = keys[bucket];
                             storedValue = values[bucket];
-                        }
-
-                        if (capacity != this.capacity) {
-                            // There has been a rehashing. We need to restart the search
-                            bucket = keyHash;
-                            continue;
                         }
 
                         if (storedKey == key) {
@@ -391,7 +393,7 @@ public class ConcurrentLongHashMap<V> {
                         }
                     }
 
-                    ++bucket;
+                    bucket = (bucket + 1) & (values.length - 1);
                 }
             } finally {
                 if (acquiredLock) {

@@ -28,6 +28,7 @@ import org.apache.bookkeeper.http.HttpServer;
  */
 public class HttpServiceResponse {
     private String body;
+    private String contentType;
     private HttpServer.StatusCode code = HttpServer.StatusCode.OK;
 
     public HttpServiceResponse() {}
@@ -41,12 +42,21 @@ public class HttpServiceResponse {
         return body;
     }
 
+    public String getContentType() {
+        return contentType;
+    }
+
     public int getStatusCode() {
         return code.getValue();
     }
 
     public HttpServiceResponse setBody(String body) {
         this.body = body;
+        return this;
+    }
+
+    public HttpServiceResponse setContentType(String contentType) {
+        this.contentType = contentType;
         return this;
     }
 

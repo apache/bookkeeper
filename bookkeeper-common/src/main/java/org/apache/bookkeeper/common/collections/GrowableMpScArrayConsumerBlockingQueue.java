@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.StampedLock;
-import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 
 
 /**

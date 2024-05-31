@@ -19,20 +19,20 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>26</version>
+    <version>31</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.17.0-SNAPSHOT</version>
+  <version>4.18.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
-  <url>http://bookkeeeper.apache.org</url>
+  <url>https://bookkeeeper.apache.org</url>
   <inceptionYear>2011</inceptionYear>
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -40,7 +40,7 @@
     <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
     <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
     <url>https://github.com/apache/bookkeeper</url>
-    <tag>branch-4.13</tag>
+    <tag>branch-4.18</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
@@ -78,30 +78,30 @@
       <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>user@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/user@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Dev</name>
       <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>dev@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Commits</name>
       <subscribe>commits-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>commits@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
     </mailingList>
   </mailingLists>
   <developers>
     <developer>
       <name>The Apache BookKeeper Team</name>
       <email>dev@bookkeeper.apache.org</email>
-      <url>http://bookkeeper.apache.org</url>
+      <url>https://bookkeeper.apache.org</url>
       <organization>Apache Software Foundation</organization>
-      <organizationUrl>http://www.apache.org</organizationUrl>
+      <organizationUrl>https://www.apache.org</organizationUrl>
     </developer>
   </developers>
   <properties>
@@ -117,63 +117,63 @@
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
     <arquillian-junit.version>1.8.0.Final</arquillian-junit.version>
+    <bc-non-fips.version>1.78</bc-non-fips.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.2</commons-cli.version>
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.21</commons-compress.version>
+    <commons-compress.version>1.26.0</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.7</commons-io.version>
-    <bouncycastle.version>1.0.2.4</bouncycastle.version>
+    <bouncycastle.version>1.0.2.5</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
+    <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
-    <etcd.version>0.5.11</etcd.version>
+    <etcd.version>0.7.7</etcd.version>
     <freebuilder.version>2.8.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
-    <grpc.version>1.56.0</grpc.version>
+    <grpc.version>1.64.0</grpc.version>
     <guava.version>32.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>3.3.5</hadoop.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
-    <jackson.version>2.13.4.20221013</jackson.version>
+    <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
     <jetty.version>9.4.53.v20231009</jetty.version>
     <jmh.version>1.37</jmh.version>
     <jmock.version>2.8.2</jmock.version>
-    <jsoup.version>1.15.3</jsoup.version>
     <junit.version>4.13.2</junit.version>
     <hamcrest.version>1.3</hamcrest.version>
     <junit5.version>5.10.2</junit5.version>
     <assertj-core.version>3.25.3</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
     <libthrift.version>0.14.2</libthrift.version>
-    <lombok.version>1.18.30</lombok.version>
-    <log4j.version>2.18.0</log4j.version>
+    <lombok.version>1.18.32</lombok.version>
+    <log4j.version>2.23.1</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.104.Final</netty.version>
-    <netty-iouring.version>0.0.24.Final</netty-iouring.version>
-    <ostrich.version>9.1.3</ostrich.version>
+    <netty.version>4.1.108.Final</netty.version>
+    <netty-iouring.version>0.0.25.Final</netty-iouring.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
-    <protobuf.version>3.22.3</protobuf.version>
-    <protoc3.version>3.22.3</protoc3.version>
+    <protobuf.version>3.25.1</protobuf.version>
+    <protoc3.version>${protobuf.version}</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>7.9.2</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
-    <slf4j.version>1.7.32</slf4j.version>
+    <slf4j.version>2.0.12</slf4j.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.19.4</testcontainers.version>
-    <vertx.version>4.3.8</vertx.version>
-    <zookeeper.version>3.8.3</zookeeper.version>
+    <vertx.version>4.5.7</vertx.version>
+    <zookeeper.version>3.8.4</zookeeper.version>
     <snappy.version>1.1.10.5</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <hppc.version>0.9.1</hppc.version>
@@ -187,19 +187,10 @@
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
-    <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-    <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-    <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
-    <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
-    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-    <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
-    <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-    <dependency-check-maven.version>8.0.2</dependency-check-maven.version>
+    <dependency-check-maven.version>9.2.0</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
@@ -251,18 +242,22 @@
       <!-- logging dependencies -->
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
+        <artifactId>slf4j-bom</artifactId>
         <version>${slf4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
+        <artifactId>log4j-bom</artifactId>
         <version>${log4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>com.lmax</groupId>
+        <artifactId>disruptor</artifactId>
+        <version>${disruptor.version}</version>
       </dependency>
 
       <!-- commons dependencies -->
@@ -356,13 +351,10 @@
       <!-- protobuf dependencies -->
       <dependency>
         <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
+        <artifactId>protobuf-bom</artifactId>
         <version>${protobuf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java-util</artifactId>
-        <version>${protobuf.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- libthrift dependency -->
@@ -419,6 +411,21 @@
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-bom</artifactId>
+        <version>4.12.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- okhttp 4.12.0 use kotlin stdlib 1.8.21 -->
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-common</artifactId>
+        <version>1.8.21</version>
       </dependency>
 
       <!-- rocksdb dependencies -->
@@ -726,11 +733,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.jsoup</groupId>
-        <artifactId>jsoup</artifactId>
-        <version>${jsoup.version}</version>
-      </dependency>
 
       <!-- benchmark dependencies -->
       <dependency>
@@ -884,7 +886,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>${maven-javadoc-plugin.version}</version>
           <configuration>
             <!-- skip javadoc generation by default, use -Pdelombok to activate -->
             <skip>true</skip>
@@ -991,12 +992,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven-source-plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
             <goals>
-              <goal>jar</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
@@ -1106,6 +1106,7 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
             <version>${dependency-check-maven.version}</version>
+            <inherited>false</inherited>
             <configuration>
               <suppressionFiles>
                 <suppressionFile>src/owasp-dependency-check-suppressions.xml</suppressionFile>
@@ -1133,24 +1134,20 @@
               </execution>
             </executions>
           </plugin>
-        </plugins>
-      </build>
-      <reporting>
-        <plugins>
+          <!-- skip maven source plugin due to
+          Error: Failed to execute goal org.apache.maven.plugins:maven-source-plugin:3.3.0:jar-no-fork (attach-sources) on project buildtools:
+          Presumably you have configured maven-source-plugin to execute twice times in your build.
+          You have to configure a classifier for at least on of them.
+          -->
           <plugin>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <version>${dependency-check-maven.version}</version>
-            <reportSets>
-              <reportSet>
-                <reports>
-                  <report>aggregate</report>
-                </reports>
-              </reportSet>
-            </reportSets>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+              <skipSource>true</skipSource>
+            </configuration>
           </plugin>
         </plugins>
-      </reporting>
+      </build>
     </profile>
     <profile>
       <id>delombok</id>
@@ -1181,7 +1178,7 @@
                   <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
                   <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
                   <formatPreferences>
-                    <pretty/>
+                    <pretty />
                   </formatPreferences>
                 </configuration>
               </execution>
@@ -1314,6 +1311,7 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
             <executions>
               <execution>

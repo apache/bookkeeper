@@ -76,6 +76,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.zookeeper.KeeperException;
@@ -83,6 +84,9 @@ import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import org.slf4j.Logger;
@@ -100,6 +104,8 @@ public abstract class BookKeeperClusterTestCase {
 
     @Rule
     public final Timeout globalTimeout;
+
+    protected String testName;
 
     // Metadata service related variables
     protected final ZooKeeperCluster zkUtil;
@@ -158,8 +164,19 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     @Before
+    @BeforeEach
     public void setUp() throws Exception {
         setUp("/ledgers");
+    }
+
+    @Before
+    public void setTestNameJunit4() {
+        testName = runtime.getMethodName();
+    }
+
+    @BeforeEach
+    void setTestNameJunit5(TestInfo testInfo) {
+        testName = testInfo.getDisplayName();
     }
 
     protected void setUp(String ledgersRootPath) throws Exception {
@@ -176,7 +193,7 @@ public abstract class BookKeeperClusterTestCase {
             this.metadataServiceUri = getMetadataServiceUri(ledgersRootPath);
             startBKCluster(metadataServiceUri);
             LOG.info("Setup testcase {} @ metadata service {} in {} ms.",
-                runtime.getMethodName(), metadataServiceUri,  sw.elapsed(TimeUnit.MILLISECONDS));
+                testName, metadataServiceUri,  sw.elapsed(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             LOG.error("Error setting up", e);
             throw e;
@@ -188,6 +205,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     @After
+    @AfterEach
     public void tearDown() throws Exception {
         boolean failed = false;
         for (Throwable e : asyncExceptions) {
@@ -219,10 +237,15 @@ public abstract class BookKeeperClusterTestCase {
             LOG.error("Got Exception while trying to cleanupTempDirs", e);
             tearDownException = e;
         }
-        LOG.info("Tearing down test {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
+        LOG.info("Tearing down test {} in {} ms.", testName, sw.elapsed(TimeUnit.MILLISECONDS));
         if (tearDownException != null) {
             throw tearDownException;
         }
+    }
+
+    @After
+    public void clearMetricsThreadRegistry() throws Exception {
+        ThreadRegistry.clear();
     }
 
     /**
@@ -295,7 +318,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     protected ClientConfiguration newClientConfiguration() {
-        return new ClientConfiguration(baseConf);
+        return new ClientConfiguration(baseClientConf);
     }
 
     protected ServerConfiguration newServerConfiguration(int port, File journalDir, File[] ledgerDirs) {

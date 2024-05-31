@@ -553,7 +553,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      * Process ledgers in a single zk node.
      *
      * <p>
-     * for each ledger found in this zk node, processor#process(ledgerId) will be triggerred
+     * for each ledger found in this zk node, processor#process(ledgerId) will be triggered
      * to process a specific ledger. after all ledgers has been processed, the finalCb will
      * be called with provided context object. The RC passed to finalCb is decided by :
      * <ul>

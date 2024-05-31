@@ -21,8 +21,12 @@ github:
   description: "Apache BookKeeper - a scalable, fault tolerant and low latency storage service optimized for append-only workloads"
   homepage: https://bookkeeper.apache.org/
   labels:
+    - apache
     - bookkeeper
     - big-data
+    - distributed-log
+    - distributed-systems
+    - wal
   features:
     # Enable wiki for documentation
     wiki: false
@@ -45,20 +49,7 @@ github:
         # Contexts are the names of checks that must pass.
         # See ./github/workflows/README.md for more documentation on this list.
         contexts:
-          - PR Validation
-          - Backward compatibility tests
-          - Bookie Tests
-          - Build with macos on JDK 11
-          - Build with windows on JDK 11
-          - Client Tests
-          - Compatibility Check Java11
-          - Compatibility Check Java17
-          - Compatibility Check Java8
-          - Integration Tests
-          - Remaining Tests
-          - Replication Tests
-          - StreamStorage Tests
-          - TLS Tests
+          - BookKeeper CI checks completed
 
       required_pull_request_reviews:
         dismiss_stale_reviews: false

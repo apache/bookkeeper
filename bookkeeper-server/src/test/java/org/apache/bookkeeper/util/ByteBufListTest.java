@@ -20,6 +20,8 @@ package org.apache.bookkeeper.util;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -32,6 +34,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.DefaultChannelPromise;
+import io.netty.channel.VoidChannelPromise;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
@@ -195,7 +199,8 @@ public class ByteBufListTest {
         b2.writerIndex(b2.capacity());
         ByteBufList buf = ByteBufList.get(b1, b2);
 
-        ChannelHandlerContext ctx = new MockChannelHandlerContext();
+        Channel channel = mock(Channel.class);
+        MockChannelHandlerContext ctx = new MockChannelHandlerContext(channel);
 
         ByteBufList.ENCODER.write(ctx, buf, null);
 
@@ -205,6 +210,15 @@ public class ByteBufListTest {
     }
 
     class MockChannelHandlerContext implements ChannelHandlerContext {
+        private final Channel channel;
+        private final EventExecutor eventExecutor;
+
+        public MockChannelHandlerContext(Channel channel) {
+            this.channel = channel;
+            eventExecutor = mock(EventExecutor.class);
+            when(eventExecutor.inEventLoop()).thenReturn(true);
+        }
+
         @Override
         public ChannelFuture bind(SocketAddress localAddress) {
             return null;
@@ -274,12 +288,18 @@ public class ByteBufListTest {
         @Override
         public ChannelFuture write(Object msg, ChannelPromise promise) {
             ReferenceCountUtil.release(msg);
+            if (promise != null  && !promise.isVoid()) {
+                promise.setSuccess();
+            }
             return null;
         }
 
         @Override
         public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
             ReferenceCountUtil.release(msg);
+            if (promise != null && !promise.isVoid()) {
+                promise.setSuccess();
+            }
             return null;
         }
 
@@ -291,7 +311,7 @@ public class ByteBufListTest {
 
         @Override
         public ChannelPromise newPromise() {
-            return null;
+            return new DefaultChannelPromise(channel, eventExecutor);
         }
 
         @Override
@@ -311,17 +331,17 @@ public class ByteBufListTest {
 
         @Override
         public ChannelPromise voidPromise() {
-            return null;
+            return new VoidChannelPromise(channel, false);
         }
 
         @Override
         public Channel channel() {
-            return null;
+            return channel;
         }
 
         @Override
         public EventExecutor executor() {
-            return null;
+            return eventExecutor;
         }
 
         @Override

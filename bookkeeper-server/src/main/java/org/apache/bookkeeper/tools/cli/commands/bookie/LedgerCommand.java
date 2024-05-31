@@ -136,8 +136,8 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
 
     private boolean dumpLedgerInfo(long ledgerId, ServerConfiguration conf) {
         try {
-            DbLedgerStorage.readLedgerIndexEntries(ledgerId, conf, (currentEntry, entryLodId, position) -> System.out
-                    .println("entry " + currentEntry + "\t:\t(log: " + entryLodId + ", pos: " + position + ")"));
+            DbLedgerStorage.readLedgerIndexEntries(ledgerId, conf, (currentEntry, entryLogId, position) -> System.out
+                    .println("entry " + currentEntry + "\t:\t(log: " + entryLogId + ", pos: " + position + ")"));
         } catch (IOException e) {
             System.err.printf("ERROR: initializing dbLedgerStorage %s", e.getMessage());
             return false;

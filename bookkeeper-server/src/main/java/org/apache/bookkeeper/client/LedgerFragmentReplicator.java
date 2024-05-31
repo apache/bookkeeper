@@ -46,6 +46,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
@@ -58,7 +59,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,11 +233,11 @@ public class LedgerFragmentReplicator {
             final Set<BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException {
-        Set<LedgerFragment> partionedFragments = splitIntoSubFragments(lh, lf,
+        Set<LedgerFragment> partitionedFragments = splitIntoSubFragments(lh, lf,
                 bkc.getConf().getRereplicationEntryBatchSize());
         LOG.info("Replicating fragment {} in {} sub fragments.",
-                lf, partionedFragments.size());
-        replicateNextBatch(lh, partionedFragments.iterator(),
+                lf, partitionedFragments.size());
+        replicateNextBatch(lh, partitionedFragments.iterator(),
                 ledgerFragmentMcb, targetBookieAddresses, onReadEntryFailureCallback);
     }
 
@@ -559,7 +559,7 @@ public class LedgerFragmentReplicator {
     /**
      * Callback for recovery of a single ledger fragment. Once the fragment has
      * had all entries replicated, update the ensemble in zookeeper. Once
-     * finished propogate callback up to ledgerFragmentsMcb which should be a
+     * finished propagate callback up to ledgerFragmentsMcb which should be a
      * multicallback responsible for all fragments in a single ledger
      */
     static class SingleFragmentCallback implements AsyncCallback.VoidCallback {

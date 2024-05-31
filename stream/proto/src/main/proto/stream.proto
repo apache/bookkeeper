@@ -83,7 +83,7 @@ message ParentRangesList {
 // Stream
 //
 
-// since stream and table are similar and exchangable,
+// since stream and table are similar and exchangeable,
 // from the beginning, we shared the metadata management
 // between streams and tables and distinguish them using
 // a flag that recorded in metadata.

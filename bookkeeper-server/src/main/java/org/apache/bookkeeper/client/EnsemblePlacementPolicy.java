@@ -369,7 +369,7 @@ public interface EnsemblePlacementPolicy {
      *
      * <p>The default implementation will pick a bookie randomly from the ensemble.
      * Other placement policies will be able to do better decisions based on
-     * additional informations (eg: rack or region awareness).
+     * additional information (eg: rack or region awareness).
      *
      * @param metadata
      *            the {@link LedgerMetadata} object

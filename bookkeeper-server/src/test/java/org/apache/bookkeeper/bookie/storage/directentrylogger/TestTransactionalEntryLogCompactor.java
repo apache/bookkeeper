@@ -56,12 +56,15 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * TestTransactionalEntryLogCompactor.
  */
+@DisabledOnOs(OS.WINDOWS)
 public class TestTransactionalEntryLogCompactor {
     private static final Slogger slog = Slogger.CONSOLE;
 
@@ -69,7 +72,7 @@ public class TestTransactionalEntryLogCompactor {
     private static final long deadLedger = 1L;
     private static final long liveLedger = 2L;
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
     }

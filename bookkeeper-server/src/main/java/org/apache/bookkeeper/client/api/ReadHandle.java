@@ -95,7 +95,7 @@ public interface ReadHandle extends Handle {
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #read(long, long) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>

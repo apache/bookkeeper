@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -176,7 +176,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             InterruptedException {
         if (!isLedgerReplicationEnabled()) {
             LOG.info("LedgerReplication is disabled externally through Zookeeper, "
-                    + "since DISABLE_NODE ZNode is created, so waiting untill it is enabled");
+                    + "since DISABLE_NODE ZNode is created, so waiting until it is enabled");
             ReplicationEnableCb cb = new ReplicationEnableCb();
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
             cb.await();

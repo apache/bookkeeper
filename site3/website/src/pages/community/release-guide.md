@@ -45,7 +45,7 @@ In general, the community prefers to have a rotating set of 3-5 Release Managers
 
 Before your first release, you should perform one-time configuration steps. This will set up your security keys for signing the release and access to various release repositories.
 
-To prepare for each release, you should audit the project status in Github issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.
+To prepare for each release, you should audit the project status in GitHub issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.
 
 ### One-time setup instructions
 
@@ -139,16 +139,16 @@ are the maintainers at the project page and ask them for adding your account as 
 You can also read the instructions on [how to upload packages to PyPi](https://twine.readthedocs.io/en/latest/)
 if you are interested in learning more details.
 
-### Create a new version in Github
+### Create a new version in GitHub
 
 When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
 
-1. In Github, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
+1. In GitHub, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
 2. Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the `Due Date`, write a description `Release x.y.z` and choose `Create milestone`.
 
 Skip this step in case of a minor release, as milestones are only for major releases.
 
-### Triage release-blocking issues in Github
+### Triage release-blocking issues in GitHub
 
 There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific `Milestone` field even before the issue resolved.
 
@@ -165,18 +165,34 @@ Before cutting a release, you need to update the python client version in
 from `SNAPSHOT` version to a release version and get the change merge to master. For example,
 in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10.0`.
 
-### Review Release Notes in Github
+### Review Release Notes in GitHub
 
-> Github does not automatically generates Release Notes based on the `Milestone` field applied to issues.
-> We can use [github-changelog-generator](https://github.com/skywinder/github-changelog-generator) to generate a ChangeLog for a milestone in future.
+From GitHub, verify the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
 
-For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
+For each release, you should verify that all the PRs have the correct label assigned (release:x.y.z), otherwise they won't appear in the release notes.
+To compare, you can use the following link from GitHub:
+* PR filter: https://github.com/apache/bookkeeper/pulls?q=is%3Apr+is%3Amerged+label%3Arelease%2F4.16.5
+* Commits: https://github.com/apache/bookkeeper/compare/release-4.16.4...branch-4.16
+
 
 #### Prepare Release Notes
 
-After review the release notes on both Github, you should write a the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
+After reviewing the release notes on both GitHub, you should write the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
 
-[4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
+To export the PR descriptions, you can use the [GitHub CLI](https://cli.github.com/).
+After the setup, you can run this command to get the list of changes. Then they can be copied in the release notes file:
+```
+
+# for a milestone release
+gh pr list -R apache/bookkeeper -S "milestone:4.17.0 is:closed " --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 500
+
+# for a path release
+gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 1000
+
+```
+
+After copying the list, you will have to manually split them into bugs, features and dependency upgrades.
+Internal changes (CI, tests) that don't modify the production code can be omitted (if not relevant for users).
 
 ### Prepare release branch
 
@@ -255,9 +271,9 @@ Verify that pom.xml contains the correct VERSION, it should still end with the '
 2. Release Manager’s GPG key is configured in `git` configuration
 3. Release Manager has `org.apache.bookkeeper` listed under `Staging Profiles` in Nexus
 4. Release Manager’s Nexus User Token is configured in `settings.xml`
-5. Github milestone item for the subsequet release has been created
-6. There are no release blocking Github issues
-7. Release Notes for Github Milestone is generated, audited and adjusted
+5. GitHub milestone item for the subsequet release has been created
+6. There are no release blocking GitHub issues
+7. Release Notes for GitHub Milestone is generated, audited and adjusted
 8. Release branch has been created
 9. Originating branch has the version information updated to the new version
 
@@ -285,7 +301,7 @@ Set up a few environment variables to simplify Maven commands that follow. This 
 ./dev/release/000-run-docker.sh ${RC_NUM}
 ```
 
-After the docker process is lauched, use `cache` credential helper to cache github credentials during releasing process.
+After the docker process is launched, use `cache` credential helper to cache github credentials during releasing process.
 
 ```shell
 $ git config --global credential.helper "cache --timeout=3600"
@@ -498,6 +514,12 @@ done
 
 2. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
 
+### Update Latest Docker Image Version
+
+> If you are releasing a newest version, you need to update the latest docker image version to the new release version.
+
+Update the `BK_VERSION` in the `docker/Dockerfile`
+
 ### Release Python Client
 
 Make sure you have installed [`pip`](https://pypi.org/project/pip/) and
@@ -545,15 +567,15 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
-### Create release in Github
+### Create release in GitHub
 
-Create a new release on Github. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
+Create a new release on GitHub. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
 
-### Mark the version as released in Github
+### Mark the version as released in GitHub
 
 > only do this for feature release
 
-In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
+In GitHub, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
 
 ### Update Release Schedule
 
@@ -571,8 +593,8 @@ Update the [release schedule](releases) page:
 * Website is updated with new release
 * Docker image is built with new release
 * Release tagged in the source code repository
-* Release exists in Github
-* Release version finalized in Github
+* Release exists in GitHub
+* Release version finalized in GitHub
 * Release schedule page is updated
 
 **********

@@ -41,7 +41,7 @@ public interface NetworkTopology {
     void add(Node node);
 
     /**
-     * Remove a node from nework topology.
+     * Remove a node from network topology.
      *
      * @param node
      *          remove the node from network topology

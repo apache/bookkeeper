@@ -140,7 +140,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
     @Test
     public void testStreamingClients() throws IOException, BKException, InterruptedException {
         lh = bkc.createLedger(digestType, ledgerPassword);
-        // write a string so that we cna
+        // write a string so that we can
         // create a buffer of a single bytes
         // and check for corner cases
         String toWrite = "we need to check for this string to match " + "and for the record mahadev is the best";

@@ -661,7 +661,7 @@ public class IndexPersistenceMgr {
             fi = getFileInfo(ledgerId, null);
             long size = fi.size();
             // make sure the file size is aligned with index entry size
-            // otherwise we may read incorret data
+            // otherwise we may read incorrect data
             if (0 != size % LedgerEntryPage.getIndexEntrySize()) {
                 LOG.warn("Index file of ledger {} is not aligned with index entry size.", ledgerId);
                 size = size - size % LedgerEntryPage.getIndexEntrySize();

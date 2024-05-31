@@ -785,7 +785,7 @@ public class LedgerHandle implements WriteHandle {
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
@@ -1009,7 +1009,7 @@ public class LedgerHandle implements WriteHandle {
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
@@ -2331,7 +2331,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Return a {@link WriteSet} suitable for reading a particular entry.
-     * This will include all bookies that are cotna
+     * This will include all bookies that are part of the ensemble for the entry.
      */
     WriteSet getWriteSetForReadOperation(long entryId) {
         if (stickyBookieIndex != STICKY_READ_BOOKIE_INDEX_UNSET) {

@@ -41,7 +41,7 @@ class TestCompatHierarchicalLedgerManager {
     DockerClient docker
 
     /**
-     * Test compatability between version old version and the current version
+     * Test compatibility between version old version and the current version
      * with respect to the HierarchicalLedgerManagers.
      * - 4.2.0 server starts with HierarchicalLedgerManager.
      * - Write ledgers with old and new clients

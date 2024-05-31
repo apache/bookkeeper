@@ -73,7 +73,7 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping implements Rac
     @Override
     public List<String> resolve(List<String> names) {
         if (getBookieAddressResolver() == null) {
-            // test that this istance has been properly initialized
+            // test that this instance has been properly initialized
             throw new IllegalStateException("bookieAddressResolver was not set");
         }
         List<String> racks = new ArrayList<String>();

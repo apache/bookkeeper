@@ -26,7 +26,7 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Intializes new cluster by creating required znodes for the cluster. If
+ * Initializes new cluster by creating required znodes for the cluster. If
  * ledgersrootpath is already existing then it will error out. If for any
  * reason it errors out while creating znodes for the cluster, then before
  * running initnewcluster again, try nuking existing cluster by running

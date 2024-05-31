@@ -3,7 +3,7 @@
 
 Apache Bookkeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
 
-> [Apache Bookkeeper](http://bookkeeper.apache.org/)
+> [Apache Bookkeeper](https://bookkeeper.apache.org/)
 
 
 # How to use this image
@@ -147,7 +147,7 @@ Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker cont
 
 There are 2 ways to set Bookkeeper configuration:
 
-1, Apply setted (e.g. docker -e kk=vv) environment variables into configuration files. Environment variable names is in format "BK_originalName", in which "originalName" is the key in config files.
+1, Apply set (e.g. docker -e kk=vv) environment variables into configuration files. Environment variable names is in format "BK_originalName", in which "originalName" is the key in config files.
 
 2, If you are able to handle your local volumes, use `docker --volume` command to bind-mount your local configure volumes to `/opt/bookkeeper/conf`.
 

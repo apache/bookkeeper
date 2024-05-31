@@ -1052,7 +1052,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         if (timeout == 0) {
             try {
                 lock0_1.tryLock(0, TimeUnit.MILLISECONDS);
-                fail("Should fail on locking if sibling is using differnt lock id.");
+                fail("Should fail on locking if sibling is using different lock id.");
             } catch (OwnershipAcquireFailedException oafe) {
                 assertEquals(clientId0, oafe.getCurrentOwner());
             }

@@ -276,8 +276,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
@@ -291,8 +290,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of read only bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
@@ -1299,7 +1297,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     /**
-     * Intializes new cluster by creating required znodes for the cluster. If
+     * Initializes new cluster by creating required znodes for the cluster. If
      * ledgersrootpath is already existing then it will error out.
      *
      * @param conf
@@ -1571,7 +1569,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
      * sure the ledgers stored in the given decommissioning bookie are properly
      * replicated and they are not underreplicated because of the given bookie.
-     * This method waits untill there are no underreplicatedledgers because of this
+     * This method waits until there are no underreplicatedledgers because of this
      * bookie. If the given Bookie is not shutdown yet, then it will throw
      * BKIllegalOpException.
      *
@@ -1614,7 +1612,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         Set<Long> ledgersStoredInThisBookie = bookieToLedgersMap.get(bookieAddress.toString());
         if ((ledgersStoredInThisBookie != null) && (!ledgersStoredInThisBookie.isEmpty())) {
             /*
-             * wait untill all the ledgers are replicated to other
+             * wait until all the ledgers are replicated to other
              * bookies by making sure that these ledgers metadata don't
              * contain this bookie as part of their ensemble.
              */

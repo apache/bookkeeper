@@ -338,7 +338,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         LOG.info("Added {} entries to ledger {}.", numEntries, lh.getId());
 
-        long ledgerLenth = lh.getLength();
+        long ledgerLength = lh.getLength();
 
         LedgerHandle recoverLh = newBk.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
         assertEquals(BookieProtocol.INVALID_ENTRY_ID, recoverLh.getLastAddPushed());
@@ -395,7 +395,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         assertTrue(success.get());
         assertEquals(numEntries - 1, recoverLh.getLastAddPushed());
         assertEquals(numEntries - 1, recoverLh.getLastAddConfirmed());
-        assertEquals(ledgerLenth, recoverLh.getLength());
+        assertEquals(ledgerLength, recoverLh.getLength());
         assertTrue(recoverLh.getLedgerMetadata().isClosed());
 
         Enumeration<LedgerEntry> enumeration = recoverLh.readEntries(0, numEntries - 1);

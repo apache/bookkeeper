@@ -323,7 +323,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Intializes new cluster by creating required znodes for the cluster. If
+     * Initializes new cluster by creating required znodes for the cluster. If
      * ledgersrootpath is already existing then it will error out. If for any
      * reason it errors out while creating znodes for the cluster, then before
      * running initnewcluster again, try nuking existing cluster by running
@@ -704,7 +704,7 @@ public class BookieShell implements Tool {
 
             ReadLedgerCommand cmd = new ReadLedgerCommand(entryFormatter, ledgerIdFormatter);
             ReadLedgerCommand.ReadLedgerFlags flags = new ReadLedgerCommand.ReadLedgerFlags();
-            flags.bookieAddresss(bookieAddress);
+            flags.bookieAddress(bookieAddress);
             flags.firstEntryId(firstEntry);
             flags.forceRecovery(forceRecovery);
             flags.lastEntryId(lastEntry);

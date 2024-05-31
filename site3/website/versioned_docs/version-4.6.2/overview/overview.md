@@ -26,7 +26,7 @@ This documentation is for Apache BookKeeper&trade; version `4.6.2`.
 Apache BookKeeper&trade; is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
 It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
 
-It is suitable for being used in following scenerios:
+It is suitable for being used in following scenarios:
 
 - [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-Ahead-Logging), e.g. HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL).
 - Message Store, e.g. [Apache Pulsar](https://pulsar.incubator.apache.org/).

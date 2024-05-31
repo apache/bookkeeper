@@ -312,10 +312,10 @@ for `<ledgerScopeId, ledgerId>`.
 
 ###### ZooKeeper Ledger Manager
 
-We need to introduce a LongLongHierchicalLedgerManager for storing metadata
+We need to introduce a LongLongHierarchicalLedgerManager for storing metadata
 indexing by `<ledgerScopeId, ledgerId>`.
 
-If `ledgerScopeId` is 0, then it will be falling back to `LongHierachicalLedgerManager`.
+If `ledgerScopeId` is 0, then it will be falling back to `LongHierarchicalLedgerManager`.
 So no behavior is changed.
 
 If `ledgerScopeId` is not 0, those ledgers will be indexed in new hierarchy
@@ -343,7 +343,7 @@ Nothing is needed for special consideration.
 There shouldn't be any performance difference when not using 128 bit ledger id
 (`ledgerScopeId` is omitted).
 
-Performance concerns can be arised in following areas:
+Performance concerns can be arisen in following areas:
 
 - **Wire Protocol**: additional 9 bytes will be added per entry, one byte for version
   and 8 bytes for the msb of 128 bit ledger id
@@ -357,7 +357,7 @@ Performance concerns can be arised in following areas:
 - **DbLedgerStorage**: additional 8 bytes per entry for entry location.
 - **Metadata**: on zookeeper, we need a 128 bit ledger manager, that means more znode
   hierarchy than 64 bit ledger manager. Etcd like key/value metadata store is probably
-  more preferrable for 128 bit ledger manager.
+  more preferable for 128 bit ledger manager.
 
 However increasing ledger id from 64 bits to 128 bits can get rid of the only remaining
 central point, since we don't need to use zookeeper for ledger id generation. The id

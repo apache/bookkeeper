@@ -1014,6 +1014,9 @@ class ReadAheadEntryReader implements
         if (!started.get()) {
             return;
         }
+        if (segments == null || segments.isEmpty()) {
+            return;
+        }
         logger.info("segments is updated with {}", segments);
         processLogSegments(segments);
     }

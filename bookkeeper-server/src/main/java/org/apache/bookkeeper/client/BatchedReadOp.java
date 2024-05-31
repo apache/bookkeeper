@@ -28,12 +28,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.BatchedReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,10 +81,10 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             LOG.error(
-                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
+                    "Batch read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
                             + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
-                    BKException.getMessage(code), startEntryId, code);
+                    lh.getId(), startEntryId, startEntryId + maxCount - 1, sentToHosts, heardFromHosts,
+                    heardFromHostsBitSet, BKException.getMessage(code), startEntryId, code);
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
 

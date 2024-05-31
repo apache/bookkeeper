@@ -20,9 +20,9 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // CHECKSTYLE.OFF: IllegalImport
 import io.netty.buffer.ByteBuf;
@@ -31,7 +31,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import java.io.IOException;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 // CHECKSTYLE.ON: IllegalImport
 
 /**
@@ -59,19 +60,25 @@ public class TestBuffer {
         assertEquals(0x7FFFF000, Buffer.nextAlignment(0x7FFFF000));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNegativePosition() throws Exception {
-        Buffer.nextAlignment(-1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Buffer.nextAlignment(-1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMaxAlignment() throws Exception {
-        Buffer.nextAlignment(Integer.MAX_VALUE);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Buffer.nextAlignment(Integer.MAX_VALUE);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateUnaligned() throws Exception {
-        new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1234);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1234);
+        });
     }
 
     @Test
@@ -148,7 +155,7 @@ public class TestBuffer {
         assertEquals(4096, ret);
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testReadIntAtBoundary() throws Exception {
         Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 4096);
 
@@ -159,10 +166,10 @@ public class TestBuffer {
         assertFalse(b.hasData(4093, Integer.BYTES));
         assertFalse(b.hasData(4096, Integer.BYTES));
 
-        b.readInt(4096 - 2);
+        Assertions.assertThrows(IOException.class, () -> b.readInt(4096 - 2));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testReadLongAtBoundary() throws Exception {
         Buffer b = new Buffer(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 4096);
 
@@ -173,7 +180,7 @@ public class TestBuffer {
         assertFalse(b.hasData(4089, Long.BYTES));
         assertFalse(b.hasData(4096, Long.BYTES));
 
-        b.readInt(4096 - 2);
+        Assertions.assertThrows(IOException.class, () -> b.readInt(4096 - 2));
     }
 
     @Test

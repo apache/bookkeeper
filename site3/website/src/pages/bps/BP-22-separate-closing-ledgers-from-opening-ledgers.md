@@ -54,7 +54,7 @@ if (lac > lastReadEntry) {
 WriteHandle writer = bk.newCreateLedgerOp().execute().get();
 ```
 
-Constrast this with how it is with the current recovery on open mechanism.
+Contrast this with how it is with the current recovery on open mechanism.
 
 ```
 ReadHandle reader = bk.newOpenLedgerOp().withLedgerId(X).execute().get();

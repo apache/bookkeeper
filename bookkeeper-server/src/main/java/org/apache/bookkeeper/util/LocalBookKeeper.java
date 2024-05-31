@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
@@ -38,8 +39,10 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.CookieValidation;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetectionImpl;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
@@ -58,6 +61,7 @@ import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -333,6 +337,13 @@ public class LocalBookKeeper implements AutoCloseable {
      * @throws IOException
      */
     private void serializeLocalBookieConfig(ServerConfiguration localBookieConfig, String fileName) throws IOException {
+        if (StringUtils.isBlank(fileName)
+                || fileName.contains("..")
+                || fileName.contains("/")
+                || fileName.contains("\\")) {
+            throw new IllegalArgumentException("Invalid filename: " + fileName);
+        }
+
         File localBookieConfFile = new File(localBookiesConfigDir, fileName);
         if (localBookieConfFile.exists() && !localBookieConfFile.delete()) {
             throw new IOException(
@@ -518,6 +529,10 @@ public class LocalBookKeeper implements AutoCloseable {
             LedgerStorage storage = BookieResources.createLedgerStorage(
                     conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                     NullStatsLogger.INSTANCE, allocator);
+
+            CookieValidation cookieValidation = new LegacyCookieValidation(conf, registrationManager);
+            cookieValidation.checkCookies(storageDirectoriesFromConf(conf));
+
             UncleanShutdownDetection shutdownManager = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
             final ComponentInfoPublisher componentInfoPublisher = new ComponentInfoPublisher();

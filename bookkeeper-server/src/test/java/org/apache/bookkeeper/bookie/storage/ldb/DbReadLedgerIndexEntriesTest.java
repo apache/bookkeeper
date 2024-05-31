@@ -125,8 +125,8 @@ public class DbReadLedgerIndexEntriesTest {
         try {
             for (ledgerId = TEST_LEDGER_MIN_ID; ledgerId <= TEST_LEDGER_MAX_ID; ledgerId++) {
                 BlockingQueue<Long> entrys = new ArrayBlockingQueue<>(TEST_ENTRY_MAX_ID + 1);
-                DbLedgerStorage.readLedgerIndexEntries(ledgerId, conf, (eId, entryLodId, pos) -> {
-                    System.out.println("entry " + eId + "\t:\t(log: " + entryLodId + ", pos: " + pos + ")");
+                DbLedgerStorage.readLedgerIndexEntries(ledgerId, conf, (eId, entryLogId, pos) -> {
+                    System.out.println("entry " + eId + "\t:\t(log: " + entryLogId + ", pos: " + pos + ")");
                     entrys.add(eId);
                 });
                 for (long entryId = TEST_ENTRY_MIN_ID; entryId <= TEST_ENTRY_MAX_ID; entryId++) {

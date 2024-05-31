@@ -163,7 +163,7 @@ public class FastTimer extends Timer {
 
     /*
      * Buckets for percentiles store response times according to the definition in BUCKET_SPEC in the
-     * form of { numerOfBuckets , nanosecondResolutionPerBucket }.
+     * form of { numberOfBuckets , nanosecondResolutionPerBucket }.
      *
      * BUCKET_SPEC_FINE:
      * This bucket definition provides fine-grained timing for small values, and more coarse-grained timing
