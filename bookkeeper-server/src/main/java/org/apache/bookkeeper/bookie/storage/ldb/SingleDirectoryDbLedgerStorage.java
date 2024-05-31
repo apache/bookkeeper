@@ -484,8 +484,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         boolean inserted = false;
 
-        inserted = writeCache.put(ledgerId, entryId, entry);
-        if (!writeCacheRotationLock.validate(stamp)) {
+        // If the stamp is 0, the lock was exclusively acquired, validation will fail, and we can skip this put.
+        if (stamp != 0) {
+            inserted = writeCache.put(ledgerId, entryId, entry);
+        }
+
+        if (stamp == 0 || !writeCacheRotationLock.validate(stamp)) {
             // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
             // the operation because we might have inserted in a write cache that was already being flushed and cleared,
             // without being sure about this last entry being flushed or not.
