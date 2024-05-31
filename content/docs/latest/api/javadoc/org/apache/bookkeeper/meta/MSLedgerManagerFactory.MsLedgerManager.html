@@ -677,7 +677,7 @@ implements <a href="LedgerManager.html" title="interface in org.apache.bookkeepe
 <dd><code>currentVersion</code> - The version of the metadata we expect to be overwriting.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>Future which, when completed, contains the newly written metadata.
-         Comleted with an exceptione:<ul>
+         Completed with an exception:<ul>
           <li><a href="../client/BKException.BKMetadataVersionException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKMetadataVersionException</code></a>
           if version in metadata doesn't match</li>
           <li><a href="../client/BKException.ZKException.html" title="class in org.apache.bookkeeper.client"><code>BKException.ZKException</code></a> for other issue</li>
@@ -700,9 +700,9 @@ implements <a href="LedgerManager.html" title="interface in org.apache.bookkeepe
 <div class="block">Loop to process all ledgers.
  <p>
  <ul>
- After all ledgers were processed, finalCb will be triggerred:
+ After all ledgers were processed, finalCb will be triggered:
  <li> if all ledgers are processed done with OK, success rc will be passed to finalCb.
- <li> if some ledgers are prcoessed failed, failure rc will be passed to finalCb.
+ <li> if some ledgers are processed failed, failure rc will be passed to finalCb.
  </ul>
  </p></div>
 <dl>
@@ -713,7 +713,7 @@ implements <a href="LedgerManager.html" title="interface in org.apache.bookkeepe
 <dd><code>finalCb</code> - Callback triggered after all ledgers are processed</dd>
 <dd><code>context</code> - Context of final callback</dd>
 <dd><code>successRc</code> - Success RC code passed to finalCb when callback</dd>
-<dd><code>failureRc</code> - Failure RC code passed to finalCb when exceptions occured.</dd>
+<dd><code>failureRc</code> - Failure RC code passed to finalCb when exceptions occurred.</dd>
 </dl>
 </li>
 </ul>

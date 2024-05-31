@@ -730,7 +730,7 @@ implements <a href="LedgerManager.html" title="interface in org.apache.bookkeepe
 <dd><code>currentVersion</code> - The version of the metadata we expect to be overwriting.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>Future which, when completed, contains the newly written metadata.
-         Comleted with an exceptione:<ul>
+         Completed with an exception:<ul>
           <li><a href="../client/BKException.BKMetadataVersionException.html" title="class in org.apache.bookkeeper.client"><code>BKException.BKMetadataVersionException</code></a>
           if version in metadata doesn't match</li>
           <li><a href="../client/BKException.ZKException.html" title="class in org.apache.bookkeeper.client"><code>BKException.ZKException</code></a> for other issue</li>
@@ -753,7 +753,7 @@ implements <a href="LedgerManager.html" title="interface in org.apache.bookkeepe
 <div class="block">Process ledgers in a single zk node.
 
  <p>
- for each ledger found in this zk node, processor#process(ledgerId) will be triggerred
+ for each ledger found in this zk node, processor#process(ledgerId) will be triggered
  to process a specific ledger. after all ledgers has been processed, the finalCb will
  be called with provided context object. The RC passed to finalCb is decided by :
  <ul>

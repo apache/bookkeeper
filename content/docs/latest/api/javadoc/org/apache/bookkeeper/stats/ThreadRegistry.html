@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -210,21 +210,47 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forceClearRegistrationForTests(long)">forceClearRegistrationForTests</a></span>&#8203;(long&nbsp;threadId)</code></th>
+<td class="colLast">
+<div class="block">In some tests we run in the same thread activities that should
+ run in different threads from different thread-pools
+ this would trigger assertions to fail.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>static <a href="ThreadRegistry.ThreadPoolThread.html" title="class in org.apache.bookkeeper.stats">ThreadRegistry.ThreadPoolThread</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get()">get</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#register(java.lang.String)">register</a></span>&#8203;(java.lang.String&nbsp;threadPool)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#register(java.lang.String,boolean)">register</a></span>&#8203;(java.lang.String&nbsp;threadPool,
+        boolean&nbsp;force)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#register(java.lang.String,int)">register</a></span>&#8203;(java.lang.String&nbsp;threadPool,
         int&nbsp;threadPoolThread)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#register(java.lang.String,int,long)">register</a></span>&#8203;(java.lang.String&nbsp;threadPool,
         int&nbsp;threadPoolThread,
         long&nbsp;threadId)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>static java.lang.Runnable</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerThread(java.lang.Runnable,java.lang.String)">registerThread</a></span>&#8203;(java.lang.Runnable&nbsp;runnable,
+              java.lang.String&nbsp;threadPool)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -270,6 +296,39 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="register(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>register</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;register&#8203;(java.lang.String&nbsp;threadPool)</pre>
+</li>
+</ul>
+<a id="register(java.lang.String,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>register</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;register&#8203;(java.lang.String&nbsp;threadPool,
+                            boolean&nbsp;force)</pre>
+</li>
+</ul>
+<a id="forceClearRegistrationForTests(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>forceClearRegistrationForTests</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;forceClearRegistrationForTests&#8203;(long&nbsp;threadId)</pre>
+<div class="block">In some tests we run in the same thread activities that should
+ run in different threads from different thread-pools
+ this would trigger assertions to fail.
+ This is a convenience method to work around such cases.
+ This method shouldn't be used in production code.</div>
+</li>
+</ul>
 <a id="register(java.lang.String,int)">
 <!--   -->
 </a>
@@ -289,6 +348,16 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;void&nbsp;register&#8203;(java.lang.String&nbsp;threadPool,
                             int&nbsp;threadPoolThread,
                             long&nbsp;threadId)</pre>
+</li>
+</ul>
+<a id="registerThread(java.lang.Runnable,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>registerThread</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.Runnable&nbsp;registerThread&#8203;(java.lang.Runnable&nbsp;runnable,
+                                                java.lang.String&nbsp;threadPool)</pre>
 </li>
 </ul>
 <a id="clear()">

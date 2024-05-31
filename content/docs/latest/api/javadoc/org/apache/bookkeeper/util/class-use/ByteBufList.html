@@ -245,6 +245,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static com.google.protobuf.ByteString</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ByteStringUtil.</span><code><span class="memberNameLink"><a href="../../proto/ByteStringUtil.html#byteBufListToByteString(org.apache.bookkeeper.util.ByteBufList)">byteBufListToByteString</a></span>&#8203;(<a href="../ByteBufList.html" title="class in org.apache.bookkeeper.util">ByteBufList</a>&nbsp;bufList)</code></th>
+<td class="colLast">
+<div class="block">Wrap the internal buffers of a ByteBufList into a single ByteString.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperInternalCallbacks.BatchedReadEntryCallback.</span><code><span class="memberNameLink"><a href="../../proto/BookkeeperInternalCallbacks.BatchedReadEntryCallback.html#readEntriesComplete(int,long,long,org.apache.bookkeeper.util.ByteBufList,java.lang.Object)">readEntriesComplete</a></span>&#8203;(int&nbsp;rc,
                    long&nbsp;ledgerId,
@@ -253,7 +260,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieClient.</span><code><span class="memberNameLink"><a href="../../proto/BookieClient.html#writeLac(org.apache.bookkeeper.net.BookieId,long,byte%5B%5D,long,org.apache.bookkeeper.util.ByteBufList,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback,java.lang.Object)">writeLac</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;address,
         long&nbsp;ledgerId,
@@ -267,7 +274,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  <code>address</code>.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieClientImpl.</span><code><span class="memberNameLink"><a href="../../proto/BookieClientImpl.html#writeLac(org.apache.bookkeeper.net.BookieId,long,byte%5B%5D,long,org.apache.bookkeeper.util.ByteBufList,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback,java.lang.Object)">writeLac</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr,
         long&nbsp;ledgerId,
@@ -278,7 +285,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
         java.lang.Object&nbsp;ctx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../proto/PerChannelBookieClient.html#writeLac(long,byte%5B%5D,long,org.apache.bookkeeper.util.ByteBufList,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback,java.lang.Object)">writeLac</a></span>&#8203;(long&nbsp;ledgerId,
         byte[]&nbsp;masterKey,

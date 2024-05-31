@@ -438,7 +438,7 @@ implements java.lang.AutoCloseable</pre>
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initNewCluster(org.apache.bookkeeper.conf.ServerConfiguration)">initNewCluster</a></span>&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)</code></th>
 <td class="colLast">
-<div class="block">Intializes new cluster by creating required znodes for the cluster.</div>
+<div class="block">Initializes new cluster by creating required znodes for the cluster.</div>
 </td>
 </tr>
 <tr id="i26" class="altColor">
@@ -1245,7 +1245,7 @@ implements java.lang.AutoCloseable</pre>
 <h4>initNewCluster</h4>
 <pre class="methodSignature">public static&nbsp;boolean&nbsp;initNewCluster&#8203;(<a href="../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;conf)
                               throws java.lang.Exception</pre>
-<div class="block">Intializes new cluster by creating required znodes for the cluster. If
+<div class="block">Initializes new cluster by creating required znodes for the cluster. If
  ledgersrootpath is already existing then it will error out.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1423,7 +1423,7 @@ implements java.lang.AutoCloseable</pre>
 <div class="block">Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
  sure the ledgers stored in the given decommissioning bookie are properly
  replicated and they are not underreplicated because of the given bookie.
- This method waits untill there are no underreplicatedledgers because of this
+ This method waits until there are no underreplicatedledgers because of this
  bookie. If the given Bookie is not shutdown yet, then it will throw
  BKIllegalOpException.</div>
 <dl>

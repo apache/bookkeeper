@@ -140,7 +140,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 extends java.lang.Object
 implements <a href="LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a></pre>
 <div class="block">ZooKeeper implementation of underreplication manager.
- This is implemented in a heirarchical fashion, so it'll work with
+ This is implemented in a hierarchical fashion, so it'll work with
  FlatLedgerManagerFactory and HierarchicalLedgerManagerFactory.
 
  <p>Layout is:
@@ -149,7 +149,7 @@ implements <a href="LedgerUnderreplicationManager.html" title="interface in org.
                          locks/(ledgerId)
 
  <p>The hierarchical path is created by splitting the ledger into 4 2byte
- segments which are represented in hexidecimal.
+ segments which are represented in hexadecimal.
  e.g. For ledger id 0xcafebeef0000feed, the path is
   cafe/beef/0000/feed/</div>
 </li>
@@ -653,7 +653,7 @@ implements <a href="LedgerUnderreplicationManager.html" title="interface in org.
                                                                                              java.util.Collection&lt;java.lang.String&gt;&nbsp;missingReplicas)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="LedgerUnderreplicationManager.html#markLedgerUnderreplicatedAsync(long,java.util.Collection)">LedgerUnderreplicationManager</a></code></span></div>
 <div class="block">Mark a ledger as underreplicated with missing bookies. The replication should then
- check which fragements are underreplicated and rereplicate them.</div>
+ check which fragments are underreplicated and rereplicate them.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="LedgerUnderreplicationManager.html#markLedgerUnderreplicatedAsync(long,java.util.Collection)">markLedgerUnderreplicatedAsync</a></code>&nbsp;in interface&nbsp;<code><a href="LedgerUnderreplicationManager.html" title="interface in org.apache.bookkeeper.meta">LedgerUnderreplicationManager</a></code></dd>
