@@ -215,7 +215,6 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         startNewBookie();
         int newBookieIndex = lastBookieIndex();
         BookieServer newBookieServer = serverByIndex(newBookieIndex);
-        forceAuditorRun();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Waiting to finish the replication of failed bookie : "
@@ -273,7 +272,6 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         startNewBookie();
         int newBookieIndex = lastBookieIndex();
         BookieServer newBookieServer = serverByIndex(newBookieIndex);
-        forceAuditorRun();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Waiting to finish the replication of failed bookie : "
@@ -344,7 +342,6 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         startNewBookie();
         int newBookieIndex = lastBookieIndex();
         BookieServer newBookieServer = serverByIndex(newBookieIndex);
-        forceAuditorRun();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Waiting to finish the replication of failed bookie : "
@@ -533,7 +530,6 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         int newBookieIndex = lastBookieIndex();
         BookieServer newBookieServer = serverByIndex(newBookieIndex);
-        forceAuditorRun();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Waiting to finish the replication of failed bookie : "
@@ -613,7 +609,6 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         int newBookieIndex = lastBookieIndex();
         BookieServer newBookieServer = serverByIndex(newBookieIndex);
-        forceAuditorRun();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Waiting to finish the replication of failed bookie : "
