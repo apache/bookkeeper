@@ -179,7 +179,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         // waiting to publish urLedger znode by Auditor
         latch.await(100, TimeUnit.SECONDS);
     }
-    
+
     /**
      * Test verifies publish urLedger by Auditor and replication worker is
      * picking up the entries and finishing the rereplication of open ledger.
@@ -700,7 +700,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             }
         });
     }
-    
+
     private void forceAuditorRun() throws Exception {
         getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get();
     }
