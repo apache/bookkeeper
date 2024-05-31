@@ -96,7 +96,7 @@ Similarly as using maven, you can also configure to use the shaded jars.
 ```groovy
 // use the shaded artifact of `bookkeeper-server` jar
 dependencies {
-    compile ('org.apache.bookkeeper:bookkeeper-server:{{ site.latest-version }}:shaded') {
+    compile ('org.apache.bookkeeper:bookkeeper-server:{{ site.latest_release }}:shaded') {
         exclude group: 'org.apache.bookkeeper', module: "bookkeeper-common'
         exclude group: 'org.apache.bookkeeper', module: 'bookkeeper-proto'
     }
@@ -105,7 +105,7 @@ dependencies {
 
 // use the `bookkeeper-server-shaded` jar
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest-version }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest_release }}'
 }
 ```
 
