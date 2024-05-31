@@ -22,12 +22,13 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.assertEntryEquals;
 import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -41,7 +42,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -72,20 +72,19 @@ import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Tests for EntryLog.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DefaultEntryLogTest {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogTest.class);
 
@@ -104,7 +103,7 @@ public class DefaultEntryLogTest {
     private LedgerDirsManager dirsMgr;
     private DefaultEntryLogger entryLogger;
 
-    @Before
+    @BeforeAll
     public void setUp() throws Exception {
         this.rootDir = createTempDir("bkTest", ".dir");
         this.curDir = BookieImpl.getCurrentDirectory(rootDir);
@@ -119,7 +118,7 @@ public class DefaultEntryLogTest {
         this.entryLogger = new DefaultEntryLogger(conf, dirsMgr);
     }
 
-    @After
+    @AfterAll
     public void tearDown() throws Exception {
         if (null != this.entryLogger) {
             entryLogger.close();
@@ -333,28 +332,6 @@ public class DefaultEntryLogTest {
     }
 
     /**
-     * Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist.
-     */
-    @Ignore // no longer valid as LedgerDirsManager creates the directory as needed
-    public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
-            throws Exception {
-        File tmpDir = createTempDir("bkTest", ".dir");
-        DefaultEntryLogger entryLogger = null;
-        try {
-            entryLogger = new DefaultEntryLogger(conf, new LedgerDirsManager(conf, new File[] { tmpDir },
-                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
-            fail("Expecting FileNotFoundException");
-        } catch (FileNotFoundException e) {
-            assertEquals("Entry log directory '" + tmpDir +  "/current' does not exist", e
-                    .getLocalizedMessage());
-        } finally {
-            if (entryLogger != null) {
-                entryLogger.close();
-            }
-        }
-    }
-
-    /**
      * Test to verify the DiskFull during addEntry.
      */
     @Test
@@ -384,9 +361,9 @@ public class DefaultEntryLogTest {
                 .getCurrentLogForLedger(DefaultEntryLogger.UNASSIGNED_LEDGERID).getLogFile().getParentFile());
         ledgerStorage.addEntry(generateEntry(3, 1));
         // Verify written entries
-        Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
-        Assert.assertTrue(0 == generateEntry(2, 1).compareTo(ledgerStorage.getEntry(2, 1)));
-        Assert.assertTrue(0 == generateEntry(3, 1).compareTo(ledgerStorage.getEntry(3, 1)));
+        assertEquals(0, generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
+        assertEquals(0, generateEntry(2, 1).compareTo(ledgerStorage.getEntry(2, 1)));
+        assertEquals(0, generateEntry(3, 1).compareTo(ledgerStorage.getEntry(3, 1)));
     }
 
     /**
@@ -707,6 +684,8 @@ public class DefaultEntryLogTest {
      * using InterleavedLedgerStorage.
      */
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
+    @Tag("flaky")
+    @Test
     public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorage() throws Exception {
         testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), false);
     }
@@ -716,6 +695,8 @@ public class DefaultEntryLogTest {
      * using InterleavedLedgerStorage with EntryLogPerLedger enabled.
      */
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
+    @Tag("flaky")
+    @Test
     public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorageWithELPLEnabled() throws Exception {
         testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), true);
     }
@@ -725,6 +706,8 @@ public class DefaultEntryLogTest {
      * using SortedLedgerStorage.
      */
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
+    @Tag("flaky")
+    @Test
     public void testConcurrentWriteAndReadCallsOfSortedLedgerStorage() throws Exception {
         testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), false);
     }
@@ -734,6 +717,8 @@ public class DefaultEntryLogTest {
      * using SortedLedgerStorage with EntryLogPerLedger enabled.
      */
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
+    @Tag("flaky")
+    @Test
     public void testConcurrentWriteAndReadCallsOfSortedLedgerStorageWithELPLEnabled() throws Exception {
         testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), true);
     }
@@ -1014,10 +999,9 @@ public class DefaultEntryLogTest {
         /*
          * since new entryLogs are set for all the ledgers, previous entrylogs would be added to rotatedLogChannels
          */
-        Assert.assertEquals("Number of current active EntryLogs ", numOfLedgers,
-                entryLogManager.getCopyOfCurrentLogs().size());
-        Assert.assertEquals("Number of Rotated Logs ", numOfLedgers,
-                entryLogManager.getRotatedLogChannels().size());
+        assertEquals(numOfLedgers, entryLogManager.getCopyOfCurrentLogs().size(),
+                "Number of current active EntryLogs ");
+        assertEquals(numOfLedgers, entryLogManager.getRotatedLogChannels().size(), "Number of Rotated Logs ");
 
         for (long i = 0; i < numOfLedgers; i++) {
             entryLogManager.setCurrentLogForLedgerAndAddToRotate(i,
@@ -1028,25 +1012,24 @@ public class DefaultEntryLogTest {
          * again since new entryLogs are set for all the ledgers, previous entrylogs would be added to
          * rotatedLogChannels
          */
-        Assert.assertEquals("Number of current active EntryLogs ", numOfLedgers,
-                entryLogManager.getCopyOfCurrentLogs().size());
-        Assert.assertEquals("Number of Rotated Logs ", 2 * numOfLedgers,
-                entryLogManager.getRotatedLogChannels().size());
+        assertEquals(numOfLedgers, entryLogManager.getCopyOfCurrentLogs().size(),
+                "Number of current active EntryLogs ");
+        assertEquals(2 * numOfLedgers, entryLogManager.getRotatedLogChannels().size(), "Number of Rotated Logs ");
 
         for (BufferedLogChannel logChannel : entryLogManager.getRotatedLogChannels()) {
             entryLogManager.getRotatedLogChannels().remove(logChannel);
         }
-        Assert.assertEquals("Number of Rotated Logs ", 0, entryLogManager.getRotatedLogChannels().size());
+        assertEquals(0, entryLogManager.getRotatedLogChannels().size(), "Number of Rotated Logs ");
 
         // entrylogid is sequential
         for (long i = 0; i < numOfLedgers; i++) {
-            assertEquals("EntryLogid for Ledger " + i, 2 * numOfLedgers + i,
-                    entryLogManager.getCurrentLogForLedger(i).getLogId());
+            assertEquals(2 * numOfLedgers + i, entryLogManager.getCurrentLogForLedger(i).getLogId(),
+                    "EntryLogId for Ledger " + i);
         }
 
         for (long i = 2 * numOfLedgers; i < (3 * numOfLedgers); i++) {
-            assertTrue("EntryLog with logId: " + i + " should be present",
-                    entryLogManager.getCurrentLogIfPresent(i) != null);
+            assertNotNull(entryLogManager.getCurrentLogIfPresent(i),
+                    "EntryLog with logId: " + i + " should be present");
         }
     }
 
@@ -1076,7 +1059,6 @@ public class DefaultEntryLogTest {
         CountDownLatch latchToWait = new CountDownLatch(1);
         AtomicInteger numberOfThreadsAcquiredLock = new AtomicInteger(0);
         AtomicBoolean irptExceptionHappened = new AtomicBoolean(false);
-        Random rand = new Random();
 
         for (int i = 0; i < numOfLedgers * numOfThreadsPerLedger; i++) {
             long ledgerId = i % numOfLedgers;
@@ -1094,7 +1076,7 @@ public class DefaultEntryLogTest {
             });
         }
 
-        assertEquals("Number Of Threads acquired Lock", 0, numberOfThreadsAcquiredLock.get());
+        assertEquals(0, numberOfThreadsAcquiredLock.get(), "Number Of Threads acquired Lock");
         latchToStart.countDown();
         Thread.sleep(1000);
         /*
@@ -1107,13 +1089,14 @@ public class DefaultEntryLogTest {
          * After acquiring the lock there must be waiting on 'latchToWait' latch
          */
         int currentNumberOfThreadsAcquiredLock = numberOfThreadsAcquiredLock.get();
-        assertTrue("Number Of Threads acquired Lock " + currentNumberOfThreadsAcquiredLock,
-                (currentNumberOfThreadsAcquiredLock > 0) && (currentNumberOfThreadsAcquiredLock <= numOfLedgers));
+        assertTrue((currentNumberOfThreadsAcquiredLock > 0) && (currentNumberOfThreadsAcquiredLock <= numOfLedgers),
+                "Number Of Threads acquired Lock " + currentNumberOfThreadsAcquiredLock);
+
         latchToWait.countDown();
         Thread.sleep(2000);
-        assertEquals("Number Of Threads acquired Lock", numOfLedgers * numOfThreadsPerLedger,
-                numberOfThreadsAcquiredLock.get());
-    }
+
+        assertEquals(numOfLedgers * numOfThreadsPerLedger, numberOfThreadsAcquiredLock.get(),
+                "Number Of Threads acquired Lock");    }
 
     /*
      * test EntryLogManager.EntryLogManagerForEntryLogPerLedger removes the
@@ -1144,7 +1127,7 @@ public class DefaultEntryLogTest {
         entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, logChannel);
 
         BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
-        assertEquals("LogChannel for ledger " + ledgerId + " should match", logChannel, currentLogForLedger);
+        assertEquals(logChannel, currentLogForLedger, "LogChannel for ledger " + ledgerId + " should match");
 
         Thread.sleep(evictionPeriod * 1000 + 100);
         entryLogManager.doEntryLogMapCleanup();
@@ -1154,15 +1137,15 @@ public class DefaultEntryLogTest {
          * ledger should not be available anymore
          */
         currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
-        assertEquals("LogChannel for ledger " + ledgerId + " should be null", null, currentLogForLedger);
-        Assert.assertEquals("Number of current active EntryLogs ", 0, entryLogManager.getCopyOfCurrentLogs().size());
-        Assert.assertEquals("Number of rotated EntryLogs ", 1, entryLogManager.getRotatedLogChannels().size());
-        Assert.assertTrue("CopyOfRotatedLogChannels should contain the created LogChannel",
-                entryLogManager.getRotatedLogChannels().contains(logChannel));
+        assertNull(currentLogForLedger, "LogChannel for ledger " + ledgerId + " should be null");
+        assertEquals(0, entryLogManager.getCopyOfCurrentLogs().size(), "Number of current active EntryLogs ");
+        assertEquals(1, entryLogManager.getRotatedLogChannels().size(), "Number of rotated EntryLogs ");
+        assertTrue(entryLogManager.getRotatedLogChannels().contains(logChannel),
+                "CopyOfRotatedLogChannels should contain the created LogChannel");
 
-        Assert.assertTrue("since mapentry must have been evicted, it should be null",
-                (entryLogManager.getCacheAsMap().get(ledgerId) == null)
-                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
+        assertTrue((entryLogManager.getCacheAsMap().get(ledgerId) == null)
+                || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null),
+                "since map entry must have been evicted, it should be null");
     }
 
     /*
@@ -1233,8 +1216,8 @@ public class DefaultEntryLogTest {
                 long readEntryId = buf.readLong();
                 byte[] readData = new byte[buf.readableBytes()];
                 buf.readBytes(readData);
-                assertEquals("LedgerId ", ledgerId, readLedgerId);
-                assertEquals("EntryId ", entryId, readEntryId);
+                assertEquals(ledgerId, readLedgerId, "LedgerId ");
+                assertEquals(entryId, readEntryId, "EntryId ");
                 assertEquals("Entry Data ", expectedValue, new String(readData));
             }
         }
@@ -1347,9 +1330,9 @@ public class DefaultEntryLogTest {
          * eviction period time, so it should not be evicted.
          */
         BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
-        assertEquals("LogChannel for ledger " + ledgerId, newLogChannel, currentLogForLedger);
-        Assert.assertEquals("Number of current active EntryLogs ", 1, entryLogManager.getCopyOfCurrentLogs().size());
-        Assert.assertEquals("Number of rotated EntryLogs ", 0, entryLogManager.getRotatedLogChannels().size());
+        assertEquals(newLogChannel, currentLogForLedger, "LogChannel for ledger " + ledgerId);
+        assertEquals(1, entryLogManager.getCopyOfCurrentLogs().size(), "Number of current active EntryLogs ");
+        assertEquals(0, entryLogManager.getRotatedLogChannels().size(), "Number of rotated EntryLogs ");
     }
 
     /**
@@ -1410,23 +1393,23 @@ public class DefaultEntryLogTest {
         t.start();
         Thread.sleep(evictionPeriod * 1000 + 100);
         entryLogManager.doEntryLogMapCleanup();
-        Assert.assertFalse("Exception occurred in thread, which is not expected", exceptionOccurred.get());
+        assertFalse(exceptionOccurred.get(), "Exception occurred in thread, which is not expected");
 
         /*
          * since for more than evictionPeriod, that ledger is not accessed and cache is cleaned up, mapping for that
          * ledger should not be available anymore
          */
         BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
-        assertEquals("LogChannel for ledger " + ledgerId + " should be null", null, currentLogForLedger);
+        assertNull(currentLogForLedger, "LogChannel for ledger " + ledgerId + " should be null");
         // expected number of current active entryLogs is 1 since we created entrylog for 'newLedgerId'
-        Assert.assertEquals("Number of current active EntryLogs ", 1, entryLogManager.getCopyOfCurrentLogs().size());
-        Assert.assertEquals("Number of rotated EntryLogs ", 1, entryLogManager.getRotatedLogChannels().size());
-        Assert.assertTrue("CopyOfRotatedLogChannels should contain the created LogChannel",
-                entryLogManager.getRotatedLogChannels().contains(newLogChannel));
+        assertEquals(1, entryLogManager.getCopyOfCurrentLogs().size(), "Number of current active EntryLogs ");
+        assertEquals(1, entryLogManager.getRotatedLogChannels().size(), "Number of rotated EntryLogs ");
+        assertTrue(entryLogManager.getRotatedLogChannels().contains(newLogChannel),
+                "CopyOfRotatedLogChannels should contain the created LogChannel");
 
-        Assert.assertTrue("since mapentry must have been evicted, it should be null",
-                (entryLogManager.getCacheAsMap().get(ledgerId) == null)
-                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
+        assertTrue((entryLogManager.getCacheAsMap().get(ledgerId) == null)
+                || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null),
+                "since mapentry must have been evicted, it should be null");
     }
 
     /*
@@ -1502,8 +1485,8 @@ public class DefaultEntryLogTest {
          * rotatedlogchannel and also leastUnflushedLogId should be advanced to numOfActiveLedgers
          */
         entryLogger.flush();
-        Assert.assertEquals("Number of rotated entrylogs", 0, entryLogManager.getRotatedLogChannels().size());
-        Assert.assertEquals("LeastUnflushedloggerID", numOfActiveLedgers, entryLogger.getLeastUnflushedLogId());
+        assertEquals(0, entryLogManager.getRotatedLogChannels().size(), "Number of rotated entrylogs");
+        assertEquals(numOfActiveLedgers, entryLogger.getLeastUnflushedLogId(), "LeastUnflushedloggerID");
 
         /*
          * after flush (flushCurrentLogs) unpersistedBytes should be 0.
@@ -1516,12 +1499,12 @@ public class DefaultEntryLogTest {
 
     @Test
     public void testSingleEntryLogCreateNewLog() throws Exception {
-        Assert.assertTrue(entryLogger.getEntryLogManager() instanceof EntryLogManagerForSingleEntryLog);
+        assertInstanceOf(EntryLogManagerForSingleEntryLog.class, entryLogger.getEntryLogManager());
         EntryLogManagerForSingleEntryLog singleEntryLog =
                 (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
         EntryLogManagerForSingleEntryLog mockSingleEntryLog = spy(singleEntryLog);
         BufferedLogChannel activeLogChannel = mockSingleEntryLog.getCurrentLogForLedgerForAddEntry(1, 1024, true);
-        Assert.assertTrue(activeLogChannel != null);
+        assertNotNull(activeLogChannel);
 
         verify(mockSingleEntryLog, times(1)).createNewLog(anyLong(), anyString());
         // `readEntryLogHardLimit` and `reachEntryLogLimit` should not call if new create log
@@ -1580,8 +1563,8 @@ public class DefaultEntryLogTest {
                 long entryId = buf.readLong();
                 byte[] data = new byte[buf.readableBytes()];
                 buf.readBytes(data);
-                assertEquals("LedgerId ", i, ledgerId);
-                assertEquals("EntryId ", j, entryId);
+                assertEquals(i, ledgerId, "LedgerId ");
+                assertEquals(j, entryId, "EntryId ");
                 assertEquals("Entry Data ", expectedValue, new String(data));
             }
         }
@@ -1601,8 +1584,8 @@ public class DefaultEntryLogTest {
                 long entryId = buf.readLong();
                 byte[] data = new byte[buf.readableBytes()];
                 buf.readBytes(data);
-                assertEquals("LedgerId ", i, ledgerId);
-                assertEquals("EntryId ", j, entryId);
+                assertEquals(i, ledgerId, "LedgerId ");
+                assertEquals(j, entryId, "EntryId ");
                 assertEquals("Entry Data ", expectedValue, new String(data));
             }
         }
@@ -1735,8 +1718,8 @@ public class DefaultEntryLogTest {
         DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
-        Assert.assertEquals("EntryLogManager class type", EntryLogManagerForEntryLogPerLedger.class,
-                entryLogManager.getClass());
+        assertEquals(EntryLogManagerForEntryLogPerLedger.class, entryLogManager.getClass(),
+                "EntryLogManager class type");
 
         entryLogger.addEntry(0L, generateEntry(0, 1));
         entryLogger.addEntry(1L, generateEntry(1, 1));
@@ -1917,8 +1900,8 @@ public class DefaultEntryLogTest {
                 long entryId = buf.readLong();
                 byte[] data = new byte[buf.readableBytes()];
                 buf.readBytes(data);
-                assertEquals("LedgerId ", i, ledgerId);
-                assertEquals("EntryId ", j, entryId);
+                assertEquals(i, ledgerId, "LedgerId ");
+                assertEquals(j, entryId, "EntryId ");
                 assertEquals("Entry Data ", expectedValue, new String(data));
             }
         }

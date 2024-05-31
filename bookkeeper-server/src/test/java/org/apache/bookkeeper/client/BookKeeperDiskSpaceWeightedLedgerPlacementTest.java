@@ -38,6 +38,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,6 +136,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * Test to show that weight based selection honors the disk weight of bookies.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
+    @Tag("flaky")
+    @Test
     public void testDiskSpaceWeightedBookieSelection() throws Exception {
         long freeDiskSpace = 1000000L;
         int multiple = 3;
@@ -182,6 +186,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * when the bookies's weight changes.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
+    @Tag("flaky")
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithChangingWeights() throws Exception {
         long freeDiskSpace = 1000000L;
         int multiple = 3;
@@ -269,6 +275,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * when bookies go away permanently.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
+    @Tag("flaky")
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithBookiesDying() throws Exception {
         long freeDiskSpace = 1000000L;
         int multiple = 3;
@@ -347,6 +355,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * when bookies are added.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
+    @Tag("flaky")
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithBookiesBeingAdded() throws Exception {
         long freeDiskSpace = 1000000L;
         int multiple = 3;
@@ -419,6 +429,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * the periodic bookieInfo read is working and causes the new weights to be taken into account.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
+    @Tag("flaky")
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithPeriodicBookieInfoUpdate() throws Exception {
         long freeDiskSpace = 1000000L;
         int multiple = 3;

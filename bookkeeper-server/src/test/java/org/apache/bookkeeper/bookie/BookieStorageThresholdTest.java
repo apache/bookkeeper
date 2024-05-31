@@ -41,6 +41,8 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.TestUtils;
 import org.junit.Before;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test BookieStorage with a threshold.
@@ -141,6 +143,8 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
     }
 
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1562")
+    @Tag("flaky")
+    @Test
     public void testStorageThresholdCompaction() throws Exception {
         stopAllBookies();
         ServerConfiguration conf = newServerConfiguration();
