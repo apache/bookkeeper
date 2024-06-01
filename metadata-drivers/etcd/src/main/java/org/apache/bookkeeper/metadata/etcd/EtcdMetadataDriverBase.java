@@ -19,9 +19,13 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import com.google.common.collect.Lists;
 import io.etcd.jetcd.Client;
+import io.etcd.jetcd.ClientBuilder;
+import io.grpc.netty.GrpcSslContexts;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -31,6 +35,8 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This is a mixin class for supporting etcd based metadata drivers.
@@ -77,18 +83,47 @@ class EtcdMetadataDriverBase implements AutoCloseable {
         ServiceURI serviceURI = ServiceURI.create(metadataServiceUriStr);
         this.keyPrefix = serviceURI.getServicePath();
 
+        EtcdConfig config = new EtcdConfig();
+        if (StringUtils.isNotEmpty(conf.getMetadataServiceConfig())) {
+            try {
+                PropertiesConfiguration propsConf = new PropertiesConfiguration(conf.getMetadataServiceConfig());
+                config.addConfiguration(propsConf);
+            } catch (ConfigurationException e) {
+                throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
+            }
+        }
+
         List<String> etcdEndpoints = Lists.newArrayList(serviceURI.getServiceHosts())
             .stream()
-            .map(host -> String.format("http://%s", host))
+            .map(host -> config.isUseTls() ? String.format("https://%s", host) : String.format("http://%s", host))
             .collect(Collectors.toList());
 
         log.info("Initializing etcd metadata driver : etcd endpoints = {}, key scope = {}",
             etcdEndpoints, keyPrefix);
 
         synchronized (this) {
-            this.client = Client.builder()
-                .endpoints(etcdEndpoints.toArray(new String[etcdEndpoints.size()]))
-                .build();
+            ClientBuilder builder = Client.builder()
+                    .endpoints(etcdEndpoints.toArray(new String[etcdEndpoints.size()]));
+            if (config.isUseTls()) {
+                File trustCertsFile = new File(config.getTlsTrustCertsFilePath());
+                File keyFile = new File(config.getTlsKeyFilePath());
+                File certFile = new File(config.getTlsCertificateFilePath());
+                try {
+                    builder.sslContext(GrpcSslContexts.forClient()
+                        .trustManager(trustCertsFile)
+                        .sslProvider(config.getTlsProvider())
+                        .keyManager(certFile, keyFile)
+                        .build());
+                } catch (SSLException e) {
+                    throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
+                }
+            }
+
+            if (StringUtils.isNotEmpty(config.getAuthority())) {
+                builder.authority(config.getAuthority());
+            }
+
+            this.client = builder.build();
         }
 
         this.layoutManager = new EtcdLayoutManager(

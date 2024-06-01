@@ -101,10 +101,13 @@ public abstract class EtcdBKClusterTestBase extends EtcdTestBase {
 
         ServiceURI uri = ServiceURI.create(etcdContainer.getExternalServiceUri());
 
+        String metadataServiceConfig = getMetadataServiceConfig();
         baseClientConf = new ClientConfiguration()
-            .setMetadataServiceUri(uri.getUri().toString());
+            .setMetadataServiceUri(uri.getUri().toString())
+            .setMetadataServiceConfig(metadataServiceConfig);
         baseServerConf = TestBKConfiguration.newServerConfiguration()
-            .setMetadataServiceUri(uri.getUri().toString());
+            .setMetadataServiceUri(uri.getUri().toString())
+            .setMetadataServiceConfig(metadataServiceConfig);
         // format the cluster
         assertTrue(BookKeeperAdmin.format(baseServerConf, false, true));
         // start bookies

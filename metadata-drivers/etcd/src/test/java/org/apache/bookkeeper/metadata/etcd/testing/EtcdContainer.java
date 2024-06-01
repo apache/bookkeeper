@@ -24,9 +24,14 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
+import io.grpc.netty.GrpcSslContexts;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslProvider;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.net.ssl.SSLException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.ContainerLaunchException;
@@ -34,6 +39,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.WaitingConsumer;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.utility.LogUtils;
+import org.testcontainers.utility.MountableFile;
 
 /**
  * Etcd test container.
@@ -52,10 +58,13 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     public static final int CLIENT_PORT = 2379;
 
     private final String clusterName;
+    @Getter
+    private final boolean secure;
 
-    public EtcdContainer(String clusterName) {
+    public EtcdContainer(String clusterName, boolean secure) {
         super("quay.io/coreos/etcd:v3.3");
         this.clusterName = clusterName;
+        this.secure = secure;
     }
 
     public String getExternalServiceUri() {
@@ -70,15 +79,31 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     protected void configure() {
         super.configure();
 
-        String[] command = new String[] {
-            "/usr/local/bin/etcd",
-            "--name", NAME + "0",
-            "--initial-advertise-peer-urls", "http://" + NAME + ":2380",
-            "--listen-peer-urls", "http://0.0.0.0:2380",
-            "--advertise-client-urls", "http://" + NAME + ":2379",
-            "--listen-client-urls", "http://0.0.0.0:2379",
-            "--initial-cluster", NAME + "0=http://" + NAME + ":2380"
-        };
+        if (secure) {
+            withCommand(
+                "/usr/local/bin/etcd",
+                "--name", NAME + "0",
+                "--initial-advertise-peer-urls", "http://" + NAME + ":2380",
+                "--listen-peer-urls", "http://0.0.0.0:2380",
+                "--advertise-client-urls", "https://" + NAME + ":2379",
+                "--listen-client-urls", "https://0.0.0.0:2379",
+                "--initial-cluster", NAME + "0=http://" + NAME + ":2380",
+                "--client-cert-auth",
+                "--trusted-ca-file", "/ca.pem",
+                "--cert-file", "/server.pem",
+                "--key-file", "/server-key.pem"
+            );
+        } else {
+            withCommand(
+                "/usr/local/bin/etcd",
+                "--name", NAME + "0",
+                "--initial-advertise-peer-urls", "http://" + NAME + ":2380",
+                "--listen-peer-urls", "http://0.0.0.0:2380",
+                "--advertise-client-urls", "http://" + NAME + ":2379",
+                "--listen-client-urls", "http://0.0.0.0:2379",
+                "--initial-cluster", NAME + "0=http://" + NAME + ":2380"
+            );
+        }
 
         this.withNetworkAliases(NAME)
             .withExposedPorts(CLIENT_PORT)
@@ -86,9 +111,14 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
                 createContainerCmd.withHostName(NAME);
                 createContainerCmd.withName(clusterName + "-" + NAME);
             })
-            .withCommand(command)
             .withNetworkAliases(NAME)
             .waitingFor(waitStrategy());
+        if (secure) {
+            this.withCopyFileToContainer(MountableFile.forClasspathResource("ssl/cert/ca.pem"), "/ca.pem")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("ssl/cert/server.pem"), "/server.pem")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("ssl/cert/server-key.pem"),
+                        "/server-key.pem");
+        }
         tailContainerLog();
     }
 
@@ -113,7 +143,11 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     }
 
     public String getClientEndpoint() {
-        return String.format("http://%s:%d", getHost(), getEtcdClientPort());
+        if (secure) {
+            return String.format("https://%s:%d", getHost(), getEtcdClientPort());
+        } else {
+            return String.format("http://%s:%d", getHost(), getEtcdClientPort());
+        }
     }
 
     private WaitStrategy waitStrategy() {
@@ -139,5 +173,23 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
         };
     }
 
+    public SslContext getSslContext() throws SSLException {
+        if (!secure) {
+            return null;
+        }
+        return GrpcSslContexts.forClient()
+            .sslProvider(SslProvider.OPENSSL)
+            .trustManager(EtcdContainer.class.getClassLoader().getResourceAsStream("ssl/cert/ca.pem"))
+            .keyManager(
+                    EtcdContainer.class.getClassLoader().getResourceAsStream("ssl/cert/client.pem"),
+                    EtcdContainer.class.getClassLoader().getResourceAsStream("ssl/cert/client-key-pk8.pem")
+            ).build();
+    }
 
+    public String getAuthority() {
+        if (!secure) {
+            return null;
+        }
+        return "etcd-ssl";
+    }
 }

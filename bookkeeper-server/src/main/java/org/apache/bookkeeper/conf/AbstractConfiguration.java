@@ -82,6 +82,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS = "allowShadedLedgerManagerFactoryClass";
     protected static final String SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX = "shadedLedgerManagerFactoryClassPrefix";
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
+    protected static final String METADATA_SERVICE_CONFIG = "metadataServiceConfig";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
     protected static final String ZK_REPLICATION_TASK_RATE_LIMIT = "zkReplicationTaskRateLimit";
@@ -293,6 +294,15 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setMetadataServiceUri(String serviceUri) {
         setProperty(METADATA_SERVICE_URI, serviceUri);
+        return getThis();
+    }
+
+    public String getMetadataServiceConfig() {
+        return getString(METADATA_SERVICE_CONFIG);
+    }
+
+    public T setMetadataServiceConfig(String config) {
+        setProperty(METADATA_SERVICE_CONFIG, config);
         return getThis();
     }
 
