@@ -165,7 +165,7 @@
     <protoc3.version>${protobuf.version}</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>7.9.2</rocksdb.version>
+    <rocksdb.version>7.10.2</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
     <snakeyaml.version>2.0</snakeyaml.version>
