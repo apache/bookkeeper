@@ -87,9 +87,7 @@ public interface BookKeeper extends AutoCloseable {
      *
      * @return the metadata service is available.
      */
-    default CompletableFuture<Boolean> isDriverMetadataServiceAvailable() {
-        return FutureUtils.value(true);
-    }
+    CompletableFuture<Boolean> isDriverMetadataServiceAvailable();
 
     /**
      * Close the client and release every resource.
