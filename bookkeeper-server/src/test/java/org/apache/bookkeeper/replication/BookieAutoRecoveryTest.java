@@ -117,6 +117,9 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         mFactory = metadataClientDriver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         ledgerManager = mFactory.newLedgerManager();
+
+        // ensure Auditor runs and updates known bookies
+        getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get();
     }
 
     @Override
