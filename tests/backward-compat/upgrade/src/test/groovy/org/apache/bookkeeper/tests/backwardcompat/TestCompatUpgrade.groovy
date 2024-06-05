@@ -155,51 +155,55 @@ class TestCompatUpgrade {
     }
 
     @Test
-    public void test_006_4130to4147() throws Exception {
-        testUpgrade("4.13.0", "4.14.7")
+    public void test_006_4130to4148() throws Exception {
+        testUpgrade("4.13.0", "4.14.8")
     }
 
     @Test
-    public void test_007_4147to4154() throws Exception {
-        testUpgrade("4.14.7", "4.15.4")
+    public void test_007_4148to4155() throws Exception {
+        testUpgrade("4.14.8", "4.15.5")
     }
 
     @Test
-    public void test_007_4147to4154_crc32c() throws Exception {
-        testUpgrade("4.14.7", "4.15.4", "CRC32C")
+    public void test_007_4148to4155_crc32c() throws Exception {
+        testUpgrade("4.14.8", "4.15.5", "CRC32C")
     }
 
     @Test
-    public void test_008_4154to4161() throws Exception {
-        testUpgrade("4.15.4", "4.16.1")
+    public void test_008_4155to4165() throws Exception {
+        testUpgrade("4.15.5", "4.16.5")
     }
 
     @Test
-    public void test_008_4154to4161_crc32c() throws Exception {
-        testUpgrade("4.15.4", "4.16.1", "CRC32C")
+    public void test_008_4155to4165_crc32c() throws Exception {
+        testUpgrade("4.15.5", "4.16.5", "CRC32C")
     }
 
     @Test
-    public void test_009_4161toCurrentMaster() throws Exception {
-        testUpgrade("4.16.1", BookKeeperClusterUtils.CURRENT_VERSION)
+    public void test_008_4165to4170_crc32c() throws Exception {
+        testUpgrade("4.16.5", "4.17.0", "CRC32C")
     }
 
     @Test
-    public void test_009_4161toCurrentMaster_crc32c() throws Exception {
-        testUpgrade("4.16.1", BookKeeperClusterUtils.CURRENT_VERSION, "CRC32C")
+    public void test_009_4165toCurrentMaster() throws Exception {
+        testUpgrade("4.17.0", BookKeeperClusterUtils.CURRENT_VERSION)
     }
 
-    // old version pulsar upgrade tests
-    // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4147_crc32c() throws Exception {
-        testUpgrade("4.10.0", "4.14.7", "CRC32C")
+    public void test_009_4165toCurrentMaster_crc32c() throws Exception {
+        testUpgrade("4.17.0", BookKeeperClusterUtils.CURRENT_VERSION, "CRC32C")
     }
 
     // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4161_crc32c() throws Exception {
-        testUpgrade("4.10.0", "4.16.1", "CRC32C")
+    public void test_010_4100to4148_crc32c() throws Exception {
+        testUpgrade("4.10.0", "4.14.8", "CRC32C")
+    }
+
+    // old version pulsar upgrade tests
+    @Test
+    public void test_010_4100to4170_crc32c() throws Exception {
+        testUpgrade("4.10.0", "4.17.0", "CRC32C")
     }
 
 }
