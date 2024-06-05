@@ -36,6 +36,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -386,7 +388,12 @@ public class Auditor implements AutoCloseable {
 
             try {
                 watchBookieChanges();
-                knownBookies = getAvailableBookies();
+                // Start with all available bookies
+                // to handle situations where the auditor
+                // is started after some bookies have already failed
+                knownBookies = admin.getAllBookies().stream()
+                        .map(BookieId::toString)
+                        .collect(Collectors.toList());
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
             } catch (BKException bke) {
