@@ -79,7 +79,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
             .setReadTimeout(30000)
             .setUseV2WireProtocol(true)
             .setReorderReadSequenceEnabled(true)
-            .setEnsemblePlacementPolicySlowBookies(true)
             .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         return new BookKeeperTestClient(conf, new TestStatsProvider());
     }
@@ -389,7 +388,6 @@ public class TestSpeculativeBatchRead extends BookKeeperClusterTestCase {
                 .setSpeculativeReadTimeout(1000)
                 .setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class)
                 .setReorderReadSequenceEnabled(true)
-                .setEnsemblePlacementPolicySlowBookies(true)
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkspec = new BookKeeperTestClient(conf, new TestStatsProvider());
         LedgerHandle l = bkspec.createLedger(1, 1, digestType, passwd);
