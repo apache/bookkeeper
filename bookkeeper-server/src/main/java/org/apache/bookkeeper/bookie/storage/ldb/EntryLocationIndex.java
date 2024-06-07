@@ -233,6 +233,7 @@ public class EntryLocationIndex implements Closeable {
             }
 
             batch.flush();
+            batch.close();
             for (long ledgerId : ledgersToDelete) {
                 deletedLedgers.remove(ledgerId);
             }
