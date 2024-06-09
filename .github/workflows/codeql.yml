@@ -38,6 +38,7 @@ jobs:
       # only required for workflows in private repositories
       actions: read
       contents: read
+      pull-requests: read
 
     strategy:
       fail-fast: false
