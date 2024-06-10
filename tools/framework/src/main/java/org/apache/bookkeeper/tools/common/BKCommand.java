@@ -19,9 +19,7 @@
 package org.apache.bookkeeper.tools.common;
 
 import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Paths;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -29,9 +27,10 @@ import org.apache.bookkeeper.tools.framework.Cli;
 import org.apache.bookkeeper.tools.framework.CliCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Base bk command class.
@@ -79,12 +78,8 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
         CompositeConfiguration conf = new CompositeConfiguration();
         if (!Strings.isNullOrEmpty(bkFlags.configFile)) {
             try {
-                URL configFileUrl = Paths.get(bkFlags.configFile).toUri().toURL();
-                PropertiesConfiguration loadedConf = new PropertiesConfiguration(configFileUrl);
+                PropertiesConfiguration loadedConf = new Configurations().properties(new File(bkFlags.configFile));
                 conf.addConfiguration(loadedConf);
-            } catch (MalformedURLException e) {
-                log.error("Could not open configuration file : {}", bkFlags.configFile, e);
-                throw new IllegalArgumentException(e);
             } catch (ConfigurationException e) {
                 log.error("Malformed configuration file : {}", bkFlags.configFile, e);
                 throw new IllegalArgumentException(e);

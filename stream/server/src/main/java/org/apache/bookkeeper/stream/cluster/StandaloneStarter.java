@@ -25,8 +25,9 @@ import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
 
 /**
  * A starter to start a standalone cluster.
@@ -143,7 +144,7 @@ public class StandaloneStarter {
 
         CompositeConfiguration conf = new CompositeConfiguration();
         if (null != starterArgs.configFile) {
-            PropertiesConfiguration propsConf = new PropertiesConfiguration(starterArgs.configFile);
+            PropertiesConfiguration propsConf = new Configurations().properties(starterArgs.configFile);
             conf.addConfiguration(propsConf);
         }
 

@@ -41,11 +41,12 @@ import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.StringEntryFormatter;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Abstract configuration.
@@ -222,7 +223,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @SuppressWarnings("unchecked")
     public void loadConf(URL confURL) throws ConfigurationException {
-        PropertiesConfiguration loadedConf = new PropertiesConfiguration(confURL);
+        PropertiesConfiguration loadedConf = new Configurations().properties(confURL);
         for (Iterator<String> iter = loadedConf.getKeys(); iter.hasNext(); ) {
             String key = iter.next();
             setProperty(key, loadedConf.getProperty(key));
