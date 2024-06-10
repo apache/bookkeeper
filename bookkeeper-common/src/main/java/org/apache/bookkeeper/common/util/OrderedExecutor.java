@@ -187,10 +187,12 @@ public class OrderedExecutor implements ExecutorService {
     protected class TimedRunnable implements Runnable {
         final Runnable runnable;
         final long initNanos;
+        final Class<?> runnableClass;
 
         TimedRunnable(Runnable runnable) {
             this.runnable = runnable;
             this.initNanos = MathUtils.nowInNano();
+            this.runnableClass = runnable.getClass();
          }
 
         @Override
@@ -203,8 +205,7 @@ public class OrderedExecutor implements ExecutorService {
                 long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
                 taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 if (elapsedMicroSec >= warnTimeMicroSec) {
-                    log.warn("Runnable {}:{} took too long {} micros to execute.", runnable, runnable.getClass(),
-                            elapsedMicroSec);
+                    log.warn("Runnable {} took too long {} micros to execute.", runnableClass, elapsedMicroSec);
                 }
             }
         }
@@ -216,10 +217,12 @@ public class OrderedExecutor implements ExecutorService {
     protected class TimedCallable<T> implements Callable<T> {
         final Callable<T> callable;
         final long initNanos;
+        final Class<?> callableClass;
 
         TimedCallable(Callable<T> callable) {
             this.callable = callable;
             this.initNanos = MathUtils.nowInNano();
+            this.callableClass = callable.getClass();
         }
 
         @Override
@@ -232,8 +235,7 @@ public class OrderedExecutor implements ExecutorService {
                 long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
                 taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 if (elapsedMicroSec >= warnTimeMicroSec) {
-                    log.warn("Callable {}:{} took too long {} micros to execute.", callable, callable.getClass(),
-                            elapsedMicroSec);
+                    log.warn("Callable {} took too long {} micros to execute.", callableClass, elapsedMicroSec);
                 }
             }
         }
