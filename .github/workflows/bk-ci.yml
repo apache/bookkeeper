@@ -485,11 +485,14 @@ jobs:
 
   typo-check:
     name: Typo Check
+    # only run on pull requests because of security reasons
+    # we shouldn't trust external actions for builds within the repository
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Check typos
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1.22.4
 
   owasp-dependency-check:
     name: OWASP Dependency Check
@@ -551,11 +554,19 @@ jobs:
       'windows-build'
     ]
     steps:
-      - name: Check build-and-license-check and typo-check success
+      - name: Check build-and-license-check success
         run: |
           if [[ ! ( \
                    "${{ needs.build-and-license-check.result }}" == "success" \
-                && "${{ needs.typo-check.result }}" == "success" \
+               ) ]]; then
+            echo "Required jobs haven't been completed successfully."
+            exit 1
+          fi
+      - name: Check typo-check success for pull requests
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [[ ! ( \
+                   "${{ needs.typo-check.result }}" == "success" \
                ) ]]; then
             echo "Required jobs haven't been completed successfully."
             exit 1
