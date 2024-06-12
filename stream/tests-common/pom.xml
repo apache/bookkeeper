@@ -34,7 +34,7 @@
       <exclusions>
         <exclusion>
           <groupId>io.grpc</groupId>
-          <artifactId>grpc-netty-shaded</artifactId>
+          <artifactId>grpc-netty</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.bouncycastle</groupId>
@@ -53,6 +53,10 @@
           <artifactId>grpc-servlet-jakarta</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>

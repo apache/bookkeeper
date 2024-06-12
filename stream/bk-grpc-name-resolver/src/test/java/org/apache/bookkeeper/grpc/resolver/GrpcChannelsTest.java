@@ -22,7 +22,7 @@ package org.apache.bookkeeper.grpc.resolver;
 import static org.junit.Assert.assertTrue;
 
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.utils.GrpcChannels;
 import org.junit.Test;
