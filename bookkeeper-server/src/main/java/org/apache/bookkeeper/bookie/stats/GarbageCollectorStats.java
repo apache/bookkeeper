@@ -126,13 +126,16 @@ public class GarbageCollectorStats {
         help = "Current proportion of compacted entry log files that have been executed"
     )
     private final Gauge<Double> entryLogCompactRatioGauge;
+    private volatile int[] entryLogUsageBuckets;
+    private final Gauge<Integer>[] entryLogUsageBucketsLeGauges;
 
 
     public GarbageCollectorStats(StatsLogger statsLogger,
                                  Supplier<Integer> activeEntryLogCountSupplier,
                                  Supplier<Long> activeEntryLogSpaceBytesSupplier,
                                  Supplier<Integer> activeLedgerCountSupplier,
-                                 Supplier<Double> entryLogCompactRatioSupplier) {
+                                 Supplier<Double> entryLogCompactRatioSupplier,
+                                 Supplier<int[]> usageBuckets) {
         this.statsLogger = statsLogger;
 
         this.minorCompactionCounter = statsLogger.getCounter(MINOR_COMPACTION_COUNT);
@@ -145,6 +148,7 @@ public class GarbageCollectorStats {
         this.gcLedgerRuntime = statsLogger.getOpStatsLogger(GC_LEDGER_RUNTIME);
         this.compactRuntime = statsLogger.getOpStatsLogger(COMPACT_RUNTIME);
         this.extractMetaRuntime = statsLogger.getOpStatsLogger(EXTRACT_META_RUNTIME);
+        this.entryLogUsageBuckets = usageBuckets.get();
 
         this.activeEntryLogCountGauge = new Gauge<Integer>() {
             @Override
@@ -194,6 +198,32 @@ public class GarbageCollectorStats {
             }
         };
         statsLogger.registerGauge(ENTRY_LOG_COMPACT_RATIO, entryLogCompactRatioGauge);
+
+        this.entryLogUsageBucketsLeGauges = new Gauge[entryLogUsageBuckets.length];
+        for (int i = 0; i < entryLogUsageBucketsLeGauges.length; i++) {
+            entryLogUsageBucketsLeGauges[i] =
+                    registerEntryLogUsageBucketsLeGauge("entry_log_usage_buckets_le_" + (i + 1) * 10, i);
+        }
     }
 
+    private Gauge<Integer> registerEntryLogUsageBucketsLeGauge(String name, int index) {
+        Gauge<Integer> gauge = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Integer getSample() {
+                return entryLogUsageBuckets[index];
+            }
+        };
+        statsLogger.registerGauge(name, gauge);
+        return gauge;
+    }
+
+
+    public void setEntryLogUsageBuckets(int[] usageBuckets) {
+        entryLogUsageBuckets = usageBuckets;
+    }
 }
