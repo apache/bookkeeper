@@ -33,7 +33,7 @@ export IMAGE_NAME="bookkeeper-release-build"
 
 pushd ${SCRIPT_DIR}
 
-docker build --rm=true -t ${IMAGE_NAME} .
+docker build --platform linux/amd64 --rm=true -t ${IMAGE_NAME} .
 
 popd
 
