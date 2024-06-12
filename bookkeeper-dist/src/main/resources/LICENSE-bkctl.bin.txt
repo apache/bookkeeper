@@ -265,7 +265,7 @@ Apache Software License, Version 2.
 - lib/io.grpc-grpc-grpclb-1.64.0.jar [32]
 - lib/io.grpc-grpc-inprocess-1.64.0.jar [32]
 - lib/io.grpc-grpc-opentelemetry-1.64.0.jar [32]
-- lib/io.grpc-grpc-netty-1.64.0.jar [32]
+- lib/io.grpc-grpc-netty-shaded-1.64.0.jar [32]
 - lib/io.grpc-grpc-protobuf-1.64.0.jar [32]
 - lib/io.grpc-grpc-protobuf-lite-1.64.0.jar [32]
 - lib/io.grpc-grpc-services-1.64.0.jar [32]

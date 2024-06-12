@@ -121,7 +121,7 @@ Copyright 2010 Cedric Beust cedric@beust.com
 - lib/io.grpc-grpc-auth-1.64.0.jar
 - lib/io.grpc-grpc-context-1.64.0.jar
 - lib/io.grpc-grpc-core-1.64.0.jar
-- lib/io.grpc-grpc-netty-1.64.0.jar
+- lib/io.grpc-grpc-netty-shaded-1.64.0.jar
 - lib/io.grpc-grpc-protobuf-1.64.0.jar
 - lib/io.grpc-grpc-protobuf-lite-1.64.0.jar
 - lib/io.grpc-grpc-stub-1.64.0.jar
