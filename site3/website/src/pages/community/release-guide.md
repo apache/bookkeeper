@@ -30,7 +30,7 @@ The release process consists of several steps:
 
 Deciding to release and selecting a Release Manager is the first step of the release process. This is a consensus-based decision of the entire community.
 
-Anybody can propose a release on the dev@ mailing list, giving a solid argument and nominating a committer as the Release Manager (including themselves). There’s no formal process, no vote requirements, and no timing requirements. Any objections should be resolved by consensus before starting the release.
+Anybody can propose a release on the dev@ mailing list, giving a solid argument and nominating a committer as the Release Manager (including themselves). There's no formal process, no vote requirements, and no timing requirements. Any objections should be resolved by consensus before starting the release.
 
 In general, the community prefers to have a rotating set of 3-5 Release Managers. Keeping a small core set of managers allows enough people to build expertise in this area and improve processes over time, without Release Managers needing to re-learn the processes for each release. That said, if you are a committer interested in serving the community in this way, please reach out to the community on the dev@ mailing list.
 
@@ -52,7 +52,7 @@ To prepare for each release, you should audit the project status in GitHub issue
 #### GPG Key
 
 You need to have a GPG key to sign the release artifacts. Please be aware of the ASF-wide [release signing guidelines](https://www.apache.org/dev/release-signing.html).
-If you don’t have a GPG key associated with your Apache account, please create one according to the [guidelines](http://apache.org/dev/openpgp.html#generate-key) and [upload](https://www.apache.org/dev/release-signing.html#keyserver-upload) your key to a public key server.
+If you don't have a GPG key associated with your Apache account, please create one according to the [guidelines](http://apache.org/dev/openpgp.html#generate-key) and [upload](https://www.apache.org/dev/release-signing.html#keyserver-upload) your key to a public key server.
 
 > It is important to [link](https://www.apache.org/dev/release-signing.html#apache-wot) your GPG key into the Apache web of trust.
 > You can reach out other committers in Apache BookKeeper community for signing your key.
@@ -72,7 +72,7 @@ This will list your GPG keys. One of these should reflect your Apache account, f
 
 Here, the key ID is the 8-digit hex string in the `pub` line: `845E6689`.
 
-**Second**, add your Apache GPG key to the BookKeeper’s `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
+**Second**, add your Apache GPG key to the BookKeeper's `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
 
 ```shell
 
@@ -95,7 +95,7 @@ Once you committed, please verify if your GPG key shows up in the BookkKeeper's 
 
     git config --global user.signingkey 845E6689
 
-You may drop the `--global` option if you’d prefer to use this key for the current repository only.
+You may drop the `--global` option if you'd prefer to use this key for the current repository only.
 
 You may wish to start `gpg-agent` to unlock your GPG key only once using your passphrase. Otherwise, you may need to enter this passphrase hundreds of times. The setup for `gpg-agent` varies based on operating system, but may be something like this:
 
@@ -111,7 +111,7 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
 2. Confirm you have appropriate access by finding `org.apache.bookkeeper` under `Staging Profiles`.
 3. Navigate to your `Profile` (top right dropdown menu of the page).
 4. Choose `User Token` from the dropdown, then click `Access User Token`. Copy a snippet of the Maven XML configuration block.
-5. Insert this snippet twice into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
+5. Insert the following snippet into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
 
         <settings>
           <servers>
@@ -267,10 +267,10 @@ Verify that pom.xml contains the correct VERSION, it should still end with the '
 
 ### Checklist to proceed to the next step
 
-1. Release Manager’s GPG key is published to `dist.apache.org`
-2. Release Manager’s GPG key is configured in `git` configuration
+1. Release Manager's GPG key is published to `dist.apache.org`
+2. Release Manager's GPG key is configured in `git` configuration
 3. Release Manager has `org.apache.bookkeeper` listed under `Staging Profiles` in Nexus
-4. Release Manager’s Nexus User Token is configured in `settings.xml`
+4. Release Manager's Nexus User Token is configured in `settings.xml`
 5. GitHub milestone item for the subsequet release has been created
 6. There are no release blocking GitHub issues
 7. Release Notes for GitHub Milestone is generated, audited and adjusted
@@ -364,7 +364,7 @@ Close the staging repository on Apache Nexus. When prompted for a description, e
 
 Once you have built and individually reviewed the release candidate, please share it for the community-wide review. Please review foundation-wide [voting guidelines](http://www.apache.org/foundation/voting.html) for more information.
 
-Start the review-and-vote thread on the dev@ mailing list. Here’s an email template; please adjust as you see fit.
+Start the review-and-vote thread on the dev@ mailing list. Here's an email template; please adjust as you see fit.
 
     From: Release Manager
     To: dev@bookkeeper.apache.org
@@ -405,9 +405,9 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     [4] link
     [5] link
 
-If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There’s no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don’t require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
+If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There's no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don't require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
 
-If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
+If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here's an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
 
     From: Release Manager
     To: dev@bookkeeper.apache.org
@@ -680,6 +680,6 @@ For example, if 4.6.1 is a newer release, we need to remove releases older than 
 
 ## Improve the process
 
-It is important that we improve the release processes over time. Once you’ve finished the release, please take a step back and look what areas of this process and be improved. Perhaps some part of the process can be simplified. Perhaps parts of this guide can be clarified.
+It is important that we improve the release processes over time. Once you've finished the release, please take a step back and look what areas of this process and be improved. Perhaps some part of the process can be simplified. Perhaps parts of this guide can be clarified.
 
 If we have specific ideas, please start a discussion on the dev@ mailing list and/or propose a pull request to update this guide. Thanks!
