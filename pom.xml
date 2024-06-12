@@ -132,6 +132,7 @@
     <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
     <jetcd.version>0.7.7</jetcd.version>
+    <failsafe.version>3.2.2</failsafe.version>
     <freebuilder.version>2.8.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
@@ -451,6 +452,13 @@
             <artifactId>grpc-servlet-jakarta</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <!-- used by jetcd-core-shaded -->
+      <dependency>
+        <groupId>dev.failsafe</groupId>
+        <artifactId>failsafe</artifactId>
+        <version>${failsafe.version}</version>
       </dependency>
 
       <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
