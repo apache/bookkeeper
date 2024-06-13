@@ -1099,24 +1099,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *            the concurrency level to use for the allocator pool
      * @return configuration object.
      */
-    @Deprecated
-    public T setAllocatorPoolingConcurrenncy(int concurrency) {
-        this.setProperty(ALLOCATOR_POOLING_POLICY, concurrency);
-        return getThis();
-    }
-
-    /**
-     * Controls the amount of concurrency for the memory pool.
-     *
-     * <p>Default is to have a number of allocator arenas equals to 2 * CPUS.
-     *
-     * <p>Decreasing this number will reduce the amount of memory overhead, at the
-     * expense of increased allocation contention.
-     *
-     * @param concurrency
-     *            the concurrency level to use for the allocator pool
-     * @return configuration object.
-     */
     public T setAllocatorPoolingConcurrency(int concurrency) {
         this.setProperty(ALLOCATOR_POOLING_POLICY, concurrency);
         return getThis();
