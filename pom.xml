@@ -131,7 +131,8 @@
     <curator.version>5.1.0</curator.version>
     <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
-    <etcd.version>0.7.7</etcd.version>
+    <jetcd.version>0.7.7</jetcd.version>
+    <failsafe.version>3.2.2</failsafe.version>
     <freebuilder.version>2.8.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
@@ -155,7 +156,7 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.108.Final</netty.version>
+    <netty.version>4.1.111.Final</netty.version>
     <netty-iouring.version>0.0.25.Final</netty-iouring.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
@@ -196,6 +197,7 @@
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
@@ -411,6 +413,49 @@
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- exclude dependencies from grpc-all -->
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-all</artifactId>
+        <version>${grpc.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-okhttp</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-servlet</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-servlet-jakarta</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- used by jetcd-core-shaded -->
+      <dependency>
+        <groupId>dev.failsafe</groupId>
+        <artifactId>failsafe</artifactId>
+        <version>${failsafe.version}</version>
       </dependency>
 
       <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
