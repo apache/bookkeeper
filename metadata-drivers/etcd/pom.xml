@@ -34,12 +34,17 @@
     </dependency>
 
     <dependency>
-      <groupId>io.etcd</groupId>
-      <artifactId>jetcd-core</artifactId>
-      <version>${etcd.version}</version>
+      <groupId>org.apache.bookkeeper.metadata.drivers</groupId>
+      <artifactId>jetcd-core-shaded</artifactId>
+      <version>${project.version}</version>
+      <classifier>shaded</classifier>
       <exclusions>
         <exclusion>
-          <groupId>io.grpc</groupId>
+          <groupId>io.etcd</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.vertx</groupId>
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
@@ -48,27 +53,11 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-all</artifactId>
-      <version>${grpc.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-okhttp</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-servlet</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-servlet-jakarta</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.arquillian.cube</groupId>
       <artifactId>arquillian-cube-docker</artifactId>

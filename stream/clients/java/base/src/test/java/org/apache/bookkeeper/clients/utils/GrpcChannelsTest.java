@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.junit.Test;
 

@@ -27,6 +27,7 @@
     <packaging>pom</packaging>
     <name>Apache BookKeeper :: Metadata Drivers :: Parent</name>
     <modules>
+        <module>jetcd-core-shaded</module>
         <module>etcd</module>
     </modules>
 </project>
