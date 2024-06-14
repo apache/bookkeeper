@@ -132,7 +132,7 @@ public class DockerUtils {
 
         try (InputStream dockerStream = docker.copyArchiveFromContainerCmd(containerId, path).exec();
              TarArchiveInputStream stream = new TarArchiveInputStream(dockerStream)) {
-            TarArchiveEntry entry = stream.getNextTarEntry();
+            TarArchiveEntry entry = stream.getNextEntry();
             while (entry != null) {
                 if (entry.isFile()) {
                     File targetDir = getTargetDirectory(containerId);
@@ -149,7 +149,7 @@ public class DockerUtils {
                         }
                     }
                 }
-                entry = stream.getNextTarEntry();
+                entry = stream.getNextEntry();
             }
         } catch (RuntimeException | IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);
