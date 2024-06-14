@@ -22,7 +22,6 @@ import com.github.dockerjava.api.DockerClient
 import io.netty.buffer.ByteBuf
 import org.apache.bookkeeper.net.BookieId
 
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
@@ -39,7 +38,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
-import org.apache.bookkeeper.versioning.Versioned
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -139,7 +137,6 @@ class TestCompatRecoveryNoPassword {
      * Test that when we try to recover a ledger which doesn't have
      * the password stored in the configuration, we don't succeed.
      */
-    @SuppressWarnings("deprecation")
     @Test
     public void testRecoveryWithoutPasswordInMetadata() throws Exception {
         int numEntries = 10
