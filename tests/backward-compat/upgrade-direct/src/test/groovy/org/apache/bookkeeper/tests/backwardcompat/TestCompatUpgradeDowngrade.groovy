@@ -102,6 +102,16 @@ class TestCompatUpgradeDowngrade {
     @Test
     public void upgradeDowngrade_015() {
         String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
+        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
+                "dbStorage_rocksDB_format_version",
+                "2")
+        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
+                "dbStorage_rocksDB_checksum_type",
+                "kCRC32c")
+        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
+                "conf/default_rocksdb.conf.default",
+                "format_version",
+                "2")
         upgradeDowngrade("4.17.0", currentVersion)
     }
 
