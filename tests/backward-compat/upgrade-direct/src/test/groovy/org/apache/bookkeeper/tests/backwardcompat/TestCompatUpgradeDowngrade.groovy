@@ -18,14 +18,12 @@
 package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
-import java.util.concurrent.TimeUnit
+import com.google.common.collect.Lists
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
-import org.junit.AfterClass
 import org.junit.Assert
-import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,16 +59,34 @@ class TestCompatUpgradeDowngrade {
 
         LOG.info("Setting ledger storage")
 
-        for (String version: BookKeeperClusterUtils.OLD_CLIENT_VERSIONS) {
+        List<String> versions = Lists.newArrayList(BookKeeperClusterUtils.OLD_CLIENT_VERSIONS)
+        versions.add(BookKeeperClusterUtils.CURRENT_VERSION)
+
+        for (String version: versions) {
+            if (version.startsWith("4.18.")) {
+                // rocksDB version 5 or above should be set as default for newer versions
+                break
+            }
             BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
                     "ledgerStorageClass",
                     "org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage")
-        }
-        BookKeeperClusterUtils.appendToAllBookieConf(docker, BookKeeperClusterUtils.CURRENT_VERSION,
-                "ledgerStorageClass",
-                "org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage")
-    }
 
+            try {
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "dbStorage_rocksDB_format_version",
+                        "2")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "dbStorage_rocksDB_checksum_type",
+                        "kCRC32c")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/default_rocksdb.conf.default",
+                        "format_version",
+                        "2")
+            } catch (Exception e) {
+                LOG.warn(version + ": Failed to set rocksdb configs, might be ok for some older version", e)
+            }
+        }
+    }
 
     // will ignore older non-supported versions
 
@@ -102,16 +118,6 @@ class TestCompatUpgradeDowngrade {
     @Test
     public void upgradeDowngrade_015() {
         String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
-        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
-                "dbStorage_rocksDB_format_version",
-                "2")
-        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
-                "dbStorage_rocksDB_checksum_type",
-                "kCRC32c")
-        BookKeeperClusterUtils.appendToAllBookieConf(docker, currentVersion,
-                "conf/default_rocksdb.conf.default",
-                "format_version",
-                "2")
         upgradeDowngrade("4.17.0", currentVersion)
     }
 
