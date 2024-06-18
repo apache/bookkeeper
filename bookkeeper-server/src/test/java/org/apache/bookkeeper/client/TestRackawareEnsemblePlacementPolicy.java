@@ -2379,7 +2379,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             }
         };
 
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, mockResolver);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE,
+                mockResolver);
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
@@ -2406,7 +2407,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         //clear history bookies and make addr1 shutdown.
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE, mockResolver);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE,
+                mockResolver);
 
         addrs.remove(addr1.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
