@@ -2360,7 +2360,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
-    public void testReplaceNotAvailableBookieWithDefualtRack() throws Exception {
+    public void testReplaceNotAvailableBookieWithDefaultRack() throws Exception {
         repp.uninitalize();
         repp.withDefaultRack(NetworkTopology.DEFAULT_RACK);
         AtomicInteger counter = new AtomicInteger();
