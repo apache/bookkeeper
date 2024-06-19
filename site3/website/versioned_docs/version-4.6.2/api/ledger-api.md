@@ -78,7 +78,7 @@ Or you can use a separate shaded artifact `bookkeeper-server-shaded`.
 
 ### Gradle
 
-If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://spring.io/guides/gs/gradle/) build configuration file:
+If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://docs.gradle.org/current/userguide/build_file_basics.html) build configuration file:
 
 ```groovy
 dependencies {
