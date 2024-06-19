@@ -49,7 +49,7 @@ shaded library, which relocate classes of protobuf and guava into a different na
 
 ### Gradle
 
-If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://spring.io/guides/gs/gradle/) build configuration file:
+If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://docs.gradle.org/current/userguide/build_file_basics.html) build configuration file:
 
 ```groovy
 dependencies {
