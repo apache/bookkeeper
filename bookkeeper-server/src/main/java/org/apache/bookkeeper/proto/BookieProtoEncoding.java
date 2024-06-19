@@ -36,6 +36,9 @@ import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.bookkeeper.proto.BookieProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
@@ -265,7 +268,7 @@ public class BookieProtoEncoding {
             this.extensionRegistry = extensionRegistry;
         }
 
-        private static final int RESPONSE_HEADERS_SIZE = 24;
+        public static final int RESPONSE_HEADERS_SIZE = 24;
 
         @Override
         public Object encode(Object msg, ByteBufAllocator allocator)
@@ -334,11 +337,7 @@ public class BookieProtoEncoding {
                     }
                 } else if (msg instanceof BookieProtocol.AddResponse) {
                     ByteBuf buf = allocator.buffer(RESPONSE_HEADERS_SIZE + 4 /* frame size */);
-                    buf.writeInt(RESPONSE_HEADERS_SIZE);
-                    buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
-                    buf.writeInt(r.getErrorCode());
-                    buf.writeLong(r.getLedgerId());
-                    buf.writeLong(r.getEntryId());
+                    serializeAddResponseInto((AddResponse) r, buf);
                     return buf;
                 } else if (msg instanceof BookieProtocol.AuthResponse) {
                     BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
@@ -358,6 +357,7 @@ public class BookieProtoEncoding {
                 r.recycle();
             }
         }
+
         @Override
         public Object decode(ByteBuf buffer)
                 throws Exception {
@@ -411,12 +411,12 @@ public class BookieProtoEncoding {
             }
         }
 
-        public static void serializeAddResponseInto(int rc, BookieProtocol.ParsedAddRequest req, ByteBuf buf) {
-            buf.writeInt(RESPONSE_HEADERS_SIZE); // Frame size
-            buf.writeInt(PacketHeader.toInt(req.getProtocolVersion(), req.getOpCode(), (short) 0));
-            buf.writeInt(rc); // rc-code
-            buf.writeLong(req.getLedgerId());
-            buf.writeLong(req.getEntryId());
+        public static void serializeAddResponseInto(AddResponse addResponse, ByteBuf buf) {
+            buf.writeInt(RESPONSE_HEADERS_SIZE);
+            buf.writeInt(PacketHeader.toInt(addResponse.getProtocolVersion(), addResponse.getOpCode(), (short) 0));
+            buf.writeInt(addResponse.getErrorCode());
+            buf.writeLong(addResponse.getLedgerId());
+            buf.writeLong(addResponse.getEntryId());
         }
     }
 
@@ -575,8 +575,9 @@ public class BookieProtoEncoding {
     /**
      * A response message encoder.
      */
-    @Sharable
     public static class ResponseEncoder extends ChannelOutboundHandlerAdapter {
+        public static final Object MSG_FLUSH_PENDING_ADD_RESPONSES = new Object();
+        private final List<AddResponse> pendingAddResponses = new ArrayList<>();
         final EnDecoder repPreV3;
         final EnDecoder repV3;
 
@@ -591,7 +592,11 @@ public class BookieProtoEncoding {
                 LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
             }
 
-            if (msg instanceof ByteBuf) {
+            if (msg == MSG_FLUSH_PENDING_ADD_RESPONSES) {
+                flushPendingAddResponses(ctx, promise);
+            } else if (msg instanceof BookieProtocol.AddResponse) {
+                pendingAddResponses.add((BookieProtocol.AddResponse) msg);
+            } else if (msg instanceof ByteBuf) {
                 ctx.write(msg, promise);
             } else if (msg instanceof BookkeeperProtocol.Response) {
                 ctx.write(repV3.encode(msg, ctx.alloc()), promise);
@@ -601,6 +606,20 @@ public class BookieProtoEncoding {
                 LOG.error("Invalid response to encode to {}: {}", ctx.channel(), msg.getClass().getName());
                 ctx.write(msg, promise);
             }
+        }
+
+        private void flushPendingAddResponses(ChannelHandlerContext ctx, ChannelPromise promise) {
+            if (pendingAddResponses.isEmpty()) {
+                return;
+            }
+            int serializedSize = pendingAddResponses.size() * (ResponseEnDeCoderPreV3.RESPONSE_HEADERS_SIZE + 4);
+            ByteBuf buf = ctx.alloc().directBuffer(serializedSize);
+            for (AddResponse addResponse : pendingAddResponses) {
+                ResponseEnDeCoderPreV3.serializeAddResponseInto(addResponse, buf);
+                addResponse.recycle();
+            }
+            pendingAddResponses.clear();
+            ctx.writeAndFlush(buf, promise);
         }
     }
 
