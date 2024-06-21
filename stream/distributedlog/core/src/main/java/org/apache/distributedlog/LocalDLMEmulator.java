@@ -162,15 +162,16 @@ public class LocalDLMEmulator {
 
     public void start() throws Exception {
         bkStartupThread.start();
-        if (!LocalBookKeeper.waitForServerUp(zkEnsemble, zkTimeoutSec * 1000)) {
+        if (!LocalBookKeeper.waitForServerUp(zkEnsemble, zkTimeoutSec * 1000L)) {
             throw new Exception("Error starting zookeeper/bookkeeper");
         }
         int bookiesUp = checkBookiesUp(numBookies, zkTimeoutSec);
         if (numBookies != bookiesUp) {
-            LOG.info("Only {} bookies are up, expected {} bookies to be there.",
+            String msg = String.format("Only %d bookies are up, expected %d bookies to be there.",
                 bookiesUp, numBookies);
+            LOG.info(msg);
+            throw new IllegalStateException(msg);
         }
-        assert (numBookies == bookiesUp);
         // Provision "/messaging/distributedlog" namespace
         DLMetadata.create(new BKDLConfig(zkEnsemble, "/ledgers")).create(uri);
     }

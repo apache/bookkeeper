@@ -604,7 +604,9 @@ public class LogSegmentMetadata {
                                                 long lastEntryId,
                                                 long lastSlotId,
                                                 long startSequenceId) {
-        assert this.lastTxId == DistributedLogConstants.INVALID_TXID;
+        if (DistributedLogConstants.INVALID_TXID != this.lastTxId) {
+            throw new IllegalStateException("Log Segment " + zkPath + " has already been completed.");
+        }
 
         return new Mutator(this)
                 .setZkPath(zkPath)
@@ -661,16 +663,20 @@ public class LogSegmentMetadata {
         long versionStatusCount = Long.parseLong(parts[0]);
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
-        assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (1 == version);
+        if (version != 1) {
+            throw new IllegalStateException("Invalid version : " + version + " in log segment metadata : "
+                + new String(data, UTF_8));
+        }
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.VERSION_V1_ORIGINAL;
 
         int regionId = (int) (versionStatusCount & REGION_MASK) >> REGION_SHIFT;
-        assert (regionId >= 0 && regionId <= 0xf);
+        if (regionId < 1) {
+            throw new IOException("Invalid region id : " + regionId + " in log segment metadata : "
+                + new String(data, UTF_8));
+        }
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
-        assert (status >= 0 && status <= METADATA_STATUS_BIT_MAX);
 
         if (parts.length == 3) {
             long logSegmentId = Long.parseLong(parts[1]);
@@ -681,7 +687,6 @@ public class LogSegmentMetadata {
                     .build();
         } else if (parts.length == 5) {
             long recordCount = (versionStatusCount & LOGRECORD_COUNT_MASK) >> LOGRECORD_COUNT_SHIFT;
-            assert (recordCount >= Integer.MIN_VALUE && recordCount <= Integer.MAX_VALUE);
 
             long logSegmentId = Long.parseLong(parts[1]);
             long firstTxId = Long.parseLong(parts[2]);
@@ -706,16 +711,16 @@ public class LogSegmentMetadata {
         long versionStatusCount = Long.parseLong(parts[0]);
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
-        assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (2 == version);
+        if (version != 2) {
+            throw new IllegalStateException("Invalid version : " + version + " in log segment metadata : "
+                + new String(data, UTF_8));
+        }
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO;
 
         int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
-        assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
-        assert (status >= 0 && status <= METADATA_STATUS_BIT_MAX);
 
         if (parts.length == 4) {
             long logSegmentId = Long.parseLong(parts[1]);
@@ -728,7 +733,6 @@ public class LogSegmentMetadata {
                 .build();
         } else if (parts.length == 8) {
             long recordCount = (versionStatusCount & LOGRECORD_COUNT_MASK) >> LOGRECORD_COUNT_SHIFT;
-            assert (recordCount >= Integer.MIN_VALUE && recordCount <= Integer.MAX_VALUE);
 
             long logSegmentId = Long.parseLong(parts[1]);
             long firstTxId = Long.parseLong(parts[2]);
@@ -760,17 +764,20 @@ public class LogSegmentMetadata {
         long versionStatusCount = Long.parseLong(parts[0]);
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
-        assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version
-                && LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version);
+        if (version < LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value) {
+            throw new UnsupportedMetadataVersionException("Ledger metadata version '"
+                    + version + "' is no longer supported: " + new String(data, UTF_8));
+        }
+        if (version > LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value) {
+            throw new UnsupportedMetadataVersionException("Metadata version '"
+                    + version + "' is higher than the highest supported version : " + new String(data, UTF_8));
+        }
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.of((int) version);
 
         int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
-        assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
-        assert (status >= 0 && status <= METADATA_STATUS_BIT_MAX);
 
         if (parts.length == 6) {
             long logSegmentId = Long.parseLong(parts[1]);
@@ -791,7 +798,6 @@ public class LogSegmentMetadata {
             return builder.build();
         } else if (parts.length == 10) {
             long recordCount = (versionStatusCount & LOGRECORD_COUNT_MASK) >> LOGRECORD_COUNT_SHIFT;
-            assert (recordCount >= Integer.MIN_VALUE && recordCount <= Integer.MAX_VALUE);
 
             long logSegmentId = Long.parseLong(parts[1]);
             long firstTxId = Long.parseLong(parts[2]);
@@ -830,17 +836,20 @@ public class LogSegmentMetadata {
         long versionStatusCount = Long.parseLong(parts[0]);
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
-        assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value <= version
-                && LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION >= version);
+        if (version < LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value) {
+            throw new UnsupportedMetadataVersionException("Ledger metadata version '"
+                    + version + "' is no longer supported: " + new String(data, UTF_8));
+        }
+        if (version > LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION) {
+            throw new UnsupportedMetadataVersionException("Metadata version '"
+                    + version + "' is higher than the highest supported version : " + new String(data, UTF_8));
+        }
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.of((int) version);
 
         int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
-        assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
-        assert (status >= 0 && status <= METADATA_STATUS_BIT_MAX);
 
         if (parts.length == 7) {
             long logSegmentId = Long.parseLong(parts[1]);
@@ -861,7 +870,6 @@ public class LogSegmentMetadata {
             return builder.build();
         } else if (parts.length == 11) {
             long recordCount = (versionStatusCount & LOGRECORD_COUNT_MASK) >> LOGRECORD_COUNT_SHIFT;
-            assert (recordCount >= Integer.MIN_VALUE && recordCount <= Integer.MAX_VALUE);
 
             long logSegmentId = Long.parseLong(parts[1]);
             long firstTxId = Long.parseLong(parts[2]);

@@ -319,7 +319,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     static int bytesToInt(byte[] b) {
-        assert b.length >= 4;
+        if (b.length < 4) {
+            throw new IllegalArgumentException("Invalid int bytes : " + b.length);
+        }
         return b[0] << 24 | b[1] << 16 | b[2] << 8 | b[3];
     }
 
