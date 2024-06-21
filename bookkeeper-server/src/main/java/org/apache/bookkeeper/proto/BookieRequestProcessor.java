@@ -441,7 +441,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final BookieRequestHandler requestHandler) {
-        WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, requestHandler, this);
+        WriteEntryProcessorV3 write = WriteEntryProcessorV3.create(r, requestHandler, this);
 
         final OrderedExecutor threadPool;
         if (RequestUtils.isHighPriority(r)) {

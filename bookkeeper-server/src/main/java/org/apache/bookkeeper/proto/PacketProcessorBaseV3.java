@@ -39,10 +39,10 @@ import org.apache.bookkeeper.util.StringUtils;
 @Slf4j
 public abstract class PacketProcessorBaseV3 implements Runnable {
 
-    final Request request;
-    final BookieRequestHandler requestHandler;
-    final BookieRequestProcessor requestProcessor;
-    final long enqueueNanos;
+    Request request;
+    BookieRequestHandler requestHandler;
+    BookieRequestProcessor requestProcessor;
+    long enqueueNanos;
 
     public PacketProcessorBaseV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
@@ -52,11 +52,35 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         this.enqueueNanos = MathUtils.nowInNano();
     }
 
+    public PacketProcessorBaseV3() {
+
+    }
+
+    protected void init(Request request, BookieRequestHandler requestHandler,
+                                 BookieRequestProcessor requestProcessor) {
+        this.request = request;
+        this.requestHandler = requestHandler;
+        this.requestProcessor = requestProcessor;
+        this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    protected void reset() {
+        this.request = null;
+        this.requestHandler = null;
+        this.requestProcessor = null;
+        this.enqueueNanos = -1;
+    }
+
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
         final long writeNanos = MathUtils.nowInNano();
 
         Channel channel = requestHandler.ctx().channel();
         final long timeOut = requestProcessor.getWaitTimeoutOnBackpressureMillis();
+        // save as local variable to make sure `channelWriteStats` and `enqueueNanos`
+        // not be reset in ChannelFutureListener
+        final OpStatsLogger channelWriteStats = requestProcessor.getRequestStats().getChannelWriteStats();
+        final long finalEnqueueNanos = enqueueNanos;
+
         if (timeOut >= 0 && !channel.isWritable()) {
             if (!requestProcessor.isBlacklisted(channel)) {
                 synchronized (channel) {
@@ -80,30 +104,30 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
             if (!channel.isWritable()) {
                 log.warn("cannot write response to non-writable channel {} for request {}", channel,
                         StringUtils.requestToString(request));
-                requestProcessor.getRequestStats().getChannelWriteStats()
-                        .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
-                statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                channelWriteStats.registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
+                statsLogger.registerFailedEvent(MathUtils.elapsedNanos(finalEnqueueNanos), TimeUnit.NANOSECONDS);
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
             }
         }
+
         if (channel.isActive()) {
             channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                     if (!future.isSuccess()) {
-                        requestProcessor.getRequestStats().getChannelWriteStats()
-                                .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                        channelWriteStats.registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                     } else {
-                        requestProcessor.getRequestStats().getChannelWriteStats()
-                                .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                        channelWriteStats.registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                     }
                     if (StatusCode.EOK == code) {
-                        statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                        statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(finalEnqueueNanos),
+                                TimeUnit.NANOSECONDS);
                     } else {
-                        statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                        statsLogger.registerFailedEvent(MathUtils.elapsedNanos(finalEnqueueNanos),
+                                TimeUnit.NANOSECONDS);
                     }
                 }
             });
