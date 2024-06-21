@@ -1788,6 +1788,101 @@ public class TestRegionAwareEnsemblePlacementPolicy {
     }
 
     @Test
+    public void testRegionsNewEnsembleWithDiskWeight() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r4");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region3/r5");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region3/r6");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+
+        int maxMultiple = 4;
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        conf.setIgnoreLocalNodeInPlacementPolicy(true);
+        conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        Map<BookieId, BookieInfoReader.BookieInfo> bookieInfoMap = new HashMap<BookieId, BookieInfoReader.BookieInfo>();
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfoReader.BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfoReader.BookieInfo(100L, 1L));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfoReader.BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfoReader.BookieInfo(100L, 1L));
+        bookieInfoMap.put(addr5.toBookieId(), new BookieInfoReader.BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr6.toBookieId(), new BookieInfoReader.BookieInfo(100L, 1L));
+
+        repp.updateBookieInfo(bookieInfoMap);
+        assertEquals(100L, repp.bookieInfoMap.get(repp.createBookieNode(addr1.toBookieId())).getWeight());
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : repp.perRegionPlacement.entrySet()) {
+            String region = entry.getKey();
+            RackawareEnsemblePlacementPolicy rackPolicy =
+                    (RackawareEnsemblePlacementPolicy) entry.getValue();
+            if (region.equals("region1")) {
+                assertEquals(100L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr1.toBookieId())).getWeight());
+                assertEquals(1L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr2.toBookieId())).getWeight());
+            }
+            if (region.equals("region2")) {
+                assertEquals(100L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr3.toBookieId())).getWeight());
+                assertEquals(1L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr4.toBookieId())).getWeight());
+            }
+            if (region.equals("region3")) {
+                assertEquals(100L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr5.toBookieId())).getWeight());
+                assertEquals(1L, rackPolicy.bookieInfoMap.get(
+                        rackPolicy.createBookieNode(addr6.toBookieId())).getWeight());
+            }
+        }
+
+        Map<BookieId, Long> selectionCounts = new HashMap<BookieId, Long>();
+        for (BookieId b : addrs) {
+            selectionCounts.put(b, 0L);
+        }
+        int numTries = 100;
+
+        Set<BookieId> excludeList = new HashSet<BookieId>();
+        EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse;
+        List<BookieId> ensemble;
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int acqQuorumSize = 2;
+        for (int i = 0; i < numTries; i++) {
+            ensembleResponse = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize, null, excludeList);
+            ensemble = ensembleResponse.getResult();
+            for (BookieId b : ensemble) {
+                selectionCounts.put(b, selectionCounts.get(b) + 1);
+            }
+        }
+
+        // freeDiskSpace of addr1 and addr2, addr3 and addr4, addr5 and addr6 is 100:1
+        // so the selectionCount should be addr1 > addr2, addr3 > addr4, addr5 > addr6
+        assertTrue(selectionCounts.get(addr1.toBookieId()) > selectionCounts.get(addr2.toBookieId()));
+        assertTrue(selectionCounts.get(addr3.toBookieId()) > selectionCounts.get(addr4.toBookieId()));
+        assertTrue(selectionCounts.get(addr5.toBookieId()) > selectionCounts.get(addr6.toBookieId()));
+    }
+
+    @Test
     public void testNotifyRackChangeWithOldRegion() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.1.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.1.2", 3181);
