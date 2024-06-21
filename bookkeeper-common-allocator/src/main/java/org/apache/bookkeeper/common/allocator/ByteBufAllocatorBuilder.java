@@ -92,4 +92,6 @@ public interface ByteBufAllocatorBuilder {
      * <p>Default is {@link LeakDetectionPolicy#Disabled}
      */
     ByteBufAllocatorBuilder leakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy);
+
+    ByteBufAllocatorBuilder exitOnOutOfMemory(boolean exitOnOutOfMemory);
 }

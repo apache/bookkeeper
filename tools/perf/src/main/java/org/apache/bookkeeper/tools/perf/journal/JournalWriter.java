@@ -495,6 +495,7 @@ public class JournalWriter implements Runnable {
                     log.error("Unable to allocate memory, exiting bookie", ex);
                 })
                 .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+                .exitOnOutOfMemory(conf.exitOnOutOfMemory())
                 .build();
     }
 
