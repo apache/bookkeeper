@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -245,6 +246,83 @@ public class LedgerDirsManagerTest {
     public void testIsReadOnlyModeOnAnyDiskFullEnabled() throws Exception {
         testAnyLedgerFullTransitToReadOnly(true);
         testAnyLedgerFullTransitToReadOnly(false);
+    }
+
+    @Test
+    public void testTriggerLedgerDirListener() throws Exception {
+        ledgerMonitor.shutdown();
+
+        final float nospace = 0.90f;
+        final float lwm = 0.80f;
+        HashMap<File, Float> usageMap;
+
+        File tmpDir1 = createTempDir("bkTest", ".dir");
+        File curDir1 = BookieImpl.getCurrentDirectory(tmpDir1);
+        BookieImpl.checkDirectoryStructure(curDir1);
+
+        File tmpDir2 = createTempDir("bkTest", ".dir");
+        File curDir2 = BookieImpl.getCurrentDirectory(tmpDir2);
+        BookieImpl.checkDirectoryStructure(curDir2);
+
+        conf.setDiskUsageThreshold(nospace);
+        conf.setDiskLowWaterMarkUsageThreshold(lwm);
+        conf.setDiskUsageWarnThreshold(nospace);
+        conf.setReadOnlyModeOnAnyDiskFullEnabled(false);
+        conf.setLedgerDirNames(new String[] { tmpDir1.toString(), tmpDir2.toString() });
+
+        mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, Collections.singletonList(dirsManager));
+        usageMap = new HashMap<>();
+        usageMap.put(curDir1, 0.1f);
+        usageMap.put(curDir2, 0.1f);
+        mockDiskChecker.setUsageMap(usageMap);
+        ledgerMonitor.init();
+        final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        ledgerMonitor.start();
+
+        final CountDownLatch diskAlmostFull = new CountDownLatch(1);
+        final CountDownLatch diskFull = new CountDownLatch(1);
+
+        dirsManager.addLedgerDirsListener(new LedgerDirsListener() {
+            @Override
+            public void diskAlmostFull(File disk) {
+                if (disk.equals(curDir1)) {
+                    diskAlmostFull.countDown();
+                }
+
+            }
+
+            @Override
+            public void diskFull(File disk) {
+                if (disk.equals(curDir1)) {
+                    diskFull.countDown();
+                }
+
+
+            }
+        });
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        // diskAlmostFull
+        setUsageAndThenVerify(curDir1, nospace - 0.6f, curDir2, nospace - 0.20f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+        assertEquals(1, diskAlmostFull.getCount());
+        setUsageAndThenVerify(curDir1, nospace - 0.2f, curDir2, nospace - 0.60f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+        assertEquals(0, diskAlmostFull.getCount());
+
+        // diskFull
+        setUsageAndThenVerify(curDir1, nospace - 0.6f, curDir2, nospace + 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+        assertEquals(1, diskFull.getCount());
+        setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace - 0.20f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+        assertEquals(0, diskFull.getCount());
     }
 
     public void testAnyLedgerFullTransitToReadOnly(boolean isReadOnlyModeOnAnyDiskFullEnabled) throws Exception {
