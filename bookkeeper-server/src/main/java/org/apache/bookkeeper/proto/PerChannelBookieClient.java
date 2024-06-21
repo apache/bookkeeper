@@ -847,8 +847,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             request = BookieProtocol.ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                                                     ledgerId, 0, (short) 0, null);
-            completionKey = acquireV2Key(ledgerId, 0, OperationType.READ_LAC);
+                                                     ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, (short) 0, null);
+            completionKey = acquireV2Key(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, OperationType.READ_ENTRY);
         } else {
             final long txnId = getTxnId();
             completionKey = new TxnCompletionKey(txnId, OperationType.READ_LAC);
@@ -865,9 +865,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setReadLacRequest(readLacBuilder)
                     .build();
         }
-        putCompletionKeyValue(completionKey,
-                              new ReadLacCompletion(completionKey, cb,
-                                                    ctx, ledgerId));
+        if (useV2WireProtocol) {
+            ReadEntryCallback readEntryCallback =
+                    (rc, ledgerId1, entryId, buffer, ctx1) -> cb.readLacComplete(rc, ledgerId1, null, buffer, ctx1);
+            ReadCompletion readCompletion = new ReadCompletion(completionKey,
+                    readEntryCallback, ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            putCompletionKeyValue(completionKey, readCompletion);
+        } else {
+            putCompletionKeyValue(completionKey,
+                    new ReadLacCompletion(completionKey, cb,
+                            ctx, ledgerId));
+        }
+
         writeAndFlush(channel, completionKey, request);
     }
 
