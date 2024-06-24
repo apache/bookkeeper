@@ -241,9 +241,9 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
             // Create a watcher manager
             StatsLogger watcherStatsLogger = statsLogger.scope("watcher");
-            ZooKeeperWatcherBase watcherManager =
-                    null == watchers ? new ZooKeeperWatcherBase(sessionTimeoutMs, watcherStatsLogger) :
-                            new ZooKeeperWatcherBase(sessionTimeoutMs, watchers, watcherStatsLogger);
+            ZooKeeperWatcherBase watcherManager = (null == watchers)
+                    ? new ZooKeeperWatcherBase(sessionTimeoutMs, allowReadOnlyMode, watcherStatsLogger)
+                    : new ZooKeeperWatcherBase(sessionTimeoutMs, allowReadOnlyMode, watchers, watcherStatsLogger);
             ZooKeeperClient client = new ZooKeeperClient(
                     connectString,
                     sessionTimeoutMs,

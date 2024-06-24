@@ -1103,7 +1103,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
          * create MockZooKeeperClient instance and wait for it to be connected.
          */
         int zkSessionTimeOut = 10000;
-        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut,
+        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut, false,
                 NullStatsLogger.INSTANCE);
         MockZooKeeperClient zkFaultInjectionWrapper = new MockZooKeeperClient(zkUtil.getZooKeeperConnectString(),
                 zkSessionTimeOut, zooKeeperWatcherBase);
