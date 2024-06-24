@@ -191,6 +191,8 @@
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+    <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
     <dependency-check-maven.version>9.2.0</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
@@ -885,6 +887,28 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <!-- Java 17 is the minimum required version for Bookkeeper -->
+            <release>17</release>
+            <encoding>UTF-8</encoding>
+            <showDeprecation>true</showDeprecation>
+            <showWarnings>true</showWarnings>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+            </annotationProcessorPaths>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${maven-checkstyle-plugin.version}</version>
           <dependencies>
@@ -941,31 +965,36 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[17,18),[21,22)</version>
+                  <message>Java 17 or Java 21 is required to build Bookkeeper.</message>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>3.6.1</version>
+                  <message>Maven 3.6.1 or newer is required to build Bookkeeper.</message>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>${spotbugs-maven-plugin.version}</version>
         <configuration>
           <excludeFilterFile>${session.executionRootDirectory}/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml</excludeFilterFile>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>${lombok.version}</version>
-            </path>
-          </annotationProcessorPaths>
-          <compilerArgs>
-            <arg>-parameters</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
