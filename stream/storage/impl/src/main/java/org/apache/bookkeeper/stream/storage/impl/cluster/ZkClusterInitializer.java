@@ -77,7 +77,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
 
                     String ledgersPath = metadataServiceUri.getPath();
                     Optional<String> segmentStorePath;
-                    if (Strings.isNullOrEmpty(ledgersPath) || "/" == ledgersPath) {
+                    if (Strings.isNullOrEmpty(ledgersPath) || "/".equals(ledgersPath)) {
                         segmentStorePath = Optional.empty();
                     } else {
                         segmentStorePath = Optional.of(ledgersPath);
