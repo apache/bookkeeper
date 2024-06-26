@@ -516,7 +516,7 @@ done
 
 ### Update Latest Docker Image Version
 
-> If you are releasing a newest version, you need to update the latest docker image version to the new release version.
+> If you are releasing the newest version, you need to update the latest docker image version to the new release version.
 
 Update the `BK_VERSION` in the `docker/Dockerfile`
 
@@ -569,7 +569,7 @@ Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
 ### Create release in GitHub
 
-Create a new release on GitHub. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
+Create a new release on GitHub. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and publish the release.
 
 ### Mark the version as released in GitHub
 
