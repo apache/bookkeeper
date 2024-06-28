@@ -281,6 +281,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return this;
     }
 
+    @Override
     public String getDefaultRack() {
         return defaultRack;
     }
