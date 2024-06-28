@@ -105,7 +105,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf, NullStatsLogger.INSTANCE);
-        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
+        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() * 2 + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
             @Override
@@ -156,7 +156,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf, NullStatsLogger.INSTANCE);
-        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
+        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() * 2 + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
             @Override
@@ -194,7 +194,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf, NullStatsLogger.INSTANCE);
-        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
+        Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() * 2 + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
             @Override
