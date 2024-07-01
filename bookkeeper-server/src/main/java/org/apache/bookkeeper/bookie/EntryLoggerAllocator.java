@@ -180,24 +180,23 @@ class EntryLoggerAllocator {
         } while (testLogFile == null);
 
         File newLogFile = new File(dirForNextEntryLog, logFileName);
-        try (FileChannel channel = new RandomAccessFile(newLogFile, "rw").getChannel()) {
+        FileChannel channel = new RandomAccessFile(newLogFile, "rw").getChannel();
 
-            BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
-                    conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
-            logfileHeader.readerIndex(0);
-            logChannel.write(logfileHeader);
+        BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
+                conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
+        logfileHeader.readerIndex(0);
+        logChannel.write(logfileHeader);
 
-            for (File f : ledgersDirs) {
-                setLastLogId(f, preallocatedLogId);
-            }
-
-            if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
-                recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
-            }
-
-            log.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
-            return logChannel;
+        for (File f : ledgersDirs) {
+            setLastLogId(f, preallocatedLogId);
         }
+
+        if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
+            recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
+        }
+
+        log.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
+        return logChannel;
     }
 
 
