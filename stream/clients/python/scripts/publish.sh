@@ -23,8 +23,8 @@
 BINDIR=`dirname "$0"`
 BK_HOME=`cd ${BINDIR}/..;pwd`
 
-python -m pip install --user --upgrade setuptools wheel twine
+python3 -m pip install --user --upgrade setuptools wheel twine
 
 rm ${BK_HOME}/dist/*
-python setup.py sdist bdist_wheel
+python3 setup.py sdist bdist_wheel
 twine upload dist/*
