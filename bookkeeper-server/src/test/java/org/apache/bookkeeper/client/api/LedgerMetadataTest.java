@@ -18,15 +18,15 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Iterator;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Bookkeeper Client API ledger metadata and ledgers listing test.
@@ -93,7 +93,7 @@ public class LedgerMetadataTest extends BookKeeperClusterTestCase {
                     assertEquals(ledgerIds[count++], ledgerId);
                 }
 
-                assertEquals("Unexpected ledgers count", numOfLedgers, count);
+                assertEquals(numOfLedgers, count, "Unexpected ledgers count");
                 try {
                     result.iterator();
                     fail("Should thrown error");
@@ -116,7 +116,7 @@ public class LedgerMetadataTest extends BookKeeperClusterTestCase {
                     assertEquals(ledgerIds[count++], ledgerId);
 
                 }
-                assertEquals("Unexpected ledgers count", numOfLedgers, count);
+                assertEquals(numOfLedgers, count, "Unexpected ledgers count");
                 try {
                     result.iterator();
                     fail("Should thrown error");
