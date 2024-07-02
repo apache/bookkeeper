@@ -158,12 +158,13 @@ public class BKDistributedLogNamespace implements Namespace {
         if (!uri.isPresent()) {
             throw new LogNotFoundException("Log " + logName + " isn't found.");
         }
-        DistributedLogManager dlm = openLogInternal(
+        try (DistributedLogManager dlm = openLogInternal(
                 uri.get(),
                 logName,
                 Optional.empty(),
-                Optional.empty());
-        dlm.delete();
+                Optional.empty())) {
+            dlm.delete();
+        }
     }
 
     @Override
