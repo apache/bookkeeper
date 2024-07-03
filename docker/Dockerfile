@@ -17,6 +17,20 @@
 # under the License.
 #
 
+FROM eclipse-temurin:17 as jre-build
+
+# Create a custom Java runtime
+RUN $JAVA_HOME/bin/jlink \
+         --add-modules ALL-MODULE-PATH \
+         --strip-debug \
+         --no-man-pages \
+         --no-header-files \
+         --compress=2 \
+         --output /javaruntime
+
+RUN echo networkaddress.cache.ttl=1 >> /javaruntime/conf/security/java.security
+RUN echo networkaddress.cache.negative.ttl=1 >> /javaruntime/conf/security/java.security
+
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
@@ -42,7 +56,6 @@ RUN set -x \
     && adduser "${BK_USER}" \
     && apt-get update \
     && apt-get install -y ca-certificates apt-transport-https \
-    && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
@@ -66,10 +79,9 @@ RUN set -x \
 
 WORKDIR /opt/bookkeeper
 
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
-
-RUN echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
-    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="$PATH:$JAVA_HOME/bin"
+COPY --from=jre-build /javaruntime $JAVA_HOME
 
 COPY scripts /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
