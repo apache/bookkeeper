@@ -104,7 +104,7 @@
               <pullNewerImage>false</pullNewerImage>
               <noCache>true</noCache>
               <buildArgs>
-                <BK_IMAGE>${docker.image}</BK_IMAGE>
+                <BK_IMAGE>${docker.organization}/${docker.image}</BK_IMAGE>
               </buildArgs>
             </configuration>
           </plugin>
