@@ -68,6 +68,7 @@
     <module>shaded</module>
     <module>microbenchmarks</module>
     <module>bookkeeper-slogger</module>
+    <module>docker</module>
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
@@ -204,6 +205,16 @@
     <otel.version>1.26.0</otel.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
+
+    <!-- docker -->
+    <docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
+    <docker.skip.push>true</docker.skip.push>
+    <docker.verbose>true</docker.verbose>
+    <docker.organization>apache</docker.organization>
+    <docker.image>bookkeeper:latest</docker.image>
+    <!-- create an additional tag -->
+    <docker.tag></docker.tag>
+    <docker.platforms></docker.platforms>
   </properties>
 
   <!-- dependency definitions -->
@@ -1346,6 +1357,11 @@
                 <!-- for some reason, setting maven.compiler.release property alone doesn't work -->
                 <release>${maven.compiler.release}</release>
               </configuration>
+            </plugin>
+            <plugin>
+              <groupId>io.fabric8</groupId>
+              <artifactId>docker-maven-plugin</artifactId>
+              <version>${docker-maven-plugin.version}</version>
             </plugin>
           </plugins>
         </pluginManagement>
