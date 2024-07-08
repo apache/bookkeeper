@@ -24,7 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 
 interface HandleFactory {
-    LedgerDescriptor getHandle(long ledgerId, byte[] masterKey)
+    LedgerDescriptor getHandle(long ledgerId, byte[] masterKey, boolean journalReplay)
             throws IOException, BookieException;
 
     LedgerDescriptor getReadOnlyHandle(long ledgerId)

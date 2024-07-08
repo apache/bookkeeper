@@ -203,7 +203,7 @@ public interface LedgerStorage {
      * Signals that a ledger is deleted by the garbage collection thread.
      */
     interface LedgerDeletionListener {
-        void ledgerDeleted(long ledgerId);
+        void ledgerDeleted(long ledgerId) throws IOException;
     }
 
     /**
