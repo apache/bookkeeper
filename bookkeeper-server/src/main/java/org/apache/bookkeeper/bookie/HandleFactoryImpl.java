@@ -79,20 +79,20 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
         return handle;
     }
 
-    private void markIfConflictWritingOccurs(long ledgerId) throws IOException {
+    private void markIfConflictWritingOccurs(long ledgerId) {
         LedgerDescriptor ledgerDescriptor = ledgers.get(ledgerId);
         try {
             if (ledgerDescriptor != null && ledgerDescriptor.isFenced()) {
                 recentlyFencedAndDeletedLedgers.put(ledgerId, true);
             }
-        } catch (BookieException ex) {
+        } catch (IOException | BookieException ex) {
             // The ledger is in limbo state.
             recentlyFencedAndDeletedLedgers.put(ledgerId, true);
         }
     }
 
     @Override
-    public void ledgerDeleted(long ledgerId) throws IOException{
+    public void ledgerDeleted(long ledgerId) {
         markIfConflictWritingOccurs(ledgerId);
         // Do delete.
         ledgers.remove(ledgerId);
