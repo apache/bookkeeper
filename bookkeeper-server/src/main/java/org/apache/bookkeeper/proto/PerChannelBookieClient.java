@@ -1162,6 +1162,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         }
                     } else {
                         nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                        errorOut(key);
                     }
                 } finally {
                     if (cleanupActionAfterWrite != null) {
