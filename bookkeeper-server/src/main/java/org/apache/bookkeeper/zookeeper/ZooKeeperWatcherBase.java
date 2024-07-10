@@ -44,6 +44,7 @@ public class ZooKeeperWatcherBase implements Watcher {
             .getLogger(ZooKeeperWatcherBase.class);
 
     private final int zkSessionTimeOut;
+    private final boolean allowReadOnlyMode;
     private volatile CountDownLatch clientConnectLatch = new CountDownLatch(1);
     private final CopyOnWriteArraySet<Watcher> childWatchers =
             new CopyOnWriteArraySet<Watcher>();
@@ -53,18 +54,20 @@ public class ZooKeeperWatcherBase implements Watcher {
     private final ConcurrentHashMap<EventType, Counter> eventCounters =
             new ConcurrentHashMap<EventType, Counter>();
 
-    public ZooKeeperWatcherBase(int zkSessionTimeOut) {
-        this(zkSessionTimeOut, NullStatsLogger.INSTANCE);
+    public ZooKeeperWatcherBase(int zkSessionTimeOut, boolean allowReadOnlyMode) {
+        this(zkSessionTimeOut, allowReadOnlyMode, NullStatsLogger.INSTANCE);
     }
 
-    public ZooKeeperWatcherBase(int zkSessionTimeOut, StatsLogger statsLogger) {
-        this(zkSessionTimeOut, new HashSet<Watcher>(), statsLogger);
+    public ZooKeeperWatcherBase(int zkSessionTimeOut, boolean allowReadOnlyMode, StatsLogger statsLogger) {
+        this(zkSessionTimeOut, allowReadOnlyMode, new HashSet<Watcher>(), statsLogger);
     }
 
     public ZooKeeperWatcherBase(int zkSessionTimeOut,
+                                boolean allowReadOnlyMode,
                                 Set<Watcher> childWatchers,
                                 StatsLogger statsLogger) {
         this.zkSessionTimeOut = zkSessionTimeOut;
+        this.allowReadOnlyMode = allowReadOnlyMode;
         this.childWatchers.addAll(childWatchers);
         this.statsLogger = statsLogger;
     }
@@ -129,6 +132,14 @@ public class ZooKeeperWatcherBase implements Watcher {
         case SyncConnected:
             LOG.info("ZooKeeper client is connected now.");
             clientConnectLatch.countDown();
+            break;
+        case ConnectedReadOnly:
+            if (allowReadOnlyMode) {
+                LOG.info("ZooKeeper client is connected in read-only mode now.");
+                clientConnectLatch.countDown();
+            } else {
+                LOG.warn("ZooKeeper client is connected in read-only mode, which is not allowed.");
+            }
             break;
         case Disconnected:
             LOG.info("ZooKeeper client is disconnected from zookeeper now,"
