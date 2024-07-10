@@ -901,7 +901,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testZKConnectionLossForLedgerCreation() throws Exception {
         int zkSessionTimeOut = 10000;
         AtomicLong ledgerIdToInjectFailure = new AtomicLong(INVALID_LEDGERID);
-        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut,
+        ZooKeeperWatcherBase zooKeeperWatcherBase = new ZooKeeperWatcherBase(zkSessionTimeOut, false,
                 NullStatsLogger.INSTANCE);
         MockZooKeeperClient zkFaultInjectionWrapper = new MockZooKeeperClient(zkUtil.getZooKeeperConnectString(),
                 zkSessionTimeOut, zooKeeperWatcherBase, ledgerIdToInjectFailure);
