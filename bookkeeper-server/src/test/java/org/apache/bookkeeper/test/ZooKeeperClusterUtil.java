@@ -137,4 +137,12 @@ public class ZooKeeperClusterUtil implements ZooKeeperCluster {
     public void sleepCluster(int time, TimeUnit timeUnit, CountDownLatch l) throws InterruptedException, IOException {
         throw new UnsupportedOperationException("sleepServer operation is not supported for ZooKeeperClusterUtil");
     }
+
+    public void stopPeer(int id) throws Exception {
+        quorumUtil.shutdown(id);
+    }
+
+    public void enableLocalSession(boolean localSessionEnabled) {
+        quorumUtil.enableLocalSession(localSessionEnabled);
+    }
 }

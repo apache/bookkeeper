@@ -65,7 +65,7 @@ public interface ZooKeeperCluster {
     default void expireSession(ZooKeeper zk) throws Exception {
         long id = zk.getSessionId();
         byte[] password = zk.getSessionPasswd();
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000, false);
         ZooKeeper zk2 = new ZooKeeper(getZooKeeperConnectString(), zk.getSessionTimeout(), w, id, password);
         w.waitForConnection();
         zk2.close();
