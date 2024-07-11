@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -45,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * This unit test tests ledger fencing.
  *
  */
+@Slf4j
 public class TestFencing extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
@@ -84,6 +86,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             fail("Should have thrown an exception when trying to write");
         } catch (BKException.BKLedgerFencedException e) {
             // correct behaviour
+            log.info("expected a fenced error", e);
         }
 
         /*
@@ -120,7 +123,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             LOG.info("Not expected: entryId: {}", entryId);
             LOG.error("Should have thrown an exception");
             fail("Should have thrown an exception when trying to write");
-        } catch (Exception e) {
+        } catch (BKException.BKLedgerFencedException e) {
             e.printStackTrace();
             // correct behaviour
         }
