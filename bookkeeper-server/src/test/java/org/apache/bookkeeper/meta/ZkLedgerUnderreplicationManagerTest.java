@@ -110,7 +110,7 @@ public class ZkLedgerUnderreplicationManagerTest extends BookKeeperClusterTestSu
 
         // mark when it hasn't been marked before
         FutureUtils.result(urMgr.markLedgerUnderreplicatedAsync(ledgerId, missingBookies));
-        UnderreplicatedLedgerFormat urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
+        UnderreplicatedLedger urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
         assertEquals(missingBookies, urLedgerFormat.getReplicaList());
         assertTrue(urLedgerFormat.getCtime() > prevCtime);
         prevCtime = urLedgerFormat.getCtime();
@@ -168,7 +168,7 @@ public class ZkLedgerUnderreplicationManagerTest extends BookKeeperClusterTestSu
         }
         FutureUtils.result(FutureUtils.collect(futures));
 
-        UnderreplicatedLedgerFormat urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
+        UnderreplicatedLedger urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
         Set<String> actualBookies = Sets.newHashSet();
         actualBookies.addAll(urLedgerFormat.getReplicaList());
 
@@ -198,7 +198,7 @@ public class ZkLedgerUnderreplicationManagerTest extends BookKeeperClusterTestSu
 
         FutureUtils.result(FutureUtils.collect(futures));
 
-        UnderreplicatedLedgerFormat urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
+        UnderreplicatedLedger urLedgerFormat = urMgr.getLedgerUnreplicationInfo(ledgerId);
         Set<String> actualBookies = Sets.newHashSet();
         actualBookies.addAll(urLedgerFormat.getReplicaList());
 
@@ -232,10 +232,10 @@ public class ZkLedgerUnderreplicationManagerTest extends BookKeeperClusterTestSu
             // expected
         }
         try {
-            UnderreplicatedLedgerFormat urLedgerFormat =
+            UnderreplicatedLedger urLedgerFormat =
                 ZkLedgerUnderreplicationManagerTest.this.urMgr.getLedgerUnreplicationInfo(ledgerId);
             fail("The ledger shouldn't been marked as underreplicated");
-        } catch (NoNodeException nee) {
+        } catch (ReplicationException.UnavailableException ue) {
             // expected
         }
     }

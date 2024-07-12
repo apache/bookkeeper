@@ -20,16 +20,20 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import io.netty.buffer.PooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.PortManager;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -112,8 +116,9 @@ public abstract class BookKeeperClusterTestSuite {
 
     private static BookieServer startBookie(ServerConfiguration conf) throws Exception {
         conf.setAutoRecoveryDaemonEnabled(true);
-        TestStatsProvider provider = new TestStatsProvider();
-        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""));
+        BookieServer server = new BookieServer( conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
         server.start();
         return server;
     }

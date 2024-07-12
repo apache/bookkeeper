@@ -30,12 +30,12 @@ class ZKMetadataStore implements MetadataStore {
 
     @Override
     public void start() throws Exception {
-        this.zkUtil.startServer();
+        this.zkUtil.startCluster();
     }
 
     @Override
     public void close() throws Exception {
-        this.zkUtil.killServer();
+        this.zkUtil.killCluster();
     }
 
     @Override
