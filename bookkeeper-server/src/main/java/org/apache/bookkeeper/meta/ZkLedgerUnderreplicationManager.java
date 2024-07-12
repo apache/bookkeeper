@@ -267,7 +267,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         return String.format("%s/urL%010d", base, ledgerId);
     }
 
-    private String getUrLedgerZnode(long ledgerId) {
+    @VisibleForTesting
+    String getUrLedgerZnode(long ledgerId) {
         return getUrLedgerZnode(urLedgerPath, ledgerId);
     }
 
