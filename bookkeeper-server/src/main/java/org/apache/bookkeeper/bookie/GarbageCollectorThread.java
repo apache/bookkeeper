@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
@@ -42,10 +43,10 @@ import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
@@ -58,14 +59,15 @@ import org.slf4j.LoggerFactory;
 public class GarbageCollectorThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
+    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
-    private EntryLogMetadataMap entryLogMetaMap;
+    private final EntryLogMetadataMap entryLogMetaMap;
 
     private final ScheduledExecutorService gcExecutor;
     Future<?> scheduledFuture = null;
 
-    // This is how often we want to run the Garbage Collector Thread (in milliseconds).
+    // This is the fixed delay in milliseconds before running the Garbage Collector Thread again.
     final long gcWaitTime;
 
     // Compaction parameters
@@ -88,7 +90,7 @@ public class GarbageCollectorThread implements Runnable {
 
     // Entry Logger Handle
     final EntryLogger entryLogger;
-    final AbstractLogCompactor compactor;
+    AbstractLogCompactor compactor;
 
     // Stats loggers for garbage collection operations
     private final GarbageCollectorStats gcStats;
@@ -136,8 +138,12 @@ public class GarbageCollectorThread implements Runnable {
                                   final CompactableLedgerStorage ledgerStorage,
                                   EntryLogger entryLogger,
                                   StatsLogger statsLogger) throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger,
-                Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread")));
+        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger, newExecutor());
+    }
+
+    @VisibleForTesting
+    static ScheduledExecutorService newExecutor() {
+        return Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
     }
 
     /**
@@ -292,12 +298,11 @@ public class GarbageCollectorThread implements Runnable {
         }
     }
 
-    public void enableForceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void enableForceGC(boolean forceMajor, boolean forceMinor) {
         if (forceGarbageCollection.compareAndSet(false, true)) {
             LOG.info("Forced garbage collection triggered by thread: {}, forceMajor: {}, forceMinor: {}",
                 Thread.currentThread().getName(), forceMajor, forceMinor);
-            triggerGC(true, forceMajor == null ? suspendMajorCompaction.get() : !forceMajor,
-                forceMinor == null ? suspendMinorCompaction.get() : !forceMinor);
+            triggerGC(true, !forceMajor, !forceMinor);
         }
     }
 
@@ -369,7 +374,7 @@ public class GarbageCollectorThread implements Runnable {
             scheduledFuture.cancel(false);
         }
         long initialDelay = getModInitialDelay();
-        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
+        scheduledFuture = gcExecutor.scheduleWithFixedDelay(this, initialDelay, gcWaitTime, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -393,12 +398,6 @@ public class GarbageCollectorThread implements Runnable {
         boolean suspendMinor = suspendMinorCompaction.get();
 
         runWithFlags(force, suspendMajor, suspendMinor);
-
-        if (force) {
-            // only set force to false if it had been true when the garbage
-            // collection cycle started
-            forceGarbageCollection.set(false);
-        }
     }
 
     public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {
@@ -497,8 +496,11 @@ public class GarbageCollectorThread implements Runnable {
                     // ledgers anymore.
                     // We can remove this entry log file now.
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
-                    removeEntryLog(entryLogId);
-                    gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    if (removeEntryLog(entryLogId)) {
+                        gcStats.getReclaimedSpaceViaDeletes().addCount(meta.getTotalSize());
+                    } else {
+                        gcStats.getReclaimFailedToDelete().inc();
+                    }
                 } else if (modified) {
                     // update entryLogMetaMap only when the meta modified.
                     entryLogMetaMap.put(meta.getEntryLogId(), meta);
@@ -589,6 +591,13 @@ public class GarbageCollectorThread implements Runnable {
                 entryLogUsageBuckets);
 
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
+        int totalEntryLogIds = 0;
+        for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
+            totalEntryLogIds += compactableBuckets.get(currBucket).size();
+        }
+        long lastPrintTimestamp = 0;
+        AtomicInteger processedEntryLogCnt = new AtomicInteger(0);
+
         stopCompaction:
         for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
             LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
@@ -606,7 +615,11 @@ public class GarbageCollectorThread implements Runnable {
 
                 final int bucketIndex = currBucket;
                 final long logId = entryLogIds.remove();
-
+                if (System.currentTimeMillis() - lastPrintTimestamp >= MINUTE) {
+                    lastPrintTimestamp = System.currentTimeMillis();
+                    LOG.info("Compaction progress {} / {}, current compaction entryLogId: {}",
+                        processedEntryLogCnt.get(), totalEntryLogIds, logId);
+                }
                 entryLogMetaMap.forKey(logId, (entryLogId, meta) -> {
                     if (meta == null) {
                         if (LOG.isDebugEnabled()) {
@@ -623,6 +636,7 @@ public class GarbageCollectorThread implements Runnable {
                     compactEntryLog(meta);
                     gcStats.getReclaimedSpaceViaCompaction().addCount(meta.getTotalSize() - priorRemainingSize);
                     compactedBuckets[bucketIndex]++;
+                    processedEntryLogCnt.getAndIncrement();
                 });
             }
         }
@@ -663,6 +677,7 @@ public class GarbageCollectorThread implements Runnable {
         if (!this.running) {
             return;
         }
+        this.running = false;
         LOG.info("Shutting down GarbageCollectorThread");
 
         throttler.cancelledAcquire();
@@ -672,7 +687,6 @@ public class GarbageCollectorThread implements Runnable {
             Thread.sleep(100);
         }
 
-        this.running = false;
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {
@@ -689,12 +703,15 @@ public class GarbageCollectorThread implements Runnable {
      *          Entry Log File Id
      * @throws EntryLogMetadataMapException
      */
-    protected void removeEntryLog(long entryLogId) throws EntryLogMetadataMapException {
+    protected boolean removeEntryLog(long entryLogId) throws EntryLogMetadataMapException {
         // remove entry log file successfully
         if (entryLogger.removeEntryLog(entryLogId)) {
             LOG.info("Removing entry log metadata for {}", entryLogId);
             entryLogMetaMap.remove(entryLogId);
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -755,8 +772,11 @@ public class GarbageCollectorThread implements Runnable {
                     // ledgers anymore.
                     // We can remove this entry log file now.
                     LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
-                    removeEntryLog(entryLogId);
-                    gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
+                    if (removeEntryLog(entryLogId)) {
+                        gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
+                    } else {
+                        gcStats.getReclaimFailedToDelete().inc();
+                    }
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }

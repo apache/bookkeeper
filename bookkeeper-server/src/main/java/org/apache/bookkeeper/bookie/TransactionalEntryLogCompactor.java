@@ -199,6 +199,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 LOG.info("No valid entry is found in entry log after scan, removing entry log now.");
                 logRemovalListener.removeEntryLog(metadata.getEntryLogId());
                 compactionLog.abort();
+                compactingLogWriteDone();
                 return false;
             }
             return true;
@@ -209,6 +210,13 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             offsets.clear();
             // since we haven't flushed yet, we only need to delete the unflushed compaction file.
             compactionLog.abort();
+            compactingLogWriteDone();
+        }
+    }
+
+    private void compactingLogWriteDone() {
+        if (entryLogger instanceof DefaultEntryLogger) {
+            ((DefaultEntryLogger) entryLogger).clearCompactingLogId();
         }
     }
 
@@ -241,6 +249,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             } catch (IOException ioe) {
                 LOG.warn("Error marking compaction as done", ioe);
                 return false;
+            } finally {
+                compactingLogWriteDone();
             }
         }
 
@@ -249,6 +259,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             offsets.clear();
             // remove compaction log file and its hardlink
             compactionLog.abort();
+            compactingLogWriteDone();
         }
     }
 

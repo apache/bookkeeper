@@ -30,7 +30,7 @@ The release process consists of several steps:
 
 Deciding to release and selecting a Release Manager is the first step of the release process. This is a consensus-based decision of the entire community.
 
-Anybody can propose a release on the dev@ mailing list, giving a solid argument and nominating a committer as the Release Manager (including themselves). There’s no formal process, no vote requirements, and no timing requirements. Any objections should be resolved by consensus before starting the release.
+Anybody can propose a release on the dev@ mailing list, giving a solid argument and nominating a committer as the Release Manager (including themselves). There's no formal process, no vote requirements, and no timing requirements. Any objections should be resolved by consensus before starting the release.
 
 In general, the community prefers to have a rotating set of 3-5 Release Managers. Keeping a small core set of managers allows enough people to build expertise in this area and improve processes over time, without Release Managers needing to re-learn the processes for each release. That said, if you are a committer interested in serving the community in this way, please reach out to the community on the dev@ mailing list.
 
@@ -45,14 +45,14 @@ In general, the community prefers to have a rotating set of 3-5 Release Managers
 
 Before your first release, you should perform one-time configuration steps. This will set up your security keys for signing the release and access to various release repositories.
 
-To prepare for each release, you should audit the project status in Github issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.
+To prepare for each release, you should audit the project status in GitHub issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.
 
 ### One-time setup instructions
 
 #### GPG Key
 
 You need to have a GPG key to sign the release artifacts. Please be aware of the ASF-wide [release signing guidelines](https://www.apache.org/dev/release-signing.html).
-If you don’t have a GPG key associated with your Apache account, please create one according to the [guidelines](http://apache.org/dev/openpgp.html#generate-key) and [upload](https://www.apache.org/dev/release-signing.html#keyserver-upload) your key to a public key server.
+If you don't have a GPG key associated with your Apache account, please create one according to the [guidelines](http://apache.org/dev/openpgp.html#generate-key) and [upload](https://www.apache.org/dev/release-signing.html#keyserver-upload) your key to a public key server.
 
 > It is important to [link](https://www.apache.org/dev/release-signing.html#apache-wot) your GPG key into the Apache web of trust.
 > You can reach out other committers in Apache BookKeeper community for signing your key.
@@ -72,7 +72,7 @@ This will list your GPG keys. One of these should reflect your Apache account, f
 
 Here, the key ID is the 8-digit hex string in the `pub` line: `845E6689`.
 
-**Second**, add your Apache GPG key to the BookKeeper’s `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
+**Second**, add your Apache GPG key to the BookKeeper's `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
 
 ```shell
 
@@ -95,7 +95,7 @@ Once you committed, please verify if your GPG key shows up in the BookkKeeper's 
 
     git config --global user.signingkey 845E6689
 
-You may drop the `--global` option if you’d prefer to use this key for the current repository only.
+You may drop the `--global` option if you'd prefer to use this key for the current repository only.
 
 You may wish to start `gpg-agent` to unlock your GPG key only once using your passphrase. Otherwise, you may need to enter this passphrase hundreds of times. The setup for `gpg-agent` varies based on operating system, but may be something like this:
 
@@ -111,7 +111,7 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
 2. Confirm you have appropriate access by finding `org.apache.bookkeeper` under `Staging Profiles`.
 3. Navigate to your `Profile` (top right dropdown menu of the page).
 4. Choose `User Token` from the dropdown, then click `Access User Token`. Copy a snippet of the Maven XML configuration block.
-5. Insert this snippet twice into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
+5. Insert the following snippet into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
 
         <settings>
           <servers>
@@ -139,16 +139,16 @@ are the maintainers at the project page and ask them for adding your account as 
 You can also read the instructions on [how to upload packages to PyPi](https://twine.readthedocs.io/en/latest/)
 if you are interested in learning more details.
 
-### Create a new version in Github
+### Create a new version in GitHub
 
 When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
 
-1. In Github, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
+1. In GitHub, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
 2. Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the `Due Date`, write a description `Release x.y.z` and choose `Create milestone`.
 
 Skip this step in case of a minor release, as milestones are only for major releases.
 
-### Triage release-blocking issues in Github
+### Triage release-blocking issues in GitHub
 
 There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific `Milestone` field even before the issue resolved.
 
@@ -165,18 +165,34 @@ Before cutting a release, you need to update the python client version in
 from `SNAPSHOT` version to a release version and get the change merge to master. For example,
 in release 4.10.0, you need to change the version from `4.10.0-alpha-0` to `4.10.0`.
 
-### Review Release Notes in Github
+### Review Release Notes in GitHub
 
-> Github does not automatically generates Release Notes based on the `Milestone` field applied to issues.
-> We can use [github-changelog-generator](https://github.com/skywinder/github-changelog-generator) to generate a ChangeLog for a milestone in future.
+From GitHub, verify the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
 
-For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
+For each release, you should verify that all the PRs have the correct label assigned (release:x.y.z), otherwise they won't appear in the release notes.
+To compare, you can use the following link from GitHub:
+* PR filter: https://github.com/apache/bookkeeper/pulls?q=is%3Apr+is%3Amerged+label%3Arelease%2F4.16.5
+* Commits: https://github.com/apache/bookkeeper/compare/release-4.16.4...branch-4.16
+
 
 #### Prepare Release Notes
 
-After review the release notes on both Github, you should write a the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
+After reviewing the release notes on both GitHub, you should write the release notes under `site3/website/src/release-notes.md` and then send out a pull request for review.
 
-[4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
+To export the PR descriptions, you can use the [GitHub CLI](https://cli.github.com/).
+After the setup, you can run this command to get the list of changes. Then they can be copied in the release notes file:
+```
+
+# for a milestone release
+gh pr list -R apache/bookkeeper -S "milestone:4.17.0 is:closed " --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 500
+
+# for a path release
+gh pr list -R apache/bookkeeper -l release/4.16.5 -s merged --json title,url,number -t '{{range .}}* {{.title}} [PR #{{.number}}]({{.url}}) {{"\n"}}{{end}}' -L 1000
+
+```
+
+After copying the list, you will have to manually split them into bugs, features and dependency upgrades.
+Internal changes (CI, tests) that don't modify the production code can be omitted (if not relevant for users).
 
 ### Prepare release branch
 
@@ -251,13 +267,13 @@ Verify that pom.xml contains the correct VERSION, it should still end with the '
 
 ### Checklist to proceed to the next step
 
-1. Release Manager’s GPG key is published to `dist.apache.org`
-2. Release Manager’s GPG key is configured in `git` configuration
+1. Release Manager's GPG key is published to `dist.apache.org`
+2. Release Manager's GPG key is configured in `git` configuration
 3. Release Manager has `org.apache.bookkeeper` listed under `Staging Profiles` in Nexus
-4. Release Manager’s Nexus User Token is configured in `settings.xml`
-5. Github milestone item for the subsequet release has been created
-6. There are no release blocking Github issues
-7. Release Notes for Github Milestone is generated, audited and adjusted
+4. Release Manager's Nexus User Token is configured in `settings.xml`
+5. GitHub milestone item for the subsequet release has been created
+6. There are no release blocking GitHub issues
+7. Release Notes for GitHub Milestone is generated, audited and adjusted
 8. Release branch has been created
 9. Originating branch has the version information updated to the new version
 
@@ -285,7 +301,7 @@ Set up a few environment variables to simplify Maven commands that follow. This 
 ./dev/release/000-run-docker.sh ${RC_NUM}
 ```
 
-After the docker process is lauched, use `cache` credential helper to cache github credentials during releasing process.
+After the docker process is launched, use `cache` credential helper to cache github credentials during releasing process.
 
 ```shell
 $ git config --global credential.helper "cache --timeout=3600"
@@ -348,7 +364,7 @@ Close the staging repository on Apache Nexus. When prompted for a description, e
 
 Once you have built and individually reviewed the release candidate, please share it for the community-wide review. Please review foundation-wide [voting guidelines](http://www.apache.org/foundation/voting.html) for more information.
 
-Start the review-and-vote thread on the dev@ mailing list. Here’s an email template; please adjust as you see fit.
+Start the review-and-vote thread on the dev@ mailing list. Here's an email template; please adjust as you see fit.
 
     From: Release Manager
     To: dev@bookkeeper.apache.org
@@ -389,9 +405,9 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     [4] link
     [5] link
 
-If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There’s no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don’t require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
+If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There's no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don't require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
 
-If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
+If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here's an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
 
     From: Release Manager
     To: dev@bookkeeper.apache.org
@@ -476,7 +492,7 @@ Note: you can put the 1. and 2. in the same pull.
 Create and push a new signed for the released version by copying the tag for the final release tag, as follows
 
 ```shell
-git tag -s "${TAG}" "${RC_TAG}"
+git tag -s "${TAG}" "${RC_TAG}^{}"
 # Message: "Release ${VERSION}"
 git push apache "${TAG}"
 ```
@@ -497,6 +513,12 @@ done
 1. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
 
 2. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
+
+### Update Latest Docker Image Version
+
+> If you are releasing the newest version, you need to update the latest docker image version to the new release version.
+
+Update the `BK_VERSION` in the `docker/Dockerfile`
 
 ### Release Python Client
 
@@ -545,15 +567,15 @@ Then you have to create a PR and submit it for review.
 
 Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
 
-### Create release in Github
+### Create release in GitHub
 
-Create a new release on Github. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and the publish the release.
+Create a new release on GitHub. Under [releases](https://github.com/apache/bookkeeper/releases), click "Draft a new release", select the tag and publish the release.
 
-### Mark the version as released in Github
+### Mark the version as released in GitHub
 
 > only do this for feature release
 
-In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
+In GitHub, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
 
 ### Update Release Schedule
 
@@ -571,8 +593,8 @@ Update the [release schedule](releases) page:
 * Website is updated with new release
 * Docker image is built with new release
 * Release tagged in the source code repository
-* Release exists in Github
-* Release version finalized in Github
+* Release exists in GitHub
+* Release version finalized in GitHub
 * Release schedule page is updated
 
 **********
@@ -658,6 +680,6 @@ For example, if 4.6.1 is a newer release, we need to remove releases older than 
 
 ## Improve the process
 
-It is important that we improve the release processes over time. Once you’ve finished the release, please take a step back and look what areas of this process and be improved. Perhaps some part of the process can be simplified. Perhaps parts of this guide can be clarified.
+It is important that we improve the release processes over time. Once you've finished the release, please take a step back and look what areas of this process and be improved. Perhaps some part of the process can be simplified. Perhaps parts of this guide can be clarified.
 
 If we have specific ideas, please start a discussion on the dev@ mailing list and/or propose a pull request to update this guide. Thanks!

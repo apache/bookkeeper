@@ -18,7 +18,13 @@ There is no upper limit on the number of bookies that you can run in a single en
 
 ### Performance
 
+#### Disks
+
 To achieve optimal performance, BookKeeper requires each server to have at least two disks. It's possible to run a bookie with a single disk but performance will be significantly degraded.
+
+#### Sticky reads
+
+BookKeeper sticky reads enables bookie node to read entries efficiently. The sticky reads are only available when ensemble (E) size is equal to quorum write (Qw).
 
 ### ZooKeeper
 
@@ -62,10 +68,10 @@ Parameter | Description | Default
 :---------|:------------|:-------
 `bookiePort` | The TCP port that the bookie listens on | `3181`
 `zkServers` | A comma-separated list of ZooKeeper servers in `hostname:port` format | `localhost:2181`
-`journalDirectory` | The directory where the [log device](../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL) | `/tmp/bk-txn`
+`journalDirectories` | The directories where the [log device](../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL, as a comma-separated list) | `/tmp/bk-txn`
 `ledgerDirectories` | The directories where the [ledger device](../getting-started/concepts#ledger-device) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
 
-> Ideally, the directories specified `journalDirectory` and `ledgerDirectories` should be on difference devices.
+> Ideally, the directories specified `journalDirectories` and `ledgerDirectories` should be on difference devices.
 
 ## Logging
 
@@ -157,7 +163,7 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
 If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change *cannot* be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it.
 
 1. Increment the [`bookiePort`](../reference/config#bookiePort) parameter in the [`bk_server.conf`](../reference/config)
-1. Ensure that all directories specified by [`journalDirectory`](../reference/config#journalDirectory) and [`ledgerDirectories`](../reference/config#ledgerDirectories) are empty.
+1. Ensure that all directories specified by [`journalDirectories`](../reference/config#journalDirectories) and [`ledgerDirectories`](../reference/config#ledgerDirectories) are empty.
 1. [Start the bookie](#starting-and-stopping-bookies).
 1. Run the following command to re-replicate the data:
 

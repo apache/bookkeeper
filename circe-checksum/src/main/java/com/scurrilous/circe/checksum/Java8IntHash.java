@@ -22,8 +22,6 @@ import static com.scurrilous.circe.params.CrcParameters.CRC32C;
 import com.scurrilous.circe.IncrementalIntHash;
 import com.scurrilous.circe.crc.StandardCrcProvider;
 import io.netty.buffer.ByteBuf;
-import java.nio.ByteBuffer;
-import java.util.zip.Checksum;
 
 public class Java8IntHash implements IntHash {
 
@@ -52,5 +50,15 @@ public class Java8IntHash implements IntHash {
         } else {
             return hash.resume(current, buffer.slice(offset, len).nioBuffer());
         }
+    }
+
+    @Override
+    public int resume(int current, byte[] buffer, int offset, int len) {
+        return hash.resume(current, buffer, offset, len);
+    }
+
+    @Override
+    public boolean acceptsMemoryAddressBuffer() {
+        return false;
     }
 }

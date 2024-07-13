@@ -44,29 +44,24 @@ import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
-import org.apache.commons.lang3.SystemUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 
 /**
  * TestDirectReader.
  */
+@DisabledOnOs(OS.WINDOWS)
 public class TestDirectReader {
 
     private final TmpDirs tmpDirs = new TmpDirs();
     private final ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
     private final OpStatsLogger opLogger = NullStatsLogger.INSTANCE.getOpStatsLogger("null");
 
-    @Before
-    public void before() {
-        Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
-    }
-
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
         writeExecutor.shutdownNow();
@@ -189,7 +184,7 @@ public class TestDirectReader {
         File ledgerDir = tmpDirs.createNew("readBuffer", "logs");
 
         writeFileWithPattern(ledgerDir, 1234, 0xbeefcafe, 1, 1 << 20);
-        BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 4, 8);
+        BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 4, 8);
 
         try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
                                                  ByteBufAllocator.DEFAULT,
@@ -236,30 +231,34 @@ public class TestDirectReader {
         }
     }
 
-    @Test(expected = EOFException.class)
+    @Test
     public void testReadPastEndOfFile() throws Exception {
         File ledgerDir = tmpDirs.createNew("readBuffer", "logs");
 
         writeFileWithPattern(ledgerDir, 1234, 0xbeeeeeef, 1, 1 << 13);
-        try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
-                                                 ByteBufAllocator.DEFAULT,
-                                                 new NativeIOImpl(), Buffer.ALIGNMENT,
-                                                 1 << 20, opLogger)) {
-            reader.readBufferAt(1 << 13, Buffer.ALIGNMENT);
-        }
+        Assertions.assertThrows(EOFException.class, () -> {
+            try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
+                                                     ByteBufAllocator.DEFAULT,
+                                                     new NativeIOImpl(), Buffer.ALIGNMENT,
+                                                     1 << 20, opLogger)) {
+                reader.readBufferAt(1 << 13, Buffer.ALIGNMENT);
+            }
+        });
     }
 
-    @Test(expected = EOFException.class)
+    @Test
     public void testReadPastEndOfFilePartial() throws Exception {
         File ledgerDir = tmpDirs.createNew("readBuffer", "logs");
 
         writeFileWithPattern(ledgerDir, 1234, 0xbeeeeeef, 1, 1 << 13);
-        try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
-                                                 ByteBufAllocator.DEFAULT,
-                                                 new NativeIOImpl(), Buffer.ALIGNMENT,
-                                                 1 << 20, opLogger)) {
-            reader.readBufferAt((1 << 13) - Buffer.ALIGNMENT / 2, Buffer.ALIGNMENT);
-        }
+        Assertions.assertThrows(EOFException.class, () -> {
+            try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
+                                                     ByteBufAllocator.DEFAULT,
+                                                     new NativeIOImpl(), Buffer.ALIGNMENT,
+                                                     1 << 20, opLogger)) {
+                reader.readBufferAt((1 << 13) - Buffer.ALIGNMENT / 2, Buffer.ALIGNMENT);
+            }
+        });
     }
 
     @Test
@@ -268,7 +267,7 @@ public class TestDirectReader {
 
         int entrySize = Buffer.ALIGNMENT / 4 + 100;
         Map<Integer, Integer> offset2Pattern = new HashMap<>();
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -315,7 +314,7 @@ public class TestDirectReader {
                     return 0;
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE);
@@ -329,7 +328,7 @@ public class TestDirectReader {
 
             try {
                 reader.readEntryAt(offset);
-                Assert.fail("Should have failed");
+                Assertions.fail("Should have failed");
             } catch (IOException ioe) {
                 // expected
             }
@@ -353,7 +352,7 @@ public class TestDirectReader {
 
         int entrySize = Buffer.ALIGNMENT / 2 + 8;
 
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE);
@@ -367,7 +366,7 @@ public class TestDirectReader {
 
             try {
                 reader.readEntryAt(offset);
-                Assert.fail("Should have failed");
+                Assertions.fail("Should have failed");
             } catch (IOException ioe) {
                 // expected
             }
@@ -403,7 +402,8 @@ public class TestDirectReader {
                     return 0; // don't preallocate
                 }
             };
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 10, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(),
+            ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 10, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
@@ -452,7 +452,7 @@ public class TestDirectReader {
         int entrySize = Buffer.ALIGNMENT * 4;
 
         int offset1, offset2;
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT * 8, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 8, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(), buffers, new NativeIOImpl(),
                                                  Slogger.CONSOLE)) {
@@ -496,7 +496,7 @@ public class TestDirectReader {
 
     private static void writeFileWithPattern(File directory, int logId,
                                              int pattern, int blockIncrement, int fileSize) throws Exception {
-        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), Buffer.ALIGNMENT, 8);
+        try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(logId, logFilename(directory, logId),
                                                  fileSize, MoreExecutors.newDirectExecutorService(),
                                                  buffers, new NativeIOImpl(), Slogger.CONSOLE)) {

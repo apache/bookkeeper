@@ -29,13 +29,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,7 +200,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             .setLedgerId(ledgerId)
             .setEntryId(entryId);
         try {
-            // handle fence reqest
+            // handle fence request
             if (RequestUtils.isFenceRequest(readRequest)) {
                 LOG.info("Ledger fence request received for ledger: {} from address: {}", ledgerId,
                     channel.remoteAddress());

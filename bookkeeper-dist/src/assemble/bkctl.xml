@@ -69,12 +69,12 @@
       <includes>
         <include>checker-qual-3.5.0/LICENSE</include>
         <include>google-auth-library-credentials-0.20.0/LICENSE</include>
-        <include>netty-4.1.93.Final/*</include>
+        <include>netty/*</include>
         <include>bouncycastle-1.0.2.3/LICENSE.html</include>
         <include>protobuf-3.14.0/LICENSE</include>
         <include>protobuf-3.12.0/LICENSE</include>
         <include>reactivestreams-1.0.3/LICENSE</include>
-        <include>slf4j-1.7.32/LICENSE.txt</include>
+        <include>slf4j-2.0.12/LICENSE.txt</include>
       </includes>
       <fileMode>644</fileMode>
     </fileSet>

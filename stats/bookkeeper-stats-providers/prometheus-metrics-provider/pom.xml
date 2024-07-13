@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-stats-providers</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>prometheus-metrics-provider</artifactId>
@@ -71,5 +71,11 @@
       <artifactId>sketches-core</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>testtools</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

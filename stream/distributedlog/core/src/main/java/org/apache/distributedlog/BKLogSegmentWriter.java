@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -53,7 +54,6 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.distributedlog.Entry.Writer;
 import org.apache.distributedlog.common.stats.OpStatsListener;
@@ -1192,7 +1192,11 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
         lastEntryId = entryId;
 
-        assert (ctx instanceof BKTransmitPacket);
+        if (!(ctx instanceof BKTransmitPacket)) {
+            LOG.error("Log segment {} received addComplete with invalid context {}",
+                    fullyQualifiedLogSegment, ctx);
+            return;
+        }
         final BKTransmitPacket transmitPacket = (BKTransmitPacket) ctx;
 
         // Time from transmit until receipt of addComplete callback
@@ -1298,7 +1302,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 }
             }
 
-            // update last dlsn before satisifying future
+            // update last dlsn before satisfying future
             if (BKException.Code.OK == transmitResultUpdater.get(this)) {
                 DLSN lastDLSNInPacket = recordSet.finalizeTransmit(
                         logSegmentSequenceNumber, entryId);

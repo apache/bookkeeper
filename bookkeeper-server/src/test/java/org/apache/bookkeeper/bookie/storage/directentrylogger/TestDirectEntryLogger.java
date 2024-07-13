@@ -49,14 +49,17 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * TestDirectEntryLogger.
  */
 @Slf4j
+@DisabledOnOs(OS.WINDOWS)
 public class TestDirectEntryLogger {
     private final Slogger slog = Slogger.CONSOLE;
 
@@ -64,7 +67,7 @@ public class TestDirectEntryLogger {
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         tmpDirs.cleanup();
     }
@@ -327,7 +330,7 @@ public class TestDirectEntryLogger {
                 int logId = logIdFromLocation(loc1);
                 try {
                     reader.readEntryLogIndex(logId);
-                    Assert.fail("Shouldn't be there");
+                    Assertions.fail("Shouldn't be there");
                 } catch (IOException ioe) {
                     // expected
                 }

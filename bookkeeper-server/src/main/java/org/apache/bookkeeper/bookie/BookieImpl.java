@@ -62,6 +62,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.BookieStats;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
@@ -77,7 +78,6 @@ import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -87,7 +87,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements a bookie.
  */
-public class BookieImpl extends BookieCriticalThread implements Bookie {
+public class BookieImpl implements Bookie {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
@@ -118,6 +118,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             ConcurrentLongHashMap.<byte[]>newBuilder().autoShrink(true).build();
 
     protected StateManager stateManager;
+
+    private BookieCriticalThread bookieThread;
 
     // Expose Stats
     final StatsLogger statsLogger;
@@ -390,7 +392,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                       ByteBufAllocator allocator,
                       Supplier<BookieServiceInfo> bookieServiceInfoProvider)
             throws IOException, InterruptedException, BookieException {
-        super("Bookie-" + conf.getBookiePort());
         this.bookieServiceInfoProvider = bookieServiceInfoProvider;
         this.statsLogger = statsLogger;
         this.conf = conf;
@@ -433,7 +434,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // instantiate the journals
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
-            journals.add(new Journal(i, journalDirectories.get(i),
+            journals.add(Journal.newJournal(i, journalDirectories.get(i),
                     conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator, journalAliveListener));
         }
 
@@ -494,6 +495,21 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
         // Expose Stats
         this.bookieStats = new BookieStats(statsLogger, journalDirectories.size(), conf.getJournalQueueSize());
+    }
+
+    @VisibleForTesting
+    public static BookieImpl newBookieImpl(ServerConfiguration conf,
+                                           RegistrationManager registrationManager,
+                                           LedgerStorage storage,
+                                           DiskChecker diskChecker,
+                                           LedgerDirsManager ledgerDirsManager,
+                                           LedgerDirsManager indexDirsManager,
+                                           StatsLogger statsLogger,
+                                           ByteBufAllocator allocator,
+                                           Supplier<BookieServiceInfo> bookieServiceInfoProvider)
+            throws IOException, InterruptedException, BookieException {
+        return new BookieImpl(conf, registrationManager, storage, diskChecker,
+                ledgerDirsManager, indexDirsManager, statsLogger, allocator, bookieServiceInfoProvider);
     }
 
     StateManager initializeStateManager() throws IOException {
@@ -631,7 +647,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 logPosition = markedLog.getLogFileOffset();
             }
             LOG.info("Replaying journal {} from position {}", id, logPosition);
-            long scanOffset = journal.scanJournal(id, logPosition, scanner);
+            long scanOffset = journal.scanJournal(id, logPosition, scanner, conf.isSkipReplayJournalInvalidRecord());
             // Update LastLogMark after completely replaying journal
             // scanOffset will point to EOF position
             // After LedgerStorage flush, SyncThread should persist this to disk
@@ -641,8 +657,10 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     @Override
     public synchronized void start() {
-        setDaemon(true);
-        ThreadRegistry.register("BookieThread", 0);
+        bookieThread = new BookieCriticalThread(() -> run(), "Bookie-" + conf.getBookiePort());
+        bookieThread.setDaemon(true);
+
+        ThreadRegistry.register("BookieThread", true);
         if (LOG.isDebugEnabled()) {
             LOG.debug("I'm starting a bookie with journal directories {}",
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
@@ -702,7 +720,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         syncThread.start();
 
         // start bookie thread
-        super.start();
+        bookieThread.start();
 
         // After successful bookie startup, register listener for disk
         // error/full notifications.
@@ -724,6 +742,20 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             LOG.error("Couldn't register bookie with zookeeper, shutting down : ", e);
             shutdown(ExitCode.ZK_REG_FAIL);
         }
+    }
+
+    @Override
+    public void join() throws InterruptedException {
+        if (bookieThread != null) {
+            bookieThread.join();
+        }
+    }
+
+    public boolean isAlive() {
+        if (bookieThread == null) {
+            return false;
+        }
+        return bookieThread.isAlive();
     }
 
     /*
@@ -809,7 +841,6 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         return stateManager.isRunning();
     }
 
-    @Override
     public void run() {
         // start journals
         for (Journal journal: journals) {
@@ -1284,5 +1315,10 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
             }
         }
+    }
+
+    @VisibleForTesting
+    public List<Journal> getJournals() {
+        return this.journals;
     }
 }

@@ -88,7 +88,7 @@ public class RegistrationStateService
                 log.info("Successfully register myself under registration path {}/{}",
                     regServiceProvider.getRegistrationPath(), NetUtils.endpointToString(myEndpoint));
             } catch (Exception e) {
-                throw new RuntimeException("Failed to intiailize a registration state service", e);
+                throw new RuntimeException("Failed to initialize a registration state service", e);
             }
         }
     }

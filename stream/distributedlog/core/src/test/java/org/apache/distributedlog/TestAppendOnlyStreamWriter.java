@@ -296,7 +296,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
                 FailpointUtils.FailPointActions.FailPointAction_Throw);
 
             writer.force(false);
-            fail("should have thown ⊙﹏⊙");
+            fail("should have thrown ⊙﹏⊙");
         } catch (WriteException we) {
         } finally {
             FailpointUtils.removeFailpoint(

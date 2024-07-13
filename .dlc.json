@@ -62,6 +62,18 @@
     },
     {
       "pattern": "^http://daxue.qq.com/content/content/id/2492"
+    },
+    {
+      "pattern": "^https://calendar.google.com/"
+    },
+    {
+      "pattern": "^#"
+    },
+    {
+      "pattern": ".*\\{\\{.*"
+    },
+    {
+      "pattern": "^//"
     }
   ],
   "timeout": "10s",

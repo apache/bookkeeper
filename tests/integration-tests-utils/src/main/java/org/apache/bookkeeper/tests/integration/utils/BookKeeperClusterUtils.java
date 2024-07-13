@@ -40,14 +40,11 @@ import org.slf4j.LoggerFactory;
 public class BookKeeperClusterUtils {
     public static final String CURRENT_VERSION = System.getProperty("currentVersion");
     public static final List<String> OLD_CLIENT_VERSIONS =
-            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
+            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1",
+                    "4.13.0", "4.14.8", "4.15.5", "4.16.5", "4.17.0");
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.4");
-
-
-    private static final List<String> OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1", "4.13.0", "4.14.3", "4.3-yahoo");
-
+            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1",
+                    "4.13.0", "4.14.8", "4.15.5", "4.16.5", "4.17.0");
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterUtils.class);
 
@@ -91,8 +88,12 @@ public class BookKeeperClusterUtils {
     public static void legacyMetadataFormat(DockerClient docker) throws Exception {
         @Cleanup
         ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
-        zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        if (zk.exists("/ledgers", false) == null) {
+            zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+        if (zk.exists("/ledgers/available", false) == null) {
+            zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
     }
 
     public static boolean metadataFormatIfNeeded(DockerClient docker, String version) throws Exception {
@@ -139,6 +140,20 @@ public class BookKeeperClusterUtils {
         String sedProgram = String.format(
                 "/[[:blank:]]*%s[[:blank:]]*=/ { h; s!=.*!=%s!; }; ${x;/^$/ { s//%s=%s/;H; }; x}",
                 key, value, key, value);
+        DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
+    }
+
+    public static void appendToAllBookieConf(DockerClient docker, String version, String key, String value)
+            throws Exception {
+        for (String b : allBookies()) {
+            appendToBookieConf(docker, b, version, key, value);
+        }
+    }
+
+    public static void appendToBookieConf(DockerClient docker, String containerId,
+                                        String version, String key, String value) throws Exception {
+        String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
+        String sedProgram = String.format("$a%s=%s", key, value);
         DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
     }
 
@@ -259,9 +274,6 @@ public class BookKeeperClusterUtils {
     }
 
     private static String computeBinFilenameByVersion(String version) {
-        if (OLD_CLIENT_VERSIONS_WITH_OLD_BK_BIN_NAME.contains(version)) {
-            return "bookkeeper";
-        }
-        return "bookkeeper_gradle";
+        return "bookkeeper";
     }
 }

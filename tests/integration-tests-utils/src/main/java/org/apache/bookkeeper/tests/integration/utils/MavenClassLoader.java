@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.tests.integration.utils;
 
+import static org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies.createExclusion;
+
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
@@ -40,21 +42,43 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
 
 /**
  * A maven class loader for resolving and loading maven artifacts.
  */
+@Slf4j
 public class MavenClassLoader implements AutoCloseable {
+    private static ScheduledExecutorService delayedCloseExecutor = createExecutorThatShutsDownIdleThreads();
+
+    private static ScheduledExecutorService createExecutorThatShutsDownIdleThreads() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        // Cast to ThreadPoolExecutor to access additional configuration methods
+        ThreadPoolExecutor poolExecutor = (ThreadPoolExecutor) executor;
+        // Set the timeout for idle threads
+        poolExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
+        // Allow core threads to time out
+        poolExecutor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
 
     private static List<File> currentVersionLibs;
 
@@ -77,22 +101,45 @@ public class MavenClassLoader implements AutoCloseable {
                                                       String mainArtifact) throws Exception {
         Optional<String> slf4jVersion = Arrays.stream(resolver.resolve(mainArtifact)
                         .withTransitivity().asResolvedArtifact())
-                .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j")
-                        && a.getCoordinate().getArtifactId().equals("slf4j-1.2-api"))
+                .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j"))
                 .map((a) -> a.getCoordinate().getVersion())
                 .findFirst();
 
+        MavenDependency dependency = MavenDependencies.createDependency(mainArtifact, ScopeType.COMPILE, false,
+                createExclusion("log4j", "log4j"),
+                createExclusion("org.slf4j", "slf4j-log4j12"),
+                createExclusion("ch.qos.reload4j", "log4j"),
+                createExclusion("org.slf4j", "slf4j-reload4j"),
+                createExclusion("org.apache.logging.log4j", "*")
+                );
         List<MavenDependency> deps = Lists.newArrayList(
-                MavenDependencies.createDependency(
-                        mainArtifact, ScopeType.COMPILE, false));
+                dependency);
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
                     ScopeType.COMPILE, false));
+            deps.add(MavenDependencies.createDependency("org.slf4j:jcl-over-slf4j:" + slf4jVersion.get(),
+                    ScopeType.COMPILE, false));
         }
 
-        File[] files = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
-                .resolve().withTransitivity().asFile();
-        return createClassLoader(files);
+        MavenResolvedArtifact[] resolvedArtifact = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
+                .resolve().withTransitivity().asResolvedArtifact();
+        File[] files = Arrays.stream(resolvedArtifact)
+                .filter((a) -> {
+                    MavenCoordinate c = a.getCoordinate();
+                    // exclude log4j
+                    if (c.getGroupId().equals("org.apache.logging.log4j") || c.getGroupId().equals("log4j")
+                            || c.getGroupId().equals("ch.qos.reload4j")
+                            || c.getGroupId().equals("commons-logging")) {
+                        return false;
+                    }
+                    if (c.getArtifactId().contains("log4j") || c.getArtifactId().contains("commons-logging")) {
+                        return false;
+                    }
+                    return true;
+                }).map(MavenResolvedArtifact::asFile)
+                .collect(Collectors.toList())
+                .toArray(new File[0]);
+            return createClassLoader(files);
     }
 
     private static MavenClassLoader createClassLoader(File[] jars) {
@@ -115,6 +162,12 @@ public class MavenClassLoader implements AutoCloseable {
                     try {
                         loadedClass = findClass(name);
                     } catch (ClassNotFoundException ignored) {
+                        // never load these classes from the parent classloader
+                        if (name.startsWith("org.apache")
+                                || name.startsWith("org.slf4j")
+                                || name.startsWith("log4j")) {
+                            throw ignored;
+                        }
                     }
                     if (loadedClass == null) {
                         try {
@@ -139,13 +192,22 @@ public class MavenClassLoader implements AutoCloseable {
         return forArtifact("org.apache.bookkeeper:bookkeeper-server:" + version);
     }
 
-    private static MavenClassLoader forBookkeeperCurrentVersion() throws Exception {
+    private static synchronized MavenClassLoader forBookkeeperCurrentVersion() throws Exception {
         if (currentVersionLibs == null) {
             final String version = BookKeeperClusterUtils.CURRENT_VERSION;
+            String rootDirectory = System.getenv("GITHUB_WORKSPACE");
+            if (rootDirectory == null) {
+                File gitDirectory = findGitRoot(new File("."));
+                if (gitDirectory != null) {
+                    rootDirectory = gitDirectory.getAbsolutePath();
+                } else {
+                    rootDirectory = System.getProperty("maven.buildDirectory", ".") + "/../../../..";
+                }
+            }
             final String artifactName = "bookkeeper-server-" + version + "-bin";
-            final Path tarFile = Paths.get("..", "..", "..",
-                    "bookkeeper-dist", "server", "build", "distributions", artifactName + ".tar.gz");
-            final File tempDir = new File("build");
+            final Path tarFile = Paths.get(rootDirectory,
+                    "bookkeeper-dist", "server", "target", artifactName + ".tar.gz").toAbsolutePath();
+            final File tempDir = new File(System.getProperty("maven.buildDirectory", "target"));
             extractTarGz(tarFile.toFile(), tempDir);
             List<File> jars = new ArrayList<>();
             Files.list(Paths.get(tempDir.getAbsolutePath(), "bookkeeper-server-" + version, "lib"))
@@ -155,6 +217,16 @@ public class MavenClassLoader implements AutoCloseable {
             currentVersionLibs = jars;
         }
         return createClassLoader(currentVersionLibs.toArray(new File[]{}));
+    }
+
+    private static File findGitRoot(File currentDir) {
+        while (currentDir != null) {
+            if (new File(currentDir, ".git").exists()) {
+                return currentDir;
+            }
+            currentDir = currentDir.getParentFile();
+        }
+        return null;
     }
 
     public Object callStaticMethod(String className, String methodName, ArrayList<?> args) throws Exception {
@@ -216,26 +288,31 @@ public class MavenClassLoader implements AutoCloseable {
     }
 
     public Object newBookKeeper(String zookeeper) throws Exception {
-        Class<?> clientConfigurationClass = Class
-                .forName("org.apache.bookkeeper.conf.ClientConfiguration", true, classloader);
-        Object clientConfiguration = newInstance("org.apache.bookkeeper.conf.ClientConfiguration");
-        clientConfigurationClass
-                .getMethod("setZkServers", String.class)
-                .invoke(clientConfiguration, zookeeper);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(classloader);
+            Class<?> clientConfigurationClass = Class
+                    .forName("org.apache.bookkeeper.conf.ClientConfiguration", true, classloader);
+            Object clientConfiguration = newInstance("org.apache.bookkeeper.conf.ClientConfiguration");
+            clientConfigurationClass
+                    .getMethod("setZkServers", String.class)
+                    .invoke(clientConfiguration, zookeeper);
 
-        // relax timeouts in order to get tests passing in limited environments
-        clientConfigurationClass
-                .getMethod("setReadTimeout", int.class)
-                .invoke(clientConfiguration, 15);
+            // relax timeouts in order to get tests passing in limited environments
+            clientConfigurationClass
+                    .getMethod("setReadTimeout", int.class)
+                    .invoke(clientConfiguration, 15);
 
-        clientConfigurationClass
-                .getMethod("setZkTimeout", int.class)
-                .invoke(clientConfiguration, 30_000);
-        Class<?> klass = Class.forName("org.apache.bookkeeper.client.BookKeeper", true, classloader);
-        return klass
-                .getConstructor(clientConfigurationClass)
-                .newInstance(clientConfiguration);
-
+            clientConfigurationClass
+                    .getMethod("setZkTimeout", int.class)
+                    .invoke(clientConfiguration, 30_000);
+            Class<?> klass = Class.forName("org.apache.bookkeeper.client.BookKeeper", true, classloader);
+            return klass
+                    .getConstructor(clientConfigurationClass)
+                    .newInstance(clientConfiguration);
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 
     public Object digestType(String type) throws Exception {
@@ -251,7 +328,14 @@ public class MavenClassLoader implements AutoCloseable {
     @Override
     public void close() throws Exception {
         if (classloader instanceof Closeable) {
-            ((Closeable) classloader).close();
+            // delay closing the classloader so that currently executing asynchronous tasks can complete
+            delayedCloseExecutor.schedule(() -> {
+                try {
+                    ((Closeable) classloader).close();
+                } catch (Exception e) {
+                    log.error("Failed to close classloader", e);
+                }
+            }, 5, TimeUnit.SECONDS);
         }
     }
 
@@ -283,14 +367,20 @@ public class MavenClassLoader implements AutoCloseable {
             TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) debInputStream.getNextEntry()) != null) {
                 final File outputFile = new File(outputDir, entry.getName());
+                if (!outputFile.toPath().normalize().startsWith(outputDir.toPath())) {
+                    throw new IOException("Bad zip entry");
+                }
+
+                if (!outputFile.getParentFile().exists()) {
+                    outputFile.getParentFile().mkdirs();
+                }
                 if (entry.isDirectory()) {
-                    if (!outputFile.exists()) {
-                        if (!outputFile.mkdirs()) {
-                            throw new IllegalStateException(
-                                    String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
-                        }
-                    } else {
-                        outputFile.delete();
+                    if (outputFile.exists()) {
+                        FileUtils.deleteDirectory(outputFile);
+                    }
+                    if (!outputFile.mkdirs()) {
+                        throw new IllegalStateException(
+                                String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
                     }
                 } else {
                     try (final OutputStream outputFileStream = new FileOutputStream(outputFile)) {

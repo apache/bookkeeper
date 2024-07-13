@@ -20,6 +20,7 @@ package org.apache.bookkeeper.meta.zk;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -30,6 +31,7 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * ZooKeeper based metadata bookie driver.
@@ -65,6 +67,12 @@ public class ZKMetadataBookieDriver
 
     @Override
     public synchronized RegistrationManager createRegistrationManager() {
+        ZKRegistrationManager zkRegistrationManager = newZKRegistrationManager(serverConf, zk);
+        return zkRegistrationManager;
+    }
+
+    @VisibleForTesting
+    ZKRegistrationManager newZKRegistrationManager(ServerConfiguration serverConf, ZooKeeper zk) {
         return new ZKRegistrationManager(serverConf, zk);
     }
 

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
@@ -35,10 +35,6 @@
       <artifactId>distributedlog-core</artifactId>
       <version>${project.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
@@ -55,7 +51,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -76,6 +71,7 @@
                   <include>com.fasterxml.jackson.core:jackson-core</include>
                   <include>com.fasterxml.jackson.core:jackson-databind</include>
                   <include>com.fasterxml.jackson.core:jackson-annotations</include>
+                  <include>com.google.guava:failureaccess</include>
                   <include>com.google.guava:guava</include>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>net.jpountz.lz4:lz4</include>
@@ -223,8 +219,8 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
         <configuration>
           <filesets>
             <fileset>

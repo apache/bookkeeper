@@ -20,6 +20,7 @@ package org.apache.bookkeeper.proto;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -29,9 +30,9 @@ import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,8 @@ import org.slf4j.LoggerFactory;
 class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
-    private ExecutorService fenceThreadPool;
-    private boolean throttleReadResponses;
+    protected ExecutorService fenceThreadPool;
+    protected boolean throttleReadResponses;
 
     public static ReadEntryProcessor create(ReadRequest request,
                                             BookieRequestHandler requestHandler,
@@ -70,7 +71,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         }
         int errorCode = BookieProtocol.EOK;
         long startTimeNanos = MathUtils.nowInNano();
-        ByteBuf data = null;
+        ReferenceCounted data = null;
         try {
             CompletableFuture<Boolean> fenceResult = null;
             if (request.isFencing()) {
@@ -85,9 +86,9 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
-            data = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId());
+            data = readData();
             if (LOG.isDebugEnabled()) {
-                LOG.debug("##### Read entry ##### {} -- ref-count: {}", data.readableBytes(), data.refCnt());
+                LOG.debug("##### Read entry ##### -- ref-count: {}",  data.refCnt());
             }
             if (fenceResult != null) {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
@@ -126,13 +127,17 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         sendResponse(data, errorCode, startTimeNanos);
     }
 
-    private void sendResponse(ByteBuf data, int errorCode, long startTimeNanos) {
+    protected ReferenceCounted readData() throws Exception {
+        return requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId());
+    }
+
+    private void sendResponse(ReferenceCounted data, int errorCode, long startTimeNanos) {
         final RequestStats stats = requestProcessor.getRequestStats();
         final OpStatsLogger logger = stats.getReadEntryStats();
         BookieProtocol.Response response;
         if (errorCode == BookieProtocol.EOK) {
             logger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
-            response = ResponseBuilder.buildReadResponse(data, request);
+            response = buildReadResponse(data);
         } else {
             if (data != null) {
                 ReferenceCountUtil.release(data);
@@ -145,13 +150,17 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         recycle();
     }
 
-    private void sendFenceResponse(Boolean result, ByteBuf data, long startTimeNanos) {
+    protected BookieProtocol.Response buildReadResponse(ReferenceCounted data) {
+        return ResponseBuilder.buildReadResponse((ByteBuf) data, request);
+    }
+
+    private void sendFenceResponse(Boolean result, ReferenceCounted data, long startTimeNanos) {
         final int retCode = result != null && result ? BookieProtocol.EOK : BookieProtocol.EIO;
         sendResponse(data, retCode, startTimeNanos);
     }
 
     private void handleReadResultForFenceRead(CompletableFuture<Boolean> fenceResult,
-                                              ByteBuf data,
+                                              ReferenceCounted data,
                                               long startTimeNanos) {
         if (null != fenceThreadPool) {
             fenceResult.whenCompleteAsync(new FutureEventListener<Boolean>() {
@@ -189,16 +198,22 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         return String.format("ReadEntry(%d, %d)", request.getLedgerId(), request.getEntryId());
     }
 
-    private void recycle() {
+    void recycle() {
         request.recycle();
         super.reset();
-        this.recyclerHandle.recycle(this);
+        if (this.recyclerHandle != null) {
+            this.recyclerHandle.recycle(this);
+        }
     }
 
     private final Recycler.Handle<ReadEntryProcessor> recyclerHandle;
 
     private ReadEntryProcessor(Recycler.Handle<ReadEntryProcessor> recyclerHandle) {
         this.recyclerHandle = recyclerHandle;
+    }
+
+    protected ReadEntryProcessor() {
+        this.recyclerHandle = null;
     }
 
     private static final Recycler<ReadEntryProcessor> RECYCLER = new Recycler<ReadEntryProcessor>() {

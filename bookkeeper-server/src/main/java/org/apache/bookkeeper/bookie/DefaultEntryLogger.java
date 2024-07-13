@@ -66,8 +66,10 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -253,8 +255,6 @@ public class DefaultEntryLogger implements EntryLogger {
      * </pre>
      */
     static final int LOGFILE_HEADER_SIZE = 1024;
-    final ByteBuf logfileHeader = Unpooled.buffer(LOGFILE_HEADER_SIZE);
-
     static final int HEADER_VERSION_POSITION = 4;
     static final int LEDGERS_MAP_OFFSET_POSITION = HEADER_VERSION_POSITION + 4;
 
@@ -326,15 +326,6 @@ public class DefaultEntryLogger implements EntryLogger {
             addListener(listener);
         }
 
-        // Initialize the entry log header buffer. This cannot be a static object
-        // since in our unit tests, we run multiple Bookies and thus EntryLoggers
-        // within the same JVM. All of these Bookie instances access this header
-        // so there can be race conditions when entry logs are rolled over and
-        // this header buffer is cleared before writing it into the new logChannel.
-        logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
-        logfileHeader.writeInt(HEADER_CURRENT_VERSION);
-        logfileHeader.writerIndex(LOGFILE_HEADER_SIZE);
-
         // Find the largest logId
         long logId = INVALID_LID;
         for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
@@ -342,7 +333,17 @@ public class DefaultEntryLogger implements EntryLogger {
                 throw new FileNotFoundException(
                         "Entry log directory '" + dir + "' does not exist");
             }
-            long lastLogId = getLastLogId(dir);
+            long lastLogId;
+            long lastLogFileFromFile = getLastLogIdFromFile(dir);
+            long lastLogIdInDir = getLastLogIdInDir(dir);
+            if (lastLogFileFromFile < lastLogIdInDir) {
+                LOG.info("The lastLogFileFromFile is {}, the lastLogIdInDir is {}, "
+                        + "use lastLogIdInDir as the lastLogId.", lastLogFileFromFile, lastLogIdInDir);
+                lastLogId = lastLogIdInDir;
+            } else {
+                lastLogId = lastLogFileFromFile;
+            }
+
             if (lastLogId > logId) {
                 logId = lastLogId;
             }
@@ -524,15 +525,16 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (FileNotFoundException e) {
             LOG.error("Trying to delete an entryLog file that could not be found: "
                     + entryLogId + ".log");
-            return false;
+            return true;
         }
         if (!entryLogFile.delete()) {
             LOG.warn("Could not delete entry log file {}", entryLogFile);
+            return false;
         }
         return true;
     }
 
-    private long getLastLogId(File dir) {
+    private long getLastLogIdFromFile(File dir) {
         long id = readLastLogId(dir);
         // read success
         if (id > 0) {
@@ -556,6 +558,17 @@ public class DefaultEntryLogger implements EntryLogger {
         return logs.get(logs.size() - 1);
     }
 
+    private long getLastLogIdInDir(File dir) {
+        List<Integer> currentIds = new ArrayList<Integer>();
+        currentIds.addAll(LedgerDirUtil.logIdsInDirectory(dir));
+        currentIds.addAll(LedgerDirUtil.compactedLogIdsInDirectory(dir));
+        if (currentIds.isEmpty()) {
+            return -1;
+        }
+        Pair<Integer, Integer> largestGap = LedgerDirUtil.findLargestGap(currentIds);
+        return largestGap.getLeft() - 1;
+    }
+
     /**
      * reads id from the "lastId" file in the given directory.
      */
@@ -572,6 +585,10 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (IOException | NumberFormatException e) {
             return INVALID_LID;
         }
+    }
+
+    void clearCompactingLogId() {
+        entryLoggerAllocator.clearCompactingLogId();
     }
 
     /**
@@ -660,7 +677,7 @@ public class DefaultEntryLogger implements EntryLogger {
     private void removeCurCompactionLog() {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
-                if (!compactionLogChannel.getLogFile().delete()) {
+                if (compactionLogChannel.getLogFile().exists() && !compactionLogChannel.getLogFile().delete()) {
                     LOG.warn("Could not delete compaction log file {}", compactionLogChannel.getLogFile());
                 }
 
@@ -816,7 +833,7 @@ public class DefaultEntryLogger implements EntryLogger {
 
     @Override
     public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(location, -1L, -1L, false /* validateEntry */);
+        return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
     }
 
 
@@ -881,7 +898,8 @@ public class DefaultEntryLogger implements EntryLogger {
         }
     }
 
-    private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
+    @VisibleForTesting
+    BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
         BufferedReadChannel fc = getFromChannels(entryLogId);
         if (fc != null) {
             return fc;
@@ -897,7 +915,11 @@ public class DefaultEntryLogger implements EntryLogger {
         }
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
-        fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes());
+        if (entryLogManager instanceof EntryLogManagerForSingleEntryLog) {
+            fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), entryLoggerAllocator.isSealed(entryLogId));
+        } else {
+            fc = new BufferedReadChannel(newFc, conf.getReadBufferBytes(), false);
+        }
         putInReadChannels(entryLogId, fc);
         return fc;
     }
@@ -1036,6 +1058,9 @@ public class DefaultEntryLogger implements EntryLogger {
         // entry log
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
+        } catch (FileNotFoundException fne) {
+            LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
+            throw fne;
         } catch (Exception e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 

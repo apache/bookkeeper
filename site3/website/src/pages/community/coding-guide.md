@@ -50,7 +50,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 
 ### Monitoring
 
-* Apache BookKeeper uses a pluggable [StatsProvider](https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats) on exporting metrics
+* Apache BookKeeper uses a pluggable [StatsProvider](https://github.com/apache/bookkeeper/tree/master/stats/bookkeeper-stats-providers) on exporting metrics
 * Any new features should come with appropriate metrics for monitoring the feature is working correctly.
 * Those metrics should be taken seriously and only export useful metrics that would be used on production on monitoring/alerting healthy of the system, or troubleshooting problems.
 
@@ -68,7 +68,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 
 * Names should be thought through from the point of view of the person using the config.
 * The default values should be thought as best value for people who runs the program without tuning parameters.
-* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site/_data/config/bk_server.yaml).
+* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site/_data/config/bk_server.yaml).
 
 ### Concurrency
 

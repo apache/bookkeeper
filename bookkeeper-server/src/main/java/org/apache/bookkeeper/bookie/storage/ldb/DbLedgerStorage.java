@@ -54,9 +54,9 @@ import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.StateManager;
-import org.apache.bookkeeper.bookie.storage.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
+import org.apache.bookkeeper.bookie.storage.directentrylogger.EntryLogIdsImpl;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage.LedgerLoggerProcessor;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -465,7 +465,7 @@ public class DbLedgerStorage implements LedgerStorage {
             LedgerLoggerProcessor processor) throws IOException {
 
         checkNotNull(serverConf, "ServerConfiguration can't be null");
-        checkNotNull(processor, "LedgerLoggger info processor can't null");
+        checkNotNull(processor, "LedgerLogger info processor can't null");
 
         DiskChecker diskChecker = new DiskChecker(serverConf.getDiskUsageThreshold(),
                 serverConf.getDiskUsageWarnThreshold());
@@ -511,7 +511,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         ledgerStorageList.stream().forEach(s -> s.forceGC(forceMajor, forceMinor));
     }
 

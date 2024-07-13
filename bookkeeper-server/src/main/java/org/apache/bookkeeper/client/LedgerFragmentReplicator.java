@@ -46,6 +46,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
@@ -58,7 +59,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,28 +172,40 @@ public class LedgerFragmentReplicator {
         }
 
         /*
-         * Add all the entries to entriesToReplicate list from
-         * firstStoredEntryId to lastStoredEntryID.
-         */
-        List<Long> entriesToReplicate = new LinkedList<Long>();
-        long lastStoredEntryId = lf.getLastStoredEntryId();
-        for (long i = lf.getFirstStoredEntryId(); i <= lastStoredEntryId; i++) {
-            entriesToReplicate.add(i);
-        }
-        /*
          * Now asynchronously replicate all of the entries for the ledger
          * fragment that were on the dead bookie.
          */
+        int entriesToReplicateCnt = (int) (endEntryId - startEntryId + 1);
         MultiCallback ledgerFragmentEntryMcb = new MultiCallback(
-                entriesToReplicate.size(), ledgerFragmentMcb, null, BKException.Code.OK,
+                entriesToReplicateCnt, ledgerFragmentMcb, null, BKException.Code.OK,
                 BKException.Code.LedgerRecoveryException);
         if (this.replicationThrottle != null) {
             this.replicationThrottle.resetRate(this.conf.getReplicationRateByBytes());
         }
-        for (final Long entryId : entriesToReplicate) {
-            recoverLedgerFragmentEntry(entryId, lh, ledgerFragmentEntryMcb,
+
+        if (conf.isRecoveryBatchReadEnabled()
+                && conf.getUseV2WireProtocol()
+                && conf.isBatchReadEnabled()
+                && lh.getLedgerMetadata().getEnsembleSize() == lh.getLedgerMetadata().getWriteQuorumSize()) {
+            batchRecoverLedgerFragmentEntry(startEntryId, endEntryId, lh, ledgerFragmentEntryMcb,
                     newBookies, onReadEntryFailureCallback);
+
+        } else {
+            /*
+             * Add all the entries to entriesToReplicate list from
+             * firstStoredEntryId to lastStoredEntryID.
+             */
+            List<Long> entriesToReplicate = new LinkedList<Long>();
+            long lastStoredEntryId = lf.getLastStoredEntryId();
+            for (long i = lf.getFirstStoredEntryId(); i <= lastStoredEntryId; i++) {
+                entriesToReplicate.add(i);
+            }
+            for (final Long entryId : entriesToReplicate) {
+                recoverLedgerFragmentEntry(entryId, lh, ledgerFragmentEntryMcb,
+                        newBookies, onReadEntryFailureCallback);
+            }
         }
+
     }
 
     /**
@@ -221,11 +233,11 @@ public class LedgerFragmentReplicator {
             final Set<BookieId> targetBookieAddresses,
             final BiConsumer<Long, Long> onReadEntryFailureCallback)
             throws InterruptedException {
-        Set<LedgerFragment> partionedFragments = splitIntoSubFragments(lh, lf,
+        Set<LedgerFragment> partitionedFragments = splitIntoSubFragments(lh, lf,
                 bkc.getConf().getRereplicationEntryBatchSize());
         LOG.info("Replicating fragment {} in {} sub fragments.",
-                lf, partionedFragments.size());
-        replicateNextBatch(lh, partionedFragments.iterator(),
+                lf, partitionedFragments.size());
+        replicateNextBatch(lh, partitionedFragments.iterator(),
                 ledgerFragmentMcb, targetBookieAddresses, onReadEntryFailureCallback);
     }
 
@@ -293,7 +305,7 @@ public class LedgerFragmentReplicator {
             assert false;
         }
 
-        long numberOfEntriesToReplicate = (lastEntryId - firstEntryId) + 1;
+        long numberOfEntriesToReplicate = firstEntryId == INVALID_ENTRY_ID ? 0 : (lastEntryId - firstEntryId) + 1;
         long splitsWithFullEntries = numberOfEntriesToReplicate
                 / rereplicationEntryBatchSize;
 
@@ -336,7 +348,7 @@ public class LedgerFragmentReplicator {
      *            New bookies we want to use to recover and replicate the ledger
      *            entries that were stored on the failed bookie.
      */
-    private void recoverLedgerFragmentEntry(final Long entryId,
+    void recoverLedgerFragmentEntry(final Long entryId,
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
             final Set<BookieId> newBookies,
@@ -410,7 +422,7 @@ public class LedgerFragmentReplicator {
                                 lh.getLastAddConfirmed(), entry.getLength(),
                                 Unpooled.wrappedBuffer(data, 0, data.length),
                                 lh.getLedgerKey(),
-                                0
+                                BookieProtocol.FLAG_RECOVERY_ADD
                                 );
                 if (replicationThrottle != null) {
                     if (toSend instanceof ByteBuf) {
@@ -433,6 +445,112 @@ public class LedgerFragmentReplicator {
         }, null);
     }
 
+    void batchRecoverLedgerFragmentEntry(final long startEntryId,
+                                         final long endEntryId,
+                                         final LedgerHandle lh,
+                                         final AsyncCallback.VoidCallback ledgerFragmentMcb,
+                                         final Set<BookieId> newBookies,
+                                         final BiConsumer<Long, Long> onReadEntryFailureCallback)
+            throws InterruptedException {
+        int entriesToReplicateCnt = (int) (endEntryId - startEntryId + 1);
+        int maxBytesToReplicate = conf.getReplicationRateByBytes();
+        if (replicationThrottle != null) {
+            if (maxBytesToReplicate != -1 && maxBytesToReplicate > averageEntrySize.get() * entriesToReplicateCnt) {
+                maxBytesToReplicate = averageEntrySize.get() * entriesToReplicateCnt;
+            }
+            replicationThrottle.acquire(maxBytesToReplicate);
+        }
+
+        lh.asyncBatchReadEntries(startEntryId, entriesToReplicateCnt, maxBytesToReplicate,
+            new ReadCallback() {
+                @Override
+                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        LOG.error("BK error reading ledger entries: {} - {}",
+                                startEntryId, endEntryId, BKException.create(rc));
+                        onReadEntryFailureCallback.accept(lh.getId(), startEntryId);
+                        for (int i = 0; i < entriesToReplicateCnt; i++) {
+                            ledgerFragmentMcb.processResult(rc, null, null);
+                        }
+                        return;
+                    }
+                    long lastEntryId = startEntryId;
+                    while (seq.hasMoreElements()) {
+                        LedgerEntry entry = seq.nextElement();
+                        lastEntryId = entry.getEntryId();
+                        byte[] data = entry.getEntry();
+                        final long dataLength = data.length;
+                        numEntriesRead.inc();
+                        numBytesRead.registerSuccessfulValue(dataLength);
+
+                        ReferenceCounted toSend = lh.getDigestManager()
+                                .computeDigestAndPackageForSending(entry.getEntryId(),
+                                        lh.getLastAddConfirmed(), entry.getLength(),
+                                        Unpooled.wrappedBuffer(data, 0, data.length),
+                                        lh.getLedgerKey(),
+                                        BookieProtocol.FLAG_RECOVERY_ADD);
+                        if (replicationThrottle != null) {
+                            if (toSend instanceof ByteBuf) {
+                                updateAverageEntrySize(((ByteBuf) toSend).readableBytes());
+                            } else if (toSend instanceof ByteBufList) {
+                                updateAverageEntrySize(((ByteBufList) toSend).readableBytes());
+                            }
+                        }
+                        AtomicInteger numCompleted = new AtomicInteger(0);
+                        AtomicBoolean completed = new AtomicBoolean(false);
+
+                        WriteCallback multiWriteCallback = new WriteCallback() {
+                            @Override
+                            public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
+                                if (rc != BKException.Code.OK) {
+                                    LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
+                                            ledgerId, entryId, addr, BKException.create(rc));
+                                    if (completed.compareAndSet(false, true)) {
+                                        ledgerFragmentMcb.processResult(rc, null, null);
+                                    }
+                                } else {
+                                    numEntriesWritten.inc();
+                                    if (ctx instanceof Long) {
+                                        numBytesWritten.registerSuccessfulValue((Long) ctx);
+                                    }
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
+                                                ledgerId, entryId, addr);
+                                    }
+                                    if (numCompleted.incrementAndGet() == newBookies.size()
+                                            && completed.compareAndSet(false, true)) {
+                                        ledgerFragmentMcb.processResult(rc, null, null);
+                                    }
+                                }
+                            }
+                        };
+
+                        for (BookieId newBookie : newBookies) {
+                            long startWriteEntryTime = MathUtils.nowInNano();
+                            bkc.getBookieClient().addEntry(newBookie, lh.getId(),
+                                    lh.getLedgerKey(), entry.getEntryId(), toSend,
+                                    multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD,
+                                    false, WriteFlag.NONE);
+                            writeDataLatency.registerSuccessfulEvent(
+                                    MathUtils.elapsedNanos(startWriteEntryTime), TimeUnit.NANOSECONDS);
+                        }
+                        toSend.release();
+                    }
+                    if (lastEntryId != endEntryId) {
+                        try {
+                            batchRecoverLedgerFragmentEntry(lastEntryId + 1, endEntryId, lh,
+                                    ledgerFragmentMcb, newBookies, onReadEntryFailureCallback);
+                        } catch (InterruptedException e) {
+                            int remainingEntries = (int) (endEntryId - lastEntryId);
+                            for (int i = 0; i < remainingEntries; i++) {
+                                ledgerFragmentMcb.processResult(BKException.Code.InterruptedException, null, null);
+                            }
+                        }
+                    }
+                }
+            }, null);
+    }
+
     private void updateAverageEntrySize(int toSendSize) {
         averageEntrySize.updateAndGet(value -> (int) (value * AVERAGE_ENTRY_SIZE_RATIO
                 + (1 - AVERAGE_ENTRY_SIZE_RATIO) * toSendSize));
@@ -441,7 +559,7 @@ public class LedgerFragmentReplicator {
     /**
      * Callback for recovery of a single ledger fragment. Once the fragment has
      * had all entries replicated, update the ensemble in zookeeper. Once
-     * finished propogate callback up to ledgerFragmentsMcb which should be a
+     * finished propagate callback up to ledgerFragmentsMcb which should be a
      * multicallback responsible for all fragments in a single ledger
      */
     static class SingleFragmentCallback implements AsyncCallback.VoidCallback {

@@ -60,7 +60,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Tests for backpressure handling on the server side.
  */
-// PowerMock usage is problematic here due to https://github.com/powermock/powermock/issues/822
 public class BookieBackpressureTest extends BookKeeperClusterTestCase
         implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 

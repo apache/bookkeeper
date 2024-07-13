@@ -10,7 +10,7 @@ Discovery of the TCP address is implicit, because the *id* of the bookie is made
 
 With this proposal we are now introducing a way for the Bookie to advertise the services it exposes, basically the Bookie will be able to store on the Metadata Service a structure that describes the list of  *available services*.
 
-We will also allow to publish a set of additional unstructured properties in form of a key-value pair that will be useful for futher implementations.
+We will also allow to publish a set of additional unstructured properties in form of a key-value pair that will be useful for further implementations.
 
 This information will be also useful for Monitoring and Management services as it will enable full discovery of the capabilities of all of the Bookies in a cluster just by having read access to the Metadata Service.
 
@@ -52,7 +52,7 @@ void registerBookie(String bookieId, boolean readOnly)
 becomes
 
 ```
-void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo bookieServieInfo)
+void registerBookie(String bookieId, boolean readOnly, BookieServiceInfo bookieServiceInfo)
 ```
 
 It will be up to the implementation of RegistrationManager and RegistrationClient to serialize

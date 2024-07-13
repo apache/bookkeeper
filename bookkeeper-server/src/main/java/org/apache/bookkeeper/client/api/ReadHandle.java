@@ -46,6 +46,23 @@ public interface ReadHandle extends Handle {
     CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry);
 
     /**
+     * Read a sequence of entries asynchronously.
+     *
+     * @param startEntry
+     *          start entry id
+     * @param maxCount
+     *          the total entries count.
+     * @param maxSize
+     *          the total entries size.
+     * @return an handle to the result of the operation
+     */
+    default CompletableFuture<LedgerEntries> batchReadAsync(long startEntry, int maxCount, long maxSize) {
+        CompletableFuture<LedgerEntries> future = new CompletableFuture<>();
+        future.completeExceptionally(new UnsupportedOperationException());
+        return future;
+    }
+
+    /**
      * Read a sequence of entries synchronously.
      *
      * @param firstEntry
@@ -60,10 +77,25 @@ public interface ReadHandle extends Handle {
     }
 
     /**
+     *
+     * @param startEntry
+     *          start entry id
+     * @param maxCount
+     *          the total entries count.
+     * @param maxSize
+     *          the total entries size.
+     * @return the result of the operation
+     */
+    default LedgerEntries batchRead(long startEntry, int maxCount, long maxSize)
+            throws BKException, InterruptedException {
+        return FutureUtils.result(batchReadAsync(startEntry, maxCount, maxSize), BKException.HANDLER);
+    }
+
+    /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #read(long, long) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>

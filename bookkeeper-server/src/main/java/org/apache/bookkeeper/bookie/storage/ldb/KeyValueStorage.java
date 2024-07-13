@@ -178,5 +178,9 @@ public interface KeyValueStorage extends Closeable {
         void clear();
 
         void flush() throws IOException;
+
+        default int batchCount() {
+            return -1;
+        }
     }
 }

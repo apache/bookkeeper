@@ -13,7 +13,7 @@
 """Helpers for retrying functions with exponential back-off.
 The :class:`Retry` decorator can be used to retry functions that raise
 exceptions using exponential backoff. Because a exponential sleep algorithm is
-used, the retry is limited by a `deadline`. The deadline is the maxmimum amount
+used, the retry is limited by a `deadline`. The deadline is the maximum amount
 of time a method can block. This is used instead of total number of retries
 because it is difficult to ascertain the amount of time a function can block
 when using total number of retries and exponential backoff.

@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +48,11 @@ public class LastMarkCommand extends BookieCommand<CliFlags> {
             .withFlags(new CliFlags())
             .withDescription(DESC)
             .build());
+    }
+
+    @VisibleForTesting
+    public static LastMarkCommand newLastMarkCommand(){
+        return new LastMarkCommand();
     }
 
     @Override

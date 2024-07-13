@@ -55,7 +55,9 @@ public class ZKVersionedSetOp extends ZKOp {
         if (null == opResult) {
             cause = t;
         } else {
-            assert (opResult instanceof OpResult.ErrorResult);
+            if (!(opResult instanceof OpResult.ErrorResult)) {
+                throw new IllegalStateException("Invalid op result : " + opResult);
+            }
             OpResult.ErrorResult errorResult = (OpResult.ErrorResult) opResult;
             if (KeeperException.Code.OK.intValue() == errorResult.getErr()) {
                 cause = t;

@@ -310,7 +310,7 @@ $ bin/bookkeeper shell listbookies \
 
 ### listfilesondisc {#bookkeeper-shell-listfilesondisc}
 
-List the files in JournalDirectory/LedgerDirectories/IndexDirectories.
+List the files in JournalDirectories/LedgerDirectories/IndexDirectories.
 
 ##### Usage
 

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.TextFormat.ParseException;
@@ -72,7 +73,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper implementation of underreplication manager.
- * This is implemented in a heirarchical fashion, so it'll work with
+ * This is implemented in a hierarchical fashion, so it'll work with
  * FlatLedgerManagerFactory and HierarchicalLedgerManagerFactory.
  *
  * <p>Layout is:
@@ -81,7 +82,7 @@ import org.slf4j.LoggerFactory;
  *                         locks/(ledgerId)
  *
  * <p>The hierarchical path is created by splitting the ledger into 4 2byte
- * segments which are represented in hexidecimal.
+ * segments which are represented in hexadecimal.
  * e.g. For ledger id 0xcafebeef0000feed, the path is
  *  cafe/beef/0000/feed/
  */
@@ -124,10 +125,19 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String replicasCheckCtimeZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
+    private final RateLimiter rateLimiter;
 
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws UnavailableException, InterruptedException, ReplicationException.CompatibilityException {
         this.conf = conf;
+        if (conf.getZkReplicationTaskRateLimit() > 0) {
+            LOG.info("Throttling acquire task rate is configured to {} permits per second",
+                    conf.getZkReplicationTaskRateLimit());
+            rateLimiter = RateLimiter.create(conf.getZkReplicationTaskRateLimit());
+        } else {
+            LOG.info("Throttling acquire task rate is disabled");
+            rateLimiter = null;
+        }
         rootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         basePath = getBasePath(rootPath);
         layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
@@ -593,6 +603,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("getLedgerToRereplicate()");
         }
         while (true) {
+            if (rateLimiter != null) {
+                rateLimiter.acquire();
+            }
             final CountDownLatch changedLatch = new CountDownLatch(1);
             Watcher w = new Watcher() {
                 @Override
@@ -620,8 +633,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
-        ReplicationEnableCb cb = new ReplicationEnableCb();
         if (!this.isLedgerReplicationEnabled()) {
+            ReplicationEnableCb cb = new ReplicationEnableCb();
             this.notifyLedgerReplicationEnabled(cb);
             cb.await();
         }

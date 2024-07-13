@@ -28,12 +28,15 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -51,24 +54,19 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
-import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test of {@link EmbeddedServer}.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({BookieService.class, BookieResources.class, EmbeddedServer.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TestEmbeddedServer {
 
     static class TestComponent extends ServerLifecycleComponent {
@@ -93,11 +91,13 @@ public class TestEmbeddedServer {
 
     @Test
     public void testBuildBookieServer() throws Exception {
-        PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(any(), any()))
-            .thenReturn(new NullMetadataBookieDriver());
-        when(BookieResources.createAllocator(any())).thenReturn(
-                PowerMockito.mock(ByteBufAllocatorWithOomHandler.class));
+        @Cleanup
+        MockedStatic<BookieResources> bookieResourcesMockedStatic = mockStatic(BookieResources.class,
+                CALLS_REAL_METHODS);
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createMetadataDriver(any(), any())).thenReturn(new NullMetadataBookieDriver());
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createAllocator(any())).thenReturn(mock(ByteBufAllocatorWithOomHandler.class));
 
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAllowLoopback(true)
@@ -106,18 +106,26 @@ public class TestEmbeddedServer {
             .setExtraServerComponents(new String[] { TestComponent.class.getName() });
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
-        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
-        whenNew(LegacyCookieValidation.class)
-            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+        @Cleanup
+        MockedStatic<LegacyCookieValidation> legacyCookieValidationMockedStatic =
+                mockStatic(LegacyCookieValidation.class);
+        legacyCookieValidationMockedStatic.when(() -> LegacyCookieValidation.newLegacyCookieValidation(any(), any()))
+                .thenReturn(mock(LegacyCookieValidation.class));
 
-        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
-        whenNew(BookieServer.class)
-            .withAnyArguments()
-            .thenReturn(mockServer);
+        @Cleanup
+        MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class, CALLS_REAL_METHODS);
+        bookieMockedStatic.when(() -> BookieImpl.newBookieImpl(any(), any(), any(), any(), any(), any(), any(),
+                any(), any())).thenReturn(mock(BookieImpl.class));
+
+        BookieServer mockServer = mock(BookieServer.class);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
-        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
+
+        @Cleanup
+        MockedStatic<BookieServer> bookieServerMockedStatic = mockStatic(BookieServer.class);
+        bookieServerMockedStatic.when(() -> BookieServer.newBookieServer(any(), any(), any(), any(), any()))
+                .thenReturn(mockServer);
 
         EmbeddedServer server = EmbeddedServer.builder(conf).build();
         LifecycleComponentStack stack = server.getLifecycleComponentStack();
@@ -158,25 +166,36 @@ public class TestEmbeddedServer {
 
         UncleanShutdownDetectionImpl uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
-        ByteBufAllocatorWithOomHandler byteBufFromResources = PowerMockito.mock(ByteBufAllocatorWithOomHandler.class);
-        ByteBufAllocatorWithOomHandler byteBuf = PowerMockito.mock(ByteBufAllocatorWithOomHandler.class);
+        ByteBufAllocatorWithOomHandler byteBufFromResources = mock(ByteBufAllocatorWithOomHandler.class);
+        ByteBufAllocatorWithOomHandler byteBuf = mock(ByteBufAllocatorWithOomHandler.class);
 
-        PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(any(), any())).thenReturn(new NullMetadataBookieDriver());
-        when(BookieResources.createAllocator(any())).thenReturn(byteBufFromResources);
+        @Cleanup
+        MockedStatic<BookieResources> bookieResourcesMockedStatic = mockStatic(BookieResources.class);
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createMetadataDriver(any(), any())).thenReturn(new NullMetadataBookieDriver());
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createAllocator(any())).thenReturn(byteBufFromResources);
 
-        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
-        whenNew(LegacyCookieValidation.class)
-                .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+        @Cleanup
+        MockedStatic<LegacyCookieValidation> legacyCookieValidationMockedStatic =
+                mockStatic(LegacyCookieValidation.class);
+        legacyCookieValidationMockedStatic.when(() -> LegacyCookieValidation.newLegacyCookieValidation(any(), any()))
+                .thenReturn(mock(LegacyCookieValidation.class));
 
-        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
-        whenNew(BookieServer.class)
-                .withAnyArguments()
+        @Cleanup
+        MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class, CALLS_REAL_METHODS);
+        bookieMockedStatic.when(() -> BookieImpl.newBookieImpl(any(), any(), any(), any(), any(), any(), any(), any(),
+                any())).thenReturn(mock(BookieImpl.class));
+
+        BookieServer mockServer = mock(BookieServer.class);
+
+        @Cleanup
+        MockedStatic<BookieServer> bookieServerMockedStatic = mockStatic(BookieServer.class);
+        bookieServerMockedStatic.when(() -> BookieServer.newBookieServer(any(), any(), any(), any(), any()))
                 .thenReturn(mockServer);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
-        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         EmbeddedServer server = EmbeddedServer.builder(conf)
                 .statsProvider(statsProvider)
@@ -211,9 +230,11 @@ public class TestEmbeddedServer {
 
     @Test
     public void testIgnoreExtraServerComponentsStartupFailures() throws Exception {
-        PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(any(), any()))
-            .thenReturn(new NullMetadataBookieDriver());
+        @Cleanup
+        MockedStatic<BookieResources> bookieResourcesMockedStatic = mockStatic(BookieResources.class,
+                CALLS_REAL_METHODS);
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createMetadataDriver(any(), any())).thenReturn(new NullMetadataBookieDriver());
 
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAllowLoopback(true)
@@ -223,18 +244,26 @@ public class TestEmbeddedServer {
             .setIgnoreExtraServerComponentsStartupFailures(true);
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
-        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
-        whenNew(LegacyCookieValidation.class)
-            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+        @Cleanup
+        MockedStatic<LegacyCookieValidation> legacyCookieValidationMockedStatic =
+                mockStatic(LegacyCookieValidation.class);
+        legacyCookieValidationMockedStatic.when(() -> LegacyCookieValidation.newLegacyCookieValidation(any(), any()))
+                .thenReturn(mock(LegacyCookieValidation.class));
 
-        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
-        whenNew(BookieServer.class)
-            .withAnyArguments()
-            .thenReturn(mockServer);
+        @Cleanup
+        MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class, CALLS_REAL_METHODS);
+        bookieMockedStatic.when(() -> BookieImpl.newBookieImpl(any(), any(), any(), any(), any(), any(), any(), any(),
+                any())).thenReturn(mock(BookieImpl.class));
+
+        BookieServer mockServer = mock(BookieServer.class);
+
+        @Cleanup
+        MockedStatic<BookieServer> bookieServerMockedStatic = mockStatic(BookieServer.class);
+        bookieServerMockedStatic.when(() -> BookieServer.newBookieServer(any(), any(), any(), any(), any()))
+                .thenReturn(mockServer);
 
         BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
         when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
-        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
 
         LifecycleComponentStack stack = EmbeddedServer.builder(conf).build().getLifecycleComponentStack();
         assertEquals(6, stack.getNumComponents());
@@ -250,9 +279,11 @@ public class TestEmbeddedServer {
 
     @Test
     public void testExtraServerComponentsStartupFailures() throws Exception {
-        PowerMockito.mockStatic(BookieResources.class);
-        when(BookieResources.createMetadataDriver(any(), any()))
-            .thenReturn(new NullMetadataBookieDriver());
+        @Cleanup
+        MockedStatic<BookieResources> bookieResourcesMockedStatic = mockStatic(BookieResources.class,
+                CALLS_REAL_METHODS);
+        bookieResourcesMockedStatic.when(() ->
+                BookieResources.createMetadataDriver(any(), any())).thenReturn(new NullMetadataBookieDriver());
 
         ServerConfiguration serverConf = new ServerConfiguration()
             .setAllowLoopback(true)
@@ -262,18 +293,23 @@ public class TestEmbeddedServer {
             .setIgnoreExtraServerComponentsStartupFailures(false);
         BookieConfiguration conf = new BookieConfiguration(serverConf);
 
-        whenNew(BookieImpl.class).withAnyArguments().thenReturn(PowerMockito.mock(BookieImpl.class));
-        whenNew(LegacyCookieValidation.class)
-            .withAnyArguments().thenReturn(PowerMockito.mock(LegacyCookieValidation.class));
+        @Cleanup
+        MockedStatic<LegacyCookieValidation> legacyCookieValidationMockedStatic =
+                mockStatic(LegacyCookieValidation.class);
+        legacyCookieValidationMockedStatic.when(() -> LegacyCookieValidation.newLegacyCookieValidation(any(), any()))
+                .thenReturn(mock(LegacyCookieValidation.class));
 
-        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
-        whenNew(BookieServer.class)
-                .withAnyArguments()
-            .thenReturn(mockServer);
+        @Cleanup
+        MockedStatic<BookieImpl> bookieMockedStatic = mockStatic(BookieImpl.class, CALLS_REAL_METHODS);
+        bookieMockedStatic.when(() -> BookieImpl.newBookieImpl(any(), any(), any(), any(), any(), any(), any(), any(),
+                any())).thenReturn(mock(BookieImpl.class));
 
-        BookieSocketAddress bookieAddress = new BookieSocketAddress("127.0.0.1", 1281);
-        when(mockServer.getLocalAddress()).thenReturn(bookieAddress);
-        when(mockServer.getBookieId()).thenReturn(bookieAddress.toBookieId());
+        BookieServer mockServer = mock(BookieServer.class);
+
+        @Cleanup
+        MockedStatic<BookieServer> bookieServerMockedStatic = mockStatic(BookieServer.class);
+        bookieServerMockedStatic.when(() -> BookieServer.newBookieServer(any(), any(), any(), any(), any()))
+                .thenReturn(mockServer);
 
         try {
             EmbeddedServer.builder(conf).build().getLifecycleComponentStack();

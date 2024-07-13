@@ -85,7 +85,7 @@ import org.slf4j.LoggerFactory;
  * <li> `readahead_worker`/notification_execution: opstats. stats on executions over the notifications received from
  * zookeeper.
  * <li> `readahead_worker`/metadata_reinitialization: opstats. stats on metadata reinitialization after receiving
- * notifcation from log segments updates.
+ * notification from log segments updates.
  * <li> `readahead_worker`/idle_reader_warn: counter. it increases each time the readahead worker detects itself
  * becoming idle.
  * </ul>

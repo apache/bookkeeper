@@ -22,8 +22,8 @@ package org.apache.bookkeeper.client;
 
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
-import org.apache.bookkeeper.util.MathUtils;
 
 @Slf4j
 class ListenerBasedPendingReadOp extends PendingReadOp {
@@ -45,7 +45,7 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
 
     @Override
     protected void submitCallback(int code) {
-        LedgerEntryRequest request;
+        SingleLedgerEntryRequest request;
         while (!seq.isEmpty() && (request = seq.getFirst()) != null) {
             if (!request.isComplete()) {
                 return;

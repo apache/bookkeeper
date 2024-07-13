@@ -41,12 +41,12 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Test
         run: ./stream/clients/python/scripts/test.sh
-  
+
 
   Stream-storage-python-client-integration-tests:
     name: StreamStorage Python Client Integration Tests
@@ -54,12 +54,12 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Cache local Maven repository
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository/*/*/*
@@ -67,16 +67,16 @@ jobs:
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 11
-      - name: Set up Maven
-        uses: apache/pulsar-test-infra/setup-maven@master
-        with:
-          maven-version: 3.8.7
       - name: Build
         run: mvn -q -T 1C -B -nsu clean install -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip
+      - name: Pick ubuntu mirror for the docker image build
+        run: |
+          # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
+          $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
       - name: Build Test image
         run: ./stream/clients/python/docker/build-local-image.sh
       - name: Test

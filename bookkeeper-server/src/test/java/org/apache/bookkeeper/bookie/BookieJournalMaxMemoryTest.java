@@ -20,11 +20,13 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,17 +40,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Test the bookie journal max memory controller.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({JournalChannel.class, Journal.class})
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class BookieJournalMaxMemoryTest {
 
@@ -67,13 +64,11 @@ public class BookieJournalMaxMemoryTest {
                 .setJournalMaxMemorySizeMb(1);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
-        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
-
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = spy(new Journal(0, journalDir, conf, ledgerDirsManager));
-        Whitebox.setInternalState(journal, "memoryLimitController",
-                spy(new MemoryLimitController(1)));
-        MemoryLimitController mlc = Whitebox.getInternalState(journal, "memoryLimitController");
+        doReturn(jc).when(journal).newLogFile(anyLong(), nullable(Long.class));
+        MemoryLimitController mlc = spy(new MemoryLimitController(1));
+        journal.setMemoryLimitController(mlc);
 
         journal.start();
 

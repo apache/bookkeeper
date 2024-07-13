@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
@@ -67,9 +68,14 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
         @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
         private int numEntries = 100;
 
+        @VisibleForTesting
+        public static Flags newFlags(){
+            return new Flags();
+        }
+
     }
     public SimpleTestCommand() {
-        this(new Flags());
+        this(Flags.newFlags());
     }
 
     public SimpleTestCommand(Flags flags) {
@@ -80,6 +86,11 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
             .build());
     }
 
+    @VisibleForTesting
+    public static SimpleTestCommand newSimpleTestCommand(Flags flags) {
+        return new SimpleTestCommand(flags);
+    }
+
     @Override
     @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "DMI_RANDOM_USED_ONLY_ONCE"})
     protected void run(BookKeeper bk, Flags flags) throws Exception {
@@ -88,17 +99,18 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) (random.nextInt(26) + 65);
         }
-        WriteHandle wh = null;
-        try {
-            wh = result(bk.newCreateLedgerOp()
-                    .withEnsembleSize(flags.ensembleSize)
-                    .withWriteQuorumSize(flags.writeQuorumSize)
-                    .withAckQuorumSize(flags.ackQuorumSize)
-                    .withDigestType(DigestType.CRC32C)
-                    .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
-                    .withPassword(new byte[0])
-                    .execute());
-            LOG.info("Ledger ID: {}", wh.getId());
+        long ledgerId = -1L;
+        long lastEntryId = -1L;
+        try (WriteHandle wh = result(bk.newCreateLedgerOp()
+                .withEnsembleSize(flags.ensembleSize)
+                .withWriteQuorumSize(flags.writeQuorumSize)
+                .withAckQuorumSize(flags.ackQuorumSize)
+                .withDigestType(DigestType.CRC32C)
+                .withCustomMetadata(ImmutableMap.of("Bookie", NAME.getBytes(StandardCharsets.UTF_8)))
+                .withPassword(new byte[0])
+                .execute())) {
+            ledgerId = wh.getId();
+            LOG.info("Ledger ID: {}", ledgerId);
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
                 wh.append(data);
@@ -108,22 +120,50 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                     lastReport = System.nanoTime();
                 }
             }
-            LOG.info("{} entries written to ledger {}", flags.numEntries, wh.getId());
+            lastEntryId = wh.getLastAddPushed();
+            LOG.info("{} entries written to ledger {}. Last entry Id {}", flags.numEntries, ledgerId, lastEntryId);
+            if (lastEntryId != flags.numEntries - 1) {
+                throw new IllegalStateException("Last entry id doesn't match the expected value");
+            }
+            // check that all entries are readable
+            readEntries(bk, ledgerId, lastEntryId, flags.numEntries, true, data);
+        }
+        if (ledgerId != -1) {
+            try {
+                if (lastEntryId != -1) {
+                    // check that all entries are readable and confirmed
+                    readEntries(bk, ledgerId, lastEntryId, flags.numEntries, false, data);
+                } else {
+                    throw new IllegalStateException("Last entry id is not set");
+                }
+            } finally {
+                // delete the ledger
+                result(bk.newDeleteLedgerOp().withLedgerId(ledgerId).execute());
+            }
+        } else {
+            throw new IllegalStateException("Ledger id is not set");
+        }
+    }
 
-            try (ReadHandle rh = result(bk.newOpenLedgerOp().withLedgerId(wh.getId()).withDigestType(DigestType.CRC32C)
-                    .withPassword(new byte[0]).execute())) {
-                LedgerEntries ledgerEntries = rh.read(0, flags.numEntries);
+    private static void readEntries(BookKeeper bk, long ledgerId, long lastEntryId, int expectedNumberOfEntries,
+                                    boolean readUnconfirmed, byte[] data) throws Exception {
+        int entriesRead = 0;
+        try (ReadHandle rh = result(bk.newOpenLedgerOp().withLedgerId(ledgerId).withDigestType(DigestType.CRC32C)
+                .withPassword(new byte[0]).execute())) {
+            try (LedgerEntries ledgerEntries = readUnconfirmed ? rh.readUnconfirmed(0, lastEntryId) :
+                    rh.read(0, lastEntryId)) {
                 for (LedgerEntry ledgerEntry : ledgerEntries) {
                     if (!Arrays.equals(ledgerEntry.getEntryBytes(), data)) {
-                        LOG.error("Read test failed, the reading data is not equals writing data.");
+                        throw new IllegalStateException("Read data doesn't match the data written.");
                     }
+                    entriesRead++;
                 }
             }
-        } finally {
-            if (wh != null) {
-                wh.close();
-                result(bk.newDeleteLedgerOp().withLedgerId(wh.getId()).execute());
-            }
+        }
+        if (entriesRead != expectedNumberOfEntries) {
+            throw new IllegalStateException(
+                    String.format("Number of entries read (%d) doesn't match the expected value (%d).",
+                            entriesRead, expectedNumberOfEntries));
         }
     }
 }

@@ -113,7 +113,7 @@ uname -mprsv
 for shell in ${shells}; do
   echo
 
-  # check for existance of shell
+  # check for existence of shell
   if [ ! -x ${shell} ]; then
     bk_warn "unable to run tests with the ${shell} shell"
     continue

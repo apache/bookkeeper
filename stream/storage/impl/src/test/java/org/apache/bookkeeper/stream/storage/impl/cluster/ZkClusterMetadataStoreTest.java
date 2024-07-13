@@ -82,7 +82,7 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
     }
 
     @Test
-    public void testUnitialized() {
+    public void testUninitialized() {
         ZkClusterMetadataStore newStore = new ZkClusterMetadataStore(
             curatorClient, zkServers, "/" + runtime.getMethodName() + "-new");
 

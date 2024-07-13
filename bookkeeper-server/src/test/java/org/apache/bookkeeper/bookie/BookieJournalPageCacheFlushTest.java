@@ -23,12 +23,14 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -48,18 +50,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
 
 /**
  * Test the bookie journal PageCache flush interval.
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xerces.*"})
-@PrepareForTest({JournalChannel.class, Journal.class})
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class BookieJournalPageCacheFlushTest {
 
@@ -83,7 +80,7 @@ public class BookieJournalPageCacheFlushTest {
             ForceWriteRequest[] array = iom.getArgument(0);
             return supportQueue.takeAll(array);
         }).when(forceWriteRequests).takeAll(any());
-        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
+        journal.setForceWriteRequests(forceWriteRequests);
         return supportQueue;
     }
 
@@ -99,15 +96,16 @@ public class BookieJournalPageCacheFlushTest {
                 .setJournalSyncData(true)
                 .setJournalPageCacheFlushIntervalMSec(5000);
 
-        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
-        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
-
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
-
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
         BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
+
+        journal = spy(journal);
+        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
+        doReturn(jc).when(journal).newLogFile(anyLong(), nullable(Long.class));
+
         journal.start();
 
         LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
@@ -166,15 +164,17 @@ public class BookieJournalPageCacheFlushTest {
                 .setJournalSyncData(true)
                 .setJournalPageCacheFlushIntervalMSec(5000);
 
-        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
-        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
-
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
         BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
+
+        journal = spy(journal);
+        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
+        doReturn(jc).when(journal).newLogFile(anyLong(), nullable(Long.class));
+
         journal.start();
 
         LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
@@ -229,15 +229,17 @@ public class BookieJournalPageCacheFlushTest {
                 .setJournalSyncData(false)
                 .setJournalPageCacheFlushIntervalMSec(5000);
 
-        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
-        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
-
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
         BatchedArrayBlockingQueue<ForceWriteRequest> supportQueue =
                 enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
+
+        journal = spy(journal);
+        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
+        doReturn(jc).when(journal).newLogFile(anyLong(), nullable(Long.class));
+
         journal.start();
 
         CountDownLatch latch = new CountDownLatch(2);

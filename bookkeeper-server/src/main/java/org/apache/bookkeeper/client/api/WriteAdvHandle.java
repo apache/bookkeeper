@@ -29,7 +29,7 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
- * Provide write access to a ledger. Using WriteAdvHandler the writer MUST explictly set an entryId. Beware that the
+ * Provide write access to a ledger. Using WriteAdvHandler the writer MUST explicitly set an entryId. Beware that the
  * write for a given entryId will be acknowledged if and only if all entries up to entryId - 1 have been acknowledged
  * too (expected from entryId 0)
  *

@@ -19,20 +19,20 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>26</version>
+    <version>31</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.16.0-SNAPSHOT</version>
+  <version>4.18.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
-  <url>http://bookkeeeper.apache.org</url>
+  <url>https://bookkeeeper.apache.org</url>
   <inceptionYear>2011</inceptionYear>
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -40,7 +40,7 @@
     <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
     <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
     <url>https://github.com/apache/bookkeeper</url>
-    <tag>branch-4.13</tag>
+    <tag>branch-4.18</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
@@ -78,36 +78,37 @@
       <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>user@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/user@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Dev</name>
       <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>dev@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
     </mailingList>
     <mailingList>
       <name>BookKeeper Commits</name>
       <subscribe>commits-subscribe@bookkeeper.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
       <post>commits@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
+      <archive>https://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
     </mailingList>
   </mailingLists>
   <developers>
     <developer>
       <name>The Apache BookKeeper Team</name>
       <email>dev@bookkeeper.apache.org</email>
-      <url>http://bookkeeper.apache.org</url>
+      <url>https://bookkeeper.apache.org</url>
       <organization>Apache Software Foundation</organization>
-      <organizationUrl>http://www.apache.org</organizationUrl>
+      <organizationUrl>https://www.apache.org</organizationUrl>
     </developer>
   </developers>
   <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
     <src.dir>src/main/java</src.dir>
@@ -115,103 +116,94 @@
 
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
-    <arquillian-junit.version>1.6.0.Final</arquillian-junit.version>
+    <arquillian-junit.version>1.8.0.Final</arquillian-junit.version>
+    <bc-non-fips.version>1.78</bc-non-fips.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.2</commons-cli.version>
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.21</commons-compress.version>
+    <commons-compress.version>1.26.0</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.7</commons-io.version>
-    <bouncycastle.version>1.0.2.3</bouncycastle.version>
+    <bouncycastle.version>1.0.2.5</bouncycastle.version>
     <curator.version>5.1.0</curator.version>
+    <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
-    <etcd.version>0.5.11</etcd.version>
-    <freebuilder.version>2.7.0</freebuilder.version>
+    <jetcd.version>0.7.7</jetcd.version>
+    <failsafe.version>3.2.2</failsafe.version>
+    <freebuilder.version>2.8.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
-    <grpc.version>1.47.0</grpc.version>
-    <guava.version>31.0.1-jre</guava.version>
+    <grpc.version>1.64.0</grpc.version>
+    <guava.version>32.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
     <hadoop.version>3.3.5</hadoop.version>
-    <hamcrest.version>1.3</hamcrest.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
-    <jackson.version>2.13.4.20221013</jackson.version>
+    <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
-    <jetty.version>9.4.51.v20230217</jetty.version>
-    <jmh.version>1.19</jmh.version>
+    <jetty.version>9.4.53.v20231009</jetty.version>
+    <jmh.version>1.37</jmh.version>
     <jmock.version>2.8.2</jmock.version>
-    <jsoup.version>1.14.3</jsoup.version>
-    <junit.version>4.12</junit.version>
-    <!-- required by zookeeper test utilities imported from ZooKeeper -->
-    <junit5.version>5.8.2</junit5.version>
+    <junit.version>4.13.2</junit.version>
+    <hamcrest.version>1.3</hamcrest.version>
+    <junit5.version>5.10.2</junit5.version>
+    <assertj-core.version>3.25.3</assertj-core.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <libthrift.version>0.14.2</libthrift.version>
-    <lombok.version>1.18.26</lombok.version>
-    <log4j.version>2.18.0</log4j.version>
+    <lombok.version>1.18.32</lombok.version>
+    <log4j.version>2.23.1</log4j.version>
     <lz4.version>1.3.0</lz4.version>
-    <mockito.version>3.12.4</mockito.version>
-    <netty.version>4.1.93.Final</netty.version>
-    <netty-boringssl.version>2.0.61.Final</netty-boringssl.version>
-    <netty-iouring.version>0.0.21.Final</netty-iouring.version>
-    <ostrich.version>9.1.3</ostrich.version>
-    <powermock.version>2.0.9</powermock.version>
+    <mockito.version>4.11.0</mockito.version>
+    <netty.version>4.1.111.Final</netty.version>
+    <netty-iouring.version>0.0.25.Final</netty-iouring.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
-    <protobuf.version>3.19.6</protobuf.version>
-    <protoc3.version>3.19.6</protoc3.version>
+    <protobuf.version>3.25.1</protobuf.version>
+    <protoc3.version>${protobuf.version}</protoc3.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>7.9.2</rocksdb.version>
-    <shrinkwrap.version>3.0.1</shrinkwrap.version>
-    <slf4j.version>1.7.32</slf4j.version>
+    <rocksdb.version>7.10.2</rocksdb.version>
+    <shrinkwrap.version>3.3.0</shrinkwrap.version>
+    <slf4j.version>2.0.12</slf4j.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
-    <testcontainers.version>1.17.6</testcontainers.version>
-    <vertx.version>4.3.8</vertx.version>
-    <zookeeper.version>3.8.1</zookeeper.version>
-    <snappy.version>1.1.7.7</snappy.version>
+    <testcontainers.version>1.19.4</testcontainers.version>
+    <vertx.version>4.5.7</vertx.version>
+    <zookeeper.version>3.8.4</zookeeper.version>
+    <snappy.version>1.1.10.5</snappy.version>
     <jctools.version>2.1.2</jctools.version>
     <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
-    <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
+    <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
     <coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
     <dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
     <download-maven-plugin.version>1.6.8</download-maven-plugin.version>
     <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
-    <gmavenplus-plugin.version>1.13.1</gmavenplus-plugin.version>
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
-    <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
-    <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
-    <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-    <maven-dependency-plugin.version>3.0.2</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
-    <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
-    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
-    <maven-shade-plugin.version>3.2.0</maven-shade-plugin.version>
-    <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
-    <dependency-check-maven.version>8.0.2</dependency-check-maven.version>
+    <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
+    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <dependency-check-maven.version>9.2.0</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
-    <awaitility.version>4.0.3</awaitility.version>
     <otel.version>1.26.0</otel.version>
+    <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
+    <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
 
   <!-- dependency definitions -->
@@ -247,24 +239,27 @@
         <groupId>org.inferred</groupId>
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
-        <optional>true</optional>
       </dependency>
 
       <!-- logging dependencies -->
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
+        <artifactId>slf4j-bom</artifactId>
         <version>${slf4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
+        <artifactId>log4j-bom</artifactId>
         <version>${log4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>com.lmax</groupId>
+        <artifactId>disruptor</artifactId>
+        <version>${disruptor.version}</version>
       </dependency>
 
       <!-- commons dependencies -->
@@ -358,13 +353,10 @@
       <!-- protobuf dependencies -->
       <dependency>
         <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
+        <artifactId>protobuf-bom</artifactId>
         <version>${protobuf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java-util</artifactId>
-        <version>${protobuf.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- libthrift dependency -->
@@ -384,82 +376,12 @@
         </exclusions>
       </dependency>
 
-      <!-- netty dependencies -->
       <dependency>
         <groupId>io.netty</groupId>
-        <artifactId>netty-common</artifactId>
+        <artifactId>netty-bom</artifactId>
         <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-buffer</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport-native-epoll</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport-native-epoll</artifactId>
-        <version>${netty.version}</version>
-        <classifier>linux-x86_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-dns</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-http</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-http2</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-socks</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler-proxy</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-resolver</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-resolver-dns</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport-native-unix-common</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-tcnative-boringssl-static</artifactId>
-        <version>${netty-boringssl.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>io.netty.incubator</groupId>
@@ -478,6 +400,11 @@
         <version>${netty-iouring.version}</version>
         <classifier>linux-aarch_64</classifier>
       </dependency>
+      <dependency>
+        <groupId>io.netty.incubator</groupId>
+        <artifactId>netty-incubator-transport-classes-io_uring</artifactId>
+        <version>${netty-iouring.version}</version>
+      </dependency>
 
       <!-- grpc dependencies -->
       <dependency>
@@ -486,6 +413,64 @@
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- exclude dependencies from grpc-all -->
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-all</artifactId>
+        <version>${grpc.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-okhttp</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-servlet</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-servlet-jakarta</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- used by jetcd-core-shaded -->
+      <dependency>
+        <groupId>dev.failsafe</groupId>
+        <artifactId>failsafe</artifactId>
+        <version>${failsafe.version}</version>
+      </dependency>
+
+      <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-bom</artifactId>
+        <version>4.12.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- okhttp 4.12.0 use kotlin stdlib 1.8.21 -->
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-common</artifactId>
+        <version>1.8.21</version>
       </dependency>
 
       <!-- rocksdb dependencies -->
@@ -534,13 +519,6 @@
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-
-      <dependency>
-         <!-- needed by ZooKeeper server tests utilities -->
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-api</artifactId>
-        <version>${junit5.version}</version>
       </dependency>
 
       <dependency>
@@ -698,8 +676,30 @@
         <version>${junit.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit5.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${assertj-core.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
+        <version>${hamcrest.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-core</artifactId>
+        <version>${hamcrest.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-library</artifactId>
         <version>${hamcrest.version}</version>
       </dependency>
       <dependency>
@@ -724,16 +724,6 @@
         <version>${mockito.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-api-mockito2</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-module-junit4</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minikdc</artifactId>
         <version>${hadoop.minikdc.version}</version>
@@ -750,6 +740,11 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>javax.ws.rs</groupId>
+        <artifactId>javax.ws.rs-api</artifactId>
+        <version>2.1.1</version>
+      </dependency>
+      <dependency>
         <groupId>org.jboss.arquillian.junit</groupId>
         <artifactId>arquillian-junit-standalone</artifactId>
         <version>${arquillian-junit.version}</version>
@@ -759,11 +754,6 @@
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.arquillian.junit</groupId>
-        <artifactId>arquillian-junit-container</artifactId>
-        <version>${arquillian-junit.version}</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
@@ -783,13 +773,10 @@
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers</artifactId>
+        <artifactId>testcontainers-bom</artifactId>
         <version>${testcontainers.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jsoup</groupId>
-        <artifactId>jsoup</artifactId>
-        <version>${jsoup.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- benchmark dependencies -->
@@ -810,7 +797,7 @@
         <artifactId>rxjava</artifactId>
         <version>${rxjava.version}</version>
       </dependency>
-  
+
       <dependency>
         <groupId>com.carrotsearch</groupId>
         <artifactId>hppc</artifactId>
@@ -848,6 +835,31 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency><!-- Needed by junit -->
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
@@ -855,17 +867,7 @@
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito2</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-junit4</artifactId>
+      <artifactId>mockito-inline</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -895,7 +897,7 @@
           <configuration>
             <configLocation>buildtools/src/main/resources/bookkeeper/checkstyle.xml</configLocation>
             <suppressionsLocation>buildtools/src/main/resources/bookkeeper/suppressions.xml</suppressionsLocation>
-            <encoding>UTF-8</encoding>
+            <inputEncoding>UTF-8</inputEncoding>
             <consoleOutput>true</consoleOutput>
             <failOnViolation>true</failOnViolation>
             <includeResources>false</includeResources>
@@ -911,6 +913,30 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.github.maven-nar</groupId>
+          <artifactId>nar-maven-plugin</artifactId>
+          <version>${nar-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <!-- skip javadoc generation by default, use -Pdelombok to activate -->
+            <skip>true</skip>
+            <doclint>none</doclint>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -923,23 +949,28 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <source>${javac.target}</source>
-          <target>${javac.target}</target>
+          <encoding>UTF-8</encoding>
+          <showDeprecation>true</showDeprecation>
+          <showWarnings>true</showWarnings>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
           <compilerArgs>
-            <compilerArg>-Xlint:deprecation</compilerArg>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-            <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-            <compilerArg>-Xpkginfo:always</compilerArg>
-	      </compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid ${test.additional.args}</argLine>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
@@ -953,17 +984,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven-failsafe-plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <notimestamp>true</notimestamp>
-          <!-- Prevent missing javadoc comments from being marked as errors -->
-          <doclint>none</doclint>
+          <!--
+          Cannot specify subpackages with maven.compiler.release because of bug https://bugs.openjdk.org/browse/JDK-8175277
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
+          -->
           <groups>
             <group>
               <title>Bookkeeper Client</title>
@@ -1007,12 +1037,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven-source-plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
             <goals>
-              <goal>jar</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
@@ -1023,6 +1052,9 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- This is generated during maven build -->
+            <exclude>dependency-reduced-pom.xml</exclude>
+
             <!-- IntelliJ -->
             <exclude>**/.idea/**</exclude>
 
@@ -1052,6 +1084,8 @@
             <exclude>**/*.iml</exclude>
             <exclude>**/*.iws</exclude>
             <exclude>**/*.ipr</exclude>
+            <!-- sdkman -->
+            <exclude>**/.sdkmanrc</exclude>
 
             <!-- Maven (CI builds) -->
             <exclude>.repository/**</exclude>
@@ -1117,6 +1151,7 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
             <version>${dependency-check-maven.version}</version>
+            <inherited>false</inherited>
             <configuration>
               <suppressionFiles>
                 <suppressionFile>src/owasp-dependency-check-suppressions.xml</suppressionFile>
@@ -1144,24 +1179,20 @@
               </execution>
             </executions>
           </plugin>
-        </plugins>
-      </build>
-      <reporting>
-        <plugins>
+          <!-- skip maven source plugin due to
+          Error: Failed to execute goal org.apache.maven.plugins:maven-source-plugin:3.3.0:jar-no-fork (attach-sources) on project buildtools:
+          Presumably you have configured maven-source-plugin to execute twice times in your build.
+          You have to configure a classifier for at least on of them.
+          -->
           <plugin>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <version>${dependency-check-maven.version}</version>
-            <reportSets>
-              <reportSet>
-                <reports>
-                  <report>aggregate</report>
-                </reports>
-              </reportSet>
-            </reportSets>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+              <skipSource>true</skipSource>
+            </configuration>
           </plugin>
         </plugins>
-      </reporting>
+      </build>
     </profile>
     <profile>
       <id>delombok</id>
@@ -1192,11 +1223,19 @@
                   <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
                   <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
                   <formatPreferences>
-                    <pretty/>
+                    <pretty />
                   </formatPreferences>
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <!-- activate javadoc generation -->
+              <skip>false</skip>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -1209,7 +1248,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
               <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -1230,7 +1268,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=paranoid -Dbookkeeper.log.root.level=INFO -Dbookkeeper.log.root.appender=CONSOLE</argLine>
               <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -1273,6 +1310,10 @@
         <jdk>[11,)</jdk>
       </activation>
       <properties>
+        <!-- prevents silent NoSuchMethodErrors that happen at runtime on Java 8 -->
+        <!-- see https://github.com/apache/bookkeeper/issues/4202 -->
+        <maven.compiler.release>${maven.compiler.target}</maven.compiler.release>
+        <!-- required for running tests on Java 11+ -->
         <test.additional.args>
           --add-opens java.base/java.io=ALL-UNNAMED
           --add-opens java.base/java.lang=ALL-UNNAMED
@@ -1284,6 +1325,7 @@
           --add-opens java.base/java.util=ALL-UNNAMED
           --add-opens java.base/java.util.concurrent=ALL-UNNAMED
           --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED
+          --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
           --add-opens java.base/java.util.stream=ALL-UNNAMED
           --add-opens java.base/java.util.zip=ALL-UNNAMED
           --add-opens java.base/java.time=ALL-UNNAMED
@@ -1294,12 +1336,27 @@
           --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
         </test.additional.args>
       </properties>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                <!-- for some reason, setting maven.compiler.release property alone doesn't work -->
+                <release>${maven.compiler.release}</release>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
     </profile>
     <profile>
       <id>apache-release</id>
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
             <executions>
               <execution>
@@ -1313,6 +1370,30 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>ubuntu-mirror-set</id>
+      <activation>
+        <property>
+          <name>env.UBUNTU_MIRROR</name>
+        </property>
+      </activation>
+      <properties>
+        <!-- Override the default value with the environment variable -->
+        <UBUNTU_MIRROR>${env.UBUNTU_MIRROR}</UBUNTU_MIRROR>
+      </properties>
+    </profile>
+    <profile>
+      <id>ubuntu-security-mirror-set</id>
+      <activation>
+        <property>
+          <name>env.UBUNTU_SECURITY_MIRROR</name>
+        </property>
+      </activation>
+      <properties>
+        <!-- Override the default value with the environment variable -->
+        <UBUNTU_SECURITY_MIRROR>${env.UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
+      </properties>
     </profile>
   </profiles>
 </project>

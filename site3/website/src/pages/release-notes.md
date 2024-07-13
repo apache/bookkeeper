@@ -1,6 +1,477 @@
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.17.1
+
+Release 4.17.1 includes multiple bug fixes and few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.17.1 if you are using 4.17.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+* Fix TimedRunnable log NPE [PR #4425](https://github.com/apache/bookkeeper/pull/4425)
+* Fix Auditor ignoring bookies shut down before Auditor start [PR #4419](https://github.com/apache/bookkeeper/pull/4419)
+* Fix lost prometheus metric in OrderedExecutor [PR #4374](https://github.com/apache/bookkeeper/pull/4374)
+* Fix: resource leak when JournalChannel is not fully initialized [PR #4340](https://github.com/apache/bookkeeper/pull/4340)
+* Fix: bookie http endpoint info always return 0.0.0.0 [PR #4325](https://github.com/apache/bookkeeper/pull/4325)
+* Fix disk weight ensemble infinite loop bug [PR #4324](https://github.com/apache/bookkeeper/pull/4324)
+* Fix guava shade error in distributedlog [PR #4319](https://github.com/apache/bookkeeper/pull/4319)
+* Fix ThreadRegistry#register behavior to ensure correct Prom metrics [PR #4300](https://github.com/apache/bookkeeper/pull/4300)
+* Fix: reference counting (retain/release) in PerChannelBookieClient [PR #4293](https://github.com/apache/bookkeeper/pull/4293)
+* Fix ByteBuf release/retain in PerChannelBookClient [PR #4289](https://github.com/apache/bookkeeper/pull/4289)
+* Tests: miss test log in prometheus-metrics-provider module [PR #4279](https://github.com/apache/bookkeeper/pull/4279)
+* Fixed creation of temporary dir in NativeUtils [PR #4262](https://github.com/apache/bookkeeper/pull/4262)
+* Fix ArrayIndexOutOfBoundsException caused by optimistic lock [PR #4066](https://github.com/apache/bookkeeper/pull/4066)
+* Prevent bookie shutdown due to rest api when bookie prohibits readOnlyMode [PR #3972](https://github.com/apache/bookkeeper/pull/3972)
+* Fix wrong implementation for percentile in bookkeeper-benchmark [PR #3864](https://github.com/apache/bookkeeper/pull/3864)
+
+#### Improvements
+
+* Adjust Log Level for LedgerFencedException in WriteEntryProcessor [PR #4327](https://github.com/apache/bookkeeper/pull/4327)
+* Improve: change scheduleAtFixedRate to scheduleWithFixedDelay in GarbageCollectorThread [PR #4296](https://github.com/apache/bookkeeper/pull/4296)
+* Remove unused code from ByteBufVisitor [PR #4383](https://github.com/apache/bookkeeper/pull/4383)
+* Use vertx blockingHandlers to run Bookkeeper http handlers which could be blocking [PR #4266](https://github.com/apache/bookkeeper/pull/4266)
+
+#### Dependency updates
+
+* Bump jetcd from 0.5.0 to 0.7.7 [PR #3849](https://github.com/apache/bookkeeper/pull/3849)
+* Bump netty from 4.1.107.Final to 4.1.108.Final to address CVE list [PR #4426](https://github.com/apache/bookkeeper/pull/4426)
+* Bump jackson from 2.13.4.20221013 to 2.17.1 to address CVE list [PR #4345](https://github.com/apache/bookkeeper/pull/4345)
+* Upgrade vertx-core to 4.5.7 to address CVE-2024-1300 [PR #4265](https://github.com/apache/bookkeeper/pull/4265)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.17.1+is%3Amerged+
+
+## 4.16.6
+
+Release 4.16.6 includes multiple bug fixes and few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.6 if you are using 4.16.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+
+* Fix TimedRunnable log NPE [PR #4425](https://github.com/apache/bookkeeper/pull/4425)
+* Fix Auditor ignoring bookies shut down before Auditor start [PR #4419](https://github.com/apache/bookkeeper/pull/4419)
+* Fix lost prometheus metric in OrderedExecutor [PR #4374](https://github.com/apache/bookkeeper/pull/4374)
+* Fix: resource leak when JournalChannel is not fully initialized [PR #4340](https://github.com/apache/bookkeeper/pull/4340)
+* Fix: bookie http endpoint info always return 0.0.0.0 [PR #4325](https://github.com/apache/bookkeeper/pull/4325)
+* Fix disk weight ensemble infinite loop bug [PR #4324](https://github.com/apache/bookkeeper/pull/4324)
+* Fix guava shade error in distributedlog [PR #4319](https://github.com/apache/bookkeeper/pull/4319)
+* Fix ThreadRegistry#register behavior to ensure correct Prom metrics [PR #4300](https://github.com/apache/bookkeeper/pull/4300)
+* Fix: reference counting (retain/release) in PerChannelBookieClient [PR #4293](https://github.com/apache/bookkeeper/pull/4293)
+* Fix ByteBuf release/retain in PerChannelBookClient [PR #4289](https://github.com/apache/bookkeeper/pull/4289)
+* Tests: miss test log in prometheus-metrics-provider module [PR #4279](https://github.com/apache/bookkeeper/pull/4279)
+* Fix ArrayIndexOutOfBoundsException caused by optimistic lock [PR #4066](https://github.com/apache/bookkeeper/pull/4066)
+* Prevent bookie shutdown due to rest api when bookie prohibits readOnlyMode [PR #3972](https://github.com/apache/bookkeeper/pull/3972)
+* Fix wrong implementation for percentile in bookkeeper-benchmark [PR #3864](https://github.com/apache/bookkeeper/pull/3864)
+
+#### Improvements
+
+* Adjust Log Level for LedgerFencedException in WriteEntryProcessor [PR #4327](https://github.com/apache/bookkeeper/pull/4327)
+* Improve: change scheduleAtFixedRate to scheduleWithFixedDelay in GarbageCollectorThread [PR #4296](https://github.com/apache/bookkeeper/pull/4296)
+* Remove unused code from ByteBufVisitor [PR #4383](https://github.com/apache/bookkeeper/pull/4383)
+* Use vertx blockingHandlers to run Bookkeeper http handlers which could be blocking [PR #4266](https://github.com/apache/bookkeeper/pull/4266)
+
+#### Dependency updates
+
+* Bump jetcd from 0.5.0 to 0.7.7 [PR #3849](https://github.com/apache/bookkeeper/pull/3849)
+* Bump netty from 4.1.94.Final to 4.1.108.Final to address CVE list [PR #4426](https://github.com/apache/bookkeeper/pull/4426)
+* Bump jackson from 2.13.4.20221013 to 2.17.1 to address CVE list [PR #4345](https://github.com/apache/bookkeeper/pull/4345)
+* Upgrade vertx-core to 4.5.7 to address CVE-2024-1300 [PR #4265](https://github.com/apache/bookkeeper/pull/4265)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.6+is%3Amerged+
+
+## 4.17.0
+
+Release 4.17.0 includes multiple important features, improvements, bug fixes and some dependencies CVE fixes.
+
+The technical details of this release are summarized below.
+
+### Breaking Changes
+No breaking changes. Some defaults are different, but overall there are no compatibility concerns.
+
+### Features
+* BP-62 Batch Read API
+
+### Notable changes
+
+* Enable reorder read sequence for bk client by default [PR #4139](https://github.com/apache/bookkeeper/pull/4139) 
+* Fix some metrics generated by prometheus client without type info [PR #3927](https://github.com/apache/bookkeeper/pull/3927) 
+* Fix arbitrary file upload vulnerability with httpServerEnabled [PR #3982](https://github.com/apache/bookkeeper/pull/3982) 
+* Enable kv logs in log4j configuration [PR #3986](https://github.com/apache/bookkeeper/pull/3986) 
+* Make compatible between DefaultEntryLogger and DirectEntryLogger [PR #4041](https://github.com/apache/bookkeeper/pull/4041) 
+
+#### Bookie
+
+* Fix bug of negative JournalQueueSize [PR #4077](https://github.com/apache/bookkeeper/pull/4077) 
+* Fix compaction throttle imprecise [PR #3192](https://github.com/apache/bookkeeper/pull/3192) 
+* Fix data lost when configured multiple ledger directories [PR #3329](https://github.com/apache/bookkeeper/pull/3329) 
+* Try to use jdk api to create hardlink when rename file when compaction. [PR #3876](https://github.com/apache/bookkeeper/pull/3876) 
+* [feature] [server] add dbStorage_readAheadCacheBatchBytesSize properties when read ahead entries [PR #3895](https://github.com/apache/bookkeeper/pull/3895) 
+* Fix keys leak in EntryLocationIndex when ledgersToDelete is empty [PR #3903](https://github.com/apache/bookkeeper/pull/3903) 
+* Fix garbage collection blocked by runtime exception [PR #3901](https://github.com/apache/bookkeeper/pull/3901) 
+* Skip sync the RocksDB when no changes [PR #3904](https://github.com/apache/bookkeeper/pull/3904) 
+* Enable PCBC completionObjects autoShrink to reduce memory usage and gc [PR #3913](https://github.com/apache/bookkeeper/pull/3913) 
+* [Fix] Recycle dropping read-write requests when various exceptions happened [PR #3912](https://github.com/apache/bookkeeper/pull/3912) 
+* Fix ledger replicated failed blocks bookie decommission process [PR #3917](https://github.com/apache/bookkeeper/pull/3917) 
+* Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956) 
+* Avoid compaction to trigger extra flushes DbLedgerStorage [PR #3959](https://github.com/apache/bookkeeper/pull/3959) 
+* Fix memory leak of direct memory in direct memory entry logger. [PR #3983](https://github.com/apache/bookkeeper/pull/3983) 
+* Unify ByteBufAllocator for the DirectIO component [PR #3985](https://github.com/apache/bookkeeper/pull/3985) 
+* Print compaction progress [PR #4071](https://github.com/apache/bookkeeper/pull/4071) 
+* Optimize bookie decommission check wait interval [PR #4070](https://github.com/apache/bookkeeper/pull/4070) 
+* Fix trigger GC not work [PR #3998](https://github.com/apache/bookkeeper/pull/3998) 
+* Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044) 
+* Add read failed log for ledger checker. [PR #4010](https://github.com/apache/bookkeeper/pull/4010) 
+* Fix read write request leak when executor throw `RejectedExecutionException` [PR #4024](https://github.com/apache/bookkeeper/pull/4024) 
+* Improve DefaultEntryLogger read performance. [PR #4038](https://github.com/apache/bookkeeper/pull/4038) 
+
+#### Client
+
+* [Bug] Always one orphan ledger is created [PR #3813](https://github.com/apache/bookkeeper/pull/3813) 
+* Fix checksum calculation bug when the payload is a CompositeByteBuf with readerIndex > 0 [PR #4196](https://github.com/apache/bookkeeper/pull/4196) 
+* Fix no known bookies after reset racks for all BKs [PR #4128](https://github.com/apache/bookkeeper/pull/4128) 
+* Fix issue with binary compatibility with older grpc versions at runtime in the client [PR #3997](https://github.com/apache/bookkeeper/pull/3997) 
+* Entry write support local node region aware placement policy [PR #4063](https://github.com/apache/bookkeeper/pull/4063) 
+* Rackaware placement policy support local node awareness by hostname [PR #4057](https://github.com/apache/bookkeeper/pull/4057) 
+* Use netty-bom for aligning netty library versions, add epoll for linux-aarch_64 [PR #4204](https://github.com/apache/bookkeeper/pull/4204) 
+
+#### AutoRecovery
+
+* Make AutoRecovery enable stickyReadS as default. [PR #4125](https://github.com/apache/bookkeeper/pull/4125) 
+* Support retry logic for auto recovery [PR #3799](https://github.com/apache/bookkeeper/pull/3799) 0
+* Fix auditor elector executor block problem. [PR #4165](https://github.com/apache/bookkeeper/pull/4165) 
+* Fix the autorecovery failed replicate by add entry fenced error [PR #4163](https://github.com/apache/bookkeeper/pull/4163) 
+* Fix auditor thread leak problem. [PR #4162](https://github.com/apache/bookkeeper/pull/4162) 
+* AutoRecovery supports batch read [PR #4211](https://github.com/apache/bookkeeper/pull/4211)
+
+#### Others
+* Added CLI command to start state store service without a bookie [PR #2648](https://github.com/apache/bookkeeper/pull/2648)
+* Add ensemble relocation command which adheres to placement policy [PR #2931](https://github.com/apache/bookkeeper/pull/2931) 
+* Tuning pool concurrency [PR #3432](https://github.com/apache/bookkeeper/pull/3432) 
+* Issue 4136: Fix logging configurations are broken in docker image [PR #4137](https://github.com/apache/bookkeeper/pull/4137) 
+* [release] Force to use linux/amd64 to build release [PR #4060](https://github.com/apache/bookkeeper/pull/4060) 
+
+### Dependency changes
+
+Upgraded notable dependencies and address CVEs, including:
+
+* Upgrade snappy-java to address multiple CVEs [PR #3993](https://github.com/apache/bookkeeper/pull/3993) 
+* Upgrade grpc and protobuf to address CVE-2023-32732 [PR #3992](https://github.com/apache/bookkeeper/pull/3992) 
+* Upgrade Zookeeper to 3.8.3 to address CVE-2023-44981 [PR #4112](https://github.com/apache/bookkeeper/pull/4112) 
+* Upgrade Netty to 4.1.107.Final and io_uring to 0.0.25.Final [PR #4224](https://github.com/apache/bookkeeper/pull/4224) 
+* Bump org.apache.commons:commons-compress from 1.21 to 1.26.0 [PR #4214](https://github.com/apache/bookkeeper/pull/4214) 
+* Update datasketches version from 0.8.3 to 3.2.0 [PR #3264](https://github.com/apache/bookkeeper/pull/3264) 
+* Issue 3567: Upgrade rocksdb version to avoid checksum mismatch error [PR #3568](https://github.com/apache/bookkeeper/pull/3568) 
+* fix(sec): upgrade commons-codec to 1.13 [PR #3508](https://github.com/apache/bookkeeper/pull/3508) 
+* Remove avro, hadoop-auth and jersey-json dependencies from hadoop-common to resolve CVE-2019-10202, CVE-2023-1370 and CVE-2022-45685 [PR #3911](https://github.com/apache/bookkeeper/pull/3911) 
+* Upgrade docker base image to resolve CVE-2023-0286 [PR #3916](https://github.com/apache/bookkeeper/pull/3916) 
+* Upgrade bc-fips to 1.0.2.4 to fix CVE-2022-45146 [PR #3915](https://github.com/apache/bookkeeper/pull/3915) 
+* Upgrade jetty version to 9.4.51.v20230217 [PR #3937](https://github.com/apache/bookkeeper/pull/3937) 
+* Bump guava version from 31.0.1-jre to 32.0.1-jre [PR #4008](https://github.com/apache/bookkeeper/pull/4008) 
+
+
+### Details
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+milestone%3A4.17.0+is%3Aclosed
+
+
+## 4.16.5
+
+Release 4.16.5 includes multiple bug fixes and few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.5 if you are using 4.16.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fixed creation of temporary dir in NativeUtils [PR #4262](https://github.com/apache/bookkeeper/pull/4262) 
+* Fix error stack track may expose to external user [PR #4223](https://github.com/apache/bookkeeper/pull/4223)
+* Add filename check for unTar [PR #4222](https://github.com/apache/bookkeeper/pull/4222)
+* Fix uncontrolled data used in path expression [PR #4221](https://github.com/apache/bookkeeper/pull/4221)
+* Set metrics endpoint content-type [PR #4208](https://github.com/apache/bookkeeper/pull/4208)
+* Fix checksum calculation bug when the payload is a CompositeByteBuf with readerIndex > 0 [PR #4205](https://github.com/apache/bookkeeper/pull/4205)
+* Fix yaml and dockerfile [PR #4186](https://github.com/apache/bookkeeper/pull/4186)
+
+#### Dependency updates
+* Bump org.apache.commons:commons-compress from 1.21 to 1.26.0 [PR #4214](https://github.com/apache/bookkeeper/pull/4214)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.5+is%3Amerged+
+
+## 4.16.4
+
+Release 4.16.4 includes multiple bug fixes and improvements, also we have a few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.4 if you are using 4.16.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fix calculate checkSum when using Java9IntHash [PR #4140](https://github.com/apache/bookkeeper/pull/4140)
+* Fix the autorecovery failed replicate by add entry fenced error [PR #4163](https://github.com/apache/bookkeeper/pull/4163)
+* Fixing memory leak error when using DirectEntryLogger [PR #4135](https://github.com/apache/bookkeeper/pull/4135)
+* Fix bug of negative JournalQueueSize [PR #4077](https://github.com/apache/bookkeeper/pull/4077)
+* Fix NoSuchElementException when rereplicate empty ledgers [PR #4039](https://github.com/apache/bookkeeper/pull/4039)
+* Change the method getUnderreplicatedFragments to the package private [PR #4174](https://github.com/apache/bookkeeper/pull/4174)
+* Fix auditor elector executor block problem. [PR #4165](https://github.com/apache/bookkeeper/pull/4165)
+* Fix auditor thread leak problem. [PR #4162](https://github.com/apache/bookkeeper/pull/4162)
+* Use Flaky flag to skip testBookieServerZKSessionExpireBehaviour test [PR #4144](https://github.com/apache/bookkeeper/pull/4144)
+* Add ledgersCount.incrementAndGet in setExplicitLac function [PR #4138](https://github.com/apache/bookkeeper/pull/4138)
+* Fix no known bookies after reset racks for all BKs [PR #4128](https://github.com/apache/bookkeeper/pull/4128)
+* Fix a slow gc thread shutdown when compacting [PR #4127](https://github.com/apache/bookkeeper/pull/4127)
+* Remove the unused logs in the CleanupLedgerManager.recordPromise [PR #4121](https://github.com/apache/bookkeeper/pull/4121)
+* Fix Flaky-test: HandleFailuresTest.testHandleFailureBookieNotInWriteSet [PR #4110](https://github.com/apache/bookkeeper/pull/4110)
+* Ignore the empty `perRegionPlacement` when RegionAwareEnsemblePlacementPolicy#newEnsemble [PR #4106](https://github.com/apache/bookkeeper/pull/4106)
+* Fix LedgerHandle `ensembleChangeCounter` not used. [PR #4103](https://github.com/apache/bookkeeper/pull/4103)
+* Tune the TestReplicationWorker test. [PR #4093](https://github.com/apache/bookkeeper/pull/4093)
+* Make AuditorBookieTest#waitForNewAuditor stronger. [PR #4078](https://github.com/apache/bookkeeper/pull/4078)
+* Print compaction progress [PR #4071](https://github.com/apache/bookkeeper/pull/4071)
+* Fix readEntry parameter order [PR #4059](https://github.com/apache/bookkeeper/pull/4059)
+* Skip sync the RocksDB when no changes [PR #3904](https://github.com/apache/bookkeeper/pull/3904)
+* Try to use jdk api to create hardlink when rename file when compaction. [PR #3876](https://github.com/apache/bookkeeper/pull/3876)
+
+#### Dependency updates
+* Upgrade Zookeeper to 3.8.3 to address CVE-2023-44981 [PR #4112](https://github.com/apache/bookkeeper/pull/4112)
+* Update Jetty dependency [PR #4141](https://github.com/apache/bookkeeper/pull/4141)
+* Upgrade bc-fips to 1.0.2.4 to fix CVE-2022-45146 [PR #3915](https://github.com/apache/bookkeeper/pull/3915)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.4+is%3Amerged+
+
+## 4.15.5
+
+Release 4.15.5 includes multiple bug fixes and improvements, also we have a few dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.15.5 if you are using 4.15.x.
+The technical details of this release are summarized below.
+
+### Highlights
+
+The previous release is using ARM platform compile, that means that the JNI libraries are only present for MacOS
+and this will incur in a performance degradation (eg: the CRC libraries) or not working (in case of cpu affinity).
+
+The build platform now is tagged with `linux/amd64` by this [PR #4060](https://github.com/apache/bookkeeper/pull/4060)
+
+#### Bugs
+* Fix no known bookies after reset racks for all BKs [PR #4128](https://github.com/apache/bookkeeper/pull/4128)
+* Fix AutoCloseableLifecycleComponent close exception log [PR #4042](https://github.com/apache/bookkeeper/pull/4042)
+* Fix NoSuchElementException when rereplicate empty ledgers [PR #4039](https://github.com/apache/bookkeeper/pull/4039)
+* Fix deletedLedgers count [PR #4026](https://github.com/apache/bookkeeper/pull/4026)
+* Fix read write request leak when executor throw `RejectedExecutionException` [PR #4024](https://github.com/apache/bookkeeper/pull/4024)
+* Recycle LongWrapper finally to avoid memory leak [PR #4007](https://github.com/apache/bookkeeper/pull/4007)
+* Fix trigger GC not work [PR #3998](https://github.com/apache/bookkeeper/pull/3998)
+* Fix arbitrary file upload vulnerability with httpServerEnabled [PR #3982](https://github.com/apache/bookkeeper/pull/3982)
+* Clear channel when channelInactive [PR #3966](https://github.com/apache/bookkeeper/pull/3966)
+* Fix npe when iterate pendingLedgersUpdates and pendingDeletedLedgers. [PR #3955](https://github.com/apache/bookkeeper/pull/3955)
+* Fix some metrics generated by prometheus client without type info [PR #3927](https://github.com/apache/bookkeeper/pull/3927)
+* Fix ledger replicated failed blocks bookie decommission process [PR #3917](https://github.com/apache/bookkeeper/pull/3917)
+* Recycle dropping read-write requests when various exceptions happened [PR #3912](https://github.com/apache/bookkeeper/pull/3912)
+* SingleDirectoryDbLedgerStorage#flushMutex does not release lock on all exception paths [PR #3909](https://github.com/apache/bookkeeper/pull/3909)
+* Fix ReclaimedSpaceViaDeletes stats incorrect problem. [PR #3906](https://github.com/apache/bookkeeper/pull/3906)
+* Fix keys leak in EntryLocationIndex when ledgersToDelete is empty [PR #3903](https://github.com/apache/bookkeeper/pull/3903)
+* Fix garbage collection blocked by runtime exception [PR #3901](https://github.com/apache/bookkeeper/pull/3901)
+* Return activeLogChannel if new create [PR #3894](https://github.com/apache/bookkeeper/pull/3894)
+* Modify incorrect rocksDB config level_compaction_dynamic_level_bytes to CFOptions [PR #3860](https://github.com/apache/bookkeeper/pull/3860)
+* Fix ReadEntryProcessor v2 SchedulingDelayStats [PR #3758](https://github.com/apache/bookkeeper/pull/3758)
+* Fix data lost when configured multiple ledger directories [PR #3329](https://github.com/apache/bookkeeper/pull/3329)
+
+
+#### Improvements
+* Issue 4126: Fix a slow gc thread shutdown when compacting [PR #4127](https://github.com/apache/bookkeeper/pull/4127)
+* Remove the unused logs in the CleanupLedgerManager.recordPromise [PR #4121](https://github.com/apache/bookkeeper/pull/4121)
+* Ignore the empty `perRegionPlacement` when RegionAwareEnsemblePlacementPolicy#newEnsemble [PR #4106](https://github.com/apache/bookkeeper/pull/4106)
+* Print compaction progress [PR #4071](https://github.com/apache/bookkeeper/pull/4071)
+* Force to use linux/amd64 to build release [PR #4060](https://github.com/apache/bookkeeper/pull/4060)
+* Remove underreplicaiton callback [PR #4058](https://github.com/apache/bookkeeper/pull/4058)
+* Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044)
+* Change pendingDeletedLedgers as ConcurrentHashSet [PR #3989](https://github.com/apache/bookkeeper/pull/3989)
+* Avoid compaction to trigger extra flushes DbLedgerStorage [PR #3959](https://github.com/apache/bookkeeper/pull/3959)
+* Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956)
+* Optimize getEntryLogMetadata [PR #3948](https://github.com/apache/bookkeeper/pull/3948)
+* drop invalid entryFormat arg from shell command [PR #3938](https://github.com/apache/bookkeeper/pull/3938)
+* Enable PCBC completionObjects autoShrink to reduce memory usage and gc [PR #3913](https://github.com/apache/bookkeeper/pull/3913)
+* Prevent transit to writable mode when forceReadOnly mode is active [PR #3881](https://github.com/apache/bookkeeper/pull/3881)
+* Make read entry request recyclable [PR #3842](https://github.com/apache/bookkeeper/pull/3842)
+* Fixed the pivot selection in the group quick-sort [PR #3800](https://github.com/apache/bookkeeper/pull/3800)
+* Execute clean indexes in finally [PR #3772](https://github.com/apache/bookkeeper/pull/3772)
+* Add small files check in garbage collection [PR #3631](https://github.com/apache/bookkeeper/pull/3631)
+
+
+#### Dependency updates
+* Update Jetty dependency [PR #4141](https://github.com/apache/bookkeeper/pull/4141)
+* Bump guava version from 31.0.1-jre to 32.0.1-jre [PR #4008](https://github.com/apache/bookkeeper/pull/4008)
+* Upgrade snappy-java to address multiple CVEs [PR #3993](https://github.com/apache/bookkeeper/pull/3993)
+* Upgrade grpc and protobuf to address CVE-2023-32732 [PR #3992](https://github.com/apache/bookkeeper/pull/3992)
+* Downgrade grpc and protobuf to avoid introducing breaking change [PR #4001](https://github.com/apache/bookkeeper/pull/4001)
+* Fix issue with binary compatibility with older grpc versions at runtime in the client [PR #3997](https://github.com/apache/bookkeeper/pull/3997)
+* Upgrade jetty version to 9.4.51.v20230217 [PR #3937](https://github.com/apache/bookkeeper/pull/3937)
+* Upgrade docker base image to resolve CVE-2023-0286 [PR #3916](https://github.com/apache/bookkeeper/pull/3916)
+* Upgrade bc-fips to 1.0.2.4 to fix CVE-2022-45146 [PR #3915](https://github.com/apache/bookkeeper/pull/3915)
+* Remove avro, hadoop-auth and jersey-json dependencies from hadoop-common to resolve CVE-2019-10202, CVE-2023-1370 and CVE-2022-45685 [PR #3911](https://github.com/apache/bookkeeper/pull/3911)
+* Sync dependency version with source version in license [PR #3633](https://github.com/apache/bookkeeper/pull/3633)
+* Bump grpc from 1.45.1 to 1.47.0, solve dependency check FP [PR #3305](https://github.com/apache/bookkeeper/pull/3305)
+* Optimize log4j dependency in Bookkeeper [PR #3892](https://github.com/apache/bookkeeper/pull/3892)
+
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.15.5+is%3Aclosed+
+
+## 4.16.3
+
+Rlease 4.16.3 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.16.3.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fix AutoCloseableLifecycleComponent close exception log [PR #4042](https://github.com/apache/bookkeeper/pull/4042)
+* Make compatible between DefaultEntryLogger and DirectEntryLogger [PR #4041](https://github.com/apache/bookkeeper/pull/4041)
+* Fix deletedLedgers count [PR #4026](https://github.com/apache/bookkeeper/pull/4026)
+* Fix read write request leak when executor throw `RejectedExecutionException` [PR #4024](https://github.com/apache/bookkeeper/pull/4024)
+* Recycle LongWrapper finally to avoid memory leak [PR #4007](https://github.com/apache/bookkeeper/pull/4007)
+* Remove underreplicaiton callback [PR #4058](https://github.com/apache/bookkeeper/pull/4058)
+
+#### Improvements
+* Force to use linux/amd64 to build release [PR #4060](https://github.com/apache/bookkeeper/pull/4060)
+* Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044)
+* Change pendingDeletedLedgers as ConcurrentHashSet [PR #3989](https://github.com/apache/bookkeeper/pull/3989)
+* Enable kv logs in log4j configuration [PR #3986](https://github.com/apache/bookkeeper/pull/3986)
+* Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956)
+* Optimize getEntryLogMetadata [PR #3948](https://github.com/apache/bookkeeper/pull/3948)
+
+#### Dependency updates
+* Bump guava version from 31.0.1-jre to 32.0.1-jre [PR #4008](https://github.com/apache/bookkeeper/pull/4008)
+* Upgrade Netty to 4.1.94.Final to address CVE-2023-34462 [PR #3999](https://github.com/apache/bookkeeper/pull/3999)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.3+is%3Aclosed
+
+## 4.14.8
+
+Release 4.14.8 includes multiple bug fixes and some dependencies CVE fixes.
+
+Apache BookKeeper users are encouraged to upgrade to 4.14.8.
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fix data lost when configured multiple ledger directories [PR #3329](https://github.com/apache/bookkeeper/pull/3329)
+* Allow to set max operation numbers in a single rocksdb batch [PR #4044](https://github.com/apache/bookkeeper/pull/4044)
+* Recycle LongWrapper finally to avoid memory leak [PR #4007](https://github.com/apache/bookkeeper/pull/4007)
+* Fix arbitrary file upload vulnerability with httpServerEnabled [PR #3982](https://github.com/apache/bookkeeper/pull/3982)
+* Clear channel when channelInactive [PR #3966](https://github.com/apache/bookkeeper/pull/3966)
+* Fix npe when iterate pendingLedgersUpdates and pendingDeletedLedgers. [PR #3955](https://github.com/apache/bookkeeper/pull/3955)
+* Fix some metrics generated by prometheus client without type info [PR #3927](https://github.com/apache/bookkeeper/pull/3927)
+* Fix ledger replicated failed blocks bookie decommission process [PR #3917](https://github.com/apache/bookkeeper/pull/3917)
+* Recycle dropping read-write requests when various exceptions happened [PR #3912](https://github.com/apache/bookkeeper/pull/3912)
+* Fix SingleDirectoryDbLedgerStorage#flushMutex does not release lock on all exception paths [PR #3909](https://github.com/apache/bookkeeper/pull/3909)
+* Fix ReclaimedSpaceViaDeletes stats incorrect problem. [PR #3906](https://github.com/apache/bookkeeper/pull/3906)
+* Fix keys leak in EntryLocationIndex when ledgersToDelete is empty [PR #3903](https://github.com/apache/bookkeeper/pull/3903)
+* Fix garbage collection blocked by runtime exception [PR #3901](https://github.com/apache/bookkeeper/pull/3901)
+* Return activeLogChannel if new create [PR #3894](https://github.com/apache/bookkeeper/pull/3894)
+* Prevent transit to writable mode when forceReadOnly mode is active [PR #3881](https://github.com/apache/bookkeeper/pull/3881)
+* Execute clean indexes in finally [PR #3772](https://github.com/apache/bookkeeper/pull/3772)
+* Fix ReadEntryProcessor v2 SchedulingDelayStats [PR #3758](https://github.com/apache/bookkeeper/pull/3758)
+* Fix RegionAwareEnsemblePlacementPolicy.newEnsemble sometimes failed problem. [PR #3725](https://github.com/apache/bookkeeper/pull/3725)
+* Fix issue where checkAllLedgers could get stuck when read throttling is enabled [PR #3655](https://github.com/apache/bookkeeper/pull/3655)
+* fix duplicate typeline for prometheus type [PR #3137](https://github.com/apache/bookkeeper/pull/3137)
+* Fix deletedLedgers count [PR #4026](https://github.com/apache/bookkeeper/pull/4026)
+
+#### Improvements
+* Avoid compaction to trigger extra flushes DbLedgerStorage [PR #3959](https://github.com/apache/bookkeeper/pull/3959)
+* Add small files check in garbage collection [PR #3631](https://github.com/apache/bookkeeper/pull/3631)
+* Change pendingDeletedLedgers as ConcurrentHashSet [PR #3989](https://github.com/apache/bookkeeper/pull/3989)
+* Support skip invalid journal record in replying journal stage [PR #3956](https://github.com/apache/bookkeeper/pull/3956)
+* Use ReferenceCountUtil.release() instead of ReferenceCountUtil.safeRelease() [PR #3798](https://github.com/apache/bookkeeper/pull/3798)
+* Add logs for ensemble select failed [PR #3779](https://github.com/apache/bookkeeper/pull/3779)
+* New ensemble choose different rack first. [PR #3721](https://github.com/apache/bookkeeper/pull/3721)
+* Show result of isFenced in log [PR #3678](https://github.com/apache/bookkeeper/pull/3678)
+
+#### Dependency updates
+* Upgrade rocksDB version to 6.29.4.1 [PR #3947](https://github.com/apache/bookkeeper/pull/3947)
+* Upgrade jetty version to 9.4.51.v20230217 [PR #3937](https://github.com/apache/bookkeeper/pull/3937)
+* Upgrade docker base image to resolve CVE-2023-0286 [PR #3916](https://github.com/apache/bookkeeper/pull/3916)
+* Remove avro, hadoop-auth and jersey-json dependencies from hadoop-common to resolve CVE-2019-10202, CVE-2023-1370 and CVE-2022-45685 [PR #3911](https://github.com/apache/bookkeeper/pull/3911)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.14.8+is%3Amerged
+
+## 4.16.2
+
+Release 4.16.2 includes multiple bug fixes and some dependencies CVE fixes.
+
+**The binaries were compiled for M1 and Apache BookKeeper users are NOT encouraged to upgrade to 4.16.2.**
+The technical details of this release are summarized below.
+
+### Highlights
+
+#### Bugs
+* Fix trigger GC not work [PR #3998](https://github.com/apache/bookkeeper/pull/3998)
+* Make slogger use current class [PR #3994](https://github.com/apache/bookkeeper/pull/3994)
+* Fix Journal without flush [PR #3979](https://github.com/apache/bookkeeper/pull/3979)
+* Fix npe when iterate pendingLedgersUpdates and pendingDeletedLedgers. [PR #3955](https://github.com/apache/bookkeeper/pull/3955)
+* Fix ledger replicated failed blocks bookie decommission process [PR #3917](https://github.com/apache/bookkeeper/pull/3917)
+* SingleDirectoryDbLedgerStorage#flushMutex does not release lock on all exception paths [PR #3909](https://github.com/apache/bookkeeper/pull/3909)
+* Fix ReclaimedSpaceViaDeletes stats incorrect problem. [PR #3906](https://github.com/apache/bookkeeper/pull/3906)
+* Fix keys leak in EntryLocationIndex when ledgersToDelete is empty [PR #3903](https://github.com/apache/bookkeeper/pull/3903)
+* Fix garbage collection blocked by runtime exception [PR #3901](https://github.com/apache/bookkeeper/pull/3901)
+* Always one orphan ledger is created [PR #3813](https://github.com/apache/bookkeeper/pull/3813)
+* Fix data lost when configured multiple ledger directories [PR #3329](https://github.com/apache/bookkeeper/pull/3329)
+* Fix memory leak of direct memory in direct memory entry logger. [PR #3983](https://github.com/apache/bookkeeper/pull/3983)
+* Fix wrong update checkAllLedgersTime when ledgerReplication disabled [PR #3939](https://github.com/apache/bookkeeper/pull/3939)
+* Fix some metrics generated by prometheus client without type info [PR #3927](https://github.com/apache/bookkeeper/pull/3927)
+
+#### Improvements
+* Unify ByteBufAllocator for the DirectIO component [PR #3985](https://github.com/apache/bookkeeper/pull/3985)
+* Fix arbitrary file upload vulnerability with httpServerEnabled [PR #3982](https://github.com/apache/bookkeeper/pull/3982)
+* Check indexBaseDir specified with ledgerBaseDir [PR #3967](https://github.com/apache/bookkeeper/pull/3967)
+* Clear channel when channelInactive [PR #3966](https://github.com/apache/bookkeeper/pull/3966)
+* Reduce unnecessary creation of ReplicationEnableCb objects [PR #3960](https://github.com/apache/bookkeeper/pull/3960)
+* Avoid compaction to trigger extra flushes DbLedgerStorage [PR #3959](https://github.com/apache/bookkeeper/pull/3959)
+* When the executor has been shut down, do not schedule task [PR #3946](https://github.com/apache/bookkeeper/pull/3946)
+* Drop invalid entryFormat arg from shell command [PR #3938](https://github.com/apache/bookkeeper/pull/3938)
+* Enable PCBC completionObjects autoShrink to reduce memory usage and gc [PR #3913](https://github.com/apache/bookkeeper/pull/3913)
+* Recycle dropping read-write requests when various exceptions happened [PR #3912](https://github.com/apache/bookkeeper/pull/3912)
+* Cleanup CbThreadFactory [PR #3907](https://github.com/apache/bookkeeper/pull/3907)
+* Return activeLogChannel if new create [PR #3894](https://github.com/apache/bookkeeper/pull/3894)
+* Prevent transit to writable mode when forceReadOnly mode is active [PR #3881](https://github.com/apache/bookkeeper/pull/3881)
+* Execute clean indexes in finally [PR #3772](https://github.com/apache/bookkeeper/pull/3772)
+* Use ChannelVoidPromise to avoid useless promise objects creation [PR #3733](https://github.com/apache/bookkeeper/pull/3733)
+
+#### Dependency updates
+* Upgrade grpc and protobuf to address CVE-2023-32732 [PR #3992](https://github.com/apache/bookkeeper/pull/3992)
+* [Branch-4.16] Downgrade grpc and protobuf to avoid introducing breaking change [PR #4001](https://github.com/apache/bookkeeper/pull/4001)
+* Fix issue with binary compatibility with older grpc versions at runtime in the client [PR #3997](https://github.com/apache/bookkeeper/pull/3997)
+* Upgrade snappy-java to address multiple CVEs [PR #3993](https://github.com/apache/bookkeeper/pull/3993)
+* Upgrade Netty to 4.1.93.Final [PR #3975](https://github.com/apache/bookkeeper/pull/3975)
+* Upgrade jetty version to 9.4.51.v20230217 [PR #3937](https://github.com/apache/bookkeeper/pull/3937)
+* Upgrade docusaurus to 2.4.0 [PR #3936](https://github.com/apache/bookkeeper/pull/3936)
+* Upgrade docker base image to resolve CVE-2023-0286 [PR #3916](https://github.com/apache/bookkeeper/pull/3916)
+* Remove avro, hadoop-auth and jersey-json dependencies from hadoop-common to resolve CVE-2019-10202, CVE-2023-1370 and CVE-2022-45685 [PR #3911](https://github.com/apache/bookkeeper/pull/3911)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.16.2+is%3Aclosed
+
 ## 4.16.1
 
 Release 4.16.1 includes one critical bug fix.
@@ -413,7 +884,7 @@ The technical details of this release are summarized below.
 * Fix JVM exited when running localbookie with jdk17. [PR #3334](https://github.com/apache/bookkeeper/pull/3334)
 * Fix the V2 AddRequest object leak issue. [PR #3323](https://github.com/apache/bookkeeper/pull/3323)
 * Fix the PendingAddOp is not recycled when LedgerHandler closed. [PR #3321](https://github.com/apache/bookkeeper/pull/3321)
-* Bookie can't start after rebooting due the cookie mistmatch. [PR #3308](https://github.com/apache/bookkeeper/pull/3308)
+* Bookie can't start after rebooting due the cookie mismatch. [PR #3308](https://github.com/apache/bookkeeper/pull/3308)
 * Close journal channel in testJunkEndedJournal. [PR #3307](https://github.com/apache/bookkeeper/pull/3307)
 * Fix jvm_memory_direct_bytes_used metrics when using jdk11+. [PR #3252](https://github.com/apache/bookkeeper/pull/3252)
 * AutoRecovery does not process underreplicated empty ledgers. [PR #3239](https://github.com/apache/bookkeeper/pull/3239)
@@ -653,7 +1124,7 @@ The technical details of this release are summarized below.
 - [https://github.com/apache/bookkeeper/pull/2833] Eliminate direct ZK access in ScanAndCompareGarbageCollector
 - [https://github.com/apache/bookkeeper/pull/2842] Remove direct ZK access for Auditor
 - [https://github.com/apache/bookkeeper/pull/2844] Add error handling to readLedgerMetadata in over-replicated ledger GC
-- [https://github.com/apache/bookkeeper/pull/2845] A empty implmentation of newLedgerAuditorManager in EtcdLedgerManagerFactory to fix build
+- [https://github.com/apache/bookkeeper/pull/2845] A empty implementation of newLedgerAuditorManager in EtcdLedgerManagerFactory to fix build
 
 #### Dependency updates
 
@@ -1238,7 +1709,7 @@ below.
 
 #### Dependency Changes
 
-There is no dependecy upgrade from 4.8.0.
+There is no dependency upgrade from 4.8.0.
 
 ### Full list of changes
 
@@ -1302,7 +1773,7 @@ See [Make ExplicitLAC persistent](https://github.com/apache/bookkeeper/issues/15
 #### Ensemble change on Delayed Write Failure
 
 We are handling more gracefully the case of a failure of a Bookie in spite of a succeeded write.
-If you are writing with Ack Quorum = 2 and Write Quorum = 3, writes will succeeed even if 1 of 3 Bookies fail,
+If you are writing with Ack Quorum = 2 and Write Quorum = 3, writes will succeed even if 1 of 3 Bookies fail,
 now BookKeeper will trigger an *ensemble change* and replace the failed bookie earlier.
 
 See [Ensemble change on Delayed Write Failure](https://github.com/apache/bookkeeper/issues/1390)
@@ -1485,7 +1956,7 @@ reduces the number of open file descriptors and the amount of random IOs can occ
 
 #### Metadata API
 
-New serviceUri based metadata API is introduced as [BP-29](http://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
+New serviceUri based metadata API is introduced as [BP-29](https://bookkeeper.apache.org/bps/BP-29-metadata-store-api-module). This metadata API provides the metadata
 abstraction over ledger manager, registration service, allowing plugin different type of data stores as the metadata service.
 
 #### Performance
@@ -1509,7 +1980,7 @@ There are are multiple new commands are added in BookieShell. Here are a few hig
 - `metaformat` is deprecated with two new commands `initnewcluster` and `nukeexistingcluster`. This separation provides better operability and reduces mistakes.
 - `initbookie` command is introduced for initializing a new bookie. `bookieformat` keeps serving as the purpose of reformatting a bookie.
 
-A new BookKeeper CLI is proposed in [BP-27](http://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
+A new BookKeeper CLI is proposed in [BP-27](https://bookkeeper.apache.org/bps/BP-27-new-bookkeeper-cli). Some commands are already ported to new bookkeeper CLI.
 The full list of shell commands will be fully ported to new bookkeeper CLI in next release.
 
 #### ReadOnly Mode Support
@@ -1703,7 +2174,7 @@ The main features in 4.5.0 cover are around following areas:
 
 Here is a list of dependencies upgraded in 4.5.0:
 
-- Moved the developement from Java 7 to Java 8.
+- Moved the development from Java 7 to Java 8.
 - Upgrade Protobuf to `2.6`.
 - Upgrade ZooKeeper from `3.4` to `3.5`.
 - Upgrade Netty to `4.1`.
@@ -1773,7 +2244,7 @@ can be enabled by setting `explicitLacInterval` to a positive value.
 There are a lot for performance related bug fixes and improvements in 4.5.0. These changes includes:
 
 - Upgraded netty from 3.x to 4.x to leverage buffer pooling and reduce memory copies.
-- Moved developement from Java 7 to Java 8 to take advantage of Java 8 features.
+- Moved development from Java 7 to Java 8 to take advantage of Java 8 features.
 - A lot of improvements around scheduling and threading on `bookies`.
 - Delay ensemble change to improve tail latency.
 - Parallel ledger recovery to improve the recovery speed.
@@ -1799,7 +2270,7 @@ To enable this feature, please set `delayEnsembleChange` to `true` on your clien
 
 ##### Parallel Ledger Recovery
 
-BookKeeper clients recovers entries one-by-one during ledger recovery. If a ledger has very large volumn of traffic, it will have
+BookKeeper clients recovers entries one-by-one during ledger recovery. If a ledger has very large volume of traffic, it will have
 large number of entries to recover when client failures occur. BookKeeper introduces `parallel ledger recovery` in 4.5.0 to allow
 batch recovery to improve ledger recovery speed.
 
@@ -1843,7 +2314,7 @@ This customized ledger metadata can be later on used by user defined placement p
 ##### Add Prometheus stats provider
 
 A new [Prometheus](https://prometheus.io/) [stats provider](https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers/prometheus-metrics-provider)
-is introduce in 4.5.0. It simplies the metric collection when running bookkeeper on [kubernetes](https://kubernetes.io/).
+is introduce in 4.5.0. It simplifies the metric collection when running bookkeeper on [kubernetes](https://kubernetes.io/).
 
 ##### Add more tools in BookieShell
 
@@ -2000,9 +2471,9 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-759'>BOOKKEEPER-759</a>] -         bookkeeper: delay ensemble change if it doesn&#39;t break ack quorum requirement
 </li>
-<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-772'>BOOKKEEPER-772</a>] -         Reorder read sequnce 
+<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-772'>BOOKKEEPER-772</a>] -         Reorder read sequence 
 </li>
-<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-874'>BOOKKEEPER-874</a>] -         Explict LAC from Writer to Bookies
+<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-874'>BOOKKEEPER-874</a>] -         Explicit LAC from Writer to Bookies
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-881'>BOOKKEEPER-881</a>] -         upgrade surefire plugin to 2.19
 </li>
@@ -2020,7 +2491,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-946'>BOOKKEEPER-946</a>] -         Provide an option to delay auto recovery of lost bookies
 </li>
-<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-961'>BOOKKEEPER-961</a>] -         Assing read/write request for same ledger to a single thread
+<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-961'>BOOKKEEPER-961</a>] -         Assign read/write request for same ledger to a single thread
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-962'>BOOKKEEPER-962</a>] -         Add more journal timing stats
 </li>
@@ -2112,7 +2583,7 @@ For the complete list of commands in `BookieShell`, please read [BookKeeper CLI 
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-948'>BOOKKEEPER-948</a>] -         Provide an option to add more ledger/index directories to a bookie
 </li>
-<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-950'>BOOKKEEPER-950</a>] -         Ledger placement policy to accomodate different storage capacity of bookies
+<li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-950'>BOOKKEEPER-950</a>] -         Ledger placement policy to accommodate different storage capacity of bookies
 </li>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-969'>BOOKKEEPER-969</a>] -         Security Support
 </li>

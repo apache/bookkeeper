@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.stats.codahale;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.codahale.metrics.Snapshot;
 import java.util.ArrayList;
@@ -51,6 +52,17 @@ public class FastTimerTest {
             }
         };
     }
+
+    @Test
+    public void testMeanRate() {
+        FastTimer t = getMockedFastTimer(1, FastTimer.Buckets.fine);
+
+        t.update(10, TimeUnit.NANOSECONDS);
+        assertTrue("should calculate mean before advancing time", t.getMeanRate() > 0);
+
+        incSec();
+        assertTrue("should calculate mean after advancing time", t.getMeanRate() > 0);
+   }
 
     @Test
     public void testBuckets() {

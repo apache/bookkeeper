@@ -19,6 +19,10 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand.newLastMarkCommand;
+import static org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand.newClusterInfoCommand;
+import static org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand.newListBookiesCommand;
+import static org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.newSimpleTestCommand;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -73,6 +77,7 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.RebuildDBLedgersIndexComm
 import org.apache.bookkeeper.tools.cli.commands.bookie.RegenerateInterleavedStorageIndexFileCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookie.UpdateBookieInLedgerCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.DecommissionCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.EndpointInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.InfoCommand;
@@ -148,6 +153,7 @@ public class BookieShell implements Tool {
     static final String CMD_UPDATE_BOOKIE_IN_LEDGER = "updateBookieInLedger";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
+    static final String CMD_CLUSTERINFO = "clusterinfo";
     static final String CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE = "activeledgers";
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
     static final String CMD_ENDPOINTINFO = "endpointinfo";
@@ -293,7 +299,14 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "metaformat   [-nonInteractive] [-force]";
+            return "metaformat      Format bookkeeper metadata in zookeeper\n"
+                    + "             Usage: metaformat [options]\n"
+                    + "             Options:\n"
+                    + "               -f, --force\n"
+                    + "              If [nonInteractive] is specified, "
+                                        + "then whether to force delete the old data without prompt\n"
+                    + "               -n, --nonInteractive\n"
+                    + "              Whether to confirm if old data exists ";
         }
 
         @Override
@@ -310,7 +323,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Intializes new cluster by creating required znodes for the cluster. If
+     * Initializes new cluster by creating required znodes for the cluster. If
      * ledgersrootpath is already existing then it will error out. If for any
      * reason it errors out while creating znodes for the cluster, then before
      * running initnewcluster again, try nuking existing cluster by running
@@ -338,7 +351,10 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "initnewcluster";
+            return "initnewcluster      Initializes a new bookkeeper cluster. If initnewcluster fails then try nuking "
+                    + "existing cluster by running nukeexistingcluster before running initnewcluster again, "
+                    + "initbookie requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: initnewcluster";
         }
 
         @Override
@@ -376,7 +392,16 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "nukeexistingcluster -zkledgersrootpath <zkledgersrootpath> [-instanceid <instanceid> | -force]";
+            return "nukeexistingcluster      Nuke bookkeeper cluster by deleting metadata\n"
+                    + "             Usage: nukeexistingcluster [options]\n"
+                    + "             Options:\n"
+                    + "               -f, --force\n"
+                    + "              If instanceid is not specified, "
+                                        + "then whether to force nuke the metadata without validating instanceid\n"
+                    + "             * -i, --instanceid\n"
+                    + "              the bookie cluster's instanceid (param format: `instanceId`)\n"
+                    + "             * -p,--zkledgersrootpath\n"
+                    + "              zookeeper ledgers rootpath (param format: `zkLedgersRootPath`)";
         }
 
         @Override
@@ -421,7 +446,16 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookieformat [-nonInteractive] [-force] [-deleteCookie]";
+            return "bookieformat      Format the current server contents\n"
+                    + "             Usage: bookieformat [options]\n"
+                    + "             Options:\n"
+                    + "               -f, --force\n"
+                    + "              If [nonInteractive] is specified, then whether "
+                                        + "to force delete the old data without prompt..? \n"
+                    + "             * -n, --nonInteractive\n"
+                    + "              Whether to confirm if old data exists..? \n"
+                    + "             * -d, --deleteCookie\n"
+                    + "              Delete its cookie on metadata store ";
         }
 
         @Override
@@ -462,7 +496,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_INITBOOKIE;
+            return "initbookie      Initialize new Bookie, initbookie requires no options,"
+                    + "use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: initbookie";
         }
 
         @Override
@@ -503,7 +539,25 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover [-deleteCookie] <bookieSrc[,bookieSrc,...]>";
+            return "recover      Recover the ledger data for failed bookie\n"
+                    + "             Usage: recover [options]\n"
+                    + "             Options:\n"
+                    + "               -q, --query\n"
+                    + "              Query the ledgers that contain given bookies\n"
+                    + "               -dr, --dryrun\n"
+                    + "              Printing the recovery plan w/o doing actual recovery\n"
+                    + "               -f, --force\n"
+                    + "              Force recovery without confirmation\n"
+                    + "               -l, --ledger\n"
+                    + "              Recover a specific ledger (param format: `ledgerId`)\n"
+                    + "               -sk, --skipOpenLedgers\n"
+                    + "              Skip recovering open ledgers\n"
+                    + "               -d, --deleteCookie\n"
+                    + "              Delete cookie node for the bookie\n"
+                    + "               -sku, --skipUnrecoverableLedgers\n"
+                    + "              Skip unrecoverable ledgers\n"
+                    + "               -rate, --replicationRate\n"
+                    + "              Replication rate by bytes";
         }
 
         @Override
@@ -572,7 +626,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "ledger       [-m] <ledger_id>";
+            return "ledger      Dump ledger index entries into readable format\n"
+                    + "             Usage: ledger [options]\n"
+                    + "             Options:\n"
+                    + "               -m, --meta\n"
+                    + "              Print meta information\n"
+                    + "             * <ledger_id>\n"
+                    + "              Ledger ID(param format: `ledgerId`) ";
         }
 
         @Override
@@ -609,9 +669,21 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readledger  [-bookie <address:port>]  [-msg] -ledgerid <ledgerid> "
-                    + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]] "
-                    + "[-force-recovery]";
+            return "readledger      Read a range of entries from a ledger\n"
+                    + "             Usage: readledger [options]\n"
+                    + "             Options:\n"
+                    + "               -m, --msg\n"
+                    + "              Print message body\n"
+                    + "             * -l, --ledgerid\n"
+                    + "              Ledger ID (param format: `ledgerId`)\n"
+                    + "             * -fe, --firstentryid\n"
+                    + "              First EntryID (param format: `firstEntryId`)\n"
+                    + "             * -le, --lastentryid\n"
+                    + "              Last EntryID (param format: `lastEntryId`)\n"
+                    + "               -r, --force-recovery\n"
+                    + "              Ensure the ledger is properly closed before reading\n"
+                    + "             * -b, --bookie\n"
+                    + "              Only read from a specific bookie (param format: `address:port`)";
         }
 
         @Override
@@ -632,7 +704,7 @@ public class BookieShell implements Tool {
 
             ReadLedgerCommand cmd = new ReadLedgerCommand(entryFormatter, ledgerIdFormatter);
             ReadLedgerCommand.ReadLedgerFlags flags = new ReadLedgerCommand.ReadLedgerFlags();
-            flags.bookieAddresss(bookieAddress);
+            flags.bookieAddress(bookieAddress);
             flags.firstEntryId(firstEntry);
             flags.forceRecovery(forceRecovery);
             flags.lastEntryId(lastEntry);
@@ -675,8 +747,20 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listunderreplicated [[-missingreplica <bookieaddress>]"
-                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica] [-printreplicationworkerid]";
+            return "listunderreplicated      List ledgers marked as underreplicated, with optional options to "
+                    + "specify missingreplica (BookieId) and to exclude missingreplica\n"
+                    + "             Usage: listunderreplicated [options]\n"
+                    + "             Options:\n"
+                    + "               -c,--onlydisplayledgercount\n"
+                    + "              Only display underreplicated ledger count \n"
+                    + "             * -emr,--excludingmissingreplica\n"
+                    + "              Bookie Id of missing replica to ignore (param format: `address:port`)\n"
+                    + "             * -mr,--missingreplica\n"
+                    + "              Bookie Id of missing replica (param format: `address:port`)\n"
+                    + "               -pmr,--printmissingreplica\n"
+                    + "              Whether to print missingreplicas list \n"
+                    + "               -prw,--printreplicationworkerid\n"
+                    + "              Whether to print replicationworkerid ";
         }
 
         @Override
@@ -733,7 +817,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listledgers  [-meta] [-bookieid <bookieaddress>]";
+            return "listledgers      List all ledgers on the cluster (this may take a long time)\n"
+                    + "             Usage: listledgers [options]\n"
+                    + "             Options:\n"
+                    + "               -m, --meta\n"
+                    + "              Print metadata\n"
+                    + "             * -bookieid\n"
+                    + "              List ledgers residing in this bookie(param format: `address:port`) ";
         }
 
         @Override
@@ -779,7 +869,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "activeledgers  [-logId <entry log id>] [-timeout <timeout>] [-formatter <ledger id formatter>]";
+            return "activeledgers      List all active ledgers on the entry log file\n"
+                    + "             Usage: activeledgers [options]\n"
+                    + "             Options:\n"
+                    + "             * -l, --logId\n"
+                    + "              Entry log file id (`ledgers/logFileName.log`,param format: `logFileName`)\n"
+                    + "             * -t, --timeout\n"
+                    + "              Read timeout(ms, param format: `runTimeoutMs`) ";
         }
 
         @Override
@@ -842,7 +938,17 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid> [--dumptofile FILENAME|--restorefromfile FILENAME]";
+            return "ledgermetadata      Print the metadata for a ledger, or optionally dump to a file\n"
+                    + "             Usage: ledgermetadata [options]\n"
+                    + "             Options:\n"
+                    + "               -dumptofile \n"
+                    + "              Dump metadata for ledger, to a file (param format: `dumpFilePath`)\n"
+                    + "               -restorefromfile \n"
+                    + "              Restore metadata for ledger, from a file (param format: `storeFilePath`)\n"
+                    + "               -update \n"
+                    + "              Update metadata if ledger already exist \n"
+                    + "             * -l, --ledgerid\n"
+                    + "              Ledger ID(param format: `ledgerId`) ";
         }
 
         @Override
@@ -874,7 +980,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "localconsistencycheck";
+            return "localconsistencycheck      Validate Ledger Storage internal metadata, "
+                    + "localconsistencycheck requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: localconsistencycheck";
         }
 
         @Override
@@ -903,13 +1011,13 @@ public class BookieShell implements Tool {
             int ackQuorum = getOptionIntValue(cmdLine, "ackQuorum", 2);
             int numEntries = getOptionIntValue(cmdLine, "numEntries", 1000);
 
-            SimpleTestCommand.Flags flags = new SimpleTestCommand.Flags()
+            SimpleTestCommand.Flags flags = SimpleTestCommand.Flags.newFlags()
                 .ensembleSize(ensemble)
                 .writeQuorumSize(writeQuorum)
                 .ackQuorumSize(ackQuorum)
                 .numEntries(numEntries);
 
-            SimpleTestCommand command = new SimpleTestCommand(flags);
+            SimpleTestCommand command = newSimpleTestCommand(flags);
 
             command.apply(bkConf, flags);
             return 0;
@@ -922,7 +1030,17 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "simpletest   [-ensemble N] [-writeQuorum N] [-ackQuorum N] [-numEntries N]";
+            return "simpletest      Simple test to create a ledger and write entries to it\n"
+                    + "             Usage: simpletest [options]\n"
+                    + "             Options:\n"
+                    + "               -e, --ensemble\n"
+                    + "              Ensemble size (default 3, param format: `ensembleSize`)\n"
+                    + "               -w, --writeQuorum\n"
+                    + "              Write quorum size (default 2, param format: `writeQuorumSize`)\n"
+                    + "               -a, --ackQuorum\n"
+                    + "              Ack quorum size (default 2, param format: `ackQuorumSize`)\n"
+                    + "               -n, --numEntries\n"
+                    + "              Entries to write (default 1000, param format: `entriesToWrite`)";
         }
 
         @Override
@@ -954,7 +1072,14 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookiesanity [-entries N] [-timeout N]";
+            return "bookiesanity      Sanity test for local bookie. "
+                                        + "Create ledger and write/reads entries on local bookie\n"
+                    + "             Usage: bookiesanity [options]\n"
+                    + "             Options:\n"
+                    + "               -e, --entries\n"
+                    + "              Total entries to be added for the test (default 10, param format: `entryNum`)\n"
+                    + "               -t, --timeout\n"
+                    + "              Timeout for write/read in seconds (default 1s, param format: `readTimeoutMs`) ";
         }
 
         @Override
@@ -1023,8 +1148,19 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> "
-                    + "[-entryid <entryid>]] [-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
+            return "readlog      Scan an entry file and format the entries into readable format\n"
+                    + "             Usage: readlog [options]\n"
+                    + "             Options:\n"
+                    + "               -m, --msg\n"
+                    + "              Print message body\n"
+                    + "             * -l, --ledgerid\n"
+                    + "              Ledger ID (param format: `ledgerId`)\n"
+                    + "             * -e, --entryid\n"
+                    + "              Entry ID (param format: `entryId`)\n"
+                    + "             * -sp, --startpos\n"
+                    + "              Start Position (param format: `startPosition`)\n"
+                    + "             * -ep, --endpos\n"
+                    + "              End Position (param format: `endPosition`)";
         }
 
         @Override
@@ -1072,7 +1208,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlogmetadata <entry_log_id | entry_log_file_name>";
+            return "readlogmetadata      Prints entrylog's metadata\n"
+                    + "             Usage: readlogmetadata [options]\n"
+                    + "             Options:\n"
+                    + "             * <entry_log_id | entry_log_file_name>\n"
+                    + "              entry log id or entry log file name (param format: `entryLogId` "
+                                        + "or `entryLogFileName`)";
         }
 
         @Override
@@ -1129,7 +1270,14 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readjournal [-dir] [-msg] <journal_id | journal_file_name>";
+            return "readjournal      Scan a journal file and format the entries into readable format\n"
+                    + "             Usage: readjournal [options]\n"
+                    + "             Options:\n"
+                    + "             * -dir\n"
+                    + "              Journal directory needed if more than one journal configured"
+                                        + " (param format: `journalDir`)\n"
+                    + "               -m, --msg\n"
+                    + "              Print message body";
         }
 
         @Override
@@ -1148,7 +1296,7 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine c) throws Exception {
-            LastMarkCommand command = new LastMarkCommand();
+            LastMarkCommand command = newLastMarkCommand();
             command.apply(bkConf, new CliFlags());
             return 0;
         }
@@ -1160,7 +1308,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "lastmark";
+            return "lastmark      Print last log marker \n"
+                    + "             Usage: lastmark";
         }
 
         @Override
@@ -1206,12 +1355,12 @@ public class BookieShell implements Tool {
                 return 1;
             }
 
-            ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
+            ListBookiesCommand.Flags flags = ListBookiesCommand.Flags.newFlags()
                 .readwrite(readwrite)
                 .readonly(readonly)
                 .all(all);
 
-            ListBookiesCommand command = new ListBookiesCommand(flags);
+            ListBookiesCommand command = newListBookiesCommand(flags);
 
             command.apply(bkConf, flags);
             return 0;
@@ -1224,7 +1373,17 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "listbookies  [-readwrite|-readonly|-all] [-hostnames]";
+            return "listbookies      List the bookies, which are running as either readwrite or readonly mode\n"
+                    + "             Usage: listbookies [options]\n"
+                    + "             Options:\n"
+                    + "               -a, --all\n"
+                    + "              Print all bookies\n"
+                    + "               -h, --hostnames\n"
+                    + "              Also print hostname of the bookie\n"
+                    + "               -ro, --readonly\n"
+                    + "              Print readonly bookies\n"
+                    + "               -rw, --readwrite\n"
+                    + "              Print readwrite bookies ";
         }
 
         @Override
@@ -1258,12 +1417,20 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories.";
+            return "List the files in JournalDirectories/LedgerDirectories/IndexDirectories.";
         }
 
         @Override
         String getUsage() {
-            return "listfilesondisc  [-journal|-entrylog|-index]";
+            return "listfilesondisc      List the files in JournalDirectories/LedgerDirectories/IndexDirectories \n"
+                    + "             Usage: listfilesondisc [options]\n"
+                    + "             Options:\n"
+                    + "               -txn, --journal\n"
+                    + "              Print list of Journal Files\n"
+                    + "               -log, --entrylog\n"
+                    + "              Print list of EntryLog Files\n"
+                    + "               -idx, --index\n"
+                    + "              Print list of Index files ";
         }
 
         @Override
@@ -1339,7 +1506,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "autorecovery [-enable|-disable]";
+            return "autorecovery      Enable or disable autorecovery in the cluster\n"
+                    + "             Usage: autorecovery [options]\n"
+                    + "             Options:\n"
+                    + "             * -e, --enable\n"
+                    + "              Enable auto recovery of underreplicated ledgers\n"
+                    + "             * -d, --disable\n"
+                    + "              Disable auto recovery of underreplicated ledgers";
         }
 
         @Override
@@ -1378,7 +1551,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "queryautorecoverystatus";
+            return "queryautorecoverystatus      Query the autorecovery status, "
+                    + "queryautorecoverystatus requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: queryautorecoverystatus";
         }
 
         @Override
@@ -1415,7 +1590,15 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "lostbookierecoverydelay [-get|-set <value>]";
+            return "lostbookierecoverydelay      Setter and Getter for LostBookieRecoveryDelay value"
+                    + " (in seconds) in metadata store\n"
+                    + "             Usage: lostbookierecoverydelay [options]\n"
+                    + "             Options:\n"
+                    + "               -g, --get\n"
+                    + "              Get LostBookieRecoveryDelay value (in seconds)\n"
+                    + "               -s, --set\n"
+                    + "              Set LostBookieRecoveryDelay value (in seconds, "
+                                        + "param format: `lostBookieRecoveryDelayInSecs`) ";
         }
 
         @Override
@@ -1456,7 +1639,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "whoisauditor";
+            return "whoisauditor      Print the node which holds the auditor lock, "
+                    + "whoisauditor requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: whoisauditor";
         }
 
         @Override
@@ -1489,7 +1674,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "whatisinstanceid";
+            return "whatisinstanceid      Print the instanceid of the cluster, "
+                    + "whatisinstanceid requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: whatisinstanceid";
         }
 
         @Override
@@ -1540,7 +1727,17 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updatecookie [-bookieId <hostname|ip>] [-expandstorage] [-list] [-delete <force>]";
+            return "updatecookie      Command to update cookie\n"
+                    + "             Usage: updatecookie [options]\n"
+                    + "             Options:\n"
+                    + "             * -b, --bookieId\n"
+                    + "              Bookie Id (param format: `address:port`)\n"
+                    + "               -e, --expandstorage\n"
+                    + "              Expand Storage\n"
+                    + "               -l, --list\n"
+                    + "              List paths of all the cookies present locally and on zookkeeper\n"
+                    + "               -d, --delete\n"
+                    + "              Delete cookie both locally and in ZooKeeper (param format: force)";
         }
 
         @Override
@@ -1614,8 +1811,24 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-maxOutstandingReads N] [-limit N] "
-                    + "[-verbose true/false] [-printprogress N]";
+            return "updateledgers      Update bookie id in ledgers\n"
+                    + "             Usage: updateledgers [options]\n"
+                    + "             Options:\n"
+                    + "             * -b, --bookieId\n"
+                    + "              Bookie Id (param format: `address:port`)\n"
+                    + "               -s, --updatespersec\n"
+                    + "              Number of ledgers updating per second (default: 5, "
+                                        + "param format: `updatespersec`)\n"
+                    + "               -r, --maxOutstandingReads\n"
+                    + "              Max outstanding reads (default: 5 * updatespersec, "
+                                        + "param format: `maxOutstandingReads`)\n"
+                    + "               -l, --limit\n"
+                    + "              Maximum number of ledgers to update (default: no limit, param format: `limit`)\n"
+                    + "               -v, --verbose\n"
+                    + "              Print status of the ledger updation (default: false, param format: `verbose`)\n"
+                    + "               -p, --printprogress\n"
+                    + "              Print messages on every configured seconds if verbose turned on "
+                                        + "(default: 10 secs, param format: `printprogress`)";
         }
 
         @Override
@@ -1691,8 +1904,28 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateBookieInLedger -srcBookie <source bookie> -destBookie <destination bookie> "
-                    + "[-updatespersec N] [-maxOutstandingReads N] [-limit N] [-verbose true/false] [-printprogress N]";
+            return "updateBookieInLedger      Replace bookie in ledger metadata. (useful when re-ip of host) "
+                                                 + "replace srcBookie with destBookie. (this may take a long time)\n"
+                    + "             Usage: updateBookieInLedger [options]\n"
+                    + "             Options:\n"
+                    + "             * -sb, --srcBookie\n"
+                    + "              Source bookie which needs to be replaced by destination bookie "
+                                        + "(param format: `address:port`)\n"
+                    + "             * -db, --destBookie\n"
+                    + "              Destination bookie which replaces source bookie (param format: `address:port`)\n"
+                    + "               -s, --updatespersec\n"
+                    + "              Number of ledgers updating per second (default: 5, "
+                                        + "param format: `updatesPerSec`)\n"
+                    + "               -r, --maxOutstandingReads\n"
+                    + "              Max outstanding reads (default: 5 * updatespersec, "
+                                        + "param format: `maxOutstandingReads`)\n"
+                    + "               -l, --limit\n"
+                    + "              Maximum number of ledgers to update (default: no limit, param format: `limit`)\n"
+                    + "               -v, --verbose\n"
+                    + "              Print status of the ledger updation (default: false, param format: `verbose`)\n"
+                    + "               -p, --printprogress\n"
+                    + "              Print messages on every configured seconds if verbose turned on (default: 10, "
+                                        + "param format: `printprogress`)";
         }
 
         @Override
@@ -1770,7 +2003,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "deleteledger -ledgerid <ledgerid> [-force]";
+            return "deleteledger      Delete a ledger\n"
+                    + "             Usage: deleteledger [options]\n"
+                    + "             Options:\n"
+                    + "             * -l, --ledgerid\n"
+                    + "              Ledger ID (param format: `ledgerId`)\n"
+                    + "             * -f, --force\n"
+                    + "              Whether to force delete the Ledger without prompt";
         }
 
         @Override
@@ -1796,7 +2035,10 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookieinfo";
+            return "bookieinfo      Retrieve bookie info such as free and total disk space,"
+                    + "bookieinfo requires no options,"
+                    + "use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: bookieinfo";
         }
 
         @Override
@@ -1828,7 +2070,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_TRIGGERAUDIT;
+            return "triggeraudit      Force trigger the Audit by resetting the lostBookieRecoveryDelay, "
+                    + "triggeraudit requires no options,use the default conf or re-specify BOOKIE_CONF \n"
+                    + "             Usage: triggeraudit";
         }
 
         @Override
@@ -1870,7 +2114,17 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "forceauditchecks [-checkallledgerscheck [-placementpolicycheck] [-replicascheck]";
+            return "forceauditchecks      Reset the last run time of auditor checks "
+                    + "(checkallledgerscheck, placementpolicycheck, replicascheck) "
+                    + "The current auditor must be REBOOTED after this command is run"
+                    + "             Usage: forceauditchecks [options]\n"
+                    + "             Options:\n"
+                    + "             * -calc, --checkallledgerscheck\n"
+                    + "              Force checkAllLedgers audit upon next Auditor startup\n"
+                    + "             * -ppc, --placementpolicycheck\n"
+                    + "              Force placementPolicyCheck audit upon next Auditor startup\n"
+                    + "             * -rc, --replicascheck\n"
+                    + "              Force replicasCheck audit upon next Auditor startup";
         }
 
         @Override
@@ -1934,7 +2188,13 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_DECOMMISSIONBOOKIE + " [-bookieid <bookieaddress>]";
+            return "decommissionbookie      Force trigger the Audittask and make sure all the ledgers stored in the "
+                    + "decommissioning bookie " + "are replicated and cookie of the decommissioned bookie is deleted "
+                    + "from metadata server.\n"
+                    + "             Usage: decommissionbookie [options]\n"
+                    + "             Options:\n"
+                    + "             * -bookieid\n"
+                    + "              Decommission a remote bookie (param format: `address:port`)";
         }
 
         @Override
@@ -1970,7 +2230,11 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_ENDPOINTINFO + " [-bookieid <bookieaddress>]";
+            return "endpointinfo      Get info about a remote bookie with a specific bookie\n"
+                    + "             Usage: endpointinfo [options]\n"
+                    + "             Options:\n"
+                    + "             * -b, --bookieid\n"
+                    + "              Bookie Id (param format: `address:port`)";
         }
 
         @Override
@@ -2023,7 +2287,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_CONVERT_TO_DB_STORAGE;
+            return "convert-to-db-storage      Convert bookie indexes from InterleavedStorage to DbLedgerStorage\n"
+                    + "             Usage: convert-to-db-storage\n";
         }
 
         @Override
@@ -2057,7 +2322,9 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_CONVERT_TO_INTERLEAVED_STORAGE;
+            return "convert-to-interleaved-storage      "
+                                        + "Convert bookie indexes from DbLedgerStorage to InterleavedStorage\n"
+                    + "             Usage: convert-to-interleaved-storage";
         }
 
         @Override
@@ -2090,7 +2357,10 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX;
+            return "rebuild-db-ledger-locations-index      Rebuild DbLedgerStorage locations index by scanning "
+                    + "the entry logs, rebuild-db-ledger-locations-index requires no options,use the default conf "
+                    + "or re-specify BOOKIE_CONF \n"
+                    + "             Usage: rebuild-db-ledger-locations-index";
         }
 
         @Override
@@ -2124,7 +2394,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_REBUILD_DB_LEDGERS_INDEX;
+            return "rebuild-db-ledgers-index      Rebuild DbLedgerStorage ledgers index by scanning the journal "
+                    + "and entry logs (sets all ledgers to fenced)\n"
+                    + "             Usage: rebuild-db-ledgers-index [options]\n"
+                    + "             Options:\n"
+                    + "               -v, --verbose\n"
+                    + "              Verbose logging, print the ledgers added to the new index";
         }
 
         @Override
@@ -2163,7 +2438,11 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_CHECK_DB_LEDGERS_INDEX;
+            return "check-db-ledgers-index      Check DbLedgerStorage ledgers index by performing a read scan\n"
+                    + "             Usage: check-db-ledgers-index [options]\n"
+                    + "             Options:\n"
+                    + "               -v, --verbose\n"
+                    + "              Verbose logging, print the ledger data in the index";
         }
 
         @Override
@@ -2216,7 +2495,19 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE;
+            return "regenerate-interleaved-storage-index-file      Regenerate an interleaved storage index file, "
+                                                                    + "from available entrylogger files\n"
+                    + "             Usage: regenerate-interleaved-storage-index-file [options]\n"
+                    + "             Options:\n"
+                    + "             * -l, --ledgerIds\n"
+                    + "              Ledger(s) whose index needs to be regenerated (param format: `l1,...,lN`)\n"
+                    + "               -dryRun\n"
+                    + "              Process the entryLogger, but don't write anything\n"
+                    + "               -password\n"
+                    + "              The bookie stores the password in the index file, so we need it to regenerate "
+                                        + "(param format: `ledgerPassword`)\n"
+                    + "               -b64password\n"
+                    + "              The password in base64 encoding (param format: `ledgerB64Password`)";
         }
 
         @Override
@@ -2238,6 +2529,39 @@ public class BookieShell implements Tool {
             return 0;
         }
     }
+
+    /*
+     * Command to exposes the current info about the cluster of bookies.
+     */
+    class ClusterInfoCmd extends MyCommand {
+        ClusterInfoCmd() {
+            super(CMD_CLUSTERINFO);
+        }
+
+        @Override
+        String getDescription() {
+            return "Exposes the current info about the cluster of bookies.";
+        }
+
+        @Override
+        String getUsage() {
+            return "clusterinfo      Exposes the current info about the cluster of bookies\n"
+                    + "             Usage: clusterinfo";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            ClusterInfoCommand cmd = newClusterInfoCommand();
+            cmd.apply(bkConf, new CliFlags());
+            return 0;
+        }
+    }
+
 
     final Map<String, Command> commands = new HashMap<>();
 
@@ -2272,6 +2596,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_UPDATE_BOOKIE_IN_LEDGER, new UpdateBookieInLedgerCmd());
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
+        commands.put(CMD_CLUSTERINFO, new ClusterInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
         commands.put(CMD_ENDPOINTINFO, new EndpointInfoCmd());
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());

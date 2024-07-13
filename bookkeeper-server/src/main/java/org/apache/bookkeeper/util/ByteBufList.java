@@ -22,7 +22,6 @@ package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -123,7 +122,7 @@ public class ByteBufList extends AbstractReferenceCounted {
         return buf;
     }
 
-    private static ByteBufList get() {
+    public static ByteBufList get() {
         ByteBufList buf = RECYCLER.get();
         buf.setRefCnt(1);
         return buf;
@@ -133,43 +132,14 @@ public class ByteBufList extends AbstractReferenceCounted {
      * Append a {@link ByteBuf} at the end of this {@link ByteBufList}.
      */
     public void add(ByteBuf buf) {
-        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
-                ? buf.unwrap() : buf;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(buf);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            ((CompositeByteBuf) unwrapped).forEach(b -> {
-                ReferenceCountUtil.retain(b);
-                buffers.add(b);
-            });
-            ReferenceCountUtil.release(unwrapped);
-        } else {
-            buffers.add(unwrapped);
-        }
+        buffers.add(buf);
     }
 
     /**
      * Prepend a {@link ByteBuf} at the beginning of this {@link ByteBufList}.
      */
     public void prepend(ByteBuf buf) {
-        // don't unwrap slices
-        final ByteBuf unwrapped = buf.unwrap() != null && buf.unwrap() instanceof CompositeByteBuf
-                ? buf.unwrap() : buf;
-        ReferenceCountUtil.retain(unwrapped);
-        ReferenceCountUtil.release(buf);
-
-        if (unwrapped instanceof CompositeByteBuf) {
-            CompositeByteBuf composite = (CompositeByteBuf) unwrapped;
-            for (int i = composite.numComponents() - 1; i >= 0; i--) {
-                ByteBuf b = composite.component(i);
-                ReferenceCountUtil.retain(b);
-                buffers.add(0, b);
-            }
-            ReferenceCountUtil.release(unwrapped);
-        } else {
-            buffers.add(0, unwrapped);
-        }
+        buffers.add(0, buf);
     }
 
     /**
@@ -285,7 +255,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     @Override
     protected void deallocate() {
         for (int i = 0; i < buffers.size(); i++) {
-            ReferenceCountUtil.release(buffers.get(i));
+            buffers.get(i).release();
         }
 
         buffers.clear();
@@ -316,19 +286,29 @@ public class ByteBufList extends AbstractReferenceCounted {
             if (msg instanceof ByteBufList) {
                 ByteBufList b = (ByteBufList) msg;
 
-                try {
-                    // Write each buffer individually on the socket. The retain() here is needed to preserve the fact
-                    // that ByteBuf are automatically released after a write. If the ByteBufPair ref count is increased
-                    // and it gets written multiple times, the individual buffers refcount should be reflected as well.
-                    int buffersCount = b.buffers.size();
-                    for (int i = 0; i < buffersCount; i++) {
-                        ByteBuf bx = b.buffers.get(i);
-                        // Last buffer will carry on the final promise to notify when everything was written on the
-                        // socket
-                        ctx.write(bx.retainedDuplicate(), i == (buffersCount - 1) ? promise : ctx.voidPromise());
+                ChannelPromise compositePromise = ctx.newPromise();
+                compositePromise.addListener(future -> {
+                    // release the ByteBufList after the write operation is completed
+                    ReferenceCountUtil.safeRelease(b);
+                    // complete the promise passed as an argument unless it's a void promise
+                    if (promise != null && !promise.isVoid()) {
+                        if (future.isSuccess()) {
+                            promise.setSuccess();
+                        } else {
+                            promise.setFailure(future.cause());
+                        }
                     }
-                } finally {
-                    ReferenceCountUtil.release(b);
+                });
+
+                // Write each buffer individually on the socket. The retain() here is needed to preserve the fact
+                // that ByteBuf are automatically released after a write. If the ByteBufPair ref count is increased
+                // and it gets written multiple times, the individual buffers refcount should be reflected as well.
+                int buffersCount = b.buffers.size();
+                for (int i = 0; i < buffersCount; i++) {
+                    ByteBuf bx = b.buffers.get(i);
+                    // Last buffer will carry on the final promise to notify when everything was written on the
+                    // socket
+                    ctx.write(bx.retainedDuplicate(), i == (buffersCount - 1) ? compositePromise : ctx.voidPromise());
                 }
             } else {
                 ctx.write(msg, promise);

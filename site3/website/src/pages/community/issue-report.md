@@ -12,7 +12,7 @@ Be aware that resolving your issue may require **your participation**. Please be
 
 ## Creating a Issue:
 
-Here is an very useful artical [How to report bugs effectively]( http://www.chiark.greenend.org.uk/%7Esgtatham/bugs.html)
+Here is an very useful article [How to report bugs effectively]( http://www.chiark.greenend.org.uk/%7Esgtatham/bugs.html)
 
 ### Provide useful and required information
 

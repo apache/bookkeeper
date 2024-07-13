@@ -28,5 +28,6 @@ fi
 cp ${ROOT_DIR}/bookkeeper-dist/server/target/bookkeeper-server*-bin.tar.gz "${CURRENT_DIR}/${BK_TAR_BALL}"
 
 pushd "${CURRENT_DIR}"
-docker build --build-arg BK_TAR_BALL=${BK_TAR_BALL} -t apache/bookkeeper:local .
+docker build --build-arg UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}" --build-arg UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}" \
+  --build-arg BK_TAR_BALL=${BK_TAR_BALL} -t apache/bookkeeper:local .
 popd

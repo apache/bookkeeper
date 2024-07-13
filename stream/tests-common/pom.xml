@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -31,20 +31,14 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-all</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-netty-shaded</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-okhttp</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-testing</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -68,16 +62,9 @@
     </extensions>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <source>${javac.target}</source>
-          <target>${javac.target}</target>
-          <compilerArgs>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-            <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-            <compilerArg>-Xpkginfo:always</compilerArg>
-          </compilerArgs>
           <showDeprecation>false</showDeprecation>
           <showWarnings>false</showWarnings>
         </configuration>
@@ -104,7 +91,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
         <executions>
           <execution>
             <goals>

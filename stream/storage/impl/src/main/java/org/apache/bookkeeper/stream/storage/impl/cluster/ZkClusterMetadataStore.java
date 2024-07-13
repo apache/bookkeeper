@@ -98,7 +98,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
         ClusterMetadata metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
-        ClusterAssignmentData assigmentData = ClusterAssignmentData.newBuilder()
+        ClusterAssignmentData assignmentData = ClusterAssignmentData.newBuilder()
             .build();
         try {
             // we are using dlog for the storage backend, so we need to initialize the dlog namespace
@@ -110,7 +110,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
                 .forOperations(
                     client.transactionOp().create().forPath(zkRootPath),
                     client.transactionOp().create().forPath(zkClusterMetadataPath, metadata.toByteArray()),
-                    client.transactionOp().create().forPath(zkClusterAssignmentPath, assigmentData.toByteArray()),
+                    client.transactionOp().create().forPath(zkClusterAssignmentPath, assignmentData.toByteArray()),
                     client.transactionOp().create().forPath(getServersPath(zkRootPath)),
                     client.transactionOp().create().forPath(getWritableServersPath(zkRootPath)),
                     client.transactionOp().create().forPath(getStoragePath(zkRootPath), dlogMetadata.serialize()));
@@ -141,8 +141,8 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public void updateClusterAssignmentData(ClusterAssignmentData assigmentData) {
-        byte[] data = assigmentData.toByteArray();
+    public void updateClusterAssignmentData(ClusterAssignmentData assignmentData) {
+        byte[] data = assignmentData.toByteArray();
         try {
             client.setData().forPath(zkClusterAssignmentPath, data);
         } catch (Exception e) {

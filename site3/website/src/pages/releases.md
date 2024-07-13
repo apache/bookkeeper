@@ -29,6 +29,96 @@ Client Guide | API docs
 
 ## News
 
+### 26 June, 2024 Release 4.17.1 available
+
+This is the 49th release of Apache BookKeeper !
+See [BookKeeper 4.17.1 Release Notes](/release-notes#4171) for details.
+
+### 26 June, 2024 Release 4.16.6 available
+
+This is the 48th release of Apache BookKeeper !
+See [BookKeeper 4.16.6 Release Notes](/release-notes#4166) for details.
+
+### 3 April, 2024 Release 4.16.5 available
+ 
+This is the 47th release of Apache BookKeeper !
+See [BookKeeper 4.16.5 Release Notes](/release-notes#4165) for details.
+ 
+### 2 April, 2024 Release 4.17.0 available
+ 
+This is the 46th release of Apache BookKeeper !
+See [BookKeeper 4.17.0 Release Notes](/release-notes#4170) for details.
+ 
+### 19 January, 2024 Release 4.16.4 available
+ 
+This is the 45th release of Apache BookKeeper !
+See [BookKeeper 4.16.4 Release Notes](/release-notes#4164) for details.
+ 
+### 19 December, 2023 Release 4.15.5 available
+ 
+This is the 44th release of Apache BookKeeper !
+See [BookKeeper 4.15.5 Release Notes](/release-notes#4155) for details.
+ 
+### 8 September, 2023 Release 4.16.3 available
+ 
+This is the 43rd release of Apache BookKeeper !
+See [BookKeeper 4.16.3 Release Notes](/release-notes#4163) for details.
+ 
+### 17 August, 2023 Release 4.14.8 available
+ 
+This is the 42nd release of Apache BookKeeper !
+See [BookKeeper 4.14.8 Release Notes](/release-notes#4148) for details.
+ 
+### 2 July, 2023 Release 4.16.2 available
+ 
+This is the 41st release of Apache BookKeeper !
+See [BookKeeper 4.16.2 Release Notes](/release-notes#4162) for details.
+ 
+### 15 April, 2023 Release 4.16.1 available
+ 
+This is the 40th release of Apache BookKeeper !
+See [BookKeeper 4.16.1 Release Notes](/release-notes#4161) for details.
+ 
+### 29 March, 2023 Release 4.16.0 available
+ 
+This is the 39th release of Apache BookKeeper !
+See [BookKeeper 4.16.0 Release Notes](/release-notes#4160) for details.
+ 
+### 14 March, 2023 Release 4.15.4 available
+ 
+This is the 38th release of Apache BookKeeper !
+See [BookKeeper 4.15.4 Release Notes](/release-notes#4154) for details.
+ 
+### 13 February, 2023 Release 4.14.7 available
+ 
+This is the 37th release of Apache BookKeeper !
+See [BookKeeper 4.14.7 Release Notes](/release-notes#4147) for details.
+ 
+### 19 December, 2022 Release 4.14.6 available
+ 
+This is the 36th release of Apache BookKeeper !
+See [BookKeeper 4.14.6 Release Notes](/release-notes#4146) for details.
+ 
+### 14 November, 2022 Release 4.15.3 available
+ 
+This is the 35th release of Apache BookKeeper !
+See [BookKeeper 4.15.3 Release Notes](/release-notes#4153) for details.
+ 
+### 8 October, 2022 Release 4.15.2 available
+ 
+This is the 34th release of Apache BookKeeper !
+See [BookKeeper 4.15.2 Release Notes](/release-notes#4152) for details.
+ 
+### 1 September, 2022 Release 4.15.1 available
+ 
+This is the 33rd release of Apache BookKeeper !
+See [BookKeeper 4.15.1 Release Notes](/release-notes#4151) for details.
+ 
+### 13 May, 2022 Release 4.14.5 available
+ 
+This is the 32nd release of Apache BookKeeper !
+See [BookKeeper 4.14.5 Release Notes](/release-notes#4145) for details.
+
 ### 9 May, 2022 Release 4.15.0 available
 
 This is the 31st release of Apache BookKeeper !
@@ -72,19 +162,19 @@ See [BookKeeper 4.12.1 Release Notes](/release-notes#4121) for details.
 
 ### 11 November, 2020 Release 4.12.0 available
 
-This is the 23th release of Apache BookKeeper !
+This is the 23rd release of Apache BookKeeper !
 
 See [BookKeeper 4.12.0 Release Notes](/release-notes#4120) for details.
 
 ### 20 October, 2020 Release 4.11.1 available
 
-This is the 22th release of Apache BookKeeper !
+This is the 22nd release of Apache BookKeeper !
 
 See [BookKeeper 4.11.1 Release Notes](/release-notes#4111) for details.
 
 ### 10 July, 2020  Release 4.11.0 available
 
-This is the 21th release of Apache BookKeeper !
+This is the 21st release of Apache BookKeeper !
 
 See [BookKeeper 4.11.0 Release Notes](/release-notes#4110) for details.
 

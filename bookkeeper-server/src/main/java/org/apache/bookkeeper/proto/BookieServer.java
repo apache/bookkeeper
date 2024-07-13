@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -108,6 +107,17 @@ public class BookieServer {
         this.nettyServer.setRequestProcessor(this.requestProcessor);
     }
 
+    @VisibleForTesting
+    public static BookieServer newBookieServer(ServerConfiguration conf,
+                                               Bookie bookie,
+                                               StatsLogger statsLogger,
+                                               ByteBufAllocator allocator,
+                                               UncleanShutdownDetection uncleanShutdownDetection)
+            throws CompatibilityException, UnavailableException, SecurityException, IOException,
+            InterruptedException, KeeperException, BookieException {
+        return new BookieServer(conf, bookie, statsLogger, allocator, uncleanShutdownDetection);
+    }
+
     /**
      * Currently the uncaught exception handler is used for DeathWatcher to notify
      * lifecycle management that a bookie is dead for some reasons.
@@ -139,10 +149,6 @@ public class BookieServer {
             deathWatcher.setUncaughtExceptionHandler(uncaughtExceptionHandler);
         }
         deathWatcher.start();
-
-        // fixes test flappers at random places until ISSUE#1400 is resolved
-        // https://github.com/apache/bookkeeper/issues/1400
-        TimeUnit.MILLISECONDS.sleep(250);
     }
 
     @VisibleForTesting

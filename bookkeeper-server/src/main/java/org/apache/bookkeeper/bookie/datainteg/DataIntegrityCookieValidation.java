@@ -87,7 +87,7 @@ public class DataIntegrityCookieValidation implements CookieValidation {
 
     private void stampCookie(Cookie masterCookie, Version expectedVersion, List<File> directories)
             throws BookieException {
-        // stamp to ZK first as it's the authoritive cookie. If this fails part way through
+        // stamp to ZK first as it's the authoritative cookie. If this fails part way through
         // stamping the directories, then a data integrity check will occur.
         log.info("Stamping cookie to ZK");
         masterCookie.writeToRegistrationManager(registrationManager, conf, expectedVersion);

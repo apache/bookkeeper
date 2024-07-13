@@ -263,7 +263,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
         // get key-file and trust-file locations and passwords
         if (!(config instanceof ClientConfiguration)) {
-            throw new SecurityException("Client configruation not provided");
+            throw new SecurityException("Client configuration not provided");
         }
 
         clientConf = (ClientConfiguration) config;
@@ -387,7 +387,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
         // get key-file and trust-file locations and passwords
         if (!(config instanceof ServerConfiguration)) {
-            throw new SecurityException("Server configruation not provided");
+            throw new SecurityException("Server configuration not provided");
         }
 
         serverConf = (ServerConfiguration) config;

@@ -110,7 +110,30 @@ public class BookieProtoEncoding {
                 return msg;
             }
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
-            if (r instanceof BookieProtocol.ReadRequest) {
+            if (r instanceof BookieProtocol.BatchedReadRequest) {
+                int totalHeaderSize = 4 // for request type
+                        + 8 // for ledger id
+                        + 8 // for entry id
+                        + 8 // for request id
+                        + 4 // for max count
+                        + 8; // for max size
+                if (r.hasMasterKey()) {
+                    totalHeaderSize += BookieProtocol.MASTER_KEY_LENGTH;
+                }
+                ByteBuf buf = allocator.buffer(totalHeaderSize + 4 /* frame size */);
+                buf.writeInt(totalHeaderSize);
+                buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
+                buf.writeLong(r.getLedgerId());
+                buf.writeLong(r.getEntryId());
+                buf.writeLong(((BookieProtocol.BatchedReadRequest) r).getRequestId());
+                buf.writeInt(((BookieProtocol.BatchedReadRequest) r).getMaxCount());
+                buf.writeLong(((BookieProtocol.BatchedReadRequest) r).getMaxSize());
+                if (r.hasMasterKey()) {
+                    buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
+                }
+                r.recycle();
+                return buf;
+            } else if (r instanceof BookieProtocol.ReadRequest) {
                 int totalHeaderSize = 4 // for request type
                     + 8 // for ledgerId
                     + 8; // for entryId
@@ -180,6 +203,21 @@ public class BookieProtoEncoding {
                     return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, masterKey);
                 } else {
                     return BookieProtocol.ReadRequest.create(version, ledgerId, entryId, flags, null);
+                }
+            case BookieProtocol.BATCH_READ_ENTRY:
+                ledgerId = packet.readLong();
+                entryId = packet.readLong();
+                long requestId = packet.readLong();
+                int maxCount = packet.readInt();
+                long maxSize = packet.readLong();
+                if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING
+                        && version >= 2) {
+                    byte[] masterKey = readMasterKey(packet);
+                    return BookieProtocol.BatchedReadRequest.create(version, ledgerId, entryId, flags, masterKey,
+                            requestId, maxCount, maxSize);
+                } else {
+                    return BookieProtocol.BatchedReadRequest.create(version, ledgerId, entryId, flags, null,
+                            requestId, maxCount, maxSize);
                 }
             case BookieProtocol.AUTH:
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
@@ -260,6 +298,40 @@ public class BookieProtoEncoding {
                     } else {
                         return ByteBufList.get(buf, rr.getData());
                     }
+                } else if (msg instanceof BookieProtocol.BatchedReadResponse) {
+                    BookieProtocol.BatchedReadResponse brr = (BookieProtocol.BatchedReadResponse) r;
+                    int payloadSize = brr.getData().readableBytes();
+                    int delimiterSize = brr.getData().size() * 4; // The size of each entry.
+                    boolean isSmallEntry = (payloadSize + delimiterSize) < SMALL_ENTRY_SIZE_THRESHOLD;
+
+                    int responseSize = RESPONSE_HEADERS_SIZE + 8 /* request_id */ + payloadSize + delimiterSize;
+                    int bufferSize = 4 /* frame size */ + responseSize;
+                    ByteBuf buf = allocator.buffer(bufferSize);
+                    buf.writeInt(responseSize);
+                    buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
+                    buf.writeInt(r.getErrorCode());
+                    buf.writeLong(r.getLedgerId());
+                    buf.writeLong(r.getEntryId());
+                    buf.writeLong(((BookieProtocol.BatchedReadResponse) r).getRequestId());
+                    if (isSmallEntry) {
+                        for (int i = 0; i < brr.getData().size(); i++) {
+                            ByteBuf entryData = brr.getData().getBuffer(i);
+                            buf.writeInt(entryData.readableBytes());
+                            buf.writeBytes(entryData);
+                        }
+                        brr.release();
+                        return buf;
+                    } else {
+                        ByteBufList byteBufList = ByteBufList.get(buf);
+                        for (int i = 0; i < brr.getData().size(); i++) {
+                            ByteBuf entryData = brr.getData().getBuffer(i);
+                            ByteBuf entryLengthBuf = allocator.buffer(4);
+                            entryLengthBuf.writeInt(entryData.readableBytes());
+                            byteBufList.add(entryLengthBuf);
+                            byteBufList.add(entryData);
+                        }
+                        return byteBufList;
+                    }
                 } else if (msg instanceof BookieProtocol.AddResponse) {
                     ByteBuf buf = allocator.buffer(RESPONSE_HEADERS_SIZE + 4 /* frame size */);
                     buf.writeInt(RESPONSE_HEADERS_SIZE);
@@ -309,6 +381,25 @@ public class BookieProtoEncoding {
 
                 return new BookieProtocol.ReadResponse(
                         version, rc, ledgerId, entryId, buffer.retainedSlice());
+            case BookieProtocol.BATCH_READ_ENTRY:
+                rc = buffer.readInt();
+                ledgerId = buffer.readLong();
+                entryId = buffer.readLong();
+                long requestId = buffer.readLong();
+                ByteBufList data = null;
+                while (buffer.readableBytes() > 0) {
+                    int entrySize = buffer.readInt();
+                    int entryPos = buffer.readerIndex();
+                    if (data == null) {
+                        data = ByteBufList.get(buffer.retainedSlice(entryPos, entrySize));
+                        buffer.readerIndex(entryPos + entrySize);
+                    } else {
+                        data.add(buffer.retainedSlice(entryPos, entrySize));
+                        buffer.readerIndex(entryPos + entrySize);
+                    }
+                }
+                return new BookieProtocol.BatchedReadResponse(version, rc, ledgerId, entryId, requestId, data == null
+                        ? ByteBufList.get() : data.retain());
             case BookieProtocol.AUTH:
                 ByteBufInputStream bufStream = new ByteBufInputStream(buffer);
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
@@ -384,7 +475,7 @@ public class BookieProtoEncoding {
         // a heap buffer while serializing and pass it down to netty library.
         // In AbstractChannel#filterOutboundMessage(), netty copies that data to a direct buffer if
         // it is currently in heap (otherwise skips it and uses it directly).
-        // Allocating a direct buffer reducing unncessary CPU cycles for buffer copies in BK client
+        // Allocating a direct buffer reducing unnecessary CPU cycles for buffer copies in BK client
         // and also helps alleviate pressure off the GC, since there is less memory churn.
         // Bookies aren't usually CPU bound. This change improves READ_ENTRY code paths by a small factor as well.
         ByteBuf buf = allocator.directBuffer(frameSize, frameSize);

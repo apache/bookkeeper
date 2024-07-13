@@ -3,7 +3,7 @@
 
 Apache Bookkeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
 
-> [Apache Bookkeeper](http://bookkeeper.apache.org/)
+> [Apache Bookkeeper](https://bookkeeper.apache.org/)
 
 
 # How to use this image
@@ -13,7 +13,6 @@ Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve
 Just like running a BookKeeper cluster in one machine(https://bookkeeper.apache.org/docs/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
 ```
 docker run -it \
-     --env JAVA_HOME=/usr/lib/jvm/java-11 \
      --entrypoint "/bin/bash" \
      apache/bookkeeper \
      -c "/opt/bookkeeper/bin/bookkeeper localbookie 3"
@@ -118,7 +117,7 @@ docker run -it --rm \
     --network "bk_network" \
     --env BK_zkServers=test_zookeeper:2181 \
     apache/bookkeeper \
-    bookkeeper shell metaformat
+    /opt/bookkeeper/bin/bookkeeper shell metaformat
 ```
 Now we can start our Bookkeeper ensemble (e.g. with three bookies):
 ```
@@ -148,7 +147,7 @@ Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker cont
 
 There are 2 ways to set Bookkeeper configuration:
 
-1, Apply setted (e.g. docker -e kk=vv) environment variables into configuration files. Environment variable names is in format "BK_originalName", in which "originalName" is the key in config files.
+1, Apply set (e.g. docker -e kk=vv) environment variables into configuration files. Environment variable names is in format "BK_originalName", in which "originalName" is the key in config files.
 
 2, If you are able to handle your local volumes, use `docker --volume` command to bind-mount your local configure volumes to `/opt/bookkeeper/conf`.
 
@@ -158,7 +157,7 @@ $ docker run --name bookie1 -d \
     -v $(local_configure_dir):/opt/bookkeeper/conf/ \   < == use 2nd approach, mount dir contains config_files
     -e BK_bookiePort=3181 \                             < == use 1st approach, set bookiePort
     -e BK_zkServers=zk-server1:2181,zk-server2:2181 \   < == use 1st approach, set zookeeper servers
-    -e BK_journalPreAllocSizeMB=32 \                    < == use 1st approach, set journalPreAllocSizeMB in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf)
+    -e BK_journalPreAllocSizeMB=32 \                    < == use 1st approach, set journalPreAllocSizeMB in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf)
     apache/bookkeeper
 ```
 
@@ -215,7 +214,7 @@ Default value is empty - " ". so ledgers dir in zookeeper will be at "/ledgers" 
 #### `BK_DATA_DIR`
 This variable allows you to specify where to store data in docker instance.
 
-This could be override by env vars "BK_journalDirectory", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectory`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
+This could be override by env vars "BK_journalDirectories", "BK_ledgerDirectories", "BK_indexDirectories"  and also `journalDirectories`, `ledgerDirectories`, `indexDirectories` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf).
 
 Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/journal`, `/data/bookkeeper/ledgers` and `/data/bookkeeper/index` to hold Bookkeeper data in docker.
 
@@ -232,8 +231,8 @@ Be careful where you put the transaction log (journal). A dedicated transaction 
 
 Here is some useful and graceful command the could be used to replace the default command, once you want to delete the cookies and do auto recovery:
 ```
-/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
-/bookkeeper/bin/bookkeeper autorecovery
+/opt/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force -deleteCookie
+/opt/bookkeeper/bin/bookkeeper autorecovery
 ```
 Use them, and replace the default [CMD] when you wanted to do things other than start a bookie.
 

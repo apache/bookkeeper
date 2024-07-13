@@ -32,9 +32,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
 import org.junit.Test;
 
@@ -173,6 +175,68 @@ public class ConcurrentLongLongPairHashMapTest {
         assertTrue(map.put(6, 6, 66, 66));
         assertTrue(map.remove(6, 6, 66, 66));
         assertTrue(map.capacity() == 8);
+    }
+
+    @Test
+    public void testConcurrentExpandAndShrinkAndGet()  throws Throwable {
+        ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+        assertEquals(map.capacity(), 4);
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        final int readThreads = 16;
+        final int writeThreads = 1;
+        final int n = 1_000;
+        CyclicBarrier barrier = new CyclicBarrier(writeThreads + readThreads);
+        Future<?> future = null;
+        AtomicReference<Exception> ex = new AtomicReference<>();
+
+        for (int i = 0; i < readThreads; i++) {
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                while (true) {
+                    try {
+                        map.get(1, 1);
+                    } catch (Exception e) {
+                        ex.set(e);
+                    }
+                }
+            });
+        }
+
+        assertTrue(map.put(1, 1, 11, 11));
+        future = executor.submit(() -> {
+            try {
+                barrier.await();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            for (int i = 0; i < n; i++) {
+                // expand hashmap
+                assertTrue(map.put(2, 2, 22, 22));
+                assertTrue(map.put(3, 3, 33, 33));
+                assertEquals(map.capacity(), 8);
+
+                // shrink hashmap
+                assertTrue(map.remove(2, 2, 22, 22));
+                assertTrue(map.remove(3, 3, 33, 33));
+                assertEquals(map.capacity(), 4);
+            }
+        });
+
+        future.get();
+        assertTrue(ex.get() == null);
+        // shut down pool
+        executor.shutdown();
     }
 
     @Test
@@ -423,7 +487,7 @@ public class ConcurrentLongLongPairHashMapTest {
     }
 
     @Test
-    public void testIvalidKeys() {
+    public void testInvalidKeys() {
         ConcurrentLongLongPairHashMap map = ConcurrentLongLongPairHashMap.newBuilder()
                 .expectedItems(16)
                 .concurrencyLevel(1)

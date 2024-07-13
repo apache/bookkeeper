@@ -25,6 +25,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+import static org.apache.bookkeeper.bookie.BookieImpl.newBookieImpl;
+import static org.apache.bookkeeper.bookie.LegacyCookieValidation.newLegacyCookieValidation;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 import static org.apache.bookkeeper.server.Main.storageDirectoriesFromConf;
@@ -50,7 +52,6 @@ import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.CookieValidation;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
-import org.apache.bookkeeper.bookie.LegacyCookieValidation;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.ScrubberStats;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
@@ -295,7 +296,7 @@ public class EmbeddedServer {
                 StatsProviderService statsProviderService = new StatsProviderService(conf);
                 statsProvider = statsProviderService.getStatsProvider();
                 serverBuilder.addComponent(statsProviderService);
-                log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
+                log.info("Load lifecycle component : {}", statsProviderService.getName());
             }
 
             StatsLogger rootStatsLogger = statsProvider.getStatsLogger("");
@@ -403,8 +404,8 @@ public class EmbeddedServer {
                         registrationManager, integCheck);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
             } else {
-                CookieValidation cookieValidation =
-                        new LegacyCookieValidation(conf.getServerConf(), registrationManager);
+                CookieValidation cookieValidation = newLegacyCookieValidation(conf.getServerConf(),
+                        registrationManager);
                 cookieValidation.checkCookies(storageDirectoriesFromConf(conf.getServerConf()));
                 // storage should be created after legacy validation or it will fail (it would find ledger dirs)
                 storage = BookieResources.createLedgerStorage(conf.getServerConf(), ledgerManager,
@@ -419,7 +420,7 @@ public class EmbeddedServer {
                         bookieStats, allocator,
                         bookieServiceInfoProvider);
             } else {
-                bookie = new BookieImpl(conf.getServerConf(), registrationManager, storage,
+                bookie = newBookieImpl(conf.getServerConf(), registrationManager, storage,
                         diskChecker,
                         ledgerDirsManager, indexDirsManager,
                         bookieStats, allocator,
@@ -431,7 +432,7 @@ public class EmbeddedServer {
                     new BookieService(conf, bookie, rootStatsLogger, allocatorWithOomHandler, uncleanShutdownDetection);
 
             serverBuilder.addComponent(bookieService);
-            log.info("Load lifecycle component : {}", BookieService.class.getName());
+            log.info("Load lifecycle component : {}", bookieService.getName());
 
             if (conf.getServerConf().isLocalScrubEnabled()) {
                 serverBuilder.addComponent(
@@ -446,7 +447,7 @@ public class EmbeddedServer {
                 autoRecoveryService = new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
 
                 serverBuilder.addComponent(autoRecoveryService);
-                log.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
+                log.info("Load lifecycle component : {}", autoRecoveryService.getName());
             }
 
             // 7. build data integrity check service
@@ -456,7 +457,7 @@ public class EmbeddedServer {
                 dataIntegrityService =
                         new DataIntegrityService(conf, rootStatsLogger.scope(REPLICATION_SCOPE), integCheck);
                 serverBuilder.addComponent(dataIntegrityService);
-                log.info("Load lifecycle component : {}", DataIntegrityService.class.getName());
+                log.info("Load lifecycle component : {}", dataIntegrityService.getName());
             }
 
             // 8. build http service
@@ -470,7 +471,7 @@ public class EmbeddedServer {
                         .build();
                 httpService = new HttpService(provider, conf, rootStatsLogger);
                 serverBuilder.addComponent(httpService);
-                log.info("Load lifecycle component : {}", HttpService.class.getName());
+                log.info("Load lifecycle component : {}", httpService.getName());
             }
 
             // 9. build extra services
@@ -483,7 +484,7 @@ public class EmbeddedServer {
                             rootStatsLogger);
                     for (ServerLifecycleComponent component : components) {
                         serverBuilder.addComponent(component);
-                        log.info("Load lifecycle component : {}", component.getClass().getName());
+                        log.info("Load lifecycle component : {}", component.getName());
                     }
                 } catch (Exception e) {
                     if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {

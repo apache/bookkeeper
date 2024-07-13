@@ -140,7 +140,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
-                                this.ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver)
+                                this.ignoreLocalNodeInPlacementPolicy,
+                                this.useHostnameResolveLocalNodePlacementPolicy, statsLogger, bookieAddressResolver)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
 
@@ -201,7 +202,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                                 this.stabilizePeriodSeconds, this.reorderThresholdPendingRequests,
                                                 this.isWeighted, this.maxWeightMultiple,
                                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
-                                                this.ignoreLocalNodeInPlacementPolicy, statsLogger,
+                                                this.ignoreLocalNodeInPlacementPolicy,
+                                                this.useHostnameResolveLocalNodePlacementPolicy, statsLogger,
                                                 bookieAddressResolver)
                                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
                                 perRegionPlacement.put(newRegion, newRegionPlacement);
@@ -242,7 +244,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
                                 this.reorderThresholdPendingRequests, this.isWeighted, this.maxWeightMultiple,
                                 this.minNumRacksPerWriteQuorum, this.enforceMinNumRacksPerWriteQuorum,
-                                this.ignoreLocalNodeInPlacementPolicy, statsLogger, bookieAddressResolver)
+                                this.ignoreLocalNodeInPlacementPolicy, this.useHostnameResolveLocalNodePlacementPolicy,
+                                statsLogger, bookieAddressResolver)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY,
@@ -321,10 +324,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     excludedBookies);
             Set<Node> excludeNodes = convertBookiesToNodes(comprehensiveExclusionBookiesSet);
             List<String> availableRegions = new ArrayList<>();
-            for (String region: perRegionPlacement.keySet()) {
-                if ((null == disallowBookiePlacementInRegionFeatureName)
+            for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> entry : perRegionPlacement.entrySet()) {
+                String region = entry.getKey();
+                if (!entry.getValue().knownBookies.isEmpty() && (null == disallowBookiePlacementInRegionFeatureName
                         || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName)
-                            .isAvailable()) {
+                            .isAvailable())) {
                     availableRegions.add(region);
                 }
             }
@@ -388,9 +392,20 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
                 int startRegionIndex = lastRegionIndex % numRegionsAvailable;
+                int localRegionIndex = -1;
+                if (myRegion != null && !UNKNOWN_REGION.equals(myRegion)) {
+                    localRegionIndex = availableRegions.indexOf(myRegion);
+                }
+                String region = myRegion;
                 for (int i = 0; i < numRegionsAvailable; ++i) {
-                    String region = availableRegions.get(startRegionIndex % numRegionsAvailable);
-                    startRegionIndex++;
+                    // select the local region first, and for the rest region select, use round-robin selection.
+                    if (i > 0 || localRegionIndex == -1) {
+                        if (startRegionIndex % numRegionsAvailable == localRegionIndex) {
+                            startRegionIndex++;
+                        }
+                        region = availableRegions.get(startRegionIndex % numRegionsAvailable);
+                        startRegionIndex++;
+                    }
                     final Pair<Integer, Integer> currentAllocation = regionsWiseAllocation.get(region);
                     TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(region);
                     if (!regionsReachedMaxAllocation.contains(region)) {

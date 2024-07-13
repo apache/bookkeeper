@@ -80,7 +80,7 @@ Every delete must go through single routine/path in the code and that needs to i
 ### Archival bit in the metadata to assist Two phase Deletes
 Main aim of this feature is to be as conservative as possible on the delete path. As explained in the stateful explicit deletes section, lack of ledgerId in the metadata means that ledger is deleted. A bug in the client code may erroneously delete the ledger. To protect from that, we want to introduce a archive/backedup bit. A separate backup/archival application can mark the bit after successfully backing up the ledger, and later on main client application will send the delete. If this feature is enabled, BK client will reject and throw an exception if it receives a delete request without archival/backed-up bit is not set. This protects the data from bugs and erroneous deletes.
 
-### Stateful explicit deltes
+### Stateful explicit deletes
 Current bookkeeper deletes synchronously deletes the metadata in the zookeeper. Bookies implicitly assume that a particular ledger is deleted if it is not present in the metadata. This process has no crosscheck if the ledger is actually deleted. Any ZK corruption or loss of the ledger path znodes will make bookies to delete data on the disk. No cross check. Even bugs in bookie code which ‘determines’ if a ledger is present on the zk or not, may lead to data deletion. 
 
 Right way to deal with this is to asynchronously delete metadata after each bookie explicitly checks that a particular ledger is deleted. This way each bookie explicitly checks the ‘delete state’ of the ledger before deleting on the disk data. One of the proposal is to move the deleted ledgers under /deleted/&lt;ledgerId&gt; other idea is to add a delete state, Open->Closed->Deleted.
@@ -96,9 +96,9 @@ If a bookie is down for long time, what would be the delete policy for the metad
 There will be lots of corner case scenarios we need to deal with. For example: 
 A bookie-1 hosting data for ledger-1  is down for long time
 Ledger-1 data has been replicated to other bookies
-Ledger-1 is deleted, and its data and metadata is clared.
+Ledger-1 is deleted, and its data and metadata is cleared.
 Now bookie-1 came back to life. Since our policy is ‘explicit state check delete’ bookie-1 can’t delete ledger-1 data as it can’t explicitly validate that the ledger-1 has been deleted. 
-One possible solution: keep tomestones of deleted ledgers around for some duration. If a bookie is down for more than that duration, it needs to be decommissioned  and add as a new bookie. 
+One possible solution: keep tombstones of deleted ledgers around for some duration. If a bookie is down for more than that duration, it needs to be decommissioned  and add as a new bookie. 
 Enhance: Archival bit in the metadata to assist Two phase Deletes
 Main aim of this feature is to be as conservative as possible on the delete path. As explained in the stateful explicit deletes section, lack of ledgerId in the metadata means that ledger is deleted. A bug in the client code may erroneously delete the ledger. To protect from that, we want to introduce a archive/backedup bit. A separate backup/archival application can mark the bit after successfully backing up the ledger, and later on main client application will send the delete. If this feature is enabled, BK client will reject and throw an exception if it receives a delete request without archival/backed-up bit is not set. This protects the data from bugs and erroneous deletes.
 

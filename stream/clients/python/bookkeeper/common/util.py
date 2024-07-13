@@ -17,13 +17,13 @@ import sys
 __PYTHON3__ = sys.version_info >= (3, 0)
 
 
-def to_bytes(n, length, endianess='big'):
+def to_bytes(n, length, endianness='big'):
     if __PYTHON3__:
-        return n.to_bytes(length, endianess)
+        return n.to_bytes(length, endianness)
     else:
         h = '%x' % n
         s = ('0'*(len(h) % 2) + h).zfill(length*2).decode('hex')
-        return s if endianess == 'big' else s[::-1]
+        return s if endianness == 'big' else s[::-1]
 
 
 def new_hostname_with_port(hostname, default_port=4181):

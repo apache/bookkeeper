@@ -49,7 +49,7 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
 
     /**
      * Mark a ledger as underreplicated with missing bookies. The replication should then
-     * check which fragements are underreplicated and rereplicate them.
+     * check which fragments are underreplicated and rereplicate them.
      *
      * @param ledgerId ledger id
      * @param missingReplicas missing replicas
@@ -240,8 +240,9 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * @param cb
      * @throws ReplicationException.UnavailableException
      */
-    void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
-            throws ReplicationException.UnavailableException;
+    @Deprecated
+    default void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {}
 
     /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.

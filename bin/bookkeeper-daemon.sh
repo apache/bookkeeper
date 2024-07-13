@@ -112,7 +112,7 @@ start()
 {
   if [ -f $pid_file ]; then
     PREVIOUS_PID=$(cat $pid_file)
-    if kill -0 $PREVIOUS_PID > /dev/null 2>&1; then
+    if ps -p $PREVIOUS_PID > /dev/null 2>&1; then
       echo $command running as process $PREVIOUS_PID.  Stop it first.
       exit 1
     fi
@@ -125,7 +125,7 @@ start()
   echo $! > $pid_file
   sleep 1; head $out
   sleep 2;
-  if ! kill -0 $! > /dev/null ; then
+  if ! ps -p $! > /dev/null ; then
     exit 1
   fi
 }
@@ -134,13 +134,13 @@ stop()
 {
   if [ -f $pid_file ]; then
     TARGET_PID=$(cat $pid_file)
-    if kill -0 $TARGET_PID > /dev/null 2>&1; then
+    if ps -p $TARGET_PID > /dev/null 2>&1; then
       echo stopping $command
       kill $TARGET_PID
 
       count=0
       location=$BOOKIE_LOG_DIR
-      while kill -0 $TARGET_PID > /dev/null 2>&1;
+      while ps -p $TARGET_PID > /dev/null 2>&1;
       do
         echo "Shutdown is in progress... Please wait..."
         sleep 1
@@ -155,9 +155,19 @@ stop()
         echo "Shutdown completed."
       fi
 
-      if kill -0 $TARGET_PID > /dev/null 2>&1; then
+      if ps -p $TARGET_PID > /dev/null 2>&1; then
         fileName=$location/$command.out
-        $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
+        # Check for the java to use
+        if [[ -z ${JAVA_HOME} ]]; then
+          JSTACK=$(which jstack)
+          if [ $? -ne 0 ]; then
+            echo "Error: JAVA_HOME not set, and no jstack executable found in $PATH." 1>&2
+            exit 1
+          fi
+        else
+          JSTACK=${JAVA_HOME}/bin/jstack
+        fi
+        $JSTACK $TARGET_PID > $fileName
         echo Thread dumps are taken for analysis at $fileName
         if [ "$1" == "-force" ]
         then
@@ -196,9 +206,9 @@ case $startStop in
     if [ "$?" == 0 ]
     then
       sleep 3
-      paramaters="$*"
-      startParamaters=${paramaters//-force/}
-      start "$startParamaters"
+      parameters="$*"
+      startParameters=${parameters//-force/}
+      start "$startParameters"
     else
       echo "WARNNING :  $command failed restart, for $command is not stopped completely."
     fi

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>bookkeeper-server-tests-shaded</artifactId>
@@ -40,8 +40,16 @@
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-reload4j</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ch.qos.reload4j</groupId>
+          <artifactId>reload4j</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.bookkeeper</groupId>
@@ -75,7 +83,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -103,7 +110,7 @@
             </configuration>
           </execution>
         </executions>
-      </plugin> 
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
@@ -129,8 +136,8 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
         <configuration>
           <filesets>
             <fileset>

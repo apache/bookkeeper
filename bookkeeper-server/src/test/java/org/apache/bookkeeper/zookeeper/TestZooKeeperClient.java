@@ -157,7 +157,7 @@ public abstract class TestZooKeeperClient extends TestCase {
     }
 
     @Test
-    public void testReconnectAfterExipred() throws Exception {
+    public void testReconnectAfterExpired() throws Exception {
         final CountDownLatch expireLatch = new CountDownLatch(1);
         Watcher testWatcher = new Watcher() {
 
@@ -171,7 +171,7 @@ public abstract class TestZooKeeperClient extends TestCase {
         };
         final int timeout = 2000;
         ZooKeeperWatcherBase watcherManager =
-                new ZooKeeperWatcherBase(timeout).addChildWatcher(testWatcher);
+                new ZooKeeperWatcherBase(timeout, false).addChildWatcher(testWatcher);
         List<Watcher> watchers = new ArrayList<Watcher>(1);
         watchers.add(testWatcher);
         ZooKeeperClient client = new ShutdownZkServerClient(
@@ -893,6 +893,34 @@ public abstract class TestZooKeeperClient extends TestCase {
         }, null);
         deleteChildLatch.await();
         logger.info("Delete children from znode " + path);
+    }
+
+    @Test
+    public void testAllowReadOnlyMode() throws Exception {
+        if (zkUtil instanceof ZooKeeperClusterUtil) {
+            System.setProperty("readonlymode.enabled", "true");
+            ((ZooKeeperClusterUtil) zkUtil).enableLocalSession(true);
+            zkUtil.restartCluster();
+            Thread.sleep(2000);
+            ((ZooKeeperClusterUtil) zkUtil).stopPeer(2);
+            ((ZooKeeperClusterUtil) zkUtil).stopPeer(3);
+        }
+
+        try (ZooKeeperClient client = ZooKeeperClient.newBuilder()
+                .connectString(zkUtil.getZooKeeperConnectString())
+                .sessionTimeoutMs(30000)
+                .watchers(new HashSet<Watcher>())
+                .operationRetryPolicy(retryPolicy)
+                .allowReadOnlyMode(true)
+                .build()) {
+            Assert.assertTrue("Client failed to connect a ZooKeeper in read-only mode.",
+                    client.getState().isConnected());
+        } finally {
+            if (zkUtil instanceof ZooKeeperClusterUtil) {
+                System.setProperty("readonlymode.enabled", "false");
+                ((ZooKeeperClusterUtil) zkUtil).enableLocalSession(false);
+            }
+        }
     }
 
 }

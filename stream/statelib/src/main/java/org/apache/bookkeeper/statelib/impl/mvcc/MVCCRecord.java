@@ -33,7 +33,7 @@ import org.apache.bookkeeper.common.util.Recycled;
 import org.apache.bookkeeper.stream.proto.kv.store.ValueType;
 
 /**
- * An object represents the mvcc metdata and value for a given key.
+ * An object represents the mvcc metadata and value for a given key.
  */
 @Data
 @Setter

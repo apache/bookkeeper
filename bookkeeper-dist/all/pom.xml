@@ -23,12 +23,12 @@
   <parent>
     <artifactId>bookkeeper-dist</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
   <artifactId>bookkeeper-dist-all</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>Apache BookKeeper :: Dist (All)</name>
 
   <dependencies>
@@ -129,8 +129,8 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <finalName>bookkeeper-all-${project.version}</finalName>
           <attach>false</attach>
@@ -152,7 +152,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>${maven-deploy-plugin.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>

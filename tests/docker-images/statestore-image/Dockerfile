@@ -17,36 +17,40 @@
 # under the License.
 #
 
-FROM ubuntu:22.10
+FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG TARGETARCH
-
-#ENV OPTS="$OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
 ENV BOOKIE_GRPC_PORT=4181
 EXPOSE ${BOOKIE_PORT} ${BOOKIE_HTTP_PORT} ${BOOKIE_GRPC_PORT}
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-$TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
-
+ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
+ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
 RUN set -x \
+    && sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
+     -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
+    && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
     && adduser "${BK_USER}" \
     && apt-get update \
+    && apt-get install -y ca-certificates apt-transport-https \
     && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
+    && apt-get -y install netcat dnsutils less procps iputils-ping \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
-     && apt-get -y --purge autoremove \
-     && apt-get autoclean \
-     && apt-get clean \
-     && rm -rf /var/lib/apt/lists/*
+    && apt-get -y --purge autoremove \
+    && apt-get autoclean \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && pip install zk-shell \
     && mkdir -pv /opt \
-    && cd /opt
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 WORKDIR /opt/bookkeeper
 RUN mkdir /opt/bookkeeper/lib

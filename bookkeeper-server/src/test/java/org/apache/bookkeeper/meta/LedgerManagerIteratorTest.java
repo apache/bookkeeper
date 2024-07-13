@@ -47,11 +47,11 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.CreateMode;
@@ -69,7 +69,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     }
 
     /**
-     * Remove ledger using lm syncronously.
+     * Remove ledger using lm synchronously.
      *
      * @param lm
      * @param ledgerId
@@ -80,7 +80,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     }
 
     /**
-     * Create ledger using lm syncronously.
+     * Create ledger using lm synchronously.
      *
      * @param lm
      * @param ledgerId

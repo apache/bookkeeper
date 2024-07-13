@@ -12,7 +12,7 @@ a new way to manage configuration settings for better documentation.
 ### Public Interfaces
 
 1. Introduced `ConfigKey` for defining a configuration key. A configuration key
-   will include informations, such as required/optional, deprecated, documentation
+   will include information, such as required/optional, deprecated, documentation
    and etc.
 
 ```java

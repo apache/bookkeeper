@@ -11,7 +11,7 @@
 # limitations under the License.
 
 try:
-    # Try with C based implemenation if available
+    # Try with C based implementation if available
     import mmh3
 except ImportError:
     # Fallback to pure python

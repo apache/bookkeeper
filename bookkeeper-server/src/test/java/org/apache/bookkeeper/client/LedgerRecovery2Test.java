@@ -294,7 +294,7 @@ public class LedgerRecovery2Test {
     }
 
     /**
-     * This test verifies the fix for the data loss scenario found by the TLA+ specfication, specifically
+     * This test verifies the fix for the data loss scenario found by the TLA+ specification, specifically
      * the invariant violation that metadata and writer can diverge. The scenario is that the original writer
      * can commit an entry e that will later be lost because a second writer can close the ledger at e-1.
      * The cause is that fencing was originally only performed on LAC reads which is not enough to prevent

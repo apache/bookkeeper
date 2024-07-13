@@ -46,6 +46,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -100,7 +101,9 @@ public class LedgerHandle implements WriteHandle {
     final byte[] ledgerKey;
     private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
+    final ExecutorService executor;
     long lastAddPushed;
+    boolean notSupportBatch;
 
     private enum HandleState {
         OPEN,
@@ -194,6 +197,7 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
+        this.executor = clientCtx.getMainWorkerPool().chooseThread(ledgerId);
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
@@ -639,6 +643,26 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * Read a sequence of entries synchronously.
+     *
+     * @param startEntry
+     *          start entry id
+     * @param maxCount
+     *          the total entries count.
+     * @param maxSize
+     *          the total entries size.
+     * @see #asyncBatchReadEntries(long, int, long, ReadCallback, Object)
+     */
+    public Enumeration<LedgerEntry> batchReadEntries(long startEntry, int maxCount, long maxSize)
+            throws InterruptedException, BKException {
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
+
+        asyncBatchReadEntries(startEntry, maxCount, maxSize, new SyncReadCallback(result), null);
+
+        return SyncCallbackUtils.waitForResult(result);
+    }
+
+    /**
      * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
      * This is the same of
      * {@link #asyncReadUnconfirmedEntries(long, long, ReadCallback, Object) }
@@ -657,6 +681,27 @@ public class LedgerHandle implements WriteHandle {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
         asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
+
+        return SyncCallbackUtils.waitForResult(result);
+    }
+
+    /**
+     * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+     * This is the same of
+     * {@link #asyncBatchReadUnconfirmedEntries(long, int, long, ReadCallback, Object) }
+     *
+     * @param firstEntry
+     *          id of first entry of sequence (included)
+     * @param maxCount
+     *          id of last entry of sequence (included)
+     * @param maxSize
+     *          the total entries size
+     */
+    public Enumeration<LedgerEntry> batchReadUnconfirmedEntries(long firstEntry, int maxCount, long maxSize)
+            throws InterruptedException, BKException {
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
+
+        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, new SyncReadCallback(result), null);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -693,10 +738,54 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * Read a sequence of entries in asynchronously.
+     * It send an RPC to get all entries instead of send multi RPC to get all entries.
+     *
+     * @param startEntry
+     *          id of first entry of sequence
+     * @param maxCount
+     *          the entries count
+     * @param maxSize
+     *          the total entries size
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     */
+    public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb, Object ctx) {
+        // Little sanity check
+        if (startEntry > lastAddConfirmed) {
+            LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
+                    ledgerId, startEntry, lastAddConfirmed);
+            cb.readComplete(BKException.Code.ReadException, this, null, ctx);
+            return;
+        }
+        if (notSupportBatchRead()) {
+            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
+        } else {
+            asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
+                @Override
+                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    //If the bookie server not support the batch read request, the bookie server will close the
+                    // connection, then get the BookieHandleNotAvailableException.
+                    if (rc == Code.BookieHandleNotAvailableException) {
+                        notSupportBatch = true;
+                        long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+                        asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
+                    } else {
+                        cb.readComplete(rc, lh, seq, ctx);
+                    }
+                }
+            }, ctx, false);
+        }
+    }
+
+    /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
@@ -732,6 +821,48 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+     * It sends an RPC to get all entries instead of send multi RPC to get all entries.
+     * @param startEntry
+     *          id of first entry of sequence
+     * @param maxCount
+     *          the entries count
+     * @param maxSize
+     *          the total entries size
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     */
+    public void asyncBatchReadUnconfirmedEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb,
+            Object ctx) {
+        // Little sanity check
+        if (startEntry < 0) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{}", ledgerId, startEntry);
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
+        }
+        if (notSupportBatchRead()) {
+            long lastEntry = startEntry + maxCount - 1;
+            asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
+        } else {
+            asyncBatchReadEntriesInternal(startEntry, maxCount, maxSize, new ReadCallback() {
+                @Override
+                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    //If the bookie server not support the batch read request, the bookie server will close the
+                    // connection, then get the BookieHandleNotAvailableException.
+                    if (rc == Code.BookieHandleNotAvailableException) {
+                        notSupportBatch = true;
+                        long lastEntry = startEntry + maxCount - 1;
+                        asyncReadEntriesInternal(startEntry, lastEntry, cb, ctx, false);
+                    } else {
+                        cb.readComplete(rc, lh, seq, ctx);
+                    }
+                }
+            }, ctx, false);
+        }
+    }
+
+    /**
      * Read a sequence of entries asynchronously.
      *
      * @param firstEntry
@@ -758,10 +889,127 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * Read a sequence of entries in asynchronously.
+     * It sends an RPC to get all entries instead of send multi RPC to get all entries.
+     *
+     * @param startEntry
+     *          id of first entry of sequence
+     * @param maxCount
+     *          the entries count
+     * @param maxSize
+     *          the total entries size
+     */
+    @Override
+    public CompletableFuture<LedgerEntries> batchReadAsync(long startEntry, int maxCount, long maxSize) {
+        // Little sanity check
+        if (startEntry < 0) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{}", ledgerId, startEntry);
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+        if (startEntry > lastAddConfirmed) {
+            LOG.error("ReadAsync exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
+                    ledgerId, startEntry, lastAddConfirmed);
+            return FutureUtils.exception(new BKReadException());
+        }
+        if (notSupportBatchRead()) {
+            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+            return readEntriesInternalAsync(startEntry, lastEntry, false);
+        }
+        CompletableFuture<LedgerEntries> future = new CompletableFuture<>();
+        batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
+                .whenComplete((entries, ex) -> {
+                    if (ex != null) {
+                        //If the bookie server not support the batch read request, the bookie server will close the
+                        // connection, then get the BookieHandleNotAvailableException.
+                        if (ex instanceof BKException.BKBookieHandleNotAvailableException) {
+                            notSupportBatch = true;
+                            long lastEntry = Math.min(startEntry + maxCount - 1, lastAddConfirmed);
+                            readEntriesInternalAsync(startEntry, lastEntry, false).whenComplete((entries1, ex1) -> {
+                                if (ex1 != null) {
+                                    future.completeExceptionally(ex1);
+                                } else {
+                                    future.complete(entries1);
+                                }
+                            });
+                        } else {
+                            future.completeExceptionally(ex);
+                        }
+                    } else {
+                        future.complete(entries);
+                    }
+                });
+        return future;
+    }
+
+    private boolean notSupportBatchRead() {
+        if (!clientCtx.getConf().batchReadEnabled) {
+            return true;
+        }
+        if (notSupportBatch) {
+            return true;
+        }
+        LedgerMetadata ledgerMetadata = getLedgerMetadata();
+        return ledgerMetadata.getEnsembleSize() != ledgerMetadata.getWriteQuorumSize();
+    }
+
+    private CompletableFuture<LedgerEntries> batchReadEntriesInternalAsync(long startEntry, int maxCount, long maxSize,
+            boolean isRecoveryRead) {
+        int nettyMaxFrameSizeBytes = clientCtx.getConf().nettyMaxFrameSizeBytes;
+        if (maxSize > nettyMaxFrameSizeBytes) {
+            LOG.info(
+                "The max size is greater than nettyMaxFrameSizeBytes, use nettyMaxFrameSizeBytes:{} to replace it.",
+                nettyMaxFrameSizeBytes);
+            maxSize = nettyMaxFrameSizeBytes;
+        }
+        if (maxSize <= 0) {
+            LOG.info("The max size is negative, use nettyMaxFrameSizeBytes:{} to replace it.", nettyMaxFrameSizeBytes);
+            maxSize = nettyMaxFrameSizeBytes;
+        }
+        BatchedReadOp op = new BatchedReadOp(this, clientCtx,
+                startEntry, maxCount, maxSize, isRecoveryRead);
+        if (!clientCtx.isClientClosed()) {
+            // Waiting on the first one.
+            // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
+            // state later after N requests sent.
+            // Unfortunately it seems that alternatives are:
+            // - send reads one-by-one (up to the app)
+            // - rework LedgerHandle to send requests one-by-one (maybe later, potential perf impact)
+            // - block worker pool (not good)
+            // Even with this implementation one should be more concerned about OOME when all read responses arrive
+            // or about overloading bookies with these requests then about submission of many small requests.
+            // Naturally one of the solutions would be to submit smaller batches and in this case
+            // current implementation will prevent next batch from starting when bookie is
+            // unresponsive thus helpful enough.
+            if (clientCtx.getConf().waitForWriteSetMs >= 0) {
+                DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(startEntry);
+                try {
+                    if (!waitForWritable(ws, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
+                        op.allowFailFastOnUnwritableChannel();
+                    }
+                } finally {
+                    ws.recycle();
+                }
+            }
+
+            if (isHandleWritable()) {
+                // Ledger handle in read/write mode: submit to OSE for ordered execution.
+                executeOrdered(op);
+            } else {
+                // Read-only ledger handle: bypass OSE and execute read directly in client thread.
+                // This avoids a context-switch to OSE thread and thus reduces latency.
+                op.run();
+            }
+        } else {
+            op.future().completeExceptionally(BKException.create(ClientClosedException));
+        }
+        return op.future();
+    }
+
+    /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
-     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
@@ -820,6 +1068,40 @@ public class LedgerHandle implements WriteHandle {
                             cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
                         }
                     }
+                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+        } else {
+            cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+        }
+    }
+
+    void asyncBatchReadEntriesInternal(long startEntry, int maxCount, long maxSize, ReadCallback cb,
+            Object ctx, boolean isRecoveryRead) {
+        if (!clientCtx.isClientClosed()) {
+            batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, isRecoveryRead)
+                    .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
+                        @Override
+                        public void onSuccess(LedgerEntries entries) {
+                            cb.readComplete(
+                                    Code.OK,
+                                    LedgerHandle.this,
+                                    IteratorUtils.asEnumeration(
+                                            Iterators.transform(entries.iterator(), le -> {
+                                                LedgerEntry entry = new LedgerEntry((LedgerEntryImpl) le);
+                                                le.close();
+                                                return entry;
+                                            })),
+                                    ctx);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable cause) {
+                            if (cause instanceof BKException) {
+                                BKException bke = (BKException) cause;
+                                cb.readComplete(bke.getCode(), LedgerHandle.this, null, ctx);
+                            } else {
+                                cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
+                            }
+                        }
                     }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
         } else {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
@@ -1910,6 +2192,7 @@ public class LedgerHandle implements WriteHandle {
 
     void ensembleChangeLoop(List<BookieId> origEnsemble, Map<Integer, BookieId> failedBookies) {
         int ensembleChangeId = numEnsembleChanges.incrementAndGet();
+        ensembleChangeCounter.inc();
         String logContext = String.format("[EnsembleChange(ledger:%d, change-id:%010d)]", ledgerId, ensembleChangeId);
 
         // when the ensemble changes are too frequent, close handle
@@ -2048,7 +2331,7 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Return a {@link WriteSet} suitable for reading a particular entry.
-     * This will include all bookies that are cotna
+     * This will include all bookies that are part of the ensemble for the entry.
      */
     WriteSet getWriteSetForReadOperation(long entryId) {
         if (stickyBookieIndex != STICKY_READ_BOOKIE_INDEX_UNSET) {
@@ -2081,7 +2364,11 @@ public class LedgerHandle implements WriteHandle {
      * @throws RejectedExecutionException
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
-        clientCtx.getMainWorkerPool().executeOrdered(ledgerId, runnable);
+        executor.execute(runnable);
     }
 
+    @VisibleForTesting
+    public Queue<PendingAddOp> getPendingAddOps() {
+        return pendingAddOps;
+    }
 }

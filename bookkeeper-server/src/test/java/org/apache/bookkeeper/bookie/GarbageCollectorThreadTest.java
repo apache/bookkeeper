@@ -58,7 +58,6 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.powermock.reflect.Whitebox;
 
 /**
  * Unit test for {@link GarbageCollectorThread}.
@@ -99,11 +98,11 @@ public class GarbageCollectorThreadTest {
         AbstractLogCompactor mockCompactor = mock(AbstractLogCompactor.class);
         when(mockCompactor.compact(any(EntryLogMetadata.class)))
                 .thenThrow(new RuntimeException("Unexpected compaction error"));
-        Whitebox.setInternalState(mockGCThread, "compactor", mockCompactor);
+        mockGCThread.compactor = mockCompactor;
 
         // Although compaction of an entry log fails due to an unexpected error,
         // the `compacting` flag should return to false
-        AtomicBoolean compacting = Whitebox.getInternalState(mockGCThread, "compacting");
+        AtomicBoolean compacting = mockGCThread.compacting;
         assertFalse(compacting.get());
         mockGCThread.compactEntryLog(new EntryLogMetadata(9999));
         assertFalse(compacting.get());

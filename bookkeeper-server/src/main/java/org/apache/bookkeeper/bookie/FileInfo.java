@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored
  * in entry loggers
  * <pre>&lt;header&gt;&lt;index pages&gt;</pre>
- * <b>Header</b> is formated as below:
+ * <b>Header</b> is formatted as below:
  * <pre>&lt;magic bytes&gt;&lt;len of master key&gt;&lt;master key&gt;</pre>
  * <ul>
  * <li>magic bytes: 4 bytes, 'BKLE', version: 4 bytes
@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * <li>master key: master key
  * <li>state: bit map to indicate the state, 32 bits.
  * </ul>
- * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored
+ * <b>Index page</b> is a fixed-length page, which contains several entries which point to the offsets of data stored
  * in entry loggers.
  * </p>
  */

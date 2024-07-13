@@ -51,9 +51,7 @@ fi
 # Check for the java to use
 if [[ -z ${JAVA_HOME} ]]; then
   JAVA=$(which java)
-  if [ $? = 0 ]; then
-    echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
-  else
+  if [ $? != 0 ]; then
     echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
     exit 1
   fi
@@ -71,13 +69,12 @@ source ${BK_CONFDIR}/bkenv.sh
 source ${BK_CONFDIR}/bk_cli_env.sh
 
 detect_jdk8() {
-
-  if [ -f "$JAVA_HOME/lib/modules" ]; then
+  local is_java_8=$($JAVA -version 2>&1 | grep version | grep '"1\.8')
+  if [ -z "$is_java_8" ]; then
      echo "0"
   else
      echo "1"
   fi
-  return
 }
 
 # default netty settings
@@ -196,13 +193,13 @@ find_module_jar() {
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskipTests\` for you ? (y|n) " answer
+      read -p "Do you want me to run \`mvn install -DskipTests\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
           mkdir -p ${BK_HOME}/logs
           output="${BK_HOME}/logs/build.out"
           echo "see output at ${output} for the progress ..." >&2
-          mvn package -DskipTests &> ${output}
+          mvn install -DskipTests &> ${output}
           ;;
         * )
           exit 1
@@ -349,7 +346,7 @@ find_table_service() {
       TABLE_SERVICE_RELEASED="false"
     fi
   fi
-  
+
   # check the configuration to see if table service is enabled or not.
   if [ -z "${ENABLE_TABLE_SERVICE}" ]; then
     # mask exit code if the configuration file doesn't contain `StreamStorageLifecycleComponent`
@@ -362,7 +359,7 @@ find_table_service() {
       ENABLE_TABLE_SERVICE="true"
     fi
   fi
-  
+
   # standalone only run
   if [ \( "x${SERVICE_COMMAND}" == "xstandalone" \) -a \( "x${TABLE_SERVICE_RELEASED}" == "xfalse" \) ]; then
     echo "The release binary is built without table service. Use \`localbookie <n>\` instead of \`standalone\` for local development."

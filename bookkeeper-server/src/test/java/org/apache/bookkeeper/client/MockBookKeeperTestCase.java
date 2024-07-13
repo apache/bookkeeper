@@ -96,6 +96,7 @@ public abstract class MockBookKeeperTestCase {
     protected BookieClient bookieClient;
     protected LedgerManager ledgerManager;
     protected LedgerIdGenerator ledgerIdGenerator;
+    protected EnsemblePlacementPolicy placementPolicy;
 
     private BookieWatcher bookieWatcher;
 
@@ -152,6 +153,7 @@ public abstract class MockBookKeeperTestCase {
         scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(4).name("bk-test").build();
         executor = OrderedExecutor.newBuilder().build();
         bookieWatcher = mock(BookieWatcher.class);
+        placementPolicy = new DefaultEnsemblePlacementPolicy();
 
         bookieClient = mock(BookieClient.class);
         ledgerManager = mock(LedgerManager.class);
@@ -194,7 +196,7 @@ public abstract class MockBookKeeperTestCase {
 
                 @Override
                 public EnsemblePlacementPolicy getPlacementPolicy() {
-                    return null;
+                    return placementPolicy;
                 }
 
                 @Override
@@ -301,8 +303,15 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected void resumeBookieWriteAcks(BookieId address) {
-        suspendedBookiesForForceLedgerAcks.remove(address);
-        List<Runnable> pendingResponses = deferredBookieForceLedgerResponses.remove(address);
+        List<Runnable> pendingResponses;
+
+        // why use the BookieId instance as the object monitor? there is a date race problem if not
+        // see https://github.com/apache/bookkeeper/issues/4200
+        synchronized (address) {
+            suspendedBookiesForForceLedgerAcks.remove(address);
+            pendingResponses = deferredBookieForceLedgerResponses.remove(address);
+        }
+
         if (pendingResponses != null) {
             pendingResponses.forEach(Runnable::run);
         }
@@ -475,8 +484,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientReadEntry() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
@@ -535,8 +544,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientReadLac() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             final BookkeeperInternalCallbacks.ReadLacCallback callback =
@@ -580,8 +589,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientAddEntry() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookkeeperInternalCallbacks.WriteCallback callback = (BookkeeperInternalCallbacks.WriteCallback) args[5];
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
@@ -637,8 +646,8 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientForceLedger() {
-        final Stubber stub = doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
             BookieId bookieSocketAddress = (BookieId) args[0];
             long ledgerId = (Long) args[1];
             BookkeeperInternalCallbacks.ForceLedgerCallback callback =
@@ -654,11 +663,17 @@ public abstract class MockBookKeeperTestCase {
                     callback.forceLedgerComplete(BKException.Code.OK, ledgerId, bookieSocketAddress, ctx);
                 });
             };
-            if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
-                List<Runnable> queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
-                        (k) -> new CopyOnWriteArrayList<>());
-                queue.add(activity);
-            } else {
+            List<Runnable> queue = null;
+
+            synchronized (bookieSocketAddress) {
+                if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
+                    queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
+                            (k) -> new CopyOnWriteArrayList<>());
+                    queue.add(activity);
+                }
+            }
+
+            if (queue == null) {
                 activity.run();
             }
             return null;

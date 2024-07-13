@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.server.service;
 
+import static org.apache.bookkeeper.proto.BookieServer.newBookieServer;
+
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
@@ -54,7 +56,7 @@ public class BookieService extends ServerLifecycleComponent {
                          UncleanShutdownDetection uncleanShutdownDetection)
             throws Exception {
         super(NAME, conf, statsLogger);
-        this.server = new BookieServer(conf.getServerConf(),
+        this.server = newBookieServer(conf.getServerConf(),
                                        bookie,
                                        statsLogger,
                                        allocator,

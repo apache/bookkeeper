@@ -30,4 +30,4 @@ docker system prune -f
 # clean up any dangling networks from previous runs
 docker network prune -f --filter "until=12h"
 docker system events > docker.debug-info & echo $! > docker-log.pid
-docker pull quay.io/coreos/etcd:v3.3
+docker pull quay.io/coreos/etcd:v3.5.14

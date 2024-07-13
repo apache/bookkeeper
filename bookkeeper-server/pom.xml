@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
   <name>Apache BookKeeper :: Server</name>
@@ -82,7 +82,12 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-transport-native-epoll</artifactId>
         <classifier>linux-x86_64</classifier>
-      </dependency>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>linux-aarch_64</classifier>
+    </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
@@ -159,7 +164,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.lmax</groupId>
+      <artifactId>disruptor</artifactId>
     </dependency>
     <!-- testing dependencies -->
     <dependency>
@@ -234,7 +243,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -275,7 +283,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <trimStackTrace>false</trimStackTrace>
           <properties>
@@ -289,12 +296,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
+          <!--
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
+          -->
           <groups>
             <group>
               <title>Bookkeeper</title>

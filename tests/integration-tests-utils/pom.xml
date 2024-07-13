@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>tests-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
   </parent>
 
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-    </dependency>    
+    </dependency>
 
     <dependency>
       <groupId>org.arquillian.cube</groupId>
@@ -71,6 +71,11 @@
       <type>pom</type>
     </dependency>
 
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -78,12 +83,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <!-- DO NOT CHANGE VERSION
-             Versions newer than 2.8.1 do not respect useSystemClassLoader=false
-             https://issues.apache.org/jira/browse/SUREFIRE-1476 //-->
-        <version>2.8.1</version>
         <configuration>
           <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
           <useSystemClassLoader>false</useSystemClassLoader>
         </configuration>
       </plugin>

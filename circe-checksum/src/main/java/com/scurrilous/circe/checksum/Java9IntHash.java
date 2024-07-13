@@ -76,7 +76,7 @@ public class Java9IntHash implements IntHash {
         return resume(0, buffer, offset, len);
     }
 
-    private int resume(int current, long address, int offset, int length) {
+    private int updateDirectByteBuffer(int current, long address, int offset, int length) {
         try {
             return (int) UPDATE_DIRECT_BYTEBUFFER.invoke(null, current, address, offset, offset + length);
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -84,7 +84,20 @@ public class Java9IntHash implements IntHash {
         }
     }
 
-    private int resume(int current, byte[] array, int offset, int length) {
+    @Override
+    public int resume(int current, byte[] array, int offset, int length) {
+        // the bit-wise complementing of the input and output is explained in the resume method below
+        current = ~current;
+        current = updateBytes(current, array, offset, length);
+        return ~current;
+    }
+
+    @Override
+    public boolean acceptsMemoryAddressBuffer() {
+        return true;
+    }
+
+    private static int updateBytes(int current, byte[] array, int offset, int length) {
         try {
             return (int) UPDATE_BYTES.invoke(null, current, array, offset, offset + length);
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -99,24 +112,37 @@ public class Java9IntHash implements IntHash {
 
     @Override
     public int resume(int current, ByteBuf buffer, int offset, int len) {
-        int negCrc = ~current;
+        // The input value is bit-wise complemented for two reasons:
+        // 1. The CRC32C algorithm is designed to start with a seed value where all bits are set to 1 (0xffffffff).
+        //    When 0 is initially passed in, ~0 results in the correct initial value (0xffffffff).
+        // 2. The CRC32C algorithm complements the final value as the last step. This method will always complement
+        //    the return value. Therefore, when the algorithm is used iteratively, it is necessary to complement
+        //    the input value to continue calculations.
+        // This allows the algorithm to be used incrementally without needing separate initialization and
+        // finalization steps.
+        current = ~current;
 
         if (buffer.hasMemoryAddress()) {
-            negCrc = resume(negCrc, buffer.memoryAddress(), offset, len);
+            current = updateDirectByteBuffer(current, buffer.memoryAddress(), offset, len);
         } else if (buffer.hasArray()) {
             int arrayOffset = buffer.arrayOffset() + offset;
-            negCrc = resume(negCrc, buffer.array(), arrayOffset, len);
+            current = updateBytes(current, buffer.array(), arrayOffset, len);
         } else {
             byte[] b = TL_BUFFER.get();
             int toRead = len;
+            int loopOffset = offset;
             while (toRead > 0) {
                 int length = Math.min(toRead, b.length);
-                buffer.slice(offset, len).readBytes(b, 0, length);
-                negCrc = resume(negCrc, b, 0, length);
+                buffer.getBytes(loopOffset, b, 0, length);
+                current = updateBytes(current, b, 0, length);
                 toRead -= length;
+                loopOffset += length;
             }
         }
 
-        return ~negCrc;
+        // The current value is complemented to align with the finalization step of the CRC32C algorithm.
+        // If there is a subsequent resume step, the value will be complemented again to initiate the next step
+        // as described in the comments in the beginning of this method.
+        return ~current;
     }
 }

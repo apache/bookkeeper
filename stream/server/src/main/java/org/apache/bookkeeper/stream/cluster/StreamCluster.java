@@ -284,7 +284,7 @@ public class StreamCluster
             // initialize the cluster
             initializeCluster();
 
-            // stop servers
+            // start servers
             startServers();
 
             // create default namespaces

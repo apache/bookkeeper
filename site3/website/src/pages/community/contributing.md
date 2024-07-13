@@ -49,7 +49,7 @@ Slack channels are great for quick questions or discussions on specialized topic
 
 To avoid potential frustration during the code review cycle, we encourage you to clearly scope and design non-trivial contributions with the BookKeeper community before you start coding.
 
-We are using [BookKeeper Proposals](http://bookkeeper.apache.org/community/bookkeeper-proposals/) for managing major changes to BookKeeper.
+We are using [BookKeeper Proposals](https://bookkeeper.apache.org/community/bookkeeper-proposals/) for managing major changes to BookKeeper.
 
 ## Code
 
@@ -190,7 +190,7 @@ Navigate to the [BookKeeper GitHub Repo](https://github.com/apache/bookkeeper) t
 
 	Issue <Github-issue-#> <Title of the pull request>
 
-Please include a descriptive pull request message to help make the comitter’s job easier when reviewing. It’s fine to refer to existing design docs or the contents of the associated JIRA as appropriate.
+Please include a descriptive pull request message to help make the committer’s job easier when reviewing. It’s fine to refer to existing design docs or the contents of the associated JIRA as appropriate.
 
 If you know a good committer to review your pull request, please make a comment like the following. If not, don’t worry -- a committer will pick it up.
 

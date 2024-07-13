@@ -19,12 +19,13 @@
 package org.apache.bookkeeper.server.http;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -65,8 +66,9 @@ import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.server.http.service.ClusterInfoService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +95,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -107,6 +109,13 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             .setServerConfiguration(baseConf)
             .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
             .build();
+    }
+
+    @Override
+    @AfterEach
+    public void tearDown() throws Exception {
+        this.bkHttpServiceProvider.close();
+        super.tearDown();
     }
 
     @Test
@@ -194,8 +203,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
         assertEquals(numberOfBookies, respBody.size());
         for (int i = 0; i < numberOfBookies; i++) {
-            assertEquals(true, respBody.containsKey(getBookie(i).toString()));
-            assertEquals(null, respBody.get(getBookie(i).toString()));
+            assertTrue(respBody.containsKey(getBookie(i).toString()));
+            assertNull(respBody.get(getBookie(i).toString()));
         }
 
         //2, parameter: type=rw&print_hostnames=true, should print rw bookies with hostname
@@ -210,7 +219,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
         assertEquals(numberOfBookies, respBody2.size());
         for (int i = 0; i < numberOfBookies; i++) {
-            assertEquals(true, respBody2.containsKey(getBookie(i).toString()));
+            assertTrue(respBody2.containsKey(getBookie(i).toString()));
             assertNotNull(respBody2.get(getBookie(i).toString()));
         }
 
@@ -229,7 +238,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(1, respBody3.size());
-        assertEquals(true, respBody3.containsKey(getBookie(1).toString()));
+        assertTrue(respBody3.containsKey(getBookie(1).toString()));
 
         // get other 5 rw bookies.
         HashMap<String, String> params4 = Maps.newHashMap();
@@ -241,7 +250,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody4 = JsonUtil.fromJson(response4.getBody(), HashMap.class);
         assertEquals(5, respBody4.size());
-        assertEquals(true, respBody4.containsKey(getBookie(2).toString()));
+        assertTrue(respBody4.containsKey(getBookie(2).toString()));
     }
 
     /**
@@ -269,8 +278,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         LinkedHashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), LinkedHashMap.class);
         assertEquals(numLedgers, respBody.size());
         for (int i = 0; i < numLedgers; i++) {
-            assertEquals(true, respBody.containsKey(Long.valueOf(lh[i].getId()).toString()));
-            assertEquals(null, respBody.get(Long.valueOf(lh[i].getId()).toString()));
+            assertTrue(respBody.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertNull(respBody.get(Long.valueOf(lh[i].getId()).toString()));
         }
 
         //2, parameter: print_metadata=true, should print ledger ids, with metadata
@@ -284,7 +293,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         LinkedHashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), LinkedHashMap.class);
         assertEquals(numLedgers, respBody2.size());
         for (int i = 0; i < numLedgers; i++) {
-            assertEquals(true, respBody2.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertTrue(respBody2.containsKey(Long.valueOf(lh[i].getId()).toString()));
             assertNotNull(respBody2.get(Long.valueOf(lh[i].getId()).toString()));
         }
 
@@ -302,7 +311,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         LinkedHashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), LinkedHashMap.class);
         assertEquals(31, respBody3.size());
         for (int i = 400; i < 430; i++) {
-            assertEquals(true, respBody3.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertTrue(respBody3.containsKey(Long.valueOf(lh[i].getId()).toString()));
             assertNotNull(respBody3.get(Long.valueOf(lh[i].getId()).toString()));
         }
     }
@@ -469,7 +478,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(77, respBody3.size());
         // Verify the entry content that we got.
-        assertTrue(respBody3.get("17").equals(content));
+        assertEquals(respBody3.get("17"), content);
     }
 
     @Test
@@ -490,7 +499,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         LinkedHashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), LinkedHashMap.class);
         assertEquals(numberOfBookies + 1, respBody.size());
         for (int i = 0; i < numberOfBookies; i++) {
-            assertEquals(true, respBody.containsKey(getBookie(i).toString()));
+            assertTrue(respBody.containsKey(getBookie(i).toString()));
         }
     }
 
@@ -856,10 +865,10 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
 
         BookieState bs = JsonUtil.fromJson(response1.getBody(), BookieState.class);
-        assertEquals(true, bs.isRunning());
-        assertEquals(false, bs.isReadOnly());
-        assertEquals(true, bs.isAvailableForHighPriorityWrites());
-        assertEquals(false, bs.isShuttingDown());
+        assertTrue(bs.isRunning());
+        assertFalse(bs.isReadOnly());
+        assertTrue(bs.isAvailableForHighPriorityWrites());
+        assertFalse(bs.isShuttingDown());
     }
 
     @Test
@@ -876,8 +885,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // fail sequential requests.
         for (int i = 0; i < 3; i++) {
             BookieSanity bs = JsonUtil.fromJson(response1.getBody(), BookieSanity.class);
-            assertEquals(true, bs.isPassed());
-            assertEquals(false, bs.isReadOnly());
+            assertTrue(bs.isPassed());
+            assertFalse(bs.isReadOnly());
         }
         HttpServiceResponse response2 = bookieStateServer.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
@@ -940,14 +949,14 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         ClusterInfoService.ClusterInfo info = JsonUtil.fromJson(response1.getBody(),
                 ClusterInfoService.ClusterInfo.class);
         assertFalse(info.isAuditorElected());
-        assertTrue(info.getAuditorId().length() == 0);
+        assertTrue(info.getAuditorId().isEmpty());
         assertFalse(info.isClusterUnderReplicated());
         assertTrue(info.isLedgerReplicationEnabled());
         assertTrue(info.getTotalBookiesCount() > 0);
         assertTrue(info.getWritableBookiesCount() > 0);
-        assertTrue(info.getReadonlyBookiesCount() == 0);
-        assertTrue(info.getUnavailableBookiesCount() == 0);
-        assertTrue(info.getTotalBookiesCount() == info.getWritableBookiesCount());
+        assertEquals(0, info.getReadonlyBookiesCount());
+        assertEquals(0, info.getUnavailableBookiesCount());
+        assertEquals(info.getTotalBookiesCount(), info.getWritableBookiesCount());
 
         // Try using POST instead of GET
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
@@ -1023,11 +1032,43 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertFalse(readOnlyState.isReadOnly());
 
         //forceReadonly to writable
-        baseConf.setForceReadOnlyBookie(true);
-        baseConf.setReadOnlyModeEnabled(true);
-        restartBookies();
+        MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
+                baseConf, NullStatsLogger.INSTANCE);
+        restartBookies(c -> {
+            c.setForceReadOnlyBookie(true);
+            c.setReadOnlyModeEnabled(true);
+            return c;
+        });
+        // the old bkHttpServiceProvider has an old bookie instance who has been shutdown
+        // so we need create a new bkHttpServiceProvider2 to contains a new bookie which has created by restart.
+        BKHttpServiceProvider bkHttpServiceProvider2 = new BKHttpServiceProvider.Builder()
+                .setBookieServer(serverByIndex(numberOfBookies - 1))
+                .setServerConfiguration(baseConf)
+                .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
+                .build();
+        HttpEndpointService bookieReadOnlyService2 = bkHttpServiceProvider2
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE_READONLY);
+
         request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(false)), HttpServer.Method.PUT,  null);
-        response = bookieReadOnlyService.handle(request);
+        response = bookieReadOnlyService2.handle(request);
+        assertEquals(400, response.getStatusCode());
+
+        // disable readOnly mode
+        restartBookies(c -> {
+            c.setForceReadOnlyBookie(false);
+            c.setReadOnlyModeEnabled(false);
+            return c;
+        });
+        bkHttpServiceProvider2 = new BKHttpServiceProvider.Builder()
+                .setBookieServer(serverByIndex(numberOfBookies - 1))
+                .setServerConfiguration(baseConf)
+                .setLedgerManagerFactory(metadataDriver.getLedgerManagerFactory())
+                .build();
+        bookieReadOnlyService2 = bkHttpServiceProvider2
+                .provideHttpEndpointService(HttpServer.ApiType.BOOKIE_STATE_READONLY);
+
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(true)), HttpServer.Method.PUT,  null);
+        response = bookieReadOnlyService2.handle(request);
         assertEquals(400, response.getStatusCode());
     }
 

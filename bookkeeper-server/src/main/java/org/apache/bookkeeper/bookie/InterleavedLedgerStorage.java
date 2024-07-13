@@ -57,6 +57,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -65,7 +66,6 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
@@ -260,7 +260,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public void forceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void forceGC(boolean forceMajor, boolean forceMinor) {
         gcThread.enableForceGC(forceMajor, forceMinor);
     }
 
@@ -569,7 +569,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // for interleaved ledger storage, we request a checkpoint when rotating a entry log file.
         // the checkpoint represent the point that all the entries added before this point are already
         // in ledger storage and ready to be synced to disk.
-        // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
+        // TODO: we could consider remove checkpointSource and checkpointSource#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
         // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
         Checkpoint checkpoint = checkpointSource.newCheckpoint();

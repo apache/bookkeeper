@@ -52,9 +52,9 @@ public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 
     private static File getTargetDirectory(String containerId) {
-        String base = System.getProperty("gradle.buildDirectory");
+        String base = System.getProperty("maven.buildDirectory");
         if (base == null) {
-            base = "build";
+            base = "target";
         }
         File directory = new File(base + "/container-logs/" + containerId);
         if (!directory.exists() && !directory.mkdirs()) {
@@ -132,10 +132,14 @@ public class DockerUtils {
 
         try (InputStream dockerStream = docker.copyArchiveFromContainerCmd(containerId, path).exec();
              TarArchiveInputStream stream = new TarArchiveInputStream(dockerStream)) {
-            TarArchiveEntry entry = stream.getNextTarEntry();
+            TarArchiveEntry entry = stream.getNextEntry();
             while (entry != null) {
                 if (entry.isFile()) {
-                    File output = new File(getTargetDirectory(containerId), entry.getName().replace("/", "-"));
+                    File targetDir = getTargetDirectory(containerId);
+                    File output = new File(targetDir, entry.getName().replace("/", "-"));
+                    if (!output.toPath().normalize().startsWith(targetDir.toPath())) {
+                        throw new IOException("Bad zip entry");
+                    }
                     try (FileOutputStream os = new FileOutputStream(output)) {
                         byte[] block = new byte[readBlockSize];
                         int read = stream.read(block, 0, readBlockSize);
@@ -145,7 +149,7 @@ public class DockerUtils {
                         }
                     }
                 }
-                entry = stream.getNextTarEntry();
+                entry = stream.getNextEntry();
             }
         } catch (RuntimeException | IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);

@@ -225,7 +225,7 @@ public class TestPrometheusFormatter {
 
 
     /**
-     * Hacky parsing of Prometheus text format. Sould be good enough for unit tests
+     * Hacky parsing of Prometheus text format. Should be good enough for unit tests
      */
     private static Multimap<String, Metric> parseMetrics(String metrics) {
         Multimap<String, Metric> parsed = ArrayListMultimap.create();

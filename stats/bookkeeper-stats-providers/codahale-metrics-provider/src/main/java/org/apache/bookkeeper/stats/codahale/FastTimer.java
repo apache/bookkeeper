@@ -163,7 +163,7 @@ public class FastTimer extends Timer {
 
     /*
      * Buckets for percentiles store response times according to the definition in BUCKET_SPEC in the
-     * form of { numerOfBuckets , nanosecondResolutionPerBucket }.
+     * form of { numberOfBuckets , nanosecondResolutionPerBucket }.
      *
      * BUCKET_SPEC_FINE:
      * This bucket definition provides fine-grained timing for small values, and more coarse-grained timing
@@ -289,7 +289,7 @@ public class FastTimer extends Timer {
         // initialize buckets
         int bucketCnt = 0;
         for (int i = 0; bucketSpec != null && i < bucketSpec.length; i++) {
-            bucketCnt += bucketSpec[i][BS_NUMBUCKETS];
+            bucketCnt += (int) bucketSpec[i][BS_NUMBUCKETS];
         }
         numBuckets = (bucketCnt > 0 ? bucketCnt + 1 : 0);
         if (numBuckets > 0) {
@@ -349,7 +349,7 @@ public class FastTimer extends Timer {
             if (duration <= bucketBounds[i]) {
                 return bucket + (int) ((duration - lowbound - 1) / bucketSpec[i][BS_RESOLUTION]);
             } else {
-                bucket += bucketSpec[i][BS_NUMBUCKETS];
+                bucket += (int) bucketSpec[i][BS_NUMBUCKETS];
                 lowbound = bucketBounds[i];
             }
         }
@@ -371,7 +371,7 @@ public class FastTimer extends Timer {
             if (b < bucket + bucketSpec[i][BS_NUMBUCKETS]) {
                 return lowbound + ((long) ((b + 1) - bucket)) * bucketSpec[i][BS_RESOLUTION];
             } else {
-                bucket += bucketSpec[i][BS_NUMBUCKETS];
+                bucket += (int) bucketSpec[i][BS_NUMBUCKETS];
                 lowbound = bucketBounds[i];
             }
         }
@@ -477,8 +477,9 @@ public class FastTimer extends Timer {
      */
     public double getRate(int seconds) {
         seconds = Math.min(seconds, timeWindow - 2);
-        int t = getNow(getHash()) - 1; // start from last completed second
-        int secFrom = t - seconds;
+        int t = getNow(getHash());
+        // start from last completed second
+        int secFrom = t - seconds - 1;
         long sum = 0;
         for (int h = 0; h < HASH_SIZE; h++) {
             for (int i = t; i > secFrom; i--) {

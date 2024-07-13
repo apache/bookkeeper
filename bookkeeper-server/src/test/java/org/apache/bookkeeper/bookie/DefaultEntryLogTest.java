@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.assertEntryEquals;
+import static org.apache.bookkeeper.bookie.storage.EntryLogTestUtils.makeEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,6 +39,7 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -64,6 +67,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -149,6 +153,53 @@ public class DefaultEntryLogTest {
         // add the first entry will trigger file creation
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         assertEquals(0L, entryLogManager.getCurrentLogId());
+    }
+
+    @Test
+    public void testEntryLogIsSealedWithPerLedgerDisabled() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(false);
+        conf.setEntryLogFilePreAllocationEnabled(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
+        EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        entrylogManager.createNewLog(0);
+        BufferedReadChannel channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(1);
+        channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(2);
+        channel = entryLogger.getChannelForLogId(1);
+        assertTrue(channel.sealed);
+    }
+
+    @Test
+    public void testEntryLogIsSealedWithPerLedgerEnabled() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        //If entryLogPerLedgerEnabled is true, the buffer channel sealed flag always false.
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setEntryLogFilePreAllocationEnabled(true);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsProvider.TestStatsLogger statsLogger =
+                statsProvider.getStatsLogger(BookKeeperServerStats.ENTRYLOGGER_SCOPE);
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, dirsMgr, null, statsLogger,
+                UnpooledByteBufAllocator.DEFAULT);
+        EntryLogManagerBase entrylogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        entrylogManager.createNewLog(0);
+        BufferedReadChannel channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(1);
+        channel = entryLogger.getChannelForLogId(0);
+        assertFalse(channel.sealed);
+        entrylogManager.createNewLog(2);
+        channel = entryLogger.getChannelForLogId(1);
+        assertFalse(channel.sealed);
     }
 
     @Test
@@ -894,6 +945,29 @@ public class DefaultEntryLogTest {
         Assert.assertEquals("EntryId", 1L, readEntryId);
     }
 
+    @Test
+    public void testReadEntryWithoutLedgerID() throws Exception {
+        List<Long> locations = new ArrayList<>();
+        // `+ 1` is not a typo: create one more log file than the max number of o cached readers
+        for (int i = 0; i < 10; i++) {
+            ByteBuf e = makeEntry(1L, i, 100);
+            long loc = entryLogger.addEntry(1L, e.slice());
+            locations.add(loc);
+        }
+        entryLogger.flush();
+        for (Long loc : locations) {
+            int i = locations.indexOf(loc);
+            ByteBuf data = entryLogger.readEntry(loc);
+            assertEntryEquals(data, makeEntry(1L, i, 100));
+            long readLedgerId = data.readLong();
+            long readEntryId = data.readLong();
+            Assert.assertEquals("LedgerId", 1L, readLedgerId);
+            Assert.assertEquals("EntryId", i, readEntryId);
+            ReferenceCountUtil.release(data);
+        }
+    }
+
+
     /*
      * tests basic logic of EntryLogManager interface for
      * EntryLogManagerForEntryLogPerLedger.
@@ -1308,7 +1382,7 @@ public class DefaultEntryLogTest {
         BufferedLogChannel newLogChannel = createDummyBufferedLogChannel(entryLogger, 1, conf);
         entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
 
-        AtomicBoolean exceptionOccured = new AtomicBoolean(false);
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
         Thread t = new Thread() {
             public void run() {
                 try {
@@ -1328,7 +1402,7 @@ public class DefaultEntryLogTest {
                     entryLogManager.getCurrentLogIfPresent(newLedgerId);
                 } catch (Exception e) {
                     LOG.error("Got Exception in thread", e);
-                    exceptionOccured.set(true);
+                    exceptionOccurred.set(true);
                 }
             }
         };
@@ -1336,7 +1410,7 @@ public class DefaultEntryLogTest {
         t.start();
         Thread.sleep(evictionPeriod * 1000 + 100);
         entryLogManager.doEntryLogMapCleanup();
-        Assert.assertFalse("Exception occured in thread, which is not expected", exceptionOccured.get());
+        Assert.assertFalse("Exception occurred in thread, which is not expected", exceptionOccurred.get());
 
         /*
          * since for more than evictionPeriod, that ledger is not accessed and cache is cleaned up, mapping for that

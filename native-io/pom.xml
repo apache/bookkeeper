@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -45,29 +45,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <compilerArgs>
-            <!-- Object.finalize() is deprecated at java 9 -->
-            <!-- <compilerArg>-Werror</compilerArg> -->
-            <compilerArg>-Xlint:deprecation</compilerArg>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-            <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-            <compilerArg>-Xpkginfo:always</compilerArg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
-        <version>${nar-maven-plugin.version}</version>
         <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -106,7 +92,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <executions>
                <execution>
@@ -120,17 +105,8 @@
           <plugin>
              <groupId>org.apache.maven.plugins</groupId>
              <artifactId>maven-compiler-plugin</artifactId>
-             <version>${maven-compiler-plugin.version}</version>
              <configuration>
-                <source>1.8</source>
-                <target>1.8</target>
                 <compilerArgs>
-                  <!-- Object.finalize() is deprecated at java 9 -->
-                  <!-- <compilerArg>-Werror</compilerArg> -->
-                  <compilerArg>-Xlint:deprecation</compilerArg>
-                  <compilerArg>-Xlint:unchecked</compilerArg>
-                   <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-                  <compilerArg>-Xpkginfo:always</compilerArg>
                   <!-- add -h flag to javac -->
                   <compilerArg>-h</compilerArg>
                   <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
@@ -152,7 +128,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
@@ -187,7 +162,6 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
@@ -204,9 +178,6 @@
                 <rtti>false</rtti>
                 <optimize>full</optimize>
               </cpp>
-              <linker>
-                <libSet>rt</libSet>
-              </linker>
             </configuration>
           </plugin>
         </plugins>
@@ -224,15 +195,14 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
-              <output>circe-checksum</output>
+              <output>native-io</output>
               <libraries>
                 <library>
                   <type>jni</type>
-                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
+                  <narSystemPackage>org.apache.bookkeeper.util.nativeio</narSystemPackage>
                 </library>
               </libraries>
               <cpp>

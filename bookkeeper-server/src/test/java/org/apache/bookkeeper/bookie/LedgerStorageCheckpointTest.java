@@ -22,6 +22,10 @@ package org.apache.bookkeeper.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.File;
@@ -34,7 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +56,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.PortManager;
@@ -64,19 +68,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * LedgerStorageCheckpointTest.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(SyncThread.class)
-@PowerMockIgnore({"java.*", "javax.*", "org.slf4j.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LedgerStorageCheckpointTest {
     private static final Logger LOG = LoggerFactory
             .getLogger(LedgerStorageCheckpointTest.class);
@@ -92,11 +92,14 @@ public class LedgerStorageCheckpointTest {
 
     // ScheduledExecutorService used by SyncThread
     MockExecutorController executorController;
+    private MockedStatic<SyncThread> syncThreadMockedStatic;
+    private MockedStatic<GarbageCollectorThread> garbageCollectorThreadMockedStatic;
+    private MockedStatic<SortedLedgerStorage> sortedLedgerStorageMockedStatic;
 
     @Before
     public void setUp() throws Exception {
+        ThreadRegistry.clear();
         LOG.info("Setting up test {}", getClass());
-        PowerMockito.mockStatic(Executors.class);
 
         try {
             // start zookeeper service
@@ -106,17 +109,34 @@ public class LedgerStorageCheckpointTest {
             throw e;
         }
 
-        ScheduledExecutorService scheduledExecutorService = PowerMockito.mock(ScheduledExecutorService.class);
+        sortedLedgerStorageMockedStatic = mockStatic(SortedLedgerStorage.class);
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
                 .controlSubmit(scheduledExecutorService)
+                .controlExecute(scheduledExecutorService)
                 .controlScheduleAtFixedRate(scheduledExecutorService, 10);
-        PowerMockito.when(scheduledExecutorService.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any())).thenReturn(scheduledExecutorService);
+        when(scheduledExecutorService.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
+        sortedLedgerStorageMockedStatic.when(() -> SortedLedgerStorage.newScheduledExecutorService())
+                .thenReturn(scheduledExecutorService);
+
+        syncThreadMockedStatic = mockStatic(SyncThread.class, CALLS_REAL_METHODS);
+        syncThreadMockedStatic.when(() -> SyncThread.newExecutor())
+                .thenReturn(scheduledExecutorService);
+
+        garbageCollectorThreadMockedStatic = mockStatic(GarbageCollectorThread.class);
+        garbageCollectorThreadMockedStatic.when(() -> GarbageCollectorThread.newExecutor())
+                .thenReturn(scheduledExecutorService);
     }
 
     @After
     public void tearDown() throws Exception {
+        ThreadRegistry.clear();
         LOG.info("TearDown");
+
+        sortedLedgerStorageMockedStatic.close();
+        syncThreadMockedStatic.close();
+        garbageCollectorThreadMockedStatic.close();
+
         Exception tearDownException = null;
         // stop zookeeper service
         try {
@@ -244,7 +264,7 @@ public class LedgerStorageCheckpointTest {
         LogMark curMarkAfterFirstSetOfAdds = lastLogMarkAfterFirstSetOfAdds.getCurMark();
 
         File lastMarkFile = new File(ledgerDir, "lastMark");
-        // lastMark file should be zero, because checkpoint hasn't happenend
+        // lastMark file should be zero, because checkpoint hasn't happened
         LogMark logMarkFileBeforeCheckpoint = readLastMarkFile(lastMarkFile);
         Assert.assertEquals("lastMarkFile before checkpoint should be zero", 0,
                 logMarkFileBeforeCheckpoint.compare(new LogMark()));
@@ -265,7 +285,7 @@ public class LedgerStorageCheckpointTest {
         LogMark curMarkAfterCheckpoint = lastLogMarkAfterCheckpoint.getCurMark();
 
         LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
-        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happenend", 0,
+        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happened", 0,
                 rolledLogMark.compare(new LogMark()));
         /*
          * Curmark should be equal before and after checkpoint, because we didnt
@@ -541,7 +561,7 @@ public class LedgerStorageCheckpointTest {
         executorController.advance(Duration.ofMillis(conf.getFlushInterval()));
 
         /*
-         * since checkpoint happenend, there shouldn't be any logChannelsToFlush
+         * since checkpoint happened, there shouldn't be any logChannelsToFlush
          * and bytesWrittenSinceLastFlush should be zero.
          */
         List<DefaultEntryLogger.BufferedLogChannel> copyOfRotatedLogChannels = entryLogManager.getRotatedLogChannels();
@@ -656,7 +676,7 @@ public class LedgerStorageCheckpointTest {
         Assert.assertTrue("lastMark file must be existing, because checkpoint should have happened",
                 lastMarkFile.exists());
         LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
-        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happenend", 0,
+        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happened", 0,
                 rolledLogMark.compare(new LogMark()));
 
         bkClient.close();

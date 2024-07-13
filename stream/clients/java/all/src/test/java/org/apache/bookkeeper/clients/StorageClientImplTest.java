@@ -22,8 +22,10 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_ST
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -43,18 +45,12 @@ import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit test {@link StorageClientImpl}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-    StorageClientImpl.class,
-})
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class StorageClientImplTest extends GrpcClientTestBase {
 
@@ -97,9 +93,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
         PByteBufTableImpl tableImpl = mock(PByteBufTableImpl.class);
         when(tableImpl.initialize()).thenReturn(FutureUtils.value(tableImpl));
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl);
+        doReturn(tableImpl).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         PTable<ByteBuf, ByteBuf> returnedTableImpl = FutureUtils.result(
             client.openPTable(STREAM_NAME)
@@ -110,7 +104,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testOpenPTableDiffernetNamespace() throws Exception {
+    public void testOpenPTableDifferentNamespace() throws Exception {
         StreamProperties tableProps1 = StreamProperties.newBuilder(STREAM_PROPERTIES)
             .setStreamName("table1")
             .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
@@ -134,18 +128,14 @@ public class StorageClientImplTest extends GrpcClientTestBase {
         PByteBufTableImpl tableImpl2 = mock(PByteBufTableImpl.class);
         when(tableImpl2.initialize()).thenReturn(FutureUtils.value(tableImpl2));
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl1);
+        doReturn(tableImpl1).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         PTable<ByteBuf, ByteBuf> returnedTableImpl1 = FutureUtils.result(
             client.openPTable("table1")
         );
         assertSame(tableImpl1, returnedTableImpl1);
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl2);
+        doReturn(tableImpl2).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         PTable<ByteBuf, ByteBuf> returnedTableImpl2 = FutureUtils.result(
             client.openPTable("table2")
@@ -167,9 +157,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
         PByteBufTableImpl tableImpl = mock(PByteBufTableImpl.class);
         when(tableImpl.initialize()).thenReturn(FutureUtils.value(tableImpl));
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl);
+        doReturn(tableImpl).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         Table<ByteBuf, ByteBuf> returnedTableImpl = FutureUtils.result(
             client.openTable(STREAM_NAME)
@@ -177,7 +165,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
         assertTrue(returnedTableImpl instanceof ByteBufTableImpl);
         ByteBufTableImpl bytesTableImpl = (ByteBufTableImpl) returnedTableImpl;
 
-        assertSame(tableImpl, Whitebox.getInternalState(bytesTableImpl, "underlying"));
+        assertSame(tableImpl, bytesTableImpl.getUnderlying());
     }
 
     @SuppressWarnings("unchecked")
@@ -206,27 +194,23 @@ public class StorageClientImplTest extends GrpcClientTestBase {
         PByteBufTableImpl tableImpl2 = mock(PByteBufTableImpl.class);
         when(tableImpl2.initialize()).thenReturn(FutureUtils.value(tableImpl2));
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl1);
+        doReturn(tableImpl1).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         Table<ByteBuf, ByteBuf> returnedTableImpl1 = FutureUtils.result(
             client.openTable("table1")
         );
         assertTrue(returnedTableImpl1 instanceof ByteBufTableImpl);
         ByteBufTableImpl bytesTableImpl1 = (ByteBufTableImpl) returnedTableImpl1;
-        assertSame(tableImpl1, Whitebox.getInternalState(bytesTableImpl1, "underlying"));
+        assertSame(tableImpl1, bytesTableImpl1.getUnderlying());
 
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl2);
+        doReturn(tableImpl2).when(client).newPByteBufTableImpl(anyString(), any(StreamProperties.class));
 
         Table<ByteBuf, ByteBuf> returnedTableImpl2 = FutureUtils.result(
             client.openTable("table2")
         );
         assertTrue(returnedTableImpl2 instanceof ByteBufTableImpl);
         ByteBufTableImpl bytesTableImpl2 = (ByteBufTableImpl) returnedTableImpl2;
-        assertSame(tableImpl2, Whitebox.getInternalState(bytesTableImpl2, "underlying"));
+        assertSame(tableImpl2, bytesTableImpl2.getUnderlying());
     }
 
     @SuppressWarnings("unchecked")
@@ -239,13 +223,6 @@ public class StorageClientImplTest extends GrpcClientTestBase {
             .build();
         when(client.getStreamProperties(anyString(), anyString()))
             .thenReturn(FutureUtils.value(streamProps));
-
-        PByteBufTableImpl tableImpl = mock(PByteBufTableImpl.class);
-        when(tableImpl.initialize()).thenReturn(FutureUtils.value(tableImpl));
-
-        PowerMockito.whenNew(PByteBufTableImpl.class)
-            .withAnyArguments()
-            .thenReturn(tableImpl);
 
         try {
             FutureUtils.result(client.openPTable(STREAM_NAME));

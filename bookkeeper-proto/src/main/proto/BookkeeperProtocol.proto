@@ -66,6 +66,7 @@ enum OperationType {
     START_TLS = 9;
     FORCE_LEDGER = 10;
     GET_LIST_OF_ENTRIES_OF_LEDGER = 11;
+    BATCH_READ_ENTRY = 12;
 }
 
 /**

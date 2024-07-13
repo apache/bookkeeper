@@ -21,10 +21,10 @@
 
 package org.apache.bookkeeper.test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
@@ -32,11 +32,14 @@ import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.MockUncleanShutdownDetection;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 /**
  * Test bookie expiration.
@@ -53,6 +56,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     */
     @Test
     @SuppressWarnings("deprecation")
+    @EnabledForJreRange(max = JRE.JAVA_17)
     public void testBookieServerZKRequestTimeoutBehaviour() throws Exception {
         // 6000 is minimum due to default tick time
         System.setProperty("zookeeper.request.timeout", "6000");
@@ -67,7 +71,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             Thread[] threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1) {
+                if (threads[i].getName().contains("SendThread")) {
                     threadset.add(threads[i]);
                 }
             }
@@ -91,13 +95,13 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
             for (int i = 0; i < threadCount; i++) {
-                if (threads[i].getName().indexOf("SendThread") != -1
+                if (threads[i].getName().contains("SendThread")
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
                 }
             }
-            assertNotNull("Send thread not found", sendthread);
+            assertNotNull(sendthread, "Send thread not found");
 
             log.info("Suspending threads");
             sendthread.suspend();
@@ -107,8 +111,8 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
             // allow watcher thread to run
             Thread.sleep(3000);
-            assertTrue("Bookie should not shutdown on zk timeout", server.isBookieRunning());
-            assertTrue("Bookie Server should not shutdown on zk timeout", server.isRunning());
+            assertTrue(server.isBookieRunning(), "Bookie should not shutdown on zk timeout");
+            assertTrue(server.isRunning(), "Bookie Server should not shutdown on zk timeout");
         } finally {
             System.clearProperty("zookeeper.request.timeout");
             server.shutdown();
@@ -121,8 +125,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     Attempt to reconnect by BookieStateManager's RegistrationManager listener
     will fail (even if retry it many times).
     */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/4142")
     @SuppressWarnings("deprecation")
+    @EnabledForJreRange(max = JRE.JAVA_17)
     public void testBookieServerZKSessionExpireBehaviour() throws Exception {
         // 6000 is minimum due to default tick time
         System.setProperty("zookeeper.request.timeout", "0");
@@ -167,7 +172,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                     break;
                 }
             }
-            assertNotNull("Send thread not found", sendthread);
+            assertNotNull(sendthread, "Send thread not found");
 
             log.info("Suspending threads");
             sendthread.suspend();
@@ -177,8 +182,8 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
             // allow watcher thread to run
             Thread.sleep(3000);
-            assertFalse("Bookie should shutdown on losing zk session", server.isBookieRunning());
-            assertFalse("Bookie Server should shutdown on losing zk session", server.isRunning());
+            assertFalse(server.isBookieRunning(), "Bookie should shutdown on losing zk session");
+            assertFalse(server.isRunning(), "Bookie Server should shutdown on losing zk session");
         } finally {
             System.clearProperty("zookeeper.request.timeout");
             server.shutdown();

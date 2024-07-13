@@ -162,7 +162,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
         boolean add(Node n) {
             if (!isAncestor(n)) {
                 throw new IllegalArgumentException(n.getName() + ", which is located at " + n.getNetworkLocation()
-                        + ", is not a decendent of " + getPath(this));
+                        + ", is not a descendent of " + getPath(this));
             }
             if (isParent(n)) {
                 // this node is the parent of n; add n directly
@@ -504,6 +504,9 @@ public class NetworkTopologyImpl implements NetworkTopology {
                 InnerNode rack = (InnerNode) getNode(node.getNetworkLocation());
                 if (rack == null) {
                     numOfRacks--;
+                }
+                if (clusterMap.numOfLeaves == 0) {
+                    depthOfAllLeaves = -1;
                 }
             }
             if (LOG.isDebugEnabled()) {

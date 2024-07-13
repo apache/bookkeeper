@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-java-client-parent</artifactId>
-    <version>4.16.0-SNAPSHOT</version>
+    <version>4.18.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-java-client</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Clients :: Java Client </name>
@@ -50,7 +50,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -97,8 +96,8 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
         <configuration>
           <filesets>
             <fileset>

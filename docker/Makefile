@@ -89,7 +89,7 @@ run-bk:
 # -------------------------------- #
 
 # Create run and destroy a container that will
-# intializes new bookkeeper cluster by creating required znodes for the cluster
+# initializes new bookkeeper cluster by creating required znodes for the cluster
 #   make run-init
 
 run-init:

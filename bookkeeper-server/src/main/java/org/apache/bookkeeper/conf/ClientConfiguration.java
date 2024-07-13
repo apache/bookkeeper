@@ -115,6 +115,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     protected static final String STICKY_READS_ENABLED = "stickyReadSEnabled";
+    protected static final String RECOVERY_BATCH_READ_ENABLED = "recoveryBatchReadEnabled";
     // Add Parameters
     protected static final String OPPORTUNISTIC_STRIPING = "opportunisticStriping";
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
@@ -158,9 +159,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     public static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
     protected static final String READ_REORDER_THRESHOLD_PENDING_REQUESTS = "readReorderThresholdPendingRequests";
-    protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
-        "ensemblePlacementPolicyOrderSlowBookies";
     protected static final String BOOKIE_ADDRESS_RESOLVER_ENABLED = "bookieAddressResolverEnabled";
+    // Use hostname to resolve local placement info
+    public static final String USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY =
+        "useHostnameResolveLocalNodePlacementPolicy";
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -198,6 +200,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Logs
     protected static final String CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING =
             "clientConnectBookieUnavailableLogThrottling";
+
+    //For batch read api, it the batch read is not stable, we can fail back to single read by this config.
+    protected static final String BATCH_READ_ENABLED = "batchReadEnabled";
 
     /**
      * Construct a default client-side configuration.
@@ -973,7 +978,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read requests.
+     * Multiplier to use when determining time between successive speculative read requests.
      *
      * @return speculative read timeout backoff multiplier.
      */
@@ -982,10 +987,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read requests.
+     * Set the multiplier to use when determining time between successive speculative read requests.
      *
      * @param speculativeReadTimeoutBackoffMultiplier
-     *          multipler to use when determining time between successive speculative read requests.
+     *          multiplier to use when determining time between successive speculative read requests.
      * @return client configuration.
      */
     public ClientConfiguration setSpeculativeReadTimeoutBackoffMultiplier(
@@ -995,7 +1000,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read LAC requests.
+     * Multiplier to use when determining time between successive speculative read LAC requests.
      *
      * @return speculative read LAC timeout backoff multiplier.
      */
@@ -1004,10 +1009,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read LAC requests.
+     * Set the multiplier to use when determining time between successive speculative read LAC requests.
      *
      * @param speculativeReadLACTimeoutBackoffMultiplier
-     *          multipler to use when determining time between successive speculative read LAC requests.
+     *          multiplier to use when determining time between successive speculative read LAC requests.
      * @return client configuration.
      */
     public ClientConfiguration setSpeculativeReadLACTimeoutBackoffMultiplier(
@@ -1145,7 +1150,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return true if reorder read sequence is enabled, otherwise false.
      */
     public boolean isReorderReadSequenceEnabled() {
-        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, false);
+        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, true);
     }
 
     /**
@@ -1186,7 +1191,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * preference) to read all entries for a ledger.
      *
      * <p>Having all the read to one bookie will increase the chances that
-     * a read request will be fullfilled by Bookie read cache (or OS file
+     * a read request will be fulfilled by Bookie read cache (or OS file
      * system cache) when doing sequential reads.
      *
      * @param enabled the flag to enable/disable sticky reads.
@@ -1197,6 +1202,23 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         return this;
     }
 
+    /**
+     * If recovery batch read enabled or not.
+     * @return
+     */
+    public boolean isRecoveryBatchReadEnabled() {
+        return getBoolean(RECOVERY_BATCH_READ_ENABLED, false);
+    }
+
+    /**
+     * Enable/disable recovery batch read.
+     * @param enabled
+     * @return
+     */
+    public ClientConfiguration setRecoveryBatchReadEnabled(boolean enabled) {
+        setProperty(RECOVERY_BATCH_READ_ENABLED, enabled);
+        return this;
+    }
     /**
      * Get Ensemble Placement Policy Class.
      *
@@ -1267,27 +1289,6 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Whether to order slow bookies in placement policy.
-     *
-     * @return flag of whether to order slow bookies in placement policy or not.
-     */
-    public boolean getEnsemblePlacementPolicySlowBookies() {
-        return getBoolean(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, false);
-    }
-
-    /**
-     * Enable/Disable ordering slow bookies in placement policy.
-     *
-     * @param enabled
-     *          flag to enable/disable ordering slow bookies in placement policy.
-     * @return client configuration.
-     */
-    public ClientConfiguration setEnsemblePlacementPolicySlowBookies(boolean enabled) {
-        setProperty(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, enabled);
-        return this;
-    }
-
-    /**
      * Whether to enable BookieAddressResolver.
      *
      * @return flag to enable/disable BookieAddressResolver.
@@ -1312,6 +1313,22 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     public ClientConfiguration setBookieAddressResolverEnabled(boolean enabled) {
         setProperty(BOOKIE_ADDRESS_RESOLVER_ENABLED, enabled);
         return this;
+    }
+
+    /**
+     * Set the flag to use hostname to resolve local node placement policy.
+     * @param useHostnameResolveLocalNodePlacementPolicy
+     */
+    public void setUseHostnameResolveLocalNodePlacementPolicy(boolean useHostnameResolveLocalNodePlacementPolicy) {
+        setProperty(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, useHostnameResolveLocalNodePlacementPolicy);
+    }
+
+    /**
+     * Get whether to use hostname to resolve local node placement policy.
+     * @return
+     */
+    public boolean getUseHostnameResolveLocalNodePlacementPolicy() {
+        return getBoolean(USE_HOSTNAME_RESOLVE_LOCAL_NODE_PLACEMENT_POLICY, false);
     }
 
     /**
@@ -2056,6 +2073,15 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public long getClientConnectBookieUnavailableLogThrottlingMs() {
         return getLong(CLIENT_CONNECT_BOOKIE_UNAVAILABLE_LOG_THROTTLING, 5_000L);
+    }
+
+    public ClientConfiguration setBatchReadEnabled(boolean enable) {
+        setProperty(BATCH_READ_ENABLED, enable);
+        return this;
+    }
+
+    public boolean isBatchReadEnabled() {
+        return getBoolean(BATCH_READ_ENABLED, true);
     }
 
     @Override

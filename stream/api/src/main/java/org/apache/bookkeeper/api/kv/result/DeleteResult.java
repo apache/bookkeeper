@@ -29,7 +29,7 @@ public interface DeleteResult<K, V> extends Result<K, V> {
 
     /**
      * Returns the list of previous kv pairs of the keys
-     * deleted in ths op.
+     * deleted in this op.
      *
      * @return the list of previous kv pairs.
      */

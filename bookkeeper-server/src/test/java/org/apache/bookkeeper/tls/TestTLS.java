@@ -27,6 +27,7 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -118,7 +119,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     private String getResourcePath(String resource) throws Exception {
-        return this.getClass().getClassLoader().getResource(resource).toURI().getPath();
+        return Paths.get(this.getClass().getClassLoader().getResource(resource).toURI()).toString();
     }
 
     @Before
@@ -349,11 +350,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testConnectToLocalTLSClusterTLSClient() throws Exception {
-        // skip test
-        if (useV2Protocol) {
-            return;
-        }
-
         restartBookies(c -> {
                 c.setDisableServerSocketBind(true);
                 c.setEnableLocalTransport(true);
@@ -560,7 +556,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         LedgerMetadata metadata = testClient(clientConf, 2);
-        assertTrue(metadata.getAllEnsembles().size() > 0);
+        assertFalse(metadata.getAllEnsembles().isEmpty());
         Collection<? extends List<BookieId>> ensembles = metadata.getAllEnsembles().values();
         try (BookKeeper client = new BookKeeper(clientConf)) {
             for (List<BookieId> bookies : ensembles) {
@@ -621,10 +617,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginRequireClientTLSAuthenticationLocal() throws Exception {
-        if (useV2Protocol) {
-            return;
-        }
-
         restartBookies(c -> {
                 c.setBookieAuthProviderFactoryClass(
                         AllowOnlyClientsWithX509Certificates.class.getName());
@@ -755,6 +747,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
             testClient(clientConf, numBookies);
             fail("Shouldn't be able to connect");
         } catch (BKException.BKUnauthorizedAccessException authFailed) {
+        } catch (BKException.BKNotEnoughBookiesException notEnoughBookiesException) {
+            if (!useV2Protocol) {
+                fail("Unexpected exception occurred.");
+            }
         }
 
         assertFalse(secureBookieSideChannel);
@@ -881,16 +877,16 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testTLSChannelCounters() throws Exception {
-        ClientConfiguration tlsClientconf = new ClientConfiguration(baseClientConf)
+        ClientConfiguration tlsClientConf = new ClientConfiguration(baseClientConf)
                 .setNumChannelsPerBookie(1);
-        ClientConfiguration nonTlsClientconf = new ClientConfiguration(baseClientConf)
+        ClientConfiguration nonTlsClientConf = new ClientConfiguration(baseClientConf)
                 .setNumChannelsPerBookie(1)
                 .setTLSProviderFactoryClass(null);
 
         TestStatsProvider tlsStatsProvider = new TestStatsProvider();
         TestStatsProvider nonTlsStatsProvider = new TestStatsProvider();
-        BookKeeperTestClient tlsClient = new BookKeeperTestClient(tlsClientconf, tlsStatsProvider);
-        BookKeeperTestClient nonTlsClient = new BookKeeperTestClient(nonTlsClientconf, nonTlsStatsProvider);
+        BookKeeperTestClient tlsClient = new BookKeeperTestClient(tlsClientConf, tlsStatsProvider);
+        BookKeeperTestClient nonTlsClient = new BookKeeperTestClient(nonTlsClientConf, nonTlsStatsProvider);
 
         // IO load from clients
         testClient(tlsClient, numBookies);
@@ -905,9 +901,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
                     .append(TestUtils.buildStatsCounterPathFromBookieID(bookie.getBookieId()))
                     .append(".");
             // check stats on TLS enabled client
-           TestStatsProvider.TestCounter cntr =  tlsClient.getTestStatsProvider().getCounter(nameBuilder
-                    + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER);
-
             assertEquals("Mismatch TLS channel count", 1,
                     tlsClient.getTestStatsProvider().getCounter(nameBuilder
                     + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());

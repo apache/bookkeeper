@@ -178,14 +178,14 @@ public class AvailabilityOfEntriesOfLedger {
 
     public AvailabilityOfEntriesOfLedger(PrimitiveIterator.OfLong entriesOfLedgerItr) {
         while (entriesOfLedgerItr.hasNext()) {
-            this.addEntryToAvailabileEntriesOfLedger(entriesOfLedgerItr.nextLong());
+            this.addEntryToAvailableEntriesOfLedger(entriesOfLedgerItr.nextLong());
         }
         this.closeStateOfEntriesOfALedger();
     }
 
     public AvailabilityOfEntriesOfLedger(long[] entriesOfLedger) {
         for (long entry : entriesOfLedger) {
-            this.addEntryToAvailabileEntriesOfLedger(entry);
+            this.addEntryToAvailableEntriesOfLedger(entry);
         }
         this.closeStateOfEntriesOfALedger();
     }
@@ -310,7 +310,7 @@ public class AvailabilityOfEntriesOfLedger {
         }
     }
 
-    private void addEntryToAvailabileEntriesOfLedger(long entryId) {
+    private void addEntryToAvailableEntriesOfLedger(long entryId) {
         if (!isCurSequenceInitialized()) {
             initializeCurSequence(entryId);
         } else if (isEntryExistingInCurSequence(entryId)) {

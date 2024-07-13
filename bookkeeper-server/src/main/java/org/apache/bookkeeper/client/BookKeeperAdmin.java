@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -173,6 +174,12 @@ public class BookKeeperAdmin implements AutoCloseable {
         this.mFactory = bkc.ledgerManagerFactory;
     }
 
+    @VisibleForTesting
+    public static BookKeeperAdmin newBookKeeperAdmin(ClientConfiguration conf)
+            throws IOException, InterruptedException, BKException {
+        return new BookKeeperAdmin(conf);
+    }
+
     /**
      * Constructor that takes in a BookKeeper instance . This will be useful,
      * when user already has bk instance ready.
@@ -269,8 +276,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
@@ -284,8 +290,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     /**
      * Notify when the available list of read only bookies changes.
-     * This is a one-shot notification. To receive subsequent notifications
-     * the listener must be registered again.
+     * Once registered, the listener will be notified when the list of available bookies changes.
      *
      * @param listener the listener to notify
      */
@@ -1292,7 +1297,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     /**
-     * Intializes new cluster by creating required znodes for the cluster. If
+     * Initializes new cluster by creating required znodes for the cluster. If
      * ledgersrootpath is already existing then it will error out.
      *
      * @param conf
@@ -1564,7 +1569,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
      * sure the ledgers stored in the given decommissioning bookie are properly
      * replicated and they are not underreplicated because of the given bookie.
-     * This method waits untill there are no underreplicatedledgers because of this
+     * This method waits until there are no underreplicatedledgers because of this
      * bookie. If the given Bookie is not shutdown yet, then it will throw
      * BKIllegalOpException.
      *
@@ -1607,7 +1612,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         Set<Long> ledgersStoredInThisBookie = bookieToLedgersMap.get(bookieAddress.toString());
         if ((ledgersStoredInThisBookie != null) && (!ledgersStoredInThisBookie.isEmpty())) {
             /*
-             * wait untill all the ledgers are replicated to other
+             * wait until all the ledgers are replicated to other
              * bookies by making sure that these ledgers metadata don't
              * contain this bookie as part of their ensemble.
              */
@@ -1631,14 +1636,17 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieId thisBookieAddress,
             LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
-        int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
-        int sleepTimePerLedger = 10 * 1000; // 10 secs
+        int maxSleepTimeInBetweenChecks = 5 * 60 * 1000; // 5 minutes
+        int sleepTimePerLedger = 3 * 1000; // 3 secs
         Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
                 thisBookieAddress, ledgerManager);
+        ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
+
         while (!ledgers.isEmpty()) {
-            LOG.info("Count of Ledgers which need to be rereplicated: {}", ledgers.size());
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
+            LOG.info("Count of Ledgers which need to be rereplicated: {}, waiting {} seconds for next check",
+                ledgers.size(), sleepTimeForThisCheck / 1000);
             Thread.sleep(sleepTimeForThisCheck);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);

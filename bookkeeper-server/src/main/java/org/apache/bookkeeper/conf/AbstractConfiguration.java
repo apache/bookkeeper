@@ -84,6 +84,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
+    protected static final String ZK_REPLICATION_TASK_RATE_LIMIT = "zkReplicationTaskRateLimit";
     protected static final String AVAILABLE_NODE = "available";
     protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
@@ -1099,7 +1100,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *            the concurrency level to use for the allocator pool
      * @return configuration object.
      */
-    public T setAllocatorPoolingConcurrenncy(int concurrency) {
+    public T setAllocatorPoolingConcurrency(int concurrency) {
         this.setProperty(ALLOCATOR_POOLING_POLICY, concurrency);
         return getThis();
     }
@@ -1191,14 +1192,14 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * CPU cores busy.
      * </p>
      *
-     * @param busyWaitEanbled
+     * @param busyWaitEnabled
      *            if enabled, use spin-waiting strategy to reduce latency in
      *            context switches
      *
      * @see #isBusyWaitEnabled()
      */
-    public T setBusyWaitEnabled(boolean busyWaitEanbled) {
-        setProperty(ENABLE_BUSY_WAIT, busyWaitEanbled);
+    public T setBusyWaitEnabled(boolean busyWaitEnabled) {
+        setProperty(ENABLE_BUSY_WAIT, busyWaitEnabled);
         return getThis();
     }
 
@@ -1243,6 +1244,26 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setReplicationRateByBytes(int rate) {
         this.setProperty(REPLICATION_RATE_BY_BYTES, rate);
+        return getThis();
+    }
+
+    /**
+     * get the max tasks can be acquired per second of re-replication.
+     * @return max tasks can be acquired per second of re-replication.
+     */
+    public double getZkReplicationTaskRateLimit() {
+        return getDouble(ZK_REPLICATION_TASK_RATE_LIMIT, 0);
+    }
+
+    /**
+     * set the max tasks can be acquired per second of re-replication, default is 0, which means no limit.
+     * Value greater than 0 will enable the rate limiting. Decimal value is allowed.
+     * For example, 0.5 means 1 task per 2 seconds, 1 means 1 task per second.
+     * @param zkReplicationTaskRateLimit
+     * @return ClientConfiguration
+     */
+    public T setZkReplicationTaskRateLimit(double zkReplicationTaskRateLimit) {
+        setProperty(ZK_REPLICATION_TASK_RATE_LIMIT, zkReplicationTaskRateLimit);
         return getThis();
     }
 
