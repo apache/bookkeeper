@@ -23,10 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -40,15 +38,12 @@ import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.common.util.ShutdownUtil;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * Tests for {@link ByteBufAllocatorBuilderImpl}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ShutdownUtil.class)
 public class ByteBufAllocatorBuilderTest {
 
     private static final OutOfMemoryError outOfDirectMemException;
@@ -106,10 +101,8 @@ public class ByteBufAllocatorBuilderTest {
                 .outOfMemoryPolicy(OutOfMemoryPolicy.ThrowException)
                 .exitOnOutOfMemory(true)
                 .build();
-
-        mockStatic(ShutdownUtil.class);
-        doNothing().when(ShutdownUtil.class);
-        ShutdownUtil.triggerImmediateForcefulShutdown();
+        
+        MockedStatic<ShutdownUtil> mockedStatic = mockStatic(ShutdownUtil.class);
 
         try {
             alloc.buffer();
@@ -118,9 +111,8 @@ public class ByteBufAllocatorBuilderTest {
             // Expected
             assertEquals(outOfDirectMemException, e);
         }
-
-        verifyStatic(ShutdownUtil.class);
-        ShutdownUtil.triggerImmediateForcefulShutdown();
+        
+        mockedStatic.verify(() -> ShutdownUtil.triggerImmediateForcefulShutdown(), Mockito.times(1));
     }
 
     @Test
