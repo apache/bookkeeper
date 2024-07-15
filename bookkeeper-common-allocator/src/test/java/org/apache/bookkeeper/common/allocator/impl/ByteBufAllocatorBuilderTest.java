@@ -101,7 +101,7 @@ public class ByteBufAllocatorBuilderTest {
                 .outOfMemoryPolicy(OutOfMemoryPolicy.ThrowException)
                 .exitOnOutOfMemory(true)
                 .build();
-        
+
         MockedStatic<ShutdownUtil> mockedStatic = mockStatic(ShutdownUtil.class);
 
         try {
@@ -111,7 +111,7 @@ public class ByteBufAllocatorBuilderTest {
             // Expected
             assertEquals(outOfDirectMemException, e);
         }
-        
+
         mockedStatic.verify(() -> ShutdownUtil.triggerImmediateForcefulShutdown(), Mockito.times(1));
     }
 
