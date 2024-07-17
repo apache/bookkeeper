@@ -238,7 +238,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Ddocker.image=bookkeeper-$(date +%s)
 
       - name: Run metadata driver tests
         run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests
@@ -323,7 +323,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Ddocker.image=bookkeeper-$(date +%s)
 
       - name: Test current server with old clients
         run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :backward-compat-current-server-old-clients test

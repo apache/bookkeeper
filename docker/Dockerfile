@@ -17,6 +17,37 @@
 # under the License.
 #
 
+FROM alpine:3.20 as bk-dist
+
+ARG BK_TARBALL
+
+ARG BK_VERSION=4.17.1
+ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
+ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
+
+COPY . /temp/
+RUN echo $BK_TARBALL
+RUN if [ -n "$BK_TARBALL" ] && [ -f "/temp/$BK_TARBALL" ]; then \
+        echo "Adding tarball: $BK_TARBALL"  \
+        && tar -xzf /temp/$BK_TARBALL -C /opt/  \
+        && mv /opt/bookkeeper-*/ /opt/bookkeeper/; \
+    else \
+        # Download Apache Bookkeeper, untar and clean up
+        echo "Downloading Apache Bookkeeper" \
+        && apk update && apk add gpg gpg-agent wget \
+        && cd /opt \
+        && wget -q "${DISTRO_URL}" \
+        && wget -q "${DISTRO_URL}.asc" \
+        && wget -q "${DISTRO_URL}.sha512" \
+        && sha512sum -c ${DISTRO_NAME}.tar.gz.sha512 \
+        && wget -q https://dist.apache.org/repos/dist/release/bookkeeper/KEYS \
+        && gpg --import KEYS \
+        && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
+        && tar -xzf "$DISTRO_NAME.tar.gz" \
+        && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
+        && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512"; \
+    fi
+
 FROM eclipse-temurin:17 as jre-build
 
 # Create a custom Java runtime
@@ -34,21 +65,16 @@ RUN echo networkaddress.cache.negative.ttl=1 >> /javaruntime/conf/security/java.
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG TARGETARCH
-ARG BK_VERSION=4.17.1
-ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
-
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
-EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
+ENV BOOKIE_GRPC_PORT=4181
+EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT $BOOKIE_GRPC_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
 ENV DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
 ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
-# Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
      -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
@@ -58,31 +84,19 @@ RUN set -x \
     && apt-get install -y ca-certificates apt-transport-https \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
+    && apt-get install -y --no-install-recommends wget sudo \
     && apt-get -y --purge autoremove \
     && apt-get autoclean \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && mkdir -pv /opt \
-    && cd /opt \
-    && wget -q "${DISTRO_URL}" \
-    && wget -q "${DISTRO_URL}.asc" \
-    && wget -q "${DISTRO_URL}.sha512" \
-    && sha512sum -c ${DISTRO_NAME}.tar.gz.sha512 \
-    && wget https://dist.apache.org/repos/dist/release/bookkeeper/KEYS \
-    && gpg --import KEYS \
-    && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
-    && tar -xzf "$DISTRO_NAME.tar.gz" \
-    && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
-    && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
     && pip install zk-shell
-
-WORKDIR /opt/bookkeeper
 
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH="$PATH:$JAVA_HOME/bin"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
+WORKDIR /opt/bookkeeper
+COPY --from=bk-dist /opt/bookkeeper /opt/bookkeeper
 COPY scripts /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
 

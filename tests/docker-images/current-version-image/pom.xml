@@ -26,16 +26,6 @@
   <artifactId>current-version-image</artifactId>
   <name>Apache BookKeeper :: Tests :: Docker Images :: Current Version</name>
   <packaging>pom</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-dist-server</artifactId>
-      <version>${project.parent.version}</version>
-      <classifier>bin</classifier>
-      <type>tar.gz</type>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
   <profiles>
     <profile>
       <id>docker</id>
@@ -81,9 +71,6 @@
                     <echo>copy python wheel file</echo>
                     <mkdir dir="${project.basedir}/target/bookkeeper-client" />
                     <copydir src="${project.basedir}/../../../stream/clients/python/dist" dest="${project.basedir}/target/bookkeeper-client" />
-                    <echo>copying docker scripts</echo>
-                    <mkdir dir="${project.basedir}/target/scripts" />
-                    <copydir src="${project.basedir}/../../../docker/scripts" dest="${project.basedir}/target/scripts" />
                   </tasks>
                 </configuration>
               </execution>
@@ -117,29 +104,9 @@
               <pullNewerImage>false</pullNewerImage>
               <noCache>true</noCache>
               <buildArgs>
-                <BK_VERSION>${project.version}</BK_VERSION>
-                <UBUNTU_MIRROR>${UBUNTU_MIRROR}</UBUNTU_MIRROR>
-                <UBUNTU_SECURITY_MIRROR>${UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
+                <BK_IMAGE>${docker.organization}/${docker.image}</BK_IMAGE>
               </buildArgs>
             </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>copy-docker-dependencies</id>
-                <goals>
-                  <goal>copy-dependencies</goal>
-                </goals>
-                <phase>generate-resources</phase>
-                <configuration>
-                  <outputDirectory>${project.build.directory}/</outputDirectory>
-                  <includeArtifactIds>bookkeeper-dist-server</includeArtifactIds>
-                  <excludeTransitive>true</excludeTransitive>
-                </configuration>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>
