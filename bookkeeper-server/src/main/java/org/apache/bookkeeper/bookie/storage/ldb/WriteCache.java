@@ -77,9 +77,9 @@ public class WriteCache implements Closeable {
     private final long segmentOffsetMask;
     private final long segmentOffsetBits;
 
-    private final AtomicLong cacheSize = new AtomicLong(0);
+    final AtomicLong cacheSize = new AtomicLong(0);
     private final AtomicLong cacheOffset = new AtomicLong(0);
-    private final LongAdder cacheCount = new LongAdder();
+    final LongAdder cacheCount = new LongAdder();
 
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
 
