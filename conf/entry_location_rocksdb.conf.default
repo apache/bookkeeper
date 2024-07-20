@@ -16,6 +16,10 @@
 # * limitations under the License.
 # */
 
+# When modifying this file, please also modify the configuration files(at
+# bookkeeper-server/src/test/resources/conf) in the
+# test case to ensure unit test coverage.
+
 [DBOptions]
  # set by jni: options.setCreateIfMissing
  create_if_missing=true
@@ -26,7 +30,7 @@
  # set by jni: options.setLogFileTimeToRoll
  log_file_time_to_roll=86400
  # set by jni: options.setMaxBackgroundJobs or options.setIncreaseParallelism
- max_background_jobs=2
+ max_background_jobs=32
  # set by jni: options.setMaxSubcompactions
  max_subcompactions=1
  # set by jni: options.setMaxTotalWalSize
@@ -57,7 +61,7 @@
 [TableOptions/BlockBasedTable "default"]
  # set by jni: tableOptions.setBlockSize
  block_size=65536
- # set by jni: tableOptions.setBlockCache
+ # set by jni: tableOptions.setBlockCache, default value is: maxDirectMemory() / ledgerDirsSize / 10;
  block_cache=206150041
  # set by jni: tableOptions.setFormatVersion
  format_version=5
