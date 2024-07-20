@@ -16,6 +16,10 @@
 # * limitations under the License.
 # */
 
+# When modifying this file, please also modify the configuration files(at
+# bookkeeper-server/src/test/resources/conf) in the
+# test case to ensure unit test coverage.
+
 [DBOptions]
  # set by jni: options.setCreateIfMissing
  create_if_missing=true
@@ -23,10 +27,11 @@
  info_log_level=INFO_LEVEL
  # set by jni: options.setKeepLogFileNum
  keep_log_file_num=30
-
-[CFOptions "default"]
  # set by jni: options.setLogFileTimeToRoll
  log_file_time_to_roll=86400
+ 
+ [CFOptions "default"]
+ #no default setting in CFOptions
 
 [TableOptions/BlockBasedTable "default"]
  # set by jni: tableOptions.setChecksumType
