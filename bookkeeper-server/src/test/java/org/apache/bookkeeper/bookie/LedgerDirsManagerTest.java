@@ -528,6 +528,35 @@ public class LedgerDirsManagerTest {
         new LedgerDirsMonitor(configuration, mockDiskChecker, Collections.singletonList(dirsManager));
     }
 
+    @Test
+    public void testBookieStartWithReadonlyAndDiskIsLowerThanThreshold() throws Exception {
+        File tmpDir1 = createTempDir("bkTest", ".dir");
+        File curDir1 = BookieImpl.getCurrentDirectory(tmpDir1);
+        BookieImpl.checkDirectoryStructure(curDir1);
+
+        final ServerConfiguration configuration = TestBKConfiguration.newServerConfiguration();
+        configuration.setDiskUsageThreshold(0.95f);
+        configuration.setDiskUsageWarnThreshold(0.80f);
+        configuration.setDiskLowWaterMarkUsageThreshold(0.80f);
+        configuration.setLedgerDirNames(new String[]{tmpDir1.toString()});
+
+        MockDiskChecker diskChecker = new MockDiskChecker(
+            configuration.getDiskUsageThreshold(), configuration.getDiskUsageWarnThreshold());
+
+        LedgerDirsManager ldm = new LedgerDirsManager(
+            configuration, configuration.getLedgerDirs(), diskChecker, statsLogger);
+        LedgerDirsMonitor ldmMonitor = new LedgerDirsMonitor(
+            configuration, diskChecker, Collections.singletonList(ldm));
+        MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        mockLedgerDirsListener.readOnly = true;
+        ldm.addLedgerDirsListener(mockLedgerDirsListener);
+        HashMap<File, Float> usageMap = new HashMap<>();
+        usageMap.put(curDir1, 0.75f);
+        diskChecker.setUsageMap(usageMap);
+        ldmMonitor.init();
+        assertFalse(mockLedgerDirsListener.readOnly);
+    }
+
     private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
             MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly)
             throws InterruptedException {
