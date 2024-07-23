@@ -149,7 +149,6 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         // verify appends
         verify(wh, times(10)).append(eq(data));
 
-
         // verify close write handle.
         verify(wh, times(1)).close();
         // verify close the read handle.
