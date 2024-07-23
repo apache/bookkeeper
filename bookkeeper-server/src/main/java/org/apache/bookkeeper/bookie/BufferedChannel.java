@@ -102,7 +102,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         if (closed) {
             return;
         }
-        ReferenceCountUtil.safeRelease(writeBuffer);
+        ReferenceCountUtil.release(writeBuffer);
         fileChannel.close();
         closed = true;
     }

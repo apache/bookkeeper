@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-java-client-parent</artifactId>
-    <version>4.15.4-SNAPSHOT</version>
+    <version>4.15.6-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-java-client-base</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Clients :: Java Client :: Base</name>
@@ -37,6 +37,11 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.inferred</groupId>
+      <artifactId>freebuilder</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
       <version>${project.parent.version}</version>
@@ -45,6 +50,19 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths combine.children="append">
+            <path>
+              <groupId>org.inferred</groupId>
+              <artifactId>freebuilder</artifactId>
+              <version>${freebuilder.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>

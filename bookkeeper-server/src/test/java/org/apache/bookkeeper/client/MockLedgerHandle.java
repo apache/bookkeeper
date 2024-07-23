@@ -93,6 +93,11 @@ public class MockLedgerHandle extends LedgerHandle {
     }
 
     @Override
+    void executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable runnable) throws RejectedExecutionException {
+        bk.executor.execute(runnable);
+    }
+
+    @Override
     public void asyncReadEntries(final long firstEntry, final long lastEntry, final ReadCallback cb, final Object ctx) {
         if (bk.isStopped()) {
             cb.readComplete(-1, MockLedgerHandle.this, null, ctx);

@@ -801,7 +801,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
                         return;
                     }
                 } finally {
-                    ReferenceCountUtil.safeRelease(removedEntry);
+                    ReferenceCountUtil.release(removedEntry);
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
                 // skip this entry and move forward

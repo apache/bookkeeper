@@ -32,7 +32,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.io.BufferedReader;
 import java.io.File;
@@ -189,7 +188,7 @@ public class EntryLogger {
                     throw e;
                 }
             } finally {
-                ReferenceCountUtil.safeRelease(serializedMap);
+                serializedMap.release();
             }
             // Flush the ledger's map out before we write the header.
             // Otherwise the header might point to something that is not fully
@@ -858,7 +857,7 @@ public class EntryLogger {
         ByteBuf data = allocator.buffer(entrySize, entrySize);
         int rc = readFromLogChannel(entryLogId, fc, data, pos);
         if (rc != entrySize) {
-            ReferenceCountUtil.safeRelease(data);
+            data.release();
             throw new IOException("Bad entry read from log file id: " + entryLogId,
                     new EntryLookupException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
@@ -896,7 +895,7 @@ public class EntryLogger {
             int ledgersCount = headers.readInt();
             return new Header(headerVersion, ledgersMapOffset, ledgersCount);
         } finally {
-            ReferenceCountUtil.safeRelease(headers);
+            headers.release();
         }
     }
 
@@ -1042,7 +1041,7 @@ public class EntryLogger {
                 pos += entrySize;
             }
         } finally {
-            ReferenceCountUtil.safeRelease(data);
+            data.release();
         }
     }
 
@@ -1065,6 +1064,9 @@ public class EntryLogger {
         // entry log
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
+        } catch (FileNotFoundException fne) {
+            LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
+            throw fne;
         } catch (Exception e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 
@@ -1145,7 +1147,7 @@ public class EntryLogger {
         } catch (IndexOutOfBoundsException e) {
             throw new IOException(e);
         } finally {
-            ReferenceCountUtil.safeRelease(ledgersMap);
+            ledgersMap.release();
         }
 
         if (meta.getLedgersMap().size() != header.ledgersCount) {

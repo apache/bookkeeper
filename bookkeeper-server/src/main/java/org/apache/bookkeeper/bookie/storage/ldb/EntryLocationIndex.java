@@ -195,15 +195,16 @@ public class EntryLocationIndex implements Closeable {
     private static final int DELETE_ENTRIES_BATCH_SIZE = 100000;
 
     public void removeOffsetFromDeletedLedgers() throws IOException {
-        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
-        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
-        LongPairWrapper keyToDelete = LongPairWrapper.get(-1, -1);
 
         Set<Long> ledgersToDelete = deletedLedgers.items();
 
         if (ledgersToDelete.isEmpty()) {
             return;
         }
+
+        LongPairWrapper keyToDelete = LongPairWrapper.get(-1, -1);
+        LongPairWrapper firstKeyWrapper = LongPairWrapper.get(-1, -1);
+        LongPairWrapper lastKeyWrapper = LongPairWrapper.get(-1, -1);
 
         log.info("Deleting indexes for ledgers: {}", ledgersToDelete);
         long startTime = System.nanoTime();

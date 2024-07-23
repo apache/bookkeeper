@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,9 +108,14 @@ public class MockBookKeeper extends BookKeeper {
                     log.info("Creating ledger {}", id);
                     MockLedgerHandle lh = new MockLedgerHandle(MockBookKeeper.this, id, digestType, passwd);
                     ledgers.put(id, lh);
-                    cb.createComplete(0, lh, ctx);
+                    lh.executeOrdered(new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            cb.createComplete(0, lh, ctx);
+                        }
+                    });
                 } catch (Throwable t) {
-                    t.printStackTrace();
+                    log.error("Error", t);
                 }
             }
         });
@@ -164,7 +170,12 @@ public class MockBookKeeper extends BookKeeper {
         } else if (!Arrays.equals(lh.passwd, passwd)) {
             cb.openComplete(BKException.Code.UnauthorizedAccessException, null, ctx);
         } else {
-            cb.openComplete(0, lh, ctx);
+            lh.executeOrdered(new SafeRunnable() {
+                                  @Override
+                                  public void safeRun() {
+                                      cb.openComplete(0, lh, ctx);
+                                  }
+                              });
         }
     }
 

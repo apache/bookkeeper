@@ -1457,7 +1457,6 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                         public boolean validate() {
                             return false;
                         }
-
                     }, false);
             fail("Should get not enough bookies exception since ensemble rejects all the nodes");
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -1508,6 +1507,177 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy2);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
+        }
+    }
+
+    //see: https://github.com/apache/bookkeeper/issues/3722
+    @Test
+    public void testNewEnsembleWithMultipleRacksWithCommonRack() throws Exception {
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        clientConf.setMinNumRacksPerWriteQuorum(3);
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.10", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/default-region/r3");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+        addrs.add(addr8.toBookieId());
+        addrs.add(addr9.toBookieId());
+        addrs.add(addr10.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        try {
+            int ensembleSize = 10;
+            int writeQuorumSize = 10;
+            int ackQuorumSize = 2;
+
+            for (int i = 0; i < 50; ++i) {
+                Set<BookieId> excludeBookies = new HashSet<>();
+                EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                        repp.newEnsemble(ensembleSize, writeQuorumSize,
+                                ackQuorumSize, null, excludeBookies);
+            }
+        } catch (Exception e) {
+            fail("Can not new ensemble selection succeed");
+        }
+    }
+
+    @Test
+    public void testNewEnsembleWithMultipleRacksWithCommonRackFailed() throws Exception {
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        clientConf.setMinNumRacksPerWriteQuorum(3);
+        repp.uninitalize();
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
+        BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.10", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/default-region/r2");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        addrs.add(addr6.toBookieId());
+        addrs.add(addr7.toBookieId());
+        addrs.add(addr8.toBookieId());
+        addrs.add(addr9.toBookieId());
+        addrs.add(addr10.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        try {
+            int ensembleSize = 10;
+            int writeQuorumSize = 10;
+            int ackQuorumSize = 2;
+
+            Set<BookieId> excludeBookies = new HashSet<>();
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            fail("Can not new ensemble selection succeed");
+        } catch (Exception e) {
+            assertTrue(e instanceof BKNotEnoughBookiesException);
+        }
+    }
+
+    @Test
+    public void testNewEnsembleWithPickDifferentRack() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        int ensembleSize = 3;
+        int writeQuorumSize = 3;
+        int ackQuorumSize = 2;
+
+        Set<BookieId> excludeBookies = new HashSet<>();
+
+        for (int i = 0; i < 50; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+            List<BookieId> ensemble = ensembleResponse.getResult();
+            if (ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId())) {
+                fail("addr1 and addr2 is same rack.");
+            }
+        }
+
+        //addr4 shutdown.
+        addrs.remove(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        for (int i = 0; i < 50; ++i) {
+            EnsemblePlacementPolicy.PlacementResult<List<BookieId>> ensembleResponse =
+                    repp.newEnsemble(ensembleSize, writeQuorumSize,
+                            ackQuorumSize, null, excludeBookies);
+              List<BookieId> ensemble = ensembleResponse.getResult();
+            assertTrue(ensemble.contains(addr1.toBookieId()) && ensemble.contains(addr2.toBookieId()));
         }
     }
 

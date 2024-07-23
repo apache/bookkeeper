@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.15.4-SNAPSHOT</version>
+    <version>4.15.6-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-api</artifactId>
@@ -33,12 +33,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <sourcepath>${src.dir}</sourcepath>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <doclint>none</doclint>
+          <!--
           <subpackages>org.apache.bookkeeper.stats</subpackages>
+          -->
           <groups>
             <group>
               <title>Bookkeeper Stats API</title>

@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>docker-images</artifactId>
-    <version>4.15.4-SNAPSHOT</version>
+    <version>4.15.6-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -82,6 +82,8 @@
               <noCache>true</noCache>
               <buildArgs>
                 <BK_TARBALL>target/bookkeeper-dist-server-${project.version}-bin.tar.gz</BK_TARBALL>
+                <UBUNTU_MIRROR>${UBUNTU_MIRROR}</UBUNTU_MIRROR>
+                <UBUNTU_SECURITY_MIRROR>${UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
               </buildArgs>
             </configuration>
           </plugin>

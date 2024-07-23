@@ -17,10 +17,10 @@
 # under the License.
 #
 
-FROM centos:7
+FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.12.1
+ARG BK_VERSION=4.15.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
@@ -29,12 +29,26 @@ ENV BOOKIE_HTTP_PORT=8080
 EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
 ENV BK_USER=bookkeeper
 ENV BK_HOME=/opt/bookkeeper
-ENV JAVA_HOME=/usr/lib/jvm/java-11
+ENV DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
+ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
+    && sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
+     -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
+    && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
     && adduser "${BK_USER}" \
-    && yum install -y java-11-openjdk-devel wget bash python3 sudo\
+    && apt-get update \
+    && apt-get install -y ca-certificates apt-transport-https \
+    && apt-get install -y --no-install-recommends openjdk-17-jdk \
+    && apt-get install -y --no-install-recommends python3 pip \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
+    && apt-get -y --purge autoremove \
+    && apt-get autoclean \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "${DISTRO_URL}" \
@@ -47,15 +61,10 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
-    # install zookeeper shell
-    && wget -q https://bootstrap.pypa.io/pip/2.7/get-pip.py \
-    && python --version \
-    && python get-pip.py \
     && pip install zk-shell \
-    && rm -rf get-pip.py \
-    && yum remove -y wget \
-    && yum clean all \
-    && ls /usr/lib/jvm
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
 WORKDIR /opt/bookkeeper
 

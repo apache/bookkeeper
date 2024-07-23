@@ -35,7 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -62,6 +62,7 @@ import org.slf4j.LoggerFactory;
 public class GarbageCollectorThread extends SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
+    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private EntryLogMetadataMap entryLogMetaMap;
@@ -296,12 +297,11 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
     }
 
-    public void enableForceGC(Boolean forceMajor, Boolean forceMinor) {
+    public void enableForceGC(boolean forceMajor, boolean forceMinor) {
         if (forceGarbageCollection.compareAndSet(false, true)) {
             LOG.info("Forced garbage collection triggered by thread: {}, forceMajor: {}, forceMinor: {}",
                 Thread.currentThread().getName(), forceMajor, forceMinor);
-            triggerGC(true, forceMajor == null ? suspendMajorCompaction.get() : !forceMajor,
-                forceMinor == null ? suspendMinorCompaction.get() : !forceMinor);
+            triggerGC(true, !forceMajor, !forceMinor);
         }
     }
 
@@ -557,15 +557,20 @@ public class GarbageCollectorThread extends SafeRunnable {
         MutableLong timeDiff = new MutableLong(0);
 
         entryLogMetaMap.forEach((entryLogId, meta) -> {
-            int bucketIndex = calculateUsageIndex(numBuckets, meta.getUsage());
+            double usage = meta.getUsage();
+            if (conf.isUseTargetEntryLogSizeForGc() && usage < 1.0d) {
+                usage = (double) meta.getRemainingSize() / Math.max(meta.getTotalSize(), conf.getEntryLogSizeLimit());
+            }
+            int bucketIndex = calculateUsageIndex(numBuckets, usage);
             entryLogUsageBuckets[bucketIndex]++;
 
             if (timeDiff.getValue() < maxTimeMillis) {
                 end.setValue(System.currentTimeMillis());
                 timeDiff.setValue(end.getValue() - start);
             }
-            if (meta.getUsage() >= threshold || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
-                    || !running) {
+            if ((usage >= threshold
+                || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
+                || !running)) {
                 // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;
@@ -579,6 +584,13 @@ public class GarbageCollectorThread extends SafeRunnable {
                 entryLogUsageBuckets);
 
         final int maxBucket = calculateUsageIndex(numBuckets, threshold);
+        int totalEntryLogIds = 0;
+        for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
+            totalEntryLogIds += compactableBuckets.get(currBucket).size();
+        }
+        long lastPrintTimestamp = 0;
+        AtomicInteger processedEntryLogCnt = new AtomicInteger(0);
+
         stopCompaction:
         for (int currBucket = 0; currBucket <= maxBucket; currBucket++) {
             LinkedList<Long> entryLogIds = compactableBuckets.get(currBucket);
@@ -596,7 +608,11 @@ public class GarbageCollectorThread extends SafeRunnable {
 
                 final int bucketIndex = currBucket;
                 final long logId = entryLogIds.remove();
-
+                if (System.currentTimeMillis() - lastPrintTimestamp >= MINUTE) {
+                    lastPrintTimestamp = System.currentTimeMillis();
+                    LOG.info("Compaction progress {} / {}, current compaction entryLogId: {}",
+                        processedEntryLogCnt.get(), totalEntryLogIds, logId);
+                }
                 entryLogMetaMap.forKey(logId, (entryLogId, meta) -> {
                     if (meta == null) {
                         if (LOG.isDebugEnabled()) {
@@ -613,6 +629,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                     compactEntryLog(meta);
                     gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
                     compactedBuckets[bucketIndex]++;
+                    processedEntryLogCnt.getAndIncrement();
                 });
             }
         }
@@ -653,6 +670,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (!this.running) {
             return;
         }
+        this.running = false;
         LOG.info("Shutting down GarbageCollectorThread");
 
         throttler.cancelledAcquire();
@@ -662,7 +680,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             Thread.sleep(100);
         }
 
-        this.running = false;
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
         try {
@@ -758,14 +775,16 @@ public class GarbageCollectorThread extends SafeRunnable {
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
-                    entryLogger.removeEntryLog(entryLogId);
-                    // remove it from entrylogmetadata-map if it is present in
-                    // the map
-                    entryLogMetaMap.remove(entryLogId);
+                    // This means the entry log is not associated with any active
+                    // ledgers anymore.
+                    // We can remove this entry log file now.
+                    LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
+                    removeEntryLog(entryLogId);
+                    gcStats.getReclaimedSpaceViaDeletes().add(entryLogMeta.getTotalSize());
                 } else {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId
                          + " recovery will take care of the problem", e);

@@ -193,6 +193,11 @@ public class BookieStateManager implements StateManager {
     }
 
     @Override
+    public boolean isForceReadOnly(){
+        return forceReadOnly.get();
+    }
+
+    @Override
     public boolean isAvailableForHighPriorityWrites() {
         return availableForHighPriorityWrites;
     }

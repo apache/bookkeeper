@@ -229,7 +229,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
          * The last mark should first be max journal log id,
          * and then max log position in max journal log.
          */
-        void readLog() {
+        public void readLog() {
             byte[] buff = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             LogMark mark = new LogMark();
@@ -348,8 +348,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             cbThreadPoolQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
-            recycle();
             callbackTime.add(MathUtils.elapsedNanos(startTime));
+            recycle();
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -366,6 +366,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         };
 
         private void recycle() {
+            this.entry = null;
+            this.cb = null;
+            this.ctx = null;
+            this.journalAddEntryStats = null;
+            this.journalCbQueuedLatency = null;
+            this.journalCbQueueSize = null;
+            this.cbThreadPoolQueueSize = null;
+            this.callbackTime = null;
             recyclerHandle.recycle(this);
         }
     }
@@ -861,13 +869,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Scan the journal.
      *
-     * @param journalId Journal Log Id
-     * @param journalPos Offset to start scanning
-     * @param scanner Scanner to handle entries
+     * @param journalId         Journal Log Id
+     * @param journalPos        Offset to start scanning
+     * @param scanner           Scanner to handle entries
+     * @param skipInvalidRecord when invalid record,should we skip it or not
      * @return scanOffset - represents the byte till which journal was read
      * @throws IOException
      */
-    public long scanJournal(long journalId, long journalPos, JournalScanner scanner)
+    public long scanJournal(long journalId, long journalPos, JournalScanner scanner, boolean skipInvalidRecord)
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
@@ -929,6 +938,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (!isPaddingRecord) {
                     scanner.process(journalVersion, offset, recBuff);
                 }
+            }
+            return recLog.fc.position();
+        } catch (IOException e) {
+            if (skipInvalidRecord) {
+                LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
+            } else {
+                throw e;
             }
             return recLog.fc.position();
         } finally {

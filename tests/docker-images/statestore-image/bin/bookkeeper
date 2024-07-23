@@ -112,8 +112,7 @@ elif [ $COMMAND == "zookeeper" ]; then
     BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"zookeeper.log"}
     exec $JAVA $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE -Dzookeeper.4lw.commands.whitelist='*' org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
 elif [ ${COMMAND} == "shell" ]; then
-  ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
-  exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
+  exec ${JAVA} ${OPTS} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
 else
   exec ${JAVA} ${OPTS} ${COMMAND} $@
 fi

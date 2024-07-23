@@ -68,6 +68,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.release();
             request.recycle();
+            recycle();
             return;
         }
 
@@ -102,8 +103,6 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                       request.ledgerId, request.entryId, t.getMessage(), t);
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
-        } finally {
-            addData.release();
         }
 
         if (rc != BookieProtocol.EOK) {
@@ -113,6 +112,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
             request.recycle();
+            recycle();
         }
     }
 

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>integration</artifactId>
-    <version>4.15.4-SNAPSHOT</version>
+    <version>4.15.6-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -28,6 +28,28 @@
   <artifactId>smoke</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Integration :: Smoke test</name>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-bom</artifactId>
+        <version>${arquillian-cube.docker-java.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.arquillian.cube</groupId>
+        <artifactId>arquillian-cube-docker</artifactId>
+        <version>${arquillian-cube.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${arquillian-cube.snakeyaml.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -56,6 +78,11 @@
       <artifactId>arquillian-junit-standalone</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.arquillian.cube</groupId>
+      <artifactId>arquillian-cube-docker</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -63,7 +90,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <!-- smoke test should never flake //-->
           <rerunFailingTestsCount>0</rerunFailingTestsCount>

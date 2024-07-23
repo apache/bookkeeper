@@ -327,4 +327,13 @@
     <Class name="org.apache.distributedlog.messaging.RRMultiWriter" />
     <Bug pattern="EI_EXPOSE_REP2" />
   </Match>
+
+  <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.bookie\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.bookie.GroupSortBenchmark$TestState" />
+    <Bug pattern="DMI_RANDOM_USED_ONLY_ONCE" />
+  </Match>
 </FindBugsFilter>

@@ -609,7 +609,8 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         // validate filtered log ids only when we have markedLogId
         if (markedLog.getLogFileId() > 0) {
             if (logs.size() == 0 || logs.get(0) != markedLog.getLogFileId()) {
-                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
+                String path = journal.getJournalDirectory().getAbsolutePath();
+                throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing at " + path);
             }
         }
 
@@ -622,7 +623,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 logPosition = markedLog.getLogFileOffset();
             }
             LOG.info("Replaying journal {} from position {}", id, logPosition);
-            long scanOffset = journal.scanJournal(id, logPosition, scanner);
+            long scanOffset = journal.scanJournal(id, logPosition, scanner, conf.isSkipReplayJournalInvalidRecord());
             // Update LastLogMark after completely replaying journal
             // scanOffset will point to EOF position
             // After LedgerStorage flush, SyncThread should persist this to disk
@@ -781,30 +782,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
 
     @Override
     public void run() {
-        // bookie thread wait for journal thread
-        try {
-            // start journals
-            for (Journal journal: journals) {
-                journal.start();
-            }
-
-            // wait until journal quits
-            for (Journal journal: journals) {
-
-                journal.joinThread();
-            }
-            LOG.info("Journal thread(s) quit.");
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            LOG.warn("Interrupted on running journal thread : ", ie);
-        }
-        // if the journal thread quits due to shutting down, it is ok
-        if (!stateManager.isShuttingDown()) {
-            // some error found in journal thread and it quits
-            // following add operations to it would hang unit client timeout
-            // so we should let bookie server exists
-            LOG.error("Journal manager quits unexpectedly.");
-            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+        // start journals
+        for (Journal journal: journals) {
+            journal.start();
         }
     }
 
@@ -1004,9 +984,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
         } finally {
-            ReferenceCountUtil.safeRelease(entry);
+            ReferenceCountUtil.release(entry);
             if (explicitLACEntry != null) {
-                ReferenceCountUtil.safeRelease(explicitLACEntry);
+                ReferenceCountUtil.release(explicitLACEntry);
             }
         }
     }
@@ -1265,5 +1245,10 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
             }
         }
+    }
+
+    @VisibleForTesting
+    public List<Journal> getJournals() {
+        return this.journals;
     }
 }

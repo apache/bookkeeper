@@ -871,6 +871,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void notifyUnderReplicationLedgerChanged(GenericCallback<Void> cb) throws UnavailableException {
         LOG.debug("notifyUnderReplicationLedgerChanged()");

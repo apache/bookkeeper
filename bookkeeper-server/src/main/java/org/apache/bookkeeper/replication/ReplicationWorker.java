@@ -33,6 +33,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -475,6 +477,14 @@ public class ReplicationWorker implements Runnable {
      *
      * <p>Missing bookies in closed ledgers are fine, as we know the last confirmed add, so
      * we can tell which entries are supposed to exist and rereplicate them if necessary.
+     *
+     * <p>Another corner case is that there are multiple ensembles in the ledger and the last
+     * segment/ensemble is open, but nothing has been written to some quorums in the ensemble.
+     * For the v2 protocol, this ledger's lastAddConfirm entry is the last segment/ensemble's `key - 2`,
+     * not `key - 2`, the explanation please refer to: https://github.com/apache/bookkeeper/pull/3917.
+     * If we treat the penultimate segment/ensemble as closed state, we will can't replicate
+     * the last entry in the segment. So in this case, we should also check if the penultimate
+     * segment/ensemble has missing bookies.
      */
     private boolean isLastSegmentOpenAndMissingBookies(LedgerHandle lh) throws BKException {
         LedgerMetadata md = admin.getLedgerMetadata(lh);
@@ -484,6 +494,10 @@ public class ReplicationWorker implements Runnable {
 
         SortedMap<Long, ? extends List<BookieId>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
         List<BookieId> finalEnsemble = ensembles.get(ensembles.lastKey());
+        if (ensembles.size() > 1 && lh.getLastAddConfirmed() < ensembles.lastKey() - 1) {
+            finalEnsemble = new ArrayList<>(finalEnsemble);
+            finalEnsemble.addAll((new TreeMap<>(ensembles)).floorEntry(ensembles.lastKey() - 1).getValue());
+        }
         Collection<BookieId> available = admin.getAvailableBookies();
         for (BookieId b : finalEnsemble) {
             if (!available.contains(b)) {

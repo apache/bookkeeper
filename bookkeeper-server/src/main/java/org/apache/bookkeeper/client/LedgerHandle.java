@@ -539,7 +539,7 @@ public class LedgerHandle implements WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+        executeOrdered(new SafeRunnable() {
             @Override
             public void safeRun() {
                 final HandleState prevHandleState;
@@ -896,7 +896,7 @@ public class LedgerHandle implements WriteHandle {
 
             if (isHandleWritable()) {
                 // Ledger handle in read/write mode: submit to OSE for ordered execution.
-                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+                executeOrdered(op);
             } else {
                 // Read-only ledger handle: bypass OSE and execute read directly in client thread.
                 // This avoids a context-switch to OSE thread and thus reduces latency.
@@ -1159,7 +1159,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                executeOrdered(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
@@ -1179,7 +1179,7 @@ public class LedgerHandle implements WriteHandle {
 
         // early exit: no write has been issued yet
         if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+            executeOrdered(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         FutureUtils.complete(result, null);
@@ -1194,7 +1194,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         try {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+            executeOrdered(op);
         } catch (RejectedExecutionException e) {
             result.completeExceptionally(new BKException.BKInterruptedException());
         }
@@ -1328,7 +1328,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                executeOrdered(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -1363,7 +1363,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         try {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+            executeOrdered(op);
         } catch (RejectedExecutionException e) {
             op.cb.addCompleteWithLatency(
                     BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
@@ -2085,4 +2085,14 @@ public class LedgerHandle implements WriteHandle {
             return distributionSchedule.getWriteSet(entryId);
         }
     }
+
+    /**
+     * Execute the callback in the thread pinned to the ledger.
+     * @param runnable
+     * @throws RejectedExecutionException
+     */
+    void executeOrdered(org.apache.bookkeeper.common.util.SafeRunnable runnable) throws RejectedExecutionException {
+        clientCtx.getMainWorkerPool().executeOrdered(ledgerId, runnable);
+    }
+
 }

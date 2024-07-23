@@ -119,6 +119,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     protected static final String GC_ENTRYLOGMETADATA_CACHE_ENABLED = "gcEntryLogMetadataCacheEnabled";
     protected static final String GC_ENTRYLOG_METADATA_CACHE_PATH = "gcEntryLogMetadataCachePath";
+    protected static final String USE_TARGET_ENTRYLOG_SIZE_FOR_GC = "useTargetEntryLogSizeForGc";
     // Scrub Parameters
     protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
     protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
@@ -335,6 +336,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Used for location index, lots of writes and much bigger dataset
     protected static final String LEDGER_METADATA_ROCKSDB_CONF = "ledgerMetadataRocksdbConf";
 
+    protected static final String MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH =
+        "maxOperationNumbersInSingleRocksdbWriteBatch";
+
+    protected static final String SKIP_REPLAY_JOURNAL_INVALID_RECORD = "skipReplayJournalInvalidRecord";
+
     /**
      * Construct a default configuration object.
      */
@@ -549,6 +555,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setGcEntryLogMetadataCachePath(String gcEntrylogMetadataCachePath) {
         this.setProperty(GC_ENTRYLOG_METADATA_CACHE_PATH, gcEntrylogMetadataCachePath);
+        return this;
+    }
+
+    public boolean isUseTargetEntryLogSizeForGc() {
+        return getBoolean(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, false);
+    }
+
+    public ServerConfiguration setUseTargetEntryLogSizeForGc(boolean useTargetEntryLogSizeForGc) {
+        this.setProperty(USE_TARGET_ENTRYLOG_SIZE_FOR_GC, useTargetEntryLogSizeForGc);
         return this;
     }
 
@@ -3903,6 +3918,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this.getBoolean(DATA_INTEGRITY_COOKIE_STAMPING_ENABLED, false);
     }
 
+
+    /**
+     * When this config is set to true,if we replay journal failed, we will skip.
+     * @param skipReplayJournalInvalidRecord
+     * @return
+     */
+    public ServerConfiguration setSkipReplayJournalInvalidRecord(boolean skipReplayJournalInvalidRecord) {
+        this.setProperty(SKIP_REPLAY_JOURNAL_INVALID_RECORD,
+                Boolean.toString(skipReplayJournalInvalidRecord));
+        return this;
+    }
+
+    /**
+     * @see #isSkipReplayJournalInvalidRecord .
+     */
+    public boolean isSkipReplayJournalInvalidRecord() {
+        return this.getBoolean(SKIP_REPLAY_JOURNAL_INVALID_RECORD, false);
+    }
+
     /**
      * Get default rocksdb conf.
      *
@@ -3995,5 +4029,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setReplicationRateByBytes(int rate) {
         setProperty(REPLICATION_RATE_BY_BYTES, rate);
         return this;
+    }
+
+    /**
+     * Set the max operation numbers in a single rocksdb write batch.
+     * The rocksdb write batch is related to the memory usage. If the batch is too large, it will cause the OOM.
+     *
+     * @param maxNumbersInSingleRocksDBBatch
+     * @return
+     */
+    public ServerConfiguration setOperationMaxNumbersInSingleRocksDBWriteBatch(int maxNumbersInSingleRocksDBBatch) {
+        this.setProperty(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, maxNumbersInSingleRocksDBBatch);
+        return this;
+    }
+
+    /**
+     * Get the max operation numbers in a single rocksdb write batch.
+     *
+     * @return
+     */
+    public int getMaxOperationNumbersInSingleRocksDBBatch() {
+        return getInt(MAX_OPERATION_NUMBERS_IN_SINGLE_ROCKSDB_WRITE_BATCH, 100000);
     }
 }

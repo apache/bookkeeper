@@ -1,4 +1,4 @@
-#
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,22 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#
-aarch64.MacOSX.linker=g++
 
-aarch64.MacOSX.gpp.c.compiler=gcc
-aarch64.MacOSX.gpp.c.defines=Darwin GNU_GCC
-aarch64.MacOSX.gpp.c.options=-Wall -Wno-long-long -Wpointer-arith -Wconversion
-aarch64.MacOSX.gpp.c.includes=**/*.c
-aarch64.MacOSX.gpp.c.excludes=
+set -x
 
-aarch64.MacOSX.gpp.java.include=include;include/darwin
-aarch64.MacOSX.gpp.java.runtimeDirectory=IGNORED
-
-aarch64.MacOSX.gpp.lib.prefix=lib
-aarch64.MacOSX.gpp.shared.prefix=lib
-aarch64.MacOSX.gpp.static.extension=a
-aarch64.MacOSX.gpp.shared.extension=dylib
-aarch64.MacOSX.gpp.plugin.extension=bundle
-aarch64.MacOSX.gpp.jni.extension=jnilib
-aarch64.MacOSX.gpp.executable.extension=
+WHEEL_FILE=`ls /opt/bookkeeper/bookkeeper-client/*.whl`
+pip install ${WHEEL_FILE}

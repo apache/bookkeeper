@@ -23,23 +23,30 @@
 ## based on the ENV variables
 ## export my-key=new-value
 ##
-## ./apply-config-from-env config_dir
+## ./apply-config-from-env file ...
 ##
 
 import os, sys
 
-if len(sys.argv) != 2:
-    print 'Usage: %s ' + 'config_dir' % (sys.argv[0])
+if len(sys.argv) < 2:
+    print('Usage: %s file ...' % (sys.argv[0]))
     sys.exit(1)
 
-def mylistdir(dir):
-    return [os.path.join(dir, filename) for filename in os.listdir(dir)]
+def prepare_conf_files(files):
+    conf_files = []
+    for f in files:
+        if os.path.isfile(f):
+            if not os.path.isabs(f):
+                f = os.path.join(os.getcwd(), f)
+            conf_files.append(f)
+        else:
+            print('%s is not a readable file' % f)
+            sys.exit(1)
+    return conf_files
 
-# Always apply env config to all the files under conf
-conf_dir = sys.argv[1]
-conf_files = mylistdir(conf_dir)
-print 'conf files: '
-print conf_files
+conf_files = prepare_conf_files(sys.argv[1:])
+print('conf files: ')
+print(conf_files)
 
 bk_env_prefix = 'BK_'
 zk_env_prefix = 'ZK_'
@@ -75,13 +82,13 @@ for conf_filename in conf_files:
         if k.startswith(bk_env_prefix):
             search_key = k[len(bk_env_prefix):]
             if search_key in keys:
-                print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
+                print('[%s] Applying config %s = %s' % (conf_filename, search_key, v))
                 idx = keys[search_key]
                 lines[idx] = '%s=%s\n' % (search_key, v)
         if k.startswith(zk_env_prefix):
             search_key = k[len(zk_env_prefix):]
             if search_key in keys:
-                print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
+                print('[%s] Applying config %s = %s' % (conf_filename, search_key, v))
                 idx = keys[search_key]
                 lines[idx] = '%s=%s\n' % (search_key, v)
 

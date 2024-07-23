@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,12 +113,10 @@ class LedgerOpenOp {
          * Asynchronously read the ledger metadata node.
          */
         bk.getLedgerManager().readLedgerMetadata(ledgerId)
-            .whenComplete((metadata, exception) -> {
-                    if (exception != null) {
-                        openComplete(BKException.getExceptionCode(exception), null);
-                    } else {
-                        openWithMetadata(metadata);
-                    }
+                .thenAcceptAsync(this::openWithMetadata, bk.getScheduler().chooseThread(ledgerId))
+                .exceptionally(exception -> {
+                    openComplete(BKException.getExceptionCode(exception), null);
+                    return null;
                 });
     }
 
@@ -209,7 +208,7 @@ class LedgerOpenOp {
                             }
                             if (rc == BKException.Code.UnauthorizedAccessException
                                     || rc == BKException.Code.TimeoutException) {
-                                openComplete(rc, null);
+                                openComplete(bk.getReturnRc(rc), null);
                             } else {
                                 openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
                             }
@@ -256,7 +255,17 @@ class LedgerOpenOp {
         } else {
             openOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
-        cb.openComplete(rc, lh, ctx);
+
+        if (lh != null) { // lh is null in case of errors
+            lh.executeOrdered(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.openComplete(rc, lh, ctx);
+                }
+            });
+        } else {
+            cb.openComplete(rc, null, ctx);
+        }
     }
 
     static final class OpenBuilderImpl extends OpenBuilderBase {

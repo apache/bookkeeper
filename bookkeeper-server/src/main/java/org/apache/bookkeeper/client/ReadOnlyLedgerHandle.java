@@ -330,11 +330,14 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                     return builder.withClosedState().withLastEntryId(lac).withLength(len).build();
                 },
                 this::setLedgerMetadata).run();
-        f.thenRun(() -> {
-                synchronized (metadataLock) {
-                    newEnsemblesFromRecovery.clear();
-                }
-            });
+        f.whenComplete((result, exception) -> {
+            synchronized (metadataLock) {
+                newEnsemblesFromRecovery.clear();
+            }
+            if (exception != null) {
+                LOG.error("When closeRecovered,failed on clearing newEnsemblesFromRecovery.", exception);
+            }
+        });
         return f;
     }
 

@@ -55,6 +55,7 @@ public class KeyValueStorageRocksDBTest {
         assertEquals(64 * 1024 * 1024, options.writeBufferSize());
         assertEquals(4, options.maxWriteBufferNumber());
         assertEquals(256 * 1024 * 1024, options.maxBytesForLevelBase());
+        assertEquals(true, options.levelCompactionDynamicLevelBytes());
         rocksDB.close();
     }
 
@@ -79,6 +80,23 @@ public class KeyValueStorageRocksDBTest {
         assertEquals(CompressionType.LZ4_COMPRESSION, familyOptions.compressionType());
         assertEquals(1024, familyOptions.writeBufferSize());
         assertEquals(1, familyOptions.maxWriteBufferNumber());
+        assertEquals(true, familyOptions.levelCompactionDynamicLevelBytes());
         rocksDB.close();
+    }
+
+    @Test
+    public void testLevelCompactionDynamicLevelBytesFromConfigurationFile() throws Exception {
+        ServerConfiguration configuration = new ServerConfiguration();
+        URL url = getClass().getClassLoader().getResource("conf/entry_location_rocksdb.conf");
+        configuration.setEntryLocationRocksdbConf(url.getPath());
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-file").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+                KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        assertNotNull(rocksDB.getColumnFamilyDescriptors());
+
+        List<ColumnFamilyDescriptor> columnFamilyDescriptorList = rocksDB.getColumnFamilyDescriptors();
+        ColumnFamilyOptions familyOptions = columnFamilyDescriptorList.get(0).getOptions();
+        assertEquals(true, familyOptions.levelCompactionDynamicLevelBytes());
     }
 }

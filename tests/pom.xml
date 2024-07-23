@@ -21,14 +21,17 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.15.4-SNAPSHOT</version>
+    <version>4.15.6-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests</name>
 
   <properties>
-    <groovy.version>3.0.11</groovy.version>
+    <groovy.version>3.0.20</groovy.version>
+    <!-- must be compatible with arquillian-cube-docker -->
+    <arquillian-cube.docker-java.version>3.2.14</arquillian-cube.docker-java.version>
+    <arquillian-cube.snakeyaml.version>1.19</arquillian-cube.snakeyaml.version>
   </properties>
 
   <modules>

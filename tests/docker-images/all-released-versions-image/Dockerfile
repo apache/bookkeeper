@@ -17,16 +17,27 @@
 # under the License.
 #
 
-FROM openjdk:8-jdk
+FROM eclipse-temurin:8-jdk
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ENV BK_JOURNALDIR=/opt/bookkeeper/data/journal
 ENV BK_LEDGERDIR=/opt/bookkeeper/data/ledgers
 ENV BK_ZKCONNECTSTRING=zookeeper1,zookeeper2,zookeeper3
+ENV DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://archive.ubuntu.com/ubuntu/
+ARG UBUNTU_SECURITY_MIRROR=http://security.ubuntu.com/ubuntu/
 
-RUN apt-get update && apt-get install -qy wget supervisor bash \
+RUN sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
+    -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
+    && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
+    && apt-get update && apt-get install -qy wget curl supervisor bash ca-certificates apt-transport-https \
+    && apt-get -y install netcat dnsutils less procps iputils-ping \
+    && apt-get install -y --no-install-recommends gpg gpg-agent sudo \
     && echo "dash dash/sh boolean false" | debconf-set-selections \
-    && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
+    && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash \
+    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
+    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/jre/lib/security/java.security \
+    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/jre/lib/security/java.security
 
 RUN mkdir /tarballs
 WORKDIR /tarballs
