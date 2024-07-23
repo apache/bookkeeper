@@ -286,19 +286,29 @@ public class ByteBufList extends AbstractReferenceCounted {
             if (msg instanceof ByteBufList) {
                 ByteBufList b = (ByteBufList) msg;
 
-                try {
-                    // Write each buffer individually on the socket. The retain() here is needed to preserve the fact
-                    // that ByteBuf are automatically released after a write. If the ByteBufPair ref count is increased
-                    // and it gets written multiple times, the individual buffers refcount should be reflected as well.
-                    int buffersCount = b.buffers.size();
-                    for (int i = 0; i < buffersCount; i++) {
-                        ByteBuf bx = b.buffers.get(i);
-                        // Last buffer will carry on the final promise to notify when everything was written on the
-                        // socket
-                        ctx.write(bx.retainedDuplicate(), i == (buffersCount - 1) ? promise : ctx.voidPromise());
+                ChannelPromise compositePromise = ctx.newPromise();
+                compositePromise.addListener(future -> {
+                    // release the ByteBufList after the write operation is completed
+                    ReferenceCountUtil.safeRelease(b);
+                    // complete the promise passed as an argument unless it's a void promise
+                    if (promise != null && !promise.isVoid()) {
+                        if (future.isSuccess()) {
+                            promise.setSuccess();
+                        } else {
+                            promise.setFailure(future.cause());
+                        }
                     }
-                } finally {
-                    ReferenceCountUtil.release(b);
+                });
+
+                // Write each buffer individually on the socket. The retain() here is needed to preserve the fact
+                // that ByteBuf are automatically released after a write. If the ByteBufPair ref count is increased
+                // and it gets written multiple times, the individual buffers refcount should be reflected as well.
+                int buffersCount = b.buffers.size();
+                for (int i = 0; i < buffersCount; i++) {
+                    ByteBuf bx = b.buffers.get(i);
+                    // Last buffer will carry on the final promise to notify when everything was written on the
+                    // socket
+                    ctx.write(bx.retainedDuplicate(), i == (buffersCount - 1) ? compositePromise : ctx.voidPromise());
                 }
             } else {
                 ctx.write(msg, promise);

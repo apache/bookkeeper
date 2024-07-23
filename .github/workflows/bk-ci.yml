@@ -512,8 +512,8 @@ jobs:
 
       - name: run "clean install verify" to trigger dependency check
         # excluding dlfs because it includes hadoop lib with
-        # CVEs that we cannot patch up anyways
-        run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs'
+        # CVEs that we cannot patch up anyway
+        run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs,!tests'
 
       - name: Upload report
         uses: actions/upload-artifact@v4

@@ -76,6 +76,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationWorker;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.PortManager;
 import org.apache.zookeeper.KeeperException;
@@ -225,6 +226,11 @@ public abstract class BookKeeperClusterTestCase {
         }
     }
 
+    @After
+    public void clearMetricsThreadRegistry() throws Exception {
+        ThreadRegistry.clear();
+    }
+
     /**
      * Start zookeeper cluster.
      *
@@ -295,7 +301,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     protected ClientConfiguration newClientConfiguration() {
-        return new ClientConfiguration(baseConf);
+        return new ClientConfiguration(baseClientConf);
     }
 
     protected ServerConfiguration newServerConfiguration(int port, File journalDir, File[] ledgerDirs) {

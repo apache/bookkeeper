@@ -29,6 +29,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.NullMetadataBookieDriver;
 import org.apache.bookkeeper.proto.SimpleBookieServiceInfoProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,19 @@ public class TestBookieImpl extends BookieImpl {
 
     public TestBookieImpl(ServerConfiguration conf) throws Exception {
         this(new ResourceBuilder(conf).build());
+    }
+
+    public TestBookieImpl(Resources resources, StatsLogger statsLogger) throws Exception {
+        super(resources.conf,
+                resources.registrationManager,
+                resources.storage,
+                resources.diskChecker,
+                resources.ledgerDirsManager,
+                resources.indexDirsManager,
+                statsLogger,
+                UnpooledByteBufAllocator.DEFAULT,
+                new SimpleBookieServiceInfoProvider(resources.conf));
+        this.resources = resources;
     }
 
     public TestBookieImpl(Resources resources) throws Exception {
@@ -157,12 +171,16 @@ public class TestBookieImpl extends BookieImpl {
             return this;
         }
 
-        Resources build() throws Exception {
+        public Resources build() throws Exception {
+            return build(NullStatsLogger.INSTANCE);
+        }
+
+        public Resources build(StatsLogger statsLogger) throws Exception {
             if (metadataBookieDriver == null) {
                 if (conf.getMetadataServiceUri() == null) {
                     metadataBookieDriver = new NullMetadataBookieDriver();
                 } else {
-                    metadataBookieDriver = BookieResources.createMetadataDriver(conf, NullStatsLogger.INSTANCE);
+                    metadataBookieDriver = BookieResources.createMetadataDriver(conf, statsLogger);
                 }
             }
             if (registrationManager == null) {
@@ -173,13 +191,13 @@ public class TestBookieImpl extends BookieImpl {
 
             DiskChecker diskChecker = BookieResources.createDiskChecker(conf);
             LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
-                    conf, diskChecker, NullStatsLogger.INSTANCE);
+                    conf, diskChecker, statsLogger);
             LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
-                    conf, diskChecker, NullStatsLogger.INSTANCE, ledgerDirsManager);
+                    conf, diskChecker, statsLogger, ledgerDirsManager);
 
             LedgerStorage storage = BookieResources.createLedgerStorage(
                     conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+                    statsLogger, UnpooledByteBufAllocator.DEFAULT);
 
             return new Resources(conf,
                                  metadataBookieDriver,

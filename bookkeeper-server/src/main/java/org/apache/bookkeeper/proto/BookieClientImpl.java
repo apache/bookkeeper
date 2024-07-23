@@ -260,18 +260,20 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
 
         toSend.retain();
         client.obtain((rc, pcbc) -> {
-            if (rc != BKException.Code.OK) {
-                try {
-                    executor.executeOrdered(ledgerId,
-                            () -> cb.writeLacComplete(rc, ledgerId, addr, ctx));
-                } catch (RejectedExecutionException re) {
-                    cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
+            try {
+                if (rc != BKException.Code.OK) {
+                    try {
+                        executor.executeOrdered(ledgerId,
+                                () -> cb.writeLacComplete(rc, ledgerId, addr, ctx));
+                    } catch (RejectedExecutionException re) {
+                        cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
+                    }
+                } else {
+                    pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
                 }
-            } else {
-                pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
+            } finally {
+                ReferenceCountUtil.release(toSend);
             }
-
-            ReferenceCountUtil.release(toSend);
         }, ledgerId, useV3Enforced);
     }
 
@@ -392,14 +394,16 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         @Override
         public void operationComplete(final int rc,
                                       PerChannelBookieClient pcbc) {
-            if (rc != BKException.Code.OK) {
-                bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
-            } else {
-                pcbc.addEntry(ledgerId, masterKey, entryId,
-                              toSend, cb, ctx, options, allowFastFail, writeFlags);
+            try {
+                if (rc != BKException.Code.OK) {
+                    bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+                } else {
+                    pcbc.addEntry(ledgerId, masterKey, entryId,
+                            toSend, cb, ctx, options, allowFastFail, writeFlags);
+                }
+            } finally {
+                ReferenceCountUtil.release(toSend);
             }
-
-            ReferenceCountUtil.release(toSend);
             recycle();
         }
 

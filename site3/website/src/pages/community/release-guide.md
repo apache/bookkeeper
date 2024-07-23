@@ -476,7 +476,7 @@ Note: you can put the 1. and 2. in the same pull.
 Create and push a new signed for the released version by copying the tag for the final release tag, as follows
 
 ```shell
-git tag -s "${TAG}" "${RC_TAG}"
+git tag -s "${TAG}" "${RC_TAG}^{}"
 # Message: "Release ${VERSION}"
 git push apache "${TAG}"
 ```
