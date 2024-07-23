@@ -284,7 +284,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                              final BookieId addr,
                              final WriteCallback cb,
                              final Object ctx) {
-        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+        executor.executeOrdered(ledgerId, () -> cb.writeComplete(rc, ledgerId, entryId, addr, ctx));
     }
 
     @Override
