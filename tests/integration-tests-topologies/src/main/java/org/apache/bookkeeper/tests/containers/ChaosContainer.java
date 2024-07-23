@@ -85,7 +85,6 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
     }
 
     public String getContainerLog() {
-        StringBuilder sb = new StringBuilder();
 
         LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(this.getContainerId());
         logContainerCmd.withStdOut(true).withStdErr(true);
@@ -94,7 +93,7 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
         } catch (InterruptedException e) {
 
         }
-        return sb.toString();
+        return "";
     }
 
     public ExecResult execCmd(String... cmd) throws Exception {
