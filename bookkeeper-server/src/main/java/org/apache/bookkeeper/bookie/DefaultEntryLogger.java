@@ -1076,7 +1076,8 @@ public class DefaultEntryLogger implements EntryLogger {
             throw new IOException("Old log file header without ledgers map on entryLogId " + entryLogId);
         }
 
-        if (header.ledgersMapOffset == 0L) {
+        // for some unknown reason this offset maybe -1.
+        if (header.ledgersMapOffset <= 0L) {
             // The index was not stored in the log file (possibly because the bookie crashed before flushing it)
             throw new IOException("No ledgers map index found on entryLogId " + entryLogId);
         }
