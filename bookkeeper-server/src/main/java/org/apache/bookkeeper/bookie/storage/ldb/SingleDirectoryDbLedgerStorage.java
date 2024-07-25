@@ -638,17 +638,19 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
                 throw new NoEntryException(ledgerId, entryId);
             }
-        } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                    MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadFromLocationIndexTime(), locationIndexStartNano);
+        } catch (NoEntryException e) {
+            recordFailedEvent(dbLedgerStorageStats.getReadFromLocationIndexTime(), locationIndexStartNano);
+            throw e;
         }
 
         long readEntryStartNano = MathUtils.nowInNano();
         try {
             entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-        } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
-                    MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadFromEntryLogTime(), readEntryStartNano);
+        } catch (Exception e) {
+            recordFailedEvent(dbLedgerStorageStats.getReadFromEntryLogTime(), readEntryStartNano);
+            throw e;
         }
 
         readCache.put(ledgerId, entryId, entry);
@@ -700,11 +702,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             if (log.isDebugEnabled()) {
                 log.debug("Exception during read ahead for ledger: {}: e", originalLedgerId, e);
             }
-        } finally {
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
-            dbLedgerStorageStats.getReadAheadTime().addLatency(
-                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadAheadTime(),readAheadStartNano);
+        } finally {
+            dbLedgerStorageStats.getReadAheadBatchCountStats().registerFailedValue(count);
+            dbLedgerStorageStats.getReadAheadBatchSizeStats().registerFailedValue(size);
+            recordFailedEvent(dbLedgerStorageStats.getReadAheadTime(),readAheadStartNano);
         }
     }
 
@@ -763,21 +767,31 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         dbLedgerStorageStats.getWriteCacheMissCounter().inc();
 
         // Search the last entry in storage
+        long lastEntryId;
+        long entryLocation;
         long locationIndexStartNano = MathUtils.nowInNano();
-        long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
-        if (log.isDebugEnabled()) {
-            log.debug("Found last entry for ledger {} in db: {}", ledgerId, lastEntryId);
+        try {
+            lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
+            if (log.isDebugEnabled()) {
+                log.debug("Found last entry for ledger {} in db: {}", ledgerId, lastEntryId);
+            }
+
+            entryLocation = entryLocationIndex.getLocation(ledgerId, lastEntryId);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadFromLocationIndexTime(), locationIndexStartNano);
+        } catch (NoEntryException e) {
+            recordFailedEvent(dbLedgerStorageStats.getReadFromLocationIndexTime(), locationIndexStartNano);
+            throw e;
         }
 
-        long entryLocation = entryLocationIndex.getLocation(ledgerId, lastEntryId);
-        dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
-
         long readEntryStartNano = MathUtils.nowInNano();
-        ByteBuf content = entryLogger.readEntry(ledgerId, lastEntryId, entryLocation);
-        dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
-                MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
-        return content;
+        try {
+            ByteBuf content = entryLogger.readEntry(ledgerId, lastEntryId, entryLocation);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadFromEntryLogTime(), readEntryStartNano);
+            return content;
+        } catch (Exception e) {
+            recordFailedEvent(dbLedgerStorageStats.getReadFromEntryLogTime(), readEntryStartNano);
+            throw e;
+        }
     }
 
     @VisibleForTesting
