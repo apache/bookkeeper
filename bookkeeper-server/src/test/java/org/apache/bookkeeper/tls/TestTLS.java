@@ -350,11 +350,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testConnectToLocalTLSClusterTLSClient() throws Exception {
-        // skip test
-        if (useV2Protocol) {
-            return;
-        }
-
         restartBookies(c -> {
                 c.setDisableServerSocketBind(true);
                 c.setEnableLocalTransport(true);
@@ -622,10 +617,6 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieAuthPluginRequireClientTLSAuthenticationLocal() throws Exception {
-        if (useV2Protocol) {
-            return;
-        }
-
         restartBookies(c -> {
                 c.setBookieAuthProviderFactoryClass(
                         AllowOnlyClientsWithX509Certificates.class.getName());
@@ -756,6 +747,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
             testClient(clientConf, numBookies);
             fail("Shouldn't be able to connect");
         } catch (BKException.BKUnauthorizedAccessException authFailed) {
+        } catch (BKException.BKNotEnoughBookiesException notEnoughBookiesException) {
+            if (!useV2Protocol) {
+                fail("Unexpected exception occurred.");
+            }
         }
 
         assertFalse(secureBookieSideChannel);

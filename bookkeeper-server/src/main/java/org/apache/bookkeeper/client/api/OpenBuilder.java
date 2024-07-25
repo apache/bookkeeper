@@ -53,7 +53,7 @@ public interface OpenBuilder extends OpBuilder<ReadHandle> {
     OpenBuilder withRecovery(boolean recovery);
 
     /**
-     * Sets the password to be used to open the ledger. It defauls to an empty password
+     * Sets the password to be used to open the ledger. It defaults to an empty password
      *
      * @param password the password to unlock the ledger
      *

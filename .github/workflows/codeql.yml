@@ -38,6 +38,7 @@ jobs:
       # only required for workflows in private repositories
       actions: read
       contents: read
+      pull-requests: read
 
     strategy:
       fail-fast: false
@@ -63,7 +64,7 @@ jobs:
     - name: Cache local Maven repository
       if: steps.check_changes.outputs.docs_only != 'true'
       id: cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository/*/*/*
@@ -83,11 +84,6 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: 11
-
-    - name: Set up Maven
-      uses: apache/pulsar-test-infra/setup-maven@master
-      with:
-        maven-version: 3.8.7
 
     - name: Validate pull request
       if: steps.check_changes.outputs.docs_only != 'true'

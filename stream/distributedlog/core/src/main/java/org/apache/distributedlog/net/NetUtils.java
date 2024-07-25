@@ -34,7 +34,7 @@ public class NetUtils {
      *
      *  <p>It would try to load the class with the constructor with <code>hostRegionOverrides</code>.
      * If it fails, it would fall back to load the class with default empty constructor.
-     * The interpretion of <code>hostRegionOverrides</code> is up to the implementation.
+     * The interpretation of <code>hostRegionOverrides</code> is up to the implementation.
      *
      * @param resolverCls
      *          resolver class

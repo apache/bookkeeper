@@ -57,7 +57,7 @@ public class InMemClusterMetadataStoreTest {
     }
 
     @Test
-    public void testUnitialized() {
+    public void testUninitialized() {
         assertEquals(
             ClusterMetadata.newBuilder().setNumStorageContainers(NUM_STORAGE_CONTAINERS).build(),
             store.getClusterMetadata());

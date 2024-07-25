@@ -73,7 +73,9 @@ public class BKDLConfig implements DLConfig {
                 dlConfig = oldDLConfig;
             }
         }
-        assert (dlConfig instanceof BKDLConfig);
+        if (!(dlConfig instanceof BKDLConfig)) {
+            throw new IllegalStateException("Invalid DLConfig type : " + dlConfig.getClass().getName());
+        }
         return (BKDLConfig) dlConfig;
     }
 

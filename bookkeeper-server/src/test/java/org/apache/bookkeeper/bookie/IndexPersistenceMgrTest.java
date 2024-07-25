@@ -164,7 +164,7 @@ public class IndexPersistenceMgrTest {
                 indexPersistenceMgr.getFileInfo(lid, null);
                 fail("Should fail get file info for reading if the file doesn't exist");
             } catch (Bookie.NoLedgerException nle) {
-                // exepcted
+                // expected
             }
             assertEquals(0, indexPersistenceMgr.writeFileInfoCache.size());
             assertEquals(0, indexPersistenceMgr.readFileInfoCache.size());
@@ -468,7 +468,7 @@ public class IndexPersistenceMgrTest {
         assertEquals("explicitLac ByteBuf contents should match", 0,
                 ByteBufUtil.compare(explicitLacByteBuf, indexPersistenceMgr.getExplicitLac(ledgerId)));
         /*
-         * release fileInfo untill it is marked dead and closed, so that
+         * release fileInfo until it is marked dead and closed, so that
          * contents of it are persisted.
          */
         while (fileInfo.refCount.get() != FileInfoBackingCache.DEAD_REF) {

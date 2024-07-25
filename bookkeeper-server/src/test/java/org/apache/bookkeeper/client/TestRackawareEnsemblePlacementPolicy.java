@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.RACKNAME_DISTANCE_FROM_LEAVES;
 import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.shuffleWithMask;
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
@@ -158,7 +161,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     @Test
-    public void testInitalize() throws Exception{
+    public void testInitialize() throws Exception {
         String dnsResolverName = conf.getString(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
         DNSToSwitchMapping dnsResolver = ReflectionUtils.newInstance(dnsResolverName, DNSToSwitchMapping.class);
         AbstractDNSToSwitchMapping tmp = (AbstractDNSToSwitchMapping) dnsResolver;
@@ -788,6 +791,55 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
+    }
+
+    @Test(timeout = 30_000)
+    public void testNewEnsembleWithExcludeBookies() throws Exception {
+        repp.uninitalize();
+        updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+                DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+
+        BookieNode addr1Node = new BookieNode(addr1.toBookieId(), repp.resolveNetworkLocation(addr1.toBookieId()));
+        BookieNode addr2Node = new BookieNode(addr2.toBookieId(), repp.resolveNetworkLocation(addr2.toBookieId()));
+        BookieNode addr3Node = new BookieNode(addr3.toBookieId(), repp.resolveNetworkLocation(addr3.toBookieId()));
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r1");
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        Set<Node> excludeBookies = new HashSet<>();
+        excludeBookies.add(addr2Node);
+        excludeBookies.add(addr3Node);
+
+        TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble ensemble =
+                new TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble(
+                        2, 2, 2,
+                        RACKNAME_DISTANCE_FROM_LEAVES,
+                        null, null, 1);
+        ensemble.addNode(new BookieNode(addr1.toBookieId(), repp.resolveNetworkLocation(addr1.toBookieId())));
+        try {
+           repp.selectRandomInternal(null, 1, excludeBookies, null, ensemble);
+           fail("Should fail with not enough bookies exception");
+        } catch (BKNotEnoughBookiesException ex) {
+            //
+        }
+
+        conf.setDiskWeightBasedPlacementEnabled(false);
     }
 
     @Test
@@ -2061,10 +2113,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
         /*
-         * since addr2 has to be replaced, the remaining bookies weight are - 50, 100, 200, 500 (10*50)
-         * So the median calculated by WeightedRandomSelection is (100 + 200) / 2 = 150
+         * Even though addr2 has to be replaced, but being excluded bookie weight is not excluded in the choose list.
+         * All the bookies weight are - 50, 100, 100, 200, 500 (10*50)
+         * So the median calculated by WeightedRandomSelection is 100
          */
-        double medianWeight = 150;
+        double medianWeight = 100;
         double medianSelectionCounts = (double) (medianWeight / bookieInfoMap.get(addr1.toBookieId()).getWeight())
             * selectionCounts.get(addr1.toBookieId());
         double observedMultiple1 = ((double) selectionCounts.get(addr4.toBookieId())
@@ -2296,13 +2349,75 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4.toBookieId());
         repp.onClusterChanged(addrs, new HashSet<BookieId>());
 
-        DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(bookieFailures, new HashMap<>()), writeSet);
-        LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr1.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(0)), addr3.toBookieId());
-        assertEquals(ensemble.get(reoderSet.get(1)), addr4.toBookieId());
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals(ensemble.get(reorderSet.get(2)), addr1.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(3)), addr2.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(0)), addr3.toBookieId());
+        assertEquals(ensemble.get(reorderSet.get(1)), addr4.toBookieId());
+        StaticDNSResolver.reset();
+    }
+
+    @Test
+    public void testReplaceNotAvailableBookieWithDefaultRack() throws Exception {
+        repp.uninitalize();
+        repp.withDefaultRack(NetworkTopology.DEFAULT_RACK);
+        AtomicInteger counter = new AtomicInteger();
+        BookieAddressResolver mockResolver = new BookieAddressResolver() {
+            @Override
+            public BookieSocketAddress resolve(BookieId bookieId) throws BookieIdNotResolvedException {
+                if (bookieId.equals(addr1.toBookieId()) && counter.getAndIncrement() >= 1) {
+                    throw new BookieIdNotResolvedException(bookieId,
+                            new RuntimeException(addr1.toBookieId() + " shutdown"));
+                }
+                try {
+                    return new BookieSocketAddress(bookieId.toString());
+                } catch (UnknownHostException err) {
+                    throw new BookieIdNotResolvedException(bookieId, err);
+                }
+            }
+        };
+
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE,
+                mockResolver);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/r1");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), NetworkTopology.DEFAULT_RACK);
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        // replace node under r1
+        EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
+                repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr1.toBookieId(), new HashSet<>());
+        BookieId replacedBookie = replaceBookieResponse.getResult();
+        assertEquals(addr4.toBookieId(), replacedBookie);
+
+        //clear history bookies and make addr1 shutdown.
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE,
+                mockResolver);
+
+        addrs.remove(addr1.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+
+        // replace node under r1 again
+        replaceBookieResponse =
+                repp.replaceBookie(1, 1, 1, null, new ArrayList<>(), addr1.toBookieId(), new HashSet<>());
+        replacedBookie = replaceBookieResponse.getResult();
+        assertEquals(addr4.toBookieId(), replacedBookie);
     }
 
     @Test

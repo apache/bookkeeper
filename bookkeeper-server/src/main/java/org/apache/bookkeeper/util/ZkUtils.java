@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Provided utilites for zookeeper access, etc.
+ * Provided utilities for zookeeper access, etc.
  */
 public class ZkUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);

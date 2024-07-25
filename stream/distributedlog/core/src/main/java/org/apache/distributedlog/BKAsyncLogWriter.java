@@ -98,9 +98,9 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     }
 
     /**
-     * Last pending record in current log segment. After it is satisified, it would
+     * Last pending record in current log segment. After it is satisfied, it would
      * roll log segment.
-     * This implementation is based on the assumption that all future satisified in same
+     * This implementation is based on the assumption that all future satisfied in same
      * order future pool.
      */
     class LastPendingLogRecord extends PendingLogRecord {

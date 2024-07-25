@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
@@ -35,7 +36,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
+import org.apache.bookkeeper.common.util.ShutdownUtil;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * Tests for {@link ByteBufAllocatorBuilderImpl}.
@@ -85,6 +89,30 @@ public class ByteBufAllocatorBuilderTest {
 
         // Ensure the notification was triggered even when exception is thrown
         assertEquals(outOfDirectMemException, receivedException.get());
+    }
+
+    @Test()
+    public void testOomExit() {
+        ByteBufAllocator baseAlloc = mock(ByteBufAllocator.class);
+        when(baseAlloc.directBuffer(anyInt(), anyInt())).thenThrow(outOfDirectMemException);
+
+        ByteBufAllocator alloc = ByteBufAllocatorBuilder.create()
+                .pooledAllocator(baseAlloc)
+                .outOfMemoryPolicy(OutOfMemoryPolicy.ThrowException)
+                .exitOnOutOfMemory(true)
+                .build();
+
+        MockedStatic<ShutdownUtil> mockedStatic = mockStatic(ShutdownUtil.class);
+
+        try {
+            alloc.buffer();
+            fail("Should have thrown exception");
+        } catch (OutOfMemoryError e) {
+            // Expected
+            assertEquals(outOfDirectMemException, e);
+        }
+
+        mockedStatic.verify(() -> ShutdownUtil.triggerImmediateForcefulShutdown(), Mockito.times(1));
     }
 
     @Test

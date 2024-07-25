@@ -21,7 +21,7 @@ A ledger's metadata contains the following:
 
 Parameter | Name | Meaning
 :---------|:-----|:-------
-Identifer | | A 64-bit integer, unique within the system
+Identifier | | A 64-bit integer, unique within the system
 Ensemble size | **E** | The number of nodes the ledger is stored on
 Write quorum size | **Q<sub>w</sub>** | The number of nodes each entry is written to. In effect, the max replication for the entry.
 Ack quorum size | **Q<sub>a</sub>** | The number of nodes an entry must be acknowledged on. In effect, the minimum replication for the entry.

@@ -916,8 +916,8 @@ import org.slf4j.LoggerFactory;
             super("show", "show metadata of a given stream and list segments");
             options.addOption("ns", "no-log-segments", false, "Do not list log segment metadata");
             options.addOption("lp", "placement-stats", false, "Show ensemble placement stats");
-            options.addOption("fl", "first-ledger", true, "First log sement no");
-            options.addOption("ll", "last-ledger", true, "Last log sement no");
+            options.addOption("fl", "first-ledger", true, "First log segment no");
+            options.addOption("ll", "last-ledger", true, "Last log segment no");
         }
 
         @Override

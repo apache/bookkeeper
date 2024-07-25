@@ -21,7 +21,7 @@ from bookkeeper.kv import exceptions
 
 class Future(bookkeeper.common.future.Future):
     """Encapsulation of the asynchronous execution of an action.
-    This object is returned from asychronous bookkeeper calls, and is the
+    This object is returned from asynchronous bookkeeper calls, and is the
     interface to determine the status of those calls.
     This object should not be created directly, but is returned by other
     methods in this library.

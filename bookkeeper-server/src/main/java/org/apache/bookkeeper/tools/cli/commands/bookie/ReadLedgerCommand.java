@@ -109,7 +109,7 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         private boolean forceRecovery;
 
         @Parameter(names = { "-b", "--bookie" }, description = "Only read from a specific bookie")
-        private String bookieAddresss;
+        private String bookieAddress;
 
         @Parameter(names = { "-lf", "--ledgeridformatter" }, description = "Set ledger id formatter")
         private String ledgerIdFormatter;
@@ -146,9 +146,9 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         long lastEntry = flags.lastEntryId;
 
         final BookieId bookie;
-        if (flags.bookieAddresss != null) {
+        if (flags.bookieAddress != null) {
             // A particular bookie was specified
-            bookie = BookieId.parse(flags.bookieAddresss);
+            bookie = BookieId.parse(flags.bookieAddress);
         } else {
             bookie = null;
         }

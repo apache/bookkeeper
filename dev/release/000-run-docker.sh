@@ -33,7 +33,7 @@ export IMAGE_NAME="bookkeeper-release-build"
 
 pushd ${SCRIPT_DIR}
 
-docker build --rm=true -t ${IMAGE_NAME} .
+docker build --platform linux/amd64 --rm=true -t ${IMAGE_NAME} .
 
 popd
 
@@ -47,11 +47,11 @@ else # boot2docker uid and gid
   GROUP_ID=50
 fi
 
-docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
-FROM --platform=linux/amd64 ${IMAGE_NAME}
-RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
-  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME} && \
-  ([ "$(dirname "$HOME")" -eq "/home" ] || ln -s /home $(dirname "$HOME")) && \
+docker buildx build --platform linux/amd64 -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
+FROM ${IMAGE_NAME}
+RUN if ! getent group ${GROUP_ID} > /dev/null; then groupadd --non-unique -g ${GROUP_ID} ${USER_NAME}; fi && \
+  if ! getent passwd ${USER_NAME} > /dev/null; then useradd -l -g ${GROUP_ID} -u ${GROUP_ID} -k /root -m ${USER_NAME}; fi && \
+  ([ "$(dirname "$HOME")" = "/home" ] || ln -s /home $(dirname "$HOME")) && \
   mkdir -p /gpg && chown ${USER_ID}:${GROUP_ID} /gpg && chmod 700 /gpg
 ENV  HOME /home/${USER_NAME}
 UserSpecificDocker

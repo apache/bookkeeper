@@ -151,7 +151,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         // wait for creating the ledger
         assertTrue("create ledger call should have completed",
                 openLatch.await(20, TimeUnit.SECONDS));
-        assertEquals("Succesfully created ledger through closed bkclient!",
+        assertEquals("Successfully created ledger through closed bkclient!",
                 BKException.Code.ClientClosedException, returnCode.get());
     }
 

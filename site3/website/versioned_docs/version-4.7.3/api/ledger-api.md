@@ -49,7 +49,7 @@ shaded library, which relocate classes of protobuf and guava into a different na
 
 ### Gradle
 
-If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://spring.io/guides/gs/gradle/) build configuration file:
+If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://docs.gradle.org/current/userguide/build_file_basics.html) build configuration file:
 
 ```groovy
 dependencies {
@@ -67,7 +67,7 @@ Similarly as using maven, you can also configure to use the shaded jars.
 ```groovy
 // use the `bookkeeper-server-shaded` jar
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest-version }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest_release }}'
 }
 ```
 
@@ -668,7 +668,7 @@ ReadHandle rh = bk.newOpenLedgerOp()
 If you are opening a ledger in "Recovery" mode, it will basically fence and seal the ledger -- no more entries are allowed
 to be appended to it. The writer which is currently appending entries to the ledger will fail with [`LedgerFencedException`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BKException.Code#LedgerFencedException).
 
-In constrat, opening a ledger in "NoRecovery" mode, it will not fence and seal the ledger. "NoRecovery" mode is usually used by applications to tailing-read from a ledger.
+In constraint, opening a ledger in "NoRecovery" mode, it will not fence and seal the ledger. "NoRecovery" mode is usually used by applications to tailing-read from a ledger.
 
 ### Read entries from ledgers
 

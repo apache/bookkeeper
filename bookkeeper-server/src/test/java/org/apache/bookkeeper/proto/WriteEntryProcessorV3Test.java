@@ -284,7 +284,7 @@ public class WriteEntryProcessorV3Test {
     }
 
     @Test
-    public void testWritesWithClientNotAcceptingReponses() throws Exception {
+    public void testWritesWithClientNotAcceptingResponses() throws Exception {
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(5L);
 
         doAnswer(invocationOnMock -> {

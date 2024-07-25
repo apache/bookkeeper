@@ -24,6 +24,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -409,7 +410,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get Garbage collection wait time. Default value is 10 minutes.
      * The guideline is not to set a too low value for this, if using zookeeper based
-     * ledger manager. And it would be nice to align with the average lifecyle time of
+     * ledger manager. And it would be nice to align with the average lifecycle time of
      * ledgers in the system.
      *
      * @return gc wait time
@@ -1223,7 +1224,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Configure the bookie to advertise a specific BookieId.
      *
      * <p>By default, a bookie will advertise a BookieId computed
-     * from the primary network endpoint addresss.
+     * from the primary network endpoint address.
      *
      * @see #getBookieId()
      * @see #setAdvertisedAddress(java.lang.String)
@@ -4049,12 +4050,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured default rocksdb conf.
      */
     public String getDefaultRocksDBConf() {
-        String defaultPath = "conf/default_rocksdb.conf";
-        URL defURL = getClass().getClassLoader().getResource(defaultPath);
-        if (defURL != null) {
-            defaultPath = defURL.getPath();
-        }
-        return getString(DEFAULT_ROCKSDB_CONF, defaultPath);
+        String filePath = getFilePath("conf/default_rocksdb.conf");
+        return getString(DEFAULT_ROCKSDB_CONF, filePath);
     }
 
     /**
@@ -4073,12 +4070,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured entry Location rocksdb conf.
      */
     public String getEntryLocationRocksdbConf() {
-        String defaultPath = "conf/entry_location_rocksdb.conf";
-        URL defURL = getClass().getClassLoader().getResource(defaultPath);
-        if (defURL != null) {
-            defaultPath = defURL.getPath();
-        }
-        return getString(ENTRY_LOCATION_ROCKSDB_CONF, defaultPath);
+        String filePath = getFilePath("conf/entry_location_rocksdb.conf");
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, filePath);
     }
 
     /**
@@ -4097,12 +4090,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured ledger metadata rocksdb conf.
      */
     public String getLedgerMetadataRocksdbConf() {
-        String defaultPath = "conf/ledger_metadata_rocksdb.conf";
-        URL defURL = getClass().getClassLoader().getResource(defaultPath);
-        if (defURL != null) {
-            defaultPath = defURL.getPath();
-        }
-        return getString(LEDGER_METADATA_ROCKSDB_CONF, defaultPath);
+        String filePath = getFilePath("conf/ledger_metadata_rocksdb.conf");
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, filePath);
     }
 
     /**
@@ -4154,5 +4143,19 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getMaxBatchReadSize() {
         return this.getLong(MAX_BATCH_READ_SIZE, DEFAULT_MAX_BATCH_READ_SIZE);
+    }
+
+    /**
+     * Get the path of a file from resources.
+     *
+     * @param fileName the name of the file to get the path for.
+     * @return String the absolute path of the file.
+     */
+    private String getFilePath(String fileName) {
+        URL resourceURL = getClass().getClassLoader().getResource(fileName);
+        if (resourceURL != null) {
+            return Paths.get(resourceURL.getPath()).toString();
+        }
+        return "";
     }
 }

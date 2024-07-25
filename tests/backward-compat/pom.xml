@@ -35,7 +35,6 @@
     <module>recovery-no-password</module>
     <module>old-cookie-new-cluster</module>
     <module>current-server-old-clients</module>
-    <module>yahoo-custom-version</module>
     <module>bc-non-fips</module>
   </modules>
   <dependencyManagement>

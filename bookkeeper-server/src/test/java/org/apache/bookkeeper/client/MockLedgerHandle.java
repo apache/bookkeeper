@@ -80,6 +80,14 @@ public class MockLedgerHandle extends LedgerHandle {
             return;
         }
 
+        LedgerMetadata metadata = getLedgerMetadata();
+        metadata = LedgerMetadataBuilder.from(metadata)
+                .withClosedState()
+                .withLastEntryId(lastEntry)
+                .withLength(length)
+                .build();
+        setLedgerMetadata(getVersionedLedgerMetadata(), new Versioned<>(metadata, new LongVersion(1L)));
+
         fenced = true;
         try {
             executeOrdered(() -> cb.closeComplete(0, this, ctx));

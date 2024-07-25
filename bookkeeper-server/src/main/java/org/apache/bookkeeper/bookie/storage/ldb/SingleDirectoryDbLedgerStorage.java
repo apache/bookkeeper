@@ -117,7 +117,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private static String dbStoragerExecutorName = "db-storage";
     private final ExecutorService executor = Executors.newSingleThreadExecutor(
-            new DefaultThreadFactory(dbStoragerExecutorName));
+            new DefaultThreadFactory(dbStoragerExecutorName) {
+                @Override
+                protected Thread newThread(Runnable r, String name) {
+                    return super.newThread(ThreadRegistry.registerThread(r, dbStoragerExecutorName), name);
+                }
+            });
 
     // Executor used to for db index cleanup
     private final ScheduledExecutorService cleanupExecutor = Executors
@@ -218,7 +223,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         flushExecutorTime = ledgerIndexDirStatsLogger.getThreadScopedCounter("db-storage-thread-time");
 
         executor.submit(() -> {
-            ThreadRegistry.register(dbStoragerExecutorName, 0);
             // ensure the metric gets registered on start-up as this thread only executes
             // when the write cache is full which may not happen or not for a long time
             flushExecutorTime.addLatency(0, TimeUnit.NANOSECONDS);
@@ -480,8 +484,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
         boolean inserted = false;
 
-        inserted = writeCache.put(ledgerId, entryId, entry);
-        if (!writeCacheRotationLock.validate(stamp)) {
+        // If the stamp is 0, the lock was exclusively acquired, validation will fail, and we can skip this put.
+        if (stamp != 0) {
+            inserted = writeCache.put(ledgerId, entryId, entry);
+        }
+
+        if (stamp == 0 || !writeCacheRotationLock.validate(stamp)) {
             // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
             // the operation because we might have inserted in a write cache that was already being flushed and cleared,
             // without being sure about this last entry being flushed or not.
@@ -894,14 +902,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             writeCacheBeingFlushed = writeCache;
             writeCache = tmp;
 
+            // Set to true before updating hasFlushBeenTriggered to false.
+            isFlushOngoing.set(true);
             // since the cache is switched, we can allow flush to be triggered
             hasFlushBeenTriggered.set(false);
         } finally {
-            try {
-                isFlushOngoing.set(true);
-            } finally {
-                writeCacheRotationLock.unlockWrite(stamp);
-            }
+            writeCacheRotationLock.unlockWrite(stamp);
         }
     }
 

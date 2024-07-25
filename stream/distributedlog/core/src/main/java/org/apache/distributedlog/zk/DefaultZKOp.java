@@ -24,7 +24,7 @@ import org.apache.zookeeper.OpResult;
 
 
 /**
- * Default zookeeper operation. No action on commiting or aborting.
+ * Default zookeeper operation. No action on committing or aborting.
  */
 public class DefaultZKOp extends ZKOp {
 

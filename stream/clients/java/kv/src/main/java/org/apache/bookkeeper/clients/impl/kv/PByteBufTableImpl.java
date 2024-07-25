@@ -53,7 +53,7 @@ import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
 /**
- * The default implemenation of {@link PTable}.
+ * The default implementation of {@link PTable}.
  */
 @Slf4j
 public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {

@@ -20,11 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test of {@link BookieAddressResolverDisabled}.
@@ -36,18 +39,18 @@ public class BookieAddressResolverDisabledTest {
         BookieAddressResolver resolver = new BookieAddressResolverDisabled();
 
         BookieSocketAddress addr1 = resolver.resolve(BookieId.parse("127.0.0.1:3181"));
-        Assert.assertEquals("127.0.0.1", addr1.getHostName());
-        Assert.assertEquals(3181, addr1.getPort());
+        assertEquals("127.0.0.1", addr1.getHostName());
+        assertEquals(3181, addr1.getPort());
 
         BookieSocketAddress addr2 = resolver.resolve(BookieId.parse("localhost:3182"));
-        Assert.assertEquals("localhost", addr2.getHostName());
-        Assert.assertEquals(3182, addr2.getPort());
+        assertEquals("localhost", addr2.getHostName());
+        assertEquals(3182, addr2.getPort());
 
         try {
             resolver.resolve(BookieId.parse("foobar"));
-            Assert.fail("Non-legacy style bookie id should fail to resolve address");
+            fail("Non-legacy style bookie id should fail to resolve address");
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof BookieAddressResolver.BookieIdNotResolvedException);
+            assertTrue(e instanceof BookieAddressResolver.BookieIdNotResolvedException);
         }
     }
 

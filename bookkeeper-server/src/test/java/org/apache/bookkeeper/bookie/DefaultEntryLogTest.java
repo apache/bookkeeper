@@ -1382,7 +1382,7 @@ public class DefaultEntryLogTest {
         BufferedLogChannel newLogChannel = createDummyBufferedLogChannel(entryLogger, 1, conf);
         entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
 
-        AtomicBoolean exceptionOccured = new AtomicBoolean(false);
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
         Thread t = new Thread() {
             public void run() {
                 try {
@@ -1402,7 +1402,7 @@ public class DefaultEntryLogTest {
                     entryLogManager.getCurrentLogIfPresent(newLedgerId);
                 } catch (Exception e) {
                     LOG.error("Got Exception in thread", e);
-                    exceptionOccured.set(true);
+                    exceptionOccurred.set(true);
                 }
             }
         };
@@ -1410,7 +1410,7 @@ public class DefaultEntryLogTest {
         t.start();
         Thread.sleep(evictionPeriod * 1000 + 100);
         entryLogManager.doEntryLogMapCleanup();
-        Assert.assertFalse("Exception occured in thread, which is not expected", exceptionOccured.get());
+        Assert.assertFalse("Exception occurred in thread, which is not expected", exceptionOccurred.get());
 
         /*
          * since for more than evictionPeriod, that ledger is not accessed and cache is cleaned up, mapping for that

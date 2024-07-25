@@ -335,7 +335,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
         out.closeAndComplete();
 
-        // open journal arbitarily far in the future
+        // open journal arbitrarily far in the future
         txid = DEFAULT_SEGMENT_SIZE * 4;
         out = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
         out.write(DLMTestUtil.getLogRecordInstance(txid));

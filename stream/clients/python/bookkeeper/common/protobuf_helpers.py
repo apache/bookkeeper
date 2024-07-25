@@ -251,10 +251,10 @@ def field_mask(original, modified):
     """Create a field mask by comparing two messages.
     Args:
         original (~google.protobuf.message.Message): the original message.
-            If set to None, this field will be interpretted as an empty
+            If set to None, this field will be interpreted as an empty
             message.
         modified (~google.protobuf.message.Message): the modified message.
-            If set to None, this field will be interpretted as an empty
+            If set to None, this field will be interpreted as an empty
             message.
     Returns:
         google.protobuf.field_mask_pb2.FieldMask: field mask that contains

@@ -17,10 +17,25 @@
 # under the License.
 #
 
+FROM eclipse-temurin:17 as jre-build
+
+# Create a custom Java runtime
+RUN $JAVA_HOME/bin/jlink \
+         --add-modules ALL-MODULE-PATH \
+         --strip-debug \
+         --no-man-pages \
+         --no-header-files \
+         --compress=2 \
+         --output /javaruntime
+
+RUN echo networkaddress.cache.ttl=1 >> /javaruntime/conf/security/java.security
+RUN echo networkaddress.cache.negative.ttl=1 >> /javaruntime/conf/security/java.security
+
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.15.1
+ARG TARGETARCH
+ARG BK_VERSION=4.17.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
 
@@ -41,7 +56,6 @@ RUN set -x \
     && adduser "${BK_USER}" \
     && apt-get update \
     && apt-get install -y ca-certificates apt-transport-https \
-    && apt-get install -y --no-install-recommends openjdk-17-jdk \
     && apt-get install -y --no-install-recommends python3 pip \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && apt-get install -y --no-install-recommends gpg gpg-agent wget sudo \
@@ -61,12 +75,13 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
-    && pip install zk-shell \
-    && JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) \
-    && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
-    && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
+    && pip install zk-shell
 
 WORKDIR /opt/bookkeeper
+
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="$PATH:$JAVA_HOME/bin"
+COPY --from=jre-build /javaruntime $JAVA_HOME
 
 COPY scripts /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/

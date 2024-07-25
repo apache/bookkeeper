@@ -190,9 +190,6 @@
                 <rtti>false</rtti>
                 <optimize>full</optimize>
               </cpp>
-              <linker>
-                <libSet>rt</libSet>
-              </linker>
             </configuration>
           </plugin>
         </plugins>

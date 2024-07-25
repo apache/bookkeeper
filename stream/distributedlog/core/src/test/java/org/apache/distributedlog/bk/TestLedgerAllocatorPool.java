@@ -133,7 +133,7 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
             try {
                 pool.allocate();
                 Utils.ioResult(pool.tryObtain(newTxn(), NULL_LISTENER));
-                fail("Should fail to allocate ledger if there are enought bookies");
+                fail("Should fail to allocate ledger if there are enough bookies");
             } catch (SimpleLedgerAllocator.AllocationException ae) {
                 assertEquals(SimpleLedgerAllocator.Phase.ERROR, ae.getPhase());
             }

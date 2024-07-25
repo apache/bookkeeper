@@ -74,7 +74,7 @@ import org.slf4j.LoggerFactory;
  * 1. prepare: create a sequential znode to identify the lock.
  * 2. check lock waiters: get all lock waiters to check after prepare. if it is the first waiter, claim the ownership;
  *    if it is not the first waiter, but first waiter was itself (same client id and same session id)
- *    claim the ownership too; otherwise, it would set watcher on its sibling and wait it to disappared.
+ *    claim the ownership too; otherwise, it would set watcher on its sibling and wait it to disappeared.
  * </p>
  *
  * <pre>
@@ -187,7 +187,7 @@ class ZKSessionLock implements SessionLock {
     }
 
     /**
-     * Convenience class for state management. Provide debuggability features by tracing unxpected state
+     * Convenience class for state management. Provide debuggability features by tracing unexpected state
      * transitions.
      */
     static class StateManagement {
@@ -860,7 +860,7 @@ class ZKSessionLock implements SessionLock {
     CompletableFuture<Void> asyncUnlock(final Throwable cause) {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
 
-        // Use lock executor here rather than lock action, because we want this opertaion to be applied
+        // Use lock executor here rather than lock action, because we want this operation to be applied
         // whether the epoch has changed or not. The member node is EPHEMERAL_SEQUENTIAL so there's no
         // risk of an ABA problem where we delete and recreate a node and then delete it again here.
         lockStateExecutor.executeOrdered(lockPath, () -> {

@@ -33,7 +33,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
 /**
- * Tests of the main BookKeeper client using networkless comunication.
+ * Tests of the main BookKeeper client using networkless communication.
  */
 public class NetworkLessBookieTest extends BookKeeperClusterTestCase {
 

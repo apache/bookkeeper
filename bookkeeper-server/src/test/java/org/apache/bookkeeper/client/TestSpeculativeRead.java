@@ -78,7 +78,6 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             .setSpeculativeReadTimeout(specTimeout)
             .setReadTimeout(30000)
             .setReorderReadSequenceEnabled(true)
-            .setEnsemblePlacementPolicySlowBookies(true)
             .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         return new BookKeeperTestClient(conf, new TestStatsProvider());
     }
@@ -391,13 +390,13 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
                 .setSpeculativeReadTimeout(1000)
                 .setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class)
                 .setReorderReadSequenceEnabled(true)
-                .setEnsemblePlacementPolicySlowBookies(true)
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-        BookKeeper bkspec = new BookKeeperTestClient(conf, new TestStatsProvider());
-        LedgerHandle l = bkspec.createLedger(1, 1, digestType, passwd);
-        List<BookieId> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
-        PendingReadOp op = new PendingReadOp(l, bkspec.getClientCtx(), 0, 5, false);
-        PendingReadOp.LedgerEntryRequest req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);
-        assertNotNull(req0.writeSet);
+        try (BookKeeper bkc = new BookKeeperTestClient(conf, new TestStatsProvider())) {
+            LedgerHandle l = bkc.createLedger(1, 1, digestType, passwd);
+            List<BookieId> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
+            PendingReadOp op = new PendingReadOp(l, bkc.getClientCtx(), 0, 5, false);
+            PendingReadOp.LedgerEntryRequest req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);
+            assertNotNull(req0.writeSet);
+        }
     }
 }

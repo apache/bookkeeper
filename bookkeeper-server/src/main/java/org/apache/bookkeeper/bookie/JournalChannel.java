@@ -192,7 +192,7 @@ class JournalChannel implements Closeable {
             writeHeader(bcBuilder, writeBufferSize);
         } else {  // open an existing file to read.
             fc = channel.getFileChannel();
-            bc = null; // readonly
+            // readonly, use fileChannel directly, no need to use BufferedChannel
 
             ByteBuffer bb = ByteBuffer.allocate(VERSION_HEADER_SIZE);
             int c = fc.read(bb);
@@ -299,6 +299,8 @@ class JournalChannel implements Closeable {
     public void close() throws IOException {
         if (bc != null) {
             bc.close();
+        } else if (fc != null) {
+            fc.close();
         }
     }
 
