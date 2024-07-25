@@ -118,6 +118,7 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
         bookieConf.setBookieAuthProviderFactoryClass(
             SASLBookieAuthProviderFactory.class.getName());
         bookieConf.setProperty(JAAS_CLIENT_ALLOWED_IDS, ".*hd.*");
+
         ClientConfiguration clientConf = newClientConfiguration();
         clientConf.setClientAuthProviderFactoryClass(
             SASLClientProviderFactory.class.getName());
