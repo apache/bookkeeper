@@ -85,7 +85,7 @@ abstract class AbstractClientFencingTest {
             }
             ledger2.close()
         } catch(Throwable tt) {
-            throw new RuntimeException("Got exception with oldClientVersion: " + oldClientVersion + " and fencingVersion: " + fencingVersion, tt);
+            throw new RuntimeException("Got exception with oldClientVersion: " + oldClientVersion + " and fencingVersion: " + fencingVersion, tt)
         } finally {
             oldBK.close()
             oldCL.close()
