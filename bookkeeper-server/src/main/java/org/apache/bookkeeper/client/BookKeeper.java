@@ -1609,6 +1609,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         });
     }
 
+    @Override
+    public CompletableFuture<Boolean> isDriverMetadataServiceAvailable() {
+        return metadataDriver.isMetadataServiceAvailable();
+    }
+
     private final ClientContext clientCtx = new ClientContext() {
             @Override
             public ClientInternalConf getConf() {
