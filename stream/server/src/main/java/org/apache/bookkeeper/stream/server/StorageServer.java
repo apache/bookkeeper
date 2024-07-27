@@ -78,6 +78,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * A storage server is a server that run storage service and serving rpc requests.
@@ -170,6 +171,7 @@ public class StorageServer {
                 grpcUseHostname);
         } catch (Exception e) {
             log.error("Invalid storage configuration", e);
+            LogManager.shutdown();
             return ExitCode.INVALID_CONF.code();
         }
 

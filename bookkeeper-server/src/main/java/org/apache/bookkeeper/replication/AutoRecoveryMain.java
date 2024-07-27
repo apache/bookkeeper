@@ -56,6 +56,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -339,6 +340,7 @@ public class AutoRecoveryMain {
             server = buildAutoRecoveryServer(new BookieConfiguration(conf));
         } catch (Exception e) {
             LOG.error("Failed to build AutoRecovery Server", e);
+            LogManager.shutdown();
             return ExitCode.SERVER_EXCEPTION;
         }
 
