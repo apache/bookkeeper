@@ -41,7 +41,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.logging.log4j.LogManager;
 
 /**
  * A bookie server is a server that run bookie and serving rpc requests.
@@ -223,7 +222,7 @@ public class Main {
             server = buildBookieServer(new BookieConfiguration(conf));
         } catch (Exception e) {
             log.error("Failed to build bookie server", e);
-            LogManager.shutdown();
+            System.err.println(e.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
 
@@ -234,8 +233,10 @@ public class Main {
             Thread.currentThread().interrupt();
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
+            System.err.println(ie.getMessage());
         } catch (ExecutionException ee) {
             log.error("Error in bookie shutdown", ee.getCause());
+            System.err.println(ee.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
         return ExitCode.OK;

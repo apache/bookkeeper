@@ -56,7 +56,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -340,7 +339,7 @@ public class AutoRecoveryMain {
             server = buildAutoRecoveryServer(new BookieConfiguration(conf));
         } catch (Exception e) {
             LOG.error("Failed to build AutoRecovery Server", e);
-            LogManager.shutdown();
+            System.err.println(e.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
 
@@ -351,8 +350,10 @@ public class AutoRecoveryMain {
             Thread.currentThread().interrupt();
             // the server is interrupted
             LOG.info("AutoRecovery server is interrupted. Exiting ...");
+            System.err.println(ie.getMessage());
         } catch (ExecutionException ee) {
             LOG.error("Error in bookie shutdown", ee.getCause());
+            System.err.println(ee.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
         return ExitCode.OK;
