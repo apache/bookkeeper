@@ -87,6 +87,10 @@ COPY scripts /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
 
 RUN chown -R 10000:0 /opt/bookkeeper
+RUN chmod -R ug+rwx /opt/bookkeeper
+RUN chmod -R g+rx /opt/bookkeeper/bin
+RUN chmod -R g+rx /opt/bookkeeper/scripts
+
 USER 10000:0
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
