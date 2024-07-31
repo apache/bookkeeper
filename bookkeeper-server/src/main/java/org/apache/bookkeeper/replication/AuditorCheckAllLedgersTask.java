@@ -210,6 +210,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                             auditorStats.getNumFragmentsPerLedger().registerSuccessfulValue(lh.getNumFragments());
                             auditorStats.getNumBookiesPerLedger().registerSuccessfulValue(lh.getNumBookies());
                             auditorStats.getNumLedgersChecked().inc();
+                            lh.closeAsync();
                         });
                     } else if (BKException.Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                         if (LOG.isDebugEnabled()) {
