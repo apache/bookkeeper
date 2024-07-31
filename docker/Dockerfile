@@ -53,7 +53,7 @@ RUN set -x \
     && sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}|g" \
      -e "s|http://security\.ubuntu\.com/ubuntu/|${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}|g" /etc/apt/sources.list \
     && echo 'Acquire::http::Timeout "30";\nAcquire::http::ConnectionAttemptDelayMsec "2000";\nAcquire::https::Timeout "30";\nAcquire::https::ConnectionAttemptDelayMsec "2000";\nAcquire::ftp::Timeout "30";\nAcquire::ftp::ConnectionAttemptDelayMsec "2000";\nAcquire::Retries "15";' > /etc/apt/apt.conf.d/99timeout_and_retries \
-    && adduser "${BK_USER}" \
+    && adduser "${BK_USER}" -u 10000 --gid 0 --home ${BK_HOME} --no-create-home --disabled-password \
     && apt-get update \
     && apt-get install -y ca-certificates apt-transport-https \
     && apt-get install -y --no-install-recommends python3 pip \
@@ -85,6 +85,13 @@ COPY --from=jre-build /javaruntime $JAVA_HOME
 
 COPY scripts /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
+
+RUN chown -R 10000:0 /opt/bookkeeper
+RUN chmod -R ug+rwx /opt/bookkeeper
+RUN chmod -R g+rx /opt/bookkeeper/bin
+RUN chmod -R g+rx /opt/bookkeeper/scripts
+
+USER 10000:0
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
 CMD ["bookie"]
