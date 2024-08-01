@@ -21,13 +21,24 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
+import java.time.Duration;
 import org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 
 class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
     private final ConcurrentLongHashMap<LedgerDescriptor> ledgers;
     private final ConcurrentLongHashMap<LedgerDescriptor> readOnlyLedgers;
+
+    /**
+     * Once the ledger was marked "fenced" before, the ledger was accessed by multi clients. One client is calling
+     * "delete" now, and other clients may call "write" continuously later. We mark these ledgers can not be written
+     * anymore. And maintains the state for 7 days is safety.
+     */
+    private final Cache<Long, Boolean> recentlyFencedAndDeletedLedgers = CacheBuilder.newBuilder()
+            .expireAfterAccess(Duration.ofDays(7)).build();
 
     final LedgerStorage ledgerStorage;
 
@@ -40,10 +51,14 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
     }
 
     @Override
-    public LedgerDescriptor getHandle(final long ledgerId, final byte[] masterKey) throws IOException, BookieException {
+    public LedgerDescriptor getHandle(final long ledgerId, final byte[] masterKey, boolean journalReplay)
+            throws IOException, BookieException {
         LedgerDescriptor handle = ledgers.get(ledgerId);
 
         if (handle == null) {
+            if (!journalReplay && recentlyFencedAndDeletedLedgers.getIfPresent(ledgerId) != null) {
+                throw BookieException.create(BookieException.Code.LedgerFencedException);
+            }
             handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
             ledgers.putIfAbsent(ledgerId, handle);
         }
@@ -64,8 +79,22 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
         return handle;
     }
 
+    private void markIfConflictWritingOccurs(long ledgerId) {
+        LedgerDescriptor ledgerDescriptor = ledgers.get(ledgerId);
+        try {
+            if (ledgerDescriptor != null && ledgerDescriptor.isFenced()) {
+                recentlyFencedAndDeletedLedgers.put(ledgerId, true);
+            }
+        } catch (IOException | BookieException ex) {
+            // The ledger is in limbo state.
+            recentlyFencedAndDeletedLedgers.put(ledgerId, true);
+        }
+    }
+
     @Override
     public void ledgerDeleted(long ledgerId) {
+        markIfConflictWritingOccurs(ledgerId);
+        // Do delete.
         ledgers.remove(ledgerId);
         readOnlyLedgers.remove(ledgerId);
     }
