@@ -158,9 +158,11 @@ public class LedgerFragmentReplicator {
          * INVALID_ENTRY_ID and viceversa.
          */
         if (startEntryId == INVALID_ENTRY_ID ^ endEntryId == INVALID_ENTRY_ID) {
-            LOG.error("For LedgerFragment: {}, seeing inconsistent firstStoredEntryId: {} and lastStoredEntryId: {}",
+            String msg = String.format("For LedgerFragment: %s, seeing inconsistent firstStoredEntryId: %s" +
+                            " and lastStoredEntryId: %s",
                     lf, startEntryId, endEntryId);
-            assert false;
+            LOG.error(msg);
+            throw new IllegalStateException(msg);
         }
 
         if (startEntryId > endEntryId || endEntryId <= INVALID_ENTRY_ID) {
@@ -231,8 +233,7 @@ public class LedgerFragmentReplicator {
     void replicate(final LedgerHandle lh, final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
             final Set<BookieId> targetBookieAddresses,
-            final BiConsumer<Long, Long> onReadEntryFailureCallback)
-            throws InterruptedException {
+            final BiConsumer<Long, Long> onReadEntryFailureCallback) {
         Set<LedgerFragment> partitionedFragments = splitIntoSubFragments(lh, lf,
                 bkc.getConf().getRereplicationEntryBatchSize());
         LOG.info("Replicating fragment {} in {} sub fragments.",
@@ -300,9 +301,11 @@ public class LedgerFragmentReplicator {
          * INVALID_ENTRY_ID and viceversa.
          */
         if (firstEntryId == INVALID_ENTRY_ID ^ lastEntryId == INVALID_ENTRY_ID) {
-            LOG.error("For LedgerFragment: {}, seeing inconsistent firstStoredEntryId: {} and lastStoredEntryId: {}",
+            String msg = String.format("For LedgerFragment: %s, seeing inconsistent firstStoredEntryId: %s" +
+                            " and lastStoredEntryId: %s",
                     ledgerFragment, firstEntryId, lastEntryId);
-            assert false;
+            LOG.error(msg);
+            throw new IllegalStateException(msg);
         }
 
         long numberOfEntriesToReplicate = firstEntryId == INVALID_ENTRY_ID ? 0 : (lastEntryId - firstEntryId) + 1;

@@ -51,7 +51,7 @@ public final class PageCacheUtil {
     }
 
     private static Field getFieldByReflection(Class cls, String fieldName) {
-        Field field = null;
+        Field field;
 
         try {
             field = cls.getDeclaredField(fieldName);
@@ -59,8 +59,9 @@ public final class PageCacheUtil {
         } catch (Exception e) {
             // We don't really expect this so throw an assertion to
             // catch this during development
-            log.warn("Unable to read {} field from {}", fieldName, cls.getName());
-            assert false;
+            String msg = "Unable to read " + fieldName + " field from " + cls.getName();
+            log.warn(msg);
+            throw new IllegalStateException(msg, e);
         }
 
         return field;

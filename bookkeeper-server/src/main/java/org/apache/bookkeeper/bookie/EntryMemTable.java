@@ -75,6 +75,9 @@ public class EntryMemTable implements AutoCloseable{
 
         @Override
         public EntryKeyValue putIfAbsent(EntryKey k, EntryKeyValue v) {
+            if (!k.equals(v)) {
+                throw new IllegalArgumentException("Key and value should be same");
+            }
             assert k.equals(v);
             return super.putIfAbsent(v, v);
         }
@@ -275,11 +278,15 @@ public class EntryMemTable implements AutoCloseable{
      */
     void clearSnapshot(final EntrySkipList keyValues) {
         // Caller makes sure that keyValues not empty
-        assert !keyValues.isEmpty();
+        if (keyValues.isEmpty()) {
+            throw new IllegalStateException("Snapshot is empty");
+        }
         this.lock.writeLock().lock();
         try {
+            if (this.snapshot != keyValues) {
+                throw new IllegalStateException("Snapshot mismatch");
+            }
             // create a new snapshot and let the old one go.
-            assert this.snapshot == keyValues;
             this.snapshot = EntrySkipList.EMPTY_VALUE;
         } finally {
             this.lock.writeLock().unlock();
@@ -371,7 +378,9 @@ public class EntryMemTable implements AutoCloseable{
             return newEntry(ledgerId, entryId, entry);
         }
 
-        assert alloc.getData() != null;
+        if (alloc.getData() == null) {
+            throw new IllegalStateException("MemorySlice.getData() should not be null");
+        }
         entry.get(alloc.getData(), alloc.getOffset(), len);
         return new EntryKeyValue(ledgerId, entryId, alloc.getData(), alloc.getOffset(), len);
     }
