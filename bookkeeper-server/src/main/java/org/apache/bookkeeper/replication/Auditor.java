@@ -1348,6 +1348,7 @@ public class Auditor implements AutoCloseable {
                             numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
                             numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
                             numLedgersChecked.inc();
+                            lh.closeAsync();
                         });
                     } else if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
                         if (LOG.isDebugEnabled()) {
