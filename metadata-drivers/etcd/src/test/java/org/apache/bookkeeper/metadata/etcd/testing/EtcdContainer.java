@@ -54,7 +54,7 @@ public class EtcdContainer extends GenericContainer<EtcdContainer> {
     private final String clusterName;
 
     public EtcdContainer(String clusterName) {
-        super("quay.io/coreos/etcd:v3.3");
+        super("quay.io/coreos/etcd:v3.5.14");
         this.clusterName = clusterName;
     }
 
