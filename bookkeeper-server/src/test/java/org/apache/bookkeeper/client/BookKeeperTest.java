@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -37,7 +38,9 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,12 +53,14 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.StaticDNSResolver;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -1295,6 +1300,50 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                         .build()) {
             bkc.createLedger(digestType, "testPasswd".getBytes()).close();
             assertSame(bkc.getBookieAddressResolver(), tested.getBookieAddressResolver());
+        }
+    }
+
+    @Test
+    public void testBookieWatcher() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        StaticDNSResolver tested = new StaticDNSResolver();
+        try (BookKeeper bkc = BookKeeper
+                .forConfig(conf)
+                .dnsResolver(tested)
+                .build()) {
+            final Map<BookieId, BookieInfoReader.BookieInfo> bookieInfo = bkc.getBookieInfo();
+
+            // 1. check all bookies in client cache successfully.
+            bookieInfo.forEach((bookieId, info) -> {
+                final CompletableFuture<Versioned<BookieServiceInfo>> bookieServiceInfo = bkc.getMetadataClientDriver()
+                        .getRegistrationClient().getBookieServiceInfo(bookieId);
+                assertTrue(bookieServiceInfo.isDone());
+                assertFalse(bookieServiceInfo.isCompletedExceptionally());
+            });
+
+            // 2. add a task to scheduler, blocking zk watch for bookies cache
+            bkc.getClientCtx().getScheduler().schedule(() -> {
+                try {
+                    Thread.sleep(Long.MAX_VALUE);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }, 0, TimeUnit.MILLISECONDS);
+
+            // 3. restart one bookie, so the client should update cache by WatchTask
+            restartBookie(bookieInfo.keySet().iterator().next());
+
+            // 4. after restart bookie, check again for the client cache
+            final CompletableFuture<Versioned<BookieServiceInfo>> bookieServiceInfo =
+                    bkc.getMetadataClientDriver().getRegistrationClient()
+                            .getBookieServiceInfo(bookieInfo.keySet().iterator().next());
+            assertTrue(bookieServiceInfo.isDone());
+            // 5. Previously, we used scheduler, and here getting bookie from client cache would fail.
+            // 6. After this PR, we introduced independent internal thread pool watchTaskScheduler,
+            // and here it will succeed.
+            assertFalse(bookieServiceInfo.isCompletedExceptionally());
         }
     }
 
