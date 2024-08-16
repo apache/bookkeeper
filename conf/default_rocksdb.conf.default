@@ -29,5 +29,7 @@
  log_file_time_to_roll=86400
 
 [TableOptions/BlockBasedTable "default"]
+ # set by jni: tableOptions.setFormatVersion
+ format_version=5
  # set by jni: tableOptions.setChecksumType
  checksum=kxxHash
