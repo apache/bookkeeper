@@ -119,6 +119,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private final BookKeeperClientStats clientStats;
     private final double bookieQuarantineRatio;
 
+    // Inner high priority thread for WatchTask. Disable external use.
+    private final OrderedScheduler highPriorityTaskExecutor;
+
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
     boolean ownEventLoopGroup = false;
@@ -424,6 +427,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize resources
         this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
+        this.highPriorityTaskExecutor =
+                OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperWatchTaskScheduler").build();
         this.mainWorkerPool = OrderedExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
                 .numThreads(conf.getNumWorkerThreads())
@@ -449,7 +454,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             this.metadataDriver.initialize(
                 conf,
-                scheduler,
+                highPriorityTaskExecutor,
                 rootStatsLogger,
                 Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
@@ -551,6 +556,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         statsLogger = NullStatsLogger.INSTANCE;
         clientStats = BookKeeperClientStats.newInstance(statsLogger);
         scheduler = null;
+        highPriorityTaskExecutor = null;
         requestTimer = null;
         metadataDriver = null;
         placementPolicy = null;
@@ -1462,6 +1468,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
             LOG.warn("The scheduler did not shutdown cleanly");
         }
+
+        // Close the watchTask scheduler
+        highPriorityTaskExecutor.shutdown();
+        if (!highPriorityTaskExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+            LOG.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly");
+        }
+
         mainWorkerPool.shutdown();
         if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
             LOG.warn("The mainWorkerPool did not shutdown cleanly");
