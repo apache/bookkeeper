@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.http.vertx;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
@@ -30,19 +31,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Http Handler for Vertx based Http Server.
  */
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(VertxAbstractHandler.class);
+
     /**
      * Process the request using the given httpEndpointService.
      */
+    @SuppressFBWarnings("DCN_NULLPOINTER_EXCEPTION")
     void processRequest(HttpEndpointService httpEndpointService, RoutingContext context) {
         HttpServerRequest httpRequest = context.request();
         HttpServerResponse httpResponse = context.response();
@@ -50,11 +55,15 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
             .setMethod(convertMethod(httpRequest))
             .setParams(convertParams(httpRequest))
             .setBody(context.body().asString());
-        HttpServiceResponse response = null;
+        HttpServiceResponse response;
         try {
             response = httpEndpointService.handle(request);
+        } catch (NullPointerException | IllegalArgumentException e) {
+            LOG.error("Vertx handler failed to process request {}, cause {}", request.toString(), e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
-            response = new ErrorHttpService().handle(request);
+            LOG.error("Exception in vertx handler", e);
+            throw new RuntimeException(e);
         }
         httpResponse.setStatusCode(response.getStatusCode());
         if (response.getContentType() != null) {
