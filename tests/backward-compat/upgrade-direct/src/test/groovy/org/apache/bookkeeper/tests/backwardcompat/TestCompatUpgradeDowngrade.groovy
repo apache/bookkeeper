@@ -62,26 +62,57 @@ class TestCompatUpgradeDowngrade {
         List<String> versions = Lists.newArrayList(BookKeeperClusterUtils.OLD_CLIENT_VERSIONS)
         versions.add(BookKeeperClusterUtils.CURRENT_VERSION)
 
+        boolean useRocksDbVersion5 = false
+        boolean useKxxHash = false
         for (String version: versions) {
-            if (version.startsWith("4.18.")) {
-                // rocksDB version 5 or above should be set as default for newer versions
-                break
-            }
             BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
                     "ledgerStorageClass",
                     "org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage")
 
+            // versions should be in the increasing order
+            if (version.startsWith("4.17.")) {
+                // rocksDB version 5 or above should be set as default for newer versions
+                useKxxHash = true
+            }
+            if (version.startsWith("4.18.")) {
+                // rocksDB version 5 or above should be set as default for newer versions
+                useRocksDbVersion5 = true
+            }
+
             try {
                 BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
                         "dbStorage_rocksDB_format_version",
-                        "2")
+                        useRocksDbVersion5 ? "5" : "2" )
                 BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
                         "dbStorage_rocksDB_checksum_type",
-                        "kCRC32c")
+                        useKxxHash ? "kxxHash" : "kCRC32c")
+
                 BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
                         "conf/default_rocksdb.conf.default",
                         "format_version",
-                        "2")
+                        useRocksDbVersion5 ? "5" : "2")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/entry_location_rocksdb.conf.default",
+                        "format_version",
+                        useRocksDbVersion5 ? "5" : "2")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/ledger_metadata_rocksdb.conf.default",
+                        "format_version",
+                        useRocksDbVersion5 ? "5" : "2")
+
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/default_rocksdb.conf.default",
+                        "checksum",
+                        useKxxHash ? "kxxHash" : "kCRC32c")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/entry_location_rocksdb.conf.default",
+                        "checksum",
+                        useKxxHash ? "kxxHash" : "kCRC32c")
+                BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+                        "conf/ledger_metadata_rocksdb.conf.default",
+                        "checksum",
+                        useKxxHash ? "kxxHash" : "kCRC32c")
+
             } catch (Exception e) {
                 LOG.warn(version + ": Failed to set rocksdb configs, might be ok for some older version", e)
             }
