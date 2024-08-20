@@ -700,14 +700,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadAheadTime(),readAheadStartNano);
+            recordSuccessfulEvent(dbLedgerStorageStats.getReadAheadTime(), readAheadStartNano);
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
                 log.debug("Exception during read ahead for ledger: {}: e", originalLedgerId, e);
             }
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerFailedValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerFailedValue(size);
-            recordFailedEvent(dbLedgerStorageStats.getReadAheadTime(),readAheadStartNano);
+            recordFailedEvent(dbLedgerStorageStats.getReadAheadTime(), readAheadStartNano);
         }
     }
 
