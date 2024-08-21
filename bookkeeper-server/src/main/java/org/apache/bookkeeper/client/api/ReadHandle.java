@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -138,7 +137,8 @@ public interface ReadHandle extends Handle {
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
-     * {@link org.apache.bookkeeper.client.LedgerHandle#asyncReadEntries(long, long, AsyncCallback.ReadCallback, Object) }
+     * {@link org.apache.bookkeeper.client.LedgerHandle#asyncReadEntries(
+     * long, long, AsyncCallback.ReadCallback, Object) }
      * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
@@ -157,7 +157,8 @@ public interface ReadHandle extends Handle {
      *          the total entries size.
      *
      * @see org.apache.bookkeeper.client.LedgerHandle#asyncReadEntries(long, long, AsyncCallback.ReadCallback, Object)
-     * @see org.apache.bookkeeper.client.LedgerHandle#asyncReadLastConfirmed(AsyncCallback.ReadLastConfirmedCallback, Object)
+     * @see org.apache.bookkeeper.client.LedgerHandle#asyncReadLastConfirmed(
+     * AsyncCallback.ReadLastConfirmedCallback, Object)
      * @see org.apache.bookkeeper.client.LedgerHandle#readUnconfirmedEntries(long, long)
      */
     CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long firstEntry, int maxCount, int maxSize);
