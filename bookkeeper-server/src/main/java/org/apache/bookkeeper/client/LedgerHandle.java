@@ -957,17 +957,13 @@ public class LedgerHandle implements WriteHandle {
             boolean isRecoveryRead) {
         int nettyMaxFrameSizeBytes = clientCtx.getConf().nettyMaxFrameSizeBytes;
         if (maxSize > nettyMaxFrameSizeBytes) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("The max size is greater than nettyMaxFrameSizeBytes, " +
-                                "use nettyMaxFrameSizeBytes:{} to replace it.", nettyMaxFrameSizeBytes);
-            }
+            LOG.info(
+                    "The max size is greater than nettyMaxFrameSizeBytes, use nettyMaxFrameSizeBytes:{} to replace it.",
+                    nettyMaxFrameSizeBytes);
             maxSize = nettyMaxFrameSizeBytes;
         }
         if (maxSize <= 0) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("The max size is negative, use nettyMaxFrameSizeBytes:{} to replace it.",
-                        nettyMaxFrameSizeBytes);
-            }
+            LOG.info("The max size is negative, use nettyMaxFrameSizeBytes:{} to replace it.", nettyMaxFrameSizeBytes);
             maxSize = nettyMaxFrameSizeBytes;
         }
         BatchedReadOp op = new BatchedReadOp(this, clientCtx,
