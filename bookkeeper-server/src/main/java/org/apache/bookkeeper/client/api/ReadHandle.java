@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -131,6 +132,52 @@ public interface ReadHandle extends Handle {
             throws BKException, InterruptedException {
         return FutureUtils.<LedgerEntries, BKException>result(readUnconfirmedAsync(firstEntry, lastEntry),
                                                               BKException.HANDLER);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+     * <br>This is the same of
+     * {@link org.apache.bookkeeper.client.LedgerHandle#asyncReadEntries(
+     * long, long, AsyncCallback.ReadCallback, Object) }
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possible to
+     * read entries for which the writer has not received the acknowledge yet. <br>
+     * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
+     * received the acknowledge.<br>
+     * For entries outside that range it is possible that the writer never received the acknowledge
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in
+     * a consistency issue in some cases.<br>
+     * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
+     * the expected consistency will be as described above for each subrange of ids.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param maxCount
+     *          id of last entry of sequence
+     * @param maxSize
+     *          the total entries size.
+     *
+     * @see org.apache.bookkeeper.client.LedgerHandle#asyncReadEntries(long, long, AsyncCallback.ReadCallback, Object)
+     * @see org.apache.bookkeeper.client.LedgerHandle#asyncReadLastConfirmed(
+     * AsyncCallback.ReadLastConfirmedCallback, Object)
+     * @see org.apache.bookkeeper.client.LedgerHandle#readUnconfirmedEntries(long, long)
+     */
+    CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long firstEntry, int maxCount, int maxSize);
+
+    /**
+     * Read a sequence of entries synchronously.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param maxCount
+     *          id of last entry of sequence
+     * @param maxSize
+     *          the total entries size.
+     *
+     * @see #batchReadUnconfirmedAsync(long, int, int)
+     */
+    default LedgerEntries batchReadUnconfirmed(long firstEntry, int maxCount, int maxSize)
+            throws BKException, InterruptedException {
+        return FutureUtils.result(batchReadUnconfirmedAsync(firstEntry, maxCount, maxSize), BKException.HANDLER);
     }
 
     /**

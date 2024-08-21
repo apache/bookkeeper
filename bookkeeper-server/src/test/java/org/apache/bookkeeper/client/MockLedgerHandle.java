@@ -260,6 +260,11 @@ public class MockLedgerHandle extends LedgerHandle {
     }
 
     @Override
+    public CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long firstEntry, int maxCount, int maxSize) {
+        return readHandle.batchReadUnconfirmedAsync(firstEntry, maxCount, maxSize);
+    }
+
+    @Override
     public CompletableFuture<Long> readLastAddConfirmedAsync() {
         return readHandle.readLastAddConfirmedAsync();
     }
