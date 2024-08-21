@@ -958,8 +958,8 @@ public class LedgerHandle implements WriteHandle {
         int nettyMaxFrameSizeBytes = clientCtx.getConf().nettyMaxFrameSizeBytes;
         if (maxSize > nettyMaxFrameSizeBytes) {
             LOG.info(
-                    "The max size is greater than nettyMaxFrameSizeBytes, use nettyMaxFrameSizeBytes:{} to replace it.",
-                    nettyMaxFrameSizeBytes);
+                "The max size is greater than nettyMaxFrameSizeBytes, use nettyMaxFrameSizeBytes:{} to replace it.",
+                nettyMaxFrameSizeBytes);
             maxSize = nettyMaxFrameSizeBytes;
         }
         if (maxSize <= 0) {
