@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.meta;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.meta.ZkLedgerAuditorManager.ELECTION_ZNODE;
 
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.RateLimiter;
@@ -737,6 +738,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("isLedgerReplicationEnabled()");
         }
         try {
+            String electionRoot = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_NODE + '/' + ELECTION_ZNODE;
+            if (zkc.exists(electionRoot, false) == null) {
+                return false;
+            }
             return null == zkc.exists(basePath + '/'
                 + BookKeeperConstants.DISABLE_NODE, false);
         } catch (KeeperException ke) {

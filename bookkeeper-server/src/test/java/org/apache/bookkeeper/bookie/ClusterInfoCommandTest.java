@@ -23,8 +23,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -58,6 +61,18 @@ public class ClusterInfoCommandTest extends BookKeeperClusterTestCase {
         assertEquals("", info.getAuditorId());
         assertFalse(info.isClusterUnderReplicated());
         assertTrue(info.isLedgerReplicationEnabled());
+    }
+
+    @Test
+    public void testRecoveryDisabled() throws Exception {
+        BookKeeperAdmin bookKeeperAdmin = new BookKeeperAdmin(super.bkc);
+        try {
+            bookKeeperAdmin.triggerAudit();
+            fail("should failed");
+        } catch (Exception e) {
+            assertTrue(e instanceof ReplicationException.UnavailableException);
+            assertTrue(e.getMessage().contains("Autorecovery is disabled. So giving up"));
+        }
     }
 
 }
