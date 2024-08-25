@@ -59,7 +59,7 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 
     private String myVote;
 
-    public static final String ELECTION_ZNODE = "auditorelection";
+    private static final String ELECTION_ZNODE = "auditorelection";
 
     // Represents the index of the auditor node
     private static final int AUDITOR_INDEX = 0;

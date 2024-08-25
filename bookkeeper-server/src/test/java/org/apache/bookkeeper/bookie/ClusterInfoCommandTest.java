@@ -64,9 +64,8 @@ public class ClusterInfoCommandTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testRecoveryDisabled() throws Exception {
-        BookKeeperAdmin bookKeeperAdmin = new BookKeeperAdmin(super.bkc);
-        try {
+    public void testRecoveryDisabled() {
+        try (BookKeeperAdmin bookKeeperAdmin = new BookKeeperAdmin(super.bkc)) {
             bookKeeperAdmin.triggerAudit();
             fail("should failed");
         } catch (Exception e) {
