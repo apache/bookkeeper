@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -113,6 +114,61 @@ public class TestSingleThreadExecutor {
 
         assertTrue(ste.getSubmittedTasksCount() >= 11);
         assertTrue(ste.getRejectedTasksCount() >= 1);
+        assertEquals(0, ste.getFailedTasksCount());
+    }
+
+    @Test
+    public void testRejectWhenDrainToInProgressAndQueueIsEmpty() throws Exception {
+        @Cleanup("shutdownNow")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, true);
+
+        CyclicBarrier barrier = new CyclicBarrier(10);
+        CountDownLatch startedLatch = new CountDownLatch(1);
+        List<Runnable> tasks = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            int n = i;
+            tasks.add(() -> {
+                if (n == 0) {
+                    startedLatch.countDown();
+                } else {
+                    try {
+                        barrier.await();
+                    } catch (InterruptedException | BrokenBarrierException e) {
+                        // ignore
+                    }
+                }
+            });
+        }
+        ste.execute(null, tasks);
+
+        // Wait until the first task is done.
+        try {
+            startedLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Next task should go through, because the runner thread has already pulled out the first and second items
+        // from the queue.
+        List<Runnable> nextTasks = new ArrayList<>();
+        nextTasks.add(() -> {
+        });
+        nextTasks.add(() -> {
+        });
+        ste.execute(null, nextTasks);
+
+        // Now the queue is really full and should reject tasks
+        try {
+            ste.execute(() -> {
+            });
+            fail("should have rejected the task");
+        } catch (RejectedExecutionException e) {
+            // Expected
+        }
+
+        assertEquals(12, ste.getSubmittedTasksCount());
+        assertEquals(1, ste.getRejectedTasksCount());
         assertEquals(0, ste.getFailedTasksCount());
     }
 
