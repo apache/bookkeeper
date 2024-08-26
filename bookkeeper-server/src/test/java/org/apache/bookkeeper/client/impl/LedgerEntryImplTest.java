@@ -20,14 +20,14 @@
 package org.apache.bookkeeper.client.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for {@link LedgerEntryImpl}.
@@ -54,7 +54,7 @@ public class LedgerEntryImplTest {
             dataBuf);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         this.entryImpl.close();
         assertEquals(0, dataBuf.refCnt());

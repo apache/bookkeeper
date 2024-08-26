@@ -22,9 +22,10 @@ package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests of builders.
@@ -73,112 +74,138 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertArrayEquals(password, metadata.getPassword());
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailEnsembleSize0() throws Exception {
-        result(newCreateLedgerOp()
-            .withEnsembleSize(0)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withEnsembleSize(0)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailWriteQuorumSize0() throws Exception {
-        result(newCreateLedgerOp()
-            .withEnsembleSize(2)
-            .withWriteQuorumSize(0)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withEnsembleSize(2)
+                    .withWriteQuorumSize(0)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailNullWriteFlags() throws Exception {
-        result(newCreateLedgerOp()
-            .withWriteFlags((EnumSet<WriteFlag>) null)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withWriteFlags((EnumSet<WriteFlag>) null)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailAckQuorumSize0() throws Exception {
-        result(newCreateLedgerOp()
-            .withEnsembleSize(2)
-            .withWriteQuorumSize(1)
-            .withAckQuorumSize(0)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withEnsembleSize(2)
+                    .withWriteQuorumSize(1)
+                    .withAckQuorumSize(0)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailWriteQuorumSizeGreaterThanEnsembleSize() throws Exception {
-        result(newCreateLedgerOp()
-            .withEnsembleSize(1)
-            .withWriteQuorumSize(2)
-            .withAckQuorumSize(1)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withEnsembleSize(1)
+                    .withWriteQuorumSize(2)
+                    .withAckQuorumSize(1)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailAckQuorumSizeGreaterThanWriteQuorumSize() throws Exception {
-        result(newCreateLedgerOp()
-            .withEnsembleSize(1)
-            .withWriteQuorumSize(1)
-            .withAckQuorumSize(2)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withEnsembleSize(1)
+                    .withWriteQuorumSize(1)
+                    .withAckQuorumSize(2)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailNoPassword() throws Exception {
-        result(newCreateLedgerOp()
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailPasswordNull() throws Exception {
-        result(newCreateLedgerOp()
-            .withPassword(null)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withPassword(null)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailCustomMetadataNull() throws Exception {
-        result(newCreateLedgerOp()
-            .withCustomMetadata(null)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withCustomMetadata(null)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailDigestTypeNullAndAutodetectionTrue() throws Exception {
         ClientConfiguration config = new ClientConfiguration();
         config.setEnableDigestTypeAutodetection(true);
         setBookKeeperConfig(config);
-        result(newCreateLedgerOp()
-            .withDigestType(null)
-            .withPassword(password)
-            .execute());
+
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withDigestType(null)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailDigestTypeNullAndAutodetectionFalse() throws Exception {
         ClientConfiguration config = new ClientConfiguration();
         config.setEnableDigestTypeAutodetection(false);
         setBookKeeperConfig(config);
-        result(newCreateLedgerOp()
-            .withDigestType(null)
-            .withPassword(password)
-            .execute());
-        fail("shoud not be able to create a ledger with such specs");
+
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withDigestType(null)
+                    .withPassword(password)
+                    .execute());
+            fail("should not be able to create a ledger with such specs");
+        });
     }
 
-    @Test(expected = BKClientClosedException.class)
+    @Test
     public void testFailDigestTypeNullAndBookkKeeperClosed() throws Exception {
-        closeBookkeeper();
-        result(newCreateLedgerOp()
-            .withPassword(password)
-            .execute());
-        fail("shoud not be able to create a ledger, client is closed");
+        assertThrows(BKClientClosedException.class, () -> {
+            closeBookkeeper();
+            result(newCreateLedgerOp()
+                    .withPassword(password)
+                    .execute());
+            fail("should not be able to create a ledger, client is closed");
+        });
     }
 
     @Test
@@ -289,58 +316,72 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeFlagsDeferredSync, lh.getWriteFlags());
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailCreateAdvLedgerBadFixedLedgerIdMinus1() throws Exception {
-        result(newCreateLedgerOp()
-            .withPassword(password)
-            .makeAdv()
-            .withLedgerId(-1)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withPassword(password)
+                    .makeAdv()
+                    .withLedgerId(-1)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testFailCreateAdvLedgerBadFixedLedgerIdNegative() throws Exception {
-        result(newCreateLedgerOp()
-            .withPassword(password)
-            .makeAdv()
-            .withLedgerId(-2)
-            .execute());
-        fail("shoud not be able to create a ledger with such specs");
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withPassword(password)
+                    .makeAdv()
+                    .withLedgerId(-2)
+                    .execute());
+            fail("should not be able to create a ledger with such specs");
+        });
     }
 
-    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
+    @Test
     public void testOpenLedgerNoId() throws Exception {
-        result(newOpenLedgerOp().execute());
+        assertThrows(BKNoSuchLedgerExistsOnMetadataServerException.class, () -> {
+            result(newOpenLedgerOp().execute());
+        });
     }
 
-    @Test(expected = BKNoSuchLedgerExistsOnMetadataServerException.class)
+    @Test
     public void testOpenLedgerBadId() throws Exception {
-        result(newOpenLedgerOp()
-            .withPassword(password)
-            .withLedgerId(ledgerId)
-            .execute());
+        assertThrows(BKNoSuchLedgerExistsOnMetadataServerException.class, () -> {
+            result(newOpenLedgerOp()
+                    .withPassword(password)
+                    .withLedgerId(ledgerId)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKClientClosedException.class)
+    @Test
     public void testOpenLedgerClientClosed() throws Exception {
-        closeBookkeeper();
-        result(newOpenLedgerOp()
-            .withPassword(password)
-            .withLedgerId(ledgerId)
-            .execute());
+        assertThrows(BKClientClosedException.class, () -> {
+            closeBookkeeper();
+            result(newOpenLedgerOp()
+                    .withPassword(password)
+                    .withLedgerId(ledgerId)
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testDeleteLedgerNoLedgerId() throws Exception {
-        result(newDeleteLedgerOp()
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newDeleteLedgerOp()
+                    .execute());
+        });
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
+    @Test
     public void testDeleteLedgerBadLedgerId() throws Exception {
-        result(newDeleteLedgerOp()
-            .withLedgerId(-1)
-            .execute());
+        assertThrows(BKIncorrectParameterException.class, () -> {
+            result(newDeleteLedgerOp()
+                    .withLedgerId(-1)
+                    .execute());
+        });
     }
 
     @Test
@@ -354,12 +395,14 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @Test(expected = BKClientClosedException.class)
+    @Test
     public void testDeleteLedgerBookKeeperClosed() throws Exception {
-        closeBookkeeper();
-        result(newDeleteLedgerOp()
-            .withLedgerId(ledgerId)
-            .execute());
+        assertThrows(BKClientClosedException.class, () -> {
+            closeBookkeeper();
+            result(newDeleteLedgerOp()
+                    .withLedgerId(ledgerId)
+                    .execute());
+        });
     }
 
     protected LedgerMetadata generateLedgerMetadata(int ensembleSize,
@@ -406,22 +449,22 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     }
 
-    @Test(expected = BKException.BKNotEnoughBookiesException.class)
+    @Test
     public void testNotEnoughBookies() throws Exception {
-
         maxNumberOfAvailableBookies =  1;
         ClientConfiguration config = new ClientConfiguration();
         config.setOpportunisticStriping(false);
         setBookKeeperConfig(config);
-
         setNewGeneratedLedgerId(ledgerId);
-        result(newCreateLedgerOp()
-            .withAckQuorumSize(ackQuorumSize)
-            .withEnsembleSize(ensembleSize)
-            .withWriteQuorumSize(writeQuorumSize)
-            .withCustomMetadata(customMetadata)
-            .withPassword(password)
-            .execute());
+        assertThrows(BKException.BKNotEnoughBookiesException.class, () -> {
+            result(newCreateLedgerOp()
+                    .withAckQuorumSize(ackQuorumSize)
+                    .withEnsembleSize(ensembleSize)
+                    .withWriteQuorumSize(writeQuorumSize)
+                    .withCustomMetadata(customMetadata)
+                    .withPassword(password)
+                    .execute());
+        });
     }
 
 }
