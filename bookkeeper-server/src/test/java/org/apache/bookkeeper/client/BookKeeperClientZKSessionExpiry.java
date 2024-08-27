@@ -24,7 +24,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks.AddCallbackFuture;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.ZooKeeper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,52 +32,54 @@ import org.slf4j.LoggerFactory;
  * Test the bookkeeper client while losing a ZK session.
  */
 public class BookKeeperClientZKSessionExpiry extends BookKeeperClusterTestCase {
-    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClientZKSessionExpiry.class);
 
-    public BookKeeperClientZKSessionExpiry() {
-        super(4);
-    }
+  private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClientZKSessionExpiry.class);
 
-    @Test
-    public void testSessionLossWhileWriting() throws Exception {
+  public BookKeeperClientZKSessionExpiry() {
+    super(4);
+  }
 
-        Thread expiryThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        while (true) {
-                            Thread.sleep(5000);
-                            long sessionId = bkc.getZkHandle().getSessionId();
-                            byte[] sessionPasswd = bkc.getZkHandle().getSessionPasswd();
+  @Test
+  void sessionLossWhileWriting() throws Exception {
 
-                            try {
-                                ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000, false);
-                                ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
-                                                             watcher, sessionId, sessionPasswd);
-                                zk.close();
-                            } catch (Exception e) {
-                                LOG.info("Error killing session", e);
-                            }
-                        }
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
-            };
-        expiryThread.start();
+    Thread expiryThread = new Thread() {
+      @Override
+      public void run() {
+        try {
+          while (true) {
+            Thread.sleep(5000);
+            long sessionId = bkc.getZkHandle().getSessionId();
+            byte[] sessionPasswd = bkc.getZkHandle().getSessionPasswd();
 
-        for (int i = 0; i < 3; i++) {
-            LedgerHandle lh = bkc.createLedger(3, 3, 2, BookKeeper.DigestType.MAC, "foobar".getBytes());
-            for (int j = 0; j < 100; j++) {
-                lh.asyncAddEntry("foobar".getBytes(), new AddCallbackFuture(j), null);
+            try {
+              ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000, true);
+              ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000, watcher,
+                  sessionId,
+                  sessionPasswd);
+              zk.close();
+            } catch (Exception e) {
+              LOG.info("Error killing session", e);
             }
-            startNewBookie();
-            killBookie(0);
-
-            lh.addEntry("lastEntry".getBytes());
-
-            lh.close();
+          }
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          return;
         }
+      }
+    };
+    expiryThread.start();
+
+    for (int i = 0; i < 3; i++) {
+      LedgerHandle lh = bkc.createLedger(3, 3, 2, BookKeeper.DigestType.MAC, "foobar".getBytes());
+      for (int j = 0; j < 100; j++) {
+        lh.asyncAddEntry("foobar".getBytes(), new AddCallbackFuture(j), null);
+      }
+      startNewBookie();
+      killBookie(0);
+
+      lh.addEntry("lastEntry".getBytes());
+
+      lh.close();
     }
+  }
 }
