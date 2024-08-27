@@ -124,7 +124,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             LOG.error("Should have thrown an exception");
             fail("Should have thrown an exception when trying to write");
         } catch (BKException.BKLedgerFencedException e) {
-            e.printStackTrace();
+            log.info("expected a fenced error", e);
             // correct behaviour
         }
 
