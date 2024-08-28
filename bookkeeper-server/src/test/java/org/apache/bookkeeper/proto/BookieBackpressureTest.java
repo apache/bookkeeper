@@ -49,8 +49,8 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -286,7 +286,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
         final BookieRequestProcessor brp = generateDataAndDoReads(0);
 
-        Assert.assertThat("reads in progress should exceed MAX_PENDING",
+        MatcherAssert.assertThat("reads in progress should exceed MAX_PENDING",
                 brp.maxReadsInProgressCount(), Matchers.greaterThan(MAX_PENDING));
     }
 
@@ -301,12 +301,12 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
         final BookieRequestProcessor brp = generateDataAndDoReads(0);
 
-        Assert.assertThat("reads in progress should NOT exceed MAX_PENDING ",
+        MatcherAssert.assertThat("reads in progress should NOT exceed MAX_PENDING ",
                 brp.maxReadsInProgressCount(), Matchers.lessThanOrEqualTo(MAX_PENDING));
     }
 
     private BookieRequestProcessor generateDataAndDoReads(final int bkId) throws Exception {
-        Assert.assertThat("should be only one bookie",
+        MatcherAssert.assertThat("should be only one bookie",
                           bookieCount(), Matchers.equalTo(1));
         ServerConfiguration conf = killBookie(0);
         BookieServer bks = startAndAddBookie(conf,
@@ -347,7 +347,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     // here we expect that backpressure is disabled and number of writes in progress
     // will exceed the limit
     private void doWritesNoBackpressure(final int bkId) throws Exception {
-        Assert.assertThat("should be only one bookie",
+        MatcherAssert.assertThat("should be only one bookie",
                           bookieCount(), Matchers.equalTo(1));
         ServerConfiguration conf = killBookie(0);
         BookieServer bks = startAndAddBookie(conf,
@@ -392,7 +392,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     // here we expect that backpressure is enabled and number of writes in progress
     // will never exceed the limit
     private void doWritesWithBackpressure(final int bkId) throws Exception {
-        Assert.assertThat("should be only one bookie",
+        MatcherAssert.assertThat("should be only one bookie",
                           bookieCount(), Matchers.equalTo(1));
         ServerConfiguration conf = killBookie(0);
         BookieServer bks = startAndAddBookie(conf,
