@@ -70,7 +70,7 @@ public class ClusterInfoCommandTest extends BookKeeperClusterTestCase {
             fail("should failed");
         } catch (Exception e) {
             assertTrue(e instanceof ReplicationException.UnavailableException);
-            assertTrue(e.getMessage().contains("Autorecovery is disabled. So giving up"));
+            assertTrue(e.getMessage().contains("Autorecovery is disabled due to missing Zookeeper node. Aborting recovery"));
         }
     }
 
