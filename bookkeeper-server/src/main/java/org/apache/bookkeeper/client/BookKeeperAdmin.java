@@ -1559,7 +1559,8 @@ public class BookKeeperAdmin implements AutoCloseable {
         } catch (IOException e) {
             if (e.getCause() instanceof KeeperException.NoNodeException) {
                 LOG.error("Unable to find Zookeeper node: {}", e.getCause().getMessage());
-                throw new UnavailableException("Autorecovery is disabled due to missing Zookeeper node. Aborting recovery!");
+                throw new UnavailableException("Autorecovery is disabled due to " +
+                        "missing Zookeeper node. Aborting recovery!");
             }
             throw e;
         }
