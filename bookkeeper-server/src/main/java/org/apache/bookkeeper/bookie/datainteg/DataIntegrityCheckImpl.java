@@ -295,7 +295,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     static class LedgerResult {
         enum State {
             MISSING, ERROR, OK
-        };
+        }
 
         static LedgerResult missing(long ledgerId) {
             return new LedgerResult(State.MISSING, ledgerId, null, null);
@@ -399,7 +399,7 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
 
     /**
      * Run ledger recovery on all a ledger if it has been marked as in limbo.
-     * @return a maybe with the most up to date metadata we have for he ledger.
+     * @return a maybe with the most up-to-date metadata we have for the ledger.
      *         If the ledger has been deleted, returns empty.
      */
     Maybe<LedgerMetadata> recoverLedgerIfInLimbo(long ledgerId, LedgerMetadata origMetadata,
