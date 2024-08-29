@@ -23,7 +23,7 @@
     <artifactId>bookkeeper</artifactId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
-    <artifactId>shaded-parent</artifactId>
+  <artifactId>shaded-parent</artifactId>
   <name>Apache BookKeeper :: Shaded :: Parent</name>
   <modules>
     <module>bookkeeper-server-shaded</module>
