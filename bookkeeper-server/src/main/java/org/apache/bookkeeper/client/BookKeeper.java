@@ -428,7 +428,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize resources
         this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
         this.highPriorityTaskExecutor =
-                OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperWatchTaskScheduler").build();
+                OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperHighPriorityThread").build();
         this.mainWorkerPool = OrderedExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
                 .numThreads(conf.getNumWorkerThreads())
@@ -1472,7 +1472,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // Close the watchTask scheduler
         highPriorityTaskExecutor.shutdown();
         if (!highPriorityTaskExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-            LOG.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly");
+            LOG.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly, interrupting");
+            highPriorityTaskExecutor.shutdownNow();
         }
 
         mainWorkerPool.shutdown();
