@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":1,"i3":6,"i4":6,"i5":6,"i6":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":1,"i4":6,"i5":6,"i6":6,"i7":6};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -176,34 +176,41 @@ extends java.lang.AutoCloseable</pre>
 </td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Boolean&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDriverMetadataServiceAvailable()">isDriverMetadataServiceAvailable</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Return driver metadata service is available.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newBuilder(org.apache.bookkeeper.conf.ClientConfiguration)">newBuilder</a></span>&#8203;(<a href="../../conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;clientConfiguration)</code></th>
 <td class="colLast">
 <div class="block">Create a new builder which can be used to boot a new BookKeeper client.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newCreateLedgerOp()">newCreateLedgerOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Start the creation of a new ledger.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="DeleteBuilder.html" title="interface in org.apache.bookkeeper.client.api">DeleteBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newDeleteLedgerOp()">newDeleteLedgerOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Delete an existing ledger.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="ListLedgersResultBuilder.html" title="interface in org.apache.bookkeeper.client.api">ListLedgersResultBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newListLedgersOp()">newListLedgersOp</a></span>()</code></th>
 <td class="colLast">
 <div class="block">List ledgers.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newOpenLedgerOp()">newOpenLedgerOp</a></span>()</code></th>
 <td class="colLast">
@@ -312,6 +319,20 @@ extends java.lang.AutoCloseable</pre>
 <dd><code>ledgerId</code> - id of the ledger.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a <code>CompletableFuture</code> instance containing ledger metadata.</dd>
+</dl>
+</li>
+</ul>
+<a id="isDriverMetadataServiceAvailable()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isDriverMetadataServiceAvailable</h4>
+<pre class="methodSignature">java.util.concurrent.CompletableFuture&lt;java.lang.Boolean&gt;&nbsp;isDriverMetadataServiceAvailable()</pre>
+<div class="block">Return driver metadata service is available.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the metadata service is available.</dd>
 </dl>
 </li>
 </ul>

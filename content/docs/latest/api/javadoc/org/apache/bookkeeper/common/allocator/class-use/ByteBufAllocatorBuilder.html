@@ -145,26 +145,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#exitOnOutOfMemory(boolean)">exitOnOutOfMemory</a></span>&#8203;(boolean&nbsp;exitOnOutOfMemory)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#leakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy)">leakDetectionPolicy</a></span>&#8203;(<a href="../LeakDetectionPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">LeakDetectionPolicy</a>&nbsp;leakDetectionPolicy)</code></th>
 <td class="colLast">
 <div class="block">Enable the leak detection for the allocator.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#outOfMemoryListener(java.util.function.Consumer)">outOfMemoryListener</a></span>&#8203;(java.util.function.Consumer&lt;java.lang.OutOfMemoryError&gt;&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Add a listener that is triggered whenever there is an allocation failure.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#outOfMemoryPolicy(org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy)">outOfMemoryPolicy</a></span>&#8203;(<a href="../OutOfMemoryPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">OutOfMemoryPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">
 <div class="block">Define the OutOfMemory handling policy.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#pooledAllocator(io.netty.buffer.ByteBufAllocator)">pooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;pooledAllocator)</code></th>
 <td class="colLast">
@@ -172,21 +177,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  forwarded to.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#poolingConcurrency(int)">poolingConcurrency</a></span>&#8203;(int&nbsp;poolingConcurrency)</code></th>
 <td class="colLast">
 <div class="block">Controls the amount of concurrency for the memory pool.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#poolingPolicy(org.apache.bookkeeper.common.allocator.PoolingPolicy)">poolingPolicy</a></span>&#8203;(<a href="../PoolingPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">PoolingPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">
 <div class="block">Define the memory pooling policy.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilder.</span><code><span class="memberNameLink"><a href="../ByteBufAllocatorBuilder.html#unpooledAllocator(io.netty.buffer.ByteBufAllocator)">unpooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;unpooledAllocator)</code></th>
 <td class="colLast">
@@ -230,35 +235,40 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#leakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy)">leakDetectionPolicy</a></span>&#8203;(<a href="../LeakDetectionPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">LeakDetectionPolicy</a>&nbsp;leakDetectionPolicy)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#exitOnOutOfMemory(boolean)">exitOnOutOfMemory</a></span>&#8203;(boolean&nbsp;exitOnOutOfMemory)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#leakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy)">leakDetectionPolicy</a></span>&#8203;(<a href="../LeakDetectionPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">LeakDetectionPolicy</a>&nbsp;leakDetectionPolicy)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#outOfMemoryListener(java.util.function.Consumer)">outOfMemoryListener</a></span>&#8203;(java.util.function.Consumer&lt;java.lang.OutOfMemoryError&gt;&nbsp;listener)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#outOfMemoryPolicy(org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy)">outOfMemoryPolicy</a></span>&#8203;(<a href="../OutOfMemoryPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">OutOfMemoryPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#pooledAllocator(io.netty.buffer.ByteBufAllocator)">pooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;pooledAllocator)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#poolingConcurrency(int)">poolingConcurrency</a></span>&#8203;(int&nbsp;poolingConcurrency)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#poolingPolicy(org.apache.bookkeeper.common.allocator.PoolingPolicy)">poolingPolicy</a></span>&#8203;(<a href="../PoolingPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">PoolingPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ByteBufAllocatorBuilderImpl.</span><code><span class="memberNameLink"><a href="../impl/ByteBufAllocatorBuilderImpl.html#unpooledAllocator(io.netty.buffer.ByteBufAllocator)">unpooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;unpooledAllocator)</code></th>
 <td class="colLast">&nbsp;</td>

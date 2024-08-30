@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -208,7 +208,7 @@ implements <a href="../MetadataClientDriver.html" title="interface in org.apache
 <!--   -->
 </a>
 <h3>Fields inherited from class&nbsp;org.apache.bookkeeper.meta.zk.<a href="ZKMetadataDriverBase.html" title="class in org.apache.bookkeeper.meta.zk">ZKMetadataDriverBase</a></h3>
-<code><a href="ZKMetadataDriverBase.html#acls">acls</a>, <a href="ZKMetadataDriverBase.html#conf">conf</a>, <a href="ZKMetadataDriverBase.html#disableHealthCheckPath">disableHealthCheckPath</a>, <a href="ZKMetadataDriverBase.html#layoutManager">layoutManager</a>, <a href="ZKMetadataDriverBase.html#ledgersRootPath">ledgersRootPath</a>, <a href="ZKMetadataDriverBase.html#lmFactory">lmFactory</a>, <a href="ZKMetadataDriverBase.html#ownZKHandle">ownZKHandle</a>, <a href="ZKMetadataDriverBase.html#SCHEME">SCHEME</a>, <a href="ZKMetadataDriverBase.html#statsLogger">statsLogger</a>, <a href="ZKMetadataDriverBase.html#zk">zk</a></code></li>
+<code><a href="ZKMetadataDriverBase.html#acls">acls</a>, <a href="ZKMetadataDriverBase.html#conf">conf</a>, <a href="ZKMetadataDriverBase.html#disableHealthCheckPath">disableHealthCheckPath</a>, <a href="ZKMetadataDriverBase.html#layoutManager">layoutManager</a>, <a href="ZKMetadataDriverBase.html#ledgersRootPath">ledgersRootPath</a>, <a href="ZKMetadataDriverBase.html#lmFactory">lmFactory</a>, <a href="ZKMetadataDriverBase.html#metadataServiceAvailable">metadataServiceAvailable</a>, <a href="ZKMetadataDriverBase.html#ownZKHandle">ownZKHandle</a>, <a href="ZKMetadataDriverBase.html#SCHEME">SCHEME</a>, <a href="ZKMetadataDriverBase.html#statsLogger">statsLogger</a>, <a href="ZKMetadataDriverBase.html#zk">zk</a></code></li>
 </ul>
 </li>
 </ul>
@@ -271,6 +271,13 @@ implements <a href="../MetadataClientDriver.html" title="interface in org.apache
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.CompletableFuture&lt;java.lang.Boolean&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMetadataServiceAvailable()">isMetadataServiceAvailable</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Return driver metadata service is available.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../discover/ZKRegistrationClient.html" title="class in org.apache.bookkeeper.discover">ZKRegistrationClient</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#newZKRegistrationClient(org.apache.zookeeper.ZooKeeper,java.lang.String,java.util.concurrent.ScheduledExecutorService,boolean)">newZKRegistrationClient</a></span>&#8203;(org.apache.zookeeper.ZooKeeper&nbsp;zk,
                        java.lang.String&nbsp;ledgersRootPath,
@@ -278,7 +285,7 @@ implements <a href="../MetadataClientDriver.html" title="interface in org.apache
                        boolean&nbsp;bookieAddressTracking)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSessionStateListener(org.apache.bookkeeper.meta.MetadataClientDriver.SessionStateListener)">setSessionStateListener</a></span>&#8203;(<a href="../MetadataClientDriver.SessionStateListener.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver.SessionStateListener</a>&nbsp;sessionStateListener)</code></th>
 <td class="colLast">
@@ -467,7 +474,7 @@ implements <a href="../MetadataClientDriver.html" title="interface in org.apache
 <a id="setSessionStateListener(org.apache.bookkeeper.meta.MetadataClientDriver.SessionStateListener)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>setSessionStateListener</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;setSessionStateListener&#8203;(<a href="../MetadataClientDriver.SessionStateListener.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver.SessionStateListener</a>&nbsp;sessionStateListener)</pre>
@@ -478,6 +485,23 @@ implements <a href="../MetadataClientDriver.html" title="interface in org.apache
 <dd><code><a href="../MetadataClientDriver.html#setSessionStateListener(org.apache.bookkeeper.meta.MetadataClientDriver.SessionStateListener)">setSessionStateListener</a></code>&nbsp;in interface&nbsp;<code><a href="../MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>sessionStateListener</code> - listener listening on metadata client session states.</dd>
+</dl>
+</li>
+</ul>
+<a id="isMetadataServiceAvailable()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>isMetadataServiceAvailable</h4>
+<pre class="methodSignature">public&nbsp;java.util.concurrent.CompletableFuture&lt;java.lang.Boolean&gt;&nbsp;isMetadataServiceAvailable()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MetadataClientDriver.html#isMetadataServiceAvailable()">MetadataClientDriver</a></code></span></div>
+<div class="block">Return driver metadata service is available.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../MetadataClientDriver.html#isMetadataServiceAvailable()">isMetadataServiceAvailable</a></code>&nbsp;in interface&nbsp;<code><a href="../MetadataClientDriver.html" title="interface in org.apache.bookkeeper.meta">MetadataClientDriver</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the metadata service is available.</dd>
 </dl>
 </li>
 </ul>

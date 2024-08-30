@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":1,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6};
+var data = {"i0":6,"i1":1,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -166,26 +166,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#exitOnOutOfMemory(boolean)">exitOnOutOfMemory</a></span>&#8203;(boolean&nbsp;exitOnOutOfMemory)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy)">leakDetectionPolicy</a></span>&#8203;(<a href="LeakDetectionPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">LeakDetectionPolicy</a>&nbsp;leakDetectionPolicy)</code></th>
 <td class="colLast">
 <div class="block">Enable the leak detection for the allocator.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#outOfMemoryListener(java.util.function.Consumer)">outOfMemoryListener</a></span>&#8203;(java.util.function.Consumer&lt;java.lang.OutOfMemoryError&gt;&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Add a listener that is triggered whenever there is an allocation failure.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#outOfMemoryPolicy(org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy)">outOfMemoryPolicy</a></span>&#8203;(<a href="OutOfMemoryPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">OutOfMemoryPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">
 <div class="block">Define the OutOfMemory handling policy.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pooledAllocator(io.netty.buffer.ByteBufAllocator)">pooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;pooledAllocator)</code></th>
 <td class="colLast">
@@ -193,21 +198,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  forwarded to.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#poolingConcurrency(int)">poolingConcurrency</a></span>&#8203;(int&nbsp;poolingConcurrency)</code></th>
 <td class="colLast">
 <div class="block">Controls the amount of concurrency for the memory pool.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#poolingPolicy(org.apache.bookkeeper.common.allocator.PoolingPolicy)">poolingPolicy</a></span>&#8203;(<a href="PoolingPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">PoolingPolicy</a>&nbsp;policy)</code></th>
 <td class="colLast">
 <div class="block">Define the memory pooling policy.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unpooledAllocator(io.netty.buffer.ByteBufAllocator)">unpooledAllocator</a></span>&#8203;(io.netty.buffer.ByteBufAllocator&nbsp;unpooledAllocator)</code></th>
 <td class="colLast">
@@ -332,13 +337,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <a id="leakDetectionPolicy(org.apache.bookkeeper.common.allocator.LeakDetectionPolicy)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>leakDetectionPolicy</h4>
 <pre class="methodSignature"><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a>&nbsp;leakDetectionPolicy&#8203;(<a href="LeakDetectionPolicy.html" title="enum in org.apache.bookkeeper.common.allocator">LeakDetectionPolicy</a>&nbsp;leakDetectionPolicy)</pre>
 <div class="block">Enable the leak detection for the allocator.
 
  <p>Default is <a href="LeakDetectionPolicy.html#Disabled"><code>LeakDetectionPolicy.Disabled</code></a></div>
+</li>
+</ul>
+<a id="exitOnOutOfMemory(boolean)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>exitOnOutOfMemory</h4>
+<pre class="methodSignature"><a href="ByteBufAllocatorBuilder.html" title="interface in org.apache.bookkeeper.common.allocator">ByteBufAllocatorBuilder</a>&nbsp;exitOnOutOfMemory&#8203;(boolean&nbsp;exitOnOutOfMemory)</pre>
 </li>
 </ul>
 </li>

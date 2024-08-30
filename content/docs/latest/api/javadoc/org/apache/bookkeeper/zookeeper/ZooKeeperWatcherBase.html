@@ -177,17 +177,20 @@ implements org.apache.zookeeper.Watcher</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,boolean)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+                    boolean&nbsp;allowReadOnlyMode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,java.util.Set,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,boolean,java.util.Set,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+                    boolean&nbsp;allowReadOnlyMode,
                     java.util.Set&lt;org.apache.zookeeper.Watcher&gt;&nbsp;childWatchers,
                     <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,boolean,org.apache.bookkeeper.stats.StatsLogger)">ZooKeeperWatcherBase</a></span>&#8203;(int&nbsp;zkSessionTimeOut,
+                    boolean&nbsp;allowReadOnlyMode,
                     <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -267,32 +270,35 @@ implements org.apache.zookeeper.Watcher</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>ZooKeeperWatcherBase</h4>
-<pre>public&nbsp;ZooKeeperWatcherBase&#8203;(int&nbsp;zkSessionTimeOut)</pre>
-</li>
-</ul>
-<a id="&lt;init&gt;(int,org.apache.bookkeeper.stats.StatsLogger)">
+<a id="&lt;init&gt;(int,boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>ZooKeeperWatcherBase</h4>
 <pre>public&nbsp;ZooKeeperWatcherBase&#8203;(int&nbsp;zkSessionTimeOut,
+                            boolean&nbsp;allowReadOnlyMode)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(int,boolean,org.apache.bookkeeper.stats.StatsLogger)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ZooKeeperWatcherBase</h4>
+<pre>public&nbsp;ZooKeeperWatcherBase&#8203;(int&nbsp;zkSessionTimeOut,
+                            boolean&nbsp;allowReadOnlyMode,
                             <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(int,java.util.Set,org.apache.bookkeeper.stats.StatsLogger)">
+<a id="&lt;init&gt;(int,boolean,java.util.Set,org.apache.bookkeeper.stats.StatsLogger)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ZooKeeperWatcherBase</h4>
 <pre>public&nbsp;ZooKeeperWatcherBase&#8203;(int&nbsp;zkSessionTimeOut,
+                            boolean&nbsp;allowReadOnlyMode,
                             java.util.Set&lt;org.apache.zookeeper.Watcher&gt;&nbsp;childWatchers,
                             <a href="../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
 </li>
