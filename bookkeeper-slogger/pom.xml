@@ -22,7 +22,6 @@
         <relativePath>..</relativePath>
     </parent>
     <packaging>pom</packaging>
-    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper-slogger-parent</artifactId>
     <name>Apache BookKeeper :: Structured Logger :: Parent</name>
 

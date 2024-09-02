@@ -23,7 +23,6 @@
     <version>4.18.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>scripts</artifactId>
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Bash Scripts Test</name>

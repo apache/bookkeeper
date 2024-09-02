@@ -22,8 +22,6 @@
     <artifactId>tests-parent</artifactId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
-
-  <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>integration-tests-utils</artifactId>
   <packaging>jar</packaging>
 
