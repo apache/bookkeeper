@@ -217,32 +217,32 @@ Apache Software License, Version 2.
 - lib/commons-io-commons-io-2.7.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
-- lib/io.netty-netty-buffer-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-dns-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-http-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-http2-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-socks-4.1.111.Final.jar [11]
-- lib/io.netty-netty-common-4.1.111.Final.jar [11]
-- lib/io.netty-netty-handler-4.1.111.Final.jar [11]
-- lib/io.netty-netty-handler-proxy-4.1.111.Final.jar [11]
-- lib/io.netty-netty-resolver-4.1.111.Final.jar [11]
-- lib/io.netty-netty-resolver-dns-4.1.111.Final.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-linux-aarch_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-linux-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-osx-aarch_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-osx-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-windows-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-classes-2.0.65.Final.jar [11]
-- lib/io.netty-netty-transport-4.1.111.Final.jar [11]
-- lib/io.netty-netty-transport-classes-epoll-4.1.111.Final.jar [11]
-- lib/io.netty-netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar [11]
-- lib/io.netty-netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-buffer-4.1.113.Final.jar [11]
+- lib/io.netty-netty-codec-4.1.113.Final.jar [11]
+- lib/io.netty-netty-codec-dns-4.1.113.Final.jar [11]
+- lib/io.netty-netty-codec-http-4.1.113.Final.jar [11]
+- lib/io.netty-netty-codec-http2-4.1.113.Final.jar [11]
+- lib/io.netty-netty-codec-socks-4.1.113.Final.jar [11]
+- lib/io.netty-netty-common-4.1.113.Final.jar [11]
+- lib/io.netty-netty-handler-4.1.113.Final.jar [11]
+- lib/io.netty-netty-handler-proxy-4.1.113.Final.jar [11]
+- lib/io.netty-netty-resolver-4.1.113.Final.jar [11]
+- lib/io.netty-netty-resolver-dns-4.1.113.Final.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final-linux-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final-osx-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final-osx-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.66.Final-windows-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-classes-2.0.66.Final.jar [11]
+- lib/io.netty-netty-transport-4.1.113.Final.jar [11]
+- lib/io.netty-netty-transport-classes-epoll-4.1.113.Final.jar [11]
+- lib/io.netty-netty-transport-native-epoll-4.1.113.Final-linux-aarch_64.jar [11]
+- lib/io.netty-netty-transport-native-epoll-4.1.113.Final-linux-x86_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.25.Final-linux-x86_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.25.Final-linux-aarch_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-classes-io_uring-0.0.25.Final.jar [11]
-- lib/io.netty-netty-transport-native-unix-common-4.1.111.Final.jar [11]
+- lib/io.netty-netty-transport-native-unix-common-4.1.113.Final.jar [11]
 - lib/io.prometheus-simpleclient-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_common-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_hotspot-0.15.0.jar [12]
@@ -360,7 +360,7 @@ Apache Software License, Version 2.
 [8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.7
 [9] Source available at https://github.com/apache/commons-lang/tree/LANG_2_6
 [10] Source available at https://github.com/apache/commons-logging/tree/commons-logging-1.1.1
-[11] Source available at https://github.com/netty/netty/tree/netty-4.1.111.Final
+[11] Source available at https://github.com/netty/netty/tree/netty-4.1.113.Final
 [12] Source available at https://github.com/prometheus/client_java/tree/parent-0.15.0
 [13] Source available at https://github.com/vert-x3/vertx-auth/tree/4.3.2
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/4.3.2
@@ -403,9 +403,9 @@ Apache Software License, Version 2.
 [56] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-codec-4.1.111.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.113.Final.jar bundles some 3rd party dependencies
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.113.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
@@ -414,7 +414,7 @@ been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
@@ -422,7 +422,7 @@ Base64 Encoder and Decoder, which can be obtained at:
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Webbit', an event based
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'Webbit', an event based
 WebSocket and HTTP server, which can be obtained at:
 
   * LICENSE:
@@ -430,7 +430,7 @@ WebSocket and HTTP server, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/joewalnes/webbit
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
@@ -438,7 +438,7 @@ facade for Java, which can be obtained at:
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Apache Harmony', an open source
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'Apache Harmony', an open source
 Java SE, which can be obtained at:
 
   * NOTICE:
@@ -448,7 +448,7 @@ Java SE, which can be obtained at:
   * HOMEPAGE:
     * http://archive.apache.org/dist/harmony/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
@@ -456,7 +456,7 @@ and decompression library written by Matthew J. Francis. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
@@ -465,7 +465,7 @@ a constant-size alphabet written by Yuta Mori. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
 Java Concurrency Tools for the JVM, which can be obtained at:
 
   * LICENSE:
@@ -473,7 +473,7 @@ Java Concurrency Tools for the JVM, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/JCTools/JCTools
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
 pure Java, which can be obtained at:
 
   * LICENSE:
@@ -481,7 +481,7 @@ pure Java, which can be obtained at:
   * HOMEPAGE:
     * http://www.jcraft.com/jzlib/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
 decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
 
   * LICENSE:
@@ -489,7 +489,7 @@ decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/ning/compress
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'lz4', a LZ4 Java compression
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'lz4', a LZ4 Java compression
 and decompression library written by Adrien Grand. It can be obtained at:
 
   * LICENSE:
@@ -497,7 +497,7 @@ and decompression library written by Adrien Grand. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/jpountz/lz4-java
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
 and decompression library, which can be obtained at:
 
   * LICENSE:
@@ -505,7 +505,7 @@ and decompression library, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/jponge/lzma-java
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
@@ -513,7 +513,7 @@ and decompression library written by William Kinney. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
 Google's data interchange format, which can be obtained at:
 
   * LICENSE:
@@ -521,7 +521,7 @@ Google's data interchange format, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/protobuf
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
 a temporary self-signed X.509 certificate when the JVM does not provide the
 equivalent functionality.  It can be obtained at:
 
@@ -530,7 +530,7 @@ equivalent functionality.  It can be obtained at:
   * HOMEPAGE:
     * http://www.bouncycastle.org/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Snappy', a compression library produced
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Snappy', a compression library produced
 by Google Inc, which can be obtained at:
 
   * LICENSE:
@@ -538,7 +538,7 @@ by Google Inc, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/snappy
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
 serialization API, which can be obtained at:
 
   * LICENSE:
@@ -546,7 +546,7 @@ serialization API, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/jboss-remoting/jboss-marshalling
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Caliper', Google's micro-
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Caliper', Google's micro-
 benchmarking framework, which can be obtained at:
 
   * LICENSE:
@@ -554,7 +554,7 @@ benchmarking framework, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/caliper
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Apache Commons Logging', a logging
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Apache Commons Logging', a logging
 framework, which can be obtained at:
 
   * LICENSE:
@@ -562,7 +562,7 @@ framework, which can be obtained at:
   * HOMEPAGE:
     * http://commons.apache.org/logging/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
 can be obtained at:
 
   * LICENSE:
@@ -570,7 +570,7 @@ can be obtained at:
   * HOMEPAGE:
     * http://logging.apache.org/log4j/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
+lib/io.netty-netty-codec-4.1.113.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
 non-blocking XML processor, which can be obtained at:
 
   * LICENSE:
@@ -578,7 +578,7 @@ non-blocking XML processor, which can be obtained at:
   * HOMEPAGE:
     * http://wiki.fasterxml.com/AaltoHome
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
 
   * LICENSE:
@@ -586,7 +586,7 @@ the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/twitter/hpack
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
 
   * LICENSE:
@@ -594,7 +594,7 @@ the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/python-hyper/hpack/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at:
 
   * LICENSE:
@@ -602,7 +602,7 @@ the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at
   * HOMEPAGE:
     * https://github.com/nghttp2/nghttp2/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
+lib/io.netty-netty-codec-4.1.113.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
 provides utilities for the java.lang API, which can be obtained at:
 
   * LICENSE:
@@ -611,7 +611,7 @@ provides utilities for the java.lang API, which can be obtained at:
     * https://commons.apache.org/proper/commons-lang/
 
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
+lib/io.netty-netty-codec-4.1.113.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
 that provides an easy way to ensure a user has everything necessary to run the Maven build.
 
   * LICENSE:
@@ -619,7 +619,7 @@ that provides an easy way to ensure a user has everything necessary to run the M
   * HOMEPAGE:
     * https://github.com/takari/maven-wrapper
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the dnsinfo.h header file,
+lib/io.netty-netty-codec-4.1.113.Final.jar contains the dnsinfo.h header file,
 that provides a way to retrieve the system DNS configuration on MacOS.
 This private header is also used by Apple's open source
  mDNSResponder (https://opensource.apple.com/tarballs/mDNSResponder/).
