@@ -527,7 +527,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             masterKeyCache.put(ledgerId, masterKey);
 
                             // Force to re-insert the master key in ledger storage
-                            handles.getHandle(ledgerId, masterKey);
+                            handles.getHandle(ledgerId, masterKey, true);
                         } else {
                             throw new IOException("Invalid journal. Contains journalKey "
                                     + " but layout version (" + journalVersion
@@ -539,7 +539,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
-                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                            LedgerDescriptor handle = handles.getHandle(ledgerId, key, true);
                             handle.setFenced();
                         } else {
                             throw new IOException("Invalid journal. Contains fenceKey "
@@ -557,7 +557,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);
                             }
-                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                            LedgerDescriptor handle = handles.getHandle(ledgerId, key, true);
                             handle.setExplicitLac(explicitLacBuf);
                         } else {
                             throw new IOException("Invalid journal. Contains explicitLAC " + " but layout version ("
@@ -580,7 +580,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
-                        LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                        LedgerDescriptor handle = handles.getHandle(ledgerId, key, true);
 
                         recBuff.rewind();
                         handle.addEntry(Unpooled.wrappedBuffer(recBuff));
@@ -902,7 +902,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
             throws IOException, BookieException {
         final long ledgerId = entry.getLong(entry.readerIndex());
 
-        return handles.getHandle(ledgerId, masterKey);
+        return handles.getHandle(ledgerId, masterKey, false);
     }
 
     private Journal getJournal(long ledgerId) {
@@ -1011,7 +1011,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         ByteBuf explicitLACEntry = null;
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
-            LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
+            LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey, false);
             synchronized (handle) {
                 entry.markReaderIndex();
                 handle.setExplicitLac(entry);
@@ -1100,7 +1100,7 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
      */
     public CompletableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
             throws IOException, BookieException {
-        LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
+        LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey, false);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
 
