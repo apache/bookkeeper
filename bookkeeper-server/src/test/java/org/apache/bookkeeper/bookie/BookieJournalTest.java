@@ -453,7 +453,7 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behaviour
         }
-        assertTrue(b.handles.getHandle(1, "testPasswd".getBytes()).isFenced());
+        assertTrue(b.handles.getHandle(1, "testPasswd".getBytes(), false).isFenced());
 
         b.shutdown();
     }
@@ -485,7 +485,7 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behavior
         }
-        assertTrue(b.handles.getHandle(1, "testV5Journal".getBytes()).isFenced());
+        assertTrue(b.handles.getHandle(1, "testV5Journal".getBytes(), false).isFenced());
 
         b.shutdown();
     }

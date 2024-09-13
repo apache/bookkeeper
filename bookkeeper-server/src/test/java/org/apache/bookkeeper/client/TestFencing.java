@@ -26,11 +26,18 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
+import org.awaitility.reflect.WhiteboxImpl;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * This unit test tests ledger fencing.
  *
  */
+@Slf4j
 public class TestFencing extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
@@ -78,6 +86,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             fail("Should have thrown an exception when trying to write");
         } catch (BKException.BKLedgerFencedException e) {
             // correct behaviour
+            log.info("expected a fenced error", e);
         }
 
         /*
@@ -86,6 +95,61 @@ public class TestFencing extends BookKeeperClusterTestCase {
         assertTrue("Has not recovered correctly: " + readlh.getLastAddConfirmed()
                    + " original " + writelh.getLastAddConfirmed(),
                    readlh.getLastAddConfirmed() == writelh.getLastAddConfirmed());
+    }
+
+    @Test
+    public void testWriteAfterDeleted() throws Exception {
+        LedgerHandle writeLedger;
+        writeLedger = bkc.createLedger(digestType, "password".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < 10; i++) {
+            long entryId = writeLedger.addEntry(tmp.getBytes());
+            LOG.info("entryId: {}", entryId);
+        }
+
+        // Fence and delete.
+        BookKeeperTestClient bkc2 = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
+        LedgerHandle readLedger = bkc2.openLedger(writeLedger.getId(), digestType, "password".getBytes());
+        bkc2.deleteLedger(readLedger.ledgerId);
+
+        // Waiting for GC.
+        for (ServerTester server : servers) {
+            triggerGC(server.getServer().getBookie());
+        }
+
+        try {
+            long entryId = writeLedger.addEntry(tmp.getBytes());
+            LOG.info("Not expected: entryId: {}", entryId);
+            LOG.error("Should have thrown an exception");
+            fail("Should have thrown an exception when trying to write");
+        } catch (BKException.BKLedgerFencedException e) {
+            log.info("expected a fenced error", e);
+            // correct behaviour
+        }
+
+        /*
+         * Check it has been recovered properly.
+         */
+        assertTrue("Has not recovered correctly: " + readLedger.getLastAddConfirmed()
+                   + " original " + writeLedger.getLastAddConfirmed(),
+                   readLedger.getLastAddConfirmed() == writeLedger.getLastAddConfirmed());
+
+        // cleanup.
+        bkc2.close();
+    }
+
+    private void triggerGC(Bookie bookie) {
+        LedgerStorage ledgerStorage = bookie.getLedgerStorage();
+        if (ledgerStorage instanceof InterleavedLedgerStorage
+                || ledgerStorage instanceof SingleDirectoryDbLedgerStorage) {
+            Runnable gcThread = WhiteboxImpl.getInternalState(ledgerStorage, "gcThread");
+            gcThread.run();
+        } else if (ledgerStorage instanceof SortedLedgerStorage) {
+            Object actLedgerStorage = WhiteboxImpl.getInternalState(ledgerStorage, "interleavedLedgerStorage");
+            Runnable gcThread = WhiteboxImpl.getInternalState(actLedgerStorage, "gcThread");
+            gcThread.run();
+        }
     }
 
     private static int threadCount = 0;
