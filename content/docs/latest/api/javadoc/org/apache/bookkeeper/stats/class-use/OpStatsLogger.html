@@ -277,6 +277,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getCompactRuntime()">getCompactRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getExtractMetaRuntime()">getExtractMetaRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getForceWriteBatchBytesStats()">getForceWriteBatchBytesStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -297,80 +307,85 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getGcThreadRuntime()">getGcThreadRuntime</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getGcLedgerRuntime()">getGcLedgerRuntime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GarbageCollectorStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#getGcThreadRuntime()">getGcThreadRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getGetEntryStats()">getGetEntryStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getGetListOfEntriesOfLedgerStats()">getGetListOfEntriesOfLedgerStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalAddEntryStats()">getJournalAddEntryStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalCreationStats()">getJournalCreationStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalFlushStats()">getJournalFlushStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalForceLedgerStats()">getJournalForceLedgerStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalProcessTimeStats()">getJournalProcessTimeStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalQueueStats()">getJournalQueueStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">JournalStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/JournalStats.html#getJournalSyncStats()">getJournalSyncStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getPutEntryStats()">getPutEntryStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getReadBytesStats()">getReadBytesStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getReadEntryStats()">getReadEntryStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookieStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/BookieStats.html#getRecoveryAddEntryStats()">getRecoveryAddEntryStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getSnapshotStats()">getSnapshotStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EntryMemTableStats.</span><code><span class="memberNameLink"><a href="../../bookie/stats/EntryMemTableStats.html#getThrottlingStats()">getThrottlingStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>

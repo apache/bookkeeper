@@ -653,10 +653,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">GarbageCollectorStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../bookie/stats/GarbageCollectorStats.html#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">GarbageCollectorStats</a></span>&#8203;(<a href="../StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                      java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeEntryLogCountSupplier,
                      java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;activeEntryLogSpaceBytesSupplier,
-                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier)</code></th>
+                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier,
+                     java.util.function.Supplier&lt;java.lang.Double&gt;&nbsp;entryLogCompactRatioSupplier,
+                     java.util.function.Supplier&lt;int[]&gt;&nbsp;usageBuckets)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">

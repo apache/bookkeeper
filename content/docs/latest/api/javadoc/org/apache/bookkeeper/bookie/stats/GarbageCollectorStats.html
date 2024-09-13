@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -181,10 +181,12 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">GarbageCollectorStats</a></span>&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">GarbageCollectorStats</a></span>&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                      java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeEntryLogCountSupplier,
                      java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;activeEntryLogSpaceBytesSupplier,
-                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier)</code></th>
+                     java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier,
+                     java.util.function.Supplier&lt;java.lang.Double&gt;&nbsp;entryLogCompactRatioSupplier,
+                     java.util.function.Supplier&lt;int[]&gt;&nbsp;usageBuckets)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -221,43 +223,78 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCompactRuntime()">getCompactRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDeletedLedgerCounter()">getDeletedLedgerCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="../../stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Double&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLogCompactRatioGauge()">getEntryLogCompactRatioGauge</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>int[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLogUsageBuckets()">getEntryLogUsageBuckets</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="../../stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLogUsageBucketsLeGauges()">getEntryLogUsageBucketsLeGauges</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExtractMetaRuntime()">getExtractMetaRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGcLedgerRuntime()">getGcLedgerRuntime</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGcThreadRuntime()">getGcThreadRuntime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMajorCompactionCounter()">getMajorCompactionCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMinorCompactionCounter()">getMinorCompactionCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReclaimedSpaceViaCompaction()">getReclaimedSpaceViaCompaction</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReclaimedSpaceViaDeletes()">getReclaimedSpaceViaDeletes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="../../stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReclaimFailedToDelete()">getReclaimFailedToDelete</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getStatsLogger()">getStatsLogger</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryLogUsageBuckets(int%5B%5D)">setEntryLogUsageBuckets</a></span>&#8203;(int[]&nbsp;usageBuckets)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -303,7 +340,7 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">
+<a id="&lt;init&gt;(org.apache.bookkeeper.stats.StatsLogger,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier,java.util.function.Supplier)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -312,7 +349,9 @@ extends java.lang.Object</pre>
 <pre>public&nbsp;GarbageCollectorStats&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
                              java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeEntryLogCountSupplier,
                              java.util.function.Supplier&lt;java.lang.Long&gt;&nbsp;activeEntryLogSpaceBytesSupplier,
-                             java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier)</pre>
+                             java.util.function.Supplier&lt;java.lang.Integer&gt;&nbsp;activeLedgerCountSupplier,
+                             java.util.function.Supplier&lt;java.lang.Double&gt;&nbsp;entryLogCompactRatioSupplier,
+                             java.util.function.Supplier&lt;int[]&gt;&nbsp;usageBuckets)</pre>
 </li>
 </ul>
 </li>
@@ -325,6 +364,15 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="setEntryLogUsageBuckets(int[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setEntryLogUsageBuckets</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setEntryLogUsageBuckets&#8203;(int[]&nbsp;usageBuckets)</pre>
+</li>
+</ul>
 <a id="getStatsLogger()">
 <!--   -->
 </a>
@@ -418,10 +466,64 @@ extends java.lang.Object</pre>
 <a id="getActiveLedgerCountGauge()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getActiveLedgerCountGauge</h4>
 <pre class="methodSignature">public&nbsp;<a href="../../stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;&nbsp;getActiveLedgerCountGauge()</pre>
+</li>
+</ul>
+<a id="getGcLedgerRuntime()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getGcLedgerRuntime</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;getGcLedgerRuntime()</pre>
+</li>
+</ul>
+<a id="getCompactRuntime()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getCompactRuntime</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;getCompactRuntime()</pre>
+</li>
+</ul>
+<a id="getExtractMetaRuntime()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getExtractMetaRuntime</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a>&nbsp;getExtractMetaRuntime()</pre>
+</li>
+</ul>
+<a id="getEntryLogCompactRatioGauge()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEntryLogCompactRatioGauge</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Double&gt;&nbsp;getEntryLogCompactRatioGauge()</pre>
+</li>
+</ul>
+<a id="getEntryLogUsageBuckets()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEntryLogUsageBuckets</h4>
+<pre class="methodSignature">public&nbsp;int[]&nbsp;getEntryLogUsageBuckets()</pre>
+</li>
+</ul>
+<a id="getEntryLogUsageBucketsLeGauges()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getEntryLogUsageBucketsLeGauges</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a>&lt;java.lang.Integer&gt;[]&nbsp;getEntryLogUsageBucketsLeGauges()</pre>
 </li>
 </ul>
 </li>
