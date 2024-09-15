@@ -205,8 +205,9 @@ implements <a href="HandleFactory.html" title="interface in org.apache.bookkeepe
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="LedgerDescriptor.html" title="class in org.apache.bookkeeper.bookie">LedgerDescriptor</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHandle(long,byte%5B%5D)">getHandle</a></span>&#8203;(long&nbsp;ledgerId,
-         byte[]&nbsp;masterKey)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHandle(long,byte%5B%5D,boolean)">getHandle</a></span>&#8203;(long&nbsp;ledgerId,
+         byte[]&nbsp;masterKey,
+         boolean&nbsp;journalReplay)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -281,19 +282,20 @@ implements <a href="HandleFactory.html" title="interface in org.apache.bookkeepe
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getHandle(long,byte[])">
+<a id="getHandle(long,byte[],boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getHandle</h4>
 <pre class="methodSignature">public&nbsp;<a href="LedgerDescriptor.html" title="class in org.apache.bookkeeper.bookie">LedgerDescriptor</a>&nbsp;getHandle&#8203;(long&nbsp;ledgerId,
-                                  byte[]&nbsp;masterKey)
+                                  byte[]&nbsp;masterKey,
+                                  boolean&nbsp;journalReplay)
                            throws java.io.IOException,
                                   <a href="BookieException.html" title="class in org.apache.bookkeeper.bookie">BookieException</a></pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="HandleFactory.html#getHandle(long,byte%5B%5D)">getHandle</a></code>&nbsp;in interface&nbsp;<code><a href="HandleFactory.html" title="interface in org.apache.bookkeeper.bookie">HandleFactory</a></code></dd>
+<dd><code><a href="HandleFactory.html#getHandle(long,byte%5B%5D,boolean)">getHandle</a></code>&nbsp;in interface&nbsp;<code><a href="HandleFactory.html" title="interface in org.apache.bookkeeper.bookie">HandleFactory</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.io.IOException</code></dd>
 <dd><code><a href="BookieException.html" title="class in org.apache.bookkeeper.bookie">BookieException</a></code></dd>
