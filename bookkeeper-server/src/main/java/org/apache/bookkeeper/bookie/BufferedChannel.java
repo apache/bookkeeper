@@ -245,7 +245,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
         if (dest.writableBytes() < length) {
             throw new IllegalArgumentException("dest buffer remaining capacity is not enough" 
-                    + "(must be at least as \"length\"=" + length +")");
+                    + "(must be at least as \"length\"=" + length + ")");
         }
 
         long prevPos = pos;
