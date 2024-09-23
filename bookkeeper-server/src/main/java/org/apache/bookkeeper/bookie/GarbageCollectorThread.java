@@ -530,7 +530,6 @@ public class GarbageCollectorThread implements Runnable {
         AtomicLong activeEntryLogSizeAcc = new AtomicLong(0L);
         AtomicLong totalEntryLogSizeAcc = new AtomicLong(0L);
 
-
         // Loop through all of the entry logs and remove the non-active ledgers.
         entryLogMetaMap.forEach((entryLogId, meta) -> {
             try {
