@@ -676,13 +676,13 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.25.1.jar
-Source available at https://github.com/google/protobuf/tree/v3.25.1
+  - lib/com.google.protobuf-protobuf-java-3.25.5.jar
+Source available at https://github.com/google/protobuf/tree/v3.25.5
 For details, see deps/protobuf-3.14.0/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.25.1.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.25.1
+  - lib/com.google.protobuf-protobuf-java-util-3.25.5.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.25.5
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
