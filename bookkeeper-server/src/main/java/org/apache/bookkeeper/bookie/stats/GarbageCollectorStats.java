@@ -35,6 +35,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPA
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIM_FAILED_TO_DELETE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.TOTAL_ENTRY_LOG_SPACE_BYTES;
 
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -102,6 +103,11 @@ public class GarbageCollectorStats {
     )
     private final Gauge<Long> activeEntryLogSpaceBytesGauge;
     @StatsDoc(
+            name = TOTAL_ENTRY_LOG_SPACE_BYTES,
+            help = "Current number of total entry log space bytes"
+    )
+    private final Gauge<Long> totalEntryLogSpaceBytesGauge;
+    @StatsDoc(
         name = ACTIVE_LEDGER_COUNT,
         help = "Current number of active ledgers"
     )
@@ -133,6 +139,7 @@ public class GarbageCollectorStats {
     public GarbageCollectorStats(StatsLogger statsLogger,
                                  Supplier<Integer> activeEntryLogCountSupplier,
                                  Supplier<Long> activeEntryLogSpaceBytesSupplier,
+                                 Supplier<Long> totalEntryLogSpaceBytesSupplier,
                                  Supplier<Integer> activeLedgerCountSupplier,
                                  Supplier<Double> entryLogCompactRatioSupplier,
                                  Supplier<int[]> usageBuckets) {
@@ -174,6 +181,18 @@ public class GarbageCollectorStats {
             }
         };
         statsLogger.registerGauge(ACTIVE_ENTRY_LOG_SPACE_BYTES, activeEntryLogSpaceBytesGauge);
+        this.totalEntryLogSpaceBytesGauge = new Gauge<Long>() {
+            @Override
+            public Long getDefaultValue() {
+                return 0L;
+            }
+
+            @Override
+            public Long getSample() {
+                return totalEntryLogSpaceBytesSupplier.get();
+            }
+        };
+        statsLogger.registerGauge(TOTAL_ENTRY_LOG_SPACE_BYTES, totalEntryLogSpaceBytesGauge);
         this.activeLedgerCountGauge = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
