@@ -214,7 +214,7 @@ Apache Software License, Version 2.
 - lib/commons-cli-commons-cli-1.2.jar [5]
 - lib/commons-codec-commons-codec-1.6.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
-- lib/commons-io-commons-io-2.7.jar [8]
+- lib/commons-io-commons-io-2.17.0.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
 - lib/io.netty-netty-buffer-4.1.113.Final.jar [11]
@@ -302,7 +302,7 @@ Apache Software License, Version 2.
 [5] Source available at https://github.com/apache/commons-cli/tree/cli-1.2
 [6] Source available at https://github.com/apache/commons-codec/tree/commons-codec-1.6-RC2
 [7] Source available at https://github.com/apache/commons-configuration/tree/CONFIGURATION_1_10
-[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.7
+[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.17.0
 [9] Source available at https://github.com/apache/commons-lang/tree/LANG_2_6
 [10] Source available at https://github.com/apache/commons-logging/tree/commons-logging-1.1.1
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.113.Final
