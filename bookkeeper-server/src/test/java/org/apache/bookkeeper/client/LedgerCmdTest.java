@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +35,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,64 +44,65 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerCmdTest extends BookKeeperClusterTestCase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerCmdTest.class);
-    private DigestType digestType = DigestType.CRC32;
-    private static final String PASSWORD = "testPasswd";
+  private static final Logger LOG = LoggerFactory.getLogger(LedgerCmdTest.class);
 
-    public LedgerCmdTest() {
-        super(1);
-        baseConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
-        baseConf.setGcWaitTime(60000);
-        baseConf.setFlushInterval(1);
+  private static final String PASSWORD = "testPasswd";
+
+  private final DigestType digestType = DigestType.CRC32;
+
+  public LedgerCmdTest() {
+    super(1);
+    baseConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+    baseConf.setGcWaitTime(60000);
+    baseConf.setFlushInterval(1);
+  }
+
+  /**
+   * list of entry logger files that contains given ledgerId.
+   */
+  @Test
+  void ledgerDbStorageCmd() throws Exception {
+
+    BookKeeper bk = new BookKeeper(baseClientConf, zkc);
+    LOG.info("Create ledger and add entries to it");
+    LedgerHandle lh1 = createLedgerWithEntries(bk, 10);
+
+    for (int i = 0; i < bookieCount(); i++) {
+      BookieAccessor.forceFlush((BookieImpl) serverByIndex(i).getBookie());
     }
 
+    String[] argv = {"ledger", Long.toString(lh1.getId())};
+    final ServerConfiguration conf = confByIndex(0);
+    conf.setUseHostNameAsBookieID(true);
 
-    /**
-     * list of entry logger files that contains given ledgerId.
-     */
-    @Test
-    public void testLedgerDbStorageCmd() throws Exception {
+    BookieShell bkShell =
+        new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
+    bkShell.setConf(conf);
 
-        BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-        LOG.info("Create ledger and add entries to it");
-        LedgerHandle lh1 = createLedgerWithEntries(bk, 10);
+    assertEquals(0, bkShell.run(argv), "Failed to return exit code!");
 
-        for (int i = 0; i < bookieCount(); i++) {
-                BookieAccessor.forceFlush((BookieImpl) serverByIndex(i).getBookie());
-        }
+  }
 
-        String[] argv = { "ledger", Long.toString(lh1.getId()) };
-        final ServerConfiguration conf = confByIndex(0);
-        conf.setUseHostNameAsBookieID(true);
+  private LedgerHandle createLedgerWithEntries(BookKeeper bk, int numOfEntries) throws Exception {
+    LedgerHandle lh = bk.createLedger(1, 1, digestType, PASSWORD.getBytes());
+    final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+    final CountDownLatch latch = new CountDownLatch(numOfEntries);
 
-        BookieShell bkShell =
-            new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
-        bkShell.setConf(conf);
-
-        assertEquals("Failed to return exit code!", 0, bkShell.run(argv));
-
+    final AddCallback cb = new AddCallback() {
+      public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
+        rc.compareAndSet(BKException.Code.OK, rccb);
+        latch.countDown();
+      }
+    };
+    for (int i = 0; i < numOfEntries; i++) {
+      lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);
     }
-
-    private LedgerHandle createLedgerWithEntries(BookKeeper bk, int numOfEntries) throws Exception {
-        LedgerHandle lh = bk.createLedger(1, 1, digestType, PASSWORD.getBytes());
-        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        final CountDownLatch latch = new CountDownLatch(numOfEntries);
-
-        final AddCallback cb = new AddCallback() {
-            public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                rc.compareAndSet(BKException.Code.OK, rccb);
-                latch.countDown();
-            }
-        };
-        for (int i = 0; i < numOfEntries; i++) {
-            lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);
-        }
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-            throw new Exception("Entries took too long to add");
-        }
-        if (rc.get() != BKException.Code.OK) {
-            throw BKException.create(rc.get());
-        }
-        return lh;
+    if (!latch.await(30, TimeUnit.SECONDS)) {
+      throw new Exception("Entries took too long to add");
     }
+    if (rc.get() != BKException.Code.OK) {
+      throw BKException.create(rc.get());
+    }
+    return lh;
+  }
 }
