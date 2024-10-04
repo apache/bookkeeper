@@ -29,6 +29,7 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 
 /**
@@ -83,8 +84,53 @@ class MockReadHandle implements ReadHandle {
     }
 
     @Override
+    public CompletableFuture<LedgerEntries> batchReadAsync(long firstEntry, int maxCount, long _maxSize) {
+        final int maxFrameSize = 5 * 1024 * 1024;
+        CompletableFuture<LedgerEntries> promise = new CompletableFuture<>();
+        if (bk.isStopped()) {
+            promise.completeExceptionally(new BKException.BKClientClosedException());
+            return promise;
+        }
+
+        long maxSize = _maxSize > 0 ? _maxSize : maxFrameSize;
+        long lastEntry = Math.min(firstEntry + maxCount - 1, getLastAddConfirmed());
+        MutableInt size = new MutableInt(0);
+        bk.orderedExecutor.chooseThread().execute(() -> {
+            if (bk.getProgrammedFailStatus()) {
+                promise.completeExceptionally(BKException.create(bk.failReturnCode));
+                return;
+            } else if (bk.isStopped()) {
+                promise.completeExceptionally(new BKException.BKClientClosedException());
+                return;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("readEntries: first={} last={} total={}", firstEntry, lastEntry, entries.size());
+            }
+            List<LedgerEntry> seq = new ArrayList<>();
+            long entryId = firstEntry;
+            while (entryId <= lastEntry && entryId < entries.size()) {
+                if (size.addAndGet(entries.get((int) entryId).getLength()) > maxSize) {
+                    break;
+                }
+                seq.add(entries.get((int) entryId++).duplicate());
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Entries read: {}", seq);
+            }
+            promise.complete(LedgerEntriesImpl.create(seq));
+        });
+        return promise;
+    }
+
+    @Override
     public CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry) {
         return readAsync(firstEntry, lastEntry);
+    }
+
+    @Override
+    public CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long firstEntry, int maxCount, int maxSize) {
+        return batchReadAsync(firstEntry, maxCount, maxSize);
     }
 
     @Override
