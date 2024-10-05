@@ -44,6 +44,8 @@ export BK_dlogRootPath=${BK_dlogRootPath:-"${BK_CLUSTER_ROOT_PATH}/distributedlo
 # stream storage
 export BK_NUM_STORAGE_CONTAINERS=${BK_NUM_STORAGE_CONTAINERS:-"32"}
 export BK_STREAM_STORAGE_ROOT_PATH=${BK_STREAM_STORAGE_ROOT_PATH:-"/stream"}
+# zk-shell
+export ZK_SHELL_HOME=${ZK_SHELL_HOME:-"${HOME}"}
 
 echo "Environment Vars for bookie:"
 echo ""
