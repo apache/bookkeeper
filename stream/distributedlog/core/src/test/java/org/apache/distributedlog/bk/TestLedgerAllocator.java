@@ -57,7 +57,6 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
@@ -133,8 +132,6 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-43")
-    @Tag("flaky")
-    @org.junit.jupiter.api.Test
     public void testAllocation() throws Exception {
         String allocationPath = "/allocation1";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
@@ -325,8 +322,6 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-26")
-    @Tag("flaky")
-    @Test
     public void testCloseAllocatorAfterConfirm() throws Exception {
         String allocationPath = "/allocation2";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);

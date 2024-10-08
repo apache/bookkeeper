@@ -49,8 +49,6 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.rules.TestName;
 
 /**
@@ -93,8 +91,6 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
     }
 
     @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
-    @Tag("flaky")
-    @Test
     public void testTableSimpleAPI() throws Exception {
         // Create a namespace
         NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()

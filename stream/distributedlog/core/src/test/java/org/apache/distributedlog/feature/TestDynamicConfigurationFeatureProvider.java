@@ -28,7 +28,6 @@ import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.PropertiesWriter;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -82,8 +81,6 @@ public class TestDynamicConfigurationFeatureProvider {
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-40")
-    @Tag("flaky")
-    @Test
     public void testLoadFeaturesFromOverlay() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
         writer.setProperty("feature_1", "10000");

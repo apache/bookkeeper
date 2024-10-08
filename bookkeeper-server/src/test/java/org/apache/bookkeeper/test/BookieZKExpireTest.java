@@ -37,7 +37,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.PortManager;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledForJreRange;
 import org.junit.jupiter.api.condition.JRE;
@@ -129,8 +128,6 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/4142")
     @SuppressWarnings("deprecation")
     @EnabledForJreRange(max = JRE.JAVA_17)
-    @Tag("flaky")
-    @Test
     public void testBookieServerZKSessionExpireBehaviour() throws Exception {
         // 6000 is minimum due to default tick time
         System.setProperty("zookeeper.request.timeout", "0");

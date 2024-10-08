@@ -44,8 +44,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +71,6 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-44")
-    @Tag("flaky")
-    @Test
     @SuppressWarnings("deprecation")
     public void testChangeSequenceNumber() throws Exception {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
