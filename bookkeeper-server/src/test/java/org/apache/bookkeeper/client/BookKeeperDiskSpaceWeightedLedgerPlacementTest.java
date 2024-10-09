@@ -179,7 +179,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
     /**
      * Test to show that weight based selection honors the disk weight of bookies and also adapts
-     * when the bookies's weight changes.
+     * when the bookies' weight changes.
      */
     @FlakyTest("https://github.com/apache/bookkeeper/issues/503")
     public void testDiskSpaceWeightedBookieSelectionWithChangingWeights() throws Exception {

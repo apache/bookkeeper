@@ -148,8 +148,8 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         File ledgerDir2 = tmpDirs.createNew("ledger", "test2");
         File journalDir = tmpDirs.createNew("journal", "test");
         String[] ledgerDirNames = new String[]{
-            ledgerDir1.getPath(),
-            ledgerDir2.getPath()
+                ledgerDir1.getPath(),
+                ledgerDir2.getPath()
         };
         conf.setLedgerDirNames(ledgerDirNames);
         conf.setJournalDirName(journalDir.getPath());
@@ -224,7 +224,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         // there are no writableLedgerDirs
         for (File ledgerDir : bookie.getLedgerDirsManager().getAllLedgerDirs()) {
             assertFalse("Found entry log file ([0,1,2].log. They should have been compacted" + ledgerDir,
-                TestUtils.hasLogFiles(ledgerDir.getParentFile(), true, 0, 1, 2));
+                    TestUtils.hasLogFiles(ledgerDir.getParentFile(), true, 0, 1, 2));
         }
 
         try {
