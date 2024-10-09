@@ -252,24 +252,24 @@ Apache Software License, Version 2.
 - lib/io.opencensus-opencensus-api-0.31.1.jar [29]
 - lib/io.opencensus-opencensus-contrib-http-util-0.31.1.jar [29]
 - lib/io.opencensus-opencensus-proto-0.2.0.jar [29]
-- lib/io.grpc-grpc-all-1.64.0.jar [32]
-- lib/io.grpc-grpc-alts-1.64.0.jar [32]
-- lib/io.grpc-grpc-api-1.64.0.jar [32]
-- lib/io.grpc-grpc-auth-1.64.0.jar [32]
-- lib/io.grpc-grpc-context-1.64.0.jar [32]
-- lib/io.grpc-grpc-core-1.64.0.jar [32]
-- lib/io.grpc-grpc-grpclb-1.64.0.jar [32]
-- lib/io.grpc-grpc-inprocess-1.64.0.jar [32]
-- lib/io.grpc-grpc-opentelemetry-1.64.0.jar [32]
-- lib/io.grpc-grpc-netty-shaded-1.64.0.jar [32]
-- lib/io.grpc-grpc-protobuf-1.64.0.jar [32]
-- lib/io.grpc-grpc-protobuf-lite-1.64.0.jar [32]
-- lib/io.grpc-grpc-services-1.64.0.jar [32]
-- lib/io.grpc-grpc-stub-1.64.0.jar [32]
-- lib/io.grpc-grpc-testing-1.64.0.jar [32]
-- lib/io.grpc-grpc-util-1.64.0.jar [32]
-- lib/io.grpc-grpc-xds-1.64.0.jar [32]
-- lib/io.grpc-grpc-rls-1.64.0.jar[32]
+- lib/io.grpc-grpc-all-1.67.1.jar [32]
+- lib/io.grpc-grpc-alts-1.67.1.jar [32]
+- lib/io.grpc-grpc-api-1.67.1.jar [32]
+- lib/io.grpc-grpc-auth-1.67.1.jar [32]
+- lib/io.grpc-grpc-context-1.67.1.jar [32]
+- lib/io.grpc-grpc-core-1.67.1.jar [32]
+- lib/io.grpc-grpc-grpclb-1.67.1.jar [32]
+- lib/io.grpc-grpc-inprocess-1.67.1.jar [32]
+- lib/io.grpc-grpc-opentelemetry-1.67.1.jar [32]
+- lib/io.grpc-grpc-netty-shaded-1.67.1.jar [32]
+- lib/io.grpc-grpc-protobuf-1.67.1.jar [32]
+- lib/io.grpc-grpc-protobuf-lite-1.67.1.jar [32]
+- lib/io.grpc-grpc-services-1.67.1.jar [32]
+- lib/io.grpc-grpc-stub-1.67.1.jar [32]
+- lib/io.grpc-grpc-testing-1.67.1.jar [32]
+- lib/io.grpc-grpc-util-1.67.1.jar [32]
+- lib/io.grpc-grpc-xds-1.67.1.jar [32]
+- lib/io.grpc-grpc-rls-1.67.1.jar[32]
 - lib/org.apache.curator-curator-client-5.1.0.jar [33]
 - lib/org.apache.curator-curator-framework-5.1.0.jar [33]
 - lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
@@ -315,7 +315,7 @@ Apache Software License, Version 2.
 [27] Source available at https://github.com/googleapis/java-common-protos/tree/v2.29.0
 [28] Source available at https://github.com/google/gson/tree/gson-parent-2.10.1
 [29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.31.1
-[32] Source available at https://github.com/grpc/grpc-java/tree/v1.64.0
+[32] Source available at https://github.com/grpc/grpc-java/tree/v1.67.1
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.1.0
 [35] Source available at https://github.com/google/error-prone/tree/v2.9.0
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
