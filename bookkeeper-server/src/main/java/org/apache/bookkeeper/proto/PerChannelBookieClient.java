@@ -2426,9 +2426,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         public void release() {}
     }
 
-    /**
-     * Note : Helper functions follow
-     */
+    // Note : Helper functions follow
 
     /**
      * @param status
@@ -2702,7 +2700,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     private void initiateTLS() {
         LOG.info("Initializing TLS to {}", channel);
-        assert state == ConnectionState.CONNECTING;
+        if (ConnectionState.CONNECTING != state) {
+            throw new IllegalStateException("Invalid state to initiate TLS: " + state);
+        }
         final long txnId = getTxnId();
         final CompletionKey completionKey = new TxnCompletionKey(txnId, OperationType.START_TLS);
         completionObjects.put(completionKey,

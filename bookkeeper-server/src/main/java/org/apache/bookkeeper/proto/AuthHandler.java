@@ -89,7 +89,9 @@ class AuthHandler {
                 super.channelRead(ctx, msg);
             } else if (msg instanceof BookieProtocol.AuthRequest) { // pre-PB-client
                 BookieProtocol.AuthRequest req = (BookieProtocol.AuthRequest) msg;
-                assert (req.getOpCode() == BookieProtocol.AUTH);
+                if (BookieProtocol.AUTH != req.getOpCode()) {
+                    throw new IllegalStateException("Received message other than auth message");
+                }
                 if (checkAuthPlugin(req.getAuthMessage(), ctx.channel())) {
                     byte[] payload = req
                         .getAuthMessage()
@@ -270,45 +272,44 @@ class AuthHandler {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            assert (authProvider != null);
+            if (authProvider == null) {
+                throw new IllegalStateException("Auth provider is not initialized");
+            }
 
             if (authenticated) {
                 super.channelRead(ctx, msg);
             } else if (msg instanceof BookkeeperProtocol.Response) {
                 BookkeeperProtocol.Response resp = (BookkeeperProtocol.Response) msg;
-                if (null == resp.getHeader().getOperation()) {
-                    LOG.info("dropping received malformed message {} from bookie {}", msg, ctx.channel());
-                    // drop the message without header
-                } else {
-                    switch (resp.getHeader().getOperation()) {
-                    case START_TLS:
-                        super.channelRead(ctx, msg);
-                        break;
-                    case AUTH:
-                        if (resp.getStatus() != BookkeeperProtocol.StatusCode.EOK) {
-                            authenticationError(ctx, resp.getStatus().getNumber());
-                        } else {
-                            assert (resp.hasAuthResponse());
-                            BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
-                            if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
-                                SocketAddress remote = ctx.channel().remoteAddress();
-                                LOG.info("Authentication is not enabled."
-                                    + "Considering this client {} authenticated", remote);
-                                AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
-                                cb.operationComplete(BKException.Code.OK, null);
-                                return;
-                            }
-                            byte[] payload = am.getPayload().toByteArray();
-                            authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
-                                authProviderFactory.getPluginName()));
+                switch (resp.getHeader().getOperation()) {
+                case START_TLS:
+                    super.channelRead(ctx, msg);
+                    break;
+                case AUTH:
+                    if (resp.getStatus() != BookkeeperProtocol.StatusCode.EOK) {
+                        authenticationError(ctx, resp.getStatus().getNumber());
+                    } else {
+                        if (!resp.hasAuthResponse()) {
+                            throw new IllegalStateException("Auth response is missing in the message");
                         }
-                        break;
-                    default:
-                        LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
-                        // else just drop the message,
-                        // we're not authenticated so nothing should be coming through
-                        break;
+                        AuthMessage am = resp.getAuthResponse();
+                        if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())) {
+                            SocketAddress remote = ctx.channel().remoteAddress();
+                            LOG.info("Authentication is not enabled."
+                                    + "Considering this client {} authenticated", remote);
+                            AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
+                            cb.operationComplete(BKException.Code.OK, null);
+                            return;
+                        }
+                        byte[] payload = am.getPayload().toByteArray();
+                        authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
+                                authProviderFactory.getPluginName()));
                     }
+                    break;
+                default:
+                    LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
+                    // else just drop the message,
+                    // we're not authenticated so nothing should be coming through
+                    break;
                 }
             } else if (msg instanceof BookieProtocol.Response) {
                 BookieProtocol.Response resp = (BookieProtocol.Response) msg;
