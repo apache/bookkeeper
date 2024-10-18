@@ -21,9 +21,9 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.bookie.BookieException.Code.OK;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -33,175 +33,180 @@ import java.util.Enumeration;
 import java.util.Random;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Verify reads from ledgers with different digest types.
- * This can happen as result of clients using different settings
- * yet reading each other data or configuration change roll out.
+ * Verify reads from ledgers with different digest types. This can happen as result of clients using
+ * different settings yet reading each other data or configuration change roll out.
  */
-@RunWith(Parameterized.class)
 public class BookieWriteLedgersWithDifferentDigestsTest extends
     BookKeeperClusterTestCase implements AsyncCallback.AddCallbackWithLatency {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(BookieWriteLedgersWithDifferentDigestsTest.class);
+  private static final Logger LOG = LoggerFactory
+      .getLogger(BookieWriteLedgersWithDifferentDigestsTest.class);
+  // test related variables
+  final int numEntriesToWrite = 20;
+  byte[] ledgerPassword = "aaa".getBytes();
+  LedgerHandle lh;
+  Enumeration<LedgerEntry> ls;
+  int maxInt = Integer.MAX_VALUE;
+  Random rng;
+  ArrayList<byte[]> entries1; // generated entries
+  ArrayList<byte[]> entries2; // generated entries
 
-    byte[] ledgerPassword = "aaa".getBytes();
-    LedgerHandle lh;
-    Enumeration<LedgerEntry> ls;
+  private DigestType digestType;
+  private DigestType otherDigestType;
 
-    // test related variables
-    final int numEntriesToWrite = 20;
-    int maxInt = Integer.MAX_VALUE;
-    Random rng;
-    ArrayList<byte[]> entries1; // generated entries
-    ArrayList<byte[]> entries2; // generated entries
+  public BookieWriteLedgersWithDifferentDigestsTest() {
+    super(3);
+  }
 
-    private final DigestType digestType;
-    private final DigestType otherDigestType;
+  public static Collection<Object[]> configs() {
+    return Arrays.asList(new Object[][]{{DigestType.MAC}, {DigestType.CRC32}, {DigestType.CRC32C}});
+  }
 
-    private static class SyncObj {
-        volatile int counter;
-        volatile int rc;
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
+    rng = new Random(System.currentTimeMillis()); // Initialize the Random
+    // Number Generator
+    entries1 = new ArrayList<byte[]>(); // initialize the entries list
+    entries2 = new ArrayList<byte[]>(); // initialize the entries list
+  }
 
-        public SyncObj() {
-            counter = 0;
-        }
+  public void initBookieWriteLedgersWithDifferentDigestsTest(DigestType digestType) {
+    this.digestType = digestType;
+    this.otherDigestType = digestType == DigestType.CRC32 ? DigestType.MAC : DigestType.CRC32;
+    String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
+    // set ledger manager
+    baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+    baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+  }
+
+  @MethodSource("configs")
+  @ParameterizedTest
+  public void ledgersWithDifferentDigestTypesNoAutodetection(DigestType digestType)
+      throws Exception {
+    initBookieWriteLedgersWithDifferentDigestsTest(digestType);
+    bkc.conf.setEnableDigestTypeAutodetection(false);
+    // Create ledgers
+    lh = bkc.createLedgerAdv(3, 2, 2, digestType, ledgerPassword);
+
+    final long id = lh.ledgerId;
+
+    LOG.info("Ledger ID: {}, digestType: {}", lh.getId(), digestType);
+    SyncObj syncObj1 = new SyncObj();
+    for (int i = numEntriesToWrite - 1; i >= 0; i--) {
+      ByteBuffer entry = ByteBuffer.allocate(4);
+      entry.putInt(rng.nextInt(maxInt));
+      entry.position(0);
+      entries1.add(0, entry.array());
+      lh.asyncAddEntry(i, entry.array(), 0, entry.capacity(), this, syncObj1);
     }
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> configs() {
-        return Arrays.asList(new Object[][] { {DigestType.MAC }, {DigestType.CRC32}, {DigestType.CRC32C} });
+    // Wait for all entries to be acknowledged
+    waitForEntriesAddition(syncObj1, numEntriesToWrite);
+
+    // Reads here work ok because ledger uses digest type set during create
+    readEntries(lh, entries1);
+    lh.close();
+
+    try {
+      bkc.openLedgerNoRecovery(id, otherDigestType, ledgerPassword).close();
+      fail("digest mismatch error is expected");
+    } catch (BKException bke) {
+      // expected
+    }
+  }
+
+  @MethodSource("configs")
+  @ParameterizedTest
+  public void ledgersWithDifferentDigestTypesWithAutodetection(DigestType digestType)
+      throws Exception {
+    initBookieWriteLedgersWithDifferentDigestsTest(digestType);
+    bkc.conf.setEnableDigestTypeAutodetection(true);
+    // Create ledgers
+    lh = bkc.createLedgerAdv(3, 2, 2, digestType, ledgerPassword);
+
+    final long id = lh.ledgerId;
+
+    LOG.info("Ledger ID-1: " + lh.getId());
+    SyncObj syncObj1 = new SyncObj();
+    for (int i = numEntriesToWrite - 1; i >= 0; i--) {
+      ByteBuffer entry = ByteBuffer.allocate(4);
+      entry.putInt(rng.nextInt(maxInt));
+      entry.position(0);
+      entries1.add(0, entry.array());
+      lh.asyncAddEntry(i, entry.array(), 0, entry.capacity(), this, syncObj1);
     }
 
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-        rng = new Random(System.currentTimeMillis()); // Initialize the Random
-        // Number Generator
-        entries1 = new ArrayList<byte[]>(); // initialize the entries list
-        entries2 = new ArrayList<byte[]>(); // initialize the entries list
+    // Wait for all entries to be acknowledged
+    waitForEntriesAddition(syncObj1, numEntriesToWrite);
+
+    // Reads here work ok because ledger uses digest type set during create
+    readEntries(lh, entries1);
+    lh.close();
+
+    // open here would fail if provided digest type is used
+    // it passes because ledger just uses digest type from its metadata/autodetects it
+    lh = bkc.openLedgerNoRecovery(id, otherDigestType, ledgerPassword);
+    readEntries(lh, entries1);
+    lh.close();
+  }
+
+  private void waitForEntriesAddition(SyncObj syncObj, int numEntriesToWrite)
+      throws InterruptedException {
+    synchronized (syncObj) {
+      while (syncObj.counter < numEntriesToWrite) {
+        syncObj.wait();
+      }
+      assertEquals(BKException.Code.OK, syncObj.rc);
     }
+  }
 
-    public BookieWriteLedgersWithDifferentDigestsTest(DigestType digestType) {
-        super(3);
-        this.digestType = digestType;
-        this.otherDigestType = digestType == DigestType.CRC32 ? DigestType.MAC : DigestType.CRC32;
-        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
-        // set ledger manager
-        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+  private void readEntries(LedgerHandle lh, ArrayList<byte[]> entries)
+      throws InterruptedException, BKException {
+    ls = lh.readEntries(0, numEntriesToWrite - 1);
+    int index = 0;
+    while (ls.hasMoreElements()) {
+      ByteBuffer origbb = ByteBuffer.wrap(entries.get(index++));
+      Integer origEntry = origbb.getInt();
+      ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
+      Integer retrEntry = result.getInt();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Length of result: " + result.capacity());
+        LOG.debug("Original entry: " + origEntry);
+        LOG.debug("Retrieved entry: " + retrEntry);
+      }
+      assertEquals(origEntry, retrEntry, "Checking entry " + index + " for equality");
     }
+  }
 
-    @Test
-    public void testLedgersWithDifferentDigestTypesNoAutodetection() throws Exception {
-        bkc.conf.setEnableDigestTypeAutodetection(false);
-        // Create ledgers
-        lh = bkc.createLedgerAdv(3, 2, 2, digestType, ledgerPassword);
-
-        final long id = lh.ledgerId;
-
-        LOG.info("Ledger ID: {}, digestType: {}", lh.getId(), digestType);
-        SyncObj syncObj1 = new SyncObj();
-        for (int i = numEntriesToWrite - 1; i >= 0; i--) {
-            ByteBuffer entry = ByteBuffer.allocate(4);
-            entry.putInt(rng.nextInt(maxInt));
-            entry.position(0);
-            entries1.add(0, entry.array());
-            lh.asyncAddEntry(i, entry.array(), 0, entry.capacity(), this, syncObj1);
-        }
-
-        // Wait for all entries to be acknowledged
-        waitForEntriesAddition(syncObj1, numEntriesToWrite);
-
-        // Reads here work ok because ledger uses digest type set during create
-        readEntries(lh, entries1);
-        lh.close();
-
-        try {
-            bkc.openLedgerNoRecovery(id, otherDigestType, ledgerPassword).close();
-            fail("digest mismatch error is expected");
-        } catch (BKException bke) {
-            // expected
-        }
+  @Override
+  public void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency,
+      Object ctx) {
+    SyncObj x = (SyncObj) ctx;
+    captureThrowable(() -> {
+      assertTrue(rc != OK || qwcLatency > 0, "Successful write should have non-zero latency");
+    });
+    synchronized (x) {
+      x.rc = rc;
+      x.counter++;
+      x.notify();
     }
+  }
 
-    @Test
-    public void testLedgersWithDifferentDigestTypesWithAutodetection() throws Exception {
-        bkc.conf.setEnableDigestTypeAutodetection(true);
-        // Create ledgers
-        lh = bkc.createLedgerAdv(3, 2, 2, digestType, ledgerPassword);
+  private static class SyncObj {
 
-        final long id = lh.ledgerId;
+    volatile int counter;
+    volatile int rc;
 
-        LOG.info("Ledger ID-1: " + lh.getId());
-        SyncObj syncObj1 = new SyncObj();
-        for (int i = numEntriesToWrite - 1; i >= 0; i--) {
-            ByteBuffer entry = ByteBuffer.allocate(4);
-            entry.putInt(rng.nextInt(maxInt));
-            entry.position(0);
-            entries1.add(0, entry.array());
-            lh.asyncAddEntry(i, entry.array(), 0, entry.capacity(), this, syncObj1);
-        }
-
-        // Wait for all entries to be acknowledged
-        waitForEntriesAddition(syncObj1, numEntriesToWrite);
-
-        // Reads here work ok because ledger uses digest type set during create
-        readEntries(lh, entries1);
-        lh.close();
-
-        // open here would fail if provided digest type is used
-        // it passes because ledger just uses digest type from its metadata/autodetects it
-        lh = bkc.openLedgerNoRecovery(id, otherDigestType, ledgerPassword);
-        readEntries(lh, entries1);
-        lh.close();
+    public SyncObj() {
+      counter = 0;
     }
-
-    private void waitForEntriesAddition(SyncObj syncObj, int numEntriesToWrite) throws InterruptedException {
-        synchronized (syncObj) {
-            while (syncObj.counter < numEntriesToWrite) {
-                syncObj.wait();
-            }
-            assertEquals(BKException.Code.OK, syncObj.rc);
-        }
-    }
-
-    private void readEntries(LedgerHandle lh, ArrayList<byte[]> entries) throws InterruptedException, BKException {
-        ls = lh.readEntries(0, numEntriesToWrite - 1);
-        int index = 0;
-        while (ls.hasMoreElements()) {
-            ByteBuffer origbb = ByteBuffer.wrap(entries.get(index++));
-            Integer origEntry = origbb.getInt();
-            ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
-            Integer retrEntry = result.getInt();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Length of result: " + result.capacity());
-                LOG.debug("Original entry: " + origEntry);
-                LOG.debug("Retrieved entry: " + retrEntry);
-            }
-            assertTrue("Checking entry " + index + " for equality", origEntry
-                    .equals(retrEntry));
-        }
-    }
-
-    @Override
-    public void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency, Object ctx) {
-        SyncObj x = (SyncObj) ctx;
-        captureThrowable(() -> {
-            assertTrue("Successful write should have non-zero latency", rc != OK || qwcLatency > 0);
-        });
-        synchronized (x) {
-            x.rc = rc;
-            x.counter++;
-            x.notify();
-        }
-    }
+  }
 }
