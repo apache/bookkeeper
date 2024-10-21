@@ -16,12 +16,12 @@
 package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.UnexpectedConditionException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for BKException methods.

@@ -21,6 +21,9 @@ on:
     - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
   workflow_dispatch:
 
+env:
+  NIST_NVD_API_KEY: ${{ secrets.NIST_NVD_API_KEY }}
+
 jobs:
   owasp-daily-build:
     name: OWASP Dependency Check

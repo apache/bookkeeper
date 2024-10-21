@@ -32,6 +32,7 @@ on:
 
 env:
   MAVEN_OPTS: -Xss1500k -Xmx1500m -Daether.connector.http.reuseConnections=false -Daether.connector.requestTimeout=60000 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.http.retryHandler.requestSentEnabled=true -Dmaven.wagon.http.serviceUnavailableRetryStrategy.class=standard -Dmaven.wagon.rto=60000
+  NIST_NVD_API_KEY: ${{ secrets.NIST_NVD_API_KEY }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -84,7 +85,7 @@ jobs:
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
           mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests
-          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check package -Ddistributedlog -DskipTests
+          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check spotless:check package -Ddistributedlog -DskipTests
 
       - name: Check license files
         if: steps.check_changes.outputs.docs_only != 'true'

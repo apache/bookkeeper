@@ -114,4 +114,13 @@ public interface MetadataClientDriver extends AutoCloseable {
     default CompletableFuture<Boolean> isHealthCheckEnabled() {
         return FutureUtils.value(true);
     }
+
+    /**
+     * Return driver metadata service is available.
+     *
+     * @return the metadata service is available.
+     */
+    default CompletableFuture<Boolean> isMetadataServiceAvailable() {
+        return FutureUtils.value(true);
+    }
 }

@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -390,8 +391,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                     byte[] other = haveTtl ? DATA_CF : DATA_TTL_CF;
                     List<byte[]> cfNames = RocksDB.listColumnFamilies(opts, dbDir.getAbsolutePath());
                     if (!cfNames.contains(wanted) && cfNames.contains(other)) {
-                        throw new StateStoreException(String.format("{}: expected {} column family, found {}",
-                                dbDir.getAbsolutePath(), wanted, other));
+                        throw new StateStoreException(String.format("%s: expected %s column family, found %s",
+                                dbDir.getAbsolutePath(), Arrays.toString(wanted), Arrays.toString(other)));
                     }
                 }
             }
