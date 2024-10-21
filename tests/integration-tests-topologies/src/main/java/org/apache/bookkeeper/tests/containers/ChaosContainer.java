@@ -84,18 +84,6 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
         });
     }
 
-    public String getContainerLog() {
-
-        LogContainerCmd logContainerCmd = this.dockerClient.logContainerCmd(this.getContainerId());
-        logContainerCmd.withStdOut(true).withStdErr(true);
-        try {
-            logContainerCmd.exec(new LogContainerResultCb()).awaitCompletion();
-        } catch (InterruptedException e) {
-
-        }
-        return "";
-    }
-
     public ExecResult execCmd(String... cmd) throws Exception {
         String cmdString = StringUtils.join(cmd, " ");
 
