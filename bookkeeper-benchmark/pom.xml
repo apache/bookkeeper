@@ -23,7 +23,6 @@
     <groupId>org.apache.bookkeeper</groupId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-benchmark</artifactId>
   <name>Apache BookKeeper :: Benchmark</name>
   <properties>

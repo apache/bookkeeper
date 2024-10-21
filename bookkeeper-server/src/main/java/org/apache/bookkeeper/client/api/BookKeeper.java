@@ -82,6 +82,13 @@ public interface BookKeeper extends AutoCloseable {
     CompletableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId);
 
     /**
+     * Return driver metadata service is available.
+     *
+     * @return the metadata service is available.
+     */
+    CompletableFuture<Boolean> isDriverMetadataServiceAvailable();
+
+    /**
      * Close the client and release every resource.
      *
      * @throws BKException

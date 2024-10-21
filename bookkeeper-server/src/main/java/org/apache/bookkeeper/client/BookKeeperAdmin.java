@@ -1553,7 +1553,17 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
 
-        BookieId auditorId = getLedgerAuditorManager().getCurrentAuditor();
+        BookieId auditorId = null;
+        try {
+            auditorId = getLedgerAuditorManager().getCurrentAuditor();
+        } catch (IOException e) {
+            if (e.getCause() instanceof KeeperException.NoNodeException) {
+                LOG.error("Unable to find Zookeeper node: {}", e.getCause().getMessage());
+                throw new UnavailableException("Autorecovery is disabled due to "
+                        + "missing Zookeeper node. Aborting recovery!");
+            }
+            throw e;
+        }
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");

@@ -44,7 +44,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 import org.mockito.stubbing.Answer;
 
 /**
@@ -131,7 +131,7 @@ public class MockExecutorController {
             if (null == executor) {
                 runnable.run();
             } else {
-                Assert.assertThat("calling this on the same thread will result in deadlock",
+                MatcherAssert.assertThat("calling this on the same thread will result in deadlock",
                         Thread.currentThread().getName(),
                         not(containsString(THREAD_NAME_PREFIX)));
                 executor.submit(runnable).get();

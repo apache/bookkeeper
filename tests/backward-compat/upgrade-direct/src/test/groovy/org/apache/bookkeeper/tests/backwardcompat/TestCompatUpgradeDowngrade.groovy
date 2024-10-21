@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
+import java.util.concurrent.TimeUnit
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 import org.jboss.arquillian.junit.Arquillian
@@ -31,8 +32,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import java.util.concurrent.TimeUnit
 
 /**
  * Sequentially upgrade bookies with different versions and check compatibility.

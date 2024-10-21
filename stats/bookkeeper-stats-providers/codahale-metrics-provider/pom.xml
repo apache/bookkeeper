@@ -22,7 +22,6 @@
     <groupId>org.apache.bookkeeper.stats</groupId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>codahale-metrics-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Codahale Metrics</name>
   <url>http://maven.apache.org</url>
