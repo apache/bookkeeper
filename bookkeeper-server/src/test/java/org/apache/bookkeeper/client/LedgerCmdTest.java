@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +35,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
      * list of entry logger files that contains given ledgerId.
      */
     @Test
-    public void testLedgerDbStorageCmd() throws Exception {
+    void ledgerDbStorageCmd() throws Exception {
 
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -78,7 +78,7 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
             new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
         bkShell.setConf(conf);
 
-        assertEquals("Failed to return exit code!", 0, bkShell.run(argv));
+        assertEquals(0, bkShell.run(argv), "Failed to return exit code!");
 
     }
 
