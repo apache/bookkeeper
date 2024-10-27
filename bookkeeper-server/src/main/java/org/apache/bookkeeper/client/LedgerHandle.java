@@ -164,7 +164,7 @@ public class LedgerHandle implements WriteHandle {
     public static final long INVALID_LEDGER_ID = -0xABCDABCDL;
 
     final Object metadataLock = new Object();
-    boolean changingEnsemble = false;
+    volatile boolean changingEnsemble = false;
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
@@ -173,6 +173,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
     private final OpStatsLogger clientChannelWriteWaitStats;
+    private final AtomicBoolean sendAddSuccessCallbacksInProgress = new AtomicBoolean(false);
 
     LedgerHandle(ClientContext clientCtx,
                  long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
@@ -558,7 +559,7 @@ public class LedgerHandle implements WriteHandle {
                         pendingAdds = drainPendingAddsAndAdjustLength();
 
                         // taking the length must occur after draining, as draining changes the length
-                        lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
+                        lastEntry = lastAddPushed = pendingAddsSequenceHead = LedgerHandle.this.lastAddConfirmed;
                         finalLength = LedgerHandle.this.length;
                         handleState = HandleState.CLOSED;
                     }
@@ -2070,13 +2071,17 @@ public class LedgerHandle implements WriteHandle {
     }
 
     synchronized List<PendingAddOp> drainPendingAddsAndAdjustLength() {
-        PendingAddOp pendingAddOp;
-        List<PendingAddOp> opsDrained = new ArrayList<PendingAddOp>(pendingAddOps.size());
-        while ((pendingAddOp = pendingAddOps.poll()) != null) {
-            addToLength(-pendingAddOp.entryLength);
-            opsDrained.add(pendingAddOp);
+        // synchronize on pendingAddOps to ensure that sendAddSuccessCallbacks isn't concurrently
+        // modifying pendingAddOps
+        synchronized (pendingAddOps) {
+            PendingAddOp pendingAddOp;
+            List<PendingAddOp> opsDrained = new ArrayList<PendingAddOp>(pendingAddOps.size());
+            while ((pendingAddOp = pendingAddOps.poll()) != null) {
+                addToLength(-pendingAddOp.entryLength);
+                opsDrained.add(pendingAddOp);
+            }
+            return opsDrained;
         }
-        return opsDrained;
     }
 
     void errorOutPendingAdds(int rc, List<PendingAddOp> ops) {
@@ -2085,38 +2090,43 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+
     void sendAddSuccessCallbacks() {
-        // Start from the head of the queue and proceed while there are
-        // entries that have had all their responses come back
-        PendingAddOp pendingAddOp;
-
-        while ((pendingAddOp = pendingAddOps.peek()) != null
-               && !changingEnsemble) {
-            if (!pendingAddOp.completed) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("pending add not completed: {}", pendingAddOp);
-                }
-                return;
-            }
-            // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead + 1) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
-                               pendingAddsSequenceHead + 1);
-                }
-                return;
-            }
-
-            pendingAddOps.remove();
-            explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            pendingAddsSequenceHead = pendingAddOp.entryId;
-            if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                this.lastAddConfirmed = pendingAddsSequenceHead;
-            }
-
-            pendingAddOp.submitCallback(BKException.Code.OK);
+        if (!sendAddSuccessCallbacksInProgress.compareAndSet(false, true)) {
+            // another thread is already sending the callbacks
+            return;
         }
+        try {
+            // Start from the head of the queue and proceed while there are
+            // entries that have had all their responses come back
 
+            // synchronize on pendingAddOps to ensure that drainPendingAddsAndAdjustLength isn't concurrently
+            // modifying pendingAddOps
+            synchronized (pendingAddOps) {
+                PendingAddOp pendingAddOp;
+
+                while ((pendingAddOp = pendingAddOps.peek()) != null
+                        && !changingEnsemble) {
+                    if (!pendingAddOp.completed) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("pending add not completed: {}", pendingAddOp);
+                        }
+                        return;
+                    }
+
+                    pendingAddOps.remove();
+                    explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
+                    pendingAddsSequenceHead = pendingAddOp.entryId;
+                    if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                        this.lastAddConfirmed = pendingAddsSequenceHead;
+                    }
+
+                    pendingAddOp.submitCallback(BKException.Code.OK);
+                }
+            }
+        } finally {
+            sendAddSuccessCallbacksInProgress.set(false);
+        }
     }
 
     @VisibleForTesting
