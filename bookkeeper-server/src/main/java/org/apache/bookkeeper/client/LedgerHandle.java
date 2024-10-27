@@ -72,6 +72,7 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -1038,6 +1039,27 @@ public class LedgerHandle implements WriteHandle {
         }
 
         return readEntriesInternalAsync(firstEntry, lastEntry, false);
+    }
+
+    @Override
+    public CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long firstEntry, int maxCount, int maxSize) {
+        CompletableFuture<LedgerEntries> f = new CompletableFuture<>();
+        asyncBatchReadUnconfirmedEntries(firstEntry, maxCount, maxSize, new ReadCallback() {
+            @Override
+            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                if (rc != Code.OK) {
+                    f.completeExceptionally(BKException.create(rc));
+                } else {
+                    List<org.apache.bookkeeper.client.api.LedgerEntry> entries = new ArrayList<>(maxCount);
+                    while (seq.hasMoreElements()) {
+                        LedgerEntry entry = seq.nextElement();
+                        entries.add(LedgerEntryImpl.create(entry.ledgerId, entry.entryId, entry.length, entry.data));
+                    }
+                    f.complete(LedgerEntriesImpl.create(entries));
+                }
+            }
+        }, null);
+        return f;
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
