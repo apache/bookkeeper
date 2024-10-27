@@ -470,11 +470,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
             @Override
             public boolean hasNext() {
-                if (curBatch.size() > 0) {
+                if (!curBatch.isEmpty()) {
                     return true;
                 }
 
-                while (queue.size() > 0 && curBatch.size() == 0) {
+                while (!queue.isEmpty() && curBatch.isEmpty()) {
                     String parent = queue.remove();
                     try {
                         for (String c : zkc.getChildren(parent, false)) {
@@ -501,12 +501,14 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                         throw new RuntimeException("Error reading list", e);
                     }
                 }
-                return curBatch.size() > 0;
+                return !curBatch.isEmpty();
             }
 
             @Override
             public UnderreplicatedLedger next() {
-                assert curBatch.size() > 0;
+                if (curBatch.isEmpty()) {
+                    throw new IllegalStateException("No more elements");
+                }
                 return curBatch.remove();
             }
         };

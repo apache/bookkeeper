@@ -45,7 +45,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  * </p>
  */
 public class SkipListArena {
-    private AtomicReference<Chunk> curChunk = new AtomicReference<Chunk>();
+    private final AtomicReference<Chunk> curChunk = new AtomicReference<Chunk>();
 
     final int chunkSize;
 
@@ -54,7 +54,9 @@ public class SkipListArena {
     public SkipListArena(ServerConfiguration cfg) {
         chunkSize = cfg.getSkipListArenaChunkSize();
         maxAlloc = cfg.getSkipListArenaMaxAllocSize();
-        assert maxAlloc <= chunkSize;
+        if (maxAlloc > chunkSize) {
+            throw new IllegalArgumentException("maxAlloc should be less than or equal to chunkSize");
+        }
     }
 
     /**
@@ -64,7 +66,9 @@ public class SkipListArena {
      * </p>
      */
     public MemorySlice allocateBytes(int size) {
-        assert size >= 0;
+        if (size < 0) {
+            throw new IllegalArgumentException("Invalid size: " + size);
+        }
 
         // Callers should satisfy large allocations directly from JVM since they
         // don't cause fragmentation as badly.
@@ -135,10 +139,10 @@ public class SkipListArena {
          * Offset for the next allocation, or the sentinel value -1
          * which implies that the chunk is still uninitialized.
          */
-        private AtomicInteger nextFreeOffset = new AtomicInteger(UNINITIALIZED);
+        private final AtomicInteger nextFreeOffset = new AtomicInteger(UNINITIALIZED);
 
         /** Total number of allocations satisfied from this buffer. */
-        private AtomicInteger allocCount = new AtomicInteger();
+        private final AtomicInteger allocCount = new AtomicInteger();
 
         /** Size of chunk in bytes. */
         private final int size;
@@ -158,17 +162,20 @@ public class SkipListArena {
          * threads calling alloc(), who will block until the allocation is complete.
          */
         public void init() {
-            assert nextFreeOffset.get() == UNINITIALIZED;
+            if (nextFreeOffset.get() != UNINITIALIZED) {
+                throw new IllegalStateException("Double-init");
+            }
             try {
                 data = new byte[size];
             } catch (OutOfMemoryError e) {
-                boolean failInit = nextFreeOffset.compareAndSet(UNINITIALIZED, OOM);
-                assert failInit; // should be true.
+                nextFreeOffset.compareAndSet(UNINITIALIZED, OOM);
                 throw e;
             }
             // Mark that it's ready for use
             boolean okInit = nextFreeOffset.compareAndSet(UNINITIALIZED, 0);
-            assert okInit;    // single-threaded call
+            if (!okInit) {
+                throw new IllegalStateException("Double-init");
+            }
         }
 
         /**

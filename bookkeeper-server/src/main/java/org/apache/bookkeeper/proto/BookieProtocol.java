@@ -237,7 +237,6 @@ public interface BookieProtocol {
         }
 
         byte[] getMasterKey() {
-            assert hasMasterKey();
             return masterKey;
         }
 
