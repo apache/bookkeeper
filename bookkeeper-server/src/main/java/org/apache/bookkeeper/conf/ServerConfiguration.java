@@ -2462,12 +2462,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get whether read-only mode is enable when any disk is full. The default is false.
+     * Get whether read-only mode is enable when any disk is full. The default is true.
      *
      * @return boolean
      */
     public boolean isReadOnlyModeOnAnyDiskFullEnabled() {
-        return getBoolean(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, false);
+        return getBoolean(READ_ONLY_MODE_ON_ANY_DISK_FULL_ENABLED, true);
     }
 
     /**
