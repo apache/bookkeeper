@@ -1848,9 +1848,40 @@ public class TestRegionAwareEnsemblePlacementPolicy {
         c3 = countMap.get(addr3.toBookieId());
         c4 = countMap.get(addr4.toBookieId());
         c5 = countMap.get(addr5.toBookieId());
-        assertTrue(Math.abs((double)c1 / c2 - 2.0) < 1.0);
-        assertTrue(Math.abs((double)c4 / c3 - 1.5) < 1.0);
-        assertTrue(Math.abs((double)c5 / c3 - 2.0) < 1.0);
+        assertTrue(Math.abs((double) c1 / c2 - 2.0) < 1.0);
+        assertTrue(Math.abs((double) c4 / c3 - 1.5) < 1.0);
+        assertTrue(Math.abs((double) c5 / c3 - 2.0) < 1.0);
+
+        // update bookie weight
+        // due to default BookieMaxWeightMultipleForWeightBasedPlacement=3, the test cases need to be in the range
+        bookieInfoMap.put(addr1.toBookieId(), new BookieInfoReader.BookieInfo(1000000, 400000));
+        bookieInfoMap.put(addr2.toBookieId(), new BookieInfoReader.BookieInfo(1000000, 800000));
+        bookieInfoMap.put(addr3.toBookieId(), new BookieInfoReader.BookieInfo(1000000, 400000));
+        bookieInfoMap.put(addr4.toBookieId(), new BookieInfoReader.BookieInfo(1000000, 300000));
+        bookieInfoMap.put(addr5.toBookieId(), new BookieInfoReader.BookieInfo(1000000, 200000));
+        repp.updateBookieInfo(bookieInfoMap);
+
+        addrs.forEach(a -> countMap.put(a, 0));
+        for (int i = 0; i < loopTimes; ++i) {
+            ensemble = repp.newEnsemble(2, 2, 2, null,
+                    new HashSet<>()).getResult();
+            for (BookieId bookieId : ensemble) {
+                countMap.put(bookieId, countMap.get(bookieId) + 1);
+            }
+        }
+
+        // c2 should be 2x than c1
+        // c4 should be 1.5x than c5
+        // c3 should be 2x than c5
+        // we allow a range of (-50%, 50%) deviation instead of the exact multiples
+        c1 = countMap.get(addr1.toBookieId());
+        c2 = countMap.get(addr2.toBookieId());
+        c3 = countMap.get(addr3.toBookieId());
+        c4 = countMap.get(addr4.toBookieId());
+        c5 = countMap.get(addr5.toBookieId());
+        assertTrue(Math.abs((double) c2 / c1 - 2.0) < 1.0);
+        assertTrue(Math.abs((double) c4 / c5 - 1.5) < 1.0);
+        assertTrue(Math.abs((double) c3 / c5 - 2.0) < 1.0);
     }
 
     @Test
