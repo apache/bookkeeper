@@ -64,6 +64,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.apache.commons.collections4.CollectionUtils;
@@ -2273,6 +2274,44 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(ensemble.get(reoderSet.get(0)), addr3.toBookieId());
         assertEquals(ensemble.get(reoderSet.get(1)), addr4.toBookieId());
         StaticDNSResolver.reset();
+    }
+
+    @Test
+    public void testSlowBookieInEnsembleOnly() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer,
+            DISABLE_ALL, statsLogger, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        TestOpStatsLogger readRequestsReorderedCounter = (TestOpStatsLogger) statsLogger
+            .getOpStatsLogger(BookKeeperClientStats.READ_REQUESTS_REORDERED);
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<BookieId>());
+        repp.registerSlowBookie(addr1.toBookieId(), 0L);
+        Map<BookieId, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1.toBookieId(), 1L);
+        repp.onClusterChanged(addrs, new HashSet<>());
+
+        DistributionSchedule.WriteSet writeSet = writeSetFromValues(1, 2, 3);
+
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
+
+        // If the slow bookie is only present in the ensemble, no reordering occurs.
+        assertEquals(writeSet, reorderSet);
+        assertEquals(0, readRequestsReorderedCounter.getSuccessCount());
     }
 
     @Test
