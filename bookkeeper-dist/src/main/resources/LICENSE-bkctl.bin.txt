@@ -242,9 +242,9 @@ Apache Software License, Version 2.
 - lib/org.apache.logging.log4j-log4j-slf4j-impl-2.18.0.jar [16]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-lang3-3.6.jar [19]
-- lib/org.apache.zookeeper-zookeeper-3.8.4.jar [20]
-- lib/org.apache.zookeeper-zookeeper-jute-3.8.4.jar [20]
-- lib/org.apache.zookeeper-zookeeper-3.8.4-tests.jar [20]
+- lib/org.apache.zookeeper-zookeeper-3.9.3.jar [20]
+- lib/org.apache.zookeeper-zookeeper-jute-3.9.3.jar [20]
+- lib/org.apache.zookeeper-zookeeper-3.9.3-tests.jar [20]
 - lib/com.beust-jcommander-1.82.jar [23]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [25]
 - lib/com.google.api.grpc-proto-google-common-protos-2.29.0.jar [27]
@@ -270,9 +270,9 @@ Apache Software License, Version 2.
 - lib/io.grpc-grpc-util-1.64.0.jar [32]
 - lib/io.grpc-grpc-xds-1.64.0.jar [32]
 - lib/io.grpc-grpc-rls-1.64.0.jar[32]
-- lib/org.apache.curator-curator-client-5.1.0.jar [33]
-- lib/org.apache.curator-curator-framework-5.1.0.jar [33]
-- lib/org.apache.curator-curator-recipes-5.1.0.jar [33]
+- lib/org.apache.curator-curator-client-5.7.1.jar [33]
+- lib/org.apache.curator-curator-framework-5.7.1.jar [33]
+- lib/org.apache.curator-curator-recipes-5.7.1.jar [33]
 - lib/com.google.errorprone-error_prone_annotations-2.9.0.jar [35]
 - lib/org.apache.yetus-audience-annotations-0.12.0.jar [36]
 - lib/org.jctools-jctools-core-2.1.2.jar [37]
@@ -315,7 +315,7 @@ Apache Software License, Version 2.
 [28] Source available at https://github.com/google/gson/tree/gson-parent-2.10.1
 [29] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.31.1
 [32] Source available at https://github.com/grpc/grpc-java/tree/v1.64.0
-[33] Source available at https://github.com/apache/curator/tree/apache-curator-5.1.0
+[33] Source available at https://github.com/apache/curator/tree/apache-curator-5.7.1
 [35] Source available at https://github.com/google/error-prone/tree/v2.9.0
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
 [37] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
