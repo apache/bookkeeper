@@ -21,25 +21,29 @@
 # */
 source ${SCRIPTS_DIR}/common.sh
 
+function run_zk_shell() {
+    HOME=${ZK_SHELL_HOME} zk-shell "$@"
+}
+
 function wait_for_zookeeper() {
     echo "wait for zookeeper"
-    until zk-shell --run-once "ls /" ${BK_zkServers}; do sleep 5; done
+    until run_zk_shell --run-once "ls /" ${BK_zkServers}; do sleep 5; done
 }
 
 function create_zk_root() {
     if [ "x${BK_CLUSTER_ROOT_PATH}" != "x" ]; then
         echo "create the zk root dir for bookkeeper at '${BK_CLUSTER_ROOT_PATH}'"
-        zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH} '' false false true" ${BK_zkServers}
+        run_zk_shell --run-once "create ${BK_CLUSTER_ROOT_PATH} '' false false true" ${BK_zkServers}
     fi
 }
 
 function init_cluster() {
-    zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
+    run_zk_shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
     if [ $? -eq 0 ]; then
         echo "Cluster metadata already exists"
     else
         # Create an ephemeral zk node `bkInitLock` for use as a lock.
-        lock=`zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH}/bkInitLock '' true false false" ${BK_zkServers}`
+        lock=`run_zk_shell --run-once "create ${BK_CLUSTER_ROOT_PATH}/bkInitLock '' true false false" ${BK_zkServers}`
         if [ -z "$lock" ]; then
             echo "znodes do not exist in Zookeeper for Bookkeeper. Initializing a new Bookkeekeper cluster in Zookeeper."
             /opt/bookkeeper/bin/bookkeeper shell initnewcluster
@@ -57,7 +61,7 @@ function init_cluster() {
             while [ ${tenSeconds} -lt 100 ]
             do
                 sleep 10
-                zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
+                run_zk_shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
                 if [ $? -eq 0 ]; then
                     echo "Waited $tenSeconds * 10 seconds. Successfully listed ''${BK_zkLedgersRootPath}/available/readonly'"
                     break
