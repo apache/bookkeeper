@@ -121,7 +121,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                                 lh.lastAddPushed = lh.lastAddConfirmed = Math.max(data.getLastAddConfirmed(),
                                         (lastEnsembleEntryId - 1));
 
-                                lh.length = data.getLength();
+                                lh.length.set(data.getLength());
                                 lh.pendingAddsSequenceHead = lh.lastAddConfirmed;
                                 startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
                             }
@@ -192,7 +192,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
              * be added again when processing the call to add it.
              */
             synchronized (lh) {
-                lh.length = entry.getLength() - (long) data.length;
+                lh.length.set(entry.getLength() - (long) data.length);
                 // check whether entry id is expected, so we won't overwritten any entries by mistake
                 if (entry.getEntryId() != lh.lastAddPushed + 1) {
                     LOG.error("Unexpected to recovery add entry {} as entry {} for ledger {}.",
