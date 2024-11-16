@@ -16,7 +16,7 @@ This BP proposes the changes for increasing ledger id from `63 bits` to `128 bit
 ### 128 bits
 
 Since there is no native support for `128 bits` in both Java and
-[Protobuf](https://github.com/google/protobuf/issues/2180), we have to break `128 bits`
+[Protobuf](https://github.com/protocolbuffers/protobuf/issues/2180), we have to break `128 bits`
 into 2 `64 bits` numbers for representing the `128 bits` id:
 
 - ledger-id-msb: the most significant 64 bits, bit 64 - 127
