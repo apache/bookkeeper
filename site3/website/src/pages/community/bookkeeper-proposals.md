@@ -45,7 +45,7 @@ Here is the process for making a BP:
 1. Write the proposal for this BP. There are two ways to write a bookkeeper proposal. You can choose to write a BP using markdown, or write a BP
 using Google Doc.
     - Markdown
-        - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+        - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site3/website/src/pages/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
         ```shell
         $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
         ```
