@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v2.4.0">
 <title data-rh="true">BP-35: 128 bits support | Apache BookKeeper</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://bookkeeper.apache.org/bps/BP-35-128-bits-support"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="BP-35: 128 bits support | Apache BookKeeper"><meta data-rh="true" name="description" content="Motivation"><meta data-rh="true" property="og:description" content="Motivation"><link data-rh="true" rel="icon" href="/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support" hreflang="en"><link data-rh="true" rel="alternate" href="https://bookkeeper.apache.org/bps/BP-35-128-bits-support" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.a7a74f05.css">
-<link rel="preload" href="/assets/js/runtime~main.b861ae42.js" as="script">
+<link rel="preload" href="/assets/js/runtime~main.fbf59963.js" as="script">
 <link rel="preload" href="/assets/js/main.3b61b92b.js" as="script">
 </head>
 <body class="navigation-with-keyboard">
@@ -15,7 +15,7 @@ great because we have a centralized metadata store for coordinating the id gener
 However this method may not scale as the cluster size and number of ledgers grow.</p><p><a href="https://en.wikipedia.org/wiki/Globally_unique_identifier" target="_blank" rel="noopener noreferrer">Universally unique identifier - Wikipedia</a>
 is a preferred way to generate decentralized globally unique IDs and it takes <code>128 bits</code>.
 This method can scale well as it doesn&#x27;t need a centralized coordination. </p><p>This BP proposes the changes for increasing ledger id from <code>63 bits</code> to <code>128 bits</code>.</p><h3 class="anchor anchorWithStickyNavbar_LWe7" id="128-bits">128 bits<a href="#128-bits" class="hash-link" aria-label="Direct link to 128 bits" title="Direct link to 128 bits">​</a></h3><p>Since there is no native support for <code>128 bits</code> in both Java and
-<a href="https://github.com/google/protobuf/issues/2180" target="_blank" rel="noopener noreferrer">Protobuf</a>, we have to break <code>128 bits</code>
+<a href="https://github.com/protocolbuffers/protobuf/issues/2180" target="_blank" rel="noopener noreferrer">Protobuf</a>, we have to break <code>128 bits</code>
 into 2 <code>64 bits</code> numbers for representing the <code>128 bits</code> id:</p><ul><li>ledger-id-msb: the most significant 64 bits, bit 64 - 127</li><li>ledger-id-lsb: the least significant 64 bits, bit 0 - 63</li></ul><p>For backward compatibility, the <code>ledger-id-lsb</code> is the current <code>64 bits</code> ledger-id.
 The <code>ledger-id-msb</code> will be added as a new field in both API and protocol. </p><p>I am proposing calling <code>ledger-id-msb</code> as <code>ledger-scope-id</code>. So the current 64bits <code>ledgerId</code> and
 the newly introduced 64bits <code>ledgerScopeId</code> together will be forming the new <code>128 bits</code> ledger id.</p><p>The default <code>ledgerScopeId</code> is <code>0</code>. That means any ledgers created prior to this change are allocated
@@ -85,7 +85,7 @@ The new application can activate the feature by starting using <code>ledgerScope
         </div>
       </footer>
       </div></div></div></footer></div>
-<script src="/assets/js/runtime~main.b861ae42.js"></script>
+<script src="/assets/js/runtime~main.fbf59963.js"></script>
 <script src="/assets/js/main.3b61b92b.js"></script>
 </body>
 </html>
