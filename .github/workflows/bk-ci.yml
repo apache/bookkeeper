@@ -242,7 +242,7 @@ jobs:
         run: mvn -B -nsu clean install -Pdocker -DskipTests
 
       - name: Run metadata driver tests
-        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests
+        run: mvn -B -nsu -f metadata-drivers/pom.xml -pl '!jetcd-core-shaded' test -DintegrationTests
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |
