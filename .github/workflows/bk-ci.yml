@@ -242,6 +242,8 @@ jobs:
         run: mvn -B -nsu clean install -Pdocker -DskipTests
 
       - name: Run metadata driver tests
+        # Exclude jetcd-core-shaded from integration tests, as it’s a POM-only project used internally,
+        # and maven prioritizes workspace artifacts during testing.
         run: mvn -B -nsu -f metadata-drivers/pom.xml -pl '!jetcd-core-shaded' test -DintegrationTests
 
       - name: Run all integration tests (except backward compatibility tests)
