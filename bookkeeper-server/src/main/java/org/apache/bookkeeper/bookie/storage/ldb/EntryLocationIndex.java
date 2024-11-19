@@ -117,8 +117,16 @@ public class EntryLocationIndex implements Closeable {
     private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
         LongPairWrapper maxEntryId = LongPairWrapper.get(ledgerId, Long.MAX_VALUE);
 
+        long startTimeNanos = MathUtils.nowInNano();
         // Search the last entry in storage
         Entry<byte[], byte[]> entry = locationsDb.getFloor(maxEntryId.array);
+        if (entry != null) {
+            stats.getGetLastEntryInLedgerStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+        } else {
+            stats.getGetLastEntryInLedgerStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+        }
         maxEntryId.recycle();
 
         if (entry == null) {

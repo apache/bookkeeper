@@ -42,6 +42,7 @@ class EntryLocationIndexStats {
 
     private static final String ENTRIES_COUNT = "entries-count";
     private static final String LOOKUP_ENTRY_LOCATION = "lookup-entry-location";
+    private static final String GET_LAST_ENTRY_IN_LEDGER = "get-last-entry-in-ledger";
 
     @StatsDoc(
         name = ENTRIES_COUNT,
@@ -54,6 +55,12 @@ class EntryLocationIndexStats {
             help = "operation stats of looking up entry location"
     )
     private final OpStatsLogger lookupEntryLocationStats;
+
+    @StatsDoc(
+            name = GET_LAST_ENTRY_IN_LEDGER,
+            help = "operation stats of get last entry in ledger"
+    )
+    private final OpStatsLogger getLastEntryInLedgerStats;
 
     EntryLocationIndexStats(StatsLogger statsLogger,
                             Supplier<Long> entriesCountSupplier) {
@@ -70,6 +77,7 @@ class EntryLocationIndexStats {
         };
         statsLogger.registerGauge(ENTRIES_COUNT, entriesCountGauge);
         lookupEntryLocationStats = statsLogger.getOpStatsLogger(LOOKUP_ENTRY_LOCATION);
+        getLastEntryInLedgerStats = statsLogger.getOpStatsLogger(GET_LAST_ENTRY_IN_LEDGER);
     }
 
 }
