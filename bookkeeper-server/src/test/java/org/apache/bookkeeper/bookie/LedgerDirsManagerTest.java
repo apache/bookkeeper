@@ -414,7 +414,7 @@ public class LedgerDirsManagerTest {
         // one dir usagespace above storagethreshold, another dir below storagethreshold
         // should still be writable
         setUsageAndThenVerify(curDir1, nospace + 0.02f, curDir2, nospace - 0.05f, mockDiskChecker,
-                mockLedgerDirsListener, false);
+                mockLedgerDirsListener, true);
 
         // should remain readonly
         setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace + 0.02f, mockDiskChecker,
@@ -438,7 +438,7 @@ public class LedgerDirsManagerTest {
         // overall diskusage is less than lwm
         // should goto readwrite
         setUsageAndThenVerify(curDir1, lwm - 0.17f, curDir2, nospace + 0.03f, mockDiskChecker, mockLedgerDirsListener,
-                false);
+                true);
         assertEquals("Only one LedgerDir should be writable", 1, dirsManager.getWritableLedgerDirs().size());
 
         // bring both the dirs below lwm
