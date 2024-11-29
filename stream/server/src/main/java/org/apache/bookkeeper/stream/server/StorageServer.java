@@ -170,6 +170,7 @@ public class StorageServer {
                 grpcUseHostname);
         } catch (Exception e) {
             log.error("Invalid storage configuration", e);
+            System.err.println(e.getMessage());
             return ExitCode.INVALID_CONF.code();
         }
 
@@ -181,8 +182,10 @@ public class StorageServer {
             // the server is interrupted.
             Thread.currentThread().interrupt();
             log.info("Storage server is interrupted. Exiting ...");
+            System.err.println(e.getMessage());
         } catch (ExecutionException e) {
             log.info("Storage server is exiting ...");
+            System.err.println(e.getMessage());
         }
         return ExitCode.OK.code();
     }
