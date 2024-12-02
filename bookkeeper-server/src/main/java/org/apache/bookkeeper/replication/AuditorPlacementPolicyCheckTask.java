@@ -257,66 +257,69 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
         LedgerMetadata metadata = metadataVer.getValue();
         int writeQuorumSize = metadata.getWriteQuorumSize();
         int ackQuorumSize = metadata.getAckQuorumSize();
-        if (metadata.isClosed()) {
-            boolean foundSegmentNotAdheringToPlacementPolicy = false;
-            boolean foundSegmentSoftlyAdheringToPlacementPolicy = false;
-            for (Map.Entry<Long, ? extends List<BookieId>> ensemble : metadata
-                    .getAllEnsembles().entrySet()) {
-                long startEntryIdOfSegment = ensemble.getKey();
-                List<BookieId> ensembleOfSegment = ensemble.getValue();
-                EnsemblePlacementPolicy.PlacementPolicyAdherence segmentAdheringToPlacementPolicy = admin
-                        .isEnsembleAdheringToPlacementPolicy(ensembleOfSegment, writeQuorumSize,
-                                ackQuorumSize);
-                if (segmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
-                    foundSegmentNotAdheringToPlacementPolicy = true;
-                    LOG.warn(
-                            "For ledger: {}, Segment starting at entry: {}, with ensemble: {} having "
-                                    + "writeQuorumSize: {} and ackQuorumSize: {} is not adhering to "
-                                    + "EnsemblePlacementPolicy",
+        boolean foundSegmentNotAdheringToPlacementPolicy = false;
+        boolean foundSegmentSoftlyAdheringToPlacementPolicy = false;
+        int ensembleIndex = 0;
+        int ensembleSize = metadata.getAllEnsembles().size();
+        for (Map.Entry<Long, ? extends List<BookieId>> ensemble : metadata
+                .getAllEnsembles().entrySet()) {
+            if (++ensembleIndex == ensembleSize && !metadata.isClosed()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ledger: {} last ensemble is not yet closed, so skipping the placementPolicy"
+                            + "check analysis for now", ledgerId);
+                }
+                break;
+            }
+            long startEntryIdOfSegment = ensemble.getKey();
+            List<BookieId> ensembleOfSegment = ensemble.getValue();
+            EnsemblePlacementPolicy.PlacementPolicyAdherence segmentAdheringToPlacementPolicy = admin
+                    .isEnsembleAdheringToPlacementPolicy(ensembleOfSegment, writeQuorumSize,
+                            ackQuorumSize);
+            if (segmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
+                foundSegmentNotAdheringToPlacementPolicy = true;
+                LOG.warn(
+                        "For ledger: {}, Segment starting at entry: {}, with ensemble: {} having "
+                                + "writeQuorumSize: {} and ackQuorumSize: {} is not adhering to "
+                                + "EnsemblePlacementPolicy",
+                        ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
+                        ackQuorumSize);
+            } else if (segmentAdheringToPlacementPolicy
+                    == EnsemblePlacementPolicy.PlacementPolicyAdherence.MEETS_SOFT) {
+                foundSegmentSoftlyAdheringToPlacementPolicy = true;
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(
+                            "For ledger: {}, Segment starting at entry: {}, with ensemble: {}"
+                                    + " having writeQuorumSize: {} and ackQuorumSize: {} is"
+                                    + " softly adhering to EnsemblePlacementPolicy",
                             ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
                             ackQuorumSize);
-                } else if (segmentAdheringToPlacementPolicy
-                        == EnsemblePlacementPolicy.PlacementPolicyAdherence.MEETS_SOFT) {
-                    foundSegmentSoftlyAdheringToPlacementPolicy = true;
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug(
-                                "For ledger: {}, Segment starting at entry: {}, with ensemble: {}"
-                                        + " having writeQuorumSize: {} and ackQuorumSize: {} is"
-                                        + " softly adhering to EnsemblePlacementPolicy",
-                                ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
-                                ackQuorumSize);
-                    }
                 }
-            }
-            if (foundSegmentNotAdheringToPlacementPolicy) {
-                numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
-                //If user enable repaired, mark this ledger to under replication manager.
-                if (conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
-                    ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
-                            Collections.emptyList()).whenComplete((res, e) -> {
-                        if (e != null) {
-                            LOG.error("For ledger: {}, the placement policy not adhering bookie "
-                                            + "storage, mark it to under replication manager failed.",
-                                    ledgerId, e);
-                            return;
-                        }
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("For ledger: {}, the placement policy not adhering bookie"
-                                    + " storage, mark it to under replication manager", ledgerId);
-                        }
-                    });
-                }
-            } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
-                numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck
-                        .incrementAndGet();
-            }
-            numOfClosedLedgersAuditedInPlacementPolicyCheck.incrementAndGet();
-        } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger: {} is not yet closed, so skipping the placementPolicy"
-                        + "check analysis for now", ledgerId);
             }
         }
+        if (foundSegmentNotAdheringToPlacementPolicy) {
+            numOfLedgersFoundNotAdheringInPlacementPolicyCheck.incrementAndGet();
+            //If user enable repaired, mark this ledger to under replication manager.
+            if (conf.isRepairedPlacementPolicyNotAdheringBookieEnable()) {
+                ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
+                        Collections.emptyList()).whenComplete((res, e) -> {
+                    if (e != null) {
+                        LOG.error("For ledger: {}, the placement policy not adhering bookie "
+                                        + "storage, mark it to under replication manager failed.",
+                                ledgerId, e);
+                        return;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("For ledger: {}, the placement policy not adhering bookie"
+                                + " storage, mark it to under replication manager", ledgerId);
+                    }
+                });
+            }
+        } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
+            numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheck
+                    .incrementAndGet();
+        }
+        numOfClosedLedgersAuditedInPlacementPolicyCheck.incrementAndGet();
+
         iterCallback.processResult(BKException.Code.OK, null, null);
     }
 }
