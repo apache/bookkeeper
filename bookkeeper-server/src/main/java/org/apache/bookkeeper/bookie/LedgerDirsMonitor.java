@@ -66,7 +66,7 @@ class LedgerDirsMonitor {
         this.dirsManagers = dirsManagers;
     }
 
-    private void check(final LedgerDirsManager ldm) {
+    void check(final LedgerDirsManager ldm, boolean notifyDiskWritable) {
         final ConcurrentMap<File, Float> diskUsages = ldm.getDiskUsages();
         boolean someDiskFulled = false;
         boolean highPriorityWritesAllowed = true;
@@ -78,6 +78,11 @@ class LedgerDirsMonitor {
             for (File dir : writableDirs) {
                 try {
                     diskUsages.put(dir, diskChecker.checkDir(dir));
+                    if (notifyDiskWritable) {
+                        for (LedgerDirsListener listener : ldm.getListeners()) {
+                            listener.diskWritable(dir);
+                        }
+                    }
                 } catch (DiskErrorException e) {
                     LOG.error("Ledger directory {} failed on disk checking : ", dir, e);
                     // Notify disk failure to all listeners
@@ -193,7 +198,11 @@ class LedgerDirsMonitor {
     }
 
     private void check() {
-        dirsManagers.forEach(this::check);
+        check(false);
+    }
+
+    private void check(boolean notifyDiskWritable) {
+        dirsManagers.forEach(ldm -> check(ldm, notifyDiskWritable));
     }
 
     /**
@@ -207,6 +216,7 @@ class LedgerDirsMonitor {
      */
     public void init() throws DiskErrorException, NoWritableLedgerDirException {
         checkDirs();
+        check(true);
     }
 
     // start the daemon for disk monitoring
