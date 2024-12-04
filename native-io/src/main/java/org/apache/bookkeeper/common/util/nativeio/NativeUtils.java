@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
@@ -33,6 +34,11 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 class NativeUtils {
+
+    public static final String TEMP_WORKDIR_PROPERTY_NAME = "org.apache.bookkeeper.native.workdir";
+
+    private static final String TEMP_DIR_NAME = "native";
+
     /**
      * loads given library from the this jar. ie: this jar contains: /lib/pulsar-checksum.jnilib
      *
@@ -52,9 +58,22 @@ class NativeUtils {
 
         String filename = parts[parts.length - 1];
 
-        File dir = Files.createTempDirectory("native").toFile();
-        dir.deleteOnExit();
-        File temp = new File(dir, filename);
+        // create the temp dir
+        final Path dir;
+        final String tempWorkDirName = System.getProperty(TEMP_WORKDIR_PROPERTY_NAME);
+        if (tempWorkDirName == null || tempWorkDirName.isEmpty()) {
+            dir = Files.createTempDirectory(TEMP_DIR_NAME);
+        } else {
+            final File tempWorkDir = new File(tempWorkDirName);
+            if (!tempWorkDir.exists() || !tempWorkDir.isDirectory()) {
+                throw new FileNotFoundException("The tempWorkDir doesn't exist: " + tempWorkDirName);
+            }
+            dir = Files.createTempDirectory(tempWorkDir.toPath(), TEMP_DIR_NAME);
+        }
+        dir.toFile().deleteOnExit();
+
+        // create the temp file
+        File temp = new File(dir.toString(), filename);
         temp.deleteOnExit();
 
         byte[] buffer = new byte[1024];

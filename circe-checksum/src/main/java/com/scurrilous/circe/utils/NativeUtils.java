@@ -35,6 +35,9 @@ import java.util.Locale;
 public class NativeUtils {
 
     public static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
+    public static final String TEMP_WORKDIR_PROPERTY_NAME = "org.apache.bookkeeper.native.workdir";
+
+    private static final String TEMP_DIR_NAME = "native";
 
     /**
      * loads given library from the this jar. ie: this jar contains: /lib/pulsar-checksum.jnilib
@@ -51,8 +54,21 @@ public class NativeUtils {
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
 
-        Path dir = Files.createTempDirectory("native");
+        // create the temp dir
+        final Path dir;
+        final String tempWorkDirName = System.getProperty(TEMP_WORKDIR_PROPERTY_NAME);
+        if (tempWorkDirName == null || tempWorkDirName.isEmpty()) {
+            dir = Files.createTempDirectory(TEMP_DIR_NAME);
+        } else {
+            final File tempWorkDir = new File(tempWorkDirName);
+            if (!tempWorkDir.exists() || !tempWorkDir.isDirectory()) {
+                throw new FileNotFoundException("The tempWorkDir doesn't exist: " + tempWorkDirName);
+            }
+            dir = Files.createTempDirectory(tempWorkDir.toPath(), TEMP_DIR_NAME);
+        }
         dir.toFile().deleteOnExit();
+
+        // create the temp file
         File temp = new File(dir.toString(), filename);
         temp.deleteOnExit();
 
