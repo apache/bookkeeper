@@ -52,6 +52,7 @@
   </ciManagement>
   <modules>
     <module>buildtools</module>
+    <module>native-library-common</module>
     <module>circe-checksum</module>
     <module>bookkeeper-common</module>
     <module>bookkeeper-common-allocator</module>
