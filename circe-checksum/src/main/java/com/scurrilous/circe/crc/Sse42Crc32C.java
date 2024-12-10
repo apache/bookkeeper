@@ -15,8 +15,8 @@
  ******************************************************************************/
 package com.scurrilous.circe.crc;
 
-import static com.scurrilous.circe.utils.NativeUtils.loadLibraryFromJar;
-import static com.scurrilous.circe.utils.NativeUtils.libType;
+import static org.apache.bookkeeper.common.util.nativelib.NativeUtils.libType;
+import static org.apache.bookkeeper.common.util.nativelib.NativeUtils.loadLibraryFromJar;
 
 import java.nio.ByteBuffer;
 import com.scurrilous.circe.IncrementalIntHash;
