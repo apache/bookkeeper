@@ -34,6 +34,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.util.nativelib.NativeUtils;
 
 /**
  * Implementation of CPU Affinity functionality.
