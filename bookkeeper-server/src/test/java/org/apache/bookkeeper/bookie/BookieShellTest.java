@@ -36,7 +36,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Maps;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Set;
@@ -248,7 +247,7 @@ public class BookieShellTest {
                                      boolean removeCookies,
                                      String... args) throws Exception {
         final PrintStream oldPs = System.err;
-        try(ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
             System.setErr(new PrintStream(outContent));
 
             RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
@@ -337,7 +336,7 @@ public class BookieShellTest {
                                boolean skipUnrecoverableLedgers,
                                String... args) throws Exception {
         final PrintStream oldPs = System.err;
-        try(ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
             System.setErr(new PrintStream(outContent));
 
             RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
