@@ -21,6 +21,7 @@ package org.apache.bookkeeper.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,6 +36,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Maps;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.function.Function;
@@ -189,6 +192,14 @@ public class BookieShellTest {
         verify(admin, times(1)).close();
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testRecoverLedgerWithRateLimit() throws Exception {
+        testRecoverCmdRecoverLedger(
+                12345, false, false, false,
+                "-force", "-l", "12345", "-rate", "10000", "127.0.0.1:3181");
+    }
+
     @Test
     public void testRecoverCmdRecoverLedgerDefault() throws Exception {
         // default behavior
@@ -235,21 +246,30 @@ public class BookieShellTest {
                                      boolean skipOpenLedgers,
                                      boolean removeCookies,
                                      String... args) throws Exception {
-        RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
-        CommandLine cmdLine = parseCommandLine(cmd, args);
-        assertEquals(0, cmd.runCmd(cmdLine));
-        bookKeeperAdminMockedStatic.verify(() -> BookKeeperAdmin.newBookKeeperAdmin(any(ClientConfiguration.class)),
-                times(1));
-        verify(admin, times(1))
-            .recoverBookieData(eq(ledgerId), any(Set.class), eq(dryrun), eq(skipOpenLedgers));
-        verify(admin, times(1)).close();
-        if (removeCookies) {
-            MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
-            verify(rm, times(1)).readCookie(any(BookieId.class));
-            verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
-        } else {
-            verify(rm, times(0)).readCookie(any(BookieId.class));
-            verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
+        final PrintStream oldPs = System.err;
+        try (ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
+            System.setErr(new PrintStream(outContent));
+
+            RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
+            CommandLine cmdLine = parseCommandLine(cmd, args);
+            assertEquals(0, cmd.runCmd(cmdLine));
+            bookKeeperAdminMockedStatic.verify(() -> BookKeeperAdmin.newBookKeeperAdmin(any(ClientConfiguration.class)),
+                    times(1));
+            verify(admin, times(1))
+                .recoverBookieData(eq(ledgerId), any(Set.class), eq(dryrun), eq(skipOpenLedgers));
+            verify(admin, times(1)).close();
+            if (removeCookies) {
+                MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
+                verify(rm, times(1)).readCookie(any(BookieId.class));
+                verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
+            } else {
+                verify(rm, times(0)).readCookie(any(BookieId.class));
+                verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
+            }
+            assertFalse("invalid value for option detected:\n" + outContent,
+                    outContent.toString().contains("invalid value for option"));
+        } finally {
+            System.setErr(oldPs);
         }
     }
 
@@ -259,6 +279,14 @@ public class BookieShellTest {
         testRecoverCmdRecover(
             false, false, false, false,
             "-force", "127.0.0.1:3181");
+    }
+
+    @Test
+    public void testRecoverWithRateLimit() throws Exception {
+        // default behavior
+        testRecoverCmdRecover(
+                false, false, false, false,
+                "-force", "127.0.0.1:3181");
     }
 
     @Test
@@ -307,21 +335,30 @@ public class BookieShellTest {
                                boolean removeCookies,
                                boolean skipUnrecoverableLedgers,
                                String... args) throws Exception {
-        RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
-        CommandLine cmdLine = parseCommandLine(cmd, args);
-        assertEquals(0, cmd.runCmd(cmdLine));
-        bookKeeperAdminMockedStatic.verify(() -> BookKeeperAdmin.newBookKeeperAdmin(any(ClientConfiguration.class)),
-                times(1));
-        verify(admin, times(1))
-            .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers), eq(skipUnrecoverableLedgers));
-        verify(admin, times(1)).close();
-        if (removeCookies) {
-            MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
-            verify(rm, times(1)).readCookie(any(BookieId.class));
-            verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
-        } else {
-            verify(rm, times(0)).readCookie(any(BookieId.class));
-            verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
+        final PrintStream oldPs = System.err;
+        try (ByteArrayOutputStream outContent = new ByteArrayOutputStream()) {
+            System.setErr(new PrintStream(outContent));
+
+            RecoverCmd cmd = (RecoverCmd) shell.commands.get("recover");
+            CommandLine cmdLine = parseCommandLine(cmd, args);
+            assertEquals(0, cmd.runCmd(cmdLine));
+            bookKeeperAdminMockedStatic.verify(() -> BookKeeperAdmin.newBookKeeperAdmin(any(ClientConfiguration.class)),
+                    times(1));
+            verify(admin, times(1))
+                .recoverBookieData(any(Set.class), eq(dryrun), eq(skipOpenLedgers), eq(skipUnrecoverableLedgers));
+            verify(admin, times(1)).close();
+            if (removeCookies) {
+                MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
+                verify(rm, times(1)).readCookie(any(BookieId.class));
+                verify(rm, times(1)).removeCookie(any(BookieId.class), eq(version));
+            } else {
+                verify(rm, times(0)).readCookie(any(BookieId.class));
+                verify(rm, times(0)).removeCookie(any(BookieId.class), eq(version));
+            }
+            assertFalse("invalid value for option detected:\n" + outContent,
+                    outContent.toString().contains("invalid value for option"));
+        } finally {
+            System.setErr(oldPs);
         }
     }
 
