@@ -20,8 +20,6 @@
  */
 package org.apache.bookkeeper.common.util.nativelib;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -30,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -114,5 +113,11 @@ public class NativeUtils {
             return "dll";
         }
         throw new TypeNotPresentException(OS_NAME + " not supported", null);
+    }
+
+    public static void checkArgument(boolean expression, @NonNull Object errorMessage) {
+        if (!expression) {
+            throw new IllegalArgumentException(String.valueOf(errorMessage));
+        }
     }
 }
