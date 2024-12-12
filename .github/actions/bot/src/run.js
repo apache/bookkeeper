@@ -19,13 +19,13 @@
 async function run(core, context, github) {
 
     try {
-        const owner = process.env.PROVIDER;
-        const repo = process.env.REPOSITORY;
+        const owner = context.repo.owner;
+        const repo = context.repo.repo;
         const reRunCmd = process.env.RERUN_CMD;
         const comment = context.payload.comment.body;
 
         if (comment !== reRunCmd) {
-            console.log("this is not a bot command");
+            core.info("this is not a bot command");
             return;
         }
 
@@ -35,13 +35,13 @@ async function run(core, context, github) {
                     sha: prRef,
                 }
             }
-        } = await github.pulls.get({
+        } = await github.rest.pulls.get({
             owner,
             repo,
             pull_number: context.issue.number,
         });
 
-        const jobs = await github.checks.listForRef({
+        const jobs = await github.rest.checks.listForRef({
             owner,
             repo,
             ref: prRef,
@@ -50,8 +50,8 @@ async function run(core, context, github) {
 
         jobs.data.check_runs.forEach(job => {
             if (job.conclusion === 'failure' || job.conclusion === 'cancelled') {
-                console.log("rerun job " + job.name);
-                github.checks.rerequestSuite({
+                core.info("rerun job " + job.name);
+                github.rest.checks.rerequestSuite({
                     owner,
                     repo,
                     check_suite_id: job.check_suite.id

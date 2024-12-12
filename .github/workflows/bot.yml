@@ -34,8 +34,6 @@ jobs:
       - name: bot actions
         uses: actions/github-script@v7
         env:
-          PROVIDER: 'apache'
-          REPOSITORY: 'bookkeeper'
           RERUN_CMD: 'rerun failure checks'
         with:
           github-token: ${{secrets.BKBOT_TOKEN}}
