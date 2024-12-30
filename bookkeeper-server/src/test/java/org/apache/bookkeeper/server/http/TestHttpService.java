@@ -18,7 +18,9 @@
  */
 package org.apache.bookkeeper.server.http;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -39,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -55,6 +58,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -66,6 +70,7 @@ import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.server.http.service.ClusterInfoService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1216,5 +1221,64 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request7 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
         HttpServiceResponse response7 = triggerEntryLocationCompactService.handle(request7);
         assertEquals(HttpServer.StatusCode.METHOD_NOT_ALLOWED.getValue(), response7.getStatusCode());
+    }
+
+    @SuppressWarnings("checkstyle:RegexpSingleline")
+    @Test
+    public void testBookieCookieService() throws Exception {
+        runFunctionWithRegistrationManager(baseConf, registrationManager -> {
+            try {
+                String bookieId = getBookie(0).toString();
+                Versioned<Cookie> cookieFromZk = Cookie.readFromRegistrationManager(registrationManager,
+                        BookieId.parse(bookieId));
+                HttpEndpointService bookieCookieService = bkHttpServiceProvider.provideHttpEndpointService(
+                        HttpServer.ApiType.BOOKIE_COOKIE);
+                Map<String, String> params = new HashMap<>();
+                // empty params
+                HttpServiceRequest request = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+                HttpServiceResponse response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.BAD_REQUEST.getValue());
+                assertEquals(response.getBody(), "Not found bookie id. Should provide bookie_id=<ip:port>");
+                // invalid params
+                params.put("bookie_id", "bookie_id");
+                response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.BAD_REQUEST.getValue());
+                assertEquals(response.getBody(), "Illegal bookie id. Should provide bookie_id=<ip:port>");
+
+                // cookie not found
+                params.put("bookie_id", "127.2.1.0:3181");
+                response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.NOT_FOUND.getValue());
+
+                params.put("bookie_id", bookieId);
+                // GET cookie
+                HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+                HttpServiceResponse response1 = bookieCookieService.handle(request1);
+                assertEquals(response1.getStatusCode(), HttpServer.StatusCode.OK.getValue());
+                assertEquals(cookieFromZk.getValue().toString(), response1.getBody());
+                Cookie old = Cookie.parseFromBytes(response1.getBody().getBytes(UTF_8));
+                // DELETE cookie
+                HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.DELETE, params);
+                HttpServiceResponse response2 = bookieCookieService.handle(request2);
+                assertEquals(response2.getStatusCode(), HttpServer.StatusCode.OK.getValue());
+
+                // GET cookie
+                HttpServiceResponse response3 = bookieCookieService.handle(request1);
+                assertEquals(response3.getStatusCode(), HttpServer.StatusCode.NOT_FOUND.getValue());
+
+                // create cookie
+                params.put("cookie", old.toString());
+                HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.PUT, params);
+                HttpServiceResponse response4 = bookieCookieService.handle(request3);
+                assertEquals(response4.getStatusCode(), HttpServer.StatusCode.OK.getValue());
+
+                HttpServiceResponse response5 = bookieCookieService.handle(request1);
+                assertEquals(response5.getStatusCode(), HttpServer.StatusCode.OK.getValue());
+                assertEquals(cookieFromZk.getValue().toString(), response5.getBody());
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
