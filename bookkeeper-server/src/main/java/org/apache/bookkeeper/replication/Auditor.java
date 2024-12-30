@@ -420,10 +420,12 @@ public class Auditor implements AutoCloseable {
         if (bookieCheckInterval == 0) {
             LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
             submitBookieCheckTask();
-        } else {
+        } else if (bookieCheckInterval > 0) {
             LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
                     bookieCheckInterval);
             executor.scheduleAtFixedRate(auditorBookieCheckTask, 0, bookieCheckInterval, TimeUnit.SECONDS);
+        } else {
+            LOG.info("Auditor periodic bookie checking disabled");
         }
     }
 
