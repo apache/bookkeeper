@@ -61,6 +61,12 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +77,9 @@ import org.slf4j.LoggerFactory;
  */
 public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
+
+    @Rule
+    public final TestName runtime = new TestName();
 
     @Rule
     public Timeout globalTimeout = Timeout.seconds(120);
@@ -105,7 +114,20 @@ public class TestDistributedLogBase {
     protected static int zkPort;
     protected static final List<File> TMP_DIRS = new ArrayList<File>();
 
+    protected String testName;
+
+    @Before
+    public void setTestNameJunit4() {
+        testName = runtime.getMethodName();
+    }
+
+    @BeforeEach
+    void setTestNameJunit5(TestInfo testInfo) {
+        testName = testInfo.getDisplayName();
+    }
+
     @BeforeClass
+    @BeforeAll
     public static void setupCluster() throws Exception {
         setupCluster(numBookies);
     }
@@ -134,6 +156,7 @@ public class TestDistributedLogBase {
     }
 
     @AfterClass
+    @AfterAll
     public static void teardownCluster() throws Exception {
         bkutil.teardown();
         zks.stop();
@@ -143,6 +166,7 @@ public class TestDistributedLogBase {
     }
 
     @Before
+    @BeforeEach
     public void setup() throws Exception {
         try {
             zkc = LocalDLMEmulator.connectZooKeeper("127.0.0.1", zkPort);
@@ -153,6 +177,7 @@ public class TestDistributedLogBase {
     }
 
     @After
+    @AfterEach
     public void teardown() throws Exception {
         if (null != zkc) {
             zkc.close();
