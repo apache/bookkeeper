@@ -19,10 +19,9 @@ package org.apache.distributedlog.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -30,6 +29,7 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.PropertiesWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test case for dynamic configuration based feature provider.
@@ -48,37 +48,36 @@ public class TestDynamicConfigurationFeatureProvider {
         Thread.sleep(1);
     }
 
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
     @Test
     public void testLoadFeaturesFromBase() throws Exception {
-        assertTimeout(Duration.ofMinutes(1), () -> {
-            PropertiesWriter writer = new PropertiesWriter();
-            writer.setProperty("feature_1", "10000");
-            writer.setProperty("feature_2", "5000");
-            writer.save();
+        PropertiesWriter writer = new PropertiesWriter();
+        writer.setProperty("feature_1", "10000");
+        writer.setProperty("feature_2", "5000");
+        writer.save();
 
-            DistributedLogConfiguration conf = new DistributedLogConfiguration()
-                    .setDynamicConfigReloadIntervalSec(Integer.MAX_VALUE)
-                    .setFileFeatureProviderBaseConfigPath(writer.getFile().toURI().toURL().getPath());
-            DynamicConfigurationFeatureProvider provider =
-                    new DynamicConfigurationFeatureProvider("", conf, NullStatsLogger.INSTANCE);
-            provider.start();
-            ensureConfigReloaded();
+        DistributedLogConfiguration conf = new DistributedLogConfiguration()
+                .setDynamicConfigReloadIntervalSec(Integer.MAX_VALUE)
+                .setFileFeatureProviderBaseConfigPath(writer.getFile().toURI().toURL().getPath());
+        DynamicConfigurationFeatureProvider provider =
+                new DynamicConfigurationFeatureProvider("", conf, NullStatsLogger.INSTANCE);
+        provider.start();
+        ensureConfigReloaded();
 
-            Feature feature1 = provider.getFeature("feature_1");
-            assertTrue(feature1.isAvailable());
-            assertEquals(10000, feature1.availability());
-            Feature feature2 = provider.getFeature("feature_2");
-            assertTrue(feature2.isAvailable());
-            assertEquals(5000, feature2.availability());
-            Feature feature3 = provider.getFeature("feature_3");
-            assertFalse(feature3.isAvailable());
-            assertEquals(0, feature3.availability());
-            Feature feature4 = provider.getFeature("unknown_feature");
-            assertFalse(feature4.isAvailable());
-            assertEquals(0, feature4.availability());
+        Feature feature1 = provider.getFeature("feature_1");
+        assertTrue(feature1.isAvailable());
+        assertEquals(10000, feature1.availability());
+        Feature feature2 = provider.getFeature("feature_2");
+        assertTrue(feature2.isAvailable());
+        assertEquals(5000, feature2.availability());
+        Feature feature3 = provider.getFeature("feature_3");
+        assertFalse(feature3.isAvailable());
+        assertEquals(0, feature3.availability());
+        Feature feature4 = provider.getFeature("unknown_feature");
+        assertFalse(feature4.isAvailable());
+        assertEquals(0, feature4.availability());
 
-            provider.stop();
-        });
+        provider.stop();
     }
 
     @FlakyTest("https://issues.apache.org/jira/browse/DL-40")
