@@ -18,9 +18,9 @@
 package org.apache.distributedlog.bk;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.Enumeration;
@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -53,17 +54,18 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * TestLedgerAllocator.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLedgerAllocator extends TestDistributedLogBase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestLedgerAllocator.class);
@@ -81,9 +83,6 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         }
     };
 
-    @Rule
-    public TestName runtime = new TestName();
-
     private ZooKeeperClient zkc;
     private BookKeeperClient bkc;
     private DistributedLogConfiguration dlConf = new DistributedLogConfiguration();
@@ -92,7 +91,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         return URI.create("distributedlog://" + zkServers + path);
     }
 
-    @Before
+    @BeforeAll
     public void setup() throws Exception {
         zkc = TestZooKeeperClientBuilder.newBuilder()
                 .uri(createURI("/"))
@@ -102,7 +101,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
                 .dlConfig(dlConf).ledgersPath(ledgersPath).zkc(zkc).build();
     }
 
-    @After
+    @AfterAll
     public void teardown() throws Exception {
         bkc.close();
         zkc.close();
@@ -164,7 +163,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         Utils.close(allocator);
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testBadVersionOnTwoAllocators() throws Exception {
         String allocationPath = "/allocation-bad-version";
         zkc.get().create(allocationPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -173,9 +173,11 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
 
         SimpleLedgerAllocator allocator1 =
-                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
+                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf),
+                        zkc, bkc);
         SimpleLedgerAllocator allocator2 =
-                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
+                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf),
+                        zkc, bkc);
         allocator1.allocate();
         // wait until allocated
         ZKTransaction txn1 = newTxn();
@@ -206,7 +208,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         assertEquals(1, i);
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testAllocatorWithoutEnoughBookies() throws Exception {
         String allocationPath = "/allocator-without-enough-bookies";
 
@@ -230,8 +233,9 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         assertEquals(0, data.length);
     }
 
-    @Test(timeout = 60000)
-    public void testSuccessAllocatorShouldDeleteUnusedledger() throws Exception {
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
+    public void testSuccessAllocatorShouldDeleteUnusedLedger() throws Exception {
         String allocationPath = "/allocation-delete-unused-ledger";
         zkc.get().create(allocationPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         Stat stat = new Stat();
@@ -239,8 +243,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
 
         Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
 
-        SimpleLedgerAllocator allocator1 =
-                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
+        SimpleLedgerAllocator allocator1 = new SimpleLedgerAllocator(allocationPath, allocationData,
+                newQuorumConfigProvider(dlConf), zkc, bkc);
         allocator1.allocate();
         // wait until allocated
         ZKTransaction txn1 = newTxn();
@@ -250,8 +254,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         stat = new Stat();
         data = zkc.get().getData(allocationPath, false, stat);
         allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
-        SimpleLedgerAllocator allocator2 =
-                new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
+        SimpleLedgerAllocator allocator2 = new SimpleLedgerAllocator(allocationPath, allocationData,
+                newQuorumConfigProvider(dlConf), zkc, bkc);
         allocator2.allocate();
         // wait until allocated
         ZKTransaction txn2 = newTxn();
@@ -296,7 +300,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         assertEquals(1, i);
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testCloseAllocatorDuringObtaining() throws Exception {
         String allocationPath = "/allocation2";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
@@ -329,7 +334,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
                 dlConf.getBKDigestPW().getBytes(UTF_8));
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testCloseAllocatorAfterAbort() throws Exception {
         String allocationPath = "/allocation3";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
@@ -352,9 +358,10 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
                 dlConf.getBKDigestPW().getBytes(UTF_8));
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testConcurrentAllocation() throws Exception {
-        String allocationPath = "/" + runtime.getMethodName();
+        String allocationPath = "/" + testName;
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
         allocator.allocate();
         ZKTransaction txn1 = newTxn();
@@ -365,15 +372,17 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         assertTrue(obtainFuture2.isCompletedExceptionally());
         try {
             Utils.ioResult(obtainFuture2);
-            fail("Should fail the concurrent obtain since there is already a transaction obtaining the ledger handle");
+            fail("Should fail the concurrent obtain since there is "
+                    + "already a transaction obtaining the ledger handle");
         } catch (SimpleLedgerAllocator.ConcurrentObtainException cbe) {
             // expected
         }
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testObtainMultipleLedgers() throws Exception {
-        String allocationPath = "/" + runtime.getMethodName();
+        String allocationPath = "/" + testName;
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
         int numLedgers = 10;
         Set<LedgerHandle> allocatedLedgers = new HashSet<LedgerHandle>();
@@ -387,9 +396,10 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         assertEquals(numLedgers, allocatedLedgers.size());
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testAllocationWithMetadata() throws Exception {
-        String allocationPath = "/" + runtime.getMethodName();
+        String allocationPath = "/" + testName;
 
         String application = "testApplicationMetadata";
         String component = "testComponentMetadata";
