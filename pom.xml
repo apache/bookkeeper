@@ -458,6 +458,11 @@
         <artifactId>failsafe</artifactId>
         <version>${failsafe.version}</version>
       </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-grpc</artifactId>
+        <version>${vertx.version}</version>
+      </dependency>
 
       <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
       <dependency>
