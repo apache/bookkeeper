@@ -339,6 +339,7 @@ public class LedgerMetadataIndex implements Closeable {
                 key.set(ledgerId);
                 ledgersDb.delete(key.array);
                 ++deletedLedgers;
+                pendingDeletedLedgers.remove(ledgerId);
             }
 
             if (log.isDebugEnabled()) {
