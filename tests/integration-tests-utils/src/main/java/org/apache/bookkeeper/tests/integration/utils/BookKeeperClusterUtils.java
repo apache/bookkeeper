@@ -143,16 +143,28 @@ public class BookKeeperClusterUtils {
         DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
     }
 
-    public static void appendToAllBookieConf(DockerClient docker, String version, String key, String value)
+    public static void appendToAllBookieConf(DockerClient docker, String version, String confFile0,
+                                             String key, String value)
             throws Exception {
         for (String b : allBookies()) {
-            appendToBookieConf(docker, b, version, key, value);
+            appendToBookieConf(docker, b, version, confFile0, key, value);
         }
+    }
+
+    public static void appendToAllBookieConf(DockerClient docker, String version,
+                                             String key, String value)
+            throws Exception {
+        appendToAllBookieConf(docker, version, "conf/bk_server.conf", key, value);
     }
 
     public static void appendToBookieConf(DockerClient docker, String containerId,
                                         String version, String key, String value) throws Exception {
-        String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
+        appendToBookieConf(docker, containerId, version, "conf/bk_server.conf", key, value);
+    }
+
+    public static void appendToBookieConf(DockerClient docker, String containerId,
+                                          String version, String confFile0, String key, String value) throws Exception {
+        String confFile = "/opt/bookkeeper/" + version + "/" + confFile0;
         String sedProgram = String.format("$a%s=%s", key, value);
         DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
     }
