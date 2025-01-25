@@ -31,6 +31,7 @@ import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
+import org.apache.bookkeeper.common.collections.HourRange;
 import org.apache.bookkeeper.common.conf.ConfigDef;
 import org.apache.bookkeeper.common.conf.ConfigException;
 import org.apache.bookkeeper.common.conf.ConfigKey;
@@ -106,6 +107,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String SKIP_COMPACTION_HOUR_RANGE = "skipCompactionHourRange";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -2971,6 +2973,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setCompactionRateByBytes(int rate) {
         setProperty(COMPACTION_RATE_BY_BYTES, rate);
+        return this;
+    }
+
+    /**
+     * Get the hour range to skip compaction.
+     * @return hour range to skip compaction
+     */
+    public HourRange getSkipCompactionHourRange() {
+        String range = getString(SKIP_COMPACTION_HOUR_RANGE, "");
+        return HourRange.parse(range);
+    }
+
+    /**
+     * Set the hour range to skip compaction.
+     * @param range
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setSkipCompactionHourRange(String range) {
+        setProperty(SKIP_COMPACTION_HOUR_RANGE, range);
         return this;
     }
 
