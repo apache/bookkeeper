@@ -1089,17 +1089,17 @@ public class BookKeeperAdmin implements AutoCloseable {
             BookieId bookie = ensemble.get(bookieIndex);
             bookiesToExclude.add(bookie);
         }
-
+        List<BookieId> newEnsemble = new ArrayList<>(ensemble);
         // allocate bookies
         for (Integer bookieIndex : bookieIndexesToRereplicate) {
-            BookieId oldBookie = ensemble.get(bookieIndex);
+            BookieId oldBookie = newEnsemble.get(bookieIndex);
             EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse =
                     bkc.getPlacementPolicy().replaceBookie(
                             lh.getLedgerMetadata().getEnsembleSize(),
                             lh.getLedgerMetadata().getWriteQuorumSize(),
                             lh.getLedgerMetadata().getAckQuorumSize(),
                             lh.getLedgerMetadata().getCustomMetadata(),
-                            ensemble,
+                            newEnsemble,
                             oldBookie,
                             bookiesToExclude);
             BookieId newBookie = replaceBookieResponse.getResult();
@@ -1108,10 +1108,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                 LOG.debug(
                         "replaceBookie for bookie: {} in ensemble: {} "
                                 + "is not adhering to placement policy and chose {}",
-                        oldBookie, ensemble, newBookie);
+                        oldBookie, newEnsemble, newBookie);
             }
             targetBookieAddresses.put(bookieIndex, newBookie);
             bookiesToExclude.add(newBookie);
+            newEnsemble.set(bookieIndex, newBookie);
         }
 
         return targetBookieAddresses;
