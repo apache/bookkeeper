@@ -61,7 +61,6 @@ public class LocalDLMEmulator {
 
     private final String zkEnsemble;
     private final URI uri;
-    private final List<File> tmpDirs = new ArrayList<File>();
     private final int zkTimeoutSec;
     private final Thread bkStartupThread;
     private final String zkHost;
@@ -179,9 +178,6 @@ public class LocalDLMEmulator {
         if (bkStartupThread != null) {
             bkStartupThread.interrupt();
             bkStartupThread.join();
-        }
-        for (File dir : tmpDirs) {
-            FileUtils.forceDeleteOnExit(dir);
         }
     }
 
