@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +55,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final LongAdder tasksCompleted = new LongAdder();
     private final LongAdder tasksRejected = new LongAdder();
     private final LongAdder tasksFailed = new LongAdder();
+
+    private final int maxQueueCapacity;
+    private static final AtomicIntegerFieldUpdater<SingleThreadExecutor> waiterCountUpdater =
+            AtomicIntegerFieldUpdater.newUpdater(SingleThreadExecutor.class, "waiterCount");
+    private volatile int waiterCount = 0;
 
     enum State {
         Running,
@@ -80,6 +87,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         } else {
             this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
         }
+        this.maxQueueCapacity = maxQueueCapacity;
+
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
@@ -134,6 +143,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private boolean safeRunTask(Runnable r) {
         try {
+            if (maxQueueCapacity > 0) {
+                waiterCountUpdater.decrementAndGet(this);
+            }
             r.run();
             tasksCompleted.increment();
         } catch (Throwable t) {
@@ -162,7 +174,10 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         this.state = State.Shutdown;
         this.runner.interrupt();
         List<Runnable> remainingTasks = new ArrayList<>();
-        queue.drainTo(remainingTasks);
+        int n = queue.drainTo(remainingTasks);
+        if (maxQueueCapacity > 0) {
+            waiterCountUpdater.addAndGet(this, -n);
+        }
         return remainingTasks;
     }
 
@@ -204,6 +219,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     @Override
     public void execute(Runnable r) {
+        execute(r, null);
+    }
+
+    @VisibleForTesting
+    void execute(Runnable r, List<Runnable> runnableList) {
         if (state != State.Running) {
             throw new RejectedExecutionException("Executor is shutting down");
         }
@@ -213,16 +233,28 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 queue.put(r);
                 tasksCount.increment();
             } else {
-                if (queue.offer(r)) {
-                    tasksCount.increment();
+                int delta = r != null ? 1 : runnableList.size();
+                validateQueueCapacity(delta);
+                if (r != null ? queue.offer(r) : queue.addAll(runnableList)) {
+                    tasksCount.add(delta);
                 } else {
-                    tasksRejected.increment();
-                    throw new ExecutorRejectedException("Executor queue is full");
+                    reject();
                 }
             }
         } catch (InterruptedException e) {
             throw new RejectedExecutionException("Executor thread was interrupted", e);
         }
+    }
+
+    private void validateQueueCapacity(int delta) {
+        if (maxQueueCapacity > 0 && waiterCountUpdater.addAndGet(this, delta) > maxQueueCapacity) {
+            reject();
+        }
+    }
+
+    private void reject() {
+        tasksRejected.increment();
+        throw new ExecutorRejectedException("Executor queue is full");
     }
 
     public void registerMetrics(StatsLogger statsLogger) {
