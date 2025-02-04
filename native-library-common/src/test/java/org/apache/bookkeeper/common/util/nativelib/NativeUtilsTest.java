@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.scurrilous.circe.utils;
+package org.apache.bookkeeper.common.util.nativelib;
 
 import java.io.FileNotFoundException;
 import org.junit.Assert;
@@ -25,7 +25,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link NativeUtils}.
  */
-public class NativeUtilsTests {
+public class NativeUtilsTest {
 
     @Test
     public void testLoadLibrary() throws Exception {

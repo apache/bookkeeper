@@ -49,6 +49,10 @@
           <artifactId>circe-checksum</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>native-library-common</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.distributedlog</groupId>
           <artifactId>distributedlog-core</artifactId>
         </exclusion>
