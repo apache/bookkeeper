@@ -300,7 +300,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         long lac, len;
         synchronized (this) {
             lac = lastAddConfirmed;
-            len = length;
+            len = length.get();
         }
         LOG.info("Closing recovered ledger {} at entry {}", getId(), lac);
         CompletableFuture<Versioned<LedgerMetadata>> f = new MetadataUpdateLoop(

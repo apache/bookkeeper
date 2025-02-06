@@ -68,7 +68,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 
 * Names should be thought through from the point of view of the person using the config.
 * The default values should be thought as best value for people who runs the program without tuning parameters.
-* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site/_data/config/bk_server.yaml).
+* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site3/website/docs/reference/config.md).
 
 ### Concurrency
 

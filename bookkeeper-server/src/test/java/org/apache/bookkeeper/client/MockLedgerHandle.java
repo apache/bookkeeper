@@ -84,7 +84,7 @@ public class MockLedgerHandle extends LedgerHandle {
         metadata = LedgerMetadataBuilder.from(metadata)
                 .withClosedState()
                 .withLastEntryId(lastEntry)
-                .withLength(length)
+                .withLength(length.get())
                 .build();
         setLedgerMetadata(getVersionedLedgerMetadata(), new Versioned<>(metadata, new LongVersion(1L)));
 

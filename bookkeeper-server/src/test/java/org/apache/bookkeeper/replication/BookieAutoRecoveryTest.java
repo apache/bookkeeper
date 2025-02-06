@@ -375,7 +375,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that if a empty ledger loses the bookie not in the quorum for entry 0, it will
+     * Test that if an empty ledger loses the bookie not in the quorum for entry 0, it will
      * still be openable when it loses enough bookies to lose a whole quorum.
      */
     @Test

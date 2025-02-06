@@ -17,6 +17,6 @@
  */
 
 /**
- * Utiltiies to access I/O using JNI.
+ * Utilities to access I/O using JNI.
  */
 package org.apache.bookkeeper.common.util.nativeio;

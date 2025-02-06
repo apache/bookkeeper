@@ -86,12 +86,12 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
 
     LedgerHandle[] prepareData(int numEntryLogs) throws Exception {
         // since an entry log file can hold at most 100 entries
-        // first ledger write 2 entries, which is less than low water mark
+        // first ledger write 2 entries, which is less than low watermark
         int num1 = 2;
-        // third ledger write more than high water mark entries
+        // third ledger write more than high watermark entries
         int num3 = (int) (NUM_ENTRIES * 0.7f);
-        // second ledger write remaining entries, which is higher than low water
-        // mark and less than high water mark
+        // second ledger write remaining entries, which is higher than low watermark
+        // and less than high watermark
         int num2 = NUM_ENTRIES - num3 - num1;
 
         LedgerHandle[] lhs = new LedgerHandle[3];
@@ -148,8 +148,8 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         File ledgerDir2 = tmpDirs.createNew("ledger", "test2");
         File journalDir = tmpDirs.createNew("journal", "test");
         String[] ledgerDirNames = new String[]{
-            ledgerDir1.getPath(),
-            ledgerDir2.getPath()
+                ledgerDir1.getPath(),
+                ledgerDir2.getPath()
         };
         conf.setLedgerDirNames(ledgerDirNames);
         conf.setJournalDirName(journalDir.getPath());
@@ -224,7 +224,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         // there are no writableLedgerDirs
         for (File ledgerDir : bookie.getLedgerDirsManager().getAllLedgerDirs()) {
             assertFalse("Found entry log file ([0,1,2].log. They should have been compacted" + ledgerDir,
-                TestUtils.hasLogFiles(ledgerDir.getParentFile(), true, 0, 1, 2));
+                    TestUtils.hasLogFiles(ledgerDir.getParentFile(), true, 0, 1, 2));
         }
 
         try {
