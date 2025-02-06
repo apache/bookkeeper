@@ -344,7 +344,6 @@ Apache Software License, Version 2.
 - lib/io.opentelemetry-opentelemetry-sdk-metrics-1.26.0.jar [55]
 - lib/io.opentelemetry-opentelemetry-sdk-trace-1.26.0.jar [55]
 - lib/io.opentelemetry-opentelemetry-semconv-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-api-incubator-1.43.0-alpha.jar [55]
 - lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.40.0-alpha.jar [55]
 - lib/io.opentelemetry.semconv-opentelemetry-semconv-1.28.0-alpha.jar [55]
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-1.26.0.jar [55]
