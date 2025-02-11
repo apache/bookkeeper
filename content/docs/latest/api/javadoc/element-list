@@ -3,7 +3,6 @@ com.scurrilous.circe.checksum
 com.scurrilous.circe.crc
 com.scurrilous.circe.impl
 com.scurrilous.circe.params
-com.scurrilous.circe.utils
 org.apache.bookkeeper.auth
 org.apache.bookkeeper.bookie
 org.apache.bookkeeper.bookie.datainteg
@@ -29,6 +28,7 @@ org.apache.bookkeeper.common.util
 org.apache.bookkeeper.common.util.affinity
 org.apache.bookkeeper.common.util.affinity.impl
 org.apache.bookkeeper.common.util.nativeio
+org.apache.bookkeeper.common.util.nativelib
 org.apache.bookkeeper.conf
 org.apache.bookkeeper.discover
 org.apache.bookkeeper.feature
