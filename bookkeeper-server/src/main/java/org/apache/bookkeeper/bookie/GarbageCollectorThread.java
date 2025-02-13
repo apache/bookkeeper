@@ -822,8 +822,13 @@ public class GarbageCollectorThread implements Runnable {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
             } catch (IOException | RuntimeException e) {
-                LOG.warn("Premature exception when processing " + entryLogId
-                         + " recovery will take care of the problem", e);
+                LOG.warn("Premature exception when processing {} recovery will take care of the problem",
+                        entryLogId, e);
+            } catch (OutOfMemoryError oome) {
+                // somewhat similar to https://github.com/apache/bookkeeper/pull/3901
+                // entrylog file can be corrupted but instead having a negative entry size
+                // it ends up with very large value for the entry size causing OODME
+                LOG.warn("OutOfMemoryError when processing {} - skipping the entry log", entryLogId, oome);
             }
         }
     }
