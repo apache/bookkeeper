@@ -680,4 +680,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
          */
         return PlacementPolicyAdherence.MEETS_STRICT;
     }
+
+    @Override
+    public void updateBookieInfo(Map<BookieId, BookieInfoReader.BookieInfo> bookieInfoMap) {
+        super.updateBookieInfo(bookieInfoMap);
+        for (TopologyAwareEnsemblePlacementPolicy policy : perRegionPlacement.values()) {
+            policy.updateBookieInfo(bookieInfoMap);
+        }
+    }
 }
