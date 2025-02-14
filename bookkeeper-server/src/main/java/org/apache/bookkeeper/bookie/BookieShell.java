@@ -488,7 +488,7 @@ public class BookieShell implements Tool {
             opts.addOption("sk", "skipOpenLedgers", false, "Skip recovering open ledgers");
             opts.addOption("d", "deleteCookie", false, "Delete cookie node for the bookie.");
             opts.addOption("sku", "skipUnrecoverableLedgers", false, "Skip unrecoverable ledgers.");
-            opts.addOption("rate", "replicationRate", false, "Replication rate by bytes");
+            opts.addOption("rate", "replicationRate", true, "Replication rate by bytes");
         }
 
         @Override
