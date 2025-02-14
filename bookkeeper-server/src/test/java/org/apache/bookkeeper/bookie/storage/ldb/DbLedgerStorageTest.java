@@ -33,8 +33,10 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -52,6 +54,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -821,5 +824,61 @@ public class DbLedgerStorageTest {
         LogMark logMark = bookie.getJournals().get(0).getLastLogMark().getCurMark();
         assertEquals(7, logMark.getLogFileId());
         assertEquals(8, logMark.getLogFileOffset());
+    }
+
+    @Test
+    public void testSingleLedgerDirectoryCheckpointTriggerRemovePendingDeletedLedgers()
+            throws Exception {
+        int gcWaitTime = 1000;
+        File ledgerDir = new File(tmpDir, "dir");
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 4);
+        conf.setProperty(DbLedgerStorage.READ_AHEAD_CACHE_MAX_SIZE_MB, 4);
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerDirNames(new String[] { ledgerDir.getCanonicalPath() });
+
+        BookieImpl bookie = new TestBookieImpl(conf);
+        ByteBuf entry1 = Unpooled.buffer(1024);
+        entry1.writeLong(1); // ledger id
+        entry1.writeLong(2); // entry id
+        entry1.writeBytes("entry-1".getBytes());
+        bookie.getLedgerStorage().addEntry(entry1);
+
+        bookie.getJournals().get(0).getLastLogMark().getCurMark().setLogMark(1, 2);
+        ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().get(0).flush();
+
+        File ledgerDirMark = new File(ledgerDir + "/current", "lastMark");
+        try {
+            LogMark logMark = readLogMark(ledgerDirMark);
+            assertEquals(1, logMark.getLogFileId());
+            assertEquals(2, logMark.getLogFileOffset());
+        } catch (Exception e) {
+            fail();
+        }
+
+        ByteBuf entry2 = Unpooled.buffer(1024);
+        entry2.writeLong(2); // ledger id
+        entry2.writeLong(1); // entry id
+        entry2.writeBytes("entry-2".getBytes());
+
+        bookie.getLedgerStorage().addEntry(entry2);
+        // write one entry to first ledger directory and flush with logMark(1, 2),
+        // only the first ledger directory should have lastMark
+        bookie.getJournals().get(0).getLastLogMark().getCurMark().setLogMark(4, 5);
+
+        SingleDirectoryDbLedgerStorage storage1 =
+                ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().get(0);
+        Field field = SingleDirectoryDbLedgerStorage.class.getDeclaredField("ledgerIndex");
+        field.setAccessible(true);
+        LedgerMetadataIndex ledgerMetadataIndex = (LedgerMetadataIndex) field.get(storage1);
+        Field field1 = LedgerMetadataIndex.class.getDeclaredField("pendingDeletedLedgers");
+        field1.setAccessible(true);
+        Set<Long> pendingDeletedLedgers = (Set<Long>) field1.get(ledgerMetadataIndex);
+
+        Assert.assertEquals(pendingDeletedLedgers.size(), 0);
+        pendingDeletedLedgers.add(2L);
+        bookie.getLedgerStorage().flush();
+        Assert.assertEquals(pendingDeletedLedgers.size(), 0);
     }
 }
