@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.COMPACT_RUNTIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOG_COMPACT_RATIO;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOG_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.EXTRACT_META_RUNTIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GC_LEDGER_RUNTIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTION_COUNT;
@@ -35,7 +36,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPA
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIM_FAILED_TO_DELETE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOG_SPACE_BYTES;
 
 import java.util.function.Supplier;
 import lombok.Getter;
