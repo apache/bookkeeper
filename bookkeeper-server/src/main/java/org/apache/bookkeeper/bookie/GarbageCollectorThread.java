@@ -97,6 +97,7 @@ public class GarbageCollectorThread implements Runnable {
     // Stats loggers for garbage collection operations
     private final GarbageCollectorStats gcStats;
 
+    private volatile long activeEntryLogSize;
     private volatile long totalEntryLogSize;
     private volatile int numActiveEntryLogs;
     private volatile double entryLogCompactRatio;
@@ -175,6 +176,7 @@ public class GarbageCollectorThread implements Runnable {
         this.gcWaitTime = conf.getGcWaitTime();
 
         this.numActiveEntryLogs = 0;
+        this.activeEntryLogSize = 0L;
         this.totalEntryLogSize = 0L;
         this.entryLogCompactRatio = 0.0;
         this.currentEntryLogUsageBuckets = new int[ENTRY_LOG_USAGE_SEGMENT_COUNT];
@@ -182,6 +184,7 @@ public class GarbageCollectorThread implements Runnable {
         this.gcStats = new GarbageCollectorStats(
             statsLogger,
             () -> numActiveEntryLogs,
+            () -> activeEntryLogSize,
             () -> totalEntryLogSize,
             () -> garbageCollector.getNumActiveLedgers(),
             () -> entryLogCompactRatio,
@@ -524,6 +527,7 @@ public class GarbageCollectorThread implements Runnable {
      */
     private void doGcEntryLogs() throws EntryLogMetadataMapException {
         // Get a cumulative count, don't update until complete
+        AtomicLong activeEntryLogSizeAcc = new AtomicLong(0L);
         AtomicLong totalEntryLogSizeAcc = new AtomicLong(0L);
 
         // Loop through all of the entry logs and remove the non-active ledgers.
@@ -550,9 +554,10 @@ public class GarbageCollectorThread implements Runnable {
                 // schedule task
                 LOG.warn("Failed to remove ledger from entry-log metadata {}", entryLogId, e);
             }
-           totalEntryLogSizeAcc.getAndAdd(meta.getRemainingSize());
+            activeEntryLogSizeAcc.getAndAdd(meta.getRemainingSize());
+            totalEntryLogSizeAcc.getAndAdd(meta.getTotalSize());
         });
-
+        this.activeEntryLogSize = activeEntryLogSizeAcc.get();
         this.totalEntryLogSize = totalEntryLogSizeAcc.get();
         this.numActiveEntryLogs = entryLogMetaMap.size();
     }
