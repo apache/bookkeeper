@@ -106,6 +106,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String ENTRY_LOCATION_COMPACTION_ENABLED = "entryLocationCompactionEnabled";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -2971,6 +2972,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setCompactionRateByBytes(int rate) {
         setProperty(COMPACTION_RATE_BY_BYTES, rate);
+        return this;
+    }
+
+    /**
+     * The entry location compaction is allowed or not with major compaction.
+     *
+     * @return the entry location compaction is allowed or not with major compaction.
+     */
+    public boolean getEntryLocationCompactionEnabled() {
+        return getBoolean(ENTRY_LOCATION_COMPACTION_ENABLED, false);
+    }
+
+    /**
+     * Sets that whether to enable entry location compaction with major compaction.
+     *
+     * @param enabled
+     *            - true if entry location compaction should be enabled with major compaction. Otherwise false.
+     *            false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setEntryLocationCompactionEnabled(boolean enabled) {
+        setProperty(ENTRY_LOCATION_COMPACTION_ENABLED, enabled);
         return this;
     }
 

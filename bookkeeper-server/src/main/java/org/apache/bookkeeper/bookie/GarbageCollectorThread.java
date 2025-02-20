@@ -87,6 +87,8 @@ public class GarbageCollectorThread implements Runnable {
     long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
+    boolean entryLocationCompaction = false;
+
     @Getter
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -211,6 +213,7 @@ public class GarbageCollectorThread implements Runnable {
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
         minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
+        entryLocationCompaction = conf.getEntryLocationCompactionEnabled();
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -469,6 +472,10 @@ public class GarbageCollectorThread implements Runnable {
                     lastMinorCompactionTime = lastMajorCompactionTime;
                     gcStats.getMajorCompactionCounter().inc();
                     majorCompacting.set(false);
+                }
+                if (entryLocationCompaction) {
+                    // submit entryLocation compaction task
+                    ledgerStorage.entryLocationCompact();
                 }
             } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
