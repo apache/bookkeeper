@@ -608,6 +608,15 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+
+    @Override
+    public void closeQuarantinedBookieChannels(BookieId bookieId) {
+        PerChannelBookieClientPool connectionPool = this.channels.remove(bookieId);
+        if (connectionPool != null) {
+            connectionPool.close(false);
+        }
+    }
+
     private static class Counter {
         int i;
         int total;
