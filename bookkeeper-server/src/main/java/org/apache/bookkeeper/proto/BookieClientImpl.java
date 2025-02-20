@@ -22,6 +22,7 @@ package org.apache.bookkeeper.proto;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
@@ -370,7 +371,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
-    private static class ChannelReadyForAddEntryCallback
+    // Without test, this class should be modifier with "private".
+    @VisibleForTesting
+    static class ChannelReadyForAddEntryCallback
         implements GenericCallback<PerChannelBookieClient> {
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
 
@@ -380,7 +383,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private long entryId;
         private BookieId addr;
         private Object ctx;
-        private WriteCallback cb;
+        // Without test, this class should be modifier with "private".
+        @VisibleForTesting
+        WriteCallback cb;
         private int options;
         private byte[] masterKey;
         private boolean allowFastFail;
