@@ -158,12 +158,20 @@ public class TestServerConfiguration {
     public void testCompactionSettings() throws ConfigurationException {
         ServerConfiguration conf = new ServerConfiguration();
         long major, minor;
+        boolean entryLocationCompaction;
 
         // Default Values
         major = conf.getMajorCompactionMaxTimeMillis();
         minor = conf.getMinorCompactionMaxTimeMillis();
+        entryLocationCompaction=conf.getEntryLocationCompactionEnabled();
         Assert.assertEquals(-1, major);
         Assert.assertEquals(-1, minor);
+        Assert.assertFalse(entryLocationCompaction);
+
+        //Set entryLocationCompaction enable
+        conf.setEntryLocationCompactionEnabled(true);
+        entryLocationCompaction=conf.getEntryLocationCompactionEnabled();
+        Assert.assertTrue(entryLocationCompaction);
 
         // Set values major then minor
         conf.setMajorCompactionMaxTimeMillis(500).setMinorCompactionMaxTimeMillis(250);
