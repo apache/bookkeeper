@@ -411,7 +411,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                                       PerChannelBookieClient pcbc) {
             try {
                 if (rc != BKException.Code.OK) {
-                    bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+                    bookieClient.executor.executeOrdered(ledgerId, () -> {
+                        bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+                    });
                 } else {
                     pcbc.addEntry(ledgerId, masterKey, entryId,
                             toSend, cb, ctx, options, allowFastFail, writeFlags);
