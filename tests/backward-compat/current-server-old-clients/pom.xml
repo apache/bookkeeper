@@ -29,4 +29,21 @@
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test old clients working on current server</name>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <excludedGroups>flaky</excludedGroups>
+          <argLine> -XX:+ExitOnOutOfMemoryError
+            -Dio.netty.tryReflectionSetAccessible=true
+            ${test.additional.args}
+          </argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+
+  </build>
 </project>
