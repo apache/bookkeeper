@@ -18,14 +18,11 @@
 package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
-
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 import org.apache.bookkeeper.tests.integration.utils.ThreadReaper
-
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
-
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -108,11 +105,11 @@ class TestCompatOldClients {
             try {
                 def ledger1 = readBK.openLedger(ledger0.getId(), readCL.digestType("CRC32"), PASSWD)
                 if (expectFail) {
-                    Assert.fail("For older versions Openledger call is expected to fail with ZKException, writerVersion: " + writeVersion + ", readerVersion: " + readerVersion);
+                    Assert.fail("For older versions Openledger call is expected to fail with ZKException, writerVersion: " + writeVersion + ", readerVersion: " + readerVersion)
                 }
             } catch (Exception exc) {
                 if (!expectFail) {
-                    Assert.fail("For older versions Openledger call is expected to work, writerVersion: " + writeVersion + ", readerVersion: " + readerVersion);
+                    Assert.fail("For older versions Openledger call is expected to work, writerVersion: " + writeVersion + ", readerVersion: " + readerVersion)
                 }
                 Assert.assertEquals(exc.getClass().getName(),
                                 "org.apache.bookkeeper.client.BKException\$ZKException")

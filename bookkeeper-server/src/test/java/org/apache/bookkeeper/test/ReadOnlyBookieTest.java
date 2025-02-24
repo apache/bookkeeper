@@ -103,6 +103,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     public void testBookieShouldTurnWritableFromReadOnly() throws Exception {
         killBookie(0);
         baseConf.setReadOnlyModeEnabled(true);
+        baseConf.setReadOnlyModeOnAnyDiskFullEnabled(false);
         baseConf.setDiskCheckInterval(Integer.MAX_VALUE);
         startNewBookie();
         LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC,

@@ -29,6 +29,16 @@ Client Guide | API docs
 
 ## News
 
+### 26 June, 2024 Release 4.17.1 available
+
+This is the 49th release of Apache BookKeeper !
+See [BookKeeper 4.17.1 Release Notes](/release-notes#4171) for details.
+
+### 26 June, 2024 Release 4.16.6 available
+
+This is the 48th release of Apache BookKeeper !
+See [BookKeeper 4.16.6 Release Notes](/release-notes#4166) for details.
+
 ### 3 April, 2024 Release 4.16.5 available
  
 This is the 47th release of Apache BookKeeper !

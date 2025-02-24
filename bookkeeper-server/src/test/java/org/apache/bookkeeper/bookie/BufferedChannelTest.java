@@ -21,10 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertThrows;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Random;
@@ -124,6 +127,41 @@ public class BufferedChannelTest {
         }
         logChannel.close();
         fileChannel.close();
+    }
+
+    @Test
+    public void testBufferedChannelReadWhenDestBufSizeExceedsReadLength() throws IOException {
+        doTestBufferedChannelReadThrowing(100, 60);
+    }
+
+    @Test
+    public void testBufferedChannelReadWhenDestBufSizeDoesNotExceedReadLength() throws IOException {
+        doTestBufferedChannelReadThrowing(100, 110);
+    }
+
+    private void doTestBufferedChannelReadThrowing(int destBufSize, int readLength) throws IOException {
+        File newLogFile = File.createTempFile("test", "log");
+        newLogFile.deleteOnExit();
+
+        try (RandomAccessFile raf = new RandomAccessFile(newLogFile, "rw")) {
+            FileChannel fileChannel = raf.getChannel();
+
+            try (BufferedChannel bufferedChannel = new BufferedChannel(
+                UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                INTERNAL_BUFFER_WRITE_CAPACITY, INTERNAL_BUFFER_READ_CAPACITY, 0)) {
+
+                bufferedChannel.write(generateEntry(500));
+
+                ByteBuf destBuf = UnpooledByteBufAllocator.DEFAULT.buffer(destBufSize);
+
+                if (destBufSize < readLength) {
+                    assertThrows(IllegalArgumentException.class,
+                        () -> bufferedChannel.read(destBuf, 0, readLength));
+                } else {
+                    bufferedChannel.read(destBuf, 0, readLength);
+                }
+            }
+        }
     }
 
     private static ByteBuf generateEntry(int length) {

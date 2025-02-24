@@ -45,9 +45,9 @@ Here is the process for making a BP:
 1. Write the proposal for this BP. There are two ways to write a bookkeeper proposal. You can choose to write a BP using markdown, or write a BP
 using Google Doc.
     - Markdown
-        - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+        - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site3/website/src/pages/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
         ```shell
-        $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
+        $ cp site3/website/src/pages/bps/BP-template.md site3/website/src/pages/bps/BP-xyz-capation-of-proposal.md
         ```
         - Fill the sections listed in the BP template.
             - issue: replace `<issue-number>` with the issue number.
@@ -60,7 +60,7 @@ using Google Doc.
     - add `BP` label to this PR
     - attach the google doc link in the PR description if the BP is written in google doc
     - don't associate this PR with any release or milestone
-    - edit `site/community/bookkeeper-proposals.md`:
+    - edit `site3/website/src/pages/community/bookkeeper-proposals.md`:
         - bump the next bp number
         - add this BP to `Inprogress` section
 1. You can tag committers on this RP for reviewers, or start a `[DISCUSS]` thread on Apache mailing list. If you are sending an email, please make sure that the subject

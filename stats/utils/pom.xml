@@ -24,7 +24,6 @@
     <groupId>org.apache.bookkeeper.stats</groupId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-utils</artifactId>
   <name>Apache BookKeeper :: Stats :: Utils</name>
   <dependencies>

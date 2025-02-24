@@ -35,6 +35,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>native-library-common</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>

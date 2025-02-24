@@ -281,6 +281,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         return this;
     }
 
+    @Override
     public String getDefaultRack() {
         return defaultRack;
     }
@@ -589,7 +590,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             LOG.warn("Failed to choose a bookie from network location {}, "
                     + "the bookies in the network location are {}, excluded bookies {}, "
                     + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
-                     networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
+                     networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble.toList());
             // randomly choose one from whole cluster, ignore the provided predicate.
             return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
         }
@@ -615,7 +616,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             LOG.warn("Failed to choose a bookie node from network location {}, "
                     + "the bookies in the network location are {}, excluded bookies {}, "
                     + "current ensemble {}, fallback to choose bookie randomly from the cluster.",
-                networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble);
+                networkLoc, topology.getLeaves(networkLoc), excludeBookies, ensemble.toList());
             return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
         }
     }
@@ -919,8 +920,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (useRegionAware || reorderReadsRandom) {
             isAnyBookieUnavailable = true;
         } else {
-            for (int i = 0; i < ensemble.size(); i++) {
-                BookieId bookieAddr = ensemble.get(i);
+            for (int i = 0; i < writeSet.size(); i++) {
+                int idx = writeSet.get(i);
+                BookieId bookieAddr = ensemble.get(idx);
                 if ((!knownBookies.containsKey(bookieAddr) && !readOnlyBookies.contains(bookieAddr))
                     || slowBookies.getIfPresent(bookieAddr) != null) {
                     // Found at least one bookie not available in the ensemble, or in slowBookies

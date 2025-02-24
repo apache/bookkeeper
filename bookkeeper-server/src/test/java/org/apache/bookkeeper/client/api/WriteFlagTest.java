@@ -21,10 +21,12 @@
 package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.EnumSet;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Unit tests for WriteFlag.
@@ -45,9 +47,11 @@ public class WriteFlagTest {
                 WriteFlag.getWriteFlags(NONE));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testGetWriteFlagsValueNull() {
-        WriteFlag.getWriteFlagsValue(null);
+        assertThrows(NullPointerException.class, () -> {
+            WriteFlag.getWriteFlagsValue(null);
+        });
     }
 
     @Test

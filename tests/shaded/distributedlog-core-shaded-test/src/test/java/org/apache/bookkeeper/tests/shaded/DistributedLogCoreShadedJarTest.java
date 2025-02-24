@@ -112,6 +112,17 @@ public class DistributedLogCoreShadedJarTest {
     }
 
     @Test
+    public void testBookKeeperNativeLibraryCommonShade() throws Exception {
+        Class.forName("dlshade.org.apache.bookkeeper.common.util.nativelib.NativeUtils");
+        assertTrue(true);
+    }
+
+    @Test(expected = ClassNotFoundException.class)
+    public void testBookKeeperNativeLibraryCommon() throws Exception {
+        Class.forName("org.apache.bookkeeper.common.util.nativelib.NativeUtils");
+    }
+
+    @Test
     public void testCirceChecksumShade() throws Exception {
         Class.forName("dlshade.com.scurrilous.circe.checksum.Crc32cIntChecksum");
         assertTrue(true);

@@ -74,6 +74,7 @@ public class ComponentStarter {
         component.setExceptionHandler((t, e) -> {
             log.error("Triggered exceptionHandler of Component: {} because of Exception in Thread: {}",
                     component.getName(), t, e);
+            System.err.println(e.getMessage());
             // start the shutdown hook when an uncaught exception happen in the lifecycle component.
             shutdownHookThread.start();
         });

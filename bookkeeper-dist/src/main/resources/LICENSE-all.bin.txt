@@ -214,35 +214,35 @@ Apache Software License, Version 2.
 - lib/commons-cli-commons-cli-1.2.jar [5]
 - lib/commons-codec-commons-codec-1.6.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
-- lib/commons-io-commons-io-2.7.jar [8]
+- lib/commons-io-commons-io-2.17.0.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
-- lib/io.netty-netty-buffer-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-dns-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-http-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-http2-4.1.111.Final.jar [11]
-- lib/io.netty-netty-codec-socks-4.1.111.Final.jar [11]
-- lib/io.netty-netty-common-4.1.111.Final.jar [11]
-- lib/io.netty-netty-handler-4.1.111.Final.jar [11]
-- lib/io.netty-netty-handler-proxy-4.1.111.Final.jar [11]
-- lib/io.netty-netty-resolver-4.1.111.Final.jar [11]
-- lib/io.netty-netty-resolver-dns-4.1.111.Final.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-linux-aarch_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-linux-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-osx-aarch_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-osx-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-boringssl-static-2.0.65.Final-windows-x86_64.jar [11]
-- lib/io.netty-netty-tcnative-classes-2.0.65.Final.jar [11]
-- lib/io.netty-netty-transport-4.1.111.Final.jar [11]
-- lib/io.netty-netty-transport-classes-epoll-4.1.111.Final.jar [11]
-- lib/io.netty-netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar [11]
-- lib/io.netty-netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-buffer-4.1.115.Final.jar [11]
+- lib/io.netty-netty-codec-4.1.115.Final.jar [11]
+- lib/io.netty-netty-codec-dns-4.1.115.Final.jar [11]
+- lib/io.netty-netty-codec-http-4.1.115.Final.jar [11]
+- lib/io.netty-netty-codec-http2-4.1.115.Final.jar [11]
+- lib/io.netty-netty-codec-socks-4.1.115.Final.jar [11]
+- lib/io.netty-netty-common-4.1.115.Final.jar [11]
+- lib/io.netty-netty-handler-4.1.115.Final.jar [11]
+- lib/io.netty-netty-handler-proxy-4.1.115.Final.jar [11]
+- lib/io.netty-netty-resolver-4.1.115.Final.jar [11]
+- lib/io.netty-netty-resolver-dns-4.1.115.Final.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final-linux-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final-linux-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final-osx-aarch_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final-osx-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.69.Final-windows-x86_64.jar [11]
+- lib/io.netty-netty-tcnative-classes-2.0.69.Final.jar [11]
+- lib/io.netty-netty-transport-4.1.115.Final.jar [11]
+- lib/io.netty-netty-transport-classes-epoll-4.1.115.Final.jar [11]
+- lib/io.netty-netty-transport-native-epoll-4.1.115.Final-linux-aarch_64.jar [11]
+- lib/io.netty-netty-transport-native-epoll-4.1.115.Final-linux-x86_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.25.Final-linux-x86_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-native-io_uring-0.0.25.Final-linux-aarch_64.jar [11]
 - lib/io.netty.incubator-netty-incubator-transport-classes-io_uring-0.0.25.Final.jar [11]
-- lib/io.netty-netty-transport-native-unix-common-4.1.111.Final.jar [11]
+- lib/io.netty-netty-transport-native-unix-common-4.1.115.Final.jar [11]
 - lib/io.prometheus-simpleclient-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_common-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_hotspot-0.15.0.jar [12]
@@ -251,57 +251,57 @@ Apache Software License, Version 2.
 - lib/io.prometheus-simpleclient_tracer_common-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_tracer_otel-0.15.0.jar [12]
 - lib/io.prometheus-simpleclient_tracer_otel_agent-0.15.0.jar [12]
-- lib/io.vertx-vertx-auth-common-4.5.7.jar [13]
-- lib/io.vertx-vertx-bridge-common-4.5.7.jar [14]
-- lib/io.vertx-vertx-core-4.5.7.jar [15]
-- lib/io.vertx-vertx-web-4.5.7.jar [16]
-- lib/io.vertx-vertx-web-common-4.5.7.jar [16]
+- lib/io.vertx-vertx-auth-common-4.5.11.jar [13]
+- lib/io.vertx-vertx-bridge-common-4.5.11.jar [14]
+- lib/io.vertx-vertx-core-4.5.11.jar [15]
+- lib/io.vertx-vertx-web-4.5.11.jar [16]
+- lib/io.vertx-vertx-web-common-4.5.11.jar [16]
 - lib/org.apache.logging.log4j-log4j-api-2.23.1.jar [17]
 - lib/org.apache.logging.log4j-log4j-core-2.23.1.jar [17]
 - lib/org.apache.logging.log4j-log4j-slf4j2-impl-2.23.1.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-lang3-3.6.jar [20]
-- lib/org.apache.zookeeper-zookeeper-3.8.4.jar [21]
-- lib/org.apache.zookeeper-zookeeper-jute-3.8.4.jar [21]
-- lib/org.apache.zookeeper-zookeeper-3.8.4-tests.jar [21]
-- lib/org.eclipse.jetty-jetty-http-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-io-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-security-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-server-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-util-9.4.53.v20231009.jar [22]
-- lib/org.eclipse.jetty-jetty-util-ajax-9.4.53.v20231009.jar [22]
+- lib/org.apache.zookeeper-zookeeper-3.9.3.jar [21]
+- lib/org.apache.zookeeper-zookeeper-jute-3.9.3.jar [21]
+- lib/org.apache.zookeeper-zookeeper-3.9.3-tests.jar [21]
+- lib/org.eclipse.jetty-jetty-http-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-io-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-security-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-server-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-servlet-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-util-9.4.55.v20240627.jar [22]
+- lib/org.eclipse.jetty-jetty-util-ajax-9.4.55.v20240627.jar [22]
 - lib/org.rocksdb-rocksdbjni-7.10.2.jar [23]
 - lib/com.beust-jcommander-1.82.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [26]
-- lib/com.google.api.grpc-proto-google-common-protos-2.29.0.jar [28]
-- lib/com.google.code.gson-gson-2.10.1.jar [29]
+- lib/com.google.api.grpc-proto-google-common-protos-2.48.0.jar [28]
+- lib/com.google.code.gson-gson-2.11.0.jar [29]
 - lib/io.opencensus-opencensus-api-0.31.1.jar [30]
 - lib/io.opencensus-opencensus-contrib-http-util-0.31.1.jar [30]
-- lib/io.opencensus-opencensus-proto-0.2.0.jar [30]
-- lib/io.grpc-grpc-all-1.64.0.jar [33]
-- lib/io.grpc-grpc-alts-1.64.0.jar [33]
-- lib/io.grpc-grpc-api-1.64.0.jar [33]
-- lib/io.grpc-grpc-auth-1.64.0.jar [33]
-- lib/io.grpc-grpc-context-1.64.0.jar [33]
-- lib/io.grpc-grpc-core-1.64.0.jar [33]
-- lib/io.grpc-grpc-grpclb-1.64.0.jar [33]
-- lib/io.grpc-grpc-inprocess-1.64.0.jar [33]
-- lib/io.grpc-grpc-opentelemetry-1.64.0.jar [33]
-- lib/io.grpc-grpc-netty-shaded-1.64.0.jar [33]
-- lib/io.grpc-grpc-protobuf-1.64.0.jar [33]
-- lib/io.grpc-grpc-protobuf-lite-1.64.0.jar [33]
-- lib/io.grpc-grpc-services-1.64.0.jar [33]
-- lib/io.grpc-grpc-stub-1.64.0.jar [33]
-- lib/io.grpc-grpc-testing-1.64.0.jar [33]
-- lib/io.grpc-grpc-util-1.64.0.jar [33]
-- lib/io.grpc-grpc-xds-1.64.0.jar [33]
-- lib/io.grpc-grpc-rls-1.64.0.jar[33]
-- lib/org.apache.curator-curator-client-5.1.0.jar [34]
-- lib/org.apache.curator-curator-framework-5.1.0.jar [34]
-- lib/org.apache.curator-curator-recipes-5.1.0.jar [34]
+- lib/io.grpc-grpc-all-1.70.0.jar [33]
+- lib/io.grpc-grpc-alts-1.70.0.jar [33]
+- lib/io.grpc-grpc-api-1.70.0.jar [33]
+- lib/io.grpc-grpc-auth-1.70.0.jar [33]
+- lib/io.grpc-grpc-context-1.70.0.jar [33]
+- lib/io.grpc-grpc-core-1.70.0.jar [33]
+- lib/io.grpc-grpc-grpclb-1.70.0.jar [33]
+- lib/io.grpc-grpc-inprocess-1.70.0.jar [33]
+- lib/io.grpc-grpc-opentelemetry-1.70.0.jar [33]
+- lib/io.grpc-grpc-netty-shaded-1.70.0.jar [33]
+- lib/io.grpc-grpc-protobuf-1.70.0.jar [33]
+- lib/io.grpc-grpc-protobuf-lite-1.70.0.jar [33]
+- lib/io.grpc-grpc-services-1.70.0.jar [33]
+- lib/io.grpc-grpc-stub-1.70.0.jar [33]
+- lib/io.grpc-grpc-testing-1.70.0.jar [33]
+- lib/io.grpc-grpc-util-1.70.0.jar [33]
+- lib/io.grpc-grpc-xds-1.70.0.jar [33]
+- lib/io.grpc-grpc-rls-1.70.0.jar[33]
+- lib/io.grpc-grpc-gcp-csm-observability-1.70.0.jar [33]
+- lib/org.apache.curator-curator-client-5.7.1.jar [34]
+- lib/org.apache.curator-curator-framework-5.7.1.jar [34]
+- lib/org.apache.curator-curator-recipes-5.7.1.jar [34]
 - lib/com.google.errorprone-error_prone_annotations-2.9.0.jar [36]
 - lib/org.apache.yetus-audience-annotations-0.12.0.jar [37]
 - lib/org.jctools-jctools-core-2.1.2.jar [38]
@@ -309,16 +309,16 @@ Apache Software License, Version 2.
 - lib/org.apache.httpcomponents-httpcore-4.4.15.jar [40]
 - lib/org.apache.thrift-libthrift-0.14.2.jar [41]
 - lib/com.google.android-annotations-4.1.1.4.jar [42]
-- lib/com.google.http-client-google-http-client-1.43.3.jar [43]
-- lib/com.google.http-client-google-http-client-gson-1.43.3.jar [43]
-- lib/com.google.auto.value-auto-value-annotations-1.10.4.jar [44]
+- lib/com.google.http-client-google-http-client-1.44.2.jar [43]
+- lib/com.google.http-client-google-http-client-gson-1.44.2.jar [43]
+- lib/com.google.auto.value-auto-value-annotations-1.11.0.jar [44]
 - lib/com.google.j2objc-j2objc-annotations-2.8.jar [45]
 - lib/com.google.re2j-re2j-1.7.jar [46]
 - lib/io.dropwizard.metrics-metrics-core-4.1.12.1.jar [47]
 - lib/io.dropwizard.metrics-metrics-graphite-4.1.12.1.jar [47]
 - lib/io.dropwizard.metrics-metrics-jmx-4.1.12.1.jar [47]
 - lib/io.dropwizard.metrics-metrics-jvm-4.1.12.1.jar [47]
-- lib/io.perfmark-perfmark-api-0.26.0.jar [48]
+- lib/io.perfmark-perfmark-api-0.27.0.jar [48]
 - lib/org.conscrypt-conscrypt-openjdk-uber-2.5.2.jar [49]
 - lib/org.xerial.snappy-snappy-java-1.1.10.5.jar [50]
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
@@ -344,9 +344,12 @@ Apache Software License, Version 2.
 - lib/io.opentelemetry-opentelemetry-sdk-metrics-1.26.0.jar [55]
 - lib/io.opentelemetry-opentelemetry-sdk-trace-1.26.0.jar [55]
 - lib/io.opentelemetry-opentelemetry-semconv-1.26.0-alpha.jar [55]
+- lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.40.0-alpha.jar [55]
+- lib/io.opentelemetry.semconv-opentelemetry-semconv-1.28.0-alpha.jar [55]
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-1.26.0.jar [55]
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-semconv-1.26.0-alpha.jar [55]
 - lib/io.opentelemetry.instrumentation-opentelemetry-runtime-metrics-1.26.0-alpha.jar [54]
+- lib/com.google.cloud.opentelemetry-detector-resources-support-0.33.0.jar [54]
 - lib/org.jetbrains-annotations-13.0.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-1.8.21.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-common-1.8.21.jar [56]
@@ -361,10 +364,10 @@ Apache Software License, Version 2.
 [5] Source available at https://github.com/apache/commons-cli/tree/cli-1.2
 [6] Source available at https://github.com/apache/commons-codec/tree/commons-codec-1.6-RC2
 [7] Source available at https://github.com/apache/commons-configuration/tree/CONFIGURATION_1_10
-[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.7
+[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.17.0
 [9] Source available at https://github.com/apache/commons-lang/tree/LANG_2_6
 [10] Source available at https://github.com/apache/commons-logging/tree/commons-logging-1.1.1
-[11] Source available at https://github.com/netty/netty/tree/netty-4.1.111.Final
+[11] Source available at https://github.com/netty/netty/tree/netty-4.1.115.Final
 [12] Source available at https://github.com/prometheus/client_java/tree/parent-0.15.0
 [13] Source available at https://github.com/vert-x3/vertx-auth/tree/4.3.2
 [14] Source available at https://github.com/vert-x3/vertx-bridge-common/tree/4.3.2
@@ -379,11 +382,11 @@ Apache Software License, Version 2.
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.82
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [26] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[28] Source available at https://github.com/googleapis/java-common-protos/tree/v2.29.0
-[29] Source available at https://github.com/google/gson/tree/gson-parent-2.10.1
+[28] Source available at https://github.com/googleapis/java-common-protos/tree/v2.48.0
+[29] Source available at https://github.com/google/gson/tree/gson-parent-2.11.0
 [30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.31.1
-[33] Source available at https://github.com/grpc/grpc-java/tree/v1.64.0
-[34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.1.0
+[33] Source available at https://github.com/grpc/grpc-java/tree/v1.70.0
+[34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.7.1
 [36] Source available at https://github.com/google/error-prone/tree/v2.9.0
 [37] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
 [38] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
@@ -396,7 +399,7 @@ Apache Software License, Version 2.
 [45] Source available at https://github.com/google/j2objc/releases/tag/1.3
 [46] Source available at https://github.com/google/re2j/releases/tag/re2j-1.7
 [47] Source available at https://github.com/dropwizard/metrics/releases/tag/v4.1.12.1
-[48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.26.0
+[48] Source available at https://github.com/perfmark/perfmark/releases/tag/v0.27.0
 [49] Source available at https://github.com/google/conscrypt/releases/tag/2.5.2
 [50] Source available at https://github.com/xerial/snappy-java/releases/tag/v1.1.10.5
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
@@ -408,9 +411,9 @@ Apache Software License, Version 2.
 [57] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-codec-4.1.111.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.115.Final.jar bundles some 3rd party dependencies
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.115.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
@@ -419,7 +422,7 @@ been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
@@ -427,7 +430,7 @@ Base64 Encoder and Decoder, which can be obtained at:
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Webbit', an event based
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'Webbit', an event based
 WebSocket and HTTP server, which can be obtained at:
 
   * LICENSE:
@@ -435,7 +438,7 @@ WebSocket and HTTP server, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/joewalnes/webbit
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
@@ -443,7 +446,7 @@ facade for Java, which can be obtained at:
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Apache Harmony', an open source
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'Apache Harmony', an open source
 Java SE, which can be obtained at:
 
   * NOTICE:
@@ -453,7 +456,7 @@ Java SE, which can be obtained at:
   * HOMEPAGE:
     * http://archive.apache.org/dist/harmony/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
@@ -461,7 +464,7 @@ and decompression library written by Matthew J. Francis. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
@@ -470,7 +473,7 @@ a constant-size alphabet written by Yuta Mori. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
 Java Concurrency Tools for the JVM, which can be obtained at:
 
   * LICENSE:
@@ -478,7 +481,7 @@ Java Concurrency Tools for the JVM, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/JCTools/JCTools
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'JZlib', a re-implementation of zlib in
 pure Java, which can be obtained at:
 
   * LICENSE:
@@ -486,7 +489,7 @@ pure Java, which can be obtained at:
   * HOMEPAGE:
     * http://www.jcraft.com/jzlib/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Compress-LZF', a Java library for encoding and
 decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
 
   * LICENSE:
@@ -494,7 +497,7 @@ decoding data in LZF format, written by Tatu Saloranta. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/ning/compress
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'lz4', a LZ4 Java compression
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'lz4', a LZ4 Java compression
 and decompression library written by Adrien Grand. It can be obtained at:
 
   * LICENSE:
@@ -502,7 +505,7 @@ and decompression library written by Adrien Grand. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/jpountz/lz4-java
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'lzma-java', a LZMA Java compression
 and decompression library, which can be obtained at:
 
   * LICENSE:
@@ -510,7 +513,7 @@ and decompression library, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/jponge/lzma-java
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
@@ -518,7 +521,7 @@ and decompression library written by William Kinney. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers',
 Google's data interchange format, which can be obtained at:
 
   * LICENSE:
@@ -526,7 +529,7 @@ Google's data interchange format, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/protobuf
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Bouncy Castle Crypto APIs' to generate
 a temporary self-signed X.509 certificate when the JVM does not provide the
 equivalent functionality.  It can be obtained at:
 
@@ -535,7 +538,7 @@ equivalent functionality.  It can be obtained at:
   * HOMEPAGE:
     * http://www.bouncycastle.org/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Snappy', a compression library produced
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Snappy', a compression library produced
 by Google Inc, which can be obtained at:
 
   * LICENSE:
@@ -543,7 +546,7 @@ by Google Inc, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/snappy
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'JBoss Marshalling', an alternative Java
 serialization API, which can be obtained at:
 
   * LICENSE:
@@ -551,7 +554,7 @@ serialization API, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/jboss-remoting/jboss-marshalling
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Caliper', Google's micro-
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Caliper', Google's micro-
 benchmarking framework, which can be obtained at:
 
   * LICENSE:
@@ -559,7 +562,7 @@ benchmarking framework, which can be obtained at:
   * HOMEPAGE:
     * https://github.com/google/caliper
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Apache Commons Logging', a logging
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Apache Commons Logging', a logging
 framework, which can be obtained at:
 
   * LICENSE:
@@ -567,7 +570,7 @@ framework, which can be obtained at:
   * HOMEPAGE:
     * http://commons.apache.org/logging/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Apache Log4J', a logging framework, which
 can be obtained at:
 
   * LICENSE:
@@ -575,7 +578,7 @@ can be obtained at:
   * HOMEPAGE:
     * http://logging.apache.org/log4j/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
+lib/io.netty-netty-codec-4.1.115.Final.jar optionally depends on 'Aalto XML', an ultra-high performance
 non-blocking XML processor, which can be obtained at:
 
   * LICENSE:
@@ -583,7 +586,7 @@ non-blocking XML processor, which can be obtained at:
   * HOMEPAGE:
     * http://wiki.fasterxml.com/AaltoHome
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
 
   * LICENSE:
@@ -591,7 +594,7 @@ the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/twitter/hpack
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
 
   * LICENSE:
@@ -599,7 +602,7 @@ the HTTP/2 HPACK algorithm written by Cory Benfield. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/python-hyper/hpack/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified version of 'HPACK', a Java implementation of
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified version of 'HPACK', a Java implementation of
 the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at:
 
   * LICENSE:
@@ -607,7 +610,7 @@ the HTTP/2 HPACK algorithm written by Tatsuhiro Tsujikawa. It can be obtained at
   * HOMEPAGE:
     * https://github.com/nghttp2/nghttp2/
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
+lib/io.netty-netty-codec-4.1.115.Final.jar contains a modified portion of 'Apache Commons Lang', a Java library
 provides utilities for the java.lang API, which can be obtained at:
 
   * LICENSE:
@@ -616,7 +619,7 @@ provides utilities for the java.lang API, which can be obtained at:
     * https://commons.apache.org/proper/commons-lang/
 
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
+lib/io.netty-netty-codec-4.1.115.Final.jar contains the Maven wrapper scripts from 'Maven Wrapper',
 that provides an easy way to ensure a user has everything necessary to run the Maven build.
 
   * LICENSE:
@@ -624,7 +627,7 @@ that provides an easy way to ensure a user has everything necessary to run the M
   * HOMEPAGE:
     * https://github.com/takari/maven-wrapper
 
-lib/io.netty-netty-codec-4.1.111.Final.jar contains the dnsinfo.h header file,
+lib/io.netty-netty-codec-4.1.115.Final.jar contains the dnsinfo.h header file,
 that provides a way to retrieve the system DNS configuration on MacOS.
 This private header is also used by Apple's open source
  mDNSResponder (https://opensource.apple.com/tarballs/mDNSResponder/).
@@ -676,13 +679,13 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.25.1.jar
-Source available at https://github.com/google/protobuf/tree/v3.25.1
+  - lib/com.google.protobuf-protobuf-java-3.25.5.jar
+Source available at https://github.com/google/protobuf/tree/v3.25.5
 For details, see deps/protobuf-3.14.0/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.25.1.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.25.1
+  - lib/com.google.protobuf-protobuf-java-util-3.25.5.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v3.25.5
 For details, see deps/protobuf-3.12.0/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
@@ -702,9 +705,9 @@ This product bundles the Google Auth Library, which is available under a "3-clau
 license. For details, see deps/google-auth-library-credentials-0.20.0/LICENSE
 
 Bundled as
-  - lib/com.google.auth-google-auth-library-credentials-1.22.0.jar
-  - lib/com.google.auth-google-auth-library-oauth2-http-1.22.0.jar
-Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v1.22.0
+  - lib/com.google.auth-google-auth-library-credentials-1.24.1.jar
+  - lib/com.google.auth-google-auth-library-oauth2-http-1.24.1.jar
+Source available at https://github.com/googleapis/google-auth-library-java/releases/tag/v1.24.1
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library.
 For license details, see deps/bouncycastle-1.0.2.3/LICENSE.html

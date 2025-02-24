@@ -19,6 +19,8 @@
 package org.apache.bookkeeper.conf;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 
@@ -179,4 +181,12 @@ public class AbstractConfigurationTest {
             System.getProperties().put(nettyLevelKey, nettyLevelStr);
         }
     }
+
+    @Test
+    public void testExitOnOutOfMemory() {
+        assertFalse(conf.exitOnOutOfMemory());
+        conf.setExitOnOutOfMemory(true);
+        assertTrue(conf.exitOnOutOfMemory());
+    }
+
 }

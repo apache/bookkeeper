@@ -77,6 +77,8 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.Stubber;
@@ -141,6 +143,7 @@ public abstract class MockBookKeeperTestCase {
 
     }
 
+    @BeforeEach
     @Before
     public void setup() throws Exception {
         maxNumberOfAvailableBookies = Integer.MAX_VALUE;
@@ -264,6 +267,7 @@ public abstract class MockBookKeeperTestCase {
                 UnpooledByteBufAllocator.DEFAULT, false);
     }
 
+    @AfterEach
     @After
     public void tearDown() {
         scheduler.shutdown();

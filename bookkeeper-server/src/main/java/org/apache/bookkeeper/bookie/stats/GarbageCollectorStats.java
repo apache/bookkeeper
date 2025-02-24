@@ -24,7 +24,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_ENTRY_LO
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_LEDGER_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.COMPACT_RUNTIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOG_COMPACT_RATIO;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOG_SPACE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.EXTRACT_META_RUNTIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GC_LEDGER_RUNTIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
@@ -98,15 +103,46 @@ public class GarbageCollectorStats {
     )
     private final Gauge<Long> activeEntryLogSpaceBytesGauge;
     @StatsDoc(
+            name = ENTRY_LOG_SPACE_BYTES,
+            help = "Current number of total entry log space bytes"
+    )
+    private final Gauge<Long> entryLogSpaceBytesGauge;
+    @StatsDoc(
         name = ACTIVE_LEDGER_COUNT,
         help = "Current number of active ledgers"
     )
     private final Gauge<Integer> activeLedgerCountGauge;
+    @StatsDoc(
+            name = GC_LEDGER_RUNTIME,
+            help = "Operation stats of doing gc ledgers base on metaStore"
+    )
+    private final OpStatsLogger gcLedgerRuntime;
+    @StatsDoc(
+            name = COMPACT_RUNTIME,
+            help = "Operation stats of entry log compaction"
+    )
+    private final OpStatsLogger compactRuntime;
+    @StatsDoc(
+            name = EXTRACT_META_RUNTIME,
+            help = "Operation stats of extracting Meta from entryLogs"
+    )
+    private final OpStatsLogger extractMetaRuntime;
+    @StatsDoc(
+        name = ENTRY_LOG_COMPACT_RATIO,
+        help = "Current proportion of compacted entry log files that have been executed"
+    )
+    private final Gauge<Double> entryLogCompactRatioGauge;
+    private volatile int[] entryLogUsageBuckets;
+    private final Gauge<Integer>[] entryLogUsageBucketsLeGauges;
+
 
     public GarbageCollectorStats(StatsLogger statsLogger,
                                  Supplier<Integer> activeEntryLogCountSupplier,
                                  Supplier<Long> activeEntryLogSpaceBytesSupplier,
-                                 Supplier<Integer> activeLedgerCountSupplier) {
+                                 Supplier<Long> entryLogSpaceBytesSupplier,
+                                 Supplier<Integer> activeLedgerCountSupplier,
+                                 Supplier<Double> entryLogCompactRatioSupplier,
+                                 Supplier<int[]> usageBuckets) {
         this.statsLogger = statsLogger;
 
         this.minorCompactionCounter = statsLogger.getCounter(MINOR_COMPACTION_COUNT);
@@ -116,6 +152,10 @@ public class GarbageCollectorStats {
         this.reclaimFailedToDelete = statsLogger.getCounter(RECLAIM_FAILED_TO_DELETE);
         this.gcThreadRuntime = statsLogger.getOpStatsLogger(THREAD_RUNTIME);
         this.deletedLedgerCounter = statsLogger.getCounter(DELETED_LEDGER_COUNT);
+        this.gcLedgerRuntime = statsLogger.getOpStatsLogger(GC_LEDGER_RUNTIME);
+        this.compactRuntime = statsLogger.getOpStatsLogger(COMPACT_RUNTIME);
+        this.extractMetaRuntime = statsLogger.getOpStatsLogger(EXTRACT_META_RUNTIME);
+        this.entryLogUsageBuckets = usageBuckets.get();
 
         this.activeEntryLogCountGauge = new Gauge<Integer>() {
             @Override
@@ -141,6 +181,18 @@ public class GarbageCollectorStats {
             }
         };
         statsLogger.registerGauge(ACTIVE_ENTRY_LOG_SPACE_BYTES, activeEntryLogSpaceBytesGauge);
+        this.entryLogSpaceBytesGauge = new Gauge<Long>() {
+            @Override
+            public Long getDefaultValue() {
+                return 0L;
+            }
+
+            @Override
+            public Long getSample() {
+                return entryLogSpaceBytesSupplier.get();
+            }
+        };
+        statsLogger.registerGauge(ENTRY_LOG_SPACE_BYTES, entryLogSpaceBytesGauge);
         this.activeLedgerCountGauge = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
@@ -153,6 +205,44 @@ public class GarbageCollectorStats {
             }
         };
         statsLogger.registerGauge(ACTIVE_LEDGER_COUNT, activeLedgerCountGauge);
+        this.entryLogCompactRatioGauge = new Gauge<Double>() {
+            @Override
+            public Double getDefaultValue() {
+                return 0.0;
+            }
+
+            @Override
+            public Double getSample() {
+                return entryLogCompactRatioSupplier.get();
+            }
+        };
+        statsLogger.registerGauge(ENTRY_LOG_COMPACT_RATIO, entryLogCompactRatioGauge);
+
+        this.entryLogUsageBucketsLeGauges = new Gauge[entryLogUsageBuckets.length];
+        for (int i = 0; i < entryLogUsageBucketsLeGauges.length; i++) {
+            entryLogUsageBucketsLeGauges[i] =
+                    registerEntryLogUsageBucketsLeGauge("entry_log_usage_buckets_le_" + (i + 1) * 10, i);
+        }
     }
 
+    private Gauge<Integer> registerEntryLogUsageBucketsLeGauge(String name, int index) {
+        Gauge<Integer> gauge = new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Integer getSample() {
+                return entryLogUsageBuckets[index];
+            }
+        };
+        statsLogger.registerGauge(name, gauge);
+        return gauge;
+    }
+
+
+    public void setEntryLogUsageBuckets(int[] usageBuckets) {
+        entryLogUsageBuckets = usageBuckets;
+    }
 }

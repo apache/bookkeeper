@@ -67,4 +67,9 @@ public class HttpServiceRequest {
         this.params = params;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "HttpServiceRequest{" + "body=" + body + ", method=" + method + ", params=" + params + '}';
+    }
 }

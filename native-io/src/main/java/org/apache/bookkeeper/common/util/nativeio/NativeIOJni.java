@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.common.util.nativeio;
 
+import org.apache.bookkeeper.common.util.nativelib.NativeUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 class NativeIOJni {
