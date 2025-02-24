@@ -208,6 +208,19 @@
     <otel.version>1.26.0</otel.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
+
+    <test.additional.args>
+      --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+      --add-opens java.base/java.lang=ALL-UNNAMED <!--Mockito-->
+      --add-opens java.base/java.io=ALL-UNNAMED <!--Bookkeeper NativeIO-->
+      --add-opens java.base/java.util=ALL-UNNAMED <!--System Lambda-->
+      --add-opens java.base/sun.net=ALL-UNNAMED <!--netty.DnsResolverUtil-->
+      --add-opens java.desktop/java.beans=ALL-UNNAMED <!--netty.DnsResolverUtil-->
+      --add-opens java.management/sun.management=ALL-UNNAMED <!--JvmDefaultGCMetricsLogger & MBeanStatsGenerator-->
+      --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED <!--MBeanStatsGenerator-->
+      --add-opens java.base/jdk.internal.platform=ALL-UNNAMED <!--LinuxInfoUtils-->
+    </test.additional.args>
+
   </properties>
 
   <!-- dependency definitions -->
@@ -950,6 +963,10 @@
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
             <excludedGroups>flaky</excludedGroups>
+            <argLine> -XX:+ExitOnOutOfMemoryError
+              -Dio.netty.tryReflectionSetAccessible=true
+              ${test.additional.args}
+            </argLine>
           </configuration>
         </plugin>
         <plugin>
