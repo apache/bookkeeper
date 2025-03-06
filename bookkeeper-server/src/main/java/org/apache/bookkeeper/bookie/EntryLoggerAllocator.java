@@ -43,6 +43,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -76,7 +78,8 @@ class EntryLoggerAllocator {
         this.preallocatedLogId = logId;
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.entryLogPreAllocationEnabled = conf.isEntryLogFilePreAllocationEnabled();
-        this.allocatorExecutor = Executors.newSingleThreadExecutor();
+        this.allocatorExecutor = Executors.newSingleThreadExecutor(
+                new DefaultThreadFactory("EntryLoggerAllocator"));
 
         // Initialize the entry log header buffer. This cannot be a static object
         // since in our unit tests, we run multiple Bookies and thus EntryLoggers
