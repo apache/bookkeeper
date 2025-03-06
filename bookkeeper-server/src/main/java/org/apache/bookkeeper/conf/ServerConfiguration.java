@@ -106,7 +106,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
-    protected static final String ENTRY_LOCATION_COMPACTION_ENABLED = "entryLocationCompactionEnabled";
+    protected static final String ENTRY_LOCATION_COMPACTION_INTERVAL = "entryLocationCompactionInterval";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -2976,24 +2976,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * The entry location compaction is allowed or not with major compaction.
+     * Get interval to run entry location compaction, in seconds.
      *
-     * @return the entry location compaction is allowed or not with major compaction.
+     * <p>If it is set to less than zero, the entry location compaction is disabled.
+     *
+     * @return high water mark.
      */
-    public boolean getEntryLocationCompactionEnabled() {
-        return getBoolean(ENTRY_LOCATION_COMPACTION_ENABLED, false);
+    public long getEntryLocationCompactionInterval() {
+        return getLong(ENTRY_LOCATION_COMPACTION_INTERVAL, -1);
     }
 
     /**
-     * Sets that whether to enable entry location compaction with major compaction.
+     * Set interval to run entry location compaction.
      *
-     * @param enabled
-     *            - true if entry location compaction should be enabled with major compaction. Otherwise false.
-     *            false.
-     * @return ServerConfiguration
+     * @see #getMajorCompactionInterval()
+     *
+     * @param interval
+     *          Interval to run entry location compaction
+     * @return server configuration
      */
-    public ServerConfiguration setEntryLocationCompactionEnabled(boolean enabled) {
-        setProperty(ENTRY_LOCATION_COMPACTION_ENABLED, enabled);
+    public ServerConfiguration setEntryLocationCompactionInterval(long interval) {
+        setProperty(ENTRY_LOCATION_COMPACTION_INTERVAL, interval);
         return this;
     }
 
@@ -3236,6 +3239,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         }
         if (getMajorCompactionInterval() > 0 && getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
+        }
+        if (getEntryLocationCompactionInterval() > 0 && getEntryLocationCompactionInterval() * SECOND < getGcWaitTime()) {
+            throw new ConfigurationException("entryLocationCompactionInterval should be >= gcWaitTime.");
         }
     }
 
