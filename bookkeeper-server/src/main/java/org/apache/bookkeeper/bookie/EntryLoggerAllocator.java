@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -76,7 +77,8 @@ class EntryLoggerAllocator {
         this.preallocatedLogId = logId;
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.entryLogPreAllocationEnabled = conf.isEntryLogFilePreAllocationEnabled();
-        this.allocatorExecutor = Executors.newSingleThreadExecutor();
+        this.allocatorExecutor = Executors.newSingleThreadExecutor(
+                new DefaultThreadFactory("EntryLoggerAllocator"));
 
         // Initialize the entry log header buffer. This cannot be a static object
         // since in our unit tests, we run multiple Bookies and thus EntryLoggers
