@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,8 +88,8 @@ public class GarbageCollectorThread implements Runnable {
     long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
-    boolean enableEntryLocationCompaction = false;
     final long entryLocationCompactionInterval;
+    long randomCompactionDelay;
     long lastEntryLocationCompactionTime;
 
     @Getter
@@ -216,6 +217,7 @@ public class GarbageCollectorThread implements Runnable {
         majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
         minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
         entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval() * SECOND;
+        randomCompactionDelay= ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -287,15 +289,14 @@ public class GarbageCollectorThread implements Runnable {
                 throw new IOException(
                         "Too short entry location compaction interval : " + entryLocationCompactionInterval);
             }
-            enableEntryLocationCompaction = true;
         }
 
         LOG.info("Minor Compaction : enabled=" + enableMinorCompaction + ", threshold="
                + minorCompactionThreshold + ", interval=" + minorCompactionInterval);
         LOG.info("Major Compaction : enabled=" + enableMajorCompaction + ", threshold="
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
-        LOG.info("Entry Location Compaction : enabled=" + enableEntryLocationCompaction + ", interval="
-                + entryLocationCompactionInterval);
+        LOG.info("Entry Location Compaction : interval=" + entryLocationCompactionInterval + ", randomCompactionDelay="
+                + randomCompactionDelay);
 
         lastMinorCompactionTime = lastMajorCompactionTime = lastEntryLocationCompactionTime = System.currentTimeMillis();
     }
@@ -505,15 +506,18 @@ public class GarbageCollectorThread implements Runnable {
                     minorCompacting.set(false);
                 }
             }
-            if (enableEntryLocationCompaction && (curTime - lastEntryLocationCompactionTime
-                    > entryLocationCompactionInterval)) {
+            if (entryLocationCompactionInterval > 0 && (curTime - lastEntryLocationCompactionTime > (
+                    entryLocationCompactionInterval + randomCompactionDelay))) {
                 // enter entry location compaction
                 LOG.info(
-                        "Enter entry location compaction, entryLocationCompactionInterval {}, "
-                                + "lastEntryLocationCompactionTime {}",
-                        entryLocationCompactionInterval, lastEntryLocationCompactionTime);
+                        "Enter entry location compaction, entryLocationCompactionInterval {}, randomCompactionDelay "
+                                + "{}, lastEntryLocationCompactionTime {}",
+                        entryLocationCompactionInterval, randomCompactionDelay, lastEntryLocationCompactionTime);
                 ledgerStorage.entryLocationCompact();
                 lastEntryLocationCompactionTime = System.currentTimeMillis();
+                randomCompactionDelay = ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
+                LOG.info("Next entry location compaction interval {}",
+                        entryLocationCompactionInterval + randomCompactionDelay);
                 gcStats.getEntryLocationCompactionCounter().inc();
             }
             gcStats.getCompactRuntime()
