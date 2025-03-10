@@ -87,6 +87,10 @@ public class GarbageCollectorThread implements Runnable {
     long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
+    boolean enableEntryLocationCompaction = false;
+    final long entryLocationCompactionInterval;
+    long lastEntryLocationCompactionTime;
+
     @Getter
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -211,6 +215,7 @@ public class GarbageCollectorThread implements Runnable {
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
         minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
+        entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval() * SECOND;
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -277,12 +282,22 @@ public class GarbageCollectorThread implements Runnable {
             }
         }
 
+        if (entryLocationCompactionInterval > 0) {
+            if (entryLocationCompactionInterval < gcWaitTime) {
+                throw new IOException(
+                        "Too short entry location compaction interval : " + entryLocationCompactionInterval);
+            }
+            enableEntryLocationCompaction = true;
+        }
+
         LOG.info("Minor Compaction : enabled=" + enableMinorCompaction + ", threshold="
                + minorCompactionThreshold + ", interval=" + minorCompactionInterval);
         LOG.info("Major Compaction : enabled=" + enableMajorCompaction + ", threshold="
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
+        LOG.info("Entry Location Compaction : enabled=" + enableEntryLocationCompaction + ", interval="
+                + entryLocationCompactionInterval);
 
-        lastMinorCompactionTime = lastMajorCompactionTime = System.currentTimeMillis();
+        lastMinorCompactionTime = lastMajorCompactionTime = lastEntryLocationCompactionTime = System.currentTimeMillis();
     }
 
     private EntryLogMetadataMap createEntryLogMetadataMap() throws IOException {
@@ -470,6 +485,7 @@ public class GarbageCollectorThread implements Runnable {
                     gcStats.getMajorCompactionCounter().inc();
                     majorCompacting.set(false);
                 }
+
             } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
                     && (!suspendMinor)) {
@@ -488,6 +504,17 @@ public class GarbageCollectorThread implements Runnable {
                     gcStats.getMinorCompactionCounter().inc();
                     minorCompacting.set(false);
                 }
+            }
+            if (enableEntryLocationCompaction && (curTime - lastEntryLocationCompactionTime
+                    > entryLocationCompactionInterval)) {
+                // enter entry location compaction
+                LOG.info(
+                        "Enter entry location compaction, entryLocationCompactionInterval {}, "
+                                + "lastEntryLocationCompactionTime {}",
+                        entryLocationCompactionInterval, lastEntryLocationCompactionTime);
+                ledgerStorage.entryLocationCompact();
+                lastEntryLocationCompactionTime = System.currentTimeMillis();
+                gcStats.getEntryLocationCompactionCounter().inc();
             }
             gcStats.getCompactRuntime()
                     .registerSuccessfulEvent(MathUtils.elapsedNanos(compactStart), TimeUnit.NANOSECONDS);
@@ -855,8 +882,10 @@ public class GarbageCollectorThread implements Runnable {
             .minorCompacting(minorCompacting.get())
             .lastMajorCompactionTime(lastMajorCompactionTime)
             .lastMinorCompactionTime(lastMinorCompactionTime)
+            .lastEntryLocationCompactionTime(lastEntryLocationCompactionTime)
             .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
             .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
+            .entryLocationCompactionCounter(gcStats.getEntryLocationCompactionCounter().get())
             .build();
     }
 }
