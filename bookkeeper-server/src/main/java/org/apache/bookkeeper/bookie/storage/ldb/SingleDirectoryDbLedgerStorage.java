@@ -313,6 +313,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public void entryLocationCompact() {
         if (entryLocationIndex.isCompacting()) {
             // RocksDB already running compact.
+            log.info("Compacting directory {}, skipping this entryLocationCompaction this time.",
+                    entryLocationIndex.getEntryLocationDBPath());
             return;
         }
         cleanupExecutor.execute(() -> {
