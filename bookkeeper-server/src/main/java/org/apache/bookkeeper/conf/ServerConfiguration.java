@@ -24,8 +24,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.FileChannelProvider;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -4050,8 +4050,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured default rocksdb conf.
      */
     public String getDefaultRocksDBConf() {
-        String filePath = getFilePath("conf/default_rocksdb.conf");
-        return getString(DEFAULT_ROCKSDB_CONF, filePath);
+        return getString(DEFAULT_ROCKSDB_CONF, getDefaultFilePath("conf/default_rocksdb.conf"));
     }
 
     /**
@@ -4070,8 +4069,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured entry Location rocksdb conf.
      */
     public String getEntryLocationRocksdbConf() {
-        String filePath = getFilePath("conf/entry_location_rocksdb.conf");
-        return getString(ENTRY_LOCATION_ROCKSDB_CONF, filePath);
+        return getString(ENTRY_LOCATION_ROCKSDB_CONF, getDefaultFilePath("conf/entry_location_rocksdb.conf"));
     }
 
     /**
@@ -4090,8 +4088,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return String configured ledger metadata rocksdb conf.
      */
     public String getLedgerMetadataRocksdbConf() {
-        String filePath = getFilePath("conf/ledger_metadata_rocksdb.conf");
-        return getString(LEDGER_METADATA_ROCKSDB_CONF, filePath);
+        return getString(LEDGER_METADATA_ROCKSDB_CONF, getDefaultFilePath("conf/ledger_metadata_rocksdb.conf"));
     }
 
     /**
@@ -4146,16 +4143,26 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the path of a file from resources.
+     * Retrieves the default file path for the specified file name.
+     * This method prioritizes a file available in the classpath, which is often used in testing scenarios.
+     * If the file is not found in the classpath, the original file name is returned.
      *
-     * @param fileName the name of the file to get the path for.
-     * @return String the absolute path of the file.
+     * @param fileName the name of the file for which to retrieve the path.
+     * @return the path of the file if found in the classpath, otherwise the input file name.
      */
-    private String getFilePath(String fileName) {
+    @SneakyThrows
+    private String getDefaultFilePath(String fileName) {
+        // Attempt to locate the file in the classpath, used mainly for testing purposes.
         URL resourceURL = getClass().getClassLoader().getResource(fileName);
-        if (resourceURL != null) {
-            return Paths.get(resourceURL.getPath()).toString();
+        if (resourceURL != null && "file".equals(resourceURL.getProtocol())) {
+            // Convert the URL to a File object using toURI() for proper URL decoding
+            // and platform specific file path handling (such as on Windows OS)
+            File file = new File(resourceURL.toURI());
+            if (file.exists()) {
+                return file.getAbsolutePath();
+            }
         }
-        return "";
+        // Return the original file name if no path was found in the classpath
+        return fileName;
     }
 }
