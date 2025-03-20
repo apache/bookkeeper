@@ -79,7 +79,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
 
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -157,7 +157,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
 
       - name: Build
         run: |
@@ -231,7 +231,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
@@ -318,7 +318,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 8
+          java-version: 17
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
@@ -400,7 +400,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -432,7 +432,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -447,10 +447,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - step_name: Compatibility Check Java8
-            jdk_version: 8
-          - step_name: Compatibility Check Java11
-            jdk_version: 11
           - step_name: Compatibility Check Java17
             jdk_version: 17
           - step_name: Compatibility Check Java21
