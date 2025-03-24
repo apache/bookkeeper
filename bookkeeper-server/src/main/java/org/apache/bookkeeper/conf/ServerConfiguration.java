@@ -3240,7 +3240,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         if (getMajorCompactionInterval() > 0 && getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
         }
-        if (getEntryLocationCompactionInterval() > 0 && getEntryLocationCompactionInterval() * SECOND < getGcWaitTime()) {
+        if (getEntryLocationCompactionInterval() > 0
+            && getEntryLocationCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("entryLocationCompactionInterval should be >= gcWaitTime.");
         }
     }
