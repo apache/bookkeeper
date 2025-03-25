@@ -298,8 +298,8 @@ public class GarbageCollectorThread implements Runnable {
         LOG.info("Entry Location Compaction : interval=" + entryLocationCompactionInterval + ", randomCompactionDelay="
                 + randomCompactionDelay);
 
-        lastMinorCompactionTime = lastMajorCompactionTime
-            = lastEntryLocationCompactionTime = System.currentTimeMillis();
+        lastMinorCompactionTime = lastMajorCompactionTime =
+            lastEntryLocationCompactionTime = System.currentTimeMillis();
     }
 
     private EntryLogMetadataMap createEntryLogMetadataMap() throws IOException {
