@@ -217,7 +217,9 @@ public class GarbageCollectorThread implements Runnable {
         majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
         minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
         entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval() * SECOND;
-        randomCompactionDelay = ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
+        if (entryLocationCompactionInterval > 0) {
+            randomCompactionDelay = ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
+        }
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
