@@ -28,6 +28,7 @@ import com.google.common.base.Strings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -44,6 +45,7 @@ import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
+import org.apache.bookkeeper.common.collections.HourRange;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -130,6 +132,7 @@ public class GarbageCollectorThread implements Runnable {
 
     private static final AtomicLong threadNum = new AtomicLong(0);
     final AbstractLogCompactor.Throttler throttler;
+    final HourRange skipCompactionHourRange;
 
     /**
      * Create a garbage collector thread.
@@ -234,6 +237,7 @@ public class GarbageCollectorThread implements Runnable {
         }
 
         this.throttler = new AbstractLogCompactor.Throttler(conf);
+        this.skipCompactionHourRange = conf.getSkipCompactionHourRange();
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
             if (minorCompactionThreshold > 1.0d) {
                 throw new IOException("Invalid minor compaction threshold "
@@ -452,7 +456,7 @@ public class GarbageCollectorThread implements Runnable {
             long compactStart = MathUtils.nowInNano();
             if (((isForceMajorCompactionAllow && force) || (enableMajorCompaction
                     && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)))
-                    && (!suspendMajor)) {
+                    && (!suspendMajor) && (!skipCompactionHourRange.contains(LocalTime.now().getHour()))) {
                 // enter major compaction
                 LOG.info("Enter major compaction, suspendMajor {}, lastMajorCompactionTime {}", suspendMajor,
                         lastMajorCompactionTime);
@@ -472,7 +476,7 @@ public class GarbageCollectorThread implements Runnable {
                 }
             } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
-                    && (!suspendMinor)) {
+                    && (!suspendMinor) && (!skipCompactionHourRange.contains(LocalTime.now().getHour()))) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction, suspendMinor {}, lastMinorCompactionTime {}", suspendMinor,
                         lastMinorCompactionTime);
@@ -621,7 +625,7 @@ public class GarbageCollectorThread implements Runnable {
             }
             if ((usage >= threshold
                 || (maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis)
-                || !running)) {
+                || !running || skipCompactionHourRange.contains(LocalTime.now().getHour()))) {
                 // We allow the usage limit calculation to continue so that we get an accurate
                 // report of where the usage was prior to running compaction.
                 return;
@@ -652,7 +656,8 @@ public class GarbageCollectorThread implements Runnable {
                     timeDiff.setValue(end.getValue() - start);
                 }
 
-                if ((maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis) || !running) {
+                if ((maxTimeMillis > 0 && timeDiff.getValue() >= maxTimeMillis) || !running
+                        || skipCompactionHourRange.contains(LocalTime.now().getHour())) {
                     // We allow the usage limit calculation to continue so that we get an accurate
                     // report of where the usage was prior to running compaction.
                     break stopCompaction;
