@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -499,6 +499,13 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
                        <a href="ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../net/BookieNode.html" title="class in org.apache.bookkeeper.net">BookieNode</a>&gt;&nbsp;ensemble)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateBookieInfo(java.util.Map)">updateBookieInfo</a></span>&#8203;(java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</code></th>
+<td class="colLast">
+<div class="block">Send the bookie info details.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy">
@@ -519,7 +526,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></h3>
-<code><a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookiesToNodes(java.util.Collection)">convertBookiesToNodes</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookieToNode(org.apache.bookkeeper.net.BookieId)">convertBookieToNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createBookieNode(org.apache.bookkeeper.net.BookieId)">createBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createDummyLocalBookieNode(java.lang.String)">createDummyLocalBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#differBetweenBookies(java.util.List,java.util.List)">differBetweenBookies</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#getNetworkLocations(java.util.Set)">getNetworkLocations</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#resolveNetworkLocation(org.apache.bookkeeper.net.BookieId)">resolveNetworkLocation</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#shuffleWithMask(org.apache.bookkeeper.client.DistributionSchedule.WriteSet,int,int)">shuffleWithMask</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code></li>
+<code><a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookiesToNodes(java.util.Collection)">convertBookiesToNodes</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#convertBookieToNode(org.apache.bookkeeper.net.BookieId)">convertBookieToNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createBookieNode(org.apache.bookkeeper.net.BookieId)">createBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#createDummyLocalBookieNode(java.lang.String)">createDummyLocalBookieNode</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#differBetweenBookies(java.util.List,java.util.List)">differBetweenBookies</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#getNetworkLocations(java.util.Set)">getNetworkLocations</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#resolveNetworkLocation(org.apache.bookkeeper.net.BookieId)">resolveNetworkLocation</a>, <a href="TopologyAwareEnsemblePlacementPolicy.html#shuffleWithMask(org.apache.bookkeeper.client.DistributionSchedule.WriteSet,int,int)">shuffleWithMask</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -533,7 +540,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></h3>
-<code><a href="EnsemblePlacementPolicy.html#areAckedBookiesAdheringToPlacementPolicy(java.util.Set,int,int)">areAckedBookiesAdheringToPlacementPolicy</a>, <a href="EnsemblePlacementPolicy.html#getStickyReadBookieIndex(org.apache.bookkeeper.client.api.LedgerMetadata,java.util.Optional)">getStickyReadBookieIndex</a>, <a href="EnsemblePlacementPolicy.html#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">registerSlowBookie</a>, <a href="EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code></li>
+<code><a href="EnsemblePlacementPolicy.html#areAckedBookiesAdheringToPlacementPolicy(java.util.Set,int,int)">areAckedBookiesAdheringToPlacementPolicy</a>, <a href="EnsemblePlacementPolicy.html#getStickyReadBookieIndex(org.apache.bookkeeper.client.api.LedgerMetadata,java.util.Optional)">getStickyReadBookieIndex</a>, <a href="EnsemblePlacementPolicy.html#registerSlowBookie(org.apache.bookkeeper.net.BookieId,long)">registerSlowBookie</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1113,7 +1120,7 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <a id="isEnsembleAdheringToPlacementPolicy(java.util.List,int,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>isEnsembleAdheringToPlacementPolicy</h4>
 <pre class="methodSignature">public&nbsp;<a href="EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a>&nbsp;isEnsembleAdheringToPlacementPolicy&#8203;(java.util.List&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;ensembleList,
@@ -1141,6 +1148,25 @@ extends <a href="RackawareEnsemblePlacementPolicy.html" title="class in org.apac
 <dd><code>writeQuorumSize</code> - writeQuorumSize of the ensemble</dd>
 <dd><code>ackQuorumSize</code> - ackQuorumSize of the ensemble</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+</dl>
+</li>
+</ul>
+<a id="updateBookieInfo(java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>updateBookieInfo</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;updateBookieInfo&#8203;(java.util.Map&lt;<a href="../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>,&#8203;<a href="BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;&nbsp;bookieInfoMap)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">EnsemblePlacementPolicy</a></code></span></div>
+<div class="block">Send the bookie info details.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="EnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code>&nbsp;in interface&nbsp;<code><a href="EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="TopologyAwareEnsemblePlacementPolicy.html#updateBookieInfo(java.util.Map)">updateBookieInfo</a></code>&nbsp;in class&nbsp;<code><a href="TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bookieInfoMap</code> - A map that has the bookie to BookieInfo</dd>
 </dl>
 </li>
 </ul>
