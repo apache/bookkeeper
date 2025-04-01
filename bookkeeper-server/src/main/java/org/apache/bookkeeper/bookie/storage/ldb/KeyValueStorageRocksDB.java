@@ -179,6 +179,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         Options options = new Options();
         options.setCreateIfMissing(true);
         ChecksumType checksumType = ChecksumType.valueOf(conf.getString(ROCKSDB_CHECKSUM_TYPE, "kxxHash"));
+        int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 2);
 
         if (dbConfigType == DbConfigType.EntryLocation) {
             /* Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override */
@@ -195,7 +196,6 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
             int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
             boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
-            int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 2);
 
             if (lz4CompressionEnabled) {
                 options.setCompressionType(CompressionType.LZ4_COMPRESSION);
@@ -232,6 +232,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         } else {
             this.cache = null;
             BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
+            tableOptions.setFormatVersion(formatVersion);
             tableOptions.setChecksumType(checksumType);
             options.setTableFormatConfig(tableOptions);
         }
