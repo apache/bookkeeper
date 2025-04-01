@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_LEDGER_C
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRY_LOCATION_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTION_COUNT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
@@ -61,6 +62,11 @@ public class GarbageCollectorStats {
         help = "Number of major compactions"
     )
     private final Counter majorCompactionCounter;
+    @StatsDoc(
+            name = ENTRY_LOCATION_COMPACTION_COUNT,
+            help = "Number of entry location compactions"
+    )
+    private final Counter entryLocationCompactionCounter;
     @StatsDoc(
         name = RECLAIMED_DELETION_SPACE_BYTES,
         help = "Number of disk space bytes reclaimed via deleting entry log files"
@@ -105,6 +111,7 @@ public class GarbageCollectorStats {
 
         this.minorCompactionCounter = statsLogger.getCounter(MINOR_COMPACTION_COUNT);
         this.majorCompactionCounter = statsLogger.getCounter(MAJOR_COMPACTION_COUNT);
+        this.entryLocationCompactionCounter = statsLogger.getCounter(ENTRY_LOCATION_COMPACTION_COUNT);
         this.reclaimedSpaceViaCompaction = statsLogger.getCounter(RECLAIMED_COMPACTION_SPACE_BYTES);
         this.reclaimedSpaceViaDeletes = statsLogger.getCounter(RECLAIMED_DELETION_SPACE_BYTES);
         this.gcThreadRuntime = statsLogger.getOpStatsLogger(THREAD_RUNTIME);
