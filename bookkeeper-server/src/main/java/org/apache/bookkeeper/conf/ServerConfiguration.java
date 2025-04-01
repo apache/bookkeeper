@@ -105,6 +105,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String ENTRY_LOCATION_COMPACTION_INTERVAL = "entryLocationCompactionInterval";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -2974,6 +2975,31 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Get interval to run entry location compaction, in seconds.
+     *
+     * <p>If it is set to less than zero, the entry location compaction is disabled.
+     *
+     * @return high water mark.
+     */
+    public long getEntryLocationCompactionInterval() {
+        return getLong(ENTRY_LOCATION_COMPACTION_INTERVAL, -1);
+    }
+
+    /**
+     * Set interval to run entry location compaction.
+     *
+     * @see #getMajorCompactionInterval()
+     *
+     * @param interval
+     *          Interval to run entry location compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setEntryLocationCompactionInterval(long interval) {
+        setProperty(ENTRY_LOCATION_COMPACTION_INTERVAL, interval);
+        return this;
+    }
+
+    /**
      * Should we remove pages from page cache after force write.
      *
      * @return remove pages from cache
@@ -3212,6 +3238,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         }
         if (getMajorCompactionInterval() > 0 && getMajorCompactionInterval() * SECOND < getGcWaitTime()) {
             throw new ConfigurationException("majorCompactionInterval should be >= gcWaitTime.");
+        }
+        if (getEntryLocationCompactionInterval() > 0
+            && getEntryLocationCompactionInterval() * SECOND < getGcWaitTime()) {
+            throw new ConfigurationException("entryLocationCompactionInterval should be >= gcWaitTime.");
         }
     }
 
