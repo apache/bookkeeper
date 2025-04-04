@@ -61,6 +61,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerChecker;
+import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -351,6 +352,8 @@ public class ReplicationWorker implements Runnable {
             lh.asyncReadEntries(entryIdToRead, entryIdToRead, (rc, ledHan, seq, ctx) -> {
                 long thisEntryId = (Long) ctx;
                 if (rc == BKException.Code.OK) {
+                    LedgerEntry entry = seq.nextElement();
+                    entry.getEntryBuffer().release();
                     entriesUnableToReadForThisLedger.remove(thisEntryId);
                     if (numOfResponsesToWaitFor.decrementAndGet() == 0) {
                         multiReadComplete.countDown();
