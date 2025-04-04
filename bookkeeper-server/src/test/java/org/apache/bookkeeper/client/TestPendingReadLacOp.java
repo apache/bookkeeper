@@ -26,8 +26,11 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.MockBookieClient;
+import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -115,5 +118,37 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         };
         pro.initiate();
         assertEquals(result.get().longValue(), 1);
+    }
+
+    @Test
+    public void  testPendingReadLacOpV2() throws Exception {
+        if (bkc != null) {
+            bkc.close();
+        }
+        baseClientConf.setUseV2WireProtocol(true);
+        bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
+        LedgerHandle lh = bkc.createLedger(3, 3, 2, BookKeeper.DigestType.MAC, pwd);
+        lh.append(data);
+        lh.append(data);
+        lh.append(data);
+
+        final CompletableFuture<Long> result = new CompletableFuture<>();
+        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(), lh.getCurrentEnsemble(),
+                (rc, lac) -> result.complete(lac)) {
+            @Override
+            public void initiate() {
+                for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
+                    final int index = i;
+                    BookieClientImpl bookieClientImpl = ((BookieClientImpl) bookieClient);
+                    PerChannelBookieClientPool client = bookieClientImpl.lookupClient(lh.getCurrentEnsemble().get(i));
+                    client.obtain(
+                            (rc, pcbc) -> pcbc.readLac(lh.getId(), this, index),
+                            lh.getId(),
+                            false); // set forceUseV3 as false
+                }
+            }
+        };
+        pro.initiate();
+        assertEquals(1, result.get().longValue());
     }
 }
