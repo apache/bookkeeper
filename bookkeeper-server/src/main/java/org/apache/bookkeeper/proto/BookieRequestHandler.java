@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.proto;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
@@ -28,22 +27,17 @@ import java.nio.channels.ClosedChannelException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.proto.BookieProtoEncoding.ResponseEncoder;
 
 /**
  * Serverside handler for bookkeeper requests.
  */
 @Slf4j
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
-
-    private static final int DEFAULT_PENDING_RESPONSE_SIZE = 256;
-
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
 
     private ChannelHandlerContext ctx;
-
-    private ByteBuf pendingSendResponses = null;
-    private int maxPendingResponsesSize = DEFAULT_PENDING_RESPONSE_SIZE;
 
     BookieRequestHandler(ServerConfiguration conf, RequestProcessor processor, ChannelGroup allChannels) {
         this.requestProcessor = processor;
@@ -90,24 +84,13 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
         requestProcessor.processRequest(msg, this);
     }
 
-    public synchronized void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
-        if (pendingSendResponses == null) {
-            pendingSendResponses = ctx().alloc().directBuffer(maxPendingResponsesSize);
-        }
-        BookieProtoEncoding.ResponseEnDeCoderPreV3.serializeAddResponseInto(rc, req, pendingSendResponses);
+    public void prepareSendResponseV2(int rc, BookieProtocol.ParsedAddRequest req) {
+        BookieProtocol.AddResponse response = BookieProtocol.AddResponse.create(req.getProtocolVersion(), rc,
+                                                                                req.getLedgerId(), req.getEntryId());
+        ctx().pipeline().write(response, ctx().voidPromise());
     }
 
-    public synchronized void flushPendingResponse() {
-        if (pendingSendResponses != null) {
-            maxPendingResponsesSize = (int) Math.max(
-                    maxPendingResponsesSize * 0.5 + 0.5 * pendingSendResponses.readableBytes(),
-                    DEFAULT_PENDING_RESPONSE_SIZE);
-            if (ctx().channel().isActive()) {
-                ctx().writeAndFlush(pendingSendResponses, ctx.voidPromise());
-            } else {
-                pendingSendResponses.release();
-            }
-            pendingSendResponses = null;
-        }
+    public void flushPendingResponse() {
+        ctx().pipeline().writeAndFlush(ResponseEncoder.MSG_FLUSH_PENDING_ADD_RESPONSES, ctx().voidPromise());
     }
 }
