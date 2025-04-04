@@ -225,10 +225,10 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         }
     }
 
-    public void registerMetrics(StatsLogger statsLogger) {
+    public void registerMetrics(StatsLogger statsLogger, String name, int idx) {
         // Register gauges
-        statsLogger.scopeLabel("thread", runner.getName())
-                .registerGauge("thread_executor_queue", new Gauge<Number>() {
+        statsLogger.scopeLabel("thread", String.valueOf(idx))
+                .registerGauge(String.format("%s-queue", name), new Gauge<Number>() {
                     @Override
                     public Number getDefaultValue() {
                         return 0;
@@ -239,8 +239,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getQueuedTasksCount();
                     }
                 });
-        statsLogger.scopeLabel("thread", runner.getName())
-                .registerGauge("thread_executor_completed", new Gauge<Number>() {
+        statsLogger.scopeLabel("thread", String.valueOf(idx))
+                .registerGauge(String.format("%s-completed-tasks", name), new Gauge<Number>() {
                     @Override
                     public Number getDefaultValue() {
                         return 0;
@@ -251,20 +251,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getCompletedTasksCount();
                     }
                 });
-        statsLogger.scopeLabel("thread", runner.getName())
-                .registerGauge("thread_executor_tasks_completed", new Gauge<Number>() {
-                    @Override
-                    public Number getDefaultValue() {
-                        return 0;
-                    }
-
-                    @Override
-                    public Number getSample() {
-                        return getCompletedTasksCount();
-                    }
-                });
-        statsLogger.scopeLabel("thread", runner.getName())
-                .registerGauge("thread_executor_tasks_rejected", new Gauge<Number>() {
+        statsLogger.scopeLabel("thread", String.valueOf(idx))
+                .registerGauge(String.format("%s-rejected-tasks", name), new Gauge<Number>() {
                     @Override
                     public Number getDefaultValue() {
                         return 0;
@@ -275,8 +263,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getRejectedTasksCount();
                     }
                 });
-        statsLogger.scopeLabel("thread", runner.getName())
-                .registerGauge("thread_executor_tasks_failed", new Gauge<Number>() {
+        statsLogger.scopeLabel("thread", String.valueOf(idx))
+                .registerGauge(String.format("%s-failed-tasks", name), new Gauge<Number>() {
                     @Override
                     public Number getDefaultValue() {
                         return 0;
