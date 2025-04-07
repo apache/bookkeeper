@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -186,40 +186,50 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forceCompacting(boolean)">forceCompacting</a></span>&#8203;(boolean&nbsp;forceCompacting)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLocationCompactionCounter(long)">entryLocationCompactionCounter</a></span>&#8203;(long&nbsp;entryLocationCompactionCounter)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastMajorCompactionTime(long)">lastMajorCompactionTime</a></span>&#8203;(long&nbsp;lastMajorCompactionTime)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forceCompacting(boolean)">forceCompacting</a></span>&#8203;(boolean&nbsp;forceCompacting)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastMinorCompactionTime(long)">lastMinorCompactionTime</a></span>&#8203;(long&nbsp;lastMinorCompactionTime)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastEntryLocationCompactionTime(long)">lastEntryLocationCompactionTime</a></span>&#8203;(long&nbsp;lastEntryLocationCompactionTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#majorCompacting(boolean)">majorCompacting</a></span>&#8203;(boolean&nbsp;majorCompacting)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastMajorCompactionTime(long)">lastMajorCompactionTime</a></span>&#8203;(long&nbsp;lastMajorCompactionTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#majorCompactionCounter(long)">majorCompactionCounter</a></span>&#8203;(long&nbsp;majorCompactionCounter)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastMinorCompactionTime(long)">lastMinorCompactionTime</a></span>&#8203;(long&nbsp;lastMinorCompactionTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#minorCompacting(boolean)">minorCompacting</a></span>&#8203;(boolean&nbsp;minorCompacting)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#majorCompacting(boolean)">majorCompacting</a></span>&#8203;(boolean&nbsp;majorCompacting)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#minorCompactionCounter(long)">minorCompactionCounter</a></span>&#8203;(long&nbsp;minorCompactionCounter)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#majorCompactionCounter(long)">majorCompactionCounter</a></span>&#8203;(long&nbsp;majorCompactionCounter)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#minorCompacting(boolean)">minorCompacting</a></span>&#8203;(boolean&nbsp;minorCompacting)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#minorCompactionCounter(long)">minorCompactionCounter</a></span>&#8203;(long&nbsp;minorCompactionCounter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -332,6 +342,19 @@ extends java.lang.Object</pre>
 </dl>
 </li>
 </ul>
+<a id="lastEntryLocationCompactionTime(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>lastEntryLocationCompactionTime</h4>
+<pre class="methodSignature">public&nbsp;<a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a>&nbsp;lastEntryLocationCompactionTime&#8203;(long&nbsp;lastEntryLocationCompactionTime)</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code>.</dd>
+</dl>
+</li>
+</ul>
 <a id="majorCompactionCounter(long)">
 <!--   -->
 </a>
@@ -352,6 +375,19 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>minorCompactionCounter</h4>
 <pre class="methodSignature">public&nbsp;<a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a>&nbsp;minorCompactionCounter&#8203;(long&nbsp;minorCompactionCounter)</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code>.</dd>
+</dl>
+</li>
+</ul>
+<a id="entryLocationCompactionCounter(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>entryLocationCompactionCounter</h4>
+<pre class="methodSignature">public&nbsp;<a href="GarbageCollectionStatus.GarbageCollectionStatusBuilder.html" title="class in org.apache.bookkeeper.bookie">GarbageCollectionStatus.GarbageCollectionStatusBuilder</a>&nbsp;entryLocationCompactionCounter&#8203;(long&nbsp;entryLocationCompactionCounter)</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>this</code>.</dd>

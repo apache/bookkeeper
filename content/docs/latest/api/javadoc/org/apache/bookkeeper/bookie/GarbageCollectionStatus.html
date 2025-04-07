@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
+var data = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -179,13 +179,15 @@ extends java.lang.Object</pre>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(boolean,boolean,boolean,long,long,long,long)">GarbageCollectionStatus</a></span>&#8203;(boolean&nbsp;forceCompacting,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(boolean,boolean,boolean,long,long,long,long,long,long)">GarbageCollectionStatus</a></span>&#8203;(boolean&nbsp;forceCompacting,
                        boolean&nbsp;majorCompacting,
                        boolean&nbsp;minorCompacting,
                        long&nbsp;lastMajorCompactionTime,
                        long&nbsp;lastMinorCompactionTime,
+                       long&nbsp;lastEntryLocationCompactionTime,
                        long&nbsp;majorCompactionCounter,
-                       long&nbsp;minorCompactionCounter)</code></th>
+                       long&nbsp;minorCompactionCounter,
+                       long&nbsp;entryLocationCompactionCounter)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -213,70 +215,90 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastMajorCompactionTime()">getLastMajorCompactionTime</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntryLocationCompactionCounter()">getEntryLocationCompactionCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastMinorCompactionTime()">getLastMinorCompactionTime</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastEntryLocationCompactionTime()">getLastEntryLocationCompactionTime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMajorCompactionCounter()">getMajorCompactionCounter</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastMajorCompactionTime()">getLastMajorCompactionTime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMinorCompactionCounter()">getMinorCompactionCounter</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLastMinorCompactionTime()">getLastMinorCompactionTime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isForceCompacting()">isForceCompacting</a></span>()</code></th>
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMajorCompactionCounter()">getMajorCompactionCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMajorCompacting()">isMajorCompacting</a></span>()</code></th>
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMinorCompactionCounter()">getMinorCompactionCounter</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMinorCompacting()">isMinorCompacting</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isForceCompacting()">isForceCompacting</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setForceCompacting(boolean)">setForceCompacting</a></span>&#8203;(boolean&nbsp;forceCompacting)</code></th>
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMajorCompacting()">isMajorCompacting</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastMajorCompactionTime(long)">setLastMajorCompactionTime</a></span>&#8203;(long&nbsp;lastMajorCompactionTime)</code></th>
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMinorCompacting()">isMinorCompacting</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastMinorCompactionTime(long)">setLastMinorCompactionTime</a></span>&#8203;(long&nbsp;lastMinorCompactionTime)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEntryLocationCompactionCounter(long)">setEntryLocationCompactionCounter</a></span>&#8203;(long&nbsp;entryLocationCompactionCounter)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMajorCompacting(boolean)">setMajorCompacting</a></span>&#8203;(boolean&nbsp;majorCompacting)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setForceCompacting(boolean)">setForceCompacting</a></span>&#8203;(boolean&nbsp;forceCompacting)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMajorCompactionCounter(long)">setMajorCompactionCounter</a></span>&#8203;(long&nbsp;majorCompactionCounter)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastEntryLocationCompactionTime(long)">setLastEntryLocationCompactionTime</a></span>&#8203;(long&nbsp;lastEntryLocationCompactionTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMinorCompacting(boolean)">setMinorCompacting</a></span>&#8203;(boolean&nbsp;minorCompacting)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastMajorCompactionTime(long)">setLastMajorCompactionTime</a></span>&#8203;(long&nbsp;lastMajorCompactionTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLastMinorCompactionTime(long)">setLastMinorCompactionTime</a></span>&#8203;(long&nbsp;lastMinorCompactionTime)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMajorCompacting(boolean)">setMajorCompacting</a></span>&#8203;(boolean&nbsp;majorCompacting)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMajorCompactionCounter(long)">setMajorCompactionCounter</a></span>&#8203;(long&nbsp;majorCompactionCounter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMinorCompacting(boolean)">setMinorCompacting</a></span>&#8203;(boolean&nbsp;minorCompacting)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMinorCompactionCounter(long)">setMinorCompactionCounter</a></span>&#8203;(long&nbsp;minorCompactionCounter)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -305,7 +327,7 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(boolean,boolean,boolean,long,long,long,long)">
+<a id="&lt;init&gt;(boolean,boolean,boolean,long,long,long,long,long,long)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -316,8 +338,10 @@ extends java.lang.Object</pre>
                         boolean&nbsp;minorCompacting,
                         long&nbsp;lastMajorCompactionTime,
                         long&nbsp;lastMinorCompactionTime,
+                        long&nbsp;lastEntryLocationCompactionTime,
                         long&nbsp;majorCompactionCounter,
-                        long&nbsp;minorCompactionCounter)</pre>
+                        long&nbsp;minorCompactionCounter,
+                        long&nbsp;entryLocationCompactionCounter)</pre>
 </li>
 </ul>
 </li>
@@ -384,6 +408,15 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public&nbsp;void&nbsp;setLastMinorCompactionTime&#8203;(long&nbsp;lastMinorCompactionTime)</pre>
 </li>
 </ul>
+<a id="setLastEntryLocationCompactionTime(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setLastEntryLocationCompactionTime</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setLastEntryLocationCompactionTime&#8203;(long&nbsp;lastEntryLocationCompactionTime)</pre>
+</li>
+</ul>
 <a id="setMajorCompactionCounter(long)">
 <!--   -->
 </a>
@@ -400,6 +433,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>setMinorCompactionCounter</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;setMinorCompactionCounter&#8203;(long&nbsp;minorCompactionCounter)</pre>
+</li>
+</ul>
+<a id="setEntryLocationCompactionCounter(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setEntryLocationCompactionCounter</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setEntryLocationCompactionCounter&#8203;(long&nbsp;entryLocationCompactionCounter)</pre>
 </li>
 </ul>
 <a id="isForceCompacting()">
@@ -447,6 +489,15 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public&nbsp;long&nbsp;getLastMinorCompactionTime()</pre>
 </li>
 </ul>
+<a id="getLastEntryLocationCompactionTime()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getLastEntryLocationCompactionTime</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getLastEntryLocationCompactionTime()</pre>
+</li>
+</ul>
 <a id="getMajorCompactionCounter()">
 <!--   -->
 </a>
@@ -459,10 +510,19 @@ extends java.lang.Object</pre>
 <a id="getMinorCompactionCounter()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getMinorCompactionCounter</h4>
 <pre class="methodSignature">public&nbsp;long&nbsp;getMinorCompactionCounter()</pre>
+</li>
+</ul>
+<a id="getEntryLocationCompactionCounter()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getEntryLocationCompactionCounter</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getEntryLocationCompactionCounter()</pre>
 </li>
 </ul>
 </li>

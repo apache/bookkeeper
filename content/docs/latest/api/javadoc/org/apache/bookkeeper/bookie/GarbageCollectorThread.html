@@ -187,43 +187,53 @@ implements java.lang.Runnable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLocationCompactionInterval">entryLocationCompactionInterval</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="storage/EntryLogger.html" title="interface in org.apache.bookkeeper.bookie.storage">EntryLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entryLogger">entryLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forceGarbageCollection">forceGarbageCollection</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="GarbageCollector.GarbageCleaner.html" title="interface in org.apache.bookkeeper.bookie">GarbageCollector.GarbageCleaner</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#garbageCleaner">garbageCleaner</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="ScanAndCompareGarbageCollector.html" title="class in org.apache.bookkeeper.bookie">ScanAndCompareGarbageCollector</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#garbageCollector">garbageCollector</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#gcWaitTime">gcWaitTime</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isForceGCAllowWhenNoSpace">isForceGCAllowWhenNoSpace</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isForceMajorCompactionAllow">isForceMajorCompactionAllow</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isForceMinorCompactionAllow">isForceMinorCompactionAllow</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lastEntryLocationCompactionTime">lastEntryLocationCompactionTime</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -287,26 +297,31 @@ implements java.lang.Runnable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randomCompactionDelay">randomCompactionDelay</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#running">running</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.Future&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scheduledFuture">scheduledFuture</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#suspendMajorCompaction">suspendMajorCompaction</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) java.util.concurrent.atomic.AtomicBoolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#suspendMinorCompaction">suspendMinorCompaction</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="AbstractLogCompactor.Throttler.html" title="class in org.apache.bookkeeper.bookie">AbstractLogCompactor.Throttler</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#throttler">throttler</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -677,6 +692,33 @@ implements java.lang.Runnable</pre>
 <li class="blockList">
 <h4>lastMajorCompactionTime</h4>
 <pre>long lastMajorCompactionTime</pre>
+</li>
+</ul>
+<a id="entryLocationCompactionInterval">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>entryLocationCompactionInterval</h4>
+<pre>final&nbsp;long entryLocationCompactionInterval</pre>
+</li>
+</ul>
+<a id="randomCompactionDelay">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>randomCompactionDelay</h4>
+<pre>long randomCompactionDelay</pre>
+</li>
+</ul>
+<a id="lastEntryLocationCompactionTime">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>lastEntryLocationCompactionTime</h4>
+<pre>long lastEntryLocationCompactionTime</pre>
 </li>
 </ul>
 <a id="isForceGCAllowWhenNoSpace">
