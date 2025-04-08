@@ -80,6 +80,9 @@ github:
     branch-4.15: {}
     branch-4.16: {}
 
+publish:
+  whoami: asf-site
+
 notifications:
   commits:      commits@bookkeeper.apache.org
   issues:       commits@bookkeeper.apache.org
