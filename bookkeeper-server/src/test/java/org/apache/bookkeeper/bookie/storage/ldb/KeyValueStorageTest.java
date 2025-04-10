@@ -156,16 +156,16 @@ public class KeyValueStorageTest {
         assertEquals(null, db.get(toArray(10)));
         assertTrue(db.count() > 0);
 
-        Batch batch = db.newBatch();
-        batch.remove(toArray(11));
-        batch.remove(toArray(12));
-        batch.remove(toArray(13));
-        batch.flush();
-        assertEquals(null, db.get(toArray(11)));
-        assertEquals(null, db.get(toArray(12)));
-        assertEquals(null, db.get(toArray(13)));
-        assertEquals(14L, fromArray(db.get(toArray(14))));
-        batch.close();
+        try (Batch batch = db.newBatch()) {
+            batch.remove(toArray(11));
+            batch.remove(toArray(12));
+            batch.remove(toArray(13));
+            batch.flush();
+            assertEquals(null, db.get(toArray(11)));
+            assertEquals(null, db.get(toArray(12)));
+            assertEquals(null, db.get(toArray(13)));
+            assertEquals(14L, fromArray(db.get(toArray(14))));
+        }
 
         db.close();
         FileUtils.deleteDirectory(tmpDir);
