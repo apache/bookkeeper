@@ -1,0 +1,12 @@
+language: java
+jdk:
+  - openjdk11 # Puoi scegliere la versione di JDK che preferisci (es. openjdk8, openjdk17)
+
+# Opzionale: specifica la versione di Maven se necessario
+# maven:
+#   - 3.8.1
+
+script:
+  - mvn clean install # Questo comando esegue la build del tuo progetto Maven
+  - mvn clean test # Esegue solo i test
+  - mvn clean package -DskipTests # Crea il pacchetto saltando i test
