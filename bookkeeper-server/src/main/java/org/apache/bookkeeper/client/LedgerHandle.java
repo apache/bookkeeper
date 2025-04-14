@@ -754,10 +754,10 @@ public class LedgerHandle implements WriteHandle {
      */
     public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb, Object ctx) {
         // Little sanity check
-        if (startEntry > lastAddConfirmed) {
-            LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
+        if (startEntry < 0 || startEntry > lastAddConfirmed) {
+            LOG.error("IncorrectParameterException on ledgerId:{} startEntry:{} lastAddConfirmed:{}",
                     ledgerId, startEntry, lastAddConfirmed);
-            cb.readComplete(BKException.Code.ReadException, this, null, ctx);
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
         if (notSupportBatchRead()) {
