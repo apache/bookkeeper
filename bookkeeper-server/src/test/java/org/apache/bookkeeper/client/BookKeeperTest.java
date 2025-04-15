@@ -716,6 +716,44 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testSanityCheckBatchReadEntriesV2() {
+        ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(true);
+        conf.setBatchReadEnabled(true);
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            long ledgerId;
+            try (LedgerHandle lh = bkc.createLedger(2, 2, digestType, "testPasswd".getBytes())) {
+                ledgerId = lh.getId();
+                for (int i = 0; i < numEntries; i++) {
+                    lh.addEntry(data);
+                }
+            } catch (BKException | InterruptedException e) {
+                fail("LedgerHandle inti failed: " + e.getMessage());
+                return;
+            }
+
+            // startEntry < 0
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                Enumeration<LedgerEntry> entries = lh.batchReadEntries(-1, numEntries, 5 * 1024 * 1024);
+            } catch (BKException | InterruptedException e) {
+                LOG.info(e.getMessage(), e); // It should raise IncorrectParameterException
+            }
+
+            // startEntry > lastAddConfirmed
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                Enumeration<LedgerEntry> entries = lh.batchReadEntries(numEntries, numEntries, 5 * 1024 * 1024);
+            } catch (BKException | InterruptedException e) {
+                LOG.info(e.getMessage(), e); // It should raise IncorrectParameterException
+            }
+        } catch (BKException | InterruptedException | IOException e) {
+            fail("BookKeeper client init failed: " + e.getMessage());
+        }
+    }
+
+    @Test
     public void testBatchReadWithV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(true);
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
