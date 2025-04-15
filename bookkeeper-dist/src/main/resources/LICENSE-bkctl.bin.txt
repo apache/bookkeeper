@@ -211,10 +211,10 @@ Apache Software License, Version 2.
 - lib/com.google.guava-guava-32.0.1-jre.jar [4]
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
-- lib/commons-cli-commons-cli-1.2.jar [5]
-- lib/commons-codec-commons-codec-1.6.jar [6]
+- lib/commons-cli-commons-cli-1.9.0.jar [5]
+- lib/commons-codec-commons-codec-1.18.0.jar [6]
 - lib/commons-configuration-commons-configuration-1.10.jar [7]
-- lib/commons-io-commons-io-2.17.0.jar [8]
+- lib/commons-io-commons-io-2.19.0.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.1.1.jar [10]
 - lib/io.netty-netty-buffer-4.1.115.Final.jar [11]
@@ -241,7 +241,7 @@ Apache Software License, Version 2.
 - lib/org.apache.logging.log4j-log4j-core-2.23.1.jar [16]
 - lib/org.apache.logging.log4j-log4j-slf4j2-impl-2.23.1.jar [16]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
-- lib/org.apache.commons-commons-lang3-3.6.jar [19]
+- lib/org.apache.commons-commons-lang3-3.17.0.jar [55]
 - lib/org.apache.zookeeper-zookeeper-3.9.3.jar [20]
 - lib/org.apache.zookeeper-zookeeper-jute-3.9.3.jar [20]
 - lib/org.apache.zookeeper-zookeeper-3.9.3-tests.jar [20]
@@ -316,10 +316,10 @@ Apache Software License, Version 2.
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.17.1
 [3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.17.1
 [4] Source available at https://github.com/google/guava/tree/v32.0.1
-[5] Source available at https://github.com/apache/commons-cli/tree/cli-1.2
-[6] Source available at https://github.com/apache/commons-codec/tree/commons-codec-1.6-RC2
+[5] Source available at https://github.com/apache/commons-cli/tree/rel/commons-cli-1.9.0
+[6] Source available at https://github.com/apache/commons-codec/tree/rel/commons-codec-1.18.0
 [7] Source available at https://github.com/apache/commons-configuration/tree/CONFIGURATION_1_10
-[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.17.0
+[8] Source available at https://github.com/apache/commons-io/tree/rel/commons-io-2.19.0
 [9] Source available at https://github.com/apache/commons-lang/tree/LANG_2_6
 [10] Source available at https://github.com/apache/commons-logging/tree/commons-logging-1.1.1
 [11] Source available at https://github.com/netty/netty/tree/netty-4.1.115.Final
@@ -353,7 +353,7 @@ Apache Software License, Version 2.
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 [53] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 [54] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.26.0
-
+[55] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.17.0
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.115.Final.jar bundles some 3rd party dependencies
 
