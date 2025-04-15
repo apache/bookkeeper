@@ -18,20 +18,19 @@
 package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
-import java.util.concurrent.TimeUnit
-import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
+import com.google.common.collect.Lists
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
-import org.junit.AfterClass
 import org.junit.Assert
-import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.*
 
 /**
  * Sequentially upgrade bookies with different versions and check compatibility.
@@ -57,62 +56,80 @@ class TestCompatUpgradeDowngrade {
     @Test
     public void atest_000_setUp() throws Exception {
         LOG.info("Running metaformat")
-        BookKeeperClusterUtils.legacyMetadataFormat(docker)
+        legacyMetadataFormat(docker)
 
         LOG.info("Setting ledger storage")
 
-        for (String version: BookKeeperClusterUtils.OLD_CLIENT_VERSIONS) {
-            BookKeeperClusterUtils.appendToAllBookieConf(docker, version,
+        List<String> versions = Lists.newArrayList(UPGRADE_DOWNGRADE_TEST_VERSIONS)
+        versions.add(CURRENT_VERSION)
+
+        File testRocksDbConfDir = new File(getClass().getClassLoader()
+                .getResource("TestCompatUpgradeDowngrade/conf/default_rocksdb.conf").toURI()).getParentFile()
+
+        boolean useRocksDbVersion5 = false
+        boolean useKxxHash = false
+        for (String version: versions) {
+            appendToAllBookieConf(docker, version,
                     "ledgerStorageClass",
                     "org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage")
-        }
-        BookKeeperClusterUtils.appendToAllBookieConf(docker, BookKeeperClusterUtils.CURRENT_VERSION,
-                "ledgerStorageClass",
-                "org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage")
-    }
 
+            try {
+                // format_version 5 has been supported since RocksDB 6.6.x
+                appendToAllBookieConf(docker, version,
+                        "dbStorage_rocksDB_format_version", "5")
+                // kxxHash has been supported for a very long time
+                appendToAllBookieConf(docker, version,
+                        "dbStorage_rocksDB_checksum_type", "kxxHash")
+
+                // copy rocksdb.conf to all bookies since some released versions don't contain the format_version
+                // which is necessary for backwards compatibility
+                copyToAllBookies(docker, version, testRocksDbConfDir)
+                appendToAllBookieConf(docker, version,
+                        "entryLocationRocksdbConf",
+                        "conf/entry_location_rocksdb.conf")
+                appendToAllBookieConf(docker, version,
+                        "ledgerMetadataRocksdbConf",
+                        "conf/ledger_metadata_rocksdb.conf")
+                appendToAllBookieConf(docker, version,
+                        "defaultRocksdbConf",
+                        "conf/default_rocksdb.conf")
+            } catch (Exception e) {
+                LOG.warn(version + ": Failed to set rocksdb configs, might be ok for some older version", e)
+            }
+        }
+    }
 
     // will ignore older non-supported versions
 
     @Test
-    public void upgradeDowngrade_010() {
-        upgradeDowngrade("4.12.1", "4.13.0")
+    public void upgradeDowngrade_for_4_14_x_and_4_15_x() {
+        upgradeDowngrade(VERSION_4_14_x, VERSION_4_15_x)
     }
 
     @Test
-    public void upgradeDowngrade_011() {
-        upgradeDowngrade("4.13.0", "4.14.8")
+    public void upgradeDowngrade_for_4_15_x_and_4_16_x() {
+        upgradeDowngrade(VERSION_4_15_x, VERSION_4_16_x)
     }
 
     @Test
-    public void upgradeDowngrade_012() {
-        upgradeDowngrade("4.14.8", "4.15.5")
+    public void upgradeDowngrade_for_4_16_x_and_4_17_x() {
+        upgradeDowngrade(VERSION_4_16_x, VERSION_4_17_x)
     }
 
     @Test
-    public void upgradeDowngrade_013() {
-        upgradeDowngrade("4.15.5", "4.16.5")
-    }
-
-    @Test
-    public void upgradeDowngrade_014() {
-        upgradeDowngrade("4.16.5", "4.17.0")
-    }
-
-    @Test
-    public void upgradeDowngrade_015() {
-        String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
-        upgradeDowngrade("4.17.0", currentVersion)
+    public void upgradeDowngrade_for_4_17_x_and_CurrentMaster() {
+        String currentVersion = CURRENT_VERSION
+        upgradeDowngrade(VERSION_4_17_x, currentVersion)
     }
 
     private void upgradeDowngrade(String oldVersion, String newVersion) throws Exception {
         LOG.info("Testing upgrade/downgrade to/from from {} to {}", oldVersion, newVersion)
 
-        String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
+        String zookeeper = zookeeperConnectString(docker)
         int numEntries = 10
 
         LOG.info("Starting bookies with old version {}", oldVersion)
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, oldVersion))
+        Assert.assertTrue(startAllBookiesWithVersion(docker, oldVersion))
 
         def oldCL = MavenClassLoader.forBookKeeperVersion(oldVersion)
         def oldBK = oldCL.newBookKeeper(zookeeper)
@@ -128,8 +145,8 @@ class TestCompatUpgradeDowngrade {
             testRead(ledger1, numEntries, oldBK, oldCL)
 
             LOG.info("Upgrade: Stopping all bookies, starting with new version {}", newVersion)
-            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, newVersion))
+            Assert.assertTrue(stopAllBookies(docker))
+            Assert.assertTrue(startAllBookiesWithVersion(docker, newVersion))
 
             LOG.info("Reading ledger with old client")
             testRead(ledger0, numEntries, oldBK, oldCL)
@@ -140,8 +157,8 @@ class TestCompatUpgradeDowngrade {
             testRead(ledger1, numEntries, newBK, newCL)
 
             LOG.info("Downgrade: Stopping all bookies, starting with old version {}", oldVersion)
-            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, oldVersion))
+            Assert.assertTrue(stopAllBookies(docker))
+            Assert.assertTrue(startAllBookiesWithVersion(docker, oldVersion))
 
             LOG.info("Reading ledgers with old client")
             testRead(ledger0, numEntries, oldBK, oldCL)
@@ -160,7 +177,7 @@ class TestCompatUpgradeDowngrade {
             testRead(ledger4, numEntries, newBK, newCL)
 
         } finally {
-            BookKeeperClusterUtils.stopAllBookies(docker)
+            stopAllBookies(docker)
 
             newBK.close()
             newCL.close()

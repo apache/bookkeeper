@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.tests.integration.utils;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CopyArchiveToContainerCmd;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -39,12 +41,27 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeperClusterUtils {
     public static final String CURRENT_VERSION = System.getProperty("currentVersion");
+
+    public static final String VERSION_4_1_x = "4.1.0";
+    public static final String VERSION_4_8_x = "4.8.2";
+    public static final String VERSION_4_9_x = "4.9.2";
+    public static final String VERSION_4_10_x = "4.10.0";
+    public static final String VERSION_4_11_x = "4.11.1";
+    public static final String VERSION_4_12_x = "4.12.1";
+    public static final String VERSION_4_13_x = "4.13.0";
+    public static final String VERSION_4_14_x = "4.14.8";
+    public static final String VERSION_4_15_x = "4.15.5";
+    public static final String VERSION_4_16_x = "4.16.6";
+    public static final String VERSION_4_17_x = "4.17.1";
+
     public static final List<String> OLD_CLIENT_VERSIONS =
-            Arrays.asList("4.8.2", "4.9.2", "4.10.0", "4.11.1", "4.12.1",
-                    "4.13.0", "4.14.8", "4.15.5", "4.16.5", "4.17.0");
+            Arrays.asList(VERSION_4_8_x, VERSION_4_9_x, VERSION_4_10_x, VERSION_4_11_x, VERSION_4_12_x,
+                    VERSION_4_13_x, VERSION_4_14_x, VERSION_4_15_x, VERSION_4_16_x, VERSION_4_17_x);
     private static final List<String> OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT =
-            Arrays.asList("4.9.2", "4.10.0", "4.11.1", "4.12.1",
-                    "4.13.0", "4.14.8", "4.15.5", "4.16.5", "4.17.0");
+            Arrays.asList(VERSION_4_9_x, VERSION_4_10_x, VERSION_4_11_x, VERSION_4_12_x,
+                    VERSION_4_13_x, VERSION_4_14_x, VERSION_4_15_x, VERSION_4_16_x, VERSION_4_17_x);
+    public static final List<String> UPGRADE_DOWNGRADE_TEST_VERSIONS =
+            Arrays.asList(VERSION_4_14_x, VERSION_4_15_x, VERSION_4_16_x, VERSION_4_17_x);
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterUtils.class);
 
@@ -143,16 +160,38 @@ public class BookKeeperClusterUtils {
         DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
     }
 
-    public static void appendToAllBookieConf(DockerClient docker, String version, String key, String value)
+    public static void copyToAllBookies(DockerClient docker, String version, File sourceDirectory)
+            throws Exception {
+        for (String containerId : allBookies()) {
+            CopyArchiveToContainerCmd copyArchiveToContainerCmd = docker.copyArchiveToContainerCmd(containerId);
+            copyArchiveToContainerCmd.withHostResource(sourceDirectory.getAbsolutePath());
+            copyArchiveToContainerCmd.withRemotePath("/opt/bookkeeper/" + version);
+            copyArchiveToContainerCmd.exec();
+        }
+    }
+
+    public static void appendToAllBookieConf(DockerClient docker, String version, String confFile0,
+                                             String key, String value)
             throws Exception {
         for (String b : allBookies()) {
-            appendToBookieConf(docker, b, version, key, value);
+            appendToBookieConf(docker, b, version, confFile0, key, value);
         }
+    }
+
+    public static void appendToAllBookieConf(DockerClient docker, String version,
+                                             String key, String value)
+            throws Exception {
+        appendToAllBookieConf(docker, version, "conf/bk_server.conf", key, value);
     }
 
     public static void appendToBookieConf(DockerClient docker, String containerId,
                                         String version, String key, String value) throws Exception {
-        String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
+        appendToBookieConf(docker, containerId, version, "conf/bk_server.conf", key, value);
+    }
+
+    public static void appendToBookieConf(DockerClient docker, String containerId,
+                                          String version, String confFile0, String key, String value) throws Exception {
+        String confFile = "/opt/bookkeeper/" + version + "/" + confFile0;
         String sedProgram = String.format("$a%s=%s", key, value);
         DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
     }
