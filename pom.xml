@@ -157,8 +157,8 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.115.Final</netty.version>
-    <netty-iouring.version>0.0.25.Final</netty-iouring.version>
+    <netty.version>4.1.119.Final</netty.version>
+    <netty-iouring.version>0.0.26.Final</netty-iouring.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
