@@ -447,13 +447,6 @@
         </exclusions>
       </dependency>
 
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-util</artifactId>
-        <!-- This is only used for JEtcd so far. Once we upgrade Grpc to >= 1.60, we can remove the special version pin -->
-        <version>1.60.0</version>
-      </dependency>
-
       <!-- used by jetcd-core-shaded -->
       <dependency>
         <groupId>dev.failsafe</groupId>
