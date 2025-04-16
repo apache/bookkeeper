@@ -158,6 +158,9 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
     public GSSAPIBookKeeperTest() {
         super(0); // start them later when auth providers are configured
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
 
     // we pass in ledgerId because the method may throw exceptions

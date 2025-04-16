@@ -53,8 +53,10 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         baseConf.setGcWaitTime(60000);
         baseConf.setFlushInterval(1);
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
-
 
     /**
      * list of entry logger files that contains given ledgerId.
