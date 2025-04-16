@@ -131,7 +131,7 @@ public class TestSingleThreadExecutor {
         for (int i = 0; i < 10; i++) {
             tasks.add(() -> {
                 try {
-                    // Block remaining tasks to simulate a stuck queue.
+                    // Block task to simulate an active, long-running task.
                     waitedLatch.await();
                 } catch (Exception e) {
                     // ignored
