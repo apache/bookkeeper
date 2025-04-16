@@ -159,6 +159,13 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Tune Java DNS TTL settings
+        run: |
+          sudo tee -a $JAVA_HOME/conf/security/java.security <<EOF
+          networkaddress.cache.ttl=1
+          networkaddress.cache.negative.ttl=1
+          EOF
+
       - name: Build
         run: |
           projects_list=
@@ -232,6 +239,13 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
+
+      - name: Tune Java DNS TTL settings
+        run: |
+          sudo tee -a $JAVA_HOME/conf/security/java.security <<EOF
+          networkaddress.cache.ttl=1
+          networkaddress.cache.negative.ttl=1
+          EOF
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
