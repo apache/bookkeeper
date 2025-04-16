@@ -352,8 +352,10 @@ public class ReplicationWorker implements Runnable {
             lh.asyncReadEntries(entryIdToRead, entryIdToRead, (rc, ledHan, seq, ctx) -> {
                 long thisEntryId = (Long) ctx;
                 if (rc == BKException.Code.OK) {
-                    LedgerEntry entry = seq.nextElement();
-                    entry.getEntryBuffer().release();
+                    while (seq.hasMoreElements()) {
+                        LedgerEntry entry = seq.nextElement();
+                        entry.getEntryBuffer().release();
+                    }
                     entriesUnableToReadForThisLedger.remove(thisEntryId);
                     if (numOfResponsesToWaitFor.decrementAndGet() == 0) {
                         multiReadComplete.countDown();
