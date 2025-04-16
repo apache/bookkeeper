@@ -174,7 +174,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         this.runner.interrupt();
         List<Runnable> remainingTasks = new ArrayList<>();
         int n = queue.drainTo(remainingTasks);
-        incrementPendingTaskCount(n);
+        decrementPendingTaskCount(n);
         return remainingTasks;
     }
 

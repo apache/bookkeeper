@@ -87,19 +87,22 @@ public class TestSingleThreadExecutor {
         CountDownLatch startedLatch = new CountDownLatch(1);
 
         for (int i = 0; i < 10; i++) {
+            int n = i;
             ste.execute(() -> {
-                startedLatch.countDown();
-
-                try {
-                    barrier.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
-                    // ignore
+                if (n == 0) {
+                    startedLatch.countDown();
+                } else {
+                    try {
+                        barrier.await();
+                    } catch (InterruptedException | BrokenBarrierException e) {
+                        // ignore
+                    }
                 }
             });
-
-            // Wait until the first task is already running in the thread
-            startedLatch.await();
         }
+
+        // Wait until the first task is already running in the thread
+        startedLatch.await();
 
         // Next task should go through, because the runner thread has already pulled out 1 item from the
         // queue: the first tasks which is currently stuck
