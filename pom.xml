@@ -118,14 +118,14 @@
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
     <arquillian-junit.version>1.8.0.Final</arquillian-junit.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
-    <commons-cli.version>1.2</commons-cli.version>
+    <commons-cli.version>1.9.0</commons-cli.version>
     <commons-collections4.version>4.1</commons-collections4.version>
-    <commons-codec.version>1.6</commons-codec.version>
+    <commons-codec.version>1.18.0</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
-    <commons-compress.version>1.26.0</commons-compress.version>
+    <commons-compress.version>1.27.1</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
-    <commons-lang3.version>3.6</commons-lang3.version>
-    <commons-io.version>2.7</commons-io.version>
+    <commons-lang3.version>3.17.0</commons-lang3.version>
+    <commons-io.version>2.19.0</commons-io.version>
     <bouncycastle.version>1.0.2.4</bouncycastle.version>
     <curator.version>5.7.1</curator.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
