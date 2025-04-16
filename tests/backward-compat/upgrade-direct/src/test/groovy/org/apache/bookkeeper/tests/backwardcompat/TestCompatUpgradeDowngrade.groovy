@@ -17,6 +17,8 @@
 */
 package org.apache.bookkeeper.tests.backwardcompat
 
+import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.*
+
 import com.github.dockerjava.api.DockerClient
 import com.google.common.collect.Lists
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
@@ -29,8 +31,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.*
 
 /**
  * Sequentially upgrade bookies with different versions and check compatibility.

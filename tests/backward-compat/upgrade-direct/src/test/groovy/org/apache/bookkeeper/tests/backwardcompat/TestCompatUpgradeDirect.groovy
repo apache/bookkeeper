@@ -17,6 +17,8 @@
 */
 package org.apache.bookkeeper.tests.backwardcompat
 
+import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.VERSION_4_1_x
+
 import com.github.dockerjava.api.DockerClient
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
@@ -27,8 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.VERSION_4_1_x
 
 @RunWith(Arquillian.class)
 class TestCompatUpgradeDirect {
