@@ -140,7 +140,8 @@ public class TestSingleThreadExecutor {
         }
         ste.executeRunnableOrList(null, tasks);
 
-        Awaitility.await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertEquals(10, ste.getPendingTaskCount()));
+        Awaitility.await().pollDelay(1, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(10, ste.getPendingTaskCount()));
 
         // Now the queue is really full and should reject tasks.
         assertThrows(RejectedExecutionException.class, () -> ste.execute(() -> {
@@ -154,7 +155,8 @@ public class TestSingleThreadExecutor {
         waitedLatch.countDown();
 
         // Check the tasks are completed.
-        Awaitility.await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertEquals(0, ste.getPendingTaskCount()));
+        Awaitility.await().pollDelay(1, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(0, ste.getPendingTaskCount()));
 
         // Invalid cases - should throw IllegalArgumentException.
         assertThrows(IllegalArgumentException.class, () -> ste.executeRunnableOrList(null, null));
