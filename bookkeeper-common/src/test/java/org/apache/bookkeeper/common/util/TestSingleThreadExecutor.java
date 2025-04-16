@@ -20,11 +20,13 @@ package org.apache.bookkeeper.common.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -36,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Cleanup;
+import org.assertj.core.util.Lists;
 import org.awaitility.Awaitility;
 import org.junit.Test;
 
@@ -122,54 +125,43 @@ public class TestSingleThreadExecutor {
         @Cleanup("shutdownNow")
         SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY, 10, true);
 
-        CyclicBarrier barrier = new CyclicBarrier(10);
-        CountDownLatch startedLatch = new CountDownLatch(1);
+        CountDownLatch waitedLatch = new CountDownLatch(1);
         List<Runnable> tasks = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            int n = i;
             tasks.add(() -> {
-                if (n == 0) {
-                    startedLatch.countDown();
-                } else {
-                    try {
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        // ignore
-                    }
+                try {
+                    // Block remaining tasks to simulate a stuck queue.
+                    waitedLatch.await();
+                } catch (Exception e) {
+                    // ignored
                 }
             });
         }
-        ste.execute(null, tasks);
+        ste.executeRunnableOrList(null, tasks);
 
-        // Wait until the first task is done.
-        try {
-            startedLatch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        Awaitility.await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertEquals(10, ste.getPendingTaskCount()));
 
-        // Next task should go through, because the runner thread has already pulled out the first and second items
-        // from the queue.
-        List<Runnable> nextTasks = new ArrayList<>();
-        nextTasks.add(() -> {
-        });
-        nextTasks.add(() -> {
-        });
-        ste.execute(null, nextTasks);
+        // Now the queue is really full and should reject tasks.
+        assertThrows(RejectedExecutionException.class, () -> ste.execute(() -> {
+        }));
 
-        // Now the queue is really full and should reject tasks
-        try {
-            ste.execute(() -> {
-            });
-            fail("should have rejected the task");
-        } catch (RejectedExecutionException e) {
-            // Expected
-        }
-
-        assertEquals(12, ste.getSubmittedTasksCount());
+        assertEquals(10, ste.getPendingTaskCount());
         assertEquals(1, ste.getRejectedTasksCount());
         assertEquals(0, ste.getFailedTasksCount());
+
+        // Now we can unblock the waited tasks.
+        waitedLatch.countDown();
+
+        // Check the tasks are completed.
+        Awaitility.await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertEquals(0, ste.getPendingTaskCount()));
+
+        // Invalid cases - should throw IllegalArgumentException.
+        assertThrows(IllegalArgumentException.class, () -> ste.executeRunnableOrList(null, null));
+        assertThrows(IllegalArgumentException.class, () -> ste.executeRunnableOrList(null, Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> ste.executeRunnableOrList(() -> {
+        }, Lists.newArrayList(() -> {
+        })));
     }
 
     @Test

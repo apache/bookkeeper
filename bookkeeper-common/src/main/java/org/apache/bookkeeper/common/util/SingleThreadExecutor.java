@@ -57,9 +57,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final LongAdder tasksFailed = new LongAdder();
 
     private final int maxQueueCapacity;
-    private static final AtomicIntegerFieldUpdater<SingleThreadExecutor> waiterCountUpdater =
-            AtomicIntegerFieldUpdater.newUpdater(SingleThreadExecutor.class, "waiterCount");
-    private volatile int waiterCount = 0;
+    private static final AtomicIntegerFieldUpdater<SingleThreadExecutor> pendingTaskCountUpdater =
+            AtomicIntegerFieldUpdater.newUpdater(SingleThreadExecutor.class, "pendingTaskCount");
+    private volatile int pendingTaskCount = 0;
 
     enum State {
         Running,
@@ -143,9 +143,6 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private boolean safeRunTask(Runnable r) {
         try {
-            if (maxQueueCapacity > 0) {
-                waiterCountUpdater.decrementAndGet(this);
-            }
             r.run();
             tasksCompleted.increment();
         } catch (Throwable t) {
@@ -156,6 +153,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 tasksFailed.increment();
                 log.error("Error while running task: {}", t.getMessage(), t);
             }
+        } finally {
+            decrementPendingTaskCount(1);
         }
 
         return true;
@@ -175,9 +174,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         this.runner.interrupt();
         List<Runnable> remainingTasks = new ArrayList<>();
         int n = queue.drainTo(remainingTasks);
-        if (maxQueueCapacity > 0) {
-            waiterCountUpdater.addAndGet(this, -n);
-        }
+        incrementPendingTaskCount(n);
         return remainingTasks;
     }
 
@@ -219,25 +216,44 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     @Override
     public void execute(Runnable r) {
-        execute(r, null);
+        executeRunnableOrList(r, null);
     }
 
     @VisibleForTesting
-    void execute(Runnable r, List<Runnable> runnableList) {
+    void executeRunnableOrList(Runnable runnable, List<Runnable> runnableList) {
         if (state != State.Running) {
             throw new RejectedExecutionException("Executor is shutting down");
         }
 
+        boolean hasSingle = runnable != null;
+        boolean hasList = runnableList != null && !runnableList.isEmpty();
+
+        if (hasSingle == hasList) {
+            // Both are provided or both are missing
+            throw new IllegalArgumentException("Provide either 'runnable' or a non-empty 'runnableList', not both.");
+        }
+
         try {
             if (!rejectExecution) {
-                queue.put(r);
-                tasksCount.increment();
-            } else {
-                int delta = r != null ? 1 : runnableList.size();
-                validateQueueCapacity(delta);
-                if (r != null ? queue.offer(r) : queue.addAll(runnableList)) {
-                    tasksCount.add(delta);
+                if (hasSingle) {
+                    queue.put(runnable);
+                    tasksCount.increment();
                 } else {
+                    for (Runnable task : runnableList) {
+                        queue.put(task);
+                        tasksCount.increment();
+                    }
+                }
+            } else {
+                int permits = runnable != null ? 1 : runnableList.size();
+                incrementPendingTaskCount(permits);
+                boolean success = hasSingle
+                        ? queue.offer(runnable)
+                        : queue.addAll(runnableList);
+                if (success) {
+                    tasksCount.add(permits);
+                } else {
+                    decrementPendingTaskCount(permits);
                     reject();
                 }
             }
@@ -246,9 +262,33 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         }
     }
 
-    private void validateQueueCapacity(int delta) {
-        if (maxQueueCapacity > 0 && waiterCountUpdater.addAndGet(this, delta) > maxQueueCapacity) {
+    private void incrementPendingTaskCount(int count) {
+        if (maxQueueCapacity <= 0) {
+            return; // Unlimited capacity
+        }
+
+        if (count < 0) {
+            throw new IllegalArgumentException("Count must be non-negative");
+        }
+
+        if (pendingTaskCountUpdater.addAndGet(this, count) > maxQueueCapacity) {
+            decrementPendingTaskCount(count);
             reject();
+        }
+    }
+
+    private void decrementPendingTaskCount(int count) {
+        if (maxQueueCapacity <= 0) {
+            return; // Unlimited capacity
+        }
+
+        if (count < 0) {
+            throw new IllegalArgumentException("Count must be non-negative");
+        }
+
+        int currentPendingCount = pendingTaskCountUpdater.addAndGet(this, -count);
+        if (log.isDebugEnabled()) {
+            log.debug("Released {} task(s), current pending count: {}", count, currentPendingCount);
         }
     }
 
@@ -319,6 +359,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getFailedTasksCount();
                     }
                 });
+    }
+
+    @VisibleForTesting
+    int getPendingTaskCount() {
+        return pendingTaskCountUpdater.get(this);
     }
 
     private static class ExecutorRejectedException extends RejectedExecutionException {
