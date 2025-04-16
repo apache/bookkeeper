@@ -74,6 +74,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
             new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
+    private volatile boolean closed = true;
     private final RocksDB db;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
@@ -147,6 +148,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         optionDontCache.setFillCache(false);
 
         this.writeBatchMaxSize = conf.getMaxOperationNumbersInSingleRocksDBBatch();
+        this.closed = false;
     }
 
     private RocksDB initializeRocksDBWithConfFile(String basePath, String subPath, DbConfigType dbConfigType,
@@ -287,6 +289,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void close() throws IOException {
+        closed = true;
         db.close();
         if (cache != null) {
             cache.close();
@@ -513,6 +516,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     public long count() throws IOException {
         try {
+            if (closed)
+                throw new IOException("RocksDB is closed");
             return db.getLongProperty("rocksdb.estimate-num-keys");
         } catch (RocksDBException e) {
             throw new IOException("Error in getting records count", e);
