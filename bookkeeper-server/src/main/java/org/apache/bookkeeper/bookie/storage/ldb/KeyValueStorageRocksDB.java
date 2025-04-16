@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -524,12 +523,14 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     public long count() throws IOException {
         try {
-            if (closed)
+            if (closed) {
                 throw new IOException("RocksDB is closed");
+            }
             try {
                 closedLock.readLock().lock();
-                if (!closed)
+                if (!closed) {
                     return db.getLongProperty("rocksdb.estimate-num-keys");
+                }
                 throw new IOException("RocksDB is closed");
             } finally {
                 closedLock.readLock().unlock();
