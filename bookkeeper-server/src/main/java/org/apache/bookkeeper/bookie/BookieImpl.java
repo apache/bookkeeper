@@ -267,15 +267,14 @@ public class BookieImpl implements Bookie {
             iface = "default";
         }
 
-        String hostName = DNS.getDefaultHost(iface);
-        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
-        if (inetAddr.isUnresolved()) {
-            throw new UnknownHostException("Unable to resolve default hostname: "
-                    + hostName + " for interface: " + iface);
-        }
-        String hostAddress = null;
-        InetAddress iAddress = inetAddr.getAddress();
+        String hostAddress = DNS.getDefaultIP(iface);
         if (conf.getUseHostNameAsBookieID()) {
+            InetSocketAddress inetAddr = new InetSocketAddress(hostAddress, conf.getBookiePort());
+            if (inetAddr.isUnresolved()) {
+                throw new UnknownHostException("Unable to resolve default hostaddress: "
+                        + hostAddress + " for interface: " + iface);
+            }
+            InetAddress iAddress = inetAddr.getAddress();
             hostAddress = iAddress.getCanonicalHostName();
             if (conf.getUseShortHostName()) {
                 /*
@@ -284,8 +283,6 @@ public class BookieImpl implements Bookie {
                  */
                 hostAddress = hostAddress.split("\\.", 2)[0];
             }
-        } else {
-            hostAddress = iAddress.getHostAddress();
         }
 
         BookieSocketAddress addr =
