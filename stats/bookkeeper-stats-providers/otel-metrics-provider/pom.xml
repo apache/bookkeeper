@@ -45,7 +45,6 @@
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-exporter-prometheus</artifactId>
-      <version>${otel.version}-alpha</version>
     </dependency>
     <dependency>
       <groupId>io.opentelemetry</groupId>
@@ -53,13 +52,11 @@
     </dependency>
     <dependency>
       <groupId>io.opentelemetry.instrumentation</groupId>
-      <artifactId>opentelemetry-runtime-metrics</artifactId>
-      <version>${otel.version}-alpha</version>
+      <artifactId>opentelemetry-runtime-telemetry-java8</artifactId>
     </dependency>
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-      <version>${otel.version}-alpha</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
