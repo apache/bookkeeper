@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -74,6 +75,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
             new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
+    private volatile boolean closed = true;
+    private final ReentrantReadWriteLock closedLock = new ReentrantReadWriteLock();
     private final RocksDB db;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
@@ -147,6 +150,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         optionDontCache.setFillCache(false);
 
         this.writeBatchMaxSize = conf.getMaxOperationNumbersInSingleRocksDBBatch();
+        this.closed = false;
     }
 
     private RocksDB initializeRocksDBWithConfFile(String basePath, String subPath, DbConfigType dbConfigType,
@@ -287,7 +291,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void close() throws IOException {
-        db.close();
+        try {
+            closedLock.writeLock().lock();
+            closed = true;
+            db.close();
+        } finally {
+            closedLock.writeLock().unlock();
+        }
         if (cache != null) {
             cache.close();
         }
@@ -513,7 +523,18 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     public long count() throws IOException {
         try {
-            return db.getLongProperty("rocksdb.estimate-num-keys");
+            if (closed) {
+                throw new IOException("RocksDB is closed");
+            }
+            try {
+                closedLock.readLock().lock();
+                if (!closed) {
+                    return db.getLongProperty("rocksdb.estimate-num-keys");
+                }
+                throw new IOException("RocksDB is closed");
+            } finally {
+                closedLock.readLock().unlock();
+            }
         } catch (RocksDBException e) {
             throw new IOException("Error in getting records count", e);
         }
