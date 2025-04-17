@@ -24,7 +24,6 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -37,7 +36,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
@@ -269,13 +267,7 @@ public class BookieImpl implements Bookie {
 
         String hostAddress = DNS.getDefaultIP(iface);
         if (conf.getUseHostNameAsBookieID()) {
-            InetSocketAddress inetAddr = new InetSocketAddress(hostAddress, conf.getBookiePort());
-            if (inetAddr.isUnresolved()) {
-                throw new UnknownHostException("Unable to resolve default hostaddress: "
-                        + hostAddress + " for interface: " + iface);
-            }
-            InetAddress iAddress = inetAddr.getAddress();
-            hostAddress = iAddress.getCanonicalHostName();
+            hostAddress = InetAddress.getByName(hostAddress).getCanonicalHostName();
             if (conf.getUseShortHostName()) {
                 /*
                  * if short hostname is used, then FQDN is not used. Short
