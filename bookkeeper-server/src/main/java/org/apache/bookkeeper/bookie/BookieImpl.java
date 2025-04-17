@@ -268,7 +268,14 @@ public class BookieImpl implements Bookie {
 
         String hostAddress = DNS.getDefaultIP(iface);
         if (conf.getUseHostNameAsBookieID()) {
-            hostAddress = InetAddress.getByName(hostAddress).getCanonicalHostName();
+            try {
+                hostAddress = InetAddress.getByName(hostAddress).getCanonicalHostName();
+            } catch (Exception e) {
+                UnknownHostException unknownHostException =
+                        new UnknownHostException("Unable to resolve hostname for interface: " + iface);
+                unknownHostException.initCause(e);
+                throw unknownHostException;
+            }
             if (conf.getUseShortHostName()) {
                 /*
                  * if short hostname is used, then FQDN is not used. Short
