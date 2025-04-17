@@ -327,29 +327,33 @@ Apache Software License, Version 2.
 - lib/com.squareup.okhttp3-okhttp-4.12.0.jar [54]
 - lib/com.squareup.okio-okio-3.6.0.jar [54]
 - lib/com.squareup.okio-okio-jvm-3.6.0.jar [54]
-- lib/io.opentelemetry-opentelemetry-api-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-api-events-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-api-logs-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-context-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-exporter-common-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-exporter-otlp-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-exporter-otlp-common-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-exporter-prometheus-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-extension-incubator-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-common-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-spi-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-logs-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-metrics-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-trace-1.26.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-semconv-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.40.0-alpha.jar [55]
-- lib/io.opentelemetry.semconv-opentelemetry-semconv-1.28.0-alpha.jar [55]
-- lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-1.26.0.jar [55]
-- lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-semconv-1.26.0-alpha.jar [55]
-- lib/io.opentelemetry.instrumentation-opentelemetry-runtime-metrics-1.26.0-alpha.jar [54]
+- lib/io.opentelemetry-opentelemetry-api-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-api-incubator-1.45.0-alpha.jar [55]
+- lib/io.opentelemetry-opentelemetry-context-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-exporter-common-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-exporter-otlp-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-exporter-otlp-common-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-exporter-prometheus-1.45.0-alpha.jar [55]
+- lib/io.opentelemetry-opentelemetry-exporter-sender-okhttp-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-common-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-spi-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-logs-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-metrics-1.45.0.jar [55]
+- lib/io.opentelemetry-opentelemetry-sdk-trace-1.45.0.jar [55]
+- lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.45.0-alpha.jar [55]
+- lib/io.opentelemetry.semconv-opentelemetry-semconv-1.29.0-alpha.jar [55]
+- lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-1.33.6.jar [59]
+- lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-semconv-1.33.6-alpha.jar [59]
+- lib/io.opentelemetry.instrumentation-opentelemetry-runtime-telemetry-java8-1.33.6-alpha.jar [59]
 - lib/com.google.cloud.opentelemetry-detector-resources-support-0.33.0.jar [54]
+- lib/io.prometheus-prometheus-metrics-config-1.3.4.jar [60]
+- lib/io.prometheus-prometheus-metrics-exporter-common-1.3.4.jar [60]
+- lib/io.prometheus-prometheus-metrics-exporter-httpserver-1.3.4.jar [60]
+- lib/io.prometheus-prometheus-metrics-exposition-formats-1.3.4.jar [60]
+- lib/io.prometheus-prometheus-metrics-exposition-textformats-1.3.4.jar [60]
+- lib/io.prometheus-prometheus-metrics-model-1.3.4.jar [60]
 - lib/org.jetbrains-annotations-13.0.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-1.8.21.jar [56]
 - lib/org.jetbrains.kotlin-kotlin-stdlib-common-1.8.21.jar [56]
@@ -406,10 +410,12 @@ Apache Software License, Version 2.
 [52] Source available at https://github.com/HdrHistogram/HdrHistogram/tree/HdrHistogram-2.1.10
 [53] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 [54] Source available at https://github.com/square/okio/releases/tag/parent-3.6.0
-[55] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.26.0
+[55] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.45.0
 [56] Source available at https://github.com/JetBrains/kotlin/releases/tag/v1.8.21
 [57] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 [58] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.17.0
+[59] Source available at https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/v1.33.6
+[60] Source available at https://github.com/prometheus/client_java/tree/v1.3.4
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.119.Final.jar bundles some 3rd party dependencies
