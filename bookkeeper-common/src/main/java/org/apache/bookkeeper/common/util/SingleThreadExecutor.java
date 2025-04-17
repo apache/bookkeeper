@@ -245,15 +245,15 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                     }
                 }
             } else {
-                int permits = runnable != null ? 1 : runnableList.size();
-                incrementPendingTaskCount(permits);
+                int count = runnable != null ? 1 : runnableList.size();
+                incrementPendingTaskCount(count);
                 boolean success = hasSingle
                         ? queue.offer(runnable)
                         : queue.addAll(runnableList);
                 if (success) {
-                    tasksCount.add(permits);
+                    tasksCount.add(count);
                 } else {
-                    decrementPendingTaskCount(permits);
+                    decrementPendingTaskCount(count);
                     reject();
                 }
             }
@@ -271,8 +271,10 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
             throw new IllegalArgumentException("Count must be non-negative");
         }
 
-        if (pendingTaskCountUpdater.addAndGet(this, count) > maxQueueCapacity) {
-            decrementPendingTaskCount(count);
+        int oldPendingTaskCount = pendingTaskCountUpdater.getAndAccumulate(this, count,
+                (curr, inc) -> (curr + inc > maxQueueCapacity) ? curr : curr + inc);
+
+        if (oldPendingTaskCount + count > maxQueueCapacity) {
             reject();
         }
     }
