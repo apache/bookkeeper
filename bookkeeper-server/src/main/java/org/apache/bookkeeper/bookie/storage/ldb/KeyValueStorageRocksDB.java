@@ -49,6 +49,7 @@ import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.CompressionType;
+import org.rocksdb.ConfigOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.InfoLogLevel;
@@ -159,8 +160,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         DBOptions dbOptions = new DBOptions();
         final List<ColumnFamilyDescriptor> cfDescs = new ArrayList<>();
         final List<ColumnFamilyHandle> cfHandles = new ArrayList<>();
-        try {
-            OptionsUtil.loadOptionsFromFile(dbFilePath, Env.getDefault(), dbOptions, cfDescs, false);
+        try (final ConfigOptions cfgOpts = new ConfigOptions()
+                .setIgnoreUnknownOptions(false)
+                .setEnv(Env.getDefault())) {
+            OptionsUtil.loadOptionsFromFile(cfgOpts, dbFilePath, dbOptions, cfDescs);
             // Configure file path
             String logPath = conf.getString(ROCKSDB_LOG_PATH, "");
             if (!logPath.isEmpty()) {

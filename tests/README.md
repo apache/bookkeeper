@@ -4,7 +4,8 @@
 
 ### Workaround for running the tests with Mac Apple Silicon
 
-The current version of the outdated maven plugin requires a workaround. 
+The current version of the outdated Maven plugin requires a workaround. This is also necessary for running the tests
+with an outdated Arquillian Cube version.
 
 Install socat
 ```bash
@@ -39,11 +40,31 @@ You can add the function to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
 
 ### Support for connecting to docker network from Mac host
 
-You will also need to install [docker-mac-net-connect](https://github.com/chipmk/docker-mac-net-connect). It allows the tests to connect to the docker network from the Mac host.
+You will also need to install [docker-mac-net-connect](https://github.com/chipmk/docker-mac-net-connect). It allows the
+tests to connect to the Docker network from the Mac host.
+Disable host network mode in Docker Desktop settings before enabling `docker-mac-net-connect`, as they cannot be enabled
+simultaneously.
 
 ```bash
 brew install chipmk/tap/docker-mac-net-connect
 sudo brew services start chipmk/tap/docker-mac-net-connect
+```
+
+You will also need to add the following to the Docker Desktop Docker Engine configuration on MacOS:
+```yaml
+{
+  "default-network-opts": {
+    "bridge": {
+      "com.docker.network.bridge.gateway_mode_ipv4": "nat-unprotected"
+    }
+  }
+}
+```
+
+Stop `docker-mac-net-connect` when you no longer need it:
+
+```bash
+sudo brew services stop chipmk/tap/docker-mac-net-connect
 ```
 
 ## Running the tests
@@ -53,6 +74,9 @@ Remember to start the unix socket proxy for docker as described in the previous 
 ### Building the docker images together with the project source code
 
 ```bash
+# remove possible remaining python client versions from previous builds
+git clean -fdx -- stream/clients/python
+# build the project and docker images
 mvn -B -nsu clean install -Pdocker -DskipTests
 docker images | grep apachebookkeeper
 ```
