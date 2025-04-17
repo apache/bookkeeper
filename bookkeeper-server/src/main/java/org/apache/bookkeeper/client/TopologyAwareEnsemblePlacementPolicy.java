@@ -807,11 +807,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             if (null != historyBookie) {
                 return historyBookie.getNetworkLocation();
             }
-
-            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}", addr,
-                      NetworkTopology.DEFAULT_REGION_AND_RACK, err);
-            return NetworkTopology.DEFAULT_REGION_AND_RACK;
+            String defaultRack = getDefaultRack();
+            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}. {}", addr,
+                    defaultRack, err.getMessage());
+            return defaultRack;
         }
+    }
+
+    protected String getDefaultRack() {
+        return NetworkTopology.DEFAULT_REGION_AND_RACK;
     }
 
     protected Set<Node> convertBookiesToNodes(Collection<BookieId> excludeBookies) {
