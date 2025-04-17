@@ -57,7 +57,7 @@
           <!-- only run tests when -DstreamTests is specified //-->
           <skipTests>true</skipTests>
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetection.level=PARANOID ${test.additional.args}</argLine>
+          <argLine>-Xmx3G -Dsun.net.inetaddr.ttl=1 -Dsun.net.inetaddr.negative.ttl=1 -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetection.level=PARANOID ${test.additional.args}</argLine>
           <forkCount>1</forkCount>
           <reuseForks>false</reuseForks>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
