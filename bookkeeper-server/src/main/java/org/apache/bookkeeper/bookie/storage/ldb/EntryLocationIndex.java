@@ -153,7 +153,7 @@ public class EntryLocationIndex implements Closeable {
         }
     }
 
-    public Batch newBatch() {
+    public Batch newBatch() throws IOException {
         return locationsDb.newBatch();
     }
 
