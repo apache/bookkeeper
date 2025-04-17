@@ -21,9 +21,11 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -117,5 +119,20 @@ public class KeyValueStorageRocksDBTest {
         // https://github.com/facebook/rocksdb/issues/5297
         // After the PR: https://github.com/facebook/rocksdb/pull/10826 merge, we can turn on this test.
         assertEquals(ChecksumType.kxxHash, ((BlockBasedTableConfig) familyOptions.tableFormatConfig()).checksumType());
+    }
+
+    @Test
+    public void testCallCountAfterClose() throws IOException {
+        ServerConfiguration configuration = new ServerConfiguration();
+        URL url = getClass().getClassLoader().getResource("test_entry_location_rocksdb.conf");
+        configuration.setEntryLocationRocksdbConf(url.getPath());
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-file").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+                KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        assertNotNull(rocksDB.getColumnFamilyDescriptors());
+        rocksDB.close();
+        IOException exception = assertThrows(IOException.class, rocksDB::count);
+        assertEquals("RocksDB is closed", exception.getMessage());
     }
 }
