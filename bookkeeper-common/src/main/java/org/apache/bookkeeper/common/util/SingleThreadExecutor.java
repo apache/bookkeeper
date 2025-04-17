@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +55,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     private final LongAdder tasksCompleted = new LongAdder();
     private final LongAdder tasksRejected = new LongAdder();
     private final LongAdder tasksFailed = new LongAdder();
+
+    private final int maxQueueCapacity;
+    private static final AtomicIntegerFieldUpdater<SingleThreadExecutor> pendingTaskCountUpdater =
+            AtomicIntegerFieldUpdater.newUpdater(SingleThreadExecutor.class, "pendingTaskCount");
+    private volatile int pendingTaskCount = 0;
 
     enum State {
         Running,
@@ -80,6 +87,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         } else {
             this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
         }
+        this.maxQueueCapacity = maxQueueCapacity;
+
         this.runner = tf.newThread(this);
         this.state = State.Running;
         this.rejectExecution = rejectExecution;
@@ -144,6 +153,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 tasksFailed.increment();
                 log.error("Error while running task: {}", t.getMessage(), t);
             }
+        } finally {
+            decrementPendingTaskCount(1);
         }
 
         return true;
@@ -162,7 +173,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         this.state = State.Shutdown;
         this.runner.interrupt();
         List<Runnable> remainingTasks = new ArrayList<>();
-        queue.drainTo(remainingTasks);
+        int n = queue.drainTo(remainingTasks);
+        decrementPendingTaskCount(n);
         return remainingTasks;
     }
 
@@ -204,25 +216,87 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     @Override
     public void execute(Runnable r) {
+        executeRunnableOrList(r, null);
+    }
+
+    @VisibleForTesting
+    void executeRunnableOrList(Runnable runnable, List<Runnable> runnableList) {
         if (state != State.Running) {
             throw new RejectedExecutionException("Executor is shutting down");
         }
 
+        boolean hasSingle = runnable != null;
+        boolean hasList = runnableList != null && !runnableList.isEmpty();
+
+        if (hasSingle == hasList) {
+            // Both are provided or both are missing
+            throw new IllegalArgumentException("Provide either 'runnable' or a non-empty 'runnableList', not both.");
+        }
+
         try {
             if (!rejectExecution) {
-                queue.put(r);
-                tasksCount.increment();
-            } else {
-                if (queue.offer(r)) {
+                if (hasSingle) {
+                    queue.put(runnable);
                     tasksCount.increment();
                 } else {
-                    tasksRejected.increment();
-                    throw new ExecutorRejectedException("Executor queue is full");
+                    for (Runnable task : runnableList) {
+                        queue.put(task);
+                        tasksCount.increment();
+                    }
+                }
+            } else {
+                int count = runnable != null ? 1 : runnableList.size();
+                incrementPendingTaskCount(count);
+                boolean success = hasSingle
+                        ? queue.offer(runnable)
+                        : queue.addAll(runnableList);
+                if (success) {
+                    tasksCount.add(count);
+                } else {
+                    decrementPendingTaskCount(count);
+                    reject();
                 }
             }
         } catch (InterruptedException e) {
             throw new RejectedExecutionException("Executor thread was interrupted", e);
         }
+    }
+
+    private void incrementPendingTaskCount(int count) {
+        if (maxQueueCapacity <= 0) {
+            return; // Unlimited capacity
+        }
+
+        if (count < 0) {
+            throw new IllegalArgumentException("Count must be non-negative");
+        }
+
+        int oldPendingTaskCount = pendingTaskCountUpdater.getAndAccumulate(this, count,
+                (curr, inc) -> (curr + inc > maxQueueCapacity) ? curr : curr + inc);
+
+        if (oldPendingTaskCount + count > maxQueueCapacity) {
+            reject();
+        }
+    }
+
+    private void decrementPendingTaskCount(int count) {
+        if (maxQueueCapacity <= 0) {
+            return; // Unlimited capacity
+        }
+
+        if (count < 0) {
+            throw new IllegalArgumentException("Count must be non-negative");
+        }
+
+        int currentPendingCount = pendingTaskCountUpdater.addAndGet(this, -count);
+        if (log.isDebugEnabled()) {
+            log.debug("Released {} task(s), current pending count: {}", count, currentPendingCount);
+        }
+    }
+
+    private void reject() {
+        tasksRejected.increment();
+        throw new ExecutorRejectedException("Executor queue is full");
     }
 
     public void registerMetrics(StatsLogger statsLogger) {
@@ -287,6 +361,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                         return getFailedTasksCount();
                     }
                 });
+    }
+
+    @VisibleForTesting
+    int getPendingTaskCount() {
+        return pendingTaskCountUpdater.get(this);
     }
 
     private static class ExecutorRejectedException extends RejectedExecutionException {
