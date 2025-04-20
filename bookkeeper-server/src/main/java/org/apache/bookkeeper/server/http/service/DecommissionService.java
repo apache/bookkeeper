@@ -19,9 +19,12 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -30,6 +33,7 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,12 +78,30 @@ public class DecommissionService implements HttpEndpointService {
             if (configMap != null && configMap.containsKey("bookie_src")) {
                 try {
                     BookieId bookieSrc = BookieId.parse(configMap.get("bookie_src"));
+                    boolean deleteCookie = Boolean.parseBoolean(configMap.getOrDefault("delete_cookie", "false"));
 
                     executor.execute(() -> {
                         try {
                             LOG.info("Start decommissioning bookie.");
                             bka.decommissionBookie(bookieSrc);
                             LOG.info("Complete decommissioning bookie.");
+                            if (deleteCookie) {
+                                runFunctionWithRegistrationManager(conf, rm -> {
+                                    try {
+                                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
+                                        cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc,
+                                                cookie.getVersion());
+                                        LOG.info("Cookie of the decommissioned bookie: {} is deleted successfully",
+                                                bookieSrc);
+                                    } catch (BookieException.CookieNotFoundException nne) {
+                                        LOG.warn("No cookie to remove for the decommissioning bookie: {}, "
+                                                + "it could be deleted already", bookieSrc, nne);
+                                    } catch (BookieException be) {
+                                        LOG.error("Error deleting cookie: {}.", bookieSrc, be);
+                                    }
+                                    return true;
+                                });
+                            }
                         } catch (Exception e) {
                             LOG.error("Error handling decommissionBookie: {}.", bookieSrc, e);
                         }
