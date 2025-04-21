@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
@@ -267,16 +266,16 @@ public class BookieImpl implements Bookie {
             iface = "default";
         }
 
-        String hostName = DNS.getDefaultHost(iface);
-        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
-        if (inetAddr.isUnresolved()) {
-            throw new UnknownHostException("Unable to resolve default hostname: "
-                    + hostName + " for interface: " + iface);
-        }
-        String hostAddress = null;
-        InetAddress iAddress = inetAddr.getAddress();
+        String hostAddress = DNS.getDefaultIP(iface);
         if (conf.getUseHostNameAsBookieID()) {
-            hostAddress = iAddress.getCanonicalHostName();
+            try {
+                hostAddress = InetAddress.getByName(hostAddress).getCanonicalHostName();
+            } catch (Exception e) {
+                UnknownHostException unknownHostException =
+                        new UnknownHostException("Unable to resolve hostname for interface: " + iface);
+                unknownHostException.initCause(e);
+                throw unknownHostException;
+            }
             if (conf.getUseShortHostName()) {
                 /*
                  * if short hostname is used, then FQDN is not used. Short
@@ -284,8 +283,6 @@ public class BookieImpl implements Bookie {
                  */
                 hostAddress = hostAddress.split("\\.", 2)[0];
             }
-        } else {
-            hostAddress = iAddress.getHostAddress();
         }
 
         BookieSocketAddress addr =
