@@ -68,7 +68,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Xmx4G -Djava.net.preferIPv4Stack=true ${test.additional.args}</argLine>
+          <argLine>-Xmx4G -Dsun.net.inetaddr.ttl=1 -Dsun.net.inetaddr.negative.ttl=1 -Djava.net.preferIPv4Stack=true ${test.additional.args}</argLine>
           <forkCount>1</forkCount>
           <useSystemClassLoader>false</useSystemClassLoader>
           <systemPropertyVariables>
