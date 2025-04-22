@@ -289,18 +289,21 @@ public class BookieImpl implements Bookie {
             }
         }
 
-        BookieSocketAddress addr =
+        BookieSocketAddress bookieSocketAddress =
                 new BookieSocketAddress(hostAddress, conf.getBookiePort());
-        if (addr.getSocketAddress().getAddress().isLoopbackAddress()
-            && !conf.getAllowLoopback()) {
+        InetAddress inetAddress = bookieSocketAddress.getSocketAddress().getAddress();
+        if (inetAddress == null) {
+            throw new UnknownHostException("Failed to resolve InetAddress for host address: " + hostAddress);
+        }
+        if (inetAddress.isLoopbackAddress() && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
-                    + addr + " but this is forbidden by default "
+                    + bookieSocketAddress + " but this is forbidden by default "
                     + "(see ServerConfiguration#getAllowLoopback()).\n"
                     + "If this happen, you can consider specifying the network interface"
                     + " to listen on (e.g. listeningInterface=eth0) or specifying the"
                     + " advertised address (e.g. advertisedAddress=172.x.y.z)");
         }
-        return addr;
+        return bookieSocketAddress;
     }
 
     public LedgerDirsManager getLedgerDirsManager() {

@@ -829,9 +829,10 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort)
             .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setUseHostNameAsBookieID(false);
+        conf.setAllowLoopback(true);
         validateConfig(conf);
 
-        conf.setAdvertisedAddress("unknown");
+        conf.setAdvertisedAddress("localhost");
         try {
             validateConfig(conf);
             fail("Should not start a bookie with ip if the bookie has been started with an ip");

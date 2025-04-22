@@ -1240,6 +1240,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Remove the configured BookieId for the bookie.
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration removeBookieId() {
+        this.setProperty(BOOKIE_ID, null);
+        return this;
+    }
+
+    /**
      * Get the configured advertised address for the bookie.
      *
      * <p>If present, this setting will take precedence over the
