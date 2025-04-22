@@ -17,6 +17,8 @@
 */
 package org.apache.bookkeeper.tests.backwardcompat
 
+import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.VERSION_4_1_x
+
 import com.github.dockerjava.api.DockerClient
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
@@ -49,8 +51,8 @@ class TestCompatUpgradeDirect {
         String currentVersion = BookKeeperClusterUtils.CURRENT_VERSION
         int numEntries = 10
 
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, VERSION_4_1_x))
+        def v410CL = MavenClassLoader.forBookKeeperVersion(VERSION_4_1_x)
         def v410BK = v410CL.newBookKeeper(zookeeper)
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
         def currentBK = currentCL.newBookKeeper(zookeeper)
@@ -102,7 +104,7 @@ class TestCompatUpgradeDirect {
 
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
         def currentBK = currentCL.newBookKeeper(zookeeper)
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        def v410CL = MavenClassLoader.forBookKeeperVersion(VERSION_4_1_x)
         def v410BK = v410CL.newBookKeeper(zookeeper)
 
         try {
