@@ -20,6 +20,7 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookieImpl.getBookieAddress;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.google.common.net.InetAddresses;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
