@@ -365,8 +365,12 @@ public class DefaultEntryLogger implements EntryLogger {
     }
 
     void addListener(EntryLogListener listener) {
-        if (null != listener) {
-            listeners.add(listener);
+        if (null != listener ) {
+            if (!listeners.contains(listener)) {
+                listeners.add(listener);
+            } else {
+                LOG.info("Add duplicate EntryLogListener, Skip it.");
+            }
         }
     }
 
