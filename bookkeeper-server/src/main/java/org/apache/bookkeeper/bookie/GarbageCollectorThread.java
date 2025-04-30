@@ -559,7 +559,7 @@ public class GarbageCollectorThread implements Runnable {
     /**
      * Garbage collect those entry loggers which are not associated with any active ledgers.
      */
-    private void doGcEntryLogs() throws EntryLogMetadataMapException {
+    protected void doGcEntryLogs() throws EntryLogMetadataMapException {
         // Get a cumulative count, don't update until complete
         AtomicLong activeEntryLogSizeAcc = new AtomicLong(0L);
         AtomicLong totalEntryLogSizeAcc = new AtomicLong(0L);
