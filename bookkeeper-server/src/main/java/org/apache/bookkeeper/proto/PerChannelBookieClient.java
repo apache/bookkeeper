@@ -616,9 +616,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
-        future.addListener(contextPreservingListener(new ConnectionFutureListener(startTime)));
-        future.addListener(x -> makeWritable());
+        addChannelListeners(future, startTime);
         return future;
+    }
+
+    protected void addChannelListeners(ChannelFuture future, long connectStartTime) {
+        future.addListener(contextPreservingListener(new ConnectionFutureListener(connectStartTime)));
+        future.addListener(x -> makeWritable());
     }
 
     void cleanDisconnectAndClose() {
