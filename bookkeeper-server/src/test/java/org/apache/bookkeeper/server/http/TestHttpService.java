@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.server.http;
 
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,7 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import lombok.Cleanup;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieResources;
+import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -55,6 +58,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -66,6 +70,7 @@ import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.server.http.service.ClusterInfoService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -765,13 +770,57 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
         //3, PUT, with body, should success.
-        String putBody3 = "{\"bookie_src\": \"" + getBookie(1).toString() + "\"}";
+        BookieId bookieId = getBookie(1);
+        String putBody3 = "{\"bookie_src\": \"" + bookieId.toString() + "\"}";
         HttpServiceRequest request3 = new HttpServiceRequest(putBody3, HttpServer.Method.PUT, null);
         // after bookie kill, request should success
         killBookie(1);
         HttpServiceResponse response3 = decommissionService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        // wait decommission finish
+        Thread.sleep(60 * 1000);
+        runFunctionWithRegistrationManager(baseConf, registrationManager -> {
+            Versioned<Cookie> cookieFromZk = null;
+            try {
+                cookieFromZk = Cookie.readFromRegistrationManager(registrationManager,
+                        bookieId);
+            } catch (BookieException e) {
+            } finally {
+                assertTrue(cookieFromZk != null);
+            }
+            return true;
+        });
         stopAuditorElector();
+    }
+
+    @Test
+    public void testDecommissionServiceWithDeleteCookie() throws Exception {
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        startReplicationService();
+
+        HttpEndpointService decommissionService = bkHttpServiceProvider
+                .provideHttpEndpointService(HttpServer.ApiType.DECOMMISSION);
+        BookieId bookieId = getBookie(1);
+        String putBody1 = "{\"bookie_src\": \"" + bookieId.toString() + "\", \"delete_cookie\": \"true\"}";
+        HttpServiceRequest request1 = new HttpServiceRequest(putBody1, HttpServer.Method.PUT, null);
+        // after bookie kill, request should success
+        killBookie(1);
+        HttpServiceResponse response1 = decommissionService.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        // wait decommission finish
+        Thread.sleep(60 * 1000);
+        runFunctionWithRegistrationManager(baseConf, registrationManager -> {
+            Versioned<Cookie> cookieFromZk = null;
+            try {
+                cookieFromZk = Cookie.readFromRegistrationManager(registrationManager,
+                        bookieId);
+            } catch (Exception e) {
+            } finally {
+                assertTrue(cookieFromZk == null);
+            }
+            return true;
+        });
+        stopReplicationService();
     }
 
     @Test
