@@ -49,7 +49,6 @@ public class DynamicConfigurationFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DynamicConfigurationFactory.class);
 
     private final Map<String, DynamicDistributedLogConfiguration> dynamicConfigs;
-    private final List<ConfigurationSubscription> subscriptions;
     private final ScheduledExecutorService executorService;
     private final int reloadPeriod;
     private final TimeUnit reloadUnit;
@@ -60,7 +59,6 @@ public class DynamicConfigurationFactory {
         this.reloadPeriod = reloadPeriod;
         this.reloadUnit = reloadUnit;
         this.dynamicConfigs = new HashMap<String, DynamicDistributedLogConfiguration>();
-        this.subscriptions = new LinkedList<ConfigurationSubscription>();
     }
 
     public synchronized Optional<DynamicDistributedLogConfiguration> getDynamicConfiguration(
@@ -77,7 +75,6 @@ public class DynamicConfigurationFactory {
                 List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(properties);
                 ConfigurationSubscription subscription = new ConfigurationSubscription(
                         dynConf, fileConfigBuilders, executorService, reloadPeriod, reloadUnit);
-                subscriptions.add(subscription);
                 dynamicConfigs.put(configPath, dynConf);
                 LOG.info("Loaded dynamic configuration at {}", configPath);
             }
