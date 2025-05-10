@@ -75,8 +75,6 @@ import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.invocation.InvocationOnMock;
@@ -144,7 +142,6 @@ public abstract class MockBookKeeperTestCase {
     }
 
     @BeforeEach
-    @Before
     public void setup() throws Exception {
         maxNumberOfAvailableBookies = Integer.MAX_VALUE;
         deferredBookieForceLedgerResponses = new ConcurrentHashMap<>();
@@ -268,7 +265,6 @@ public abstract class MockBookKeeperTestCase {
     }
 
     @AfterEach
-    @After
     public void tearDown() {
         scheduler.shutdown();
         executor.shutdown();
