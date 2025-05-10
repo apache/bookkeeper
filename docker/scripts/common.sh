@@ -36,7 +36,7 @@ export BK_metadataServiceUri=${BK_metadataServiceUri:-"zk://${BK_zkServers}${BK_
 export BK_bookiePort=${BK_bookiePort:-${PORT0}}
 export BK_httpServerEnabled=${BK_httpServerEnabled:-"true"}
 export BK_httpServerPort=${BK_httpServerPort:-${BOOKIE_HTTP_PORT}}
-export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
+export BK_journalDirectories=${BK_journalDirectories:-${BK_journalDirectory:-${BK_DATA_DIR}/journal}}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_ledgerDirectories}}
 # dlog
@@ -57,7 +57,7 @@ echo ""
 echo "  [bookie]"
 echo "  BK_bookiePort bookie service port is $BK_bookiePort"
 echo "  BK_DATA_DIR is $BK_DATA_DIR"
-echo "  BK_journalDirectory is ${BK_journalDirectory}"
+echo "  BK_journalDirectories is ${BK_journalDirectories}"
 echo "  BK_ledgerDirectories are ${BK_ledgerDirectories}"
 echo "  BK_indexDirectories are ${BK_indexDirectories}"
 echo ""
@@ -79,15 +79,15 @@ export BOOKIE_CONF=${BK_HOME}/conf/bk_server.conf
 export SERVICE_PORT=${PORT0}
 
 function create_bookie_dirs() {
-    mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
+    mkdir -p "${BK_journalDirectories}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
     echo "Created bookie dirs : "
-    echo "  journal = ${BK_journalDirectory}"
+    echo "  journal = ${BK_journalDirectories}"
     echo "  ledger = ${BK_ledgerDirectories}"
     echo "  index = ${BK_indexDirectories}"
     # -------------- #
     # Allow the container to be started with `--user`
     if [ "$(id -u)" = '0' ]; then
-        chown -R "${BK_USER}:${BK_USER}" "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
+        chown -R "${BK_USER}:${BK_USER}" "${BK_journalDirectories}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
     fi
     # -------------- #
 }
