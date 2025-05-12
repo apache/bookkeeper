@@ -160,11 +160,12 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
       if (entryLogMetadata.getRemainingSize() == 0){
         LOG.info("No active ledgers on log file {}", logId);
       } else {
-        LOG.info("entryLogId: {}, remaining size: {}, total size: {}, usage: {}",
-                entryLogMetadata.getEntryLogId(), entryLogMetadata.getRemainingSize(), entryLogMetadata.getTotalSize(), entryLogMetadata.getUsage());
+        LOG.info("entryLogId: {}, remaining size: {}, total size: {}, usage: {}", entryLogMetadata.getEntryLogId(),
+                entryLogMetadata.getRemainingSize(), entryLogMetadata.getTotalSize(), entryLogMetadata.getUsage());
       }
       entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
-        LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------", ledgerIdFormatter.formatLedgerId(ledgerId), size);
+        LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
+                ledgerIdFormatter.formatLedgerId(ledgerId), size);
       });
     }
 }
