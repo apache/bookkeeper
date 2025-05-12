@@ -24,10 +24,8 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -135,17 +133,13 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
             if  (resultCode.get() == BKException.Code.OK) {
               DefaultEntryLogger entryLogger = new ReadOnlyDefaultEntryLogger(bkConf);
               EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(cmdFlags.logId);
-              List<Long> ledgersOnEntryLog = entryLogMetadata.getLedgersMap().keys();
-              if (ledgersOnEntryLog.size() == 0) {
+              Map<Long, Long> ledgersOnEntryLog = entryLogMetadata.getLedgersMap().asMap();
+              if (ledgersOnEntryLog.isEmpty()) {
                 LOG.info("Ledgers on log file {} is empty", cmdFlags.logId);
               }
-              List<Long> activeLedgersOnEntryLog = new ArrayList<Long>(ledgersOnEntryLog.size());
-              for (long ledger : ledgersOnEntryLog) {
-                if (activeLedgersOnMetadata.contains(ledger)) {
-                  activeLedgersOnEntryLog.add(ledger);
-                }
-              }
-              printActiveLedgerOnEntryLog(cmdFlags.logId, activeLedgersOnEntryLog);
+
+              entryLogMetadata.removeLedgerIf(ledgerId -> !activeLedgersOnMetadata.contains(ledgerId));
+              printActiveLedgerOnEntryLog(cmdFlags.logId, entryLogMetadata);
             } else {
               LOG.info("Read active ledgers id from metadata store,fail code {}", resultCode.get());
               throw BKException.create(resultCode.get());
@@ -161,15 +155,16 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
       });
     }
 
-    public void printActiveLedgerOnEntryLog(long logId, List<Long> activeLedgers){
-      if (activeLedgers.size() == 0){
+    public void printActiveLedgerOnEntryLog(long logId, EntryLogMetadata entryLogMetadata) {
+      LOG.info("Print active ledgers of entrylog {} ({}.log)", logId, Long.toHexString(logId));
+      if (entryLogMetadata.getRemainingSize() == 0){
         LOG.info("No active ledgers on log file {}", logId);
       } else {
-        LOG.info("Active ledgers on entry log {} as follow:", logId);
+        LOG.info("entryLogId: {}, remaining size: {}, total size: {}, usage: {}",
+                entryLogMetadata.getEntryLogId(), entryLogMetadata.getRemainingSize(), entryLogMetadata.getTotalSize(), entryLogMetadata.getUsage());
       }
-      Collections.sort(activeLedgers);
-      for (long a : activeLedgers){
-        LOG.info("{} ", ledgerIdFormatter.formatLedgerId(a));
-      }
+      entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
+        LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------", ledgerIdFormatter.formatLedgerId(ledgerId), size);
+      });
     }
 }
