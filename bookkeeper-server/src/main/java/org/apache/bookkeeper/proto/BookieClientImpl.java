@@ -414,19 +414,24 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         @Override
         public void operationComplete(final int rc,
                                       PerChannelBookieClient pcbc) {
-            try {
-                if (rc != BKException.Code.OK) {
-                    bookieClient.executor.executeOrdered(ledgerId, () -> {
+            if (rc != BKException.Code.OK) {
+                bookieClient.executor.executeOrdered(ledgerId, () -> {
+                    try {
                         bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
-                    });
-                } else {
+                    } finally {
+                        ReferenceCountUtil.release(toSend);
+                    }
+                    recycle();
+                });
+            } else {
+                try {
                     pcbc.addEntry(ledgerId, masterKey, entryId,
                             toSend, cb, ctx, options, allowFastFail, writeFlags);
+                } finally {
+                    ReferenceCountUtil.release(toSend);
                 }
-            } finally {
-                ReferenceCountUtil.release(toSend);
+                recycle();
             }
-            recycle();
         }
 
         private ChannelReadyForAddEntryCallback(
