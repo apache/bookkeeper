@@ -22,6 +22,7 @@ package org.apache.bookkeeper.proto;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
@@ -370,7 +371,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
-    private static class ChannelReadyForAddEntryCallback
+    // Without test, this class should be modifier with "private".
+    @VisibleForTesting
+    static class ChannelReadyForAddEntryCallback
         implements GenericCallback<PerChannelBookieClient> {
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
 
@@ -380,7 +383,9 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         private long entryId;
         private BookieId addr;
         private Object ctx;
-        private WriteCallback cb;
+        // Without test, this class should be modifier with "private".
+        @VisibleForTesting
+        WriteCallback cb;
         private int options;
         private byte[] masterKey;
         private boolean allowFastFail;
@@ -409,17 +414,24 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         @Override
         public void operationComplete(final int rc,
                                       PerChannelBookieClient pcbc) {
-            try {
-                if (rc != BKException.Code.OK) {
-                    bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
-                } else {
+            if (rc != BKException.Code.OK) {
+                bookieClient.executor.executeOrdered(ledgerId, () -> {
+                    try {
+                        bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+                    } finally {
+                        ReferenceCountUtil.release(toSend);
+                    }
+                    recycle();
+                });
+            } else {
+                try {
                     pcbc.addEntry(ledgerId, masterKey, entryId,
                             toSend, cb, ctx, options, allowFastFail, writeFlags);
+                } finally {
+                    ReferenceCountUtil.release(toSend);
                 }
-            } finally {
-                ReferenceCountUtil.release(toSend);
+                recycle();
             }
-            recycle();
         }
 
         private ChannelReadyForAddEntryCallback(
