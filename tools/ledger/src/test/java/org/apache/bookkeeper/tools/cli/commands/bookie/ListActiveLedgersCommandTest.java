@@ -71,8 +71,8 @@ public class ListActiveLedgersCommandTest extends BookieCommandTestBase {
             AsyncCallback.VoidCallback callback = invocation.getArgument(1);
             callback.processResult(BKException.Code.OK, "", null);
             return true;
-        }).when(ledgerManager).asyncProcessLedgers(any(BookkeeperInternalCallbacks.Processor.class), any(AsyncCallback.VoidCallback.class),
-                any(), anyInt(), anyInt());
+        }).when(ledgerManager).asyncProcessLedgers(any(BookkeeperInternalCallbacks.Processor.class),
+                any(AsyncCallback.VoidCallback.class), any(), anyInt(), anyInt());
 
         entryLogMetadata = createEntryLogMeta();
         mockConstruction(ReadOnlyDefaultEntryLogger.class, (entryLogger, context) ->  {
@@ -82,7 +82,7 @@ public class ListActiveLedgersCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testCommand() {
-        ListActiveLedgersCommand command = new ListActiveLedgersCommand();;
+        ListActiveLedgersCommand command = new ListActiveLedgersCommand();
         Assert.assertTrue(command.apply(bkFlags, new String[] {"-l", "0", "-t", "1000000"}));
 
         EntryLogMetadata entryLogMetadataToPrint = createEntryLogMeta();
