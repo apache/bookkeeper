@@ -155,7 +155,7 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
       });
     }
 
-    public void printActiveLedgerOnEntryLog(long logId, EntryLogMetadata entryLogMetadata) {
+    private void printActiveLedgerOnEntryLog(long logId, EntryLogMetadata entryLogMetadata) {
       LOG.info("Print active ledgers of entrylog {} ({}.log)", logId, Long.toHexString(logId));
       if (entryLogMetadata.getRemainingSize() == 0){
         LOG.info("No active ledgers on log file {}", logId);
