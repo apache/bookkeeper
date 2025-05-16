@@ -111,6 +111,11 @@ public class ReplicationWorker implements Runnable {
     private final long baseBackoffForLockReleaseOfFailedLedger;
     private final BiConsumer<Long, Long> onReadEntryFailureCallback;
     private final LedgerManager ledgerManager;
+    enum ReplicateResult {
+        SUCCESS,
+        FAILED,
+        SKIP_OPEN_FRAGMENT
+    }
 
     // Expose Stats
     private final StatsLogger statsLogger;
@@ -246,7 +251,7 @@ public class ReplicationWorker implements Runnable {
         workerRunning = true;
         while (workerRunning) {
             try {
-                if (!rereplicate()) {
+                if (rereplicate() == ReplicateResult.FAILED) {
                     LOG.warn("failed while replicating fragments");
                     waitBackOffTime(rwRereplicateBackoffMs);
                 }
@@ -290,24 +295,27 @@ public class ReplicationWorker implements Runnable {
      * Replicates the under replicated fragments from failed bookie ledger to
      * targetBookie.
      */
-    private boolean rereplicate() throws InterruptedException, BKException,
+    private ReplicateResult rereplicate() throws InterruptedException, BKException,
             UnavailableException {
         long ledgerIdToReplicate = underreplicationManager
                 .getLedgerToRereplicate();
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        boolean success = false;
+
+        ReplicateResult result = ReplicateResult.FAILED;
         try {
-            success = rereplicate(ledgerIdToReplicate);
+            result = rereplicate(ledgerIdToReplicate);
         } finally {
             long latencyMillis = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-            if (success) {
+            if (result == ReplicateResult.SUCCESS) {
                 rereplicateOpStats.registerSuccessfulEvent(latencyMillis, TimeUnit.MILLISECONDS);
-            } else {
+            } else if (result == ReplicateResult.FAILED) {
                 rereplicateOpStats.registerFailedEvent(latencyMillis, TimeUnit.MILLISECONDS);
+            } else {
+                LOG.info("Replication of ledger with open fragment is skipped, ledgerId is {}.", ledgerIdToReplicate);
             }
         }
-        return success;
+        return result;
     }
 
     private void logBKExceptionAndReleaseLedger(BKException e, long ledgerIdToReplicate)
@@ -440,7 +448,7 @@ public class ReplicationWorker implements Runnable {
     }
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
-    private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
+    private ReplicateResult rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Going to replicate the fragments of the ledger: {}", ledgerIdToReplicate);
@@ -495,21 +503,21 @@ public class ReplicationWorker implements Runnable {
             if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
                 deferLedgerLockRelease = true;
                 deferLedgerLockRelease(ledgerIdToReplicate);
-                return false;
+                return ReplicateResult.SKIP_OPEN_FRAGMENT;
             }
 
             fragments = getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
             if (fragments.size() == 0) {
                 LOG.info("Ledger replicated successfully. ledger id is: " + ledgerIdToReplicate);
                 underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
-                return true;
+                return ReplicateResult.SUCCESS;
             } else {
                 deferLedgerLockRelease = true;
                 deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
                 numDeferLedgerLockReleaseOfFailedLedger.inc();
                 // Releasing the underReplication ledger lock and compete
                 // for the replication again for the pending fragments
-                return false;
+                return ReplicateResult.FAILED;
             }
 
         } catch (BKNoSuchLedgerExistsOnMetadataServerException e) {
@@ -520,13 +528,13 @@ public class ReplicationWorker implements Runnable {
                 + "So, no harm to continue", ledgerIdToReplicate);
             underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
             getExceptionCounter("BKNoSuchLedgerExistsOnMetadataServerException").inc();
-            return false;
+            return ReplicateResult.FAILED;
         } catch (BKNotEnoughBookiesException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
             throw e;
         } catch (BKException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
-            return false;
+            return ReplicateResult.FAILED;
         } finally {
             // we make sure we always release the underreplicated lock, unless we decided to defer it. If the lock has
             // already been released, this is a no-op

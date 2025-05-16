@@ -1249,6 +1249,44 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testReplicateOpenStateLedger() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
+                TESTPASSWD);
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        LOG.info("Killing Bookie : {}", replicaToKill);
+        killBookie(replicaToKill);
+
+        ReplicationWorker rw = new ReplicationWorker(baseConf);
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(),
+                    replicaToKill.toString());
+            while (!ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
+                Thread.sleep(100);
+            }
+
+            final Method rereplicate = rw.getClass().getDeclaredMethod("rereplicate", long.class);
+            rereplicate.setAccessible(true);
+            assertFalse(lh.getLedgerMetadata().isClosed());
+            Object result = rereplicate.invoke(rw, lh.getId());
+            assertEquals(result, ReplicationWorker.ReplicateResult.SKIP_OPEN_FRAGMENT);
+            lh.close();
+            assertTrue(lh.getLedgerMetadata().isClosed());
+            result = rereplicate.invoke(rw, lh.getId());
+            assertEquals(result, ReplicationWorker.ReplicateResult.FAILED);
+            BookieId newBkAddr = startNewBookieAndReturnBookieId();
+            LOG.info("New Bookie addr : {}", newBkAddr);
+            result = rereplicate.invoke(rw, lh.getId());
+            assertEquals(result, ReplicationWorker.ReplicateResult.SUCCESS);
+        } finally {
+            rw.shutdown();
+        }
+    }
+    @Test
     public void testRepairedNotAdheringPlacementPolicyLedgerFragmentsOnRack() throws Exception {
         testRepairedNotAdheringPlacementPolicyLedgerFragments(RackawareEnsemblePlacementPolicy.class, null);
     }
@@ -1275,14 +1313,14 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                         1, numDeferLedgerLockReleaseOfFailedLedgerCounter.get().longValue());
 
                 if (first) {
-                    assertFalse((boolean) result);
+                    assertEquals(result, ReplicationWorker.ReplicateResult.FAILED);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             0, numLedgersReplicatedCounter.get().longValue());
                     assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
                             0, numNotAdheringPlacementLedgersCounter.get().longValue());
 
                 } else {
-                    assertTrue((boolean) result);
+                    assertEquals(result, ReplicationWorker.ReplicateResult.SUCCESS);
                     assertEquals("NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED",
                             1, numLedgersReplicatedCounter.get().longValue());
                     assertEquals("NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED",
