@@ -200,6 +200,7 @@ public class GarbageCollectorThreadTest {
         // all ledgers exist, nothing should disappear
         final EntryLogMetadataMap entryLogMetaMap = gcThread.getEntryLogMetaMap();
         gcThread.extractMetaFromEntryLogs();
+        gcThread.doGcEntryLogs();
 
         assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1, logId2));
         assertTrue(entryLogMetaMap.containsKey(logId1));
@@ -210,6 +211,7 @@ public class GarbageCollectorThreadTest {
         entryLogMetaMap.clear();
         storage.deleteLedger(2L);
         gcThread.extractMetaFromEntryLogs();
+        gcThread.doGcEntryLogs();
 
         assertThat(entryLogger.getFlushedLogIds(), containsInAnyOrder(logId1));
         assertTrue(entryLogMetaMap.containsKey(logId1));
@@ -220,6 +222,7 @@ public class GarbageCollectorThreadTest {
         storage.deleteLedger(1L);
         storage.deleteLedger(3L);
         gcThread.extractMetaFromEntryLogs();
+        gcThread.doGcEntryLogs();
 
         assertThat(entryLogger.getFlushedLogIds(), empty());
         assertTrue(entryLogMetaMap.isEmpty());
@@ -233,6 +236,7 @@ public class GarbageCollectorThreadTest {
 
         entryLogMetaMap.clear();
         gcThread.extractMetaFromEntryLogs();
+        gcThread.doGcEntryLogs();
 
         assertThat(entryLogger.getFlushedLogIds(), empty());
         assertTrue(entryLogMetaMap.isEmpty());
