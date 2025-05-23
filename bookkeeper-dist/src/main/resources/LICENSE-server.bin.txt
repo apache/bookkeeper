@@ -211,8 +211,10 @@ Apache Software License, Version 2.
 - lib/com.google.guava-guava-32.0.1-jre.jar [4]
 - lib/com.google.guava-failureaccess-1.0.1.jar [4]
 - lib/com.google.guava-listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar [4]
+- lib/commons-beanutils-commons-beanutils-1.10.1.jar [61]
 - lib/commons-cli-commons-cli-1.9.0.jar [5]
 - lib/commons-codec-commons-codec-1.18.0.jar [6]
+- lib/commons-collections-commons-collections-3.2.2.jar [62]
 - lib/commons-io-commons-io-2.19.0.jar [8]
 - lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.3.5.jar [10]
@@ -413,7 +415,8 @@ Apache Software License, Version 2.
 [58] Source available at https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/v1.33.6
 [59] Source available at https://github.com/prometheus/client_java/tree/v1.3.4
 [60] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.13.1
-
+[61] Source available at https://github.com/apache/commons-beanutils/tree/rel/commons-beanutils-1.10.1
+[62] Source available at https://github.com/apache/commons-collections/tree/collections-3.3.2
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-4.1.121.Final.jar bundles some 3rd party dependencies
 

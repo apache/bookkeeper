@@ -124,6 +124,7 @@
     <commons-collections4.version>4.1</commons-collections4.version>
     <commons-codec.version>1.18.0</commons-codec.version>
     <commons-configuration2.version>2.12.0</commons-configuration2.version>
+    <commons-beanutils.version>1.10.1</commons-beanutils.version>
     <commons-compress.version>1.27.1</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
@@ -281,6 +282,11 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-configuration2</artifactId>
         <version>${commons-configuration2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>${commons-beanutils.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -868,6 +874,11 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
+    </dependency>
+    <!-- commons-configuration2 has an optional dependency on commons-beanutils -->
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
     </dependency>
     <!-- test dependencies -->
     <dependency>
