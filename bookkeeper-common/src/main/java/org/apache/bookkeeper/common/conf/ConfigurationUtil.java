@@ -21,8 +21,10 @@ package org.apache.bookkeeper.common.conf;
 import java.util.function.Function;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.BasicBuilderParameters;
+import org.apache.commons.configuration2.builder.DefaultParametersManager;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
@@ -30,8 +32,7 @@ public class ConfigurationUtil {
     /**
      * Create a new PropertiesConfiguration using the given builder function.
      * The purpose of this method is to configure the list handling to behave in the same way as in
-     * commons-configuration 1.x.
-     * without duplicating the code in multiple places.
+     * commons-configuration 1.x. without duplicating the code in multiple places.
      *
      * @param builderFunction a function that takes a Configurations object and returns a FileBasedConfigurationBuilder
      * @return a new PropertiesConfiguration
@@ -40,9 +41,17 @@ public class ConfigurationUtil {
     public static PropertiesConfiguration newConfiguration(
             Function<Configurations, FileBasedConfigurationBuilder<PropertiesConfiguration>> builderFunction)
             throws ConfigurationException {
-        FileBasedConfigurationBuilder<PropertiesConfiguration> builder = builderFunction.apply(new Configurations());
-        // configure list handling to behave in the same way as in commons-configuration 1.x
-        builder.configure(new BasicBuilderParameters().setListDelimiterHandler(new DefaultListDelimiterHandler(',')));
+        // configure defaults
+        DefaultParametersManager parametersManager = new DefaultParametersManager();
+        parametersManager.registerDefaultsHandler(BasicBuilderParameters.class, basicBuilderParameters -> {
+            // configure list handling to behave in the same way as in commons-configuration 1.x
+            basicBuilderParameters.setListDelimiterHandler(new DefaultListDelimiterHandler(','));
+        });
+        Parameters params = new Parameters(parametersManager);
+        Configurations configurations = new Configurations(params);
+        // create a new builder using the provided function
+        FileBasedConfigurationBuilder<PropertiesConfiguration> builder = builderFunction.apply(configurations);
+        // build the configuration
         return builder.getConfiguration();
     }
 }
