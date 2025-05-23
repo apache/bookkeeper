@@ -34,7 +34,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.ConfigurationDecoder;
 import org.apache.commons.configuration2.ImmutableConfiguration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.interpol.ConfigurationInterpolator;
 import org.apache.commons.configuration2.interpol.Lookup;
@@ -78,7 +77,7 @@ public abstract class ComponentConfiguration implements Configuration {
      * @throws ConfigurationException when failed to load configuration.
      */
     public void loadConf(URL confURL) throws ConfigurationException {
-        Configuration loadedConf = new Configurations().properties(confURL);
+        Configuration loadedConf = ConfigurationUtil.newConfiguration(conf -> conf.propertiesBuilder(confURL));
         loadConf(loadedConf);
     }
 

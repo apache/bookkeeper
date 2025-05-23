@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.tools.framework.Cli;
 import org.apache.bookkeeper.tools.framework.CliCommand;
@@ -29,7 +30,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
@@ -78,7 +78,8 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
         CompositeConfiguration conf = new CompositeConfiguration();
         if (!Strings.isNullOrEmpty(bkFlags.configFile)) {
             try {
-                PropertiesConfiguration loadedConf = new Configurations().properties(new File(bkFlags.configFile));
+                PropertiesConfiguration loadedConf =
+                        ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(new File(bkFlags.configFile)));
                 conf.addConfiguration(loadedConf);
             } catch (ConfigurationException e) {
                 log.error("Malformed configuration file : {}", bkFlags.configFile, e);

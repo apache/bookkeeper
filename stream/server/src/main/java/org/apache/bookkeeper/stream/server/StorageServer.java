@@ -35,6 +35,7 @@ import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -73,7 +74,6 @@ import org.apache.bookkeeper.stream.storage.impl.sc.ZkStorageContainerManager;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactoryImpl;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
 
@@ -102,7 +102,7 @@ public class StorageServer {
     private static void loadConfFile(CompositeConfiguration conf, String confFile)
         throws IllegalArgumentException {
         try {
-            Configuration loadedConf = new Configurations().properties(confFile);
+            Configuration loadedConf = ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(confFile));
             conf.addConfiguration(loadedConf);
         } catch (ConfigurationException e) {
             log.error("Malformed configuration file {}", confFile, e);

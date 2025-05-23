@@ -47,6 +47,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -109,7 +110,6 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -2741,7 +2741,8 @@ public class BookieShell implements Tool {
             CompositeConfiguration conf = new CompositeConfiguration();
             if (cmdLine.hasOption(CONF_OPT)) {
                 String val = cmdLine.getOptionValue(CONF_OPT);
-                conf.addConfiguration(new Configurations().properties(new File(val)));
+                conf.addConfiguration(
+                        ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(new File(val))));
             }
             shell.setConf(conf);
 

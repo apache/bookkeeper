@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.configuration2.AbstractConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 
 /**
  * Configuration view built on concurrent hash map for fast thread-safe access.
@@ -38,6 +39,7 @@ public class ConcurrentConfiguration extends AbstractConfiguration {
     private final ConcurrentMap<String, Object> map;
 
     public ConcurrentConfiguration() {
+        setListDelimiterHandler(new DefaultListDelimiterHandler(','));
         this.map = new ConcurrentHashMap<>();
     }
 
