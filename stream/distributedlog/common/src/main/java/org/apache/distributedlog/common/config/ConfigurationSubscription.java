@@ -37,6 +37,7 @@ import org.apache.commons.configuration2.builder.ConfigurationBuilderEvent;
 import org.apache.commons.configuration2.builder.ReloadingFileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.FileBasedBuilderParameters;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.reloading.PeriodicReloadingTrigger;
 import org.apache.commons.configuration2.reloading.ReloadingController;
@@ -101,7 +102,8 @@ public class ConfigurationSubscription implements AutoCloseable {
                         new Parameters()
                                 .fileBased()
                                 .setFile(configFile)
-                                .setReloadingRefreshDelay(0L);
+                                .setReloadingRefreshDelay(0L)
+                                .setListDelimiterHandler(new DefaultListDelimiterHandler(','));
                 ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> configBuilder =
                         new ReloadingFileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
                                 .configure(parameters);
