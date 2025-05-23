@@ -276,7 +276,7 @@ public class ConfigKeyTest {
         newList = Lists.newArrayList(
             "item7", "item8", "item9"
         );
-        conf.setProperty(key.name(), "item7,item8,item9");
+        conf.setProperty(key.name(), Lists.newArrayList("item7", "item8", "item9"));
         assertEquals(newList, key.getList(conf));
         assertEquals(newList, key.get(conf));
     }
