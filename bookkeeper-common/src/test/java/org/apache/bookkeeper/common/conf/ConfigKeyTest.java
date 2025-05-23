@@ -35,6 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -258,7 +259,11 @@ public class ConfigKeyTest {
             .defaultValue(defaultList)
             .build();
 
-        Configuration conf = new CompositeConfiguration();
+        Configuration conf = new CompositeConfiguration() {
+            {
+                setListDelimiterHandler(new DefaultListDelimiterHandler(','));
+            }
+        };
 
         // get default value
         assertEquals(defaultList, key.getList(conf));
