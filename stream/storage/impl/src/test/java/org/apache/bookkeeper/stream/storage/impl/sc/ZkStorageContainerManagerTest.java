@@ -44,7 +44,7 @@ import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerFactory;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRegistry;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;

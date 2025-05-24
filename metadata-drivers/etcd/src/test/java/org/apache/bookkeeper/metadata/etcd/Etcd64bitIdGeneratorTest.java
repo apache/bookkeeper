@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 

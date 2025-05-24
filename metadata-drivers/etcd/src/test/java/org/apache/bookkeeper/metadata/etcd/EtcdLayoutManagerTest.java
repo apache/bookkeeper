@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
 import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -34,13 +34,11 @@ import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConfigurationListener;
 import org.apache.distributedlog.common.config.ConfigurationSubscription;
-import org.apache.distributedlog.common.config.FileConfigurationBuilder;
-import org.apache.distributedlog.common.config.PropertiesConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,25 +76,21 @@ public class DynamicConfigurationFeatureProvider extends AbstractFeatureProvider
 
     @Override
     public void start() throws IOException {
-        List<FileConfigurationBuilder> fileConfigBuilders =
+        List<File> configFiles =
                 Lists.newArrayListWithExpectedSize(2);
         String baseConfigPath = conf.getFileFeatureProviderBaseConfigPath();
         checkNotNull(baseConfigPath);
         File baseConfigFile = new File(baseConfigPath);
-        FileConfigurationBuilder baseProperties =
-                new PropertiesConfigurationBuilder(baseConfigFile.toURI().toURL());
-        fileConfigBuilders.add(baseProperties);
+        configFiles.add(baseConfigFile);
         String overlayConfigPath = conf.getFileFeatureProviderOverlayConfigPath();
         if (null != overlayConfigPath) {
             File overlayConfigFile = new File(overlayConfigPath);
-            FileConfigurationBuilder overlayProperties =
-                    new PropertiesConfigurationBuilder(overlayConfigFile.toURI().toURL());
-            fileConfigBuilders.add(overlayProperties);
+            configFiles.add(overlayConfigFile);
         }
         try {
             this.featuresConfSubscription = new ConfigurationSubscription(
                     this.featuresConf,
-                    fileConfigBuilders,
+                    configFiles,
                     executorService,
                     conf.getDynamicConfigReloadIntervalSec(),
                     TimeUnit.SECONDS);

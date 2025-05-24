@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
@@ -41,11 +42,11 @@ import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.StringEntryFormatter;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Abstract configuration.
@@ -193,9 +194,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     protected AbstractConfiguration() {
         super();
+        // configure list handling to behave in the same way as in commons-configuration 1.x
+        setListDelimiterHandler(new DefaultListDelimiterHandler(','));
         if (READ_SYSTEM_PROPERTIES) {
             // add configuration for system properties
-            addConfiguration(new SystemConfiguration());
+            addConfiguration(ConfigurationUtil.readSystemPropertiesAsConfiguration());
         }
     }
 
@@ -222,7 +225,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @SuppressWarnings("unchecked")
     public void loadConf(URL confURL) throws ConfigurationException {
-        PropertiesConfiguration loadedConf = new PropertiesConfiguration(confURL);
+        PropertiesConfiguration loadedConf =
+                ConfigurationUtil.newConfiguration(conf -> conf.propertiesBuilder(confURL));
         for (Iterator<String> iter = loadedConf.getKeys(); iter.hasNext(); ) {
             String key = iter.next();
             setProperty(key, loadedConf.getProperty(key));

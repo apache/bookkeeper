@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.util;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * A tool interface that supports handling of generic command-line options.

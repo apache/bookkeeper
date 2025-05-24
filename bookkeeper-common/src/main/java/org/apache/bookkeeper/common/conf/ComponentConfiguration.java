@@ -21,6 +21,8 @@ package org.apache.bookkeeper.common.conf;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,10 +30,15 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ConfigurationDecoder;
+import org.apache.commons.configuration2.ImmutableConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.interpol.ConfigurationInterpolator;
+import org.apache.commons.configuration2.interpol.Lookup;
+import org.apache.commons.configuration2.sync.LockMode;
+import org.apache.commons.configuration2.sync.Synchronizer;
 
 /**
  * Component Configuration.
@@ -70,7 +77,7 @@ public abstract class ComponentConfiguration implements Configuration {
      * @throws ConfigurationException when failed to load configuration.
      */
     public void loadConf(URL confURL) throws ConfigurationException {
-        Configuration loadedConf = new PropertiesConfiguration(confURL);
+        Configuration loadedConf = ConfigurationUtil.newConfiguration(conf -> conf.propertiesBuilder(confURL));
         loadConf(loadedConf);
     }
 
@@ -290,6 +297,128 @@ public abstract class ComponentConfiguration implements Configuration {
     @Override
     public List<Object> getList(String key, List<?> defaultValue) {
         return conf.getList(getKeyName(key), defaultValue);
+    }
+
+    @Override
+    public ConfigurationInterpolator getInterpolator() {
+        return conf.getInterpolator();
+    }
+
+    @Override
+    public void installInterpolator(Map<String, ? extends Lookup> prefixLookups,
+                                    Collection<? extends Lookup> defLookups) {
+        conf.installInterpolator(prefixLookups, defLookups);
+    }
+
+    @Override
+    public void setInterpolator(ConfigurationInterpolator ci) {
+        conf.setInterpolator(ci);
+    }
+
+    @Override
+    public <T> T get(Class<T> cls, String key) {
+        return conf.get(cls, key);
+    }
+
+    @Override
+    public <T> T get(Class<T> cls, String key, T defaultValue) {
+        return conf.get(cls, key, defaultValue);
+    }
+
+    @Override
+    public Object getArray(Class<?> cls, String key) {
+        return conf.getArray(cls, key);
+    }
+
+    @Override
+    @Deprecated
+    public Object getArray(Class<?> cls, String key, Object defaultValue) {
+        return conf.getArray(cls, key, defaultValue);
+    }
+
+    @Override
+    public <T> Collection<T> getCollection(Class<T> cls, String key, Collection<T> target) {
+        return conf.getCollection(cls, key, target);
+    }
+
+    @Override
+    public <T> Collection<T> getCollection(Class<T> cls, String key, Collection<T> target, Collection<T> defaultValue) {
+        return conf.getCollection(cls, key, target, defaultValue);
+    }
+
+    @Override
+    public Duration getDuration(String key) {
+        return conf.getDuration(key);
+    }
+
+    @Override
+    public Duration getDuration(String key, Duration defaultValue) {
+        return conf.getDuration(key, defaultValue);
+    }
+
+    @Override
+    public String getEncodedString(String key) {
+        return conf.getEncodedString(key);
+    }
+
+    @Override
+    public String getEncodedString(String key, ConfigurationDecoder decoder) {
+        return conf.getEncodedString(key, decoder);
+    }
+
+    @Override
+    public <T extends Enum<T>> T getEnum(String key, Class<T> enumType) {
+        return conf.getEnum(key, enumType);
+    }
+
+    @Override
+    public <T extends Enum<T>> T getEnum(String key, Class<T> enumType, T defaultValue) {
+        return conf.getEnum(key, enumType, defaultValue);
+    }
+
+    @Override
+    public Iterator<String> getKeys(String prefix, String delimiter) {
+        return conf.getKeys(prefix, delimiter);
+    }
+
+    @Override
+    public <T> List<T> getList(Class<T> cls, String key) {
+        return conf.getList(cls, key);
+    }
+
+    @Override
+    public <T> List<T> getList(Class<T> cls, String key, List<T> defaultValue) {
+        return conf.getList(cls, key, defaultValue);
+    }
+
+    @Override
+    public ImmutableConfiguration immutableSubset(String prefix) {
+        return conf.immutableSubset(prefix);
+    }
+
+    @Override
+    public int size() {
+        return conf.size();
+    }
+
+    @Override
+    public Synchronizer getSynchronizer() {
+        return conf.getSynchronizer();
+    }
+
+    @Override
+    public void lock(LockMode mode) {
+        conf.lock(mode);
+    }
+
+    @Override
+    public void setSynchronizer(Synchronizer sync) {
+        conf.setSynchronizer(sync);
+    }
+
+    @Override
+    public void unlock(LockMode mode) {
+        conf.unlock(mode);
     }
 
     /**

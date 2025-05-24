@@ -79,7 +79,7 @@ import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.bookkeeper.statelib.impl.kv.RocksdbKVStore;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.stream.proto.kv.store.ValueType;
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.tuple.Pair;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;

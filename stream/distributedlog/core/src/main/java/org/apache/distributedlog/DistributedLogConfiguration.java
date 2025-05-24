@@ -25,17 +25,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.feature.DefaultFeatureProvider;
@@ -496,8 +497,8 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      */
     public DistributedLogConfiguration() {
         super();
-        // add configuration for system properties
-        addConfiguration(new SystemConfiguration());
+        setListDelimiterHandler(new DefaultListDelimiterHandler(','));
+        addConfiguration(ConfigurationUtil.readSystemPropertiesAsConfiguration());
     }
 
     /**
@@ -507,7 +508,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * @param confURL Configuration URL
      */
     public void loadConf(URL confURL) throws ConfigurationException {
-        Configuration loadedConf = new PropertiesConfiguration(confURL);
+        Configuration loadedConf = ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(confURL));
         addConfiguration(loadedConf);
     }
 

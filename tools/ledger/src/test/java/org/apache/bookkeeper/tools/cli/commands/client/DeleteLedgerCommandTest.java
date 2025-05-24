@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.junit.Test;
 
 

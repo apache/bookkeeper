@@ -19,9 +19,8 @@ package org.apache.distributedlog.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Lists;
 import java.io.File;
-import java.net.MalformedURLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,13 +28,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.common.config.ConfigurationSubscription;
-import org.apache.distributedlog.common.config.FileConfigurationBuilder;
-import org.apache.distributedlog.common.config.PropertiesConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,32 +56,25 @@ public class DynamicConfigurationFactory {
         this.executorService = executorService;
         this.reloadPeriod = reloadPeriod;
         this.reloadUnit = reloadUnit;
-        this.dynamicConfigs = new HashMap<String, DynamicDistributedLogConfiguration>();
-        this.subscriptions = new LinkedList<ConfigurationSubscription>();
+        this.dynamicConfigs = new HashMap<>();
+        this.subscriptions = new LinkedList<>();
     }
 
     public synchronized Optional<DynamicDistributedLogConfiguration> getDynamicConfiguration(
             String configPath,
             ConcurrentBaseConfiguration defaultConf) throws ConfigurationException {
         checkNotNull(configPath);
-        try {
-            if (!dynamicConfigs.containsKey(configPath)) {
-                File configFile = new File(configPath);
-                FileConfigurationBuilder properties =
-                        new PropertiesConfigurationBuilder(configFile.toURI().toURL());
-                DynamicDistributedLogConfiguration dynConf =
-                        new DynamicDistributedLogConfiguration(defaultConf);
-                List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(properties);
-                ConfigurationSubscription subscription = new ConfigurationSubscription(
-                        dynConf, fileConfigBuilders, executorService, reloadPeriod, reloadUnit);
-                subscriptions.add(subscription);
-                dynamicConfigs.put(configPath, dynConf);
-                LOG.info("Loaded dynamic configuration at {}", configPath);
-            }
-            return Optional.of(dynamicConfigs.get(configPath));
-        } catch (MalformedURLException ex) {
-            throw new ConfigurationException(ex);
+        if (!dynamicConfigs.containsKey(configPath)) {
+            File configFile = new File(configPath);
+            DynamicDistributedLogConfiguration dynConf =
+                    new DynamicDistributedLogConfiguration(defaultConf);
+            ConfigurationSubscription subscription = new ConfigurationSubscription(
+                    dynConf, Collections.singletonList(configFile), executorService, reloadPeriod, reloadUnit);
+            subscriptions.add(subscription);
+            dynamicConfigs.put(configPath, dynConf);
+            LOG.info("Loaded dynamic configuration at {}", configPath);
         }
+        return Optional.of(dynamicConfigs.get(configPath));
     }
 
     public synchronized Optional<DynamicDistributedLogConfiguration>

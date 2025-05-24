@@ -60,6 +60,10 @@
       <artifactId>jctools-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.netty.incubator</groupId>
       <artifactId>netty-incubator-transport-native-io_uring</artifactId>
       <classifier>linux-x86_64</classifier>
@@ -88,11 +92,6 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
       <version>${project.parent.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

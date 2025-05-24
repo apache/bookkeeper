@@ -94,7 +94,7 @@ import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcServices;
 import org.apache.bookkeeper.stream.storage.impl.sc.LocalStorageContainerManager;
 import org.apache.bookkeeper.stream.storage.impl.service.RangeStoreContainerServiceFactoryImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

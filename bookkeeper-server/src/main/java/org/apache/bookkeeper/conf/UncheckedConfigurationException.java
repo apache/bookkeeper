@@ -19,10 +19,10 @@
 package org.apache.bookkeeper.conf;
 
 import java.util.Objects;
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
- * Wraps a {@link org.apache.commons.configuration.ConfigurationException} with an unchecked exception.
+ * Wraps a {@link org.apache.commons.configuration2.ex.ConfigurationException} with an unchecked exception.
  *
  * @since 4.7.0
  */

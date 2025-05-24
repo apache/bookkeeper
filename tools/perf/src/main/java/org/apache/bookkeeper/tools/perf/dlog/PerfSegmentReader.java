@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogRecordWithDLSN;

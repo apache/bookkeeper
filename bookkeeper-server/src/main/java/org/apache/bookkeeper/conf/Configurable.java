@@ -22,7 +22,7 @@ package org.apache.bookkeeper.conf;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Stable;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * Class that may be configured with a {@link Configuration}.

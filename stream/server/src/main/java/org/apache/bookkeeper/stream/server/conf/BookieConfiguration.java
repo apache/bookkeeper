@@ -14,7 +14,7 @@
 package org.apache.bookkeeper.stream.server.conf;
 
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * A configuration delegates bookkeeper's {@link org.apache.bookkeeper.conf.ServerConfiguration}.

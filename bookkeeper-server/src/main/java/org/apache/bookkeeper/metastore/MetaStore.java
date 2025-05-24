@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metastore;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * Metadata Store Interface.

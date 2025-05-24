@@ -34,7 +34,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * ServiceURI represents service uri within bookkeeper cluster.

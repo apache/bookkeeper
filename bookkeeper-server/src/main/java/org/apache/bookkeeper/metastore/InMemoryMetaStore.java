@@ -19,7 +19,7 @@ package org.apache.bookkeeper.metastore;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * An in-memory implementation of the MetaStore interface.

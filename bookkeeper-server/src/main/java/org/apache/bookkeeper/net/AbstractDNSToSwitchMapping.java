@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This is a base class for DNS to Switch mappings.

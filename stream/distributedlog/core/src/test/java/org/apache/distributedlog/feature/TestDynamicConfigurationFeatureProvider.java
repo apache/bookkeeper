@@ -39,7 +39,7 @@ public class TestDynamicConfigurationFeatureProvider {
      * Make sure config is reloaded.
      *Give FileChangedReloadingStrategy some time to allow reloading
      * Make sure now!=lastChecked
-     * {@link org.apache.commons.configuration.reloading.FileChangedReloadingStrategy#reloadingRequired()}
+     * {@link org.apache.commons.configuration2.reloading.FileChangedReloadingStrategy#reloadingRequired()}
      */
     private void ensureConfigReloaded() throws InterruptedException {
         // sleep 1 ms so that System.currentTimeMillis() !=

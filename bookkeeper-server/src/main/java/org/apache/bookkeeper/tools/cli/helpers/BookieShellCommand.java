@@ -22,7 +22,7 @@ package org.apache.bookkeeper.tools.cli.helpers;
 import org.apache.bookkeeper.bookie.BookieShell.Command;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.lang3.StringUtils;
 
 /**
