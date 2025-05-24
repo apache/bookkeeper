@@ -496,8 +496,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      */
     public DistributedLogConfiguration() {
         super();
-        // add configuration for system properties
-        addConfiguration(new SystemConfiguration());
+        addConfiguration(ConfigurationUtil.readSystemPropertiesAsConfiguration());
     }
 
     /**

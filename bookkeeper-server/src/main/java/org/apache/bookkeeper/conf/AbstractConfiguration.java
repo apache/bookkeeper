@@ -44,7 +44,6 @@ import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.StringEntryFormatter;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
@@ -199,7 +198,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         setListDelimiterHandler(new DefaultListDelimiterHandler(','));
         if (READ_SYSTEM_PROPERTIES) {
             // add configuration for system properties
-            addConfiguration(new SystemConfiguration());
+            addConfiguration(ConfigurationUtil.readSystemPropertiesAsConfiguration());
         }
     }
 

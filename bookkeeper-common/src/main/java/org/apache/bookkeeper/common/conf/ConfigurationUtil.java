@@ -18,7 +18,12 @@
 
 package org.apache.bookkeeper.common.conf;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.BasicBuilderParameters;
 import org.apache.commons.configuration2.builder.DefaultParametersManager;
@@ -53,5 +58,20 @@ public class ConfigurationUtil {
         FileBasedConfigurationBuilder<PropertiesConfiguration> builder = builderFunction.apply(configurations);
         // build the configuration
         return builder.getConfiguration();
+    }
+
+    /**
+     * Read system properties as a Configuration. Where a copy of the system properties is made
+     * so that mutations to the Configuration do not affect the system properties.
+     *
+     * @return a Configuration object containing the system properties
+     */
+    public static Configuration readSystemPropertiesAsConfiguration() {
+        Properties properties = System.getProperties();
+        Map<String, Object> propertiesMap = new HashMap<String, Object>();
+        for (Object key : properties.keySet()) {
+            propertiesMap.put(key.toString(), properties.get(key));
+        }
+        return new MapConfiguration(propertiesMap);
     }
 }
