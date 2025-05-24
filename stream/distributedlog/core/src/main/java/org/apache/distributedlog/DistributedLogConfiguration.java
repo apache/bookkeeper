@@ -34,6 +34,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
@@ -496,6 +497,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      */
     public DistributedLogConfiguration() {
         super();
+        setListDelimiterHandler(new DefaultListDelimiterHandler(','));
         addConfiguration(ConfigurationUtil.readSystemPropertiesAsConfiguration());
     }
 
