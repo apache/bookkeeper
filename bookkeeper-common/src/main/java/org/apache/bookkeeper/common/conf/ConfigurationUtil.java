@@ -69,8 +69,8 @@ public class ConfigurationUtil {
     public static Configuration readSystemPropertiesAsConfiguration() {
         Properties properties = System.getProperties();
         Map<String, Object> propertiesMap = new HashMap<String, Object>();
-        for (Object key : properties.keySet()) {
-            propertiesMap.put(key.toString(), properties.get(key));
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            propertiesMap.put(entry.getKey().toString(), entry.getValue());
         }
         return new MapConfiguration(propertiesMap);
     }
