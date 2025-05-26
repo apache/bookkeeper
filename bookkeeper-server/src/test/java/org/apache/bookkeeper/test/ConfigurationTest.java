@@ -25,6 +25,8 @@ import static org.junit.Assert.assertEquals;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
@@ -38,15 +40,19 @@ public class ConfigurationTest {
         System.setProperty(AbstractConfiguration.READ_SYSTEM_PROPERTIES_PROPERTY, "true");
     }
 
+    @After
+    public void clearProperty() {
+        System.clearProperty("metadataServiceUri");
+    }
+
     @Test
     public void testConfigurationOverwrite() {
-        System.clearProperty("metadataServiceUri");
-
         ServerConfiguration conf = new ServerConfiguration();
         assertEquals(null, conf.getMetadataServiceUriUnchecked());
 
         // override setting from property
         System.setProperty("metadataServiceUri", "zk://server:2181/ledgers");
+        conf = new ServerConfiguration();
         // it affects previous created configurations, if the setting is not overwrite
         assertEquals("zk://server:2181/ledgers", conf.getMetadataServiceUriUnchecked());
 
@@ -74,4 +80,5 @@ public class ConfigurationTest {
         assertEquals("zookeeper connect string doesn't match in client configuration",
                      "zk://server1:port1;server2:port2/ledgers", clientConf.getMetadataServiceUriUnchecked());
     }
+
 }
