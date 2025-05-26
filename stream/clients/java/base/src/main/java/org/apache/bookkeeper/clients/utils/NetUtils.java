@@ -26,7 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Network related utils.

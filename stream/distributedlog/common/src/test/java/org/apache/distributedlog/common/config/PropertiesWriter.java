@@ -57,11 +57,12 @@ public class PropertiesWriter {
     }
 
     public void save() throws Exception {
-        FileOutputStream outputStream = new FileOutputStream(configFile);
-        properties.store(outputStream, null);
-        configFile.setLastModified(configFile.lastModified() + 1000);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("save modified={}", configFile.lastModified());
+        try (FileOutputStream outputStream = new FileOutputStream(configFile)) {
+            properties.store(outputStream, null);
+            configFile.setLastModified(configFile.lastModified() + 1000);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("save modified={}", configFile.lastModified());
+            }
         }
     }
 
