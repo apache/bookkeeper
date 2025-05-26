@@ -26,7 +26,6 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
