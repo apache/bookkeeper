@@ -23,7 +23,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.commons.configuration.AbstractConfiguration;
+import org.apache.commons.configuration2.AbstractConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 
 /**
  * Configuration view built on concurrent hash map for fast thread-safe access.
@@ -38,6 +39,7 @@ public class ConcurrentConfiguration extends AbstractConfiguration {
     private final ConcurrentMap<String, Object> map;
 
     public ConcurrentConfiguration() {
+        setListDelimiterHandler(new DefaultListDelimiterHandler(','));
         this.map = new ConcurrentHashMap<>();
     }
 
@@ -48,22 +50,27 @@ public class ConcurrentConfiguration extends AbstractConfiguration {
     }
 
     @Override
-    public Object getProperty(String key) {
+    public Object getPropertyInternal(String key) {
         return map.get(key);
     }
 
     @Override
-    public Iterator getKeys() {
+    public Iterator getKeysInternal() {
         return map.keySet().iterator();
     }
 
     @Override
-    public boolean containsKey(String key) {
+    public boolean containsKeyInternal(String key) {
         return map.containsKey(key);
     }
 
     @Override
-    public boolean isEmpty() {
+    protected boolean containsValueInternal(Object o) {
+        return map.containsValue(o);
+    }
+
+    @Override
+    public boolean isEmptyInternal() {
         return map.isEmpty();
     }
 

@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Optional;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.commons.configuration.StrictConfigurationComparator;
+import org.apache.commons.configuration2.StrictConfigurationComparator;
 import org.apache.distributedlog.net.DNSResolverForRacks;
 import org.apache.distributedlog.net.DNSResolverForRows;
 import org.junit.Test;

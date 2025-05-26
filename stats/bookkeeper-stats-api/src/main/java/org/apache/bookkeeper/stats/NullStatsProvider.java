@@ -17,7 +17,7 @@
 package org.apache.bookkeeper.stats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * A <i>no-op</i> stats provider implementation.
