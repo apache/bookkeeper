@@ -66,6 +66,8 @@ public interface BookKeeperClientStats {
     String READ_REQUESTS_REORDERED = "READ_REQUESTS_REORDERED";
     String GET_LIST_OF_ENTRIES_OF_LEDGER_OP = "GET_LIST_OF_ENTRIES_OF_LEDGER";
 
+    String NUMBER_OPEN_LEDGER_HANDLE = "NUM_OPEN_LEDGER_HANDLE";
+
     // per channel stats
     String CHANNEL_SCOPE = "per_channel_bookie_client";
 
@@ -130,6 +132,7 @@ public interface BookKeeperClientStats {
     Counter getWriteDelayedDueToNotEnoughFaultDomains();
     Counter getWriteTimedOutDueToNotEnoughFaultDomains();
     void registerPendingAddsGauge(Gauge<Integer> gauge);
+    void registerOpenLedgerHandleGauge(Gauge<Integer> gauge);
 
     static BookKeeperClientStats newInstance(StatsLogger stats) {
         return new BookKeeperClientStatsImpl(stats);

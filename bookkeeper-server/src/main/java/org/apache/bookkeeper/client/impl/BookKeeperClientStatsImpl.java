@@ -292,4 +292,9 @@ public class BookKeeperClientStatsImpl implements BookKeeperClientStats {
     public void registerPendingAddsGauge(Gauge<Integer> gauge) {
         stats.registerGauge(PENDING_ADDS, gauge);
     }
+
+    @Override
+    public void registerOpenLedgerHandleGauge(Gauge<Integer> gauge) {
+        stats.registerGauge(NUMBER_OPEN_LEDGER_HANDLE, gauge);
+    }
 }
