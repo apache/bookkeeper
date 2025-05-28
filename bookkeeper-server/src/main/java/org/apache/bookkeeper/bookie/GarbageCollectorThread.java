@@ -559,7 +559,7 @@ public class GarbageCollectorThread implements Runnable {
     /**
      * Garbage collect those entry loggers which are not associated with any active ledgers.
      */
-    private void doGcEntryLogs() throws EntryLogMetadataMapException {
+    protected void doGcEntryLogs() throws EntryLogMetadataMapException {
         // Get a cumulative count, don't update until complete
         AtomicLong activeEntryLogSizeAcc = new AtomicLong(0L);
         AtomicLong totalEntryLogSizeAcc = new AtomicLong(0L);
@@ -847,20 +847,7 @@ public class GarbageCollectorThread implements Runnable {
             try {
                 // Read through the entry log file and extract the entry log meta
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
-                removeIfLedgerNotExists(entryLogMeta);
-                if (entryLogMeta.isEmpty()) {
-                    // This means the entry log is not associated with any active
-                    // ledgers anymore.
-                    // We can remove this entry log file now.
-                    LOG.info("Deleting entryLogId {} as it has no active ledgers!", entryLogId);
-                    if (removeEntryLog(entryLogId)) {
-                        gcStats.getReclaimedSpaceViaDeletes().addCount(entryLogMeta.getTotalSize());
-                    } else {
-                        gcStats.getReclaimFailedToDelete().inc();
-                    }
-                } else {
-                    entryLogMetaMap.put(entryLogId, entryLogMeta);
-                }
+                entryLogMetaMap.put(entryLogId, entryLogMeta);
             } catch (IOException | RuntimeException e) {
                 LOG.warn("Premature exception when processing {} recovery will take care of the problem",
                         entryLogId, e);
