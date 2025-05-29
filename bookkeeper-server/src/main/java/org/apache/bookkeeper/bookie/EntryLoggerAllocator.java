@@ -85,6 +85,7 @@ class EntryLoggerAllocator {
         // within the same JVM. All of these Bookie instances access this header
         // so there can be race conditions when entry logs are rolled over and
         // this header buffer is cleared before writing it into the new logChannel.
+        logfileHeader.setZero(0, DefaultEntryLogger.LOGFILE_HEADER_SIZE);
         logfileHeader.writeBytes("BKLO".getBytes(UTF_8));
         logfileHeader.writeInt(DefaultEntryLogger.HEADER_CURRENT_VERSION);
         logfileHeader.writerIndex(DefaultEntryLogger.LOGFILE_HEADER_SIZE);

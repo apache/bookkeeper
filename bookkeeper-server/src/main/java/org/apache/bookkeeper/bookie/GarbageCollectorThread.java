@@ -842,11 +842,12 @@ public class GarbageCollectorThread implements Runnable {
                 continue;
             }
 
-            LOG.info("Extracting entry log meta from entryLogId: {}", entryLogId);
 
             try {
                 // Read through the entry log file and extract the entry log meta
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
+                LOG.info("Extracted entry log meta from entryLogId: {}, ledgers {}",
+                    entryLogId, entryLogMeta.getLedgersMap().keys());
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
                     // This means the entry log is not associated with any active

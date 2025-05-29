@@ -1151,6 +1151,10 @@ public class DefaultEntryLogger implements EntryLogger {
                     + " -- found: " + meta.getLedgersMap().size() + " -- entryLogId: " + entryLogId);
         }
 
+        if (header.ledgersCount == 0) {
+            throw new IOException("No ledgers map found in entryLogId " + entryLogId + ", do scan to double confirm");
+        }
+
         return meta;
     }
 
