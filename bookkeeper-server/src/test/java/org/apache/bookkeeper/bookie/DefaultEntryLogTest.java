@@ -391,6 +391,46 @@ public class DefaultEntryLogTest {
         assertEquals(120, meta.getRemainingSize());
     }
 
+    @Test
+    public void testLedgersMapIsEmpty() throws Exception {
+        // create some entries
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
+        entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
+        entryLogger.close();
+
+        // Rewrite the entry log header to be on V0 format
+        File f = new File(curDir, "0.log");
+        RandomAccessFile raf = new RandomAccessFile(f, "rw");
+        raf.seek(8);
+        // Mock that there is a ledgers map offset but the ledgers count is 0
+        raf.writeLong(40);
+        raf.writeInt(0);
+        raf.close();
+
+        // now see which ledgers are in the log
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
+
+        try {
+            entryLogger.extractEntryLogMetadataFromIndex(0L);
+            fail("Should not be possible to recover from ledgers map index");
+        } catch (IOException e) {
+            assertEquals("No ledgers map found in entryLogId 0, do scan to double confirm", e.getMessage());
+        }
+
+        // Public method should succeed by falling back to scanning the file
+        EntryLogMetadata meta = entryLogger.getEntryLogMetadata(0L);
+        LOG.info("Extracted Meta From Entry Log {}", meta);
+        assertEquals(60, meta.getLedgersMap().get(1L));
+        assertEquals(30, meta.getLedgersMap().get(2L));
+        assertEquals(30, meta.getLedgersMap().get(3L));
+        assertFalse(meta.getLedgersMap().containsKey(4L));
+        assertEquals(120, meta.getTotalSize());
+        assertEquals(120, meta.getRemainingSize());
+    }
+
     /**
      * Explicitly try to recover using the ledgers map index at the end of the entry log.
      */
