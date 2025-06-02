@@ -21,12 +21,11 @@
 
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.client.BKException;
-
-import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
 class ReadCompletion extends CompletionValue {
     final BookkeeperInternalCallbacks.ReadEntryCallback cb;

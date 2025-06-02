@@ -23,6 +23,8 @@ package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Joiner;
 import io.netty.channel.Channel;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.MdcUtils;
@@ -30,9 +32,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 abstract class CompletionValue {
     private final String operationName;

@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.util.Recycler;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.MDC;
 
@@ -88,8 +89,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
 
     @Override
     boolean maybeTimeout() {
-        if (org.apache.bookkeeper.common.util.MathUtils.elapsedNanos(startTime) >=
-                perChannelBookieClient.addEntryTimeoutNanos) {
+        if (MathUtils.elapsedNanos(startTime) >= perChannelBookieClient.addEntryTimeoutNanos) {
             timeout();
             return true;
         } else {

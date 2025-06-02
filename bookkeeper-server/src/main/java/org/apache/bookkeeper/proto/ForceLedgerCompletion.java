@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.proto;
 
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.net.BookieId;
 
 class ForceLedgerCompletion extends CompletionValue {
     final BookkeeperInternalCallbacks.ForceLedgerCallback cb;

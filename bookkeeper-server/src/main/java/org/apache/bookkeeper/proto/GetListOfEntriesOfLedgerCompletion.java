@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.client.BKException;
@@ -30,20 +31,16 @@ class GetListOfEntriesOfLedgerCompletion extends CompletionValue {
     final BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback cb;
 
     public GetListOfEntriesOfLedgerCompletion(final CompletionKey key,
-                                              final BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback origCallback,
+                                              final GetListOfEntriesOfLedgerCallback origCallback,
                                               final long ledgerId,
                                               PerChannelBookieClient perChannelBookieClient) {
         super("GetListOfEntriesOfLedger", null, ledgerId, 0L, perChannelBookieClient);
         this.opLogger = perChannelBookieClient.getListOfEntriesOfLedgerCompletionOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.getListOfEntriesOfLedgerCompletionTimeoutOpLogger;
-        this.cb = new BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback() {
-            @Override
-            public void getListOfEntriesOfLedgerComplete(int rc, long ledgerId,
-                                                         AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger) {
-                logOpResult(rc);
-                origCallback.getListOfEntriesOfLedgerComplete(rc, ledgerId, availabilityOfEntriesOfLedger);
-                key.release();
-            }
+        this.cb = (rc, ledgerId1, availabilityOfEntriesOfLedger) -> {
+            logOpResult(rc);
+            origCallback.getListOfEntriesOfLedgerComplete(rc, ledgerId1, availabilityOfEntriesOfLedger);
+            key.release();
         };
     }
 
@@ -62,8 +59,9 @@ class GetListOfEntriesOfLedgerCompletion extends CompletionValue {
         BookkeeperProtocol.GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = response
                 .getGetListOfEntriesOfLedgerResponse();
         ByteBuf availabilityOfEntriesOfLedgerBuffer = Unpooled.EMPTY_BUFFER;
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK ? getListOfEntriesOfLedgerResponse.getStatus()
-                : response.getStatus();
+        BookkeeperProtocol.StatusCode status =
+                response.getStatus() == BookkeeperProtocol.StatusCode.EOK ? getListOfEntriesOfLedgerResponse.getStatus()
+                        : response.getStatus();
 
         if (getListOfEntriesOfLedgerResponse.hasAvailabilityOfEntriesOfLedger()) {
             availabilityOfEntriesOfLedgerBuffer = Unpooled.wrappedBuffer(
