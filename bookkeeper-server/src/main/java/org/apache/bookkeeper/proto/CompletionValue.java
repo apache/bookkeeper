@@ -72,7 +72,7 @@ abstract class CompletionValue {
         }
 
         if (rc != BKException.Code.OK
-                && !PerChannelBookieClient.expectedBkOperationErrors.contains(rc)) {
+                && !PerChannelBookieClient.EXPECTED_BK_OPERATION_ERRORS.contains(rc)) {
             perChannelBookieClient.recordError();
         }
     }

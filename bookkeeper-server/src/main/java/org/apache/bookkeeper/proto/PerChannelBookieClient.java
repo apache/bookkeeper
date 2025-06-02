@@ -149,7 +149,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);
 
     // this set contains the bookie error return codes that we do not consider for a bookie to be "faulty"
-    protected static final Set<Integer> expectedBkOperationErrors = Collections.unmodifiableSet(Sets
+    protected static final Set<Integer> EXPECTED_BK_OPERATION_ERRORS = Collections.unmodifiableSet(Sets
             .newHashSet(BKException.Code.BookieHandleNotAvailableException,
                         BKException.Code.NoSuchEntryException,
                         BKException.Code.NoSuchLedgerExistsException,

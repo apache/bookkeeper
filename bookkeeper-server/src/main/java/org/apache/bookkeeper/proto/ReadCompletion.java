@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
@@ -38,17 +39,12 @@ class ReadCompletion extends CompletionValue {
         super("Read", originalCtx, ledgerId, entryId, perChannelBookieClient);
         this.opLogger = perChannelBookieClient.readEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readTimeoutOpLogger;
-        this.cb = new BookkeeperInternalCallbacks.ReadEntryCallback() {
-            @Override
-            public void readEntryComplete(int rc, long ledgerId,
-                                          long entryId, ByteBuf buffer,
-                                          Object ctx) {
-                logOpResult(rc);
-                originalCallback.readEntryComplete(rc,
-                        ledgerId, entryId,
-                        buffer, originalCtx);
-                key.release();
-            }
+        this.cb = (rc, ledgerId1, entryId1, buffer, ctx) -> {
+            logOpResult(rc);
+            originalCallback.readEntryComplete(rc,
+                    ledgerId1, entryId1,
+                    buffer, originalCtx);
+            key.release();
         };
     }
 

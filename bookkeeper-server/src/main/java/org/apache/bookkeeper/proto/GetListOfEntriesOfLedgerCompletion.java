@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.client.BKException;

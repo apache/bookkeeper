@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.util.ByteBufList;
 
