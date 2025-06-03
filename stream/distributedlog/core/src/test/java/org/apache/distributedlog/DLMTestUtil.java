@@ -470,7 +470,7 @@ public class DLMTestUtil {
                 conf.loadConf(confUrl);
                 LOG.info("loaded bk_server.conf from resources");
             }
-        } catch (org.apache.commons.configuration.ConfigurationException ex) {
+        } catch (org.apache.commons.configuration2.ex.ConfigurationException ex) {
             LOG.warn("loading conf failed", ex);
         }
         conf.setAllowLoopback(true);

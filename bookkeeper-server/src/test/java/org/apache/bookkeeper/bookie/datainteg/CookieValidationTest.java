@@ -75,7 +75,8 @@ public class CookieValidationTest {
     private static ServerConfiguration serverConf(boolean stampMissingCookies) {
         ServerConfiguration conf = new ServerConfiguration();
         conf.setDataIntegrityStampMissingCookiesEnabled(stampMissingCookies);
-        conf.setAdvertisedAddress("foobar");
+        conf.setAdvertisedAddress("localhost");
+        conf.setAllowLoopback(true);
         return conf;
     }
 
@@ -255,7 +256,7 @@ public class CookieValidationTest {
                 conf, regManager, new MockDataIntegrityCheck());
         v1.checkCookies(dirs); // stamp original cookies
 
-        conf.setAdvertisedAddress("barfoo");
+        conf.setBookieId("barfoo");
         DataIntegrityCookieValidation v2 = new DataIntegrityCookieValidation(
                 conf, regManager, new MockDataIntegrityCheck());
         try {
@@ -265,7 +266,7 @@ public class CookieValidationTest {
             // expected
         }
 
-        conf.setAdvertisedAddress("foobar");
+        conf.removeBookieId();
         DataIntegrityCookieValidation v3 = new DataIntegrityCookieValidation(
                 conf, regManager, new MockDataIntegrityCheck());
         v3.checkCookies(dirs); // should succeed as the cookie is same as before

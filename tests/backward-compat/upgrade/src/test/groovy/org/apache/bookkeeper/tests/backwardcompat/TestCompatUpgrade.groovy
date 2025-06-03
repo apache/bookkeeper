@@ -17,6 +17,8 @@
 */
 package org.apache.bookkeeper.tests.backwardcompat
 
+import static org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils.*
+
 import com.github.dockerjava.api.DockerClient
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
@@ -122,84 +124,83 @@ class TestCompatUpgrade {
     @Test
     public void test_000() throws Exception {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.8.2"))
+        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, VERSION_4_8_x))
     }
 
     @Test
-    public void test_001_482to492() throws Exception {
-        testUpgrade("4.8.2", "4.9.2")
+    public void test_001_48xto49x() throws Exception {
+        testUpgrade(VERSION_4_8_x, VERSION_4_9_x)
     }
 
     @Test
-    public void test_002_492to4100() throws Exception {
-        testUpgrade("4.9.2", "4.10.0")
+    public void test_002_49xto410x() throws Exception {
+        testUpgrade(VERSION_4_9_x, VERSION_4_10_x)
     }
 
     @Test
-    public void test_003_4100to4111() throws Exception {
-        testUpgrade("4.10.0", "4.11.1")
+    public void test_003_410xto411x() throws Exception {
+        testUpgrade(VERSION_4_10_x, VERSION_4_11_x)
     }
 
     @Test
-    public void test_004_4111to4121() throws Exception {
-        testUpgrade("4.11.1", "4.12.1")
+    public void test_004_411xto412x() throws Exception {
+        testUpgrade(VERSION_4_11_x, VERSION_4_12_x)
     }
 
     @Test
-    public void test_005_4121to4130() throws Exception {
-        testUpgrade("4.12.1", "4.13.0")
+    public void test_005_412xto413x() throws Exception {
+        testUpgrade(VERSION_4_12_x, VERSION_4_13_x)
     }
 
     @Test
-    public void test_006_4130to4148() throws Exception {
-        testUpgrade("4.13.0", "4.14.8")
+    public void test_006_413xto414x() throws Exception {
+        testUpgrade(VERSION_4_13_x, VERSION_4_14_x)
     }
 
     @Test
-    public void test_007_4148to4155() throws Exception {
-        testUpgrade("4.14.8", "4.15.5")
+    public void test_007_414xto415x() throws Exception {
+        testUpgrade(VERSION_4_14_x, VERSION_4_15_x)
     }
 
     @Test
-    public void test_007_4148to4155_crc32c() throws Exception {
-        testUpgrade("4.14.8", "4.15.5", "CRC32C")
+    public void test_007_414xto415x_crc32c() throws Exception {
+        testUpgrade(VERSION_4_14_x, VERSION_4_15_x, "CRC32C")
     }
 
     @Test
-    public void test_008_4155to4165() throws Exception {
-        testUpgrade("4.15.5", "4.16.5")
+    public void test_008_415xto416x() throws Exception {
+        testUpgrade(VERSION_4_15_x, VERSION_4_16_x)
     }
 
     @Test
-    public void test_008_4155to4165_crc32c() throws Exception {
-        testUpgrade("4.15.5", "4.16.5", "CRC32C")
+    public void test_008_415xto416x_crc32c() throws Exception {
+        testUpgrade(VERSION_4_15_x, VERSION_4_16_x, "CRC32C")
     }
 
     @Test
-    public void test_008_4165to4170_crc32c() throws Exception {
-        testUpgrade("4.16.5", "4.17.0", "CRC32C")
+    public void test_008_416xto417x_crc32c() throws Exception {
+        testUpgrade(VERSION_4_16_x, VERSION_4_17_x, "CRC32C")
     }
 
     @Test
-    public void test_009_4165toCurrentMaster() throws Exception {
-        testUpgrade("4.17.0", BookKeeperClusterUtils.CURRENT_VERSION)
+    public void test_009_417xtoCurrentMaster() throws Exception {
+        testUpgrade(VERSION_4_17_x, CURRENT_VERSION)
     }
 
     @Test
-    public void test_009_4165toCurrentMaster_crc32c() throws Exception {
-        testUpgrade("4.17.0", BookKeeperClusterUtils.CURRENT_VERSION, "CRC32C")
+    public void test_009_417xtoCurrentMaster_crc32c() throws Exception {
+        testUpgrade(VERSION_4_17_x, CURRENT_VERSION, "CRC32C")
     }
 
     // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4148_crc32c() throws Exception {
-        testUpgrade("4.10.0", "4.14.8", "CRC32C")
+    public void test_010_410xto414x_crc32c() throws Exception {
+        testUpgrade(VERSION_4_10_x, VERSION_4_14_x, "CRC32C")
     }
 
     // old version pulsar upgrade tests
     @Test
-    public void test_010_4100to4170_crc32c() throws Exception {
-        testUpgrade("4.10.0", "4.17.0", "CRC32C")
+    public void test_010_410xto417x_crc32c() throws Exception {
+        testUpgrade(VERSION_4_10_x, VERSION_4_17_x, "CRC32C")
     }
-
 }

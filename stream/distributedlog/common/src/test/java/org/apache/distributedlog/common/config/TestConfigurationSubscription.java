@@ -21,15 +21,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.event.ConfigurationEvent;
-import org.apache.commons.configuration.event.ConfigurationListener;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.event.ConfigurationEvent;
 import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -42,28 +42,23 @@ import org.slf4j.LoggerFactory;
  */
 public class TestConfigurationSubscription {
     static final Logger LOG = LoggerFactory.getLogger(TestConfigurationSubscription.class);
+    public static final int RELOAD_PERIOD = 10;
 
     /**
-     * Give FileChangedReloadingStrategy some time to start reloading.
-     *
-     * <p>Make sure now!=lastChecked
-     * {@link org.apache.commons.configuration.reloading.FileChangedReloadingStrategy#reloadingRequired()}
+     * Give some time to handle reloading.
      */
     private void ensureConfigReloaded() throws InterruptedException {
-        // sleep 1 ms so that System.currentTimeMillis() !=
-        // lastChecked (the time we construct FileChangedReloadingStrategy
         Thread.sleep(1);
     }
 
     @Test(timeout = 60000)
     public void testReloadConfiguration() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
-        FileConfigurationBuilder builder = new PropertiesConfigurationBuilder(writer.getFile().toURI().toURL());
         ConcurrentConstConfiguration conf = new ConcurrentConstConfiguration(new CompositeConfiguration());
         DeterministicScheduler executorService = new DeterministicScheduler();
-        List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(builder);
+        List<File> configFiles = Collections.singletonList(writer.getFile());
         ConfigurationSubscription confSub =
-                new ConfigurationSubscription(conf, fileConfigBuilders, executorService, 100, TimeUnit.MILLISECONDS);
+                new ConfigurationSubscription(conf, configFiles, executorService, RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         final AtomicReference<ConcurrentBaseConfiguration> confHolder = new AtomicReference<>();
         confSub.registerListener(new org.apache.distributedlog.common.config.ConfigurationListener() {
             @Override
@@ -78,8 +73,7 @@ public class TestConfigurationSubscription {
         writer.save();
         // ensure the file change reloading event can be triggered
         ensureConfigReloaded();
-        // reload the config
-        confSub.reload();
+        executorService.tick(RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         assertNotNull(confHolder.get());
         assertTrue(conf == confHolder.get());
         assertEquals("1", conf.getProperty("prop1"));
@@ -89,11 +83,10 @@ public class TestConfigurationSubscription {
     public void testAddReloadBasicsConfig() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
         DeterministicScheduler mockScheduler = new DeterministicScheduler();
-        FileConfigurationBuilder builder = new PropertiesConfigurationBuilder(writer.getFile().toURI().toURL());
         ConcurrentConstConfiguration conf = new ConcurrentConstConfiguration(new CompositeConfiguration());
-        List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(builder);
+        List<File> configFiles = Collections.singletonList(writer.getFile());
         ConfigurationSubscription confSub =
-                new ConfigurationSubscription(conf, fileConfigBuilders, mockScheduler, 100, TimeUnit.MILLISECONDS);
+                new ConfigurationSubscription(conf, configFiles, mockScheduler, RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         assertEquals(null, conf.getProperty("prop1"));
 
         // add
@@ -101,7 +94,7 @@ public class TestConfigurationSubscription {
         writer.save();
         // ensure the file change reloading event can be triggered
         ensureConfigReloaded();
-        mockScheduler.tick(100, TimeUnit.MILLISECONDS);
+        mockScheduler.tick(RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         assertEquals("1", conf.getProperty("prop1"));
 
     }
@@ -117,11 +110,10 @@ public class TestConfigurationSubscription {
         writer.save();
 
         ScheduledExecutorService mockScheduler = new DeterministicScheduler();
-        FileConfigurationBuilder builder = new PropertiesConfigurationBuilder(writer.getFile().toURI().toURL());
         ConcurrentConstConfiguration conf = new ConcurrentConstConfiguration(new CompositeConfiguration());
-        List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(builder);
+        List<File> configFiles = Collections.singletonList(writer.getFile());
         ConfigurationSubscription confSub =
-                new ConfigurationSubscription(conf, fileConfigBuilders, mockScheduler, 100, TimeUnit.MILLISECONDS);
+                new ConfigurationSubscription(conf, configFiles, mockScheduler, RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         assertEquals(1, conf.getInt("prop1"));
         assertEquals("abc", conf.getString("prop2"));
         assertEquals(123.0, conf.getFloat("prop3"), 0);
@@ -136,38 +128,36 @@ public class TestConfigurationSubscription {
         writer.save();
 
         DeterministicScheduler mockScheduler = new DeterministicScheduler();
-        FileConfigurationBuilder builder = new PropertiesConfigurationBuilder(writer.getFile().toURI().toURL());
         ConcurrentConstConfiguration conf = new ConcurrentConstConfiguration(new CompositeConfiguration());
-        List<FileConfigurationBuilder> fileConfigBuilders = Lists.newArrayList(builder);
+        List<File> configFiles = Collections.singletonList(writer.getFile());
         ConfigurationSubscription confSub =
-                new ConfigurationSubscription(conf, fileConfigBuilders, mockScheduler, 100, TimeUnit.MILLISECONDS);
+                new ConfigurationSubscription(conf, configFiles, mockScheduler, RELOAD_PERIOD, TimeUnit.MILLISECONDS);
 
         final AtomicInteger count = new AtomicInteger(1);
-        conf.addConfigurationListener(new ConfigurationListener() {
-            @Override
-            public void configurationChanged(ConfigurationEvent event) {
+        conf.addEventListener(ConfigurationEvent.ANY, event -> {
                 LOG.info("config changed {}", event);
                 // Throw after so we actually see the update anyway.
                 if (!event.isBeforeUpdate()) {
                     count.getAndIncrement();
                     throw new RuntimeException("config listener threw and exception");
                 }
-            }
-        });
+            });
 
         int i = 0;
         int initial = 0;
         while (count.get() == initial) {
             writer.setProperty("prop1", Integer.toString(i++));
             writer.save();
-            mockScheduler.tick(100, TimeUnit.MILLISECONDS);
+            ensureConfigReloaded();
+            mockScheduler.tick(RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         }
 
         initial = count.get();
         while (count.get() == initial) {
             writer.setProperty("prop1", Integer.toString(i++));
             writer.save();
-            mockScheduler.tick(100, TimeUnit.MILLISECONDS);
+            ensureConfigReloaded();
+            mockScheduler.tick(RELOAD_PERIOD, TimeUnit.MILLISECONDS);
         }
     }
 }

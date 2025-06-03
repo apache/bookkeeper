@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
@@ -255,51 +254,56 @@ public class BookieImpl implements Bookie {
      */
     public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
+        String hostAddress;
         // Advertised address takes precedence over the listening interface and the
         // useHostNameAsBookieID settings
         if (conf.getAdvertisedAddress() != null && conf.getAdvertisedAddress().trim().length() > 0) {
-            String hostAddress = conf.getAdvertisedAddress().trim();
-            return new BookieSocketAddress(hostAddress, conf.getBookiePort());
-        }
-
-        String iface = conf.getListeningInterface();
-        if (iface == null) {
-            iface = "default";
-        }
-
-        String hostName = DNS.getDefaultHost(iface);
-        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
-        if (inetAddr.isUnresolved()) {
-            throw new UnknownHostException("Unable to resolve default hostname: "
-                    + hostName + " for interface: " + iface);
-        }
-        String hostAddress = null;
-        InetAddress iAddress = inetAddr.getAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            hostAddress = iAddress.getCanonicalHostName();
-            if (conf.getUseShortHostName()) {
-                /*
-                 * if short hostname is used, then FQDN is not used. Short
-                 * hostname is the hostname cut at the first dot.
-                 */
-                hostAddress = hostAddress.split("\\.", 2)[0];
-            }
+            hostAddress = conf.getAdvertisedAddress().trim();
         } else {
-            hostAddress = iAddress.getHostAddress();
+            String iface = conf.getListeningInterface();
+            if (iface == null) {
+                iface = "default";
+            }
+            String defaultIP = DNS.getDefaultIP(iface);
+            if (conf.getUseHostNameAsBookieID()) {
+                try {
+                    hostAddress = InetAddress.getByName(defaultIP).getCanonicalHostName();
+                } catch (Exception e) {
+                    UnknownHostException unknownHostException =
+                            new UnknownHostException("Unable to resolve hostname for interface: " + iface);
+                    unknownHostException.initCause(e);
+                    throw unknownHostException;
+                }
+                if (defaultIP.equals(hostAddress)) {
+                    throw new UnknownHostException("Unable to resolve hostname for ip address: " + defaultIP);
+                }
+                if (conf.getUseShortHostName()) {
+                    /*
+                     * if short hostname is used, then FQDN is not used. Short
+                     * hostname is the hostname cut at the first dot.
+                     */
+                    hostAddress = hostAddress.split("\\.", 2)[0];
+                }
+            } else {
+                hostAddress = defaultIP;
+            }
         }
 
-        BookieSocketAddress addr =
+        BookieSocketAddress bookieSocketAddress =
                 new BookieSocketAddress(hostAddress, conf.getBookiePort());
-        if (addr.getSocketAddress().getAddress().isLoopbackAddress()
-            && !conf.getAllowLoopback()) {
+        InetAddress inetAddress = bookieSocketAddress.getSocketAddress().getAddress();
+        if (inetAddress == null) {
+            throw new UnknownHostException("Failed to resolve InetAddress for host address: " + hostAddress);
+        }
+        if (inetAddress.isLoopbackAddress() && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
-                    + addr + " but this is forbidden by default "
+                    + bookieSocketAddress + " but this is forbidden by default "
                     + "(see ServerConfiguration#getAllowLoopback()).\n"
                     + "If this happen, you can consider specifying the network interface"
                     + " to listen on (e.g. listeningInterface=eth0) or specifying the"
                     + " advertised address (e.g. advertisedAddress=172.x.y.z)");
         }
-        return addr;
+        return bookieSocketAddress;
     }
 
     public LedgerDirsManager getLedgerDirsManager() {

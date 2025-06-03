@@ -93,16 +93,15 @@ public class EntryLocationIndexTest {
         int numEntriesPerLedger = 100;
 
         int location = 0;
-        KeyValueStorage.Batch batch = idx.newBatch();
-        for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
-            for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
-                idx.addLocation(batch, ledgerId, entryId, location);
-                location++;
+        try (KeyValueStorage.Batch batch = idx.newBatch()) {
+            for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {
+                for (int ledgerId = 0; ledgerId < numLedgers; ++ledgerId) {
+                    idx.addLocation(batch, ledgerId, entryId, location);
+                    location++;
+                }
             }
+            batch.flush();
         }
-        batch.flush();
-        batch.close();
-
 
         int expectedLocation = 0;
         for (int entryId = 0; entryId < numEntriesPerLedger; ++entryId) {

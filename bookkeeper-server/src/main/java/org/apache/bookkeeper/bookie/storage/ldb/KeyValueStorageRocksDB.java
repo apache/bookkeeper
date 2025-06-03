@@ -38,8 +38,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
@@ -47,6 +49,7 @@ import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.CompressionType;
+import org.rocksdb.ConfigOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.InfoLogLevel;
@@ -73,6 +76,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
             new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType, conf);
 
+    private volatile boolean closed = true;
+    private final ReentrantReadWriteLock closedLock = new ReentrantReadWriteLock();
     private final RocksDB db;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
@@ -131,7 +136,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             dbFilePath = conf.getDefaultRocksDBConf();
         }
         log.info("Searching for a RocksDB configuration file in {}", dbFilePath);
-        if (Paths.get(dbFilePath).toFile().exists()) {
+        if (StringUtils.isNotBlank(dbFilePath) && Paths.get(dbFilePath).toFile().exists()) {
             log.info("Found a RocksDB configuration file and using it to initialize the RocksDB");
             db = initializeRocksDBWithConfFile(basePath, subPath, dbConfigType, conf, readOnly, dbFilePath);
         } else {
@@ -146,6 +151,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         optionDontCache.setFillCache(false);
 
         this.writeBatchMaxSize = conf.getMaxOperationNumbersInSingleRocksDBBatch();
+        this.closed = false;
     }
 
     private RocksDB initializeRocksDBWithConfFile(String basePath, String subPath, DbConfigType dbConfigType,
@@ -154,8 +160,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         DBOptions dbOptions = new DBOptions();
         final List<ColumnFamilyDescriptor> cfDescs = new ArrayList<>();
         final List<ColumnFamilyHandle> cfHandles = new ArrayList<>();
-        try {
-            OptionsUtil.loadOptionsFromFile(dbFilePath, Env.getDefault(), dbOptions, cfDescs, false);
+        try (final ConfigOptions cfgOpts = new ConfigOptions()
+                .setIgnoreUnknownOptions(false)
+                .setEnv(Env.getDefault())) {
+            OptionsUtil.loadOptionsFromFile(cfgOpts, dbFilePath, dbOptions, cfDescs);
             // Configure file path
             String logPath = conf.getString(ROCKSDB_LOG_PATH, "");
             if (!logPath.isEmpty()) {
@@ -182,6 +190,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         Options options = new Options();
         options.setCreateIfMissing(true);
         ChecksumType checksumType = ChecksumType.valueOf(conf.getString(ROCKSDB_CHECKSUM_TYPE, "kxxHash"));
+        int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 5);
 
         if (dbConfigType == DbConfigType.EntryLocation) {
             /* Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override */
@@ -198,7 +207,6 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
             int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
             boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
-            int formatVersion = conf.getInt(ROCKSDB_FORMAT_VERSION, 5);
 
             if (lz4CompressionEnabled) {
                 options.setCompressionType(CompressionType.LZ4_COMPRESSION);
@@ -235,6 +243,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         } else {
             this.cache = null;
             BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
+            tableOptions.setFormatVersion(formatVersion);
             tableOptions.setChecksumType(checksumType);
             options.setTableFormatConfig(tableOptions);
         }
@@ -285,7 +294,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void close() throws IOException {
-        db.close();
+        try {
+            closedLock.writeLock().lock();
+            closed = true;
+            db.close();
+        } finally {
+            closedLock.writeLock().unlock();
+        }
         if (cache != null) {
             cache.close();
         }
@@ -511,7 +526,18 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     @Override
     public long count() throws IOException {
         try {
-            return db.getLongProperty("rocksdb.estimate-num-keys");
+            if (closed) {
+                throw new IOException("RocksDB is closed");
+            }
+            try {
+                closedLock.readLock().lock();
+                if (!closed) {
+                    return db.getLongProperty("rocksdb.estimate-num-keys");
+                }
+                throw new IOException("RocksDB is closed");
+            } finally {
+                closedLock.readLock().unlock();
+            }
         } catch (RocksDBException e) {
             throw new IOException("Error in getting records count", e);
         }

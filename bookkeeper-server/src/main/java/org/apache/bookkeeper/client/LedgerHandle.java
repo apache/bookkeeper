@@ -754,10 +754,10 @@ public class LedgerHandle implements WriteHandle {
      */
     public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb, Object ctx) {
         // Little sanity check
-        if (startEntry > lastAddConfirmed) {
-            LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
+        if (startEntry < 0 || startEntry > lastAddConfirmed) {
+            LOG.error("IncorrectParameterException on ledgerId:{} startEntry:{} lastAddConfirmed:{}",
                     ledgerId, startEntry, lastAddConfirmed);
-            cb.readComplete(BKException.Code.ReadException, this, null, ctx);
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
         if (notSupportBatchRead()) {
@@ -2135,19 +2135,24 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void maybeHandleDelayedWriteBookieFailure() {
+        Map<Integer, BookieId> toReplace = null;
         synchronized (metadataLock) {
             if (delayedWriteFailedBookies.isEmpty()) {
                 return;
             }
-            Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
+            toReplace = new HashMap<>(delayedWriteFailedBookies);
             delayedWriteFailedBookies.clear();
-
-            // Original intent of this change is to do a best-effort ensemble change.
-            // But this is not possible until the local metadata is completely immutable.
-            // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
-            // handleBookieFailure() to handle delayed writes as regular bookie failures.
-            handleBookieFailure(toReplace);
         }
+
+        if (toReplace.isEmpty()) {
+            return;
+        }
+
+        // Original intent of this change is to do a best-effort ensemble change.
+        // But this is not possible until the local metadata is completely immutable.
+        // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
+        // handleBookieFailure() to handle delayed writes as regular bookie failures.
+        handleBookieFailure(toReplace);
     }
 
     void handleBookieFailure(final Map<Integer, BookieId> failedBookies) {
@@ -2266,12 +2271,12 @@ public class LedgerHandle implements WriteHandle {
 
                         List<BookieId> newEnsemble = null;
                         Set<Integer> replaced = null;
+
+                        Map<Integer, BookieId> toReplace = null;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
-                                Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
+                                toReplace = new HashMap<>(delayedWriteFailedBookies);
                                 delayedWriteFailedBookies.clear();
-
-                                ensembleChangeLoop(origEnsemble, toReplace);
                             } else {
                                 newEnsemble = getCurrentEnsemble();
                                 replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
@@ -2280,6 +2285,11 @@ public class LedgerHandle implements WriteHandle {
                                 changingEnsemble = false;
                             }
                         }
+
+                        if (toReplace != null && !toReplace.isEmpty()) {
+                            ensembleChangeLoop(origEnsemble, toReplace);
+                        }
+
                         if (newEnsemble != null) { // unsetSuccess outside of lock
                             unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                         }

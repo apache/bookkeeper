@@ -19,7 +19,7 @@ package org.apache.distributedlog.common.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * Invariant thread-safe view of some configuration.

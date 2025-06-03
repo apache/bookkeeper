@@ -21,12 +21,12 @@ import io.netty.util.internal.PlatformDependent;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
-import io.opentelemetry.instrumentation.runtimemetrics.BufferPools;
-import io.opentelemetry.instrumentation.runtimemetrics.Classes;
-import io.opentelemetry.instrumentation.runtimemetrics.Cpu;
-import io.opentelemetry.instrumentation.runtimemetrics.GarbageCollector;
-import io.opentelemetry.instrumentation.runtimemetrics.MemoryPools;
-import io.opentelemetry.instrumentation.runtimemetrics.Threads;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.BufferPools;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.Classes;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.Cpu;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.GarbageCollector;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.MemoryPools;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.Threads;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
@@ -45,7 +45,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 // CHECKSTYLE.ON: IllegalImport
 
 @Slf4j
