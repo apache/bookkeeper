@@ -116,8 +116,8 @@
     <test.additional.args />
 
     <!-- dependencies -->
-    <arquillian-cube.version>1.18.2</arquillian-cube.version>
-    <arquillian-junit.version>1.8.0.Final</arquillian-junit.version>
+    <arquillian-cube.version>2.0.0.Final</arquillian-cube.version>
+    <arquillian-junit.version>1.9.4.Final</arquillian-junit.version>
     <bc-non-fips.version>1.78</bc-non-fips.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <commons-cli.version>1.9.0</commons-cli.version>
@@ -799,6 +799,11 @@
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.arquillian.core</groupId>
+        <artifactId>arquillian-core-spi</artifactId>
+        <version>${arquillian-junit.version}</version>
       </dependency>
       <dependency>
         <groupId>javax.ws.rs</groupId>
