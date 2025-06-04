@@ -87,9 +87,9 @@ abstract class CompletionValue {
     }
 
     void timeout() {
-        errorOut(BKException.Code.TimeoutException);
         timeoutOpLogger.registerSuccessfulEvent(latency(),
                 TimeUnit.NANOSECONDS);
+        errorOut(BKException.Code.TimeoutException);
     }
 
     protected void logResponse(BookkeeperProtocol.StatusCode status, Object... extraInfo) {
