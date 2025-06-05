@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +39,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 @Slf4j
 public class ClientSocketDisconnectTest extends BookKeeperClusterTestCase {
@@ -96,6 +97,7 @@ public class ClientSocketDisconnectTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testAddEntriesCallbackWithBKClientThread() throws Exception {
+        //setUp();
         // Create BKC and a ledger handle.
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
