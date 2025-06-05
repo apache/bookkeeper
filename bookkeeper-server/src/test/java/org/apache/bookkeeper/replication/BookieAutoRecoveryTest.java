@@ -24,10 +24,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
@@ -36,6 +38,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -55,6 +58,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +142,51 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         if (null != scheduler) {
             scheduler.shutdown();
         }
+    }
+
+    /**
+     * The purpose of this test:
+     * 1. Client service open a readonly ledger handle, which has been closed.
+     * 2. All BKs that relates to the ledger have been decommissioned.
+     * 3. Auto recovery component moved the data into other BK instances who is alive.
+     * 4. Verify: lhe ledger handle in the client memory keeps updating the ledger ensemble set, and the new read
+     *    request works.
+     */
+    @Test
+    public void testOpenedLedgerHandleStillWorkAfterDecommissioning() throws Exception {
+        LedgerHandle lh = bkc.createLedger(2, 2, digestType, PASSWD);
+        lh.addEntry(data);
+        lh.close();
+        List<BookieId> ensemble = lh.getLedgerMetadata().getAllEnsembles().get(0L);
+        BookieId bookieIdDoesNotInEnsemble = null;
+        for (BookieId bkAddr : bookieAddresses()) {
+            if (!ensemble.contains(bkAddr)) {
+                bookieIdDoesNotInEnsemble = bkAddr;
+                break;
+            }
+        }
+        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD, false);
+        assertTrue(ensemble.size() == 2);
+
+        killBookie(ensemble.get(0));
+        verifyLedgerEnsembleMetadataAfterReplication(bookieIdDoesNotInEnsemble,
+                lh, 0);
+
+        startNewBookie();
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
+        killBookie(ensemble.get(1));
+        verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
+                lh, 1);
+
+        Awaitility.await().untilAsserted(() -> {
+            LedgerEntries ledgerEntries = readonlyLh.read(0, 0);
+            assertNotNull(ledgerEntries);
+            byte[] entryBytes = ledgerEntries.getEntry(0L).getEntryBytes();
+            assertEquals(new String(data), new String(entryBytes));
+            ledgerEntries.close();
+        });
+        readonlyLh.close();
     }
 
     /**
@@ -590,13 +639,19 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private void verifyLedgerEnsembleMetadataAfterReplication(
             BookieServer newBookieServer, LedgerHandle lh,
             int ledgerReplicaIndex) throws Exception {
+        verifyLedgerEnsembleMetadataAfterReplication(newBookieServer.getBookieId(), lh, ledgerReplicaIndex);
+    }
+
+    private void verifyLedgerEnsembleMetadataAfterReplication(
+            BookieId newBookie, LedgerHandle lh,
+            int ledgerReplicaIndex) throws Exception {
         LedgerHandle openLedger = bkc
                 .openLedger(lh.getId(), digestType, PASSWD);
 
         BookieId inetSocketAddress = openLedger.getLedgerMetadata().getAllEnsembles().get(0L)
                 .get(ledgerReplicaIndex);
-        assertEquals("Rereplication has been failed and ledgerReplicaIndex :"
-                + ledgerReplicaIndex, newBookieServer.getBookieId(),
+        assertEquals("Replication has been failed and ledgerReplicaIndex :"
+                + ledgerReplicaIndex, newBookie,
                 inetSocketAddress);
         openLedger.close();
     }
