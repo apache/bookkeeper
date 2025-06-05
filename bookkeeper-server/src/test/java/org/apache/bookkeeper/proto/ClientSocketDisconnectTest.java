@@ -38,7 +38,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 @Slf4j
 public class ClientSocketDisconnectTest extends BookKeeperClusterTestCase {
