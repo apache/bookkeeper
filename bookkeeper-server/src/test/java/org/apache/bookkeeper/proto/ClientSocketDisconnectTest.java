@@ -23,7 +23,6 @@ package org.apache.bookkeeper.proto;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,7 +96,6 @@ public class ClientSocketDisconnectTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testAddEntriesCallbackWithBKClientThread() throws Exception {
-        //setUp();
         // Create BKC and a ledger handle.
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
