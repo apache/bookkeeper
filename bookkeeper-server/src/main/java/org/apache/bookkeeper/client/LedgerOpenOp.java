@@ -184,7 +184,7 @@ class LedgerOpenOp {
             // 3. Auto recovery component moved the data into other BK instances who is alive.
             // 4. The ledger handle in the client memory keeps connects to the BKs who in the original ensemble set,
             //    and the connection will always fail.
-            // Therefore, all ledger handle need the watcher,
+            // Therefore, whether the ledger handle is closed or not, it needs the watcher,
             lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
                                           passwd, true);
         } catch (GeneralSecurityException e) {
