@@ -244,7 +244,7 @@ public class AuditorElector {
             }
             // close auditor manager
             try {
-                submitShutdownTask().get(10, TimeUnit.SECONDS);
+                submitShutdownTask().get(60, TimeUnit.SECONDS);
                 executor.shutdown();
             } catch (ExecutionException e) {
                 LOG.warn("Failed to close auditor manager", e);
