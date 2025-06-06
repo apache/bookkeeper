@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import jdk.jpackage.internal.Log;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -208,7 +210,8 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             assertNull("UrLedger already exists!",
                     watchUrLedgerNode(getUrLedgerZNode(lh), latch));
         }
-
+        LOG.info("Ledgers wait for replication: {}", listOfLedgerHandle.stream().map(LedgerHandle::getId).collect(
+                Collectors.toList()));
         LOG.info("Killing Bookie :" + replicaToKillAddr);
         killBookie(replicaToKillAddr);
 
@@ -634,13 +637,13 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             @Override
             public void process(WatchedEvent event) {
                 if (event.getType() == EventType.NodeDeleted) {
-                    LOG.info("Received Ledger rereplication completion event :"
-                            + event.getType());
+                    LOG.info("Received Ledger replication completion. event : {}, path: {}",
+                            event.getType(), event.getPath());
                     latch.countDown();
                 }
                 if (event.getType() == EventType.NodeCreated) {
-                    LOG.info("Received urLedger publishing event :"
-                            + event.getType());
+                    LOG.info("Received urLedger publishing event: {}, path: {}",
+                            event.getType(), event.getPath());
                     latch.countDown();
                 }
             }
