@@ -48,9 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Integration tests verifies the complete functionality of the
- * Auditor-rereplication process: Auditor will publish the bookie failures,
- * consequently ReplicationWorker will get the notifications and act on it.
+ * Integration tests verifies the complete decommission tasks.
  */
 public class FullEnsembleDecommissionedTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
@@ -65,8 +63,6 @@ public class FullEnsembleDecommissionedTest extends BookKeeperClusterTestCase {
     private LedgerUnderreplicationManager underReplicationManager;
     private LedgerManager ledgerManager;
     private OrderedScheduler scheduler;
-
-    private final String underreplicatedPath = "/ledgers/underreplication/ledgers";
 
     public FullEnsembleDecommissionedTest() throws Exception{
         super(2);
