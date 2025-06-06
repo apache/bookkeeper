@@ -70,6 +70,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.jboss.arquillian.test</groupId>
+      <artifactId>arquillian-test-spi</artifactId>
+      <version>${arquillian-junit.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.jboss.arquillian.junit</groupId>
       <artifactId>arquillian-junit-container</artifactId>
     </dependency>
