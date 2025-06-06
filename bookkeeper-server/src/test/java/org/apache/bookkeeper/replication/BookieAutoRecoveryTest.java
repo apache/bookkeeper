@@ -163,7 +163,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                 break;
             }
         }
-        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD, false);
+        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD);
         assertTrue(ensemble.size() == 2);
 
         killBookie(ensemble.get(0));
