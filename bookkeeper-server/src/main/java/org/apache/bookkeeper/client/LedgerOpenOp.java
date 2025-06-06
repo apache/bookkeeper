@@ -175,8 +175,18 @@ class LedgerOpenOp {
 
         // get the ledger metadata back
         try {
+            // The ledger metadata may be modified even if it has been closed, because the auto-recovery component may
+            // rewrite the ledger's metadata. Keep receiving a notification from ZK to avoid the following issue: an
+            // opened ledger handle in memory still accesses to a BK instance who has been decommissioned. The issue
+            // that solved happens as follows:
+            // 1. Client service open a readonly ledger handle, which has been closed.
+            // 2. All BKs that relates to the ledger have been decommissioned.
+            // 3. Auto recovery component moved the data into other BK instances who is alive.
+            // 4. The ledger handle in the client memory keeps connects to the BKs who in the original ensemble set,
+            //    and the connection will always fail.
+            // Therefore, whether the ledger handle is closed or not, it needs the watcher,
             lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
-                                          passwd, !doRecovery);
+                                          passwd, true);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             openComplete(BKException.Code.DigestNotInitializedException, null);
