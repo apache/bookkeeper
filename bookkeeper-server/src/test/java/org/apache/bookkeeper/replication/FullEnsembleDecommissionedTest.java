@@ -138,7 +138,7 @@ public class FullEnsembleDecommissionedTest extends BookKeeperClusterTestCase {
         lh.addEntry(data);
         lh.close();
         List<BookieId> originalEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(0L);
-        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD);
+        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD, true);
         assertTrue(originalEnsemble.size() == 2);
 
         startNewBookie();
