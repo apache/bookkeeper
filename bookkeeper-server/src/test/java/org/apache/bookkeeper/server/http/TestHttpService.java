@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -64,6 +65,7 @@ import org.apache.bookkeeper.server.http.service.BookieSanityService.BookieSanit
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.server.http.service.ClusterInfoService;
+import org.apache.bookkeeper.server.http.service.DecommissionService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.jupiter.api.AfterEach;
@@ -759,10 +761,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = decommissionService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2,  GET, should fail for not support get
+        //2,  GET, should success
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response2 = decommissionService.handle(request2);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        assertEquals("There is not a Decommission task currently running.", response2.getBody());
 
         //3, PUT, with body, should success.
         String putBody3 = "{\"bookie_src\": \"" + getBookie(1).toString() + "\"}";
@@ -771,6 +774,16 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         killBookie(1);
         HttpServiceResponse response3 = decommissionService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+
+        DecommissionService dms = (DecommissionService) decommissionService;
+        Field decommissionTaskField = dms.getClass().getDeclaredField("decommissionTask");
+        decommissionTaskField.setAccessible(true);
+        decommissionTaskField.set(dms, new FutureTask(() -> {}, null));
+        HttpServiceResponse response4 = dms.handle(request3);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response4.getStatusCode());
+        assertEquals("There is an already Decommission task running, ignoring this request.",
+                response4.getBody());
+
         stopAuditorElector();
     }
 
