@@ -163,13 +163,13 @@ long entryId = ledger.addEntry("Some entry data".getBytes());
 ## Reading entries from ledgers
 
 ```java
-Enumerator<LedgerEntry> entries = handle.readEntries(1, 99);
+Enumeration<LedgerEntry> entries = handle.readEntries(1, 99);
 ```
 
 To read all possible entries from the ledger:
 
 ```java
-Enumerator<LedgerEntry> entries =
+Enumeration<LedgerEntry> entries =
   handle.readEntries(0, handle.getLastAddConfirmed());
 
 while (entries.hasNextElement()) {
@@ -188,12 +188,12 @@ With this method you can even read entries before the LastAddConfirmed and entri
 
 ```java
 Enumeration<LedgerEntry> entries =
-        handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
+  handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
 
 while (entries.hasMoreElements()) {
-LedgerEntry entry = entries.nextElement();
+    LedgerEntry entry = entries.nextElement();
     System.out.println("Successfully read entry " + entry.getEntryId());
-        }
+}
 ```
 
 ## Deleting ledgers
@@ -216,10 +216,10 @@ Ledgers can also be deleted asynchronously:
 
 ```java
 class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
-  @Override
-  public void deleteComplete(int rc, Object ctx) {
-    System.out.println("Delete completed");
-  }
+    @Override
+    public void deleteComplete(int rc, Object ctx) {
+        System.out.println("Delete completed");
+    }
 }
 bkClient.asyncDeleteLedger(ledgerID, new DeleteEntryCallback(), null);
 ```
