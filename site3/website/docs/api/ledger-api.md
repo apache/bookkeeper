@@ -188,12 +188,12 @@ With this method you can even read entries before the LastAddConfirmed and entri
 
 ```java
 Enumeration<LedgerEntry> entries =
-  handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
+        handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
 
-while (entries.hasNextElement()) {
-    LedgerEntry entry = entries.nextElement();
-    System.out.println("Successfully read entry " + entry.getId());
-}
+while (entries.hasMoreElements()) {
+LedgerEntry entry = entries.nextElement();
+    System.out.println("Successfully read entry " + entry.getEntryId());
+        }
 ```
 
 ## Deleting ledgers
@@ -216,9 +216,10 @@ Ledgers can also be deleted asynchronously:
 
 ```java
 class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
-    public void deleteComplete() {
-        System.out.println("Delete completed");
-    }
+  @Override
+  public void deleteComplete(int rc, Object ctx) {
+    System.out.println("Delete completed");
+  }
 }
 bkClient.asyncDeleteLedger(ledgerID, new DeleteEntryCallback(), null);
 ```
