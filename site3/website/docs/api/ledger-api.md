@@ -163,13 +163,13 @@ long entryId = ledger.addEntry("Some entry data".getBytes());
 ## Reading entries from ledgers
 
 ```java
-Enumeration<LedgerEntry> entries = handle.readEntries(1, 99);
+Enumerator<LedgerEntry> entries = handle.readEntries(1, 99);
 ```
 
 To read all possible entries from the ledger:
 
 ```java
-Enumeration<LedgerEntry> entries =
+Enumerator<LedgerEntry> entries =
   handle.readEntries(0, handle.getLastAddConfirmed());
 
 while (entries.hasNextElement()) {

@@ -201,13 +201,13 @@ long entryId = ledger.addEntry("Some entry data".getBytes());
 ## Reading entries from ledgers
 
 ```java
-Enumeration<LedgerEntry> entries = handle.readEntries(1, 99);
+Enumerator<LedgerEntry> entries = handle.readEntries(1, 99);
 ```
 
 To read all possible entries from the ledger:
 
 ```java
-Enumeration<LedgerEntry> entries =
+Enumerator<LedgerEntry> entries =
   handle.readEntries(0, handle.getLastAddConfirmed());
 
 while (entries.hasNextElement()) {
@@ -225,7 +225,7 @@ For entries outside that range it is possible that the writer never received the
 With this method you can even read entries before the LastAddConfirmed and entries after it with one call, the expected consistency will be as described above.
 
 ```java
-Enumeration<LedgerEntry> entries =
+Enumerator<LedgerEntry> entries =
   handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
 
 while (entries.hasNextElement()) {
