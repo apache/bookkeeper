@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.metadata.drivers</groupId>
     <artifactId>metadata-drivers-parent</artifactId>
-    <version>4.16.7-SNAPSHOT</version>
+    <version>4.16.7</version>
     <relativePath>..</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
