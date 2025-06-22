@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
@@ -72,6 +73,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -638,6 +640,75 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr6.toBookieId());
         assertEquals("PlacementPolicyAdherence", PlacementPolicyAdherence.FAIL,
                 repp.isEnsembleAdheringToPlacementPolicy(ensemble, 3, 3));
+    }
+
+    @Test
+    public void testReplaceBookieWithNewEnsemble() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r1");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r2");
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/r3");
+
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setMinNumRacksPerWriteQuorum(3);
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        // Update cluster
+        Set<BookieId> addrs = new HashSet<BookieId>();
+        addrs.add(addr1.toBookieId());
+        addrs.add(addr2.toBookieId());
+        addrs.add(addr3.toBookieId());
+        addrs.add(addr4.toBookieId());
+        addrs.add(addr5.toBookieId());
+        repp.onClusterChanged(addrs, new HashSet<>());
+
+        Set<Integer> bookieIndexesToRereplicate = new HashSet<>();
+        bookieIndexesToRereplicate.add(1);
+        bookieIndexesToRereplicate.add(2);
+
+        List<BookieId> ensemble = new ArrayList<>();
+        ensemble.add(addr1.toBookieId());
+        ensemble.add(addr2.toBookieId());
+        ensemble.add(addr3.toBookieId());
+
+        Set<BookieId> bookiesToExclude = Sets.newHashSet();
+
+        for (Integer bookieIndex : bookieIndexesToRereplicate) {
+            BookieId bookie = ensemble.get(bookieIndex);
+            bookiesToExclude.add(bookie);
+        }
+
+        List<BookieId> newEnsemble = new ArrayList<>(ensemble);
+
+        int i = 0;
+        for (Integer bookieIndex : bookieIndexesToRereplicate) {
+            BookieId oldBookie = newEnsemble.get(bookieIndex);
+            EnsemblePlacementPolicy.PlacementResult<BookieId> replaceBookieResponse = repp.replaceBookie(3, 3, 2,
+                            Collections.emptyMap(), newEnsemble, oldBookie, bookiesToExclude);
+            BookieId newBookie = replaceBookieResponse.getResult();
+            PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
+            if (i == 0) {
+                Assert.assertEquals(PlacementPolicyAdherence.FAIL, isEnsembleAdheringToPlacementPolicy);
+            }
+            if (i == 1) {
+                Assert.assertEquals(PlacementPolicyAdherence.MEETS_STRICT, isEnsembleAdheringToPlacementPolicy);
+            }
+            bookiesToExclude.add(newBookie);
+            //We should update ensemble after replace.
+            newEnsemble.set(bookieIndex, newBookie);
+            i++;
+        }
     }
 
     @Test
