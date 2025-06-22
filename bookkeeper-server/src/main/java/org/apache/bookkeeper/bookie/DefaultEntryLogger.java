@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.bookie.storage.EntryLogScanner.ReadLengthType.READ_LEDGER_ENTRY_ID;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
@@ -1034,16 +1035,35 @@ public class DefaultEntryLogger implements EntryLogger {
                 }
                 // read the entry
                 data.clear();
-                data.capacity(entrySize);
-                int rc = readFromLogChannel(entryLogId, bc, data, pos);
-                if (rc != entrySize) {
-                    LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
-                            entryLogId, pos, rc, entrySize);
-                    return;
+                int rc;
+                // process the entry based on the read length type
+                switch (scanner.getReadLengthType()) {
+                    case READ_NOTHING:
+                        // skip read
+                        scanner.process(ledgerId, offset, entrySize);
+                        break;
+                    case READ_LEDGER_ENTRY_ID:
+                        data.capacity(READ_LEDGER_ENTRY_ID.getLengthToRead());
+                        rc = readFromLogChannel(entryLogId, bc, data, pos);
+                        if (rc != READ_LEDGER_ENTRY_ID.getLengthToRead()) {
+                            LOG.warn("Short read for ledger entry id from entrylog {}", entryLogId);
+                            return;
+                        }
+                        long entryId = data.getLong(Long.BYTES);
+                        scanner.process(ledgerId, offset, entrySize, entryId);
+                        break;
+                    case READ_ALL:
+                        data.capacity(entrySize);
+                        rc = readFromLogChannel(entryLogId, bc, data, pos);
+                        if (rc != entrySize) {
+                            LOG.warn("Short read for ledger entry id from entrylog {}", entryLogId);
+                            return;
+                        }
+                        scanner.process(ledgerId, offset, data);
+                        break;
+                     default:
+                         throw new IOException("Unknown read length type " + scanner.getReadLengthType());
                 }
-                // process the entry
-                scanner.process(ledgerId, offset, data);
-
                 // Advance position to the next entry
                 pos += entrySize;
             }
@@ -1166,17 +1186,20 @@ public class DefaultEntryLogger implements EntryLogger {
         // Read through the entry log file and extract the entry log meta
         scanEntryLog(entryLogId, new EntryLogScanner() {
             @Override
-            public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
-                if (throttler != null) {
-                    throttler.acquire(entry.readableBytes());
-                }
+            public void process(long ledgerId, long offset, int entrySize) throws IOException {
                 // add new entry size of a ledger to entry log meta
-                meta.addLedgerSize(ledgerId, entry.readableBytes() + 4);
+                meta.addLedgerSize(ledgerId, entrySize + 4);
             }
 
             @Override
             public boolean accept(long ledgerId) {
                 return ledgerId >= 0;
+            }
+
+            @Override
+            public ReadLengthType getReadLengthType(){
+                // we only need to read the entry size.
+                return ReadLengthType.READ_NOTHING;
             }
         });
 

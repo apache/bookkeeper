@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Sets;
-import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -100,9 +100,7 @@ public class LocationsIndexRebuildOp {
             for (long entryLogId : entryLogs) {
                 entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                     @Override
-                    public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
-                        long entryId = entry.getLong(8);
-
+                    public void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {
                         // Actual location indexed is pointing past the entry size
                         long location = (entryLogId << 32L) | (offset + 4);
 
@@ -134,6 +132,11 @@ public class LocationsIndexRebuildOp {
                     @Override
                     public boolean accept(long ledgerId) {
                         return activeLedgers.contains(ledgerId);
+                    }
+
+                    @Override
+                    public ReadLengthType getReadLengthType() {
+                        return ReadLengthType.READ_LEDGER_ENTRY_ID;
                     }
                 });
 
