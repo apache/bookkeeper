@@ -100,6 +100,20 @@ class SyncThread implements Checkpointer {
     }
 
     protected void doCheckpoint(Checkpoint checkpoint) {
+	// Clear stacked checkpoint tasks
+        try {
+            Field filed = executor.getClass().getDeclaredField("e");
+            filed.setAccessible(true);
+            ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = (ScheduledThreadPoolExecutor) filed.get(executor);
+            BlockingQueue<Runnable> workQueue = scheduledThreadPoolExecutor.getQueue();
+            int workQueueSize = workQueue.size();
+            if (workQueueSize > 1) {
+                workQueue.clear();
+            }
+        } catch (Exception e) {
+            log.error("Clear SyncThread thread pool wrokQueue failed exception:{}", e.getMessage());
+            e.printStackTrace();
+        }
         executor.submit(() -> {
             long startTime = System.nanoTime();
             try {
