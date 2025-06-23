@@ -21,7 +21,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.16.7</version>
+    <version>4.16.7-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-benchmark</artifactId>
