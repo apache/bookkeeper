@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.17.2-SNAPSHOT</version>
+  <version>4.17.2</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -40,7 +40,7 @@
     <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
     <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
     <url>https://github.com/apache/bookkeeper</url>
-    <tag>branch-4.13</tag>
+    <tag>v4.17.2-rc0</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
