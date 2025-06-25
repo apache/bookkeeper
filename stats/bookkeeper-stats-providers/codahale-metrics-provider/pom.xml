@@ -20,7 +20,7 @@
   <parent>
     <artifactId>bookkeeper-stats-providers</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.17.2</version>
+    <version>4.17.2-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>codahale-metrics-provider</artifactId>
