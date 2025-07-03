@@ -140,6 +140,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">DefaultPerChannelBookieClientPool.</span><code><span class="memberNameLink"><a href="../DefaultPerChannelBookieClientPool.html#clientsV3Enforced">clientsV3Enforced</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompletionValue.</span><code><span class="memberNameLink"><a href="../CompletionValue.html#perChannelBookieClient">perChannelBookieClient</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -180,9 +185,35 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../AddCompletion.html" title="class in org.apache.bookkeeper.proto">AddCompletion</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AddCompletion.</span><code><span class="memberNameLink"><a href="../AddCompletion.html#acquireAddCompletion(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">acquireAddCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                    <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;originalCallback,
+                    java.lang.Object&nbsp;originalCtx,
+                    long&nbsp;ledgerId,
+                    long&nbsp;entryId,
+                    <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieClientImpl.ChannelReadyForAddEntryCallback.</span><code><span class="memberNameLink"><a href="../BookieClientImpl.ChannelReadyForAddEntryCallback.html#operationComplete(int,org.apache.bookkeeper.proto.PerChannelBookieClient)">operationComplete</a></span>&#8203;(int&nbsp;rc,
+                 <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;pcbc)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DefaultPerChannelBookieClientPool.</span><code><span class="memberNameLink"><a href="../DefaultPerChannelBookieClientPool.html#operationComplete(int,org.apache.bookkeeper.proto.PerChannelBookieClient)">operationComplete</a></span>&#8203;(int&nbsp;rc,
                  <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;pcbc)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AddCompletion.</span><code><span class="memberNameLink"><a href="../AddCompletion.html#reset(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">reset</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+     <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;originalCallback,
+     java.lang.Object&nbsp;originalCtx,
+     long&nbsp;ledgerId,
+     long&nbsp;entryId,
+     <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -229,6 +260,84 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">
 <div class="block">Obtain a channel from channel pool by version to execute operations.</div>
 </td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../package-summary.html">org.apache.bookkeeper.proto</a> with parameters of type <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../BatchedReadCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.BatchedReadEntryCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">BatchedReadCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                     <a href="../BookkeeperInternalCallbacks.BatchedReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.BatchedReadEntryCallback</a>&nbsp;originalCallback,
+                     java.lang.Object&nbsp;originalCtx,
+                     long&nbsp;ledgerId,
+                     long&nbsp;entryId,
+                     <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CompletionValue.html#%3Cinit%3E(java.lang.String,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">CompletionValue</a></span>&#8203;(java.lang.String&nbsp;operationName,
+               java.lang.Object&nbsp;ctx,
+               long&nbsp;ledgerId,
+               long&nbsp;entryId,
+               <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ForceLedgerCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback,java.lang.Object,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">ForceLedgerCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                     <a href="../BookkeeperInternalCallbacks.ForceLedgerCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ForceLedgerCallback</a>&nbsp;originalCallback,
+                     java.lang.Object&nbsp;originalCtx,
+                     long&nbsp;ledgerId,
+                     <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GetBookieInfoCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback,java.lang.Object,org.apache.bookkeeper.proto.PerChannelBookieClient)">GetBookieInfoCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                       <a href="../BookkeeperInternalCallbacks.GetBookieInfoCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GetBookieInfoCallback</a>&nbsp;origCallback,
+                       java.lang.Object&nbsp;origCtx,
+                       <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GetListOfEntriesOfLedgerCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">GetListOfEntriesOfLedgerCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                                  <a href="../BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback</a>&nbsp;origCallback,
+                                  long&nbsp;ledgerId,
+                                  <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReadCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">ReadCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+              <a href="../BookkeeperInternalCallbacks.ReadEntryCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadEntryCallback</a>&nbsp;originalCallback,
+              java.lang.Object&nbsp;originalCtx,
+              long&nbsp;ledgerId,
+              long&nbsp;entryId,
+              <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReadLacCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback,java.lang.Object,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">ReadLacCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                 <a href="../BookkeeperInternalCallbacks.ReadLacCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.ReadLacCallback</a>&nbsp;originalCallback,
+                 java.lang.Object&nbsp;ctx,
+                 long&nbsp;ledgerId,
+                 <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../StartTLSCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.PerChannelBookieClient)">StartTLSCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                  <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WriteLacCompletion.html#%3Cinit%3E(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback,java.lang.Object,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">WriteLacCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
+                  <a href="../BookkeeperInternalCallbacks.WriteLacCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteLacCallback</a>&nbsp;originalCallback,
+                  java.lang.Object&nbsp;originalCtx,
+                  long&nbsp;ledgerId,
+                  <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>

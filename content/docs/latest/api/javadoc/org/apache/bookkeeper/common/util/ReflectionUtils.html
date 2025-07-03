@@ -187,7 +187,7 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static java.lang.Class&lt;?&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getClass(org.apache.commons.configuration.Configuration,java.lang.String,java.lang.Class,java.lang.ClassLoader)">getClass</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getClass(org.apache.commons.configuration2.Configuration,java.lang.String,java.lang.Class,java.lang.ClassLoader)">getClass</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf,
         java.lang.String&nbsp;name,
         java.lang.Class&lt;?&gt;&nbsp;defaultCls,
         java.lang.ClassLoader&nbsp;classLoader)</code></th>
@@ -197,7 +197,7 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>static &lt;T&gt;&nbsp;java.lang.Class&lt;? extends T&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getClass(org.apache.commons.configuration.Configuration,java.lang.String,java.lang.Class,java.lang.Class,java.lang.ClassLoader)">getClass</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getClass(org.apache.commons.configuration2.Configuration,java.lang.String,java.lang.Class,java.lang.Class,java.lang.ClassLoader)">getClass</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf,
         java.lang.String&nbsp;name,
         java.lang.Class&lt;? extends T&gt;&nbsp;defaultValue,
         java.lang.Class&lt;T&gt;&nbsp;xface,
@@ -284,17 +284,17 @@ extends java.lang.Object</pre>
 </dl>
 </li>
 </ul>
-<a id="getClass(org.apache.commons.configuration.Configuration,java.lang.String,java.lang.Class,java.lang.ClassLoader)">
+<a id="getClass(org.apache.commons.configuration2.Configuration,java.lang.String,java.lang.Class,java.lang.ClassLoader)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getClass</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.Class&lt;?&gt;&nbsp;getClass&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf,
+<pre class="methodSignature">public static&nbsp;java.lang.Class&lt;?&gt;&nbsp;getClass&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf,
                                           java.lang.String&nbsp;name,
                                           java.lang.Class&lt;?&gt;&nbsp;defaultCls,
                                           java.lang.ClassLoader&nbsp;classLoader)
-                                   throws org.apache.commons.configuration.ConfigurationException</pre>
+                                   throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get the value of the <code>name</code> property as a <code>Class</code>.
  If no such property is specified, then <code>defaultCls</code> is returned.</div>
 <dl>
@@ -306,22 +306,22 @@ extends java.lang.Object</pre>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>property value as a <code>Class</code>, or <code>defaultCls</code>.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
-<a id="getClass(org.apache.commons.configuration.Configuration,java.lang.String,java.lang.Class,java.lang.Class,java.lang.ClassLoader)">
+<a id="getClass(org.apache.commons.configuration2.Configuration,java.lang.String,java.lang.Class,java.lang.Class,java.lang.ClassLoader)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getClass</h4>
-<pre class="methodSignature">public static&nbsp;&lt;T&gt;&nbsp;java.lang.Class&lt;? extends T&gt;&nbsp;getClass&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf,
+<pre class="methodSignature">public static&nbsp;&lt;T&gt;&nbsp;java.lang.Class&lt;? extends T&gt;&nbsp;getClass&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf,
                                                         java.lang.String&nbsp;name,
                                                         java.lang.Class&lt;? extends T&gt;&nbsp;defaultValue,
                                                         java.lang.Class&lt;T&gt;&nbsp;xface,
                                                         java.lang.ClassLoader&nbsp;classLoader)
-                                                 throws org.apache.commons.configuration.ConfigurationException</pre>
+                                                 throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get the value of the <code>name</code> property as a <code>Class</code> implementing
  the interface specified by <code>xface</code>.
 
@@ -338,7 +338,7 @@ extends java.lang.Object</pre>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>property value as a <code>Class</code>, or <code>defaultValue</code>.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>

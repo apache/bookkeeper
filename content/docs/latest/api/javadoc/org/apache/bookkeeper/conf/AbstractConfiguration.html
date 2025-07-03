@@ -124,13 +124,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>java.lang.Object</li>
 <li>
 <ul class="inheritance">
-<li>org.apache.commons.configuration.event.EventSource</li>
+<li>org.apache.commons.configuration2.event.BaseEventSource</li>
 <li>
 <ul class="inheritance">
-<li>org.apache.commons.configuration.AbstractConfiguration</li>
+<li>org.apache.commons.configuration2.AbstractConfiguration</li>
 <li>
 <ul class="inheritance">
-<li>org.apache.commons.configuration.CompositeConfiguration</li>
+<li>org.apache.commons.configuration2.CompositeConfiguration</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.bookkeeper.conf.AbstractConfiguration&lt;T&gt;</li>
@@ -148,7 +148,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Cloneable</code>, <code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>java.lang.Cloneable</code>, <code>org.apache.commons.configuration2.Configuration</code>, <code>org.apache.commons.configuration2.event.EventSource</code>, <code>org.apache.commons.configuration2.ImmutableConfiguration</code>, <code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -156,7 +156,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">AbstractConfiguration&lt;T extends AbstractConfiguration&gt;</span>
-extends org.apache.commons.configuration.CompositeConfiguration</pre>
+extends org.apache.commons.configuration2.CompositeConfiguration</pre>
 <div class="block">Abstract configuration.</div>
 </li>
 </ul>
@@ -480,13 +480,6 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
-<ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.org.apache.commons.configuration.AbstractConfiguration">
-<!--   -->
-</a>
-<h3>Fields inherited from class&nbsp;org.apache.commons.configuration.AbstractConfiguration</h3>
-<code>END_TOKEN, EVENT_ADD_PROPERTY, EVENT_CLEAR, EVENT_CLEAR_PROPERTY, EVENT_READ_PROPERTY, EVENT_SET_PROPERTY, START_TOKEN</code></li>
-</ul>
 </li>
 </ul>
 </section>
@@ -893,7 +886,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </tr>
 <tr id="i52" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConf(org.apache.commons.configuration.CompositeConfiguration)">loadConf</a></span>&#8203;(org.apache.commons.configuration.CompositeConfiguration&nbsp;baseConf)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConf(org.apache.commons.configuration2.CompositeConfiguration)">loadConf</a></span>&#8203;(org.apache.commons.configuration2.CompositeConfiguration&nbsp;baseConf)</code></th>
 <td class="colLast">
 <div class="block">You can load configuration from other configuration.</div>
 </td>
@@ -1226,25 +1219,25 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration.CompositeConfiguration">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration2.CompositeConfiguration">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.apache.commons.configuration.CompositeConfiguration</h3>
-<code>addConfiguration, addConfiguration, addPropertyDirect, clear, clearPropertyDirect, clone, containsKey, getConfiguration, getInMemoryConfiguration, getKeys, getKeys, getList, getNumberOfConfigurations, getProperty, getSource, getStringArray, isEmpty, removeConfiguration, setDelimiterParsingDisabled, setListDelimiter</code></li>
+<h3>Methods inherited from class&nbsp;org.apache.commons.configuration2.CompositeConfiguration</h3>
+<code>addConfiguration, addConfiguration, addConfigurationFirst, addConfigurationFirst, addPropertyDirect, clearInternal, clearPropertyDirect, clone, containsKeyInternal, containsValueInternal, getConfiguration, getInMemoryConfiguration, getKeysInternal, getKeysInternal, getKeysInternal, getList, getNumberOfConfigurations, getPropertyInternal, getSource, getStringArray, isEmptyInternal, removeConfiguration, setListDelimiterHandler</code></li>
 </ul>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration.AbstractConfiguration">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration2.AbstractConfiguration">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.apache.commons.configuration.AbstractConfiguration</h3>
-<code>addErrorLogListener, addProperty, append, clearProperty, copy, createInterpolator, getBigDecimal, getBigDecimal, getBigInteger, getBigInteger, getBoolean, getBoolean, getBoolean, getByte, getByte, getByte, getDefaultListDelimiter, getDelimiter, getDouble, getDouble, getDouble, getFloat, getFloat, getFloat, getInt, getInt, getInteger, getInterpolator, getList, getListDelimiter, getLogger, getLong, getLong, getLong, getProperties, getProperties, getShort, getShort, getShort, getString, getString, getSubstitutor, interpolate, interpolate, interpolatedConfiguration, interpolateHelper, isDelimiterParsingDisabled, isScalarValue, isThrowExceptionOnMissing, resolveContainerStore, setDefaultListDelimiter, setDelimiter, setLogger, setProperty, setThrowExceptionOnMissing, subset</code></li>
+<h3>Methods inherited from class&nbsp;org.apache.commons.configuration2.AbstractConfiguration</h3>
+<code>addErrorLogListener, addProperty, addPropertyInternal, append, beginRead, beginWrite, clear, clearProperty, cloneInterpolator, contains, containsKey, containsValue, copy, endRead, endWrite, get, get, getArray, getArray, getBigDecimal, getBigDecimal, getBigInteger, getBigInteger, getBoolean, getBoolean, getBoolean, getByte, getByte, getByte, getCollection, getCollection, getConfigurationDecoder, getConversionHandler, getDouble, getDouble, getDouble, getDuration, getDuration, getEncodedString, getEncodedString, getFloat, getFloat, getFloat, getInt, getInt, getInteger, getInterpolator, getKeys, getKeys, getKeys, getList, getList, getList, getListDelimiterHandler, getLogger, getLong, getLong, getLong, getProperties, getProperties, getProperty, getShort, getShort, getShort, getString, getString, getSynchronizer, immutableSubset, initLogger, installInterpolator, interpolate, interpolate, interpolatedConfiguration, isEmpty, isScalarValue, isThrowExceptionOnMissing, lock, setConfigurationDecoder, setConversionHandler, setDefaultLookups, setInterpolator, setLogger, setParentInterpolator, setPrefixLookups, setProperty, setPropertyInternal, setSynchronizer, setThrowExceptionOnMissing, size, sizeInternal, subset, unlock</code></li>
 </ul>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration.event.EventSource">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration2.event.BaseEventSource">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.apache.commons.configuration.event.EventSource</h3>
-<code>addConfigurationListener, addErrorListener, clearConfigurationListeners, clearErrorListeners, createErrorEvent, createEvent, fireError, fireEvent, getConfigurationListeners, getErrorListeners, isDetailEvents, removeConfigurationListener, removeErrorListener, setDetailEvents</code></li>
+<h3>Methods inherited from class&nbsp;org.apache.commons.configuration2.event.BaseEventSource</h3>
+<code>addEventListener, clearErrorListeners, clearEventListeners, copyEventListeners, createErrorEvent, createEvent, fireError, fireEvent, getEventListenerRegistrations, getEventListeners, isDetailEvents, removeEventListener, setDetailEvents</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -1252,6 +1245,13 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.Object</h3>
 <code>equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration2.ImmutableConfiguration">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.commons.configuration2.ImmutableConfiguration</h3>
+<code>getEnum, getEnum</code></li>
 </ul>
 </li>
 </ul>
@@ -2085,24 +2085,24 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <li class="blockList">
 <h4>loadConf</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;loadConf&#8203;(java.net.URL&nbsp;confURL)
-              throws org.apache.commons.configuration.ConfigurationException</pre>
+              throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">You can load configurations in precedence order. The first one takes
  precedence over any loaded later.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>confURL</code> - Configuration URL</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
-<a id="loadConf(org.apache.commons.configuration.CompositeConfiguration)">
+<a id="loadConf(org.apache.commons.configuration2.CompositeConfiguration)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>loadConf</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;loadConf&#8203;(org.apache.commons.configuration.CompositeConfiguration&nbsp;baseConf)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;loadConf&#8203;(org.apache.commons.configuration2.CompositeConfiguration&nbsp;baseConf)</pre>
 <div class="block">You can load configuration from other configuration.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -2138,13 +2138,13 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <li class="blockList">
 <h4>getMetadataServiceUri</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getMetadataServiceUri()
-                                       throws org.apache.commons.configuration.ConfigurationException</pre>
+                                       throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get metadata service uri.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>metadata service uri.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code> - if the metadata service uri is invalid.</dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code> - if the metadata service uri is invalid.</dd>
 </dl>
 </li>
 </ul>
@@ -2433,13 +2433,13 @@ public&nbsp;java.lang.String&nbsp;getLedgerManagerType()</pre>
 <li class="blockList">
 <h4>getLedgerManagerLayoutStringFromFactoryClass</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getLedgerManagerLayoutStringFromFactoryClass()
-                                                              throws org.apache.commons.configuration.ConfigurationException</pre>
+                                                              throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get layout string ("null" if unconfigured).</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>null, hierarchical, longhierarchical, or flat based on LEDGER_MANAGER_FACTORY_CLASS</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
@@ -2464,13 +2464,13 @@ public&nbsp;java.lang.String&nbsp;getLedgerManagerType()</pre>
 <li class="blockList">
 <h4>getLedgerManagerFactoryClass</h4>
 <pre class="methodSignature">public&nbsp;java.lang.Class&lt;? extends <a href="../meta/LedgerManagerFactory.html" title="interface in org.apache.bookkeeper.meta">LedgerManagerFactory</a>&gt;&nbsp;getLedgerManagerFactoryClass()
-                                                                             throws org.apache.commons.configuration.ConfigurationException</pre>
+                                                                             throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get ledger manager factory class.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>ledger manager factory class</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
@@ -2699,13 +2699,13 @@ public&nbsp;java.lang.String&nbsp;getZkAvailableBookiesPath()</pre>
 <li class="blockList">
 <h4>getLedgerIdFormatterClass</h4>
 <pre class="methodSignature">public&nbsp;java.lang.Class&lt;? extends <a href="../util/LedgerIdFormatter.html" title="class in org.apache.bookkeeper.util">LedgerIdFormatter</a>&gt;&nbsp;getLedgerIdFormatterClass()
-                                                                       throws org.apache.commons.configuration.ConfigurationException</pre>
+                                                                       throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get ledger id formatter class.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>LedgerIdFormatter class</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
@@ -2730,13 +2730,13 @@ public&nbsp;java.lang.String&nbsp;getZkAvailableBookiesPath()</pre>
 <li class="blockList">
 <h4>getEntryFormatterClass</h4>
 <pre class="methodSignature">public&nbsp;java.lang.Class&lt;? extends <a href="../util/EntryFormatter.html" title="class in org.apache.bookkeeper.util">EntryFormatter</a>&gt;&nbsp;getEntryFormatterClass()
-                                                                 throws org.apache.commons.configuration.ConfigurationException</pre>
+                                                                 throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Get entry formatter class.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>EntryFormatter class</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>

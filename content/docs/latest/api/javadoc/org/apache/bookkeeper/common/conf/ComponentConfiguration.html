@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":42,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -133,7 +133,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>org.apache.commons.configuration2.Configuration</code>, <code>org.apache.commons.configuration2.ImmutableConfiguration</code>, <code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -142,7 +142,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public abstract class <span class="typeNameLabel">ComponentConfiguration</span>
 extends java.lang.Object
-implements org.apache.commons.configuration.Configuration</pre>
+implements org.apache.commons.configuration2.Configuration</pre>
 <div class="block">Component Configuration.</div>
 </li>
 </ul>
@@ -189,7 +189,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected </code></td>
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration.CompositeConfiguration,java.lang.String)">ComponentConfiguration</a></span>&#8203;(org.apache.commons.configuration.CompositeConfiguration&nbsp;underlyingConf,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration2.CompositeConfiguration,java.lang.String)">ComponentConfiguration</a></span>&#8203;(org.apache.commons.configuration2.CompositeConfiguration&nbsp;underlyingConf,
                       java.lang.String&nbsp;componentPrefix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -205,7 +205,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t6" class="tableTab"><span><a href="javascript:show(32);">Deprecated Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -240,232 +240,375 @@ implements org.apache.commons.configuration.Configuration</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(java.lang.Class,java.lang.String)">get</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+   java.lang.String&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(java.lang.Class,java.lang.String,T)">get</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+   java.lang.String&nbsp;key,
+   T&nbsp;defaultValue)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>java.lang.Object</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getArray(java.lang.Class,java.lang.String)">getArray</a></span>&#8203;(java.lang.Class&lt;?&gt;&nbsp;cls,
+        java.lang.String&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>java.lang.Object</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getArray(java.lang.Class,java.lang.String,java.lang.Object)">getArray</a></span>&#8203;(java.lang.Class&lt;?&gt;&nbsp;cls,
+        java.lang.String&nbsp;key,
+        java.lang.Object&nbsp;defaultValue)</code></th>
+<td class="colLast">
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>java.math.BigDecimal</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBigDecimal(java.lang.String)">getBigDecimal</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>java.math.BigDecimal</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBigDecimal(java.lang.String,java.math.BigDecimal)">getBigDecimal</a></span>&#8203;(java.lang.String&nbsp;key,
              java.math.BigDecimal&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>java.math.BigInteger</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBigInteger(java.lang.String)">getBigInteger</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>java.math.BigInteger</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBigInteger(java.lang.String,java.math.BigInteger)">getBigInteger</a></span>&#8203;(java.lang.String&nbsp;key,
              java.math.BigInteger&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBoolean(java.lang.String)">getBoolean</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBoolean(java.lang.String,boolean)">getBoolean</a></span>&#8203;(java.lang.String&nbsp;key,
           boolean&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>java.lang.Boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBoolean(java.lang.String,java.lang.Boolean)">getBoolean</a></span>&#8203;(java.lang.String&nbsp;key,
           java.lang.Boolean&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>byte</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getByte(java.lang.String)">getByte</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>byte</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getByte(java.lang.String,byte)">getByte</a></span>&#8203;(java.lang.String&nbsp;key,
        byte&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>java.lang.Byte</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getByte(java.lang.String,java.lang.Byte)">getByte</a></span>&#8203;(java.lang.String&nbsp;key,
        java.lang.Byte&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;java.util.Collection&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCollection(java.lang.Class,java.lang.String,java.util.Collection)">getCollection</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+             java.lang.String&nbsp;key,
+             java.util.Collection&lt;T&gt;&nbsp;target)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;java.util.Collection&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCollection(java.lang.Class,java.lang.String,java.util.Collection,java.util.Collection)">getCollection</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+             java.lang.String&nbsp;key,
+             java.util.Collection&lt;T&gt;&nbsp;target,
+             java.util.Collection&lt;T&gt;&nbsp;defaultValue)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDouble(java.lang.String)">getDouble</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDouble(java.lang.String,double)">getDouble</a></span>&#8203;(java.lang.String&nbsp;key,
          double&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>java.lang.Double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDouble(java.lang.String,java.lang.Double)">getDouble</a></span>&#8203;(java.lang.String&nbsp;key,
          java.lang.Double&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i24" class="altColor">
+<td class="colFirst"><code>java.time.Duration</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDuration(java.lang.String)">getDuration</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code>java.time.Duration</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDuration(java.lang.String,java.time.Duration)">getDuration</a></span>&#8203;(java.lang.String&nbsp;key,
+           java.time.Duration&nbsp;defaultValue)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i26" class="altColor">
+<td class="colFirst"><code>java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEncodedString(java.lang.String)">getEncodedString</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i27" class="rowColor">
+<td class="colFirst"><code>java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEncodedString(java.lang.String,org.apache.commons.configuration2.ConfigurationDecoder)">getEncodedString</a></span>&#8203;(java.lang.String&nbsp;key,
+                org.apache.commons.configuration2.ConfigurationDecoder&nbsp;decoder)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i28" class="altColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Enum&lt;T&gt;&gt;<br>T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEnum(java.lang.String,java.lang.Class)">getEnum</a></span>&#8203;(java.lang.String&nbsp;key,
+       java.lang.Class&lt;T&gt;&nbsp;enumType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i29" class="rowColor">
+<td class="colFirst"><code>&lt;T extends java.lang.Enum&lt;T&gt;&gt;<br>T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEnum(java.lang.String,java.lang.Class,T)">getEnum</a></span>&#8203;(java.lang.String&nbsp;key,
+       java.lang.Class&lt;T&gt;&nbsp;enumType,
+       T&nbsp;defaultValue)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>float</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFloat(java.lang.String)">getFloat</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>float</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFloat(java.lang.String,float)">getFloat</a></span>&#8203;(java.lang.String&nbsp;key,
         float&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>java.lang.Float</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFloat(java.lang.String,java.lang.Float)">getFloat</a></span>&#8203;(java.lang.String&nbsp;key,
         java.lang.Float&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInt(java.lang.String)">getInt</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInt(java.lang.String,int)">getInt</a></span>&#8203;(java.lang.String&nbsp;key,
       int&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>java.lang.Integer</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInteger(java.lang.String,java.lang.Integer)">getInteger</a></span>&#8203;(java.lang.String&nbsp;key,
           java.lang.Integer&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i36" class="altColor">
+<td class="colFirst"><code>org.apache.commons.configuration2.interpol.ConfigurationInterpolator</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInterpolator()">getInterpolator</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKeyName(java.lang.String)">getKeyName</a></span>&#8203;(java.lang.String&nbsp;name)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>java.util.Iterator&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKeys()">getKeys</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>java.util.Iterator&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKeys(java.lang.String)">getKeys</a></span>&#8203;(java.lang.String&nbsp;prefix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i40" class="altColor">
+<td class="colFirst"><code>java.util.Iterator&lt;java.lang.String&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKeys(java.lang.String,java.lang.String)">getKeys</a></span>&#8203;(java.lang.String&nbsp;prefix,
+       java.lang.String&nbsp;delimiter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i41" class="rowColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;java.util.List&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getList(java.lang.Class,java.lang.String)">getList</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+       java.lang.String&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i42" class="altColor">
+<td class="colFirst"><code>&lt;T&gt;&nbsp;java.util.List&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getList(java.lang.Class,java.lang.String,java.util.List)">getList</a></span>&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+       java.lang.String&nbsp;key,
+       java.util.List&lt;T&gt;&nbsp;defaultValue)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getList(java.lang.String)">getList</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getList(java.lang.String,java.util.List)">getList</a></span>&#8203;(java.lang.String&nbsp;key,
        java.util.List&lt;?&gt;&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLong(java.lang.String)">getLong</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLong(java.lang.String,long)">getLong</a></span>&#8203;(java.lang.String&nbsp;key,
        long&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>java.lang.Long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLong(java.lang.String,java.lang.Long)">getLong</a></span>&#8203;(java.lang.String&nbsp;key,
        java.lang.Long&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>java.util.Properties</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getProperties(java.lang.String)">getProperties</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getProperty(java.lang.String)">getProperty</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>short</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getShort(java.lang.String)">getShort</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>short</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getShort(java.lang.String,short)">getShort</a></span>&#8203;(java.lang.String&nbsp;key,
         short&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>java.lang.Short</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getShort(java.lang.String,java.lang.Short)">getShort</a></span>&#8203;(java.lang.String&nbsp;key,
         java.lang.Short&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(java.lang.String)">getString</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(java.lang.String,java.lang.String)">getString</a></span>&#8203;(java.lang.String&nbsp;key,
          java.lang.String&nbsp;defaultValue)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>java.lang.String[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getStringArray(java.lang.String)">getStringArray</a></span>&#8203;(java.lang.String&nbsp;key)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
-<td class="colFirst"><code>org.apache.commons.configuration.CompositeConfiguration</code></td>
+<tr id="i56" class="altColor">
+<td class="colFirst"><code>org.apache.commons.configuration2.sync.Synchronizer</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSynchronizer()">getSynchronizer</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i57" class="rowColor">
+<td class="colFirst"><code>org.apache.commons.configuration2.CompositeConfiguration</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUnderlyingConf()">getUnderlyingConf</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i58" class="altColor">
+<td class="colFirst"><code>org.apache.commons.configuration2.ImmutableConfiguration</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#immutableSubset(java.lang.String)">immutableSubset</a></span>&#8203;(java.lang.String&nbsp;prefix)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i59" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#installInterpolator(java.util.Map,java.util.Collection)">installInterpolator</a></span>&#8203;(java.util.Map&lt;java.lang.String,&#8203;? extends org.apache.commons.configuration2.interpol.Lookup&gt;&nbsp;prefixLookups,
+                   java.util.Collection&lt;? extends org.apache.commons.configuration2.interpol.Lookup&gt;&nbsp;defLookups)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConf(java.net.URL)">loadConf</a></span>&#8203;(java.net.URL&nbsp;confURL)</code></th>
 <td class="colLast">
 <div class="block">Load configuration from a given <code>confURL</code>.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConf(org.apache.commons.configuration.Configuration)">loadConf</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;loadedConf)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConf(org.apache.commons.configuration2.Configuration)">loadConf</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;loadedConf)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i63" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lock(org.apache.commons.configuration2.sync.LockMode)">lock</a></span>&#8203;(org.apache.commons.configuration2.sync.LockMode&nbsp;mode)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i64" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setInterpolator(org.apache.commons.configuration2.interpol.ConfigurationInterpolator)">setInterpolator</a></span>&#8203;(org.apache.commons.configuration2.interpol.ConfigurationInterpolator&nbsp;ci)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setProperty(java.lang.String,java.lang.Object)">setProperty</a></span>&#8203;(java.lang.String&nbsp;key,
            java.lang.Object&nbsp;value)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
-<td class="colFirst"><code>org.apache.commons.configuration.Configuration</code></td>
+<tr id="i66" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSynchronizer(org.apache.commons.configuration2.sync.Synchronizer)">setSynchronizer</a></span>&#8203;(org.apache.commons.configuration2.sync.Synchronizer&nbsp;sync)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i67" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i68" class="altColor">
+<td class="colFirst"><code>org.apache.commons.configuration2.Configuration</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subset(java.lang.String)">subset</a></span>&#8203;(java.lang.String&nbsp;prefix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i69" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unlock(org.apache.commons.configuration2.sync.LockMode)">unlock</a></span>&#8203;(org.apache.commons.configuration2.sync.LockMode&nbsp;mode)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#validate()">validate</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -477,6 +620,13 @@ implements org.apache.commons.configuration.Configuration</pre>
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.Object</h3>
 <code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait</code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.commons.configuration2.ImmutableConfiguration">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.commons.configuration2.ImmutableConfiguration</h3>
+<code>containsValue</code></li>
 </ul>
 </li>
 </ul>
@@ -517,13 +667,13 @@ implements org.apache.commons.configuration.Configuration</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(org.apache.commons.configuration.CompositeConfiguration,java.lang.String)">
+<a id="&lt;init&gt;(org.apache.commons.configuration2.CompositeConfiguration,java.lang.String)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ComponentConfiguration</h4>
-<pre>protected&nbsp;ComponentConfiguration&#8203;(org.apache.commons.configuration.CompositeConfiguration&nbsp;underlyingConf,
+<pre>protected&nbsp;ComponentConfiguration&#8203;(org.apache.commons.configuration2.CompositeConfiguration&nbsp;underlyingConf,
                                  java.lang.String&nbsp;componentPrefix)</pre>
 </li>
 </ul>
@@ -552,7 +702,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getUnderlyingConf</h4>
-<pre class="methodSignature">public&nbsp;org.apache.commons.configuration.CompositeConfiguration&nbsp;getUnderlyingConf()</pre>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.CompositeConfiguration&nbsp;getUnderlyingConf()</pre>
 </li>
 </ul>
 <a id="loadConf(java.net.URL)">
@@ -562,23 +712,23 @@ implements org.apache.commons.configuration.Configuration</pre>
 <li class="blockList">
 <h4>loadConf</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;loadConf&#8203;(java.net.URL&nbsp;confURL)
-              throws org.apache.commons.configuration.ConfigurationException</pre>
+              throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <div class="block">Load configuration from a given <code>confURL</code>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>confURL</code> - the url points to the configuration.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code> - when failed to load configuration.</dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code> - when failed to load configuration.</dd>
 </dl>
 </li>
 </ul>
-<a id="loadConf(org.apache.commons.configuration.Configuration)">
+<a id="loadConf(org.apache.commons.configuration2.Configuration)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>loadConf</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;loadConf&#8203;(org.apache.commons.configuration.Configuration&nbsp;loadedConf)</pre>
+<pre class="methodSignature">protected&nbsp;void&nbsp;loadConf&#8203;(org.apache.commons.configuration2.Configuration&nbsp;loadedConf)</pre>
 </li>
 </ul>
 <a id="validate()">
@@ -588,10 +738,10 @@ implements org.apache.commons.configuration.Configuration</pre>
 <li class="blockList">
 <h4>validate</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;validate()
-              throws org.apache.commons.configuration.ConfigurationException</pre>
+              throws org.apache.commons.configuration2.ex.ConfigurationException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.apache.commons.configuration.ConfigurationException</code></dd>
+<dd><code>org.apache.commons.configuration2.ex.ConfigurationException</code></dd>
 </dl>
 </li>
 </ul>
@@ -601,10 +751,10 @@ implements org.apache.commons.configuration.Configuration</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>subset</h4>
-<pre class="methodSignature">public&nbsp;org.apache.commons.configuration.Configuration&nbsp;subset&#8203;(java.lang.String&nbsp;prefix)</pre>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.Configuration&nbsp;subset&#8203;(java.lang.String&nbsp;prefix)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>subset</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>subset</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
 </dl>
 </li>
 </ul>
@@ -617,7 +767,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isEmpty()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>isEmpty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>isEmpty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -630,7 +780,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;containsKey&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>containsKey</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>containsKey</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -644,7 +794,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                         java.lang.Object&nbsp;value)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>addProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>addProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
 </dl>
 </li>
 </ul>
@@ -658,7 +808,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                         java.lang.Object&nbsp;value)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>setProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>setProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
 </dl>
 </li>
 </ul>
@@ -671,7 +821,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;void&nbsp;clearProperty&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>clearProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>clearProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
 </dl>
 </li>
 </ul>
@@ -684,7 +834,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;void&nbsp;clear()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>clear</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>clear</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
 </dl>
 </li>
 </ul>
@@ -697,7 +847,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;getProperty&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getProperty</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -710,7 +860,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.util.Iterator&lt;java.lang.String&gt;&nbsp;getKeys&#8203;(java.lang.String&nbsp;prefix)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getKeys</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getKeys</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -723,7 +873,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.util.Iterator&lt;java.lang.String&gt;&nbsp;getKeys()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getKeys</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getKeys</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -736,7 +886,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.util.Properties&nbsp;getProperties&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getProperties</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getProperties</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -749,7 +899,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;getBoolean&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -763,7 +913,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                           boolean&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -777,7 +927,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                     java.lang.Boolean&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBoolean</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -790,7 +940,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;byte&nbsp;getByte&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -804,7 +954,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                     byte&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -818,7 +968,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                               java.lang.Byte&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getByte</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -831,7 +981,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;double&nbsp;getDouble&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -845,7 +995,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                         double&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -859,7 +1009,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                   java.lang.Double&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getDouble</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -872,7 +1022,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;float&nbsp;getFloat&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -886,7 +1036,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                       float&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -900,7 +1050,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                 java.lang.Float&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getFloat</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -913,7 +1063,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;int&nbsp;getInt&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getInt</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getInt</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -927,7 +1077,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                   int&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getInt</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getInt</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -941,7 +1091,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                     java.lang.Integer&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -954,7 +1104,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;long&nbsp;getLong&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -968,7 +1118,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                     long&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -982,7 +1132,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                               java.lang.Long&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getLong</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -995,7 +1145,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;short&nbsp;getShort&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1009,7 +1159,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                       short&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1023,7 +1173,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                 java.lang.Short&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getShort</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1036,7 +1186,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.math.BigDecimal&nbsp;getBigDecimal&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBigDecimal</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBigDecimal</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1050,7 +1200,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                           java.math.BigDecimal&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBigDecimal</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBigDecimal</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1063,7 +1213,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.math.BigInteger&nbsp;getBigInteger&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBigInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBigInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1077,7 +1227,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                           java.math.BigInteger&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getBigInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getBigInteger</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1090,7 +1240,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getString&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1104,7 +1254,7 @@ implements org.apache.commons.configuration.Configuration</pre>
                                   java.lang.String&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1117,7 +1267,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.lang.String[]&nbsp;getStringArray&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getStringArray</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getStringArray</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1130,7 +1280,7 @@ implements org.apache.commons.configuration.Configuration</pre>
 <pre class="methodSignature">public&nbsp;java.util.List&lt;java.lang.Object&gt;&nbsp;getList&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
 </dl>
 </li>
 </ul>
@@ -1144,7 +1294,346 @@ implements org.apache.commons.configuration.Configuration</pre>
                                                 java.util.List&lt;?&gt;&nbsp;defaultValue)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration.Configuration</code></dd>
+<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getInterpolator()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getInterpolator</h4>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.interpol.ConfigurationInterpolator&nbsp;getInterpolator()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getInterpolator</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="installInterpolator(java.util.Map,java.util.Collection)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>installInterpolator</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;installInterpolator&#8203;(java.util.Map&lt;java.lang.String,&#8203;? extends org.apache.commons.configuration2.interpol.Lookup&gt;&nbsp;prefixLookups,
+                                java.util.Collection&lt;? extends org.apache.commons.configuration2.interpol.Lookup&gt;&nbsp;defLookups)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>installInterpolator</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="setInterpolator(org.apache.commons.configuration2.interpol.ConfigurationInterpolator)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setInterpolator</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setInterpolator&#8203;(org.apache.commons.configuration2.interpol.ConfigurationInterpolator&nbsp;ci)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>setInterpolator</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.Configuration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="get(java.lang.Class,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;T&nbsp;get&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                 java.lang.String&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>get</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="get(java.lang.Class,java.lang.String,java.lang.Object)">
+<!--   -->
+</a><a id="get(java.lang.Class,java.lang.String,T)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;T&nbsp;get&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                 java.lang.String&nbsp;key,
+                 T&nbsp;defaultValue)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>get</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getArray(java.lang.Class,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getArray</h4>
+<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;getArray&#8203;(java.lang.Class&lt;?&gt;&nbsp;cls,
+                                 java.lang.String&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getArray</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getArray(java.lang.Class,java.lang.String,java.lang.Object)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getArray</h4>
+<pre class="methodSignature">@Deprecated
+public&nbsp;java.lang.Object&nbsp;getArray&#8203;(java.lang.Class&lt;?&gt;&nbsp;cls,
+                                 java.lang.String&nbsp;key,
+                                 java.lang.Object&nbsp;defaultValue)</pre>
+<div class="deprecationBlock"><span class="deprecatedLabel">Deprecated.</span></div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getArray</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getCollection(java.lang.Class,java.lang.String,java.util.Collection)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getCollection</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;java.util.Collection&lt;T&gt;&nbsp;getCollection&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                                                 java.lang.String&nbsp;key,
+                                                 java.util.Collection&lt;T&gt;&nbsp;target)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getCollection</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getCollection(java.lang.Class,java.lang.String,java.util.Collection,java.util.Collection)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getCollection</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;java.util.Collection&lt;T&gt;&nbsp;getCollection&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                                                 java.lang.String&nbsp;key,
+                                                 java.util.Collection&lt;T&gt;&nbsp;target,
+                                                 java.util.Collection&lt;T&gt;&nbsp;defaultValue)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getCollection</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getDuration(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getDuration</h4>
+<pre class="methodSignature">public&nbsp;java.time.Duration&nbsp;getDuration&#8203;(java.lang.String&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getDuration</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getDuration(java.lang.String,java.time.Duration)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getDuration</h4>
+<pre class="methodSignature">public&nbsp;java.time.Duration&nbsp;getDuration&#8203;(java.lang.String&nbsp;key,
+                                      java.time.Duration&nbsp;defaultValue)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getDuration</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getEncodedString(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEncodedString</h4>
+<pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getEncodedString&#8203;(java.lang.String&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getEncodedString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getEncodedString(java.lang.String,org.apache.commons.configuration2.ConfigurationDecoder)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEncodedString</h4>
+<pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getEncodedString&#8203;(java.lang.String&nbsp;key,
+                                         org.apache.commons.configuration2.ConfigurationDecoder&nbsp;decoder)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getEncodedString</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getEnum(java.lang.String,java.lang.Class)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEnum</h4>
+<pre class="methodSignature">public&nbsp;&lt;T extends java.lang.Enum&lt;T&gt;&gt;&nbsp;T&nbsp;getEnum&#8203;(java.lang.String&nbsp;key,
+                                               java.lang.Class&lt;T&gt;&nbsp;enumType)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getEnum</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getEnum(java.lang.String,java.lang.Class,java.lang.Enum)">
+<!--   -->
+</a><a id="getEnum(java.lang.String,java.lang.Class,T)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEnum</h4>
+<pre class="methodSignature">public&nbsp;&lt;T extends java.lang.Enum&lt;T&gt;&gt;&nbsp;T&nbsp;getEnum&#8203;(java.lang.String&nbsp;key,
+                                               java.lang.Class&lt;T&gt;&nbsp;enumType,
+                                               T&nbsp;defaultValue)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getEnum</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getKeys(java.lang.String,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getKeys</h4>
+<pre class="methodSignature">public&nbsp;java.util.Iterator&lt;java.lang.String&gt;&nbsp;getKeys&#8203;(java.lang.String&nbsp;prefix,
+                                                    java.lang.String&nbsp;delimiter)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getKeys</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getList(java.lang.Class,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getList</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;java.util.List&lt;T&gt;&nbsp;getList&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                                     java.lang.String&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getList(java.lang.Class,java.lang.String,java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getList</h4>
+<pre class="methodSignature">public&nbsp;&lt;T&gt;&nbsp;java.util.List&lt;T&gt;&nbsp;getList&#8203;(java.lang.Class&lt;T&gt;&nbsp;cls,
+                                     java.lang.String&nbsp;key,
+                                     java.util.List&lt;T&gt;&nbsp;defaultValue)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getList</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="immutableSubset(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>immutableSubset</h4>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.ImmutableConfiguration&nbsp;immutableSubset&#8203;(java.lang.String&nbsp;prefix)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>immutableSubset</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="size()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>size</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;size()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>size</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.ImmutableConfiguration</code></dd>
+</dl>
+</li>
+</ul>
+<a id="getSynchronizer()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSynchronizer</h4>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.sync.Synchronizer&nbsp;getSynchronizer()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>getSynchronizer</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
+</dl>
+</li>
+</ul>
+<a id="lock(org.apache.commons.configuration2.sync.LockMode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>lock</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;lock&#8203;(org.apache.commons.configuration2.sync.LockMode&nbsp;mode)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>lock</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
+</dl>
+</li>
+</ul>
+<a id="setSynchronizer(org.apache.commons.configuration2.sync.Synchronizer)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setSynchronizer</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setSynchronizer&#8203;(org.apache.commons.configuration2.sync.Synchronizer&nbsp;sync)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>setSynchronizer</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
+</dl>
+</li>
+</ul>
+<a id="unlock(org.apache.commons.configuration2.sync.LockMode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>unlock</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;unlock&#8203;(org.apache.commons.configuration2.sync.LockMode&nbsp;mode)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>unlock</code>&nbsp;in interface&nbsp;<code>org.apache.commons.configuration2.sync.SynchronizerSupport</code></dd>
 </dl>
 </li>
 </ul>

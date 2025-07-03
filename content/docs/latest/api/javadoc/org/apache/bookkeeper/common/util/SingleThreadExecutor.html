@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -230,56 +230,67 @@ implements java.util.concurrent.ExecutorService, java.lang.Runnable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCompletedTasksCount()">getCompletedTasksCount</a></span>()</code></th>
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeRunnableOrList(java.lang.Runnable,java.util.List)">executeRunnableOrList</a></span>&#8203;(java.lang.Runnable&nbsp;runnable,
+                     java.util.List&lt;java.lang.Runnable&gt;&nbsp;runnableList)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFailedTasksCount()">getFailedTasksCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCompletedTasksCount()">getCompletedTasksCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getQueuedTasksCount()">getQueuedTasksCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFailedTasksCount()">getFailedTasksCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRejectedTasksCount()">getRejectedTasksCount</a></span>()</code></th>
+<td class="colFirst"><code>(package private) int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPendingTaskCount()">getPendingTaskCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSubmittedTasksCount()">getSubmittedTasksCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getQueuedTasksCount()">getQueuedTasksCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRejectedTasksCount()">getRejectedTasksCount</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSubmittedTasksCount()">getSubmittedTasksCount</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShutdown()">isShutdown</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isTerminated()">isTerminated</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerMetrics(org.apache.bookkeeper.stats.StatsLogger)">registerMetrics</a></span>&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#run()">run</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdown()">shutdown</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.Runnable&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdownNow()">shutdownNow</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -492,13 +503,32 @@ implements java.util.concurrent.ExecutorService, java.lang.Runnable</pre>
 </dl>
 </li>
 </ul>
+<a id="executeRunnableOrList(java.lang.Runnable,java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>executeRunnableOrList</h4>
+<pre class="methodSignature">void&nbsp;executeRunnableOrList&#8203;(java.lang.Runnable&nbsp;runnable,
+                           java.util.List&lt;java.lang.Runnable&gt;&nbsp;runnableList)</pre>
+</li>
+</ul>
 <a id="registerMetrics(org.apache.bookkeeper.stats.StatsLogger)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>registerMetrics</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;registerMetrics&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
+</li>
+</ul>
+<a id="getPendingTaskCount()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>registerMetrics</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;registerMetrics&#8203;(<a href="../../stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
+<h4>getPendingTaskCount</h4>
+<pre class="methodSignature">int&nbsp;getPendingTaskCount()</pre>
 </li>
 </ul>
 </li>

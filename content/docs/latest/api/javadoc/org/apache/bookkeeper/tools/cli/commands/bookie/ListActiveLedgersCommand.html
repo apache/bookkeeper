@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10};
+var data = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -257,26 +257,20 @@ extends <a href="../../helpers/BookieCommand.html" title="class in org.apache.bo
        <a href="ListActiveLedgersCommand.ActiveLedgerFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ListActiveLedgersCommand.ActiveLedgerFlags</a>&nbsp;cmdFlags)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printActiveLedgerOnEntryLog(long,java.util.List)">printActiveLedgerOnEntryLog</a></span>&#8203;(long&nbsp;logId,
-                           java.util.List&lt;java.lang.Long&gt;&nbsp;activeLedgers)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.tools.cli.helpers.BookieCommand">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.tools.cli.helpers.<a href="../../helpers/BookieCommand.html" title="class in org.apache.bookkeeper.tools.cli.helpers">BookieCommand</a></h3>
-<code><a href="../../helpers/BookieCommand.html#apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,BookieFlagsT)">apply</a></code></li>
+<code><a href="../../helpers/BookieCommand.html#apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration2.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,BookieFlagsT)">apply</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.tools.common.BKCommand">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.tools.common.<a href="../../../common/BKCommand.html" title="class in org.apache.bookkeeper.tools.common">BKCommand</a></h3>
-<code><a href="../../../common/BKCommand.html#acceptServiceUri(org.apache.bookkeeper.common.net.ServiceURI)">acceptServiceUri</a>, <a href="../../../common/BKCommand.html#apply(java.lang.String,org.apache.commons.configuration.CompositeConfiguration,java.lang.String%5B%5D)">apply</a>, <a href="../../../common/BKCommand.html#apply(org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">apply</a>, <a href="../../../common/BKCommand.html#apply(org.apache.bookkeeper.tools.common.BKFlags,java.lang.String%5B%5D)">apply</a></code></li>
+<code><a href="../../../common/BKCommand.html#acceptServiceUri(org.apache.bookkeeper.common.net.ServiceURI)">acceptServiceUri</a>, <a href="../../../common/BKCommand.html#apply(java.lang.String,org.apache.commons.configuration2.CompositeConfiguration,java.lang.String%5B%5D)">apply</a>, <a href="../../../common/BKCommand.html#apply(org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">apply</a>, <a href="../../../common/BKCommand.html#apply(org.apache.bookkeeper.tools.common.BKFlags,java.lang.String%5B%5D)">apply</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.bookkeeper.tools.framework.CliCommand">
@@ -369,7 +363,7 @@ extends <a href="../../helpers/BookieCommand.html" title="class in org.apache.bo
 <a id="handler(org.apache.bookkeeper.conf.ServerConfiguration,org.apache.bookkeeper.tools.cli.commands.bookie.ListActiveLedgersCommand.ActiveLedgerFlags)">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>handler</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;handler&#8203;(<a href="../../../../conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a>&nbsp;bkConf,
@@ -381,16 +375,6 @@ extends <a href="../../helpers/BookieCommand.html" title="class in org.apache.bo
 <dd><code>java.util.concurrent.ExecutionException</code></dd>
 <dd><code><a href="../../../../meta/exceptions/MetadataException.html" title="class in org.apache.bookkeeper.meta.exceptions">MetadataException</a></code></dd>
 </dl>
-</li>
-</ul>
-<a id="printActiveLedgerOnEntryLog(long,java.util.List)">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>printActiveLedgerOnEntryLog</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;printActiveLedgerOnEntryLog&#8203;(long&nbsp;logId,
-                                        java.util.List&lt;java.lang.Long&gt;&nbsp;activeLedgers)</pre>
 </li>
 </ul>
 </li>

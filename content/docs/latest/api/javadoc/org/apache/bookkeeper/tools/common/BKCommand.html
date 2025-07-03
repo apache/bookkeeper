@@ -215,8 +215,8 @@ extends <a href="../framework/CliCommand.html" title="class in org.apache.bookke
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(java.lang.String,org.apache.commons.configuration.CompositeConfiguration,java.lang.String%5B%5D)">apply</a></span>&#8203;(java.lang.String&nbsp;commandName,
-     org.apache.commons.configuration.CompositeConfiguration&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(java.lang.String,org.apache.commons.configuration2.CompositeConfiguration,java.lang.String%5B%5D)">apply</a></span>&#8203;(java.lang.String&nbsp;commandName,
+     org.apache.commons.configuration2.CompositeConfiguration&nbsp;conf,
      java.lang.String[]&nbsp;args)</code></th>
 <td class="colLast">
 <div class="block">Made this as public for allowing old bookie shell use new cli command.</div>
@@ -224,8 +224,8 @@ extends <a href="../framework/CliCommand.html" title="class in org.apache.bookke
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>protected abstract boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">apply</a></span>&#8203;(<a href="../../common/net/ServiceURI.html" title="class in org.apache.bookkeeper.common.net">ServiceURI</a>&nbsp;serviceURI,
-     org.apache.commons.configuration.CompositeConfiguration&nbsp;conf,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration2.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">apply</a></span>&#8203;(<a href="../../common/net/ServiceURI.html" title="class in org.apache.bookkeeper.common.net">ServiceURI</a>&nbsp;serviceURI,
+     org.apache.commons.configuration2.CompositeConfiguration&nbsp;conf,
      <a href="BKFlags.html" title="class in org.apache.bookkeeper.tools.common">BKFlags</a>&nbsp;globalFlags,
      <a href="BKCommand.html" title="type parameter in BKCommand">CommandFlagsT</a>&nbsp;cmdFlags)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -322,7 +322,7 @@ extends <a href="../framework/CliCommand.html" title="class in org.apache.bookke
 </dl>
 </li>
 </ul>
-<a id="apply(java.lang.String,org.apache.commons.configuration.CompositeConfiguration,java.lang.String[])">
+<a id="apply(java.lang.String,org.apache.commons.configuration2.CompositeConfiguration,java.lang.String[])">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -330,7 +330,7 @@ extends <a href="../framework/CliCommand.html" title="class in org.apache.bookke
 <h4>apply</h4>
 <pre class="methodSignature"><a href="../../common/annotation/InterfaceAudience.Private.html" title="annotation in org.apache.bookkeeper.common.annotation">@Private</a>
 public&nbsp;int&nbsp;apply&#8203;(java.lang.String&nbsp;commandName,
-                 org.apache.commons.configuration.CompositeConfiguration&nbsp;conf,
+                 org.apache.commons.configuration2.CompositeConfiguration&nbsp;conf,
                  java.lang.String[]&nbsp;args)</pre>
 <div class="block">Made this as public for allowing old bookie shell use new cli command.
  This should be removed once we get rid of the old bookie shell.</div>
@@ -357,16 +357,16 @@ public&nbsp;int&nbsp;apply&#8203;(java.lang.String&nbsp;commandName,
 <pre class="methodSignature">protected&nbsp;boolean&nbsp;acceptServiceUri&#8203;(<a href="../../common/net/ServiceURI.html" title="class in org.apache.bookkeeper.common.net">ServiceURI</a>&nbsp;serviceURI)</pre>
 </li>
 </ul>
-<a id="apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,org.apache.bookkeeper.tools.framework.CliFlags)">
+<a id="apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration2.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,org.apache.bookkeeper.tools.framework.CliFlags)">
 <!--   -->
-</a><a id="apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">
+</a><a id="apply(org.apache.bookkeeper.common.net.ServiceURI,org.apache.commons.configuration2.CompositeConfiguration,org.apache.bookkeeper.tools.common.BKFlags,CommandFlagsT)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>apply</h4>
 <pre class="methodSignature">protected abstract&nbsp;boolean&nbsp;apply&#8203;(<a href="../../common/net/ServiceURI.html" title="class in org.apache.bookkeeper.common.net">ServiceURI</a>&nbsp;serviceURI,
-                                 org.apache.commons.configuration.CompositeConfiguration&nbsp;conf,
+                                 org.apache.commons.configuration2.CompositeConfiguration&nbsp;conf,
                                  <a href="BKFlags.html" title="class in org.apache.bookkeeper.tools.common">BKFlags</a>&nbsp;globalFlags,
                                  <a href="BKCommand.html" title="type parameter in BKCommand">CommandFlagsT</a>&nbsp;cmdFlags)</pre>
 </li>

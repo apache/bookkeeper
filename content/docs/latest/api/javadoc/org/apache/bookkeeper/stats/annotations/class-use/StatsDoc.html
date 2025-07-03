@@ -472,23 +472,43 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#addEntryOpLogger">addEntryOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#addEntryOutstanding">addEntryOutstanding</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#addTimeoutOpLogger">addTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#channelWriteStats">channelWriteStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadEntryStats">fenceReadEntryStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadRequestStats">fenceReadRequestStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#fenceReadWaitStats">fenceReadWaitStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#forceLedgerOpLogger">forceLedgerOpLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -502,6 +522,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#forceLedgerTimeoutOpLogger">forceLedgerTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#getBookieInfoOpLogger">getBookieInfoOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getBookieInfoRequestStats">getBookieInfoRequestStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -512,48 +542,68 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#getBookieInfoTimeoutOpLogger">getBookieInfoTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getListOfEntriesOfLedgerRequestStats">getListOfEntriesOfLedgerRequestStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#getListOfEntriesOfLedgerStats">getListOfEntriesOfLedgerStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollPreWaitStats">longPollPreWaitStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollReadRequestStats">longPollReadRequestStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollReadStats">longPollReadStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#longPollWaitStats">longPollWaitStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntryBlockedStats">readEntryBlockedStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#readEntryOpLogger">readEntryOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntrySchedulingDelayStats">readEntrySchedulingDelayStats</a></span></code></th>
+<td class="colFirst"><code>protected <a href="../../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#readEntryOutstanding">readEntryOutstanding</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntrySchedulingDelayStats">readEntrySchedulingDelayStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readEntryStats">readEntryStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#readLacOpLogger">readLacOpLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -567,23 +617,53 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#readLacTimeoutOpLogger">readLacTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readLastEntryNoEntryErrorCounter">readLastEntryNoEntryErrorCounter</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#readRequestStats">readRequestStats</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#readTimeoutOpLogger">readTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#writeLacRequestStats">writeLacRequestStats</a></span></code></th>
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#startTLSOpLogger">startTLSOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#startTLSTimeoutOpLogger">startTLSTimeoutOpLogger</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#writeLacOpLogger">writeLacOpLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#writeLacRequestStats">writeLacRequestStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RequestStats.</span><code><span class="memberNameLink"><a href="../../../proto/RequestStats.html#writeLacStats">writeLacStats</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../../../proto/PerChannelBookieClient.html#writeLacTimeoutOpLogger">writeLacTimeoutOpLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

@@ -42,6 +42,7 @@
 <li><a href="com/scurrilous/circe/impl/AbstractStatelessLongHash.html" title="class in com.scurrilous.circe.impl">AbstractStatelessLongHash</a></li>
 <li><a href="org/apache/bookkeeper/meta/AbstractZkLedgerManager.html" title="class in org.apache.bookkeeper.meta">AbstractZkLedgerManager</a></li>
 <li><a href="org/apache/bookkeeper/meta/AbstractZkLedgerManagerFactory.html" title="class in org.apache.bookkeeper.meta">AbstractZkLedgerManagerFactory</a></li>
+<li><a href="org/apache/bookkeeper/proto/AddCompletion.html" title="class in org.apache.bookkeeper.proto">AddCompletion</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/AdminCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">AdminCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/AdminCommand.AdminFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">AdminCommand.AdminFlags</a></li>
 <li><a href="org/apache/bookkeeper/stats/AlertStatsLogger.html" title="class in org.apache.bookkeeper.stats">AlertStatsLogger</a></li>
@@ -92,6 +93,7 @@
 <li><a href="org/apache/bookkeeper/common/util/Backoff.Policy.html" title="interface in org.apache.bookkeeper.common.util"><span class="interfaceName">Backoff.Policy</span></a></li>
 <li><a href="org/apache/bookkeeper/common/collections/BatchedArrayBlockingQueue.html" title="class in org.apache.bookkeeper.common.collections">BatchedArrayBlockingQueue</a></li>
 <li><a href="org/apache/bookkeeper/common/collections/BatchedBlockingQueue.html" title="interface in org.apache.bookkeeper.common.collections"><span class="interfaceName">BatchedBlockingQueue</span></a></li>
+<li><a href="org/apache/bookkeeper/proto/BatchedReadCompletion.html" title="class in org.apache.bookkeeper.proto">BatchedReadCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/BatchedReadEntryProcessor.html" title="class in org.apache.bookkeeper.proto">BatchedReadEntryProcessor</a></li>
 <li><a href="org/apache/bookkeeper/client/BatchedReadOp.html" title="class in org.apache.bookkeeper.client">BatchedReadOp</a></li>
 <li><a href="org/apache/bookkeeper/tools/common/BKCommand.html" title="class in org.apache.bookkeeper.tools.common">BKCommand</a></li>
@@ -154,6 +156,7 @@
 <li><a href="org/apache/bookkeeper/tls/BookieAuthZFactory.html" title="class in org.apache.bookkeeper.tls">BookieAuthZFactory</a></li>
 <li><a href="org/apache/bookkeeper/proto/BookieClient.html" title="interface in org.apache.bookkeeper.proto"><span class="interfaceName">BookieClient</span></a></li>
 <li><a href="org/apache/bookkeeper/proto/BookieClientImpl.html" title="class in org.apache.bookkeeper.proto">BookieClientImpl</a></li>
+<li><a href="org/apache/bookkeeper/proto/BookieClientImpl.ChannelReadyForAddEntryCallback.html" title="class in org.apache.bookkeeper.proto">BookieClientImpl.ChannelReadyForAddEntryCallback</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/helpers/BookieCommand.html" title="class in org.apache.bookkeeper.tools.cli.helpers">BookieCommand</a></li>
 <li><a href="org/apache/bookkeeper/server/conf/BookieConfiguration.html" title="class in org.apache.bookkeeper.server.conf">BookieConfiguration</a></li>
 <li><a href="org/apache/bookkeeper/proto/BookieConnectionPeer.html" title="interface in org.apache.bookkeeper.proto"><span class="interfaceName">BookieConnectionPeer</span></a></li>
@@ -410,6 +413,8 @@
 <li><a href="com/scurrilous/circe/CommonHashes.html" title="class in com.scurrilous.circe">CommonHashes</a></li>
 <li><a href="org/apache/bookkeeper/bookie/CompactableLedgerStorage.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">CompactableLedgerStorage</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/storage/CompactionEntryLog.html" title="interface in org.apache.bookkeeper.bookie.storage"><span class="interfaceName">CompactionEntryLog</span></a></li>
+<li><a href="org/apache/bookkeeper/proto/CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a></li>
+<li><a href="org/apache/bookkeeper/proto/CompletionValue.html" title="class in org.apache.bookkeeper.proto">CompletionValue</a></li>
 <li><a href="org/apache/bookkeeper/common/conf/ComponentConfiguration.html" title="class in org.apache.bookkeeper.common.conf">ComponentConfiguration</a></li>
 <li><a href="org/apache/bookkeeper/common/component/ComponentInfoPublisher.html" title="class in org.apache.bookkeeper.common.component">ComponentInfoPublisher</a></li>
 <li><a href="org/apache/bookkeeper/common/component/ComponentInfoPublisher.EndpointInfo.html" title="class in org.apache.bookkeeper.common.component">ComponentInfoPublisher.EndpointInfo</a></li>
@@ -447,6 +452,7 @@
 <li><a href="org/apache/bookkeeper/common/conf/ConfigKeyGroup.ConfigKeyGroupBuilder.html" title="class in org.apache.bookkeeper.common.conf">ConfigKeyGroup.ConfigKeyGroupBuilder</a></li>
 <li><a href="org/apache/bookkeeper/conf/Configurable.html" title="interface in org.apache.bookkeeper.conf"><span class="interfaceName">Configurable</span></a></li>
 <li><a href="org/apache/bookkeeper/server/http/service/ConfigurationService.html" title="class in org.apache.bookkeeper.server.http.service">ConfigurationService</a></li>
+<li><a href="org/apache/bookkeeper/common/conf/ConfigurationUtil.html" title="class in org.apache.bookkeeper.common.conf">ConfigurationUtil</a></li>
 <li><a href="org/apache/bookkeeper/proto/ConnectionPeer.html" title="interface in org.apache.bookkeeper.proto"><span class="interfaceName">ConnectionPeer</span></a></li>
 <li><a href="org/apache/bookkeeper/slogger/ConsoleSlogger.html" title="class in org.apache.bookkeeper.slogger">ConsoleSlogger</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/ConvertToDBStorageCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ConvertToDBStorageCommand</a></li>
@@ -584,6 +590,7 @@
 <li><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementPolicyAdherence.html" title="enum in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementPolicyAdherence</a></li>
 <li><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.PlacementResult.html" title="class in org.apache.bookkeeper.client">EnsemblePlacementPolicy.PlacementResult</a></li>
 <li><a href="org/apache/bookkeeper/client/EnsembleUtils.html" title="class in org.apache.bookkeeper.client">EnsembleUtils</a></li>
+<li><a href="org/apache/bookkeeper/proto/EntryCompletionKey.html" title="class in org.apache.bookkeeper.proto">EntryCompletionKey</a></li>
 <li><a href="org/apache/bookkeeper/bookie/datainteg/EntryCopier.html" title="interface in org.apache.bookkeeper.bookie.datainteg"><span class="interfaceName">EntryCopier</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/datainteg/EntryCopier.Batch.html" title="interface in org.apache.bookkeeper.bookie.datainteg"><span class="interfaceName">EntryCopier.Batch</span></a></li>
 <li><a href="org/apache/bookkeeper/bookie/datainteg/EntryCopierImpl.html" title="class in org.apache.bookkeeper.bookie.datainteg">EntryCopierImpl</a></li>
@@ -643,6 +650,7 @@
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/FlipBookieIdCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">FlipBookieIdCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/FlipBookieIdCommand.FlipBookieIdFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">FlipBookieIdCommand.FlipBookieIdFlags</a></li>
 <li><a href="org/apache/bookkeeper/client/api/ForceableHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="interfaceName">ForceableHandle</span></a></li>
+<li><a href="org/apache/bookkeeper/proto/ForceLedgerCompletion.html" title="class in org.apache.bookkeeper.proto">ForceLedgerCompletion</a></li>
 <li><a href="org/apache/bookkeeper/client/ForceLedgerOp.html" title="class in org.apache.bookkeeper.client">ForceLedgerOp</a></li>
 <li><a href="org/apache/bookkeeper/proto/ForceLedgerProcessorV3.html" title="class in org.apache.bookkeeper.proto">ForceLedgerProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/FormatCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">FormatCommand</a></li>
@@ -660,11 +668,13 @@
 <li><a href="org/apache/bookkeeper/server/http/service/GCDetailsService.html" title="class in org.apache.bookkeeper.server.http.service">GCDetailsService</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/GenerateCookieCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">GenerateCookieCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/GenerateCookieCommand.Flags.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">GenerateCookieCommand.Flags</a></li>
+<li><a href="org/apache/bookkeeper/proto/GetBookieInfoCompletion.html" title="class in org.apache.bookkeeper.proto">GetBookieInfoCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/GetBookieInfoProcessorV3.html" title="class in org.apache.bookkeeper.proto">GetBookieInfoProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/GetCookieCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">GetCookieCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/cookie/GetCookieCommand.Flags.html" title="class in org.apache.bookkeeper.tools.cli.commands.cookie">GetCookieCommand.Flags</a></li>
 <li><a href="org/apache/bookkeeper/server/http/service/GetLastLogMarkService.html" title="class in org.apache.bookkeeper.server.http.service">GetLastLogMarkService</a></li>
 <li><a href="org/apache/bookkeeper/server/http/service/GetLedgerMetaService.html" title="class in org.apache.bookkeeper.server.http.service">GetLedgerMetaService</a></li>
+<li><a href="org/apache/bookkeeper/proto/GetListOfEntriesOfLedgerCompletion.html" title="class in org.apache.bookkeeper.proto">GetListOfEntriesOfLedgerCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/GetListOfEntriesOfLedgerProcessorV3.html" title="class in org.apache.bookkeeper.proto">GetListOfEntriesOfLedgerProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/common/collections/GrowableMpScArrayConsumerBlockingQueue.html" title="class in org.apache.bookkeeper.common.collections">GrowableMpScArrayConsumerBlockingQueue</a></li>
 <li><a href="org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api"><span class="interfaceName">Handle</span></a></li>
@@ -1017,11 +1027,13 @@
 <li><a href="org/apache/bookkeeper/client/RackChangeNotifier.html" title="interface in org.apache.bookkeeper.client"><span class="interfaceName">RackChangeNotifier</span></a></li>
 <li><a href="org/apache/bookkeeper/common/conf/validators/RangeValidator.html" title="class in org.apache.bookkeeper.common.conf.validators">RangeValidator</a></li>
 <li><a href="org/apache/bookkeeper/bookie/storage/ldb/ReadCache.html" title="class in org.apache.bookkeeper.bookie.storage.ldb">ReadCache</a></li>
+<li><a href="org/apache/bookkeeper/proto/ReadCompletion.html" title="class in org.apache.bookkeeper.proto">ReadCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/ReadEntryProcessor.html" title="class in org.apache.bookkeeper.proto">ReadEntryProcessor</a></li>
 <li><a href="org/apache/bookkeeper/proto/ReadEntryProcessorV3.html" title="class in org.apache.bookkeeper.proto">ReadEntryProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="interfaceName">ReadHandle</span></a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/ReadJournalCommand.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ReadJournalCommand</a></li>
 <li><a href="org/apache/bookkeeper/tools/cli/commands/bookie/ReadJournalCommand.ReadJournalFlags.html" title="class in org.apache.bookkeeper.tools.cli.commands.bookie">ReadJournalCommand.ReadJournalFlags</a></li>
+<li><a href="org/apache/bookkeeper/proto/ReadLacCompletion.html" title="class in org.apache.bookkeeper.proto">ReadLacCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/ReadLacProcessorV3.html" title="class in org.apache.bookkeeper.proto">ReadLacProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/proto/ReadLastConfirmedAndEntryContext.html" title="class in org.apache.bookkeeper.proto">ReadLastConfirmedAndEntryContext</a></li>
 <li><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a></li>
@@ -1141,6 +1153,7 @@
 <li><a href="org/apache/bookkeeper/net/StabilizeNetworkTopology.NodeStatus.html" title="class in org.apache.bookkeeper.net">StabilizeNetworkTopology.NodeStatus</a></li>
 <li><a href="org/apache/bookkeeper/proto/checksum/StandardCRC32Digest.html" title="class in org.apache.bookkeeper.proto.checksum">StandardCRC32Digest</a></li>
 <li><a href="com/scurrilous/circe/crc/StandardCrcProvider.html" title="class in com.scurrilous.circe.crc">StandardCrcProvider</a></li>
+<li><a href="org/apache/bookkeeper/proto/StartTLSCompletion.html" title="class in org.apache.bookkeeper.proto">StartTLSCompletion</a></li>
 <li><a href="com/scurrilous/circe/StatefulHash.html" title="interface in com.scurrilous.circe"><span class="interfaceName">StatefulHash</span></a></li>
 <li><a href="com/scurrilous/circe/StatefulIntHash.html" title="interface in com.scurrilous.circe"><span class="interfaceName">StatefulIntHash</span></a></li>
 <li><a href="com/scurrilous/circe/StatefulLongHash.html" title="interface in com.scurrilous.circe"><span class="interfaceName">StatefulLongHash</span></a></li>
@@ -1202,6 +1215,7 @@
 <li><a href="org/apache/bookkeeper/server/http/service/TriggerGCService.html" title="class in org.apache.bookkeeper.server.http.service">TriggerGCService</a></li>
 <li><a href="org/apache/bookkeeper/server/http/service/TriggerLocationCompactService.html" title="class in org.apache.bookkeeper.server.http.service">TriggerLocationCompactService</a></li>
 <li><a href="org/apache/bookkeeper/client/TryReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client">TryReadLastConfirmedOp</a></li>
+<li><a href="org/apache/bookkeeper/proto/TxnCompletionKey.html" title="class in org.apache.bookkeeper.proto">TxnCompletionKey</a></li>
 <li><a href="org/apache/bookkeeper/common/conf/Type.html" title="enum in org.apache.bookkeeper.common.conf">Type</a></li>
 <li><a href="org/apache/bookkeeper/conf/UncheckedConfigurationException.html" title="class in org.apache.bookkeeper.conf">UncheckedConfigurationException</a></li>
 <li><a href="org/apache/bookkeeper/bookie/UncleanShutdownDetection.html" title="interface in org.apache.bookkeeper.bookie"><span class="interfaceName">UncleanShutdownDetection</span></a></li>
@@ -1231,6 +1245,7 @@
 <li><a href="org/apache/bookkeeper/proto/WriteEntryProcessorV3.html" title="class in org.apache.bookkeeper.proto">WriteEntryProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></li>
 <li><a href="org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="interfaceName">WriteHandle</span></a></li>
+<li><a href="org/apache/bookkeeper/proto/WriteLacCompletion.html" title="class in org.apache.bookkeeper.proto">WriteLacCompletion</a></li>
 <li><a href="org/apache/bookkeeper/proto/WriteLacProcessorV3.html" title="class in org.apache.bookkeeper.proto">WriteLacProcessorV3</a></li>
 <li><a href="org/apache/bookkeeper/bookie/storage/directentrylogger/WriterWithMetadata.html" title="class in org.apache.bookkeeper.bookie.storage.directentrylogger">WriterWithMetadata</a></li>
 <li><a href="org/apache/bookkeeper/bookie/datainteg/WriteSets.html" title="class in org.apache.bookkeeper.bookie.datainteg">WriteSets</a></li>

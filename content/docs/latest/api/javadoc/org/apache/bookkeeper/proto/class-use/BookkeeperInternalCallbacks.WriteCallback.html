@@ -325,7 +325,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PerChannelBookieClient.AddCompletion.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient.AddCompletion</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../AddCompletion.html" title="class in org.apache.bookkeeper.proto">AddCompletion</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -347,7 +347,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.AddCompletion.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.AddCompletion.html#originalCallback">originalCallback</a></span></code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieClientImpl.ChannelReadyForAddEntryCallback.</span><code><span class="memberNameLink"><a href="../BookieClientImpl.ChannelReadyForAddEntryCallback.html#cb">cb</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AddCompletion.</span><code><span class="memberNameLink"><a href="../AddCompletion.html#originalCallback">originalCallback</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -361,12 +366,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="../PerChannelBookieClient.AddCompletion.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient.AddCompletion</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.html#acquireAddCompletion(org.apache.bookkeeper.proto.PerChannelBookieClient.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long)">acquireAddCompletion</a></span>&#8203;(<a href="../PerChannelBookieClient.CompletionKey.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient.CompletionKey</a>&nbsp;key,
+<td class="colFirst"><code>(package private) static <a href="../AddCompletion.html" title="class in org.apache.bookkeeper.proto">AddCompletion</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AddCompletion.</span><code><span class="memberNameLink"><a href="../AddCompletion.html#acquireAddCompletion(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">acquireAddCompletion</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
                     <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;originalCallback,
                     java.lang.Object&nbsp;originalCtx,
                     long&nbsp;ledgerId,
-                    long&nbsp;entryId)</code></th>
+                    long&nbsp;entryId,
+                    <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -416,12 +422,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../BookieClientImpl.ChannelReadyForAddEntryCallback.html" title="class in org.apache.bookkeeper.proto">BookieClientImpl.ChannelReadyForAddEntryCallback</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookieClientImpl.ChannelReadyForAddEntryCallback.</span><code><span class="memberNameLink"><a href="../BookieClientImpl.ChannelReadyForAddEntryCallback.html#create(org.apache.bookkeeper.proto.BookieClientImpl,io.netty.util.ReferenceCounted,long,long,org.apache.bookkeeper.net.BookieId,java.lang.Object,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,int,byte%5B%5D,boolean,java.util.EnumSet)">create</a></span>&#8203;(<a href="../BookieClientImpl.html" title="class in org.apache.bookkeeper.proto">BookieClientImpl</a>&nbsp;bookieClient,
+      io.netty.util.ReferenceCounted&nbsp;toSend,
+      long&nbsp;ledgerId,
+      long&nbsp;entryId,
+      <a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;addr,
+      java.lang.Object&nbsp;ctx,
+      <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;cb,
+      int&nbsp;options,
+      byte[]&nbsp;masterKey,
+      boolean&nbsp;allowFastFail,
+      java.util.EnumSet&lt;<a href="../../client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.AddCompletion.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.AddCompletion.html#reset(org.apache.bookkeeper.proto.PerChannelBookieClient.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long)">reset</a></span>&#8203;(<a href="../PerChannelBookieClient.CompletionKey.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient.CompletionKey</a>&nbsp;key,
+<th class="colSecond" scope="row"><span class="typeNameLabel">AddCompletion.</span><code><span class="memberNameLink"><a href="../AddCompletion.html#reset(org.apache.bookkeeper.proto.CompletionKey,org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback,java.lang.Object,long,long,org.apache.bookkeeper.proto.PerChannelBookieClient)">reset</a></span>&#8203;(<a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a>&nbsp;key,
      <a href="../BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>&nbsp;originalCallback,
      java.lang.Object&nbsp;originalCtx,
      long&nbsp;ledgerId,
-     long&nbsp;entryId)</code></th>
+     long&nbsp;entryId,
+     <a href="../PerChannelBookieClient.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient</a>&nbsp;perChannelBookieClient)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

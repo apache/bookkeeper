@@ -152,7 +152,7 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
  <p>This class does not extend the <code>Configured</code>
  base class, and should not be changed to do so, as it causes problems
  for subclasses. The constructor of the <code>Configured</code> calls
- the  <a href="#setConf(org.apache.commons.configuration.Configuration)"><code>setConf(Configuration)</code></a> method, which will call into the
+ the  <a href="#setConf(org.apache.commons.configuration2.Configuration)"><code>setConf(Configuration)</code></a> method, which will call into the
  subclasses before they have been fully constructed.</div>
 </li>
 </ul>
@@ -183,7 +183,7 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected </code></td>
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration.Configuration)">AbstractDNSToSwitchMapping</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration2.Configuration)">AbstractDNSToSwitchMapping</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</code></th>
 <td class="colLast">
 <div class="block">Create an instance, caching the configuration file.</div>
 </td>
@@ -221,7 +221,7 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>org.apache.commons.configuration.Configuration</code></td>
+<td class="colFirst"><code>org.apache.commons.configuration2.Configuration</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getConf()">getConf</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Return the configuration used by this object.</div>
@@ -264,7 +264,7 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setConf(org.apache.commons.configuration.Configuration)">setConf</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setConf(org.apache.commons.configuration2.Configuration)">setConf</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</code></th>
 <td class="colLast">
 <div class="block">Set the configuration to be used by this object.</div>
 </td>
@@ -317,15 +317,15 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 <div class="block">Create an unconfigured instance.</div>
 </li>
 </ul>
-<a id="&lt;init&gt;(org.apache.commons.configuration.Configuration)">
+<a id="&lt;init&gt;(org.apache.commons.configuration2.Configuration)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>AbstractDNSToSwitchMapping</h4>
-<pre>protected&nbsp;AbstractDNSToSwitchMapping&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</pre>
+<pre>protected&nbsp;AbstractDNSToSwitchMapping&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</pre>
 <div class="block">Create an instance, caching the configuration file.
- This constructor does not call <a href="#setConf(org.apache.commons.configuration.Configuration)"><code>setConf(Configuration)</code></a>; if
+ This constructor does not call <a href="#setConf(org.apache.commons.configuration2.Configuration)"><code>setConf(Configuration)</code></a>; if
  a subclass extracts information in that method, it must call it explicitly.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -373,7 +373,7 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 <ul class="blockList">
 <li class="blockList">
 <h4>getConf</h4>
-<pre class="methodSignature">public&nbsp;org.apache.commons.configuration.Configuration&nbsp;getConf()</pre>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.Configuration&nbsp;getConf()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../conf/Configurable.html#getConf()">Configurable</a></code></span></div>
 <div class="block">Return the configuration used by this object.</div>
 <dl>
@@ -384,18 +384,18 @@ implements <a href="DNSToSwitchMapping.html" title="interface in org.apache.book
 </dl>
 </li>
 </ul>
-<a id="setConf(org.apache.commons.configuration.Configuration)">
+<a id="setConf(org.apache.commons.configuration2.Configuration)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setConf</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setConf&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration.Configuration)">Configurable</a></code></span></div>
+<pre class="methodSignature">public&nbsp;void&nbsp;setConf&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration2.Configuration)">Configurable</a></code></span></div>
 <div class="block">Set the configuration to be used by this object.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration.Configuration)">setConf</a></code>&nbsp;in interface&nbsp;<code><a href="../conf/Configurable.html" title="interface in org.apache.bookkeeper.conf">Configurable</a></code></dd>
+<dd><code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration2.Configuration)">setConf</a></code>&nbsp;in interface&nbsp;<code><a href="../conf/Configurable.html" title="interface in org.apache.bookkeeper.conf">Configurable</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>conf</code> - Configuration object to use</dd>
 </dl>

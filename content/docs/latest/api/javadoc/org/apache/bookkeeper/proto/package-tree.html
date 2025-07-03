@@ -208,6 +208,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.proto.<a href="BKStats.OpStatData.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BKStats.OpStatData</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="BKStats.OpStats.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BKStats.OpStats</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="BookieClientImpl.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookieClientImpl</span></a> (implements org.apache.bookkeeper.proto.<a href="BookieClient.html" title="interface in org.apache.bookkeeper.proto">BookieClient</a>, org.apache.bookkeeper.proto.<a href="PerChannelBookieClientFactory.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientFactory</a>)</li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="BookieClientImpl.ChannelReadyForAddEntryCallback.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookieClientImpl.ChannelReadyForAddEntryCallback</span></a> (implements org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;T&gt;)</li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="BookieNettyServer.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookieNettyServer</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="BookieProtocol.PacketHeader.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookieProtocol.PacketHeader</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="BookieProtocol.Request.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookieProtocol.Request</span></a>
@@ -273,6 +274,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.GenericCallbackFuture.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BookkeeperInternalCallbacks.GenericCallbackFuture</span></a>&lt;T&gt; (implements org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;T&gt;)</li>
 </ul>
 </li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="CompletionKey.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">CompletionKey</span></a>
+<ul>
+<li class="circle">org.apache.bookkeeper.proto.<a href="EntryCompletionKey.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">EntryCompletionKey</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="TxnCompletionKey.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">TxnCompletionKey</span></a></li>
+</ul>
+</li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="CompletionValue.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">CompletionValue</span></a>
+<ul>
+<li class="circle">org.apache.bookkeeper.proto.<a href="AddCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">AddCompletion</span></a> (implements org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>)</li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="BatchedReadCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">BatchedReadCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="ForceLedgerCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">ForceLedgerCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="GetBookieInfoCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">GetBookieInfoCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="GetListOfEntriesOfLedgerCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">GetListOfEntriesOfLedgerCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="ReadCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">ReadCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="ReadLacCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">ReadLacCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="StartTLSCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">StartTLSCompletion</span></a></li>
+<li class="circle">org.apache.bookkeeper.proto.<a href="WriteLacCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">WriteLacCompletion</span></a></li>
+</ul>
+</li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="DataFormats.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">DataFormats</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="DefaultPerChannelBookieClientPool.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">DefaultPerChannelBookieClientPool</span></a> (implements org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.GenericCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.GenericCallback</a>&lt;T&gt;, org.apache.bookkeeper.proto.<a href="PerChannelBookieClientPool.html" title="interface in org.apache.bookkeeper.proto">PerChannelBookieClientPool</a>)</li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="LocalBookiesRegistry.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">LocalBookiesRegistry</span></a></li>
@@ -299,24 +319,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.bookkeeper.proto.<a href="ReadLacProcessorV3.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">ReadLacProcessorV3</span></a> (implements java.lang.Runnable)</li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="WriteEntryProcessorV3.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">WriteEntryProcessorV3</span></a></li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="WriteLacProcessorV3.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">WriteLacProcessorV3</span></a> (implements java.lang.Runnable)</li>
-</ul>
-</li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.CompletionKey.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.CompletionKey</span></a>
-<ul>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.TxnCompletionKey.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.TxnCompletionKey</span></a></li>
-</ul>
-</li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.CompletionValue.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.CompletionValue</span></a>
-<ul>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.AddCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.AddCompletion</span></a> (implements org.apache.bookkeeper.proto.<a href="BookkeeperInternalCallbacks.WriteCallback.html" title="interface in org.apache.bookkeeper.proto">BookkeeperInternalCallbacks.WriteCallback</a>)</li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.BatchedReadCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.BatchedReadCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.ForceLedgerCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.ForceLedgerCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.GetBookieInfoCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.GetBookieInfoCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.GetListOfEntriesOfLedgerCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.GetListOfEntriesOfLedgerCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.ReadCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.ReadCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.ReadLacCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.ReadLacCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.StartTLSCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.StartTLSCompletion</span></a></li>
-<li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.WriteLacCompletion.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.WriteLacCompletion</span></a></li>
 </ul>
 </li>
 <li class="circle">org.apache.bookkeeper.proto.<a href="PerChannelBookieClient.ConnectionFutureListener.html" title="class in org.apache.bookkeeper.proto"><span class="typeNameLink">PerChannelBookieClient.ConnectionFutureListener</span></a> (implements io.netty.channel.ChannelFutureListener)</li>

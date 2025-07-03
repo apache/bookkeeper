@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.CompletionKey.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.CompletionKey.html#operationType">operationType</a></span></code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompletionKey.</span><code><span class="memberNameLink"><a href="../CompletionKey.html#operationType">operationType</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -226,19 +226,26 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.PerChannelBookieClient.EntryCompletionKey</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.html#acquireV2Key(long,long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">acquireV2Key</a></span>&#8203;(long&nbsp;ledgerId,
+<td class="colFirst"><code>(package private) static <a href="../EntryCompletionKey.html" title="class in org.apache.bookkeeper.proto">EntryCompletionKey</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryCompletionKey.</span><code><span class="memberNameLink"><a href="../EntryCompletionKey.html#acquireV2Key(long,long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">acquireV2Key</a></span>&#8203;(long&nbsp;ledgerId,
             long&nbsp;entryId,
             <a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../PerChannelBookieClient.CompletionKey.html" title="class in org.apache.bookkeeper.proto">PerChannelBookieClient.CompletionKey</a></code></td>
+<td class="colFirst"><code>(package private) <a href="../CompletionKey.html" title="class in org.apache.bookkeeper.proto">CompletionKey</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PerChannelBookieClient.</span><code><span class="memberNameLink"><a href="../PerChannelBookieClient.html#newCompletionKey(long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">newCompletionKey</a></span>&#8203;(long&nbsp;txnId,
                 <a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EntryCompletionKey.</span><code><span class="memberNameLink"><a href="../EntryCompletionKey.html#reset(long,long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">reset</a></span>&#8203;(long&nbsp;ledgerId,
+     long&nbsp;entryId,
+     <a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../BookkeeperProtocol.BKPacketHeader.Builder.html" title="class in org.apache.bookkeeper.proto">BookkeeperProtocol.BKPacketHeader.Builder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookkeeperProtocol.BKPacketHeader.Builder.</span><code><span class="memberNameLink"><a href="../BookkeeperProtocol.BKPacketHeader.Builder.html#setOperation(org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">setOperation</a></span>&#8203;(<a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;value)</code></th>
 <td class="colLast">
@@ -255,11 +262,11 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PerChannelBookieClient.CompletionKey.html#%3Cinit%3E(org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">CompletionKey</a></span>&#8203;(<a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CompletionKey.html#%3Cinit%3E(org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">CompletionKey</a></span>&#8203;(<a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PerChannelBookieClient.TxnCompletionKey.html#%3Cinit%3E(long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">TxnCompletionKey</a></span>&#8203;(long&nbsp;txnId,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../TxnCompletionKey.html#%3Cinit%3E(long,org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType)">TxnCompletionKey</a></span>&#8203;(long&nbsp;txnId,
                 <a href="../BookkeeperProtocol.OperationType.html" title="enum in org.apache.bookkeeper.proto">BookkeeperProtocol.OperationType</a>&nbsp;operationType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>

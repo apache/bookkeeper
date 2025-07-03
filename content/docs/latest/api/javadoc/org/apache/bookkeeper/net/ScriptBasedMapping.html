@@ -248,7 +248,7 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration.Configuration)">ScriptBasedMapping</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.commons.configuration2.Configuration)">ScriptBasedMapping</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</code></th>
 <td class="colLast">
 <div class="block">Create an instance from the given configuration.</div>
 </td>
@@ -272,7 +272,7 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>org.apache.commons.configuration.Configuration</code></td>
+<td class="colFirst"><code>org.apache.commons.configuration2.Configuration</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getConf()">getConf</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Return the configuration used by this object.</div>
@@ -280,7 +280,7 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setConf(org.apache.commons.configuration.Configuration)">setConf</a></span>&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setConf(org.apache.commons.configuration2.Configuration)">setConf</a></span>&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</code></th>
 <td class="colLast">
 <div class="block">Set the configuration to be used by this object.</div>
 </td>
@@ -419,18 +419,18 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 <pre>public&nbsp;ScriptBasedMapping()</pre>
 <div class="block">Create an instance with the default configuration.
 
- <p>Calling <a href="#setConf(org.apache.commons.configuration.Configuration)"><code>setConf(Configuration)</code></a> will trigger a
+ <p>Calling <a href="#setConf(org.apache.commons.configuration2.Configuration)"><code>setConf(Configuration)</code></a> will trigger a
  re-evaluation of the configuration settings and so be used to
  set up the mapping script.</div>
 </li>
 </ul>
-<a id="&lt;init&gt;(org.apache.commons.configuration.Configuration)">
+<a id="&lt;init&gt;(org.apache.commons.configuration2.Configuration)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ScriptBasedMapping</h4>
-<pre>public&nbsp;ScriptBasedMapping&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</pre>
+<pre>public&nbsp;ScriptBasedMapping&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</pre>
 <div class="block">Create an instance from the given configuration.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -454,7 +454,7 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 <ul class="blockList">
 <li class="blockList">
 <h4>getConf</h4>
-<pre class="methodSignature">public&nbsp;org.apache.commons.configuration.Configuration&nbsp;getConf()</pre>
+<pre class="methodSignature">public&nbsp;org.apache.commons.configuration2.Configuration&nbsp;getConf()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../conf/Configurable.html#getConf()">Configurable</a></code></span></div>
 <div class="block">Return the configuration used by this object.</div>
 <dl>
@@ -480,13 +480,13 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
 </dl>
 </li>
 </ul>
-<a id="setConf(org.apache.commons.configuration.Configuration)">
+<a id="setConf(org.apache.commons.configuration2.Configuration)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>setConf</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setConf&#8203;(org.apache.commons.configuration.Configuration&nbsp;conf)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;setConf&#8203;(org.apache.commons.configuration2.Configuration&nbsp;conf)</pre>
 <div class="block">Set the configuration to be used by this object.
 
  <p>This will get called in the superclass constructor, so a check is needed
@@ -494,9 +494,9 @@ extends <a href="CachedDNSToSwitchMapping.html" title="class in org.apache.bookk
  configuration.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration.Configuration)">setConf</a></code>&nbsp;in interface&nbsp;<code><a href="../conf/Configurable.html" title="interface in org.apache.bookkeeper.conf">Configurable</a></code></dd>
+<dd><code><a href="../conf/Configurable.html#setConf(org.apache.commons.configuration2.Configuration)">setConf</a></code>&nbsp;in interface&nbsp;<code><a href="../conf/Configurable.html" title="interface in org.apache.bookkeeper.conf">Configurable</a></code></dd>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AbstractDNSToSwitchMapping.html#setConf(org.apache.commons.configuration.Configuration)">setConf</a></code>&nbsp;in class&nbsp;<code><a href="AbstractDNSToSwitchMapping.html" title="class in org.apache.bookkeeper.net">AbstractDNSToSwitchMapping</a></code></dd>
+<dd><code><a href="AbstractDNSToSwitchMapping.html#setConf(org.apache.commons.configuration2.Configuration)">setConf</a></code>&nbsp;in class&nbsp;<code><a href="AbstractDNSToSwitchMapping.html" title="class in org.apache.bookkeeper.net">AbstractDNSToSwitchMapping</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>conf</code> - </dd>
 </dl>
