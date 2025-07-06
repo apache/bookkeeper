@@ -271,7 +271,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-servlet-9.4.57.v20241219.jar [22]
 - lib/org.eclipse.jetty-jetty-util-9.4.57.v20241219.jar [22]
 - lib/org.eclipse.jetty-jetty-util-ajax-9.4.57.v20241219.jar [22]
-- lib/org.rocksdb-rocksdbjni-9.9.3.jar [23]
+- lib/org.rocksdb-rocksdbjni-7.9.2.jar [23]
 - lib/com.beust-jcommander-1.82.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
