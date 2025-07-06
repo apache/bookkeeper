@@ -51,8 +51,8 @@ RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.1/bookke
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.13.0/bookkeeper-server-4.13.0-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.14.8/bookkeeper-server-4.14.8-bin.tar.gz{,.sha512,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.15.5/bookkeeper-server-4.15.5-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.16.6/bookkeeper-server-4.16.6-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.17.1/bookkeeper-server-4.17.1-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.16.7/bookkeeper-server-4.16.7-bin.tar.gz{,.sha512,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.17.2/bookkeeper-server-4.17.2-bin.tar.gz{,.sha512,.asc}
 
 RUN wget -nv https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 RUN wget -nv http://svn.apache.org/repos/asf/zookeeper/bookkeeper/dist/KEYS?p=1620552 -O KEYS.old
