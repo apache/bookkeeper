@@ -195,6 +195,7 @@ class LedgerOpenOp {
         }
 
         // get the ledger metadata back
+        final boolean needRecovery = !doRecovery || !metadata.isClosed();
         try {
             // The ledger metadata may be modified even if it has been closed, because the auto-recovery component may
             // rewrite the ledger's metadata. Keep receiving a notification from ZK to avoid the following issue: an
@@ -208,7 +209,7 @@ class LedgerOpenOp {
             // Therefore, if a user needs to the feature that update metadata automatically, he will set
             // "keepUpdateMetadata" to "true",
             lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
-                                          passwd, !doRecovery || keepUpdateMetadata);
+                                          passwd, !needRecovery);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             openComplete(BKException.Code.DigestNotInitializedException, null);
@@ -231,6 +232,9 @@ class LedgerOpenOp {
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
+                        if (needRecovery && keepUpdateMetadata) {
+                            lh.registerLedgerMetadataListener();
+                        }
                     } else {
                         closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
                             if (ex != null) {
