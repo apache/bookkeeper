@@ -138,6 +138,44 @@ public class FullEnsembleDecommissionedTest extends BookKeeperClusterTestCase {
         lh.addEntry(data);
         lh.close();
         List<BookieId> originalEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(0L);
+        LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD, false);
+        assertTrue(originalEnsemble.size() == 2);
+
+        startNewBookie();
+        BookieServer newBookieServer3 = serverByIndex(lastBookieIndex());
+        killBookie(originalEnsemble.get(0));
+        waitAutoRecoveryFinished(lh.getId(), originalEnsemble.get(0), newBookieServer3.getBookieId());
+
+        startNewBookie();
+        int newBookieIndex4 = lastBookieIndex();
+        BookieServer newBookieServer4 = serverByIndex(newBookieIndex4);
+        killBookie(originalEnsemble.get(1));
+        waitAutoRecoveryFinished(lh.getId(), originalEnsemble.get(1), newBookieServer4.getBookieId());
+
+        Awaitility.await().untilAsserted(() -> {
+            LedgerEntries ledgerEntries = readonlyLh.read(0, 0);
+            assertNotNull(ledgerEntries);
+            byte[] entryBytes = ledgerEntries.getEntry(0L).getEntryBytes();
+            assertEquals(new String(data), new String(entryBytes));
+            ledgerEntries.close();
+        });
+        readonlyLh.close();
+    }
+
+    /**
+     * The purpose of this test:
+     * 1. Client service open a readonly ledger handle with recovery, which has not been closed yet.
+     * 2. All BKs that relates to the ledger have been decommissioned.
+     * 3. Auto recovery component moved the data into other BK instances who is alive.
+     * 4. Verify: lhe ledger handle in the client memory keeps updating the ledger ensemble set, and the new read
+     *    request works.
+     */
+    @Test
+    public void testRecoverOpenLedgerHandleStillWorkAfterDecommissioning() throws Exception {
+        LedgerHandle lh = bkc.createLedger(2, 2, digestType, PASSWD);
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).size() == 2);
+        lh.addEntry(data);
+        List<BookieId> originalEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(0L);
         LedgerHandle readonlyLh = bkc.openLedger(lh.getId(), digestType, PASSWD, true);
         assertTrue(originalEnsemble.size() == 2);
 
