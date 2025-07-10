@@ -232,7 +232,7 @@ class LedgerOpenOp {
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
                         openComplete(BKException.Code.OK, lh);
-                        if (needRecovery && keepUpdateMetadata) {
+                        if (!watchImmediately && keepUpdateMetadata) {
                             lh.registerLedgerMetadataListener();
                         }
                     } else {
