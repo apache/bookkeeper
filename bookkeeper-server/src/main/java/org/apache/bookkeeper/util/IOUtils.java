@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.util;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
@@ -146,14 +148,12 @@ public class IOUtils {
      */
     public static File createTempDir(String prefix, String suffix, File dir)
             throws IOException {
-        File tmpDir = File.createTempFile(prefix, suffix, dir);
-        if (!tmpDir.delete()) {
-            throw new IOException("Couldn't delete directory " + tmpDir);
-        }
-        if (!tmpDir.mkdir()) {
-            throw new IOException("Couldn't create directory " + tmpDir);
-        }
-        return tmpDir;
+        try {
+            final File tmpDir = Files.createTempDirectory(prefix + suffix).toFile();
+                return tmpDir;
+            } catch (IOException e) {
+                throw new IOException("Could not create temp directory: " + prefix + suffix, e);
+            }
     }
 
     /**
