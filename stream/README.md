@@ -4,7 +4,7 @@ BookKeeper Table Service is a contrib module added to BookKeeper, providing a ta
 
 ## Detail Design
 
-[BP-30](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f)
+[BP-30](https://github.com/apache/bookkeeper/issues/1205)
 
 ## Build
 
