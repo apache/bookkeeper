@@ -69,6 +69,9 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     public CookieTest() {
         super(0);
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
 
     private String newDirectory() throws Exception {
