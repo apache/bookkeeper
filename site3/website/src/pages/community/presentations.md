@@ -11,7 +11,7 @@
 - [Apache BookKeeper as distributed Store](http://www.slideshare.net/jujjuri/apache-con2016final), ([audio](http://feathercast.apache.org/apachecon-na-2016-low-latency-distributed-storage-services-using-apache-bookkeeper-venkateswararao-jujjuri-sijie-guo/)) JV Jujjuri, ApacheCon 2016
 - [Building a Durable Real-Time Data Pipeline: Apache BookKeeper at Twitter](https://apachebigdata2016.sched.org/event/6M74/building-a-durable-real-time-data-pipeline-apache-bookkeeper-at-twitter-sijie-guo-leigh-stewart-twitter), Leigh Stewart, Apache Big Data 2016 ( [Slides](http://schd.ws/hosted_files/apachebigdata2016/65/Building%20a%20Durable%20Real-Time%20Data%20Pipeline-Apache%20BookKeeper%20at%20Twitter.pdf) )
 - [Scale DistributedLog at Twitter](http://daxue.qq.com/content/content/id/2492), Sijie Guo, QCon Beijing, April 2016
-- [Building DistributedLog, a high-performance replicated log service](https://www.oreilly.com/ideas/twitters-real-time-data-stack?twitter=@bigdata) ([Slides](http://conferences.oreilly.com/strata/strata-ca-2016/public/schedule/detail/46897)), Sijie Guo, Strata+Hadoop World, March 2016
+- [Building DistributedLog, a high-performance replicated log service](https://www.oreilly.com/ideas/twitters-real-time-data-stack?twitter=@bigdata), Sijie Guo, Strata+Hadoop World, March 2016
 - [Building DistributedLog, a high-performance replicated log service](https://youtu.be/QW1OEQxcjZc), Sijie Guo, Sep 2015
 - [Cloud Messaging Service - Technical Overview](http://www.slideshare.net/MessagingMeetup/cloud-messaging-service-technical-overview), Matteo Merli, Sep 2015
 - [Building reliable systems with Apache BookKeeper](http://www.slideshare.net/MatthieuMorel/building-reliable-systems-with-apache-bookkeeper), Matthieu Morel, Jun 2014
