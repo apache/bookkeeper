@@ -67,11 +67,6 @@ RUN echo networkaddress.cache.negative.ttl=1 >> /javaruntime/conf/security/java.
 FROM ubuntu:22.04
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG TARGETARCH
-ARG BK_VERSION=4.17.2
-ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG DISTRO_URL=https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz
-
 ENV BOOKIE_PORT=3181
 ENV BOOKIE_HTTP_PORT=8080
 EXPOSE $BOOKIE_PORT $BOOKIE_HTTP_PORT
