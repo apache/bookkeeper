@@ -77,6 +77,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.Lifecycle;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
+import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -84,7 +85,10 @@ import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpRouter;
+import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
+import org.apache.bookkeeper.http.service.HttpServiceRequest;
+import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
@@ -96,6 +100,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationStats;
 import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -107,8 +112,10 @@ import org.apache.bookkeeper.util.PortManager;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
+import org.awaitility.Awaitility;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -1445,30 +1452,154 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setPersistBookieStatusEnabled(true)
             .setMetadataServiceUri(metadataServiceUri);
         // start a new bookie
-        BookieServer bookieServer = new BookieServer(
+        BookieServer bookieServer1 = new BookieServer(
                 conf, new TestBookieImpl(conf),
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                 new MockUncleanShutdownDetection());
-        bookieServer.start();
+        bookieServer1.start();
         // transition in to read only and persist the status on disk
-        Bookie bookie = (BookieImpl) bookieServer.getBookie();
-        assertFalse(bookie.isReadOnly());
-        bookie.getStateManager().transitionToReadOnlyMode().get();
-        assertTrue(bookie.isReadOnly());
+        Bookie bookie1 = (BookieImpl) bookieServer1.getBookie();
+        assertFalse(bookie1.isReadOnly());
+        bookie1.getStateManager().transitionToReadOnlyMode().get();
+        assertTrue(bookie1.isReadOnly());
         // corrupt status file
-        List<File> ledgerDirs = ((BookieImpl) bookie).getLedgerDirsManager().getAllLedgerDirs();
+        List<File> ledgerDirs = ((BookieImpl) bookie1).getLedgerDirsManager().getAllLedgerDirs();
         corruptFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME));
         corruptFile(new File(ledgerDirs.get(1), BOOKIE_STATUS_FILENAME));
         // restart the bookie should be in read only mode
-        bookieServer.shutdown();
-        bookieServer = new BookieServer(
+        bookieServer1.shutdown();
+        BookieServer bookieServer2 = new BookieServer(
                 conf, new TestBookieImpl(conf),
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                 new MockUncleanShutdownDetection());
-        bookieServer.start();
-        bookie = bookieServer.getBookie();
-        assertTrue(bookie.isReadOnly());
-        bookieServer.shutdown();
+        bookieServer2.start();
+        BookieImpl bookie2 = (BookieImpl) bookieServer2.getBookie();
+        assertTrue(bookie2.isReadOnly());
+        // After a disk check, the bookie should switch to writable mode because the disk usage is fine.
+        bookie2.dirsMonitor.check();
+        Awaitility.await().untilAsserted(() -> {
+            assertFalse(bookie2.isReadOnly());
+        });
+        bookieServer2.shutdown();
+    }
+
+
+    private void setBookieToReadOnly(Bookie bookie, boolean readOnly) throws Exception {
+        BookieStateReadOnlyService.ReadOnlyState state = new BookieStateReadOnlyService.ReadOnlyState();
+        state.setReadOnly(readOnly);
+        HttpServiceRequest request = new HttpServiceRequest(JsonUtil.toJson(state), HttpServer.Method.PUT, null);
+        BookieStateReadOnlyService service = new BookieStateReadOnlyService(bookie);
+        HttpServiceResponse response1 = service.handle(request);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+    }
+
+    /**
+     * Verify: once the state is manually modified to read-only by Admin API, it should not be changed to writable
+     * by the monitor task.
+     * But it can be changed to read-only by monitor task if it was manually set to writable by Admin API.
+     */
+    @Test(timeout = 1000 * 30)
+    public void testRetrieveBookieStatusAdminModifiedWhenStatusFileIsCorrupted() throws Exception {
+        File[] tmpLedgerDirs = new File[3];
+        String[] filePath = new String[tmpLedgerDirs.length];
+        for (int i = 0; i < tmpLedgerDirs.length; i++) {
+            tmpLedgerDirs[i] = tmpDirs.createNew("bookie", "test" + i);
+            filePath[i] = tmpLedgerDirs[i].getPath();
+        }
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(filePath[0])
+            .setLedgerDirNames(filePath)
+            .setReadOnlyModeEnabled(true)
+            .setPersistBookieStatusEnabled(true)
+            .setMetadataServiceUri(metadataServiceUri);
+        // start a new bookie
+        BookieServer bookieServer1 = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
+        bookieServer1.start();
+        // transition in to read only and persist the status on disk
+        Bookie bookie1 = (BookieImpl) bookieServer1.getBookie();
+        assertFalse(bookie1.isReadOnly());
+        setBookieToReadOnly(bookie1, true);
+        assertTrue(bookie1.isReadOnly());
+        // corrupt status file
+        List<File> ledgerDirs = ((BookieImpl) bookie1).getLedgerDirsManager().getAllLedgerDirs();
+        corruptFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME));
+        corruptFile(new File(ledgerDirs.get(1), BOOKIE_STATUS_FILENAME));
+        // restart the bookie should be in read only mode
+        bookieServer1.shutdown();
+        BookieServer bookieServer2 = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
+        bookieServer2.start();
+        BookieImpl bookie2 = (BookieImpl) bookieServer2.getBookie();
+        assertTrue(bookie2.isReadOnly());
+        // After a disk check, the bookie should not switch to writable mode because the state was set to read-only
+        // by admin api manually.
+        bookie2.dirsMonitor.check();
+        Thread.sleep(2000);
+        Awaitility.await().untilAsserted(() -> {
+            assertTrue(bookie2.isReadOnly());
+        });
+        // We can use Admin Api to change the state back to writable.
+        setBookieToReadOnly(bookie2, false);
+        assertFalse(bookie2.isReadOnly());
+        // The state can be changed to read-only by monitor task if it was manually set to writable by Admin API.
+        bookie2.getStateManager().transitionToReadOnlyMode().get();
+        assertTrue(bookie2.isReadOnly());
+        bookieServer2.shutdown();
+    }
+
+    /**
+     * Verify: the newest version can read the old version payload of persisted bookie status.
+     * old payload: "1,READ_ONLY,1752809349613"
+     * new payload: "1,READ_ONLY,1752809349613,false"
+     */
+    @Test(timeout = 10000)
+    public void testPersistBookieStatusCompatibility() throws Exception {
+        File[] tmpLedgerDirs = new File[1];
+        String[] filePath = new String[1];
+        tmpLedgerDirs[0] = tmpDirs.createNew("bookie", "test");
+        filePath[0] = tmpLedgerDirs[0].getPath();
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(filePath[0])
+                .setLedgerDirNames(filePath)
+                .setReadOnlyModeEnabled(true)
+                .setPersistBookieStatusEnabled(true)
+                .setMetadataServiceUri(metadataServiceUri);
+        // start a new bookie
+        BookieServer bookieServer1 = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
+        bookieServer1.start();
+        // transition in to read only and persist the status on disk
+        Bookie bookie1 = (BookieImpl) bookieServer1.getBookie();
+        assertFalse(bookie1.isReadOnly());
+        bookie1.getStateManager().transitionToReadOnlyMode().get();
+        assertTrue(bookie1.isReadOnly());
+        // Rewrite file to the old payload.
+        List<File> ledgerDirs = ((BookieImpl) bookie1).getLedgerDirsManager().getAllLedgerDirs();
+        FileUtils.writeStringToFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME),
+                "1,READ_ONLY,1752809349613");
+        // restart the bookie should be in read only mode
+        bookieServer1.shutdown();
+        BookieServer bookieServer2 = new BookieServer(
+                conf, new TestBookieImpl(conf),
+                NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
+                new MockUncleanShutdownDetection());
+        bookieServer2.start();
+        BookieImpl bookie2 = (BookieImpl) bookieServer2.getBookie();
+        assertTrue(bookie2.isReadOnly());
+        // After a disk check, the bookie should not switch to writable mode because the state was set to read-only
+        // by admin api manually.
+        bookie2.dirsMonitor.check();
+        Awaitility.await().untilAsserted(() -> {
+            assertFalse(bookie2.isReadOnly());
+        });
+        bookieServer2.shutdown();
     }
 
     /**
