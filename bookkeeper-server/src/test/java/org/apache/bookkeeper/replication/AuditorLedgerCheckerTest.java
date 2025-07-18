@@ -326,7 +326,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = serverByIndex(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
 
-        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
+        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode(false);
         bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(bkIndex)))
             .get(30, TimeUnit.SECONDS);
 
@@ -361,7 +361,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         BookieServer bk = serverByIndex(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
 
-        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode();
+        ((BookieImpl) bk.getBookie()).getStateManager().doTransitionToReadOnlyMode(false);
         bkc.waitForReadOnlyBookie(BookieImpl.getBookieId(confByIndex(bkIndex)))
             .get(30, TimeUnit.SECONDS);
 

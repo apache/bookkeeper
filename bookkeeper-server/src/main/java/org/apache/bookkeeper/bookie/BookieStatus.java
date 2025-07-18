@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,8 @@ public class BookieStatus {
     private int layoutVersion;
     private long lastUpdateTime;
     private volatile BookieMode bookieMode;
+    @Getter
+    private boolean isManuallyModifiedToReadOnly;
 
     BookieStatus() {
         this.bookieMode = BookieMode.READ_WRITE;
@@ -72,6 +75,7 @@ public class BookieStatus {
         if (!bookieMode.equals(BookieMode.READ_WRITE)) {
             bookieMode = BookieMode.READ_WRITE;
             this.lastUpdateTime = System.currentTimeMillis();
+            this.isManuallyModifiedToReadOnly = false;
             return true;
         }
         return false;
@@ -81,10 +85,11 @@ public class BookieStatus {
         return bookieMode.equals(BookieMode.READ_ONLY);
     }
 
-    synchronized boolean setToReadOnlyMode() {
+    synchronized boolean setToReadOnlyMode(boolean isManuallyModify) {
         if (!bookieMode.equals(BookieMode.READ_ONLY)) {
             bookieMode = BookieMode.READ_ONLY;
             this.lastUpdateTime = System.currentTimeMillis();
+            this.isManuallyModifiedToReadOnly = isManuallyModify;
             return true;
         }
         return false;
@@ -147,6 +152,7 @@ public class BookieStatus {
                             this.lastUpdateTime = status.lastUpdateTime;
                             this.layoutVersion = status.layoutVersion;
                             this.bookieMode = status.bookieMode;
+                            this.isManuallyModifiedToReadOnly = status.isManuallyModifiedToReadOnly;
                             success = true;
                         }
                     }
@@ -216,6 +222,15 @@ public class BookieStatus {
             if (status.layoutVersion == 1 && parts.length == 3) {
                 status.bookieMode = BookieMode.valueOf(parts[1]);
                 status.lastUpdateTime = Long.parseLong(parts[2].trim());
+                status.isManuallyModifiedToReadOnly = true;
+                return status;
+            }
+            // Since we should guarantee the compatibility of downgrade. We do not change the layoutVersion, otherwise,
+            // the string can not be parsed by the lower version.
+            if (status.layoutVersion == 1 && parts.length == 4) {
+                status.bookieMode = BookieMode.valueOf(parts[1]);
+                status.lastUpdateTime = Long.parseLong(parts[2].trim());
+                status.isManuallyModifiedToReadOnly = Boolean.parseBoolean(parts[3].trim());
                 return status;
             }
         }
@@ -231,6 +246,8 @@ public class BookieStatus {
         builder.append(getBookieMode());
         builder.append(",");
         builder.append(System.currentTimeMillis());
+        builder.append(",");
+        builder.append(isManuallyModifiedToReadOnly);
         builder.append("\n");
         return builder.toString();
     }

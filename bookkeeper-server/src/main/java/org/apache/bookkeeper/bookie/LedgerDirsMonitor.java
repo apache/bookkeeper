@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +55,7 @@ class LedgerDirsMonitor {
     private final long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
+    private boolean isFirstLoopOfCheckTask = true;
 
     public LedgerDirsMonitor(final ServerConfiguration conf,
                              final DiskChecker diskChecker,
@@ -67,6 +69,10 @@ class LedgerDirsMonitor {
     }
 
     private void check(final LedgerDirsManager ldm) {
+        final boolean isFirstLoopOfCheckTaskLocalValue = this.isFirstLoopOfCheckTask;
+        if (isFirstLoopOfCheckTaskLocalValue) {
+            this.isFirstLoopOfCheckTask = false;
+        }
         final ConcurrentMap<File, Float> diskUsages = ldm.getDiskUsages();
         boolean someDiskFulled = false;
         boolean highPriorityWritesAllowed = true;
@@ -175,6 +181,14 @@ class LedgerDirsMonitor {
             }
         }
 
+        if (isFirstLoopOfCheckTaskLocalValue && ldm.getFullFilledLedgerDirs().isEmpty()) {
+            // notify any disk full.
+            for (LedgerDirsListener listener : ldm.getListeners()) {
+                listener.allDisksWritable();
+            }
+            return;
+        }
+
         if (conf.isReadOnlyModeOnAnyDiskFullEnabled()) {
             if (someDiskFulled && !ldm.getFullFilledLedgerDirs().isEmpty()) {
                 // notify any disk full.
@@ -192,7 +206,8 @@ class LedgerDirsMonitor {
         }
     }
 
-    private void check() {
+    @VisibleForTesting
+    void check() {
         dirsManagers.forEach(this::check);
     }
 
