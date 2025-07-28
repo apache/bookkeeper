@@ -30,6 +30,7 @@ import com.google.protobuf.TextFormat;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import lombok.Cleanup;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -170,6 +172,55 @@ public class TestLedgerUnderreplicationManager {
                 }
             });
     }
+
+    /**
+     * Test that larger ledgerIds are processed first when getting ledgers to rereplicate.
+     * This verifies the sorting behavior in getLedgerToRereplicateFromHierarchy.
+     * Specifically tests the Collections.sort(children, Collections.reverseOrder()) at line 564.
+     */
+    @Test
+    public void testLargerLedgerIdProcessedFirst() throws Exception {
+        // 4294950639 (0xffffbeefL): /ledgers/0000/0000/ffff/beef/urL4294950639
+        // 4207853295 (0xdeadbeefL): /ledgers/0000/0000/dead/beef/urL4207853295
+        // 3735928559 (0xbeefcafeL): /ledgers/0000/0000/beef/cafe/urL3735928559
+        // 3203386110 (0xfacebeefL): /ledgers/0000/0000/face/beef/urL3203386110
+        Set<Long> testLedgers = new HashSet<>();
+        testLedgers.add(0xffffbeefL);
+        testLedgers.add(0xdeadbeefL);
+        testLedgers.add(0xbeefcafeL);
+        testLedgers.add(0xfacebeefL);
+
+        String missingReplica = "localhost:3181";
+
+        @Cleanup
+        LedgerUnderreplicationManager manager = lmf1.newLedgerUnderreplicationManager();
+
+        for (Long ledgerId : testLedgers) {
+            manager.markLedgerUnderreplicated(ledgerId, missingReplica);
+        }
+
+        List<Long> processedLedgers = new ArrayList<>();
+        for (int i = 0; i < testLedgers.size(); i++) {
+            Future<Long> future = getLedgerToReplicate(manager);
+            Long ledgerId = future.get(5, TimeUnit.SECONDS);
+            processedLedgers.add(ledgerId);
+        }
+
+        List<Long> expectedLedgers = new ArrayList<>(testLedgers)
+                .stream().sorted(Collections.reverseOrder()).collect(Collectors.toList());
+
+        assertEquals("Should have processed all test ledgers",expectedLedgers, processedLedgers);
+
+        for (Long ledgerId : processedLedgers) {
+            assertTrue("Processed ledger should be in test set", testLedgers.contains(ledgerId));
+        }
+
+        Long firstProcessed = processedLedgers.get(0);
+        Long expectedFirst = 0xffffbeefL;
+
+        assertEquals("Larger ledger ID should be processed first", expectedFirst, firstProcessed);
+    }
+
 
     /**
      * Test basic interactions with the ledger underreplication

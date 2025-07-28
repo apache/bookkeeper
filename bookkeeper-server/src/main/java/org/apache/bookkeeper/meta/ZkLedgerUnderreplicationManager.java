@@ -567,7 +567,12 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return -1;
         }
 
-        Collections.shuffle(children);
+        if (depth == 3) {
+            // Avoid workers want to get the same ledger lock.
+            Collections.shuffle(children);
+        } else {
+            Collections.sort(children, Collections.reverseOrder());
+        }
 
         while (children.size() > 0) {
             String tryChild = children.get(0);
