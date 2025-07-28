@@ -140,7 +140,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
 
     @Override
     public ByteBuf buffer(int initialCapacity, int maxCapacity) {
-        if (poolingPolicy == PoolingPolicy.PooledDirect) {
+        if (poolingPolicy == PoolingPolicy.PooledDirect || poolingPolicy == PoolingPolicy.UnpooledDirect) {
             return newDirectBuffer(initialCapacity, maxCapacity, true /* can fallback to heap if needed */);
         } else {
             return newHeapBuffer(initialCapacity, maxCapacity);

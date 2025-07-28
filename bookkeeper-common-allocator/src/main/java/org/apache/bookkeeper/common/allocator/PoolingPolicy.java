@@ -31,6 +31,8 @@ public enum PoolingPolicy {
      */
     UnpooledHeap,
 
+    UnpooledDirect,
+
     /**
      * Use Direct memory for all buffers and pool the memory.
      *
