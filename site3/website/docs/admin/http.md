@@ -327,8 +327,8 @@ Currently all the HTTP endpoints could be divided into these 5 components:
     * Parameters:
      | Name | Type    | Required | Description                                   |
              |:--------|:-----|:----------------------------------------------|:------------|
-     |forceMajor  | Boolean | No | Wether forcing major compaction.              |
-     |forceMinor  | Boolean | No | Wether forcing minor compaction.              |
+     |forceMajor  | Boolean | No | Whether forcing major compaction.              |
+     |forceMinor  | Boolean | No | Whether forcing minor compaction.              |
      |majorCompactionThreshold  | Double  | No | threshold of major compaction.                |
      |minorCompactionThreshold  | Double  | No | threshold of minor compaction.                |
      |majorCompactionMaxTimeMillis  | Long    | No | maximum milliseconds to run major compaction. |
