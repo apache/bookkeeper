@@ -209,8 +209,7 @@ public class TestLedgerUnderreplicationManager {
         List<Long> expectedLedgers = new ArrayList<>(testLedgers)
                 .stream().sorted(Collections.reverseOrder()).collect(Collectors.toList());
 
-        assertEquals("Should have processed all test ledgers",expectedLedgers, processedLedgers);
-
+        assertEquals("Should have processed all test ledgers", expectedLedgers, processedLedgers);
         for (Long ledgerId : processedLedgers) {
             assertTrue("Processed ledger should be in test set", testLedgers.contains(ledgerId));
         }
