@@ -114,7 +114,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String GC_OVERREPLICATED_LEDGER_MAX_CONCURRENT_REQUESTS =
             "gcOverreplicatedLedgerMaxConcurrentRequests";
-    protected static final String GC_RATE_LIMIT = "gcRateLimit";
+    protected static final String GC_ZK_OP_RATE_LIMIT = "gcZkOpRateLimit";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     protected static final String GC_ENTRYLOGMETADATA_CACHE_ENABLED = "gcEntryLogMetadataCacheEnabled";
@@ -486,8 +486,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the rate limit of zookeeper operations in garbage collection.
      * @return
      */
-    public int getGcRateLimit() {
-        return this.getInt(GC_RATE_LIMIT, 1000);
+    public int getGcZkOpRateLimit() {
+        return this.getInt(GC_ZK_OP_RATE_LIMIT, 1000);
     }
 
     /**
@@ -495,8 +495,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param gcRateLimit
      * @return
      */
-    public ServerConfiguration setGcRateLimit(int gcRateLimit) {
-        this.setProperty(GC_RATE_LIMIT, Integer.toString(gcRateLimit));
+    public ServerConfiguration setGcZkOpRateLimit(int gcRateLimit) {
+        this.setProperty(GC_ZK_OP_RATE_LIMIT, Integer.toString(gcRateLimit));
         return this;
     }
 

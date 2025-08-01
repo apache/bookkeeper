@@ -85,7 +85,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private int activeLedgerCounter;
     private StatsLogger statsLogger;
     private final int maxConcurrentRequests;
-    private final RateLimiter gcRateLimiter;
+    private final RateLimiter gcZkOpRateLimiter;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
@@ -105,7 +105,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentRequests);
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
-        this.gcRateLimiter = RateLimiter.create(conf.getGcRateLimit());
+        this.gcZkOpRateLimiter = RateLimiter.create(conf.getGcZkOpRateLimit());
 
         this.activeLedgerCounter = 0;
     }
@@ -156,7 +156,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             Versioned<LedgerMetadata> metadata = null;
             while (!done) {
                 start = end + 1;
-                gcRateLimiter.tryAcquire();
+                gcZkOpRateLimiter.acquire();
                 if (ledgerRangeIterator.hasNext()) {
                     LedgerRange lRange = ledgerRangeIterator.next();
                     ledgersInMetadata = lRange.getLedgers();
@@ -179,7 +179,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                             metadata = null;
                             int rc = BKException.Code.OK;
                             try {
-                                gcRateLimiter.tryAcquire();
+                                gcZkOpRateLimiter.acquire();
                                 metadata = result(ledgerManager.readLedgerMetadata(bkLid), zkOpTimeoutMs,
                                         TimeUnit.MILLISECONDS);
                             } catch (BKException | TimeoutException e) {
@@ -241,7 +241,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 // check ledger ensembles before creating lock nodes.
                 // this is to reduce the number of lock node creations and deletions in ZK.
                 // the ensemble check is done again after the lock node is created.
-                gcRateLimiter.tryAcquire();
+                gcZkOpRateLimiter.acquire();
                 Versioned<LedgerMetadata> preCheckMetadata = ledgerManager.readLedgerMetadata(ledgerId).get();
                 if (!isNotBookieIncludedInLedgerEnsembles(preCheckMetadata)) {
                     latch.countDown();
@@ -267,7 +267,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 // current bookie again and, in that case, we cannot remove the ledger from local storage
                 lum.acquireUnderreplicatedLedger(ledgerId);
                 semaphore.acquire();
-                gcRateLimiter.tryAcquire();
+                gcZkOpRateLimiter.acquire();
                 ledgerManager.readLedgerMetadata(ledgerId)
                     .whenComplete((metadata, exception) -> {
                             try {
