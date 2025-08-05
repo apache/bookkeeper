@@ -484,7 +484,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get the rate limit of metadata operations in garbage collection.
-     * @return
+     * @return rate limit of metadata operations in garbage collection
      */
     public int getGcMetadataOpRateLimit() {
         return this.getInt(GC_METADATA_OP_RATE_LIMIT, 1000);
@@ -493,7 +493,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Set the rate limit of metadata operations in garbage collection.
      * @param gcRateLimit
-     * @return
+     * @return server configuration
      */
     public ServerConfiguration setGcMetadataOpRateLimit(int gcRateLimit) {
         this.setProperty(GC_METADATA_OP_RATE_LIMIT, Integer.toString(gcRateLimit));
