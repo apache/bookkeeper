@@ -226,62 +226,62 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 //        testOpenLedgers();
 //    }
 
-//    /**
-//     * Test verifies publish urLedger by Auditor and replication worker is
-//     * picking up the entries and finishing the rereplication of open ledger.
-//     */
-//    @Test
-//    public void testOpenLedgers() throws Exception {
-//        LOG.info("===> Testing open ledgers");
-//        List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
-//        LedgerHandle lh = listOfLedgerHandle.get(0);
-//        int ledgerReplicaIndex = 0;
-//        BookieId replicaToKillAddr = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
-//
-//        final String urLedgerZNode = getUrLedgerZNode(lh);
-//        ledgerReplicaIndex = getReplicaIndexInLedger(lh, replicaToKillAddr);
-//
-//        CountDownLatch latch = new CountDownLatch(1);
-//        LOG.info("===> 1 Watching on urLedgerPath:" + urLedgerZNode
-//                + " to know the status of rereplication process");
-//        assertNull("UrLedger already exists!",
-//                watchUrLedgerNode(urLedgerZNode, latch));
-//
-//        LOG.info("Killing Bookie :" + replicaToKillAddr);
-//        killBookie(replicaToKillAddr);
-//
-//        // waiting to publish urLedger znode by Auditor
-//        LOG.info("===> 2 Watching on urLedgerPath:" + urLedgerZNode
-//                + " to know the status of rereplication process");
-//        latch.await();
-//        latch = new CountDownLatch(1);
-//        LOG.info("===> 3 Watching on urLedgerPath:" + urLedgerZNode
-//                + " to know the status of rereplication process");
-//        assertNotNull("UrLedger doesn't exists!",
-//                watchUrLedgerNode(urLedgerZNode, latch));
-//
-//        // starting the replication service, so that he will be able to act as
-//        // target bookie
-//        startNewBookie();
-//        int newBookieIndex = lastBookieIndex();
-//        BookieServer newBookieServer = serverByIndex(newBookieIndex);
-//
-//        if (LOG.isDebugEnabled()) {
-//            LOG.debug("Waiting to finish the replication of failed bookie : "
-//                    + replicaToKillAddr);
-//        }
-//        LOG.info("===> 4 Watching on urLedgerPath:" + urLedgerZNode
-//                + " to know the status of rereplication process");
-//        latch.await();
-//        LOG.info("===> 5 Watching on urLedgerPath:" + urLedgerZNode
-//                + " to know the status of rereplication process");
-//        // grace period to update the urledger metadata in zookeeper
-//        LOG.info("Waiting to update the urledger metadata in zookeeper");
-//
-//        verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
-//                listOfLedgerHandle.get(0), ledgerReplicaIndex);
-//        LOG.info("===> Finished test open ledgers");
-//    }
+    /**
+     * Test verifies publish urLedger by Auditor and replication worker is
+     * picking up the entries and finishing the rereplication of open ledger.
+     */
+    @Test
+    public void testOpenLedgers() throws Exception {
+        LOG.info("===> Testing open ledgers");
+        List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
+        LedgerHandle lh = listOfLedgerHandle.get(0);
+        int ledgerReplicaIndex = 0;
+        BookieId replicaToKillAddr = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+
+        final String urLedgerZNode = getUrLedgerZNode(lh);
+        ledgerReplicaIndex = getReplicaIndexInLedger(lh, replicaToKillAddr);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        LOG.info("===> 1 Watching on urLedgerPath:" + urLedgerZNode
+                + " to know the status of rereplication process");
+        assertNull("UrLedger already exists!",
+                watchUrLedgerNode(urLedgerZNode, latch));
+
+        LOG.info("Killing Bookie :" + replicaToKillAddr);
+        killBookie(replicaToKillAddr);
+
+        // waiting to publish urLedger znode by Auditor
+        LOG.info("===> 2 Watching on urLedgerPath:" + urLedgerZNode
+                + " to know the status of rereplication process");
+        latch.await();
+        latch = new CountDownLatch(1);
+        LOG.info("===> 3 Watching on urLedgerPath:" + urLedgerZNode
+                + " to know the status of rereplication process");
+        assertNotNull("UrLedger doesn't exists!",
+                watchUrLedgerNode(urLedgerZNode, latch));
+
+        // starting the replication service, so that he will be able to act as
+        // target bookie
+        startNewBookie();
+        int newBookieIndex = lastBookieIndex();
+        BookieServer newBookieServer = serverByIndex(newBookieIndex);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Waiting to finish the replication of failed bookie : "
+                    + replicaToKillAddr);
+        }
+        LOG.info("===> 4 Watching on urLedgerPath:" + urLedgerZNode
+                + " to know the status of rereplication process");
+        latch.await();
+        LOG.info("===> 5 Watching on urLedgerPath:" + urLedgerZNode
+                + " to know the status of rereplication process");
+        // grace period to update the urledger metadata in zookeeper
+        LOG.info("Waiting to update the urledger metadata in zookeeper");
+
+        verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
+                listOfLedgerHandle.get(0), ledgerReplicaIndex);
+        LOG.info("===> Finished test open ledgers");
+    }
 
     /**
      * Test verifies publish urLedger by Auditor and replication worker is
