@@ -760,7 +760,7 @@ public class ReplicationWorker implements Runnable {
      * Stop the replication worker service.
      */
     public void shutdown() {
-        LOG.info("Shutting down replication worker");
+        LOG.warn("Shutting down replication worker", new Exception("test CI"));
 
         synchronized (this) {
             if (!workerRunning) {
@@ -768,7 +768,7 @@ public class ReplicationWorker implements Runnable {
             }
             workerRunning = false;
         }
-        LOG.info("Shutting down ReplicationWorker");
+        LOG.warn("Shutting down ReplicationWorker", new Exception("test CI"));
         this.pendingReplicationTimer.cancel();
         try {
             this.workerThread.interrupt();
