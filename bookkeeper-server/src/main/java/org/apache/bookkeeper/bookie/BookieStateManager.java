@@ -267,6 +267,7 @@ public class BookieStateManager implements StateManager {
 
     @Override
     public void close() {
+        LOG.warn("Closing BookieStateManager", new Exception("test CI"));
         this.running = false;
         stateService.shutdown();
     }
