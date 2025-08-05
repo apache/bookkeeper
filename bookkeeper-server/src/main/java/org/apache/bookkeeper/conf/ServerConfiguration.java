@@ -483,7 +483,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the rate limit of zookeeper operations in garbage collection.
+     * Get the rate limit of metadata operations in garbage collection.
      * @return
      */
     public int getGcMetadataOpRateLimit() {
@@ -491,7 +491,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set the rate limit of zookeeper operations in garbage collection.
+     * Set the rate limit of metadata operations in garbage collection.
      * @param gcRateLimit
      * @return
      */
