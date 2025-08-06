@@ -96,7 +96,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     @Override
     public void setUp() throws Exception {
-        LOG.info("===> Start setUp");
+        LOG.info("Start setUp");
         super.setUp();
         baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         baseClientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -118,12 +118,12 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         mFactory = metadataClientDriver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         ledgerManager = mFactory.newLedgerManager();
-        LOG.info("===> Finished setUp");
+        LOG.info("Finished setUp");
     }
 
     @Override
     public void tearDown() throws Exception {
-        LOG.info("===> Start tearDown");
+        LOG.info("Start tearDown");
         super.tearDown();
 
         if (null != underReplicationManager) {
@@ -141,7 +141,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         if (null != scheduler) {
             scheduler.shutdown();
         }
-        LOG.info("===> Finished tearDown");
+        LOG.info("Finished tearDown");
     }
 
     /**
@@ -150,7 +150,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testOpenLedgers() throws Exception {
-        LOG.info("===> Start testOpenLedgers");
+        LOG.info("Start testOpenLedgers");
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
         int ledgerReplicaIndex = 0;
@@ -191,7 +191,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
                 listOfLedgerHandle.get(0), ledgerReplicaIndex);
-        LOG.info("===> Finished testOpenLedgers");
+        LOG.info("Finished testOpenLedgers");
     }
 
     /**
@@ -200,7 +200,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testClosedLedgers() throws Exception {
-        LOG.info("===> Start testClosedLedgers");
+        LOG.info("Start testClosedLedgers");
         List<Integer> listOfReplicaIndex = new ArrayList<Integer>();
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         closeLedgers(listOfLedgerHandle);
@@ -254,7 +254,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                     listOfLedgerHandle.get(index),
                     listOfReplicaIndex.get(index));
         }
-        LOG.info("===> Finished testClosedLedgers");
+        LOG.info("Finished testClosedLedgers");
     }
 
     /**
@@ -264,7 +264,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testStopWhileReplicationInProgress() throws Exception {
-        LOG.info("===> Start testStopWhileReplicationInProgress");
+        LOG.info("Start testStopWhileReplicationInProgress");
         int numberOfLedgers = 2;
         List<Integer> listOfReplicaIndex = new ArrayList<Integer>();
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(
@@ -336,7 +336,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                     listOfLedgerHandle.get(index),
                     listOfReplicaIndex.get(index));
         }
-        LOG.info("===> Finished testStopWhileReplicationInProgress");
+        LOG.info("Finished testStopWhileReplicationInProgress");
     }
 
     /**
@@ -346,7 +346,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testNoSuchLedgerExists() throws Exception {
-        LOG.info("===> Start testNoSuchLedgerExists");
+        LOG.info("Start testNoSuchLedgerExists");
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(2, 5);
         CountDownLatch latch = new CountDownLatch(listOfLedgerHandle.size());
         for (LedgerHandle lh : listOfLedgerHandle) {
@@ -383,7 +383,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             assertNull("UrLedger still exists after rereplication",
                     watchUrLedgerNode(getUrLedgerZNode(lh), latch));
         }
-        LOG.info("===> Finished testNoSuchLedgerExists");
+        LOG.info("Finished testNoSuchLedgerExists");
     }
 
     /**
@@ -392,7 +392,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testEmptyLedgerLosesQuorumEventually() throws Exception {
-        LOG.info("===> Start testEmptyLedgerLosesQuorumEventually");
+        LOG.info("Start testEmptyLedgerLosesQuorumEventually");
         LedgerHandle lh = bkc.createLedger(3, 2, 2, DigestType.CRC32, PASSWD);
         CountDownLatch latch = new CountDownLatch(1);
         String urZNode = getUrLedgerZNode(lh);
@@ -433,7 +433,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // should be able to open ledger without issue
         bkc.openLedger(lh.getId(), DigestType.CRC32, PASSWD);
-        LOG.info("===> Finished testEmptyLedgerLosesQuorumEventually");
+        LOG.info("Finished testEmptyLedgerLosesQuorumEventually");
     }
 
     /**
@@ -443,7 +443,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerMetadataContainsIpAddressAsBookieID()
             throws Exception {
-        LOG.info("===> Start testLedgerMetadataContainsIpAddressAsBookieID");
+        LOG.info("Start testLedgerMetadataContainsIpAddressAsBookieID");
         stopBKCluster();
         bkc = new BookKeeperTestClient(baseClientConf);
         // start bookie with useHostNameAsBookieID=false, as old bookie
@@ -509,7 +509,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
                 listOfLedgerHandle.get(0), ledgerReplicaIndex);
-        LOG.info("===> Finished testLedgerMetadataContainsIpAddressAsBookieID");
+        LOG.info("Finished testLedgerMetadataContainsIpAddressAsBookieID");
     }
 
     /**
@@ -519,7 +519,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerMetadataContainsHostNameAsBookieID()
             throws Exception {
-        LOG.info("===> Start testLedgerMetadataContainsHostNameAsBookieID");
+        LOG.info("Start testLedgerMetadataContainsHostNameAsBookieID");
         stopBKCluster();
 
         bkc = new BookKeeperTestClient(baseClientConf);
@@ -588,7 +588,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         verifyLedgerEnsembleMetadataAfterReplication(newBookieServer,
                 listOfLedgerHandle.get(0), ledgerReplicaIndex);
-        LOG.info("===> Finished testLedgerMetadataContainsHostNameAsBookieID");
+        LOG.info("Finished testLedgerMetadataContainsHostNameAsBookieID");
     }
 
     private int getReplicaIndexInLedger(LedgerHandle lh, BookieId replicaToKill) {
