@@ -22,6 +22,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,8 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.stats.OpStatsListener;
@@ -63,6 +66,39 @@ public final class FutureUtils {
 
     public static <T> T result(CompletableFuture<T> future, long timeout, TimeUnit timeUnit) throws Exception {
         return FutureUtils.result(future, DEFAULT_EXCEPTION_HANDLER, timeout, timeUnit);
+    }
+
+    @ThreadSafe
+    public static class Sequencer<T> {
+        private CompletableFuture<T> sequencerFuture = CompletableFuture.completedFuture(null);
+        private final boolean allowExceptionBreakChain;
+
+        public Sequencer(boolean allowExceptionBreakChain) {
+            this.allowExceptionBreakChain = allowExceptionBreakChain;
+        }
+
+        public static <T> Sequencer<T> create(boolean allowExceptionBreakChain) {
+            return new Sequencer<>(allowExceptionBreakChain);
+        }
+        public static <T> Sequencer<T> create() {
+            return new Sequencer<>(false);
+        }
+
+        /**
+         * @throws NullPointerException NPE when param is null
+         */
+        public synchronized CompletableFuture<T> sequential(Supplier<CompletableFuture<T>> newTask) {
+            Objects.requireNonNull(newTask);
+            if (sequencerFuture.isDone()) {
+                if (sequencerFuture.isCompletedExceptionally() && allowExceptionBreakChain) {
+                    return sequencerFuture;
+                }
+                return sequencerFuture = newTask.get();
+            }
+            return sequencerFuture = allowExceptionBreakChain
+                    ? sequencerFuture.thenCompose(__ -> newTask.get())
+                    : sequencerFuture.exceptionally(ex -> null).thenCompose(__ -> newTask.get());
+        }
     }
 
     @SneakyThrows(InterruptedException.class)
