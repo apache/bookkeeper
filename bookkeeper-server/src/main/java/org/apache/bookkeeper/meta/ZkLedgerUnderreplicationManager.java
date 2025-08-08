@@ -568,7 +568,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
 
         if (depth == 3) {
-            // Avoid workers want to get the same ledger lock.
+            // Avoid workers wanting to get the same ledger lock.
             Collections.shuffle(children);
         } else {
             // Sort children in descending order for depths 0-2 to prioritize larger ledger IDs
