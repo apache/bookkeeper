@@ -174,8 +174,8 @@ public class TestLedgerUnderreplicationManager {
     }
 
     /**
-     * Test that larger ledgerIds are processed first when getting ledgers to rereplicate.
-     * This verifies the sorting behavior in getLedgerToRereplicateFromHierarchy.
+     * Test that larger ledgerIds are processed first when getting ledgers to replicate.
+     * This verifies the sorting behavior in getLedgerToReplicateFromHierarchy.
      * Specifically tests the Collections.sort(children, Collections.reverseOrder()) at line 564.
      */
     @Test
