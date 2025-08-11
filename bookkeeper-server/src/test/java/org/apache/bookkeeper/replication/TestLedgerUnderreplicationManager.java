@@ -725,8 +725,8 @@ public class TestLedgerUnderreplicationManager {
         final LedgerUnderreplicationManager replicaMgr = lmf1
             .newLedgerUnderreplicationManager();
         // 4 ledgers, 2 in the same hierarchy
-        long[] ledgers = { 0x00000000deadbeefL, 0x00000000deadbeeeL,
-                           0x00000000beefcafeL, 0x00000000cafed00dL };
+        long[] ledgers = {0x00000000beefcafeL, 0x00000000cafed00dL,
+                          0x00000000deadbeeeL, 0x00000000deadbeefL};
 
         for (long l : ledgers) {
             replicaMgr.markLedgerUnderreplicated(l, "localhost:3181");
