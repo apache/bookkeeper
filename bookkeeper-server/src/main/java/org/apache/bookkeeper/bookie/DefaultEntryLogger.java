@@ -1061,7 +1061,7 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (FileNotFoundException fne) {
             LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
             throw fne;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 
             // Fall-back to scanning
