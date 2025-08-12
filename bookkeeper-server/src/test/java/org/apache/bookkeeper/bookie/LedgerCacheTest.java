@@ -711,7 +711,7 @@ public class LedgerCacheTest {
                 LOG.info("Started flushing mem table.");
                 memTable.flush(FlushTestSortedLedgerStorage.this);
             } catch (IOException e) {
-                getStateManager().doTransitionToReadOnlyMode();
+                getStateManager().doTransitionToReadOnlyMode(false);
                 LOG.error("Exception thrown while flushing skip list cache.", e);
          }
          }
