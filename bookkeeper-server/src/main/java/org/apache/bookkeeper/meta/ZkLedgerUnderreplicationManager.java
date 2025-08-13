@@ -567,7 +567,18 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return -1;
         }
 
-        Collections.shuffle(children);
+        if (depth == 3) {
+            // Avoid workers wanting to get the same ledger lock.
+            Collections.shuffle(children);
+        } else {
+            // Sort children in descending order for depths 0-2 to prioritize larger ledger IDs
+            // The hierarchical path is built based on hexadecimal representation of ledger IDs
+            // Larger ledger IDs will appear first in hexadecimal string comparison
+            // By using reverse order sorting, we ensure that paths containing larger ledger IDs
+            // are visited first during directory traversal, implementing the business requirement
+            // of "larger ledger IDs should be processed first"
+            Collections.sort(children, Collections.reverseOrder());
+        }
 
         while (children.size() > 0) {
             String tryChild = children.get(0);
