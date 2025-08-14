@@ -364,16 +364,16 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Set<BookieId> bookiesInDefaultRack = null;
             Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
             for (Node node : defaultRackLeaves) {
-                if (node instanceof BookieNode) {
+                if (node instanceof BookieNode && ((BookieNode) node).getAddr() != null) {
                     if (bookiesInDefaultRack == null) {
-                        bookiesInDefaultRack = new HashSet<BookieId>(excludeBookies);
+                        bookiesInDefaultRack = new HashSet<>();
                     }
                     bookiesInDefaultRack.add(((BookieNode) node).getAddr());
                 } else {
                     LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
                 }
             }
-            if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
+            if (bookiesInDefaultRack == null) {
                 comprehensiveExclusionBookiesSet = excludeBookies;
             } else {
                 comprehensiveExclusionBookiesSet = new HashSet<BookieId>(excludeBookies);
