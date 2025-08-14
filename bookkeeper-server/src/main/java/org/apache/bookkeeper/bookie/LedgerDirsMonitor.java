@@ -91,9 +91,7 @@ class LedgerDirsMonitor {
                         }
                         return e.getUsage();
                     });
-                    for (LedgerDirsListener listener : ldm.getListeners()) {
-                        listener.diskAlmostFull(dir);
-                    }
+                    ldm.addToWarnDirs(dir);
                 } catch (DiskOutOfSpaceException e) {
                     diskUsages.compute(dir, (d, prevUsage) -> {
                         if (null == prevUsage || e.getUsage() != prevUsage) {
@@ -121,6 +119,25 @@ class LedgerDirsMonitor {
             }
             for (LedgerDirsListener listener : ldm.getListeners()) {
                 listener.allDisksFull(highPriorityWritesAllowed);
+            }
+        }
+
+        // - Update warnThresholdDirs disk usage.
+        List<File> warnDirs = new ArrayList<File>(ldm.getWarnLedgerDirs());
+        for (File dir : warnDirs) {
+            try {
+                diskUsages.put(dir, diskChecker.checkDir(dir));
+                ldm.removeFromWarnDirs(dir);
+            } catch (DiskErrorException e) {
+                // Notify disk failure to all the listeners
+                for (LedgerDirsListener listener : ldm.getListeners()) {
+                    listener.diskFailed(dir);
+                }
+            } catch (DiskWarnThresholdException e) {
+                diskUsages.put(dir, e.getUsage());
+            } catch (DiskOutOfSpaceException e) {
+                diskUsages.put(dir, e.getUsage());
+                ldm.addToFilledDirs(dir);
             }
         }
 

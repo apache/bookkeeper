@@ -1164,6 +1164,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             }
 
             @Override
+            public void diskUnderWarnThreshold(File disk) {
+                if (gcThread.isForceGCAllowWhenNoSpace()) {
+                    gcThread.disableForceGC();
+                } else {
+                    gcThread.resumeMajorGC();
+                }
+            }
+
+            @Override
             public void diskFull(File disk) {
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     gcThread.enableForceGC();
