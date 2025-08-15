@@ -364,7 +364,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             Set<BookieId> bookiesInDefaultRack = null;
             Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
             for (Node node : defaultRackLeaves) {
-                if (node instanceof BookieNode && ((BookieNode) node).getAddr() != null) {
+                if (node instanceof BookieNode) {
                     if (bookiesInDefaultRack == null) {
                         bookiesInDefaultRack = new HashSet<>();
                     }
