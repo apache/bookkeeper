@@ -71,6 +71,8 @@ public abstract class BookieException extends Exception {
             return new UnknownBookieIdException();
         case Code.DataUnknownException:
             return new DataUnknownException();
+        case Code.BookieStartException:
+            return new BookieStartException();
         default:
             return new BookieIllegalOpException();
         }
@@ -95,6 +97,7 @@ public abstract class BookieException extends Exception {
         int CookieExistsException = -109;
         int EntryLogMetadataMapException = -110;
         int DataUnknownException = -111;
+        int BookieStartException = -112;
     }
 
     public int getCode() {
@@ -142,6 +145,9 @@ public abstract class BookieException extends Exception {
             break;
         case Code.DataUnknownException:
             err = "Unable to respond, ledger is in unknown state";
+            break;
+        case Code.BookieStartException:
+            err = "bookie startup is not successful";
             break;
         default:
             err = "Invalid operation";
@@ -366,6 +372,12 @@ public abstract class BookieException extends Exception {
 
         public DataUnknownException(String reason, Throwable t) {
             super(Code.DataUnknownException, reason, t);
+        }
+    }
+
+    public static class BookieStartException extends BookieException {
+        public BookieStartException() {
+            super(Code.BookieStartException);
         }
     }
 }

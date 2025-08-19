@@ -32,6 +32,7 @@ import java.util.Arrays;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.BookieStartException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
@@ -130,14 +131,14 @@ public class BookieServer {
         this.uncaughtExceptionHandler = exceptionHandler;
     }
 
-    public void start() throws InterruptedException, IOException {
+    public void start() throws InterruptedException, IOException, BookieStartException {
         this.bookie.start();
 
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
             this.requestProcessor.close();
-            return;
+            throw new BookieStartException();
         }
 
         this.uncleanShutdownDetection.registerStartUp();
