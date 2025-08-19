@@ -78,7 +78,7 @@ public class ListUnderReplicatedCommand extends BookieCommand<ListUnderReplicate
      */
     @Accessors(fluent = true)
     @Setter
-    public static class LURFlags extends CliFlags{
+    public static class LURFlags extends CliFlags {
 
         @Parameter(names = { "-pmr", "--printmissingreplica" }, description = "Whether to print missingreplicas list?")
         private boolean printMissingReplica;
