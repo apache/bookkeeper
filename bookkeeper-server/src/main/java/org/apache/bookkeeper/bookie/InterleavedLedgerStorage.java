@@ -121,6 +121,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
     private Counter retryCounter;
+    protected LedgerDirsManager ledgerDirsManager;
 
     public InterleavedLedgerStorage() {
         activeLedgers = new SnapshotMap<>();
@@ -184,6 +185,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = (DefaultEntryLogger) entryLogger;
         this.entryLogger.addListener(this);
+        this.ledgerDirsManager = ledgerDirsManager;
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
@@ -201,21 +203,26 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
             @Override
             public void diskAlmostFull(File disk) {
-                if (gcThread.isForceGCAllowWhenNoSpace) {
-                    gcThread.enableForceGC();
-                } else {
-                    gcThread.suspendMajorGC();
+                if (ledgerDirsManager.getAllLedgerDirs().contains(disk)) {
+                    if (gcThread.isForceGCAllowWhenNoSpace) {
+                        gcThread.enableForceGC();
+                    } else {
+                        gcThread.suspendMajorGC();
+                    }
                 }
             }
 
             @Override
             public void diskFull(File disk) {
-                if (gcThread.isForceGCAllowWhenNoSpace) {
-                    gcThread.enableForceGC();
-                } else {
-                    gcThread.suspendMajorGC();
-                    gcThread.suspendMinorGC();
+                if (ledgerDirsManager.getAllLedgerDirs().contains(disk)) {
+                    if (gcThread.isForceGCAllowWhenNoSpace) {
+                        gcThread.enableForceGC();
+                    } else {
+                        gcThread.suspendMajorGC();
+                        gcThread.suspendMinorGC();
+                    }
                 }
+
             }
 
             @Override
@@ -230,25 +237,30 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
             @Override
             public void diskWritable(File disk) {
-                // we have enough space now
-                if (gcThread.isForceGCAllowWhenNoSpace) {
-                    // disable force gc.
-                    gcThread.disableForceGC();
-                } else {
-                    // resume compaction to normal.
-                    gcThread.resumeMajorGC();
-                    gcThread.resumeMinorGC();
+                if (ledgerDirsManager.getAllLedgerDirs().contains(disk)) {
+                    // we have enough space now
+                    if (gcThread.isForceGCAllowWhenNoSpace) {
+                        // disable force gc.
+                        gcThread.disableForceGC();
+                    } else {
+                        // resume compaction to normal.
+                        gcThread.resumeMajorGC();
+                        gcThread.resumeMinorGC();
+                    }
                 }
+
             }
 
             @Override
             public void diskJustWritable(File disk) {
-                if (gcThread.isForceGCAllowWhenNoSpace) {
-                    // if a disk is just writable, we still need force gc.
-                    gcThread.enableForceGC();
-                } else {
-                    // still under warn threshold, only resume minor compaction.
-                    gcThread.resumeMinorGC();
+                if (ledgerDirsManager.getAllLedgerDirs().contains(disk)) {
+                    if (gcThread.isForceGCAllowWhenNoSpace) {
+                        // if a disk is just writable, we still need force gc.
+                        gcThread.enableForceGC();
+                    } else {
+                        // still under warn threshold, only resume minor compaction.
+                        gcThread.resumeMinorGC();
+                    }
                 }
             }
         };
