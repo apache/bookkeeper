@@ -159,9 +159,7 @@ public class SortedLedgerStorage
         // the O(1) for the ledgerCache.
         if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
             EntryKeyValue kv = memTable.getLastEntry(ledgerId);
-            if (null == kv) {
-                return interleavedLedgerStorage.ledgerExists(ledgerId);
-            }
+            return null != kv;
         }
         return true;
     }
