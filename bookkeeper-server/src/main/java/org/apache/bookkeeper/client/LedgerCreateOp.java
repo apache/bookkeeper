@@ -45,6 +45,7 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
@@ -258,6 +259,35 @@ class LedgerCreateOp {
             for (BookieId bsa : curEns) {
                 clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
             }
+
+            LedgerHandle.INSTANCES.add(lh);
+
+            clientStats.registerPendingAddsGauge(new Gauge<Integer>() {
+                @Override
+                public Integer getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Integer getSample() {
+                    return LedgerHandle.INSTANCES.
+                            stream().
+                            mapToInt(ledgerHandle -> ledgerHandle.pendingAddOps.size()).
+                            sum();
+                }
+            });
+
+            clientStats.registerOpenLedgerHandleGauge(new Gauge<Integer>() {
+                @Override
+                public Integer getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Integer getSample() {
+                    return LedgerHandle.INSTANCES.size();
+                }
+            });
 
             // return the ledger handle back
             createComplete(BKException.Code.OK, lh);
