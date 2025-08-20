@@ -76,7 +76,7 @@
       "pattern": "^//"
     }
   ],
-  "timeout": "10s",
+  "timeout": "60s",
   "retryOn429": true,
   "retryCount": 10,
   "fallbackRetryDelay": "1000s",

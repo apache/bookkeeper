@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -340,6 +341,53 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         garbageCollector.gc(cleaner);
         assertEquals("Should have cleaned something", 1, cleaned.size());
         assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.get(0));
+    }
+
+
+    /**
+     * Verifies that the garbage collector respects the configured rate limit for metadata operations.
+     * @throws Exception
+     */
+    @Test
+    public void testGcMetadataOpRateLimit() throws Exception {
+        int numLedgers = 2000;
+        int numRemovedLedgers = 800;
+        final Set<Long> createdLedgers = new HashSet<Long>();
+        createLedgers(numLedgers, createdLedgers);
+
+        ServerConfiguration conf = new ServerConfiguration(baseConf);
+        int customRateLimit = 200;
+        conf.setGcMetadataOpRateLimit(customRateLimit);
+        // set true to verify metadata on gc
+        conf.setVerifyMetadataOnGc(true);
+
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
+                getLedgerManager(), new MockLedgerStorage(), conf, NullStatsLogger.INSTANCE);
+
+        // delete created ledgers to simulate the garbage collection scenario
+        Iterator<Long> createdLedgersIterator = createdLedgers.iterator();
+        for (int i = 0; i < numRemovedLedgers && createdLedgersIterator.hasNext(); i++) {
+            long ledgerId = createdLedgersIterator.next();
+            try {
+                removeLedger(ledgerId);
+            } catch (Exception e) {
+                LOG.error("Failed to remove ledger {}", ledgerId, e);
+            }
+        }
+
+        long startTime = System.currentTimeMillis();
+        garbageCollector.gc(new GarbageCollector.GarbageCleaner() {
+            @Override
+            public void clean(long ledgerId) {
+            }
+        });
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        long minExpectedTime = (numRemovedLedgers * 1000L) / customRateLimit;
+
+        LOG.info("GC operation with rate limit {} took {} ms, theoretical minimum time: {} ms",
+                customRateLimit, duration, minExpectedTime);
+        assertTrue("GC operation should be rate limited", duration >= minExpectedTime * 0.7);
     }
 
     /*
