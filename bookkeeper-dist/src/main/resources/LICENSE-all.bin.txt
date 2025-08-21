@@ -216,7 +216,6 @@ Apache Software License, Version 2.
 - lib/commons-codec-commons-codec-1.18.0.jar [6]
 - lib/commons-collections-commons-collections-3.2.2.jar [62]
 - lib/commons-io-commons-io-2.19.0.jar [8]
-- lib/commons-lang-commons-lang-2.6.jar [9]
 - lib/commons-logging-commons-logging-1.3.5.jar [10]
 - lib/io.netty-netty-buffer-4.1.121.Final.jar [11]
 - lib/io.netty-netty-codec-4.1.121.Final.jar [11]
