@@ -2185,13 +2185,27 @@ public class LedgerHandle implements WriteHandle {
                 delayedWriteFailedBookies.putAll(failedBookies);
             } else {
                 changingEnsemble = true;
-                triggerLoop = true;
-
                 toReplace = new HashMap<>(delayedWriteFailedBookies);
                 delayedWriteFailedBookies.clear();
                 toReplace.putAll(failedBookies);
 
                 origEnsemble = getCurrentEnsemble();
+
+                for (Map.Entry<Integer, BookieId> entry : toReplace.entrySet()) {
+                    Integer bookieIndex = entry.getKey();
+                    BookieId addr = entry.getValue();
+                    if (origEnsemble.get(bookieIndex).equals(addr)) {
+                        triggerLoop = true;
+                        break;
+                    }
+                }
+
+                if (!triggerLoop) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("No need to triggerLoop as all failed bookies are not in current ensemble, failedBookies:{}", toReplace);
+                    }
+                    changingEnsemble = false;
+                }
             }
         }
         if (triggerLoop) {
@@ -2220,10 +2234,13 @@ public class LedgerHandle implements WriteHandle {
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
                 this::getVersionedLedgerMetadata,
-                (metadata) -> metadata.getState() == LedgerMetadata.State.OPEN
-                        && failedBookies.entrySet().stream().anyMatch(
-                                e -> LedgerMetadataUtils.getLastEnsembleValue(metadata)
-                                             .get(e.getKey()).equals(e.getValue())),
+                (metadata) -> {
+                    LedgerHandleFaultInjector.getInstance().sleepWhenTest();
+                    return metadata.getState() == LedgerMetadata.State.OPEN
+                            && failedBookies.entrySet().stream().anyMatch(
+                            e -> LedgerMetadataUtils.getLastEnsembleValue(metadata)
+                                    .get(e.getKey()).equals(e.getValue()));
+                },
                 (metadata) -> {
                     attempts.incrementAndGet();
 
