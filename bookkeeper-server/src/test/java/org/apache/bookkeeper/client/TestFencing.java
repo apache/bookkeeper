@@ -24,6 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +36,16 @@ import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieClientImpl;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.awaitility.reflect.WhiteboxImpl;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -150,6 +159,110 @@ public class TestFencing extends BookKeeperClusterTestCase {
             Runnable gcThread = WhiteboxImpl.getInternalState(actLedgerStorage, "gcThread");
             gcThread.run();
         }
+    }
+
+    @Test(timeout = 3000 * 1000)
+    public void testConcurrentFenceAndDeleteLedger() throws Exception {
+        LedgerHandle writeLedger;
+        writeLedger = bkc.createLedger(digestType, "password".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+        long lac = 0;
+        for (int i = 0; i < 10; i++) {
+            long entryId = writeLedger.addEntry(tmp.getBytes());
+            LOG.info("entryId: {}", entryId);
+            lac = entryId;
+        }
+
+        // Fence and delete.
+        final BookieId bookieId = writeLedger.getLedgerMetadata().getEnsembleAt(0).get(0);
+        ClientConfiguration clientConfiguration2 = newClientConfiguration();
+        clientConfiguration2.setUseV2WireProtocol(true);
+        ClientConfiguration clientConfiguration3 = newClientConfiguration();
+        BookKeeperTestClient bkcV2 = new BookKeeperTestClient(clientConfiguration2, new TestStatsProvider());
+        LedgerHandle  writeLedgerV2 = bkcV2.createLedger(digestType, "password".getBytes());
+        BookKeeperTestClient bkcV3 = new BookKeeperTestClient(clientConfiguration3, new TestStatsProvider());
+        LedgerHandle  writeLedgerV3 = bkcV3.createLedger(digestType, "password".getBytes());
+        ReadOnlyLedgerHandle readLedgerV2 =
+                (ReadOnlyLedgerHandle) bkcV2.openLedger(writeLedger.getId(), digestType, "password".getBytes());
+        ReadOnlyLedgerHandle readLedgerV3 =
+                (ReadOnlyLedgerHandle) bkcV3.openLedger(writeLedger.getId(), digestType, "password".getBytes());
+        BookieClientImpl bookieClientV2 = (BookieClientImpl) readLedgerV2.clientCtx.getBookieClient();
+        BookieClientImpl bookieClientV3 = (BookieClientImpl) readLedgerV3.clientCtx.getBookieClient();
+        // Trigger opening connection.
+        CompletableFuture<Integer> obtainV2 = new CompletableFuture<>();
+        bookieClientV2.lookupClient(bookieId).obtain(
+            new BookkeeperInternalCallbacks.GenericCallback<PerChannelBookieClient>() {
+                @Override
+                public void operationComplete(int rc, PerChannelBookieClient result) {
+                    obtainV2.complete(rc);
+                }
+            }, writeLedger.getId());
+        assertEquals(obtainV2.get().intValue(), BKException.Code.OK);
+        CompletableFuture<Integer> obtainV3 = new CompletableFuture<>();
+        bookieClientV3.lookupClient(bookieId).obtain(
+            new BookkeeperInternalCallbacks.GenericCallback<PerChannelBookieClient>() {
+                @Override
+                public void operationComplete(int rc, PerChannelBookieClient result) {
+                    obtainV3.complete(rc);
+                }
+            }, writeLedger.getId());
+        assertEquals(obtainV3.get().intValue(), BKException.Code.OK);
+        bkcV3.deleteLedger(readLedgerV3.ledgerId);
+
+        // Waiting for GC.
+        for (ServerTester server : servers) {
+            triggerGC(server.getServer().getBookie());
+        }
+
+        // Verify: read requests with V2 protocol will receive a NoSuchLedgerException.
+        final byte readEntryFlagFencing = 1;
+        CompletableFuture<Integer> readResV2 = new CompletableFuture<>();
+        bookieClientV2.readEntry(bookieId,
+                writeLedger.getId(), 0, (rc, ledgerId, entryId1, buffer, ctx) -> {
+                    readResV2.complete(rc);
+                }, null, readEntryFlagFencing, readLedgerV2.ledgerKey);
+        assertEquals(BKException.Code.NoSuchLedgerExistsException, readResV2.get().intValue());
+        // Verify: read requests with V3 protocol will receive a NoSuchLedgerException.
+        CompletableFuture<Integer> readResV3 = new CompletableFuture<>();
+        bookieClientV3.readEntry(bookieId,
+                writeLedger.getId(), 0, (rc, ledgerId, entryId1, buffer, ctx) -> {
+                    readResV3.complete(rc);
+                }, null, readEntryFlagFencing, readLedgerV3.ledgerKey);
+        assertEquals(BKException.Code.NoSuchLedgerExistsException, readResV3.get().intValue());
+        // Verify: add requests with V2 protocol will receive a NoSuchLedgerException.
+        log.info("Try to add the next entry: {}:{}", writeLedger.getId(), lac + 1);
+        final ByteBuf dataV2 = UnpooledByteBufAllocator.DEFAULT.heapBuffer();
+        // Combine add request, and rewrite ledgerId of the request.
+        dataV2.writeByte(1);
+        final ByteBuf toSendV2 = (ByteBuf) writeLedgerV2.macManager.computeDigestAndPackageForSending(
+                lac + 1, lac, 1, dataV2, writeLedger.ledgerKey, BookieProtocol.FLAG_NONE);
+        toSendV2.setLong(28, writeLedger.getId());
+        CompletableFuture<Integer> addResV2 = new CompletableFuture<>();
+        bookieClientV2.addEntry(bookieId, writeLedger.getId(), writeLedger.ledgerKey, lac + 1, toSendV2,
+                (rc, ledgerId, entryId1, addr, ctx) -> {
+                    addResV2.complete(rc);
+                }, null, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+        assertEquals(BKException.Code.LedgerFencedException, addResV2.get().intValue());
+        // Verify: read requests with V3 protocol will receive a NoSuchLedgerException.
+        final ByteBuf dataV3 = UnpooledByteBufAllocator.DEFAULT.heapBuffer();
+        dataV3.writeByte(1);
+        // Combine add request, and rewrite ledgerId of the request.
+        final ByteBufList toSendV3 = (ByteBufList) writeLedgerV3.macManager.computeDigestAndPackageForSending(
+                lac + 1, lac, 1, dataV3, writeLedger.ledgerKey, BookieProtocol.FLAG_NONE);
+        toSendV3.getBuffer(0).setLong(0, writeLedger.getId());
+        CompletableFuture<Integer> addResV3 = new CompletableFuture<>();
+        bookieClientV3.addEntry(bookieId, writeLedger.getId(), writeLedger.ledgerKey, lac + 1, toSendV3,
+                (rc, ledgerId, entryId1, addr, ctx) -> {
+                    addResV3.complete(rc);
+                }, null, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+        assertEquals(BKException.Code.LedgerFencedException, addResV3.get().intValue());
+
+        // cleanup.
+        writeLedgerV2.close();
+        writeLedgerV3.close();
+        bkcV2.close();
+        bkcV3.close();
     }
 
     private static int threadCount = 0;
