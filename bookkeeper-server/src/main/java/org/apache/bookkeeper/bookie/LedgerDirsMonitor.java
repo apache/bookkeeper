@@ -182,7 +182,7 @@ class LedgerDirsMonitor {
         }
 
         if (isFirstLoopOfCheckTaskLocalValue && ldm.getFullFilledLedgerDirs().isEmpty()) {
-            // notify any disk full.
+            // notify no disk full.
             for (LedgerDirsListener listener : ldm.getListeners()) {
                 listener.allDisksWritable();
             }
