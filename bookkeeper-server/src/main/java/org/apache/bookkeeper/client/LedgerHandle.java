@@ -2273,6 +2273,7 @@ public class LedgerHandle implements WriteHandle {
                         Set<Integer> replaced = null;
 
                         Map<Integer, BookieId> toReplace = null;
+                        boolean changed = false;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
                                 toReplace = new HashMap<>(delayedWriteFailedBookies);
@@ -2281,8 +2282,7 @@ public class LedgerHandle implements WriteHandle {
                                 newEnsemble = getCurrentEnsemble();
                                 replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
                                 LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
-
-                                changingEnsemble = false;
+                                changed = true;
                             }
                         }
 
@@ -2292,6 +2292,13 @@ public class LedgerHandle implements WriteHandle {
 
                         if (newEnsemble != null) { // unsetSuccess outside of lock
                             unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                        }
+                        if (changed) {
+                            // We cannot handle the success callback before unsetSuccessAndSendWriteRequest completes,
+                            // as this would remove the PendingAddOp from pendingAddOps.
+                            // After unsetSuccessAndSendWriteRequest executes, the ensemble in PendingAddOp will have been updated,
+                            // allowing the condition !ensemble.get(bookieIndex).equals(addr) to properly filter out incorrect bookies.
+                            changingEnsemble = false;
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
