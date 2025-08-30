@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -149,6 +150,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final Counter flushExecutorTime;
     private final boolean singleLedgerDirs;
+    private final File currentFile;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
@@ -158,7 +160,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
-
+        currentFile = ledgerDirsManager.getAllLedgerDirs().get(0);
         String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
@@ -1156,6 +1158,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskAlmostFull(File disk) {
+                if (!Objects.equals(disk.getPath(), currentFile.getPath())) {
+                    // Only process currently used disks
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     gcThread.enableForceGC();
                 } else {
@@ -1165,6 +1171,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskFull(File disk) {
+                if (!Objects.equals(disk.getPath(), currentFile.getPath())) {
+                    // Only process currently used disks
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     gcThread.enableForceGC();
                 } else {
@@ -1185,6 +1195,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskWritable(File disk) {
+                if (!Objects.equals(disk.getPath(), currentFile.getPath())) {
+                    // Only process currently used disks
+                    return;
+                }
                 // we have enough space now
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     // disable force gc.
@@ -1198,6 +1212,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskJustWritable(File disk) {
+                if (!Objects.equals(disk.getPath(), currentFile.getPath())) {
+                    // Only process currently used disks
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     // if a disk is just writable, we still need force gc.
                     gcThread.enableForceGC();
@@ -1299,5 +1317,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @VisibleForTesting
     DbLedgerStorageStats getDbLedgerStorageStats() {
         return dbLedgerStorageStats;
+    }
+
+    @VisibleForTesting
+    public File getCurrentFile() {
+        return currentFile;
     }
 }

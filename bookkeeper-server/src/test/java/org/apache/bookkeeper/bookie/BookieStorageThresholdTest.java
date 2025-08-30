@@ -21,21 +21,28 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -250,4 +257,128 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         Thread.sleep(500);
         assertFalse("Bookie should be transitioned to ReadWrite", bookie.isReadOnly());
     }
+
+    @org.junit.Test
+    public void testOneDirectoryFull() throws Exception {
+        // 1. Create test directories
+        File ledgerDir1 = tmpDirs.createNew("ledger", "test1");
+        File ledgerDir2 = tmpDirs.createNew("ledger", "test2");
+
+        // 2. Configure Bookie
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(1000);
+        conf.setLedgerDirNames(new String[] { ledgerDir1.getPath(), ledgerDir2.getPath() });
+        conf.setDiskCheckInterval(100); // Shorten disk check interval
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+
+        // 3. Start Bookie and obtain internal components
+        Bookie bookie = new TestBookieImpl(conf);
+        BookieImpl bookieImpl = (BookieImpl) bookie;
+        LedgerDirsManager ledgerDirsManager = bookieImpl.getLedgerDirsManager();
+
+        // 4. Create custom disk checker (key step)
+        GCTestDiskChecker diskChecker = new GCTestDiskChecker(
+                conf.getDiskUsageThreshold(),
+                conf.getDiskUsageWarnThreshold()
+        );
+        // Set directory status: dir1 full (100%), dir2 normal (50%)
+        File[] currentDirectories = BookieImpl.getCurrentDirectories(new File[] { ledgerDir1, ledgerDir2 });
+        diskChecker.setUsageMap(currentDirectories[0], 1.0f);  // 100% usage
+        diskChecker.setUsageMap(currentDirectories[1], 0.5f);  // 50% usage
+
+        // 5. Replace Bookie's disk checker
+        bookieImpl.dirsMonitor.shutdown(); // Stop default monitor
+        bookieImpl.dirsMonitor = new LedgerDirsMonitor(
+                conf,
+                diskChecker,
+                Collections.singletonList(ledgerDirsManager)
+        );
+        bookieImpl.dirsMonitor.start();
+
+        // 6. Add disk state listener
+        CountDownLatch dir1Full = new CountDownLatch(1);
+        CountDownLatch dir1Writable = new CountDownLatch(1);
+
+        ledgerDirsManager.addLedgerDirsListener(new LedgerDirsListener() {
+            @Override
+            public void diskFull(File disk) {
+                if (disk.equals(currentDirectories[0])) dir1Full.countDown();
+            }
+
+            @Override
+            public void diskWritable(File disk) {
+                if (disk.equals(currentDirectories[0])) dir1Writable.countDown();
+            }
+        });
+
+        // 7. Wait for state update (ensure event is triggered)
+        assertTrue("dir1 did not trigger full state", dir1Full.await(30, TimeUnit.SECONDS));
+
+        // 8. Verify directory status
+        List<File> fullDirs = ledgerDirsManager.getFullFilledLedgerDirs();
+        List<File> writableDirs = ledgerDirsManager.getWritableLedgerDirs();
+
+        assertTrue("dir1 should be marked as full", fullDirs.contains(currentDirectories[0]));
+        assertTrue("dir2 should remain writable", writableDirs.contains(currentDirectories[1]));
+        assertEquals("Only 1 writable directory should remain", 1, writableDirs.size());
+
+        // 9. Verify GC status
+        ((DbLedgerStorage)bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
+            if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
+                assertTrue("dir1 should suspend minor GC", storage.isMinorGcSuspended());
+                assertTrue("dir1 should suspend major GC", storage.isMajorGcSuspended());
+            } else {
+                assertFalse("dir2 should not suspend minor GC", storage.isMinorGcSuspended());
+                assertFalse("dir2 should not suspend major GC", storage.isMajorGcSuspended());
+            }
+        });
+
+        // 10. Restore dir1 status
+        diskChecker.setUsageMap(currentDirectories[0], 0.5f);  // 50% usage
+        assertTrue("dir1 did not become writable again", dir1Writable.await(3, TimeUnit.SECONDS));
+
+        // 11. Verify GC status after recovery
+        ((DbLedgerStorage)bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
+            if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
+                assertFalse("dir1 should not suspend minor GC", storage.isMinorGcSuspended());
+                assertFalse("dir1 should not suspend major GC", storage.isMajorGcSuspended());
+            } else {
+                assertFalse("dir2 should not suspend minor GC", storage.isMinorGcSuspended());
+                assertFalse("dir2 should not suspend major GC", storage.isMajorGcSuspended());
+            }
+        });
+
+        // 12. Cleanup
+        bookie.shutdown();
+    }
+
+    // Custom disk checker (simulate different usage for directories)
+    static class GCTestDiskChecker extends DiskChecker {
+        private final Map<File, Float> usageMap = new ConcurrentHashMap<>();
+
+        public GCTestDiskChecker(float threshold, float warnThreshold) {
+            super(threshold, warnThreshold);
+        }
+
+        // Set simulated usage for a directory
+        public void setUsageMap(File dir, float usage) {
+            usageMap.put(dir, usage);
+        }
+
+        @Override
+        public float checkDir(File dir) throws DiskErrorException, DiskWarnThresholdException, DiskOutOfSpaceException {
+            Float usage = usageMap.get(dir);
+            if (usage == null) {
+                return super.checkDir(dir); // Default behavior
+            }
+            // Throw exception based on preset usage rate
+            if (usage >= 1.0) {
+                throw new DiskOutOfSpaceException("Simulated disk full", usage);
+            } else if (usage >= 0.9) {
+                throw new DiskWarnThresholdException("Simulated disk warning", usage);
+            }
+            return usage;
+        }
+    }
+
 }
