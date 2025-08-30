@@ -259,7 +259,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
     }
 
     @org.junit.Test
-    public void testOneDirectoryFull() throws Exception {
+    public void testStopGCOnCorrespondingDiskWhenDiskFull() throws Exception {
         // 1. Create test directories
         File ledgerDir1 = tmpDirs.createNew("ledger", "test1");
         File ledgerDir2 = tmpDirs.createNew("ledger", "test2");
