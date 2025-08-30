@@ -302,12 +302,16 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         ledgerDirsManager.addLedgerDirsListener(new LedgerDirsListener() {
             @Override
             public void diskFull(File disk) {
-                if (disk.equals(currentDirectories[0])) dir1Full.countDown();
+                if (disk.equals(currentDirectories[0])) {
+                    dir1Full.countDown();
+                }
             }
 
             @Override
             public void diskWritable(File disk) {
-                if (disk.equals(currentDirectories[0])) dir1Writable.countDown();
+                if (disk.equals(currentDirectories[0])) {
+                    dir1Writable.countDown();
+                }
             }
         });
 
@@ -323,7 +327,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         assertEquals("Only 1 writable directory should remain", 1, writableDirs.size());
 
         // 9. Verify GC status
-        ((DbLedgerStorage)bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
+        ((DbLedgerStorage) bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
             if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
                 assertTrue("dir1 should suspend minor GC", storage.isMinorGcSuspended());
                 assertTrue("dir1 should suspend major GC", storage.isMajorGcSuspended());
@@ -338,7 +342,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         assertTrue("dir1 did not become writable again", dir1Writable.await(3, TimeUnit.SECONDS));
 
         // 11. Verify GC status after recovery
-        ((DbLedgerStorage)bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
+        ((DbLedgerStorage) bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
             if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
                 assertFalse("dir1 should not suspend minor GC", storage.isMinorGcSuspended());
                 assertFalse("dir1 should not suspend major GC", storage.isMajorGcSuspended());
