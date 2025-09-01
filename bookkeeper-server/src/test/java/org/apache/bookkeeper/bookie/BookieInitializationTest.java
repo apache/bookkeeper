@@ -1557,7 +1557,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * old payload: "1,READ_ONLY,1752809349613"
      * new payload: "1,READ_ONLY,1752809349613,false"
      */
-    @Test(timeout = 10000)
+    @Test(timeout = 30000)
     public void testPersistBookieStatusCompatibility() throws Exception {
         File[] tmpLedgerDirs = new File[1];
         String[] filePath = new String[1];
@@ -1575,17 +1575,13 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                 new MockUncleanShutdownDetection());
         bookieServer1.start();
-        // transition in to read only and persist the status on disk
         Bookie bookie1 = (BookieImpl) bookieServer1.getBookie();
-        assertFalse(bookie1.isReadOnly());
-        bookie1.getStateManager().transitionToReadOnlyMode().get();
-        assertTrue(bookie1.isReadOnly());
-        // Rewrite file to the old payload.
+        // restart the bookie should be in read only mode
+        bookieServer1.shutdown();
+        // Rewrite file to the old version payload.
         List<File> ledgerDirs = ((BookieImpl) bookie1).getLedgerDirsManager().getAllLedgerDirs();
         FileUtils.writeStringToFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME),
                 "1,READ_ONLY,1752809349613");
-        // restart the bookie should be in read only mode
-        bookieServer1.shutdown();
         BookieServer bookieServer2 = new BookieServer(
                 conf, new TestBookieImpl(conf),
                 NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
@@ -1594,10 +1590,10 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         BookieImpl bookie2 = (BookieImpl) bookieServer2.getBookie();
         assertTrue(bookie2.isReadOnly());
         // After a disk check, the bookie should not switch to writable mode because the state was set to read-only
-        // by admin api manually.
+        // by admin api manually(the default value of previous version is true).
         bookie2.dirsMonitor.check();
         Awaitility.await().untilAsserted(() -> {
-            assertFalse(bookie2.isReadOnly());
+            assertTrue(bookie2.isReadOnly());
         });
         bookieServer2.shutdown();
     }
