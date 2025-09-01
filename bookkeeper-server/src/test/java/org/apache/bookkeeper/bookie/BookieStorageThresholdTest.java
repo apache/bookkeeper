@@ -328,7 +328,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
 
         // 9. Verify GC status
         ((DbLedgerStorage) bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
-            if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
+            if (Objects.equals(storage.getLedgerBaseDir(), currentDirectories[0].getPath())) {
                 assertTrue("dir1 should suspend minor GC", storage.isMinorGcSuspended());
                 assertTrue("dir1 should suspend major GC", storage.isMajorGcSuspended());
             } else {
@@ -343,7 +343,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
 
         // 11. Verify GC status after recovery
         ((DbLedgerStorage) bookieImpl.ledgerStorage).getLedgerStorageList().forEach(storage -> {
-            if (Objects.equals(storage.getCurrentFile(), currentDirectories[0])) {
+            if (Objects.equals(storage.getLedgerBaseDir(), currentDirectories[0].getPath())) {
                 assertFalse("dir1 should not suspend minor GC", storage.isMinorGcSuspended());
                 assertFalse("dir1 should not suspend major GC", storage.isMajorGcSuspended());
             } else {
