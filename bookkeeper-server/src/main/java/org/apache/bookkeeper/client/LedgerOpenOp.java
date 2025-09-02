@@ -195,7 +195,11 @@ class LedgerOpenOp {
         }
 
         // get the ledger metadata back
-        final boolean watchImmediately = !doRecovery || metadata.isClosed();
+        // The cases that need to register listener immediately are:
+        // 1. The ledger is not in recovery opening, which is the original case.
+        // 2. The ledger is closed and need to keep update metadata. There is other cases that do not need to
+        //   register listener. e.g. The ledger is opening by Auto-Recovery component.
+        final boolean watchImmediately = !doRecovery || (keepUpdateMetadata && metadata.isClosed());
         try {
             // The ledger metadata may be modified even if it has been closed, because the auto-recovery component may
             // rewrite the ledger's metadata. Keep receiving a notification from ZK to avoid the following issue: an
