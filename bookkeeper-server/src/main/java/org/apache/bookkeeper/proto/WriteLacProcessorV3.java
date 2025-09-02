@@ -105,6 +105,10 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd),
                     writeCallback, requestHandler, masterKey);
             status = StatusCode.EOK;
+        } catch (BookieException.LedgerFencedAndDeletedException e) {
+            logger.error("Error saving lac {} for ledger:{}, which has been deleted",
+                    lac, ledgerId, e);
+            status = StatusCode.ENOLEDGER;
         } catch (IOException e) {
             logger.error("Error saving lac {} for ledger:{}",
                     lac, ledgerId, e);

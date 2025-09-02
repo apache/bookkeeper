@@ -90,8 +90,8 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         } catch (IOException e) {
             LOG.error("Error writing {}", request, e);
             rc = BookieProtocol.EIO;
-        } catch (BookieException.LedgerFencedException lfe) {
-            LOG.warn("Write attempt on fenced ledger {} by client {}", request.getLedgerId(),
+        } catch (BookieException.LedgerFencedException | BookieException.LedgerFencedAndDeletedException lfe) {
+            LOG.warn("Write attempt on fenced/deleted ledger {} by client {}", request.getLedgerId(),
                     requestHandler.ctx().channel().remoteAddress());
             rc = BookieProtocol.EFENCED;
         } catch (BookieException e) {

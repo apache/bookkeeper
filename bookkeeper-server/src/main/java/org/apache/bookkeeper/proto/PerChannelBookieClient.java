@@ -1165,6 +1165,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             completion.setOutstanding();
                         }
                     } else {
+                        try {
+                            future.get();
+                        } catch (Exception ex) {
+                            LOG.warn("Failed to request to the bookie: {}", bookieId, ex);
+                        }
                         nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                         errorOut(key);
                     }
