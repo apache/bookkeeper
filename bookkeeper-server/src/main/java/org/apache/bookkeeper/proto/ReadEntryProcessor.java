@@ -94,7 +94,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 return;
             }
-        } catch (Bookie.NoLedgerException e) {
+        } catch (Bookie.NoLedgerException | BookieException.LedgerFencedAndDeletedException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error reading {}", request, e);
             }
