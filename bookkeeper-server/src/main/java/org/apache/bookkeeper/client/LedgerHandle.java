@@ -2281,17 +2281,17 @@ public class LedgerHandle implements WriteHandle {
                                 newEnsemble = getCurrentEnsemble();
                                 replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
                                 LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
-
+                                unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                                // We cannot handle the success callback before unsetSuccessAndSendWriteRequest completes,
+                                // as this would remove the PendingAddOp from pendingAddOps.
+                                // After unsetSuccessAndSendWriteRequest executes, the ensemble in PendingAddOp will have been updated,
+                                // allowing the condition !ensemble.get(bookieIndex).equals(addr) to properly filter out incorrect bookies.
                                 changingEnsemble = false;
                             }
                         }
 
                         if (toReplace != null && !toReplace.isEmpty()) {
                             ensembleChangeLoop(origEnsemble, toReplace);
-                        }
-
-                        if (newEnsemble != null) { // unsetSuccess outside of lock
-                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
