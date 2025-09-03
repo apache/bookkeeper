@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -149,6 +150,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private final Counter flushExecutorTime;
     private final boolean singleLedgerDirs;
+    private final String ledgerBaseDir;
+    private final String indexBaseDir;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
@@ -158,8 +161,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
-
-        String ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
+        ledgerBaseDir = ledgerDirsManager.getAllLedgerDirs().get(0).getPath();
         // indexBaseDir default use ledgerBaseDir
         String indexBaseDir = ledgerBaseDir;
         if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())
@@ -172,6 +174,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             log.info("indexDir is specified a separate dir, creating single directory db ledger storage on {}",
                     indexBaseDir);
         }
+        this.indexBaseDir = indexBaseDir;
 
         StatsLogger ledgerIndexDirStatsLogger = statsLogger
                 .scopeLabel("ledgerDir", ledgerBaseDir)
@@ -228,9 +231,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             flushExecutorTime.addLatency(0, TimeUnit.NANOSECONDS);
         });
 
-        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener(ledgerBaseDir));
         if (!ledgerBaseDir.equals(indexBaseDir)) {
-            indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+            indexDirsManager.addLedgerDirsListener(getLedgerDirsListener(indexBaseDir));
         }
     }
 
@@ -1148,11 +1151,19 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 "getListOfEntriesOfLedger method is currently unsupported for SingleDirectoryDbLedgerStorage");
     }
 
-    private LedgerDirsManager.LedgerDirsListener getLedgerDirsListener() {
+    private LedgerDirsManager.LedgerDirsListener getLedgerDirsListener(String diskPath) {
         return new LedgerDirsListener() {
+            private final String currentFilePath = diskPath;
+
+            private boolean isCurrentFile(File disk) {
+                return Objects.equals(disk.getPath(), currentFilePath);
+            }
 
             @Override
             public void diskAlmostFull(File disk) {
+                if (!isCurrentFile(disk)) {
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     gcThread.enableForceGC();
                 } else {
@@ -1162,6 +1173,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskFull(File disk) {
+                if (!isCurrentFile(disk)) {
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     gcThread.enableForceGC();
                 } else {
@@ -1182,6 +1196,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskWritable(File disk) {
+                if (!isCurrentFile(disk)) {
+                    return;
+                }
                 // we have enough space now
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     // disable force gc.
@@ -1195,6 +1212,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             @Override
             public void diskJustWritable(File disk) {
+                if (!isCurrentFile(disk)) {
+                    return;
+                }
                 if (gcThread.isForceGCAllowWhenNoSpace()) {
                     // if a disk is just writable, we still need force gc.
                     gcThread.enableForceGC();
@@ -1296,5 +1316,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @VisibleForTesting
     DbLedgerStorageStats getDbLedgerStorageStats() {
         return dbLedgerStorageStats;
+    }
+
+    @VisibleForTesting
+    public String getLedgerBaseDir() {
+        return ledgerBaseDir;
+    }
+
+    @VisibleForTesting
+    public String getIndexBaseDir() {
+        return indexBaseDir;
     }
 }
