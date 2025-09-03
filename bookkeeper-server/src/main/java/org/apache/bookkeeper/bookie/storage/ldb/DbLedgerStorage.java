@@ -449,7 +449,7 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @VisibleForTesting
-    List<SingleDirectoryDbLedgerStorage> getLedgerStorageList() {
+    public List<SingleDirectoryDbLedgerStorage> getLedgerStorageList() {
         return ledgerStorageList;
     }
 
