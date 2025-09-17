@@ -100,12 +100,20 @@ public interface StateManager extends AutoCloseable {
     /**
      * Change the state of bookie to Writable mode.
      */
-    Future<Void> transitionToWritableMode();
+    Future<Void> transitionToWritableMode(boolean isManuallyModify);
+
+    default Future<Void> transitionToWritableMode() {
+        return transitionToWritableMode(false);
+    }
 
     /**
      * Change the state of bookie to ReadOnly mode.
      */
-    Future<Void> transitionToReadOnlyMode();
+    Future<Void> transitionToReadOnlyMode(boolean isManuallyModify);
+
+    default Future<Void> transitionToReadOnlyMode() {
+        return transitionToReadOnlyMode(false);
+    }
 
     /**
      * ShutdownHandler used to shutdown bookie.
