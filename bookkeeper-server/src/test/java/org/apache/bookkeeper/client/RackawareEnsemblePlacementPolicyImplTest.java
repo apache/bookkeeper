@@ -20,20 +20,22 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieNode;
-import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -49,7 +51,7 @@ public class RackawareEnsemblePlacementPolicyImplTest {
     private BookieId bookie1;
     private BookieId bookie2;
 
-    String DEFAULT_RACK = "/default-rack";
+    String defaultRack = "/default-rack";
 
     @Before
     public void setUp() {
@@ -71,7 +73,7 @@ public class RackawareEnsemblePlacementPolicyImplTest {
         bookie2 = BookieId.parse("bookie2:3181");
 
         // Set the default rack
-        when(topology.getLeaves(DEFAULT_RACK))
+        when(topology.getLeaves(defaultRack))
                 .thenReturn(Collections.emptySet());
 
         // Use reflection to inject the mock topology into the policy
@@ -81,14 +83,14 @@ public class RackawareEnsemblePlacementPolicyImplTest {
     @Test
     public void testWithDefaultRackBookies() {
         // Scenario: bookie nodes exist in the default rack
-        BookieNode node1 = new BookieNode(bookie1, DEFAULT_RACK);
-        BookieNode node2 = new BookieNode(bookie2, DEFAULT_RACK);
+        BookieNode node1 = new BookieNode(bookie1, defaultRack);
+        BookieNode node2 = new BookieNode(bookie2, defaultRack);
 
         Set<Node> defaultRackNodes = new HashSet<>();
         defaultRackNodes.add(node1);
         defaultRackNodes.add(node2);
 
-        when(topology.getLeaves(DEFAULT_RACK))
+        when(topology.getLeaves(defaultRack))
                 .thenReturn(defaultRackNodes);
 
         // Add some bookies to be excluded
@@ -106,14 +108,14 @@ public class RackawareEnsemblePlacementPolicyImplTest {
     @Test
     public void testMixedNodesInDefaultRack() {
         // Scenario: default rack contains mixed BookieNode and non-BookieNode nodes
-        BookieNode bookieNode = new BookieNode(bookie1, DEFAULT_RACK);
+        BookieNode bookieNode = new BookieNode(bookie1, defaultRack);
         Node nonBookieNode = mock(Node.class);
 
         Set<Node> defaultRackNodes = new HashSet<>();
         defaultRackNodes.add(bookieNode);
         defaultRackNodes.add(nonBookieNode);
 
-        when(topology.getLeaves(DEFAULT_RACK))
+        when(topology.getLeaves(defaultRack))
                 .thenReturn(defaultRackNodes);
 
         Set<BookieId> result = policy.addDefaultRackBookiesIfMinNumRacksIsEnforced(excludeBookies);
@@ -127,7 +129,7 @@ public class RackawareEnsemblePlacementPolicyImplTest {
     public void testEmptyDefaultRackBookies() {
         // Scenario: the collection in default rack is empty
         Set<Node> emptySet = Collections.emptySet();
-        when(topology.getLeaves(DEFAULT_RACK))
+        when(topology.getLeaves(defaultRack))
                 .thenReturn(emptySet);
 
         // Add some bookies to be excluded
