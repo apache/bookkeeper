@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.LongStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -189,33 +188,39 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                                                                  executor, scheduler, NullStatsLogger.INSTANCE,
                                                                  bk.getBookieAddressResolver());
 
-                LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
+                long nextEntryId = flags.firstEntryId;
+                while (lastEntry == -1 || nextEntryId <= lastEntry) {
                     CompletableFuture<Void> future = new CompletableFuture<>();
 
-                    bookieClient.readEntry(bookie, flags.ledgerId, entryId,
-                                           (rc, ledgerId1, entryId1, buffer, ctx) -> {
-                                               if (rc != BKException.Code.OK) {
-                                                   LOG.error("Failed to read entry {} -- {}", entryId1,
-                                                             BKException.getMessage(rc));
-                                                   future.completeExceptionally(BKException.create(rc));
-                                                   return;
-                                               }
+                    long entryId = nextEntryId;
+                    bookieClient.readEntry(bookie, flags.ledgerId, nextEntryId,
+                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
+                                if (rc != BKException.Code.OK) {
+                                    LOG.error("Failed to read entry {} -- {}", entryId1,
+                                            BKException.getMessage(rc));
+                                    future.completeExceptionally(BKException.create(rc));
+                                    return;
+                                }
 
-                                               LOG.info("--------- Lid={}, Eid={} ---------",
-                                                   ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
-                                               if (flags.msg) {
-                                                   LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
-                                               }
+                                LOG.info("--------- Lid={}, Eid={} ---------",
+                                        ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
+                                if (flags.msg) {
+                                    LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
+                                }
 
-                                               future.complete(null);
-                                           }, null, BookieProtocol.FLAG_NONE);
+                                future.complete(null);
+                            }, null, BookieProtocol.FLAG_NONE);
 
                     try {
                         future.get();
                     } catch (Exception e) {
                         LOG.error("Error future.get while reading entries from ledger {}", flags.ledgerId, e);
+                        if (e.getCause() instanceof BKException.BKNoSuchEntryException) {
+                            break;
+                        }
                     }
-                });
+                    ++nextEntryId;
+                }
 
                 eventLoopGroup.shutdownGracefully();
                 executor.shutdown();
