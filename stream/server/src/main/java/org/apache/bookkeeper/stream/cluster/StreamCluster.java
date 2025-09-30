@@ -191,7 +191,8 @@ public class StreamCluster
                 server.start();
                 log.info("Started storage server at (bookie port = {}, grpc port = {})",
                     bookiePort, grpcPort);
-                this.rpcEndpoints.add(StorageServer.createLocalEndpoint(grpcPort, false));
+                this.rpcEndpoints.add(
+                        StorageServer.createLocalEndpoint(serverConf.getAdvertisedAddress(), grpcPort, false));
                 return server;
             } catch (Throwable e) {
                 log.error("Failed to start storage server", e);
