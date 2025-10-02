@@ -26,9 +26,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +46,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.CommonConfigurationKeys;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.Shell;
@@ -48,6 +54,8 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -459,6 +467,59 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         } catch (RuntimeException re) {
             fail("EnforceMinNumRacksPerWriteQuorum is set, and mapping.validateConf succeeds."
                     + " So repp.initialize should succeed");
+        }
+    }
+
+    @Test
+    public void testUseHostnameArgsOption() throws Exception {
+        ignoreTestIfItIsWindowsOS();
+        repp.uninitalize();
+
+        // Mock NetUtils.
+        try (MockedStatic<NetUtils> netUtils = Mockito.mockStatic(NetUtils.class)) {
+            netUtils.when(() -> NetUtils.resolveNetworkLocation(any(DNSToSwitchMapping.class), any(BookieSocketAddress.class))).thenCallRealMethod();
+            netUtils.when(() -> NetUtils.normalizeToHostNames(any())).thenCallRealMethod();
+            netUtils.when(() -> NetUtils.normalizeToHostName(anyString())).thenCallRealMethod();
+
+            netUtils.when(() -> NetUtils.normalizeToHostName(eq(InetAddress.getLocalHost().getHostAddress()))).thenReturn("bookie1");
+            netUtils.when(() -> NetUtils.normalizeToHostName(eq("127.0.0.4"))).thenReturn("bookie22");
+
+            // Initialize RackawareEnsemblePlacementPolicy.
+            ClientConfiguration newConf = new ClientConfiguration();
+            newConf.setProperty(REPP_DNS_RESOLVER_CLASS, ScriptBasedMapping.class.getName());
+            newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY,
+                    "src/test/resources/networkmappingscript.sh");
+            newConf.setProperty(CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_USE_HOSTNAME_ARGS_KEY, true);
+            timer = new HashedWheelTimer(
+                    new ThreadFactoryBuilder().setNameFormat("TestTimer-%d").build(),
+                    conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
+                    conf.getTimeoutTimerNumTicks());
+            repp = new RackawareEnsemblePlacementPolicy();
+            repp.initialize(newConf, Optional.<DNSToSwitchMapping>empty(), timer,
+                    DISABLE_ALL, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+
+            // Join Bookie2, Bookie22, Bookie3, and Bookie33.
+            BookieSocketAddress addr1 = new BookieSocketAddress("bookie2", 3181);   // /2 rack
+            BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.4", 3181); // /2 rack
+            BookieSocketAddress addr3 = new BookieSocketAddress("bookie3", 3181);   // /3 rack
+            BookieSocketAddress addr4 = new BookieSocketAddress("bookie33", 3181);  // /3 rack
+            Set<BookieId> addrs = new HashSet<>();
+            addrs.add(addr1.toBookieId());
+            addrs.add(addr2.toBookieId());
+            addrs.add(addr3.toBookieId());
+            addrs.add(addr4.toBookieId());
+            repp.onClusterChanged(addrs, new HashSet<>());
+
+            // Remove Bookie2.
+            addrs.remove(addr1.toBookieId());
+            repp.onClusterChanged(addrs, new HashSet<>());
+
+            BookieId replacedBookie = repp.replaceBookie(1, 1, 1, null, new ArrayList<>(),
+                    addr1.toBookieId(), new HashSet<>()).getResult();
+            assertEquals(addr2.toBookieId(), replacedBookie);
+
+            netUtils.verify(() -> NetUtils.normalizeToHostName(eq(InetAddress.getLocalHost().getHostAddress())), times(1));
+            netUtils.verify(() -> NetUtils.normalizeToHostName(eq("127.0.0.4")), times(1));
         }
     }
 
