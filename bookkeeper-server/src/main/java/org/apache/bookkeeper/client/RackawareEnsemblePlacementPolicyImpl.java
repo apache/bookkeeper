@@ -359,30 +359,22 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      */
     protected Set<BookieId> addDefaultRackBookiesIfMinNumRacksIsEnforced(
             Set<BookieId> excludeBookies) {
-        Set<BookieId> comprehensiveExclusionBookiesSet;
-        if (enforceMinNumRacksPerWriteQuorum) {
-            Set<BookieId> bookiesInDefaultRack = null;
-            Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
-            for (Node node : defaultRackLeaves) {
-                if (node instanceof BookieNode) {
-                    if (bookiesInDefaultRack == null) {
-                        bookiesInDefaultRack = new HashSet<>();
-                    }
-                    bookiesInDefaultRack.add(((BookieNode) node).getAddr());
-                } else {
-                    LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
-                }
-            }
-            if (bookiesInDefaultRack == null) {
-                comprehensiveExclusionBookiesSet = excludeBookies;
+        if (!enforceMinNumRacksPerWriteQuorum) {
+            return excludeBookies;
+        }
+
+        Set<BookieId> comprehensiveExclusionBookiesSet = new HashSet<>(excludeBookies);
+        Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
+        for (Node node : defaultRackLeaves) {
+            if (node instanceof BookieNode) {
+                comprehensiveExclusionBookiesSet.add(((BookieNode) node).getAddr());
             } else {
-                comprehensiveExclusionBookiesSet = new HashSet<BookieId>(excludeBookies);
-                comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
-                LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
-                        bookiesInDefaultRack);
+                LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
             }
-        } else {
-            comprehensiveExclusionBookiesSet = excludeBookies;
+        }
+        if (!comprehensiveExclusionBookiesSet.isEmpty()) {
+            LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
+                    comprehensiveExclusionBookiesSet);
         }
         return comprehensiveExclusionBookiesSet;
     }
