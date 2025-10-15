@@ -40,6 +40,7 @@ import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.StaticDNSResolver;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,7 +55,7 @@ public class RackawareEnsemblePlacementPolicyImplTest {
     String defaultRack = "/default-rack";
 
     @Before
-    public void setUp() {
+    public void setUp() throws IllegalAccessException {
         TestStatsProvider provider = new TestStatsProvider();
         policy = new RackawareEnsemblePlacementPolicyImpl();
         ClientConfiguration clientConfiguration = mock(ClientConfiguration.class);
@@ -77,7 +78,7 @@ public class RackawareEnsemblePlacementPolicyImplTest {
                 .thenReturn(Collections.emptySet());
 
         // Use reflection to inject the mock topology into the policy
-        TestUtils.setField(TopologyAwareEnsemblePlacementPolicy.class, policy, "topology", topology);
+        FieldUtils.writeField(policy, "topology", topology, true);
     }
 
     @Test
@@ -138,18 +139,5 @@ public class RackawareEnsemblePlacementPolicyImplTest {
 
         // Verify: should return the original exclusion set
         assertSame(excludeBookies, result);
-    }
-}
-
-// Utility class for setting private fields
-class TestUtils {
-    public static void setField(Class<?> tclass , Object target, String fieldName, Object value) {
-        try {
-            java.lang.reflect.Field field = tclass.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
