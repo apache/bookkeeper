@@ -363,20 +363,27 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             return excludeBookies;
         }
 
-        Set<BookieId> comprehensiveExclusionBookiesSet = new HashSet<>(excludeBookies);
+        Set<BookieId> bookiesInDefaultRack = null;
         Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
         for (Node node : defaultRackLeaves) {
             if (node instanceof BookieNode) {
-                comprehensiveExclusionBookiesSet.add(((BookieNode) node).getAddr());
+                if (bookiesInDefaultRack == null) {
+                    bookiesInDefaultRack = new HashSet<>();
+                }
+                bookiesInDefaultRack.add(((BookieNode) node).getAddr());
             } else {
                 LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
             }
         }
-        if (!comprehensiveExclusionBookiesSet.isEmpty()) {
+        if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
+            return excludeBookies;
+        } else {
+            Set<BookieId> comprehensiveExclusionBookiesSet = new HashSet<>(excludeBookies);
+            comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
             LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
-                    comprehensiveExclusionBookiesSet);
+                    bookiesInDefaultRack);
+            return comprehensiveExclusionBookiesSet;
         }
-        return comprehensiveExclusionBookiesSet;
     }
 
     @Override
