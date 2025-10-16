@@ -372,7 +372,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 bookiesInDefaultRack.add(((BookieNode) node).getAddr());
             } else {
-                LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
+                LOG.error("found non-BookieNode: {} as leaf of defaultRack: {}", node, getDefaultRack());
             }
         }
         if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
