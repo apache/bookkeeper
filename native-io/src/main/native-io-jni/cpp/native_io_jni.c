@@ -30,7 +30,12 @@
 
 #ifdef _WIN32
 
-#define fsync(fd) fflush(fd)
+/*  fflush requires a FILE*, but we're passing an int file descriptor.
+   On Windows, the correct equivalent is _commit(fd), which takes an int fd.
+   So, change the mapping of fsync from fflush to _commit. */
+#include <io.h>
+#define fsync(fd) _commit(fd)
+
 #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
 
 static ssize_t pread (int fd, void *buf, size_t count, off_t offset)
