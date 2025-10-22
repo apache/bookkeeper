@@ -20,11 +20,16 @@
  */
 #define _GNU_SOURCE
 
+#include <jni.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include <org_apache_bookkeeper_common_util_nativeio_NativeIOJni.h>
 
@@ -165,7 +170,14 @@ JNIEXPORT jint JNICALL
 Java_org_apache_bookkeeper_common_util_nativeio_NativeIOJni_fsync(JNIEnv * env,
                                                                jclass clazz,
                                                                jint fd) {
-    int res = fsync(fd);
+    int res;
+
+    // Guarantee compatibility for winsows.
+    #ifdef _WIN32
+        res = _commit((int)fd);
+    #else
+        res = fsync((int)fd);
+    #endif
 
     if (res == -1) {
       throwExceptionWithErrno(env, "Failed to fsync");
