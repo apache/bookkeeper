@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":18,"i15":6,"i16":18,"i17":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -174,7 +174,7 @@ extends java.lang.AutoCloseable</pre>
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t5" class="tableTab"><span><a href="javascript:show(16);">Default Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -277,15 +277,25 @@ extends java.lang.AutoCloseable</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
-<td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
+<td class="colFirst"><code>default java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToReadOnlyMode()">transitionToReadOnlyMode</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToReadOnlyMode(boolean)">transitionToReadOnlyMode</a></span>&#8203;(boolean&nbsp;isManuallyModify)</code></th>
 <td class="colLast">
 <div class="block">Change the state of bookie to ReadOnly mode.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
-<td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>default java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToWritableMode()">transitionToWritableMode</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>java.util.concurrent.Future&lt;java.lang.Void&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transitionToWritableMode(boolean)">transitionToWritableMode</a></span>&#8203;(boolean&nbsp;isManuallyModify)</code></th>
 <td class="colLast">
 <div class="block">Change the state of bookie to Writable mode.</div>
 </td>
@@ -449,14 +459,33 @@ extends java.lang.AutoCloseable</pre>
 <div class="block">Turn state to not registered, just the flag.</div>
 </li>
 </ul>
+<a id="transitionToWritableMode(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>transitionToWritableMode</h4>
+<pre class="methodSignature">java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToWritableMode&#8203;(boolean&nbsp;isManuallyModify)</pre>
+<div class="block">Change the state of bookie to Writable mode.</div>
+</li>
+</ul>
 <a id="transitionToWritableMode()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>transitionToWritableMode</h4>
-<pre class="methodSignature">java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToWritableMode()</pre>
-<div class="block">Change the state of bookie to Writable mode.</div>
+<pre class="methodSignature">default&nbsp;java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToWritableMode()</pre>
+</li>
+</ul>
+<a id="transitionToReadOnlyMode(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>transitionToReadOnlyMode</h4>
+<pre class="methodSignature">java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToReadOnlyMode&#8203;(boolean&nbsp;isManuallyModify)</pre>
+<div class="block">Change the state of bookie to ReadOnly mode.</div>
 </li>
 </ul>
 <a id="transitionToReadOnlyMode()">
@@ -465,8 +494,7 @@ extends java.lang.AutoCloseable</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>transitionToReadOnlyMode</h4>
-<pre class="methodSignature">java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToReadOnlyMode()</pre>
-<div class="block">Change the state of bookie to ReadOnly mode.</div>
+<pre class="methodSignature">default&nbsp;java.util.concurrent.Future&lt;java.lang.Void&gt;&nbsp;transitionToReadOnlyMode()</pre>
 </li>
 </ul>
 <a id="setShutdownHandler(org.apache.bookkeeper.bookie.StateManager.ShutdownHandler)">

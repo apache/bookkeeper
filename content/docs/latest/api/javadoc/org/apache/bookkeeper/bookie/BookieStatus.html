@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -233,35 +233,40 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isManuallyModifiedToReadOnly()">isManuallyModifiedToReadOnly</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="BookieStatus.html" title="class in org.apache.bookkeeper.bookie">BookieStatus</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parse(java.io.BufferedReader)">parse</a></span>&#8203;(java.io.BufferedReader&nbsp;reader)</code></th>
 <td class="colLast">
 <div class="block">Parse the bookie status object using appropriate layout version.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFromDirectories(java.util.List)">readFromDirectories</a></span>&#8203;(java.util.List&lt;java.io.File&gt;&nbsp;directories)</code></th>
 <td class="colLast">
 <div class="block">Read bookie status from the status files, and update the bookie status if read succeed.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setToReadOnlyMode()">setToReadOnlyMode</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setToReadOnlyMode(boolean)">setToReadOnlyMode</a></span>&#8203;(boolean&nbsp;isManuallyModify)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setToWritableMode()">setToWritableMode</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeToDirectories(java.util.List)">writeToDirectories</a></span>&#8203;(java.util.List&lt;java.io.File&gt;&nbsp;directories)</code></th>
 <td class="colLast">
@@ -361,13 +366,13 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">boolean&nbsp;isInReadOnlyMode()</pre>
 </li>
 </ul>
-<a id="setToReadOnlyMode()">
+<a id="setToReadOnlyMode(boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setToReadOnlyMode</h4>
-<pre class="methodSignature">boolean&nbsp;setToReadOnlyMode()</pre>
+<pre class="methodSignature">boolean&nbsp;setToReadOnlyMode&#8203;(boolean&nbsp;isManuallyModify)</pre>
 </li>
 </ul>
 <a id="writeToDirectories(java.util.List)">
@@ -423,7 +428,7 @@ extends java.lang.Object</pre>
 <a id="toString()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;toString()</pre>
@@ -431,6 +436,15 @@ extends java.lang.Object</pre>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
 </dl>
+</li>
+</ul>
+<a id="isManuallyModifiedToReadOnly()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>isManuallyModifiedToReadOnly</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isManuallyModifiedToReadOnly()</pre>
 </li>
 </ul>
 </li>
