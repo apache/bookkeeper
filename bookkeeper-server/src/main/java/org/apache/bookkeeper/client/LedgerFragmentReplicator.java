@@ -455,8 +455,9 @@ public class LedgerFragmentReplicator {
         int entriesToReplicateCnt = (int) (endEntryId - startEntryId + 1);
         int maxBytesToReplicate = conf.getReplicationRateByBytes();
         if (replicationThrottle != null) {
-            if (maxBytesToReplicate != -1 && maxBytesToReplicate > averageEntrySize.get() * entriesToReplicateCnt) {
-                maxBytesToReplicate = averageEntrySize.get() * entriesToReplicateCnt;
+            long bytesToReplicateCnt = (long) averageEntrySize.get() * entriesToReplicateCnt;
+            if (bytesToReplicateCnt <= Integer.MAX_VALUE && bytesToReplicateCnt >= 0) {
+                maxBytesToReplicate = Math.min(maxBytesToReplicate, (int) bytesToReplicateCnt);
             }
             replicationThrottle.acquire(maxBytesToReplicate);
         }
