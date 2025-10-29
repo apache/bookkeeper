@@ -61,12 +61,16 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         super(CliSpec.<SanityFlags>newBuilder().withFlags(flags).withName(NAME).withDescription(DESC).build());
     }
 
+    public static SanityTestCommand newSanityTestCommand(SanityFlags flags) {
+        return new SanityTestCommand(flags);
+    }
+
     /**
      * Flags for sanity command.
      */
     @Accessors(fluent = true)
     @Setter
-    public static class SanityFlags extends CliFlags{
+    public static class SanityFlags extends CliFlags {
 
         @Parameter(names = {"-e", "--entries"}, description = "Total entries to be added for the test (default 10)")
         private int entries = 10;
@@ -86,7 +90,7 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         }
     }
 
-    private static boolean handle(ServerConfiguration conf, SanityFlags cmdFlags) throws Exception {
+    public static boolean handle(ServerConfiguration conf, SanityFlags cmdFlags) throws Exception {
         try {
             return handleAsync(conf, cmdFlags).get();
         } catch (Exception e) {

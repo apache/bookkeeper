@@ -38,6 +38,8 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.Maps;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.function.Function;
@@ -52,6 +54,8 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand.SanityFlags;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ClusterInfoCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -70,6 +74,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -374,6 +379,42 @@ public class BookieShellTest {
         lastMarkCommandMockedStatic.verify(() -> LastMarkCommand.newLastMarkCommand(), times(1));
         verify(mockLastMarkCommand, times(1))
             .apply(same(shell.bkConf), any(CliFlags.class));
+    }
+
+    @Test
+    public void testBookieSanityTestCmd() throws Exception {
+        SanityTestCommand mockCommand = spy(new SanityTestCommand());
+
+        @Cleanup
+        MockedStatic<SanityTestCommand> commandMockedStatic = mockStatic(SanityTestCommand.class);
+        commandMockedStatic.when(() -> SanityTestCommand.newSanityTestCommand(any(SanityFlags.class)))
+                .thenReturn(mockCommand);
+        commandMockedStatic.when(() -> SanityTestCommand.handle(any(ServerConfiguration.class), any(SanityFlags.class)))
+                .thenReturn(true);
+
+        shell.run(new String[] {
+            "bookiesanity"
+        });
+
+        shell.run(new String[] {
+            "bookiesanity",
+            "-e", "20",
+            "-t", "5"
+        });
+
+        ArgumentCaptor<SanityFlags> flagsCaptor = ArgumentCaptor.forClass(SanityFlags.class);
+        commandMockedStatic.verify(() -> SanityTestCommand.handle(same(shell.bkConf), flagsCaptor.capture()), times(2));
+        List<SanityFlags> flagsList = flagsCaptor.getAllValues();
+
+        Field entriesField = SanityFlags.class.getDeclaredField("entries");
+        entriesField.setAccessible(true);
+        assertEquals(10, (int) entriesField.get(flagsList.get(0))); // default value
+        assertEquals(20, (int) entriesField.get(flagsList.get(1)));
+
+        Field timeoutField = SanityFlags.class.getDeclaredField("timeout");
+        timeoutField.setAccessible(true);
+        assertEquals(1, (int) timeoutField.get(flagsList.get(0))); // default value
+        assertEquals(5, (int) timeoutField.get(flagsList.get(1)));
     }
 
     @Test
