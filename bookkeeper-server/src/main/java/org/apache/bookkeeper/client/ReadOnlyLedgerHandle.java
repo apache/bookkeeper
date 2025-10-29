@@ -95,12 +95,16 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     ReadOnlyLedgerHandle(ClientContext clientCtx,
                          long ledgerId, Versioned<LedgerMetadata> metadata,
                          BookKeeper.DigestType digestType, byte[] password,
-                         boolean watch)
+                         boolean watchImmediately)
             throws GeneralSecurityException, NumberFormatException {
         super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE);
-        if (watch) {
-            clientCtx.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
+        if (watchImmediately) {
+            registerLedgerMetadataListener();
         }
+    }
+
+    void registerLedgerMetadataListener() {
+        clientCtx.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
     }
 
     @Override
