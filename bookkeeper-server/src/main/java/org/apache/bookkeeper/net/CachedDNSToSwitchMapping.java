@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
-  private Map<String, String> cache = new ConcurrentHashMap<String, String>();
+  private Map<String, String> cache = new ConcurrentHashMap<>();
 
   /**
    * The uncached mapping.
@@ -46,7 +46,8 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
     this.rawMapping = rawMapping;
   }
 
-  // we'll use IP Address for these mappings.
+  // we'll use IP Address or Host Name for these mappings.
+  // The default value is the IP address.
   @Override
   public boolean useHostName() {
     return false;
@@ -58,7 +59,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    */
   private List<String> getUncachedHosts(List<String> names) {
     // find out all names without cached resolved location
-    List<String> unCachedHosts = new ArrayList<String>(names.size());
+    List<String> unCachedHosts = new ArrayList<>(names.size());
     for (String name : names) {
       if (cache.get(name) == null) {
         unCachedHosts.add(name);
@@ -91,7 +92,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    *  or null if any of the names are not currently in the cache
    */
   private List<String> getCachedHosts(List<String> names) {
-    List<String> result = new ArrayList<String>(names.size());
+    List<String> result = new ArrayList<>(names.size());
     // Construct the result
     for (String name : names) {
       String networkLocation = cache.get(name);
@@ -106,23 +107,27 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
 
   @Override
   public List<String> resolve(List<String> names) {
-    // normalize all input names to be in the form of IP addresses
-    names = NetUtils.normalizeHostNames(names);
-
-    List <String> result = new ArrayList<String>(names.size());
+    List <String> result = new ArrayList<>(names.size());
     if (names.isEmpty()) {
       return result;
+    }
+
+    if (useHostName()) {
+      // normalize all input names to be in the form of host name
+      names = NetUtils.normalizeToHostNames(names);
+    } else {
+      // normalize all input names to be in the form of IP addresses
+      names = NetUtils.normalizeToIPAddresses(names);
     }
 
     List<String> uncachedHosts = getUncachedHosts(names);
 
     // Resolve the uncached hosts
     List<String> resolvedHosts = rawMapping.resolve(uncachedHosts);
-    //cache them
+    // cache them
     cacheResolvedHosts(uncachedHosts, resolvedHosts);
-    //now look up the entire list in the cache
+    // now look up the entire list in the cache
     return getCachedHosts(names);
-
   }
 
   /**
@@ -131,7 +136,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    */
   @Override
   public Map<String, String> getSwitchMap() {
-    Map<String, String> switchMap = new HashMap<String, String>(cache);
+    Map<String, String> switchMap = new HashMap<>(cache);
     return switchMap;
   }
 
