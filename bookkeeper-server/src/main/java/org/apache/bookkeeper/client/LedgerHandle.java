@@ -2282,6 +2282,8 @@ public class LedgerHandle implements WriteHandle {
                                 replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
                                 LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
 
+                                // Since changingEnsemble is true, processing in #sendAddSuccessCallbacks() is skipped.
+                                unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                                 changingEnsemble = false;
                             }
                         }
@@ -2290,8 +2292,9 @@ public class LedgerHandle implements WriteHandle {
                             ensembleChangeLoop(origEnsemble, toReplace);
                         }
 
-                        if (newEnsemble != null) { // unsetSuccess outside of lock
-                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                        if (newEnsemble != null) {
+                            // After changingEnsemble is changed to false, call #sendAddSuccessCallbacks().
+                            sendAddSuccessCallbacks();
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
@@ -2303,6 +2306,21 @@ public class LedgerHandle implements WriteHandle {
                 pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
             }
         }
+        // Suppose that unset doesn't happen on the write set of an entry. In this
+        // case we don't need to resend the write request upon an ensemble change.
+        // We do need to invoke #sendAddSuccessCallbacks() for such entries because
+        // they may have already completed, but they are just waiting for the ensemble
+        // to change.
+        // E.g.
+        // ensemble (A, B, C, D), entry k is written to (A, B, D). An ensemble change
+        // happens to replace C with E. Entry k does not complete until C is
+        // replaced with E successfully. When the ensemble change completes, it tries
+        // to unset entry k. C however is not in k's write set, so no entry is written
+        // again, and no one triggers #sendAddSuccessCallbacks. Consequently, k never
+        // completes.
+        //
+        // We call sendAddSuccessCallback to cover this case.
+        sendAddSuccessCallbacks();
     }
 
     void registerOperationFailureOnBookie(BookieId bookie, long entryId) {
