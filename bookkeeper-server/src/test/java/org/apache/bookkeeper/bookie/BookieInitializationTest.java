@@ -1897,4 +1897,19 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             fail();
         }
     }
+
+    @Test
+    public void testFormatTwiceWithNonDefaultHierarchicalType() throws Exception {
+        File tmpDir = tmpDirs.createNew("bookie", "test");
+        final String zkRoot = "/ledgers3";
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri(zkRoot, "longhierarchical"))
+                .setZkTimeout(5000);
+        BookKeeperAdmin.format(conf, false, false);
+        BookKeeperAdmin.format(conf, false, true);
+    }
+
 }
