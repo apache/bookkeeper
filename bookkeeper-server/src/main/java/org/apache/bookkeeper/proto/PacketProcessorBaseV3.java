@@ -43,6 +43,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
     final BookieRequestHandler requestHandler;
     final BookieRequestProcessor requestProcessor;
     final long enqueueNanos;
+    private long writeNanos;
 
     public PacketProcessorBaseV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
@@ -53,7 +54,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
     }
 
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
-        final long writeNanos = MathUtils.nowInNano();
+        writeNanos = MathUtils.nowInNano();
 
         Channel channel = requestHandler.ctx().channel();
         final long timeOut = requestProcessor.getWaitTimeoutOnBackpressureMillis();
@@ -80,9 +81,8 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
             if (!channel.isWritable()) {
                 log.warn("cannot write response to non-writable channel {} for request {}", channel,
                         StringUtils.requestToString(request));
-                requestProcessor.getRequestStats().getChannelWriteStats()
-                        .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                onSendResponseFailure();
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
@@ -92,13 +92,10 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
             channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                     if (!future.isSuccess()) {
-                        requestProcessor.getRequestStats().getChannelWriteStats()
-                                .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                        onSendResponseFailure();
                     } else {
-                        requestProcessor.getRequestStats().getChannelWriteStats()
-                                .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                        onSendResponseSuccess();
                     }
                     if (StatusCode.EOK == code) {
                         statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
@@ -110,6 +107,7 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         } else {
             log.debug("Netty channel {} is inactive, "
                     + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+            onSendResponseFailure();
         }
     }
 
@@ -128,6 +126,16 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
         header.setOperation(request.getHeader().getOperation());
         header.setTxnId(request.getHeader().getTxnId());
         return header.build();
+    }
+
+    protected void onSendResponseSuccess() {
+        requestProcessor.getRequestStats().getChannelWriteStats()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
+    }
+
+    protected void onSendResponseFailure() {
+        requestProcessor.getRequestStats().getChannelWriteStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
     }
 
     @Override
