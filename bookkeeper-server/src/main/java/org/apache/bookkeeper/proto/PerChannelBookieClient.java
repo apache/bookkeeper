@@ -561,7 +561,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (!(eventLoopGroup instanceof DefaultEventLoopGroup)) {
             bootstrap.option(ChannelOption.TCP_NODELAY, conf.getClientTcpNoDelay());
             bootstrap.option(ChannelOption.SO_KEEPALIVE, conf.getClientSockKeepalive());
-
+            if (eventLoopGroup instanceof EpollEventLoopGroup) {
+                // Set TCP keepalive parameters if configured
+                if (conf.getTcpKeepIdle() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, conf.getTcpKeepIdle());
+                }
+                if (conf.getTcpKeepIntvl() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, conf.getTcpKeepIntvl());
+                }
+                if (conf.getTcpKeepCnt() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getTcpKeepCnt());
+                }
+            }
             // if buffer sizes are 0, let OS auto-tune it
             if (conf.getClientSendBufferSize() > 0) {
                 bootstrap.option(ChannelOption.SO_SNDBUF, conf.getClientSendBufferSize());
