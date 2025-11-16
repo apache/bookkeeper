@@ -889,6 +889,7 @@ public class GarbageCollectorThread implements Runnable {
 
     public GarbageCollectionStatus getGarbageCollectionStatus() {
         return GarbageCollectionStatus.builder()
+            .ledgerDir(ledgerDirsManager.getAllLedgerDirs().get(0).getParent())
             .forceCompacting(forceGarbageCollection.get())
             .majorCompacting(majorCompacting.get())
             .minorCompacting(minorCompacting.get())
