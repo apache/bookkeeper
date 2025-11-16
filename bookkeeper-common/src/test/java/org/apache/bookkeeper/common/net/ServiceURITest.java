@@ -55,6 +55,7 @@ public class ServiceURITest {
             "bk://localhost:2181:3181/path/to/namespace",   // invalid hostname pair
             "bk://localhost:xyz/path/to/namespace",         // invalid port
             "bk://localhost:-2181/path/to/namespace",       // negative port
+            "bk://fec0:0:0:ffff::1:6650",   // missing brackets
         };
 
         for (String uri : uris) {
@@ -121,6 +122,31 @@ public class ServiceURITest {
             new String[] { "localhost:2181" },
             "/path/to/namespace");
     }
+
+    @Test
+    public void testIpv6Uri() {
+        String serviceUri = "bk://bkuser@[fec0:0:0:ffff::1]:4181/path/to/namespace";
+        assertServiceUri(
+            serviceUri,
+            "bk",
+            new String[0],
+            "bkuser",
+            new String[] { "[fec0:0:0:ffff::1]:4181" },
+            "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultiIpv6UriWithoutPort() {
+        String serviceUri = "bk://bkuser@[fec0:0:0:ffff::1],[fec0:0:0:ffff::2];[fec0:0:0:ffff::3]/path/to/namespace";
+        assertServiceUri(
+            serviceUri,
+            "bk",
+            new String[0],
+            "bkuser",
+            new String[] { "[fec0:0:0:ffff::1]:4181", "[fec0:0:0:ffff::2]:4181", "[fec0:0:0:ffff::3]:4181" },
+            "/path/to/namespace");
+    }
+
 
     @Test
     public void testMultipleHostsSemiColon() {
