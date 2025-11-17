@@ -2271,30 +2271,43 @@ public class LedgerHandle implements WriteHandle {
 
                         List<BookieId> newEnsemble = null;
                         Set<Integer> replaced = null;
+                        synchronized (metadataLock) {
+                            if (delayedWriteFailedBookies.isEmpty()) {
+                                newEnsemble = getCurrentEnsemble();
+                                replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
+                                LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
+                            }
+                        }
+
+                        if (newEnsemble != null) {
+                            // Resend write requests while changingEnsemble is true (unsetSuccess outside the lock).
+                            // sendAddSuccessCallbacks() is skipped in this state,
+                            // preventing pending adds from being marked complete prematurely.
+                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                        }
 
                         Map<Integer, BookieId> toReplace = null;
+                        List<BookieId> nextOrigEnsemble = null;
+                        boolean triggerCallbacks = false;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
                                 toReplace = new HashMap<>(delayedWriteFailedBookies);
                                 delayedWriteFailedBookies.clear();
+                                nextOrigEnsemble = newEnsemble != null ? newEnsemble : origEnsemble;
                             } else {
-                                newEnsemble = getCurrentEnsemble();
-                                replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
-                                LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
-
-                                // Since changingEnsemble is true, processing in #sendAddSuccessCallbacks() is skipped.
-                                unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                                 changingEnsemble = false;
+                                triggerCallbacks = true;
                             }
                         }
 
-                        if (toReplace != null && !toReplace.isEmpty()) {
-                            ensembleChangeLoop(origEnsemble, toReplace);
+                        if (triggerCallbacks) {
+                            // Trigger sendAddSuccessCallbacks() after changingEnsemble is set to false,
+                            // so that pending adds can complete once the ensemble change is finished.
+                            sendAddSuccessCallbacks();
                         }
 
-                        if (newEnsemble != null) {
-                            // After changingEnsemble is changed to false, call #sendAddSuccessCallbacks().
-                            sendAddSuccessCallbacks();
+                        if (toReplace != null && !toReplace.isEmpty()) {
+                            ensembleChangeLoop(nextOrigEnsemble, toReplace);
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
