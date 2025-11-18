@@ -477,11 +477,13 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
 
         // Mock NetUtils.
         try (MockedStatic<NetUtils> netUtils = Mockito.mockStatic(NetUtils.class)) {
-            netUtils.when(() -> NetUtils.resolveNetworkLocation(any(DNSToSwitchMapping.class), any(BookieSocketAddress.class))).thenCallRealMethod();
+            netUtils.when(() -> NetUtils.resolveNetworkLocation(
+                    any(DNSToSwitchMapping.class), any(BookieSocketAddress.class))).thenCallRealMethod();
             netUtils.when(() -> NetUtils.normalizeToHostNames(any())).thenCallRealMethod();
             netUtils.when(() -> NetUtils.normalizeToHostName(anyString())).thenCallRealMethod();
 
-            netUtils.when(() -> NetUtils.normalizeToHostName(eq(InetAddress.getLocalHost().getHostAddress()))).thenReturn("bookie1");
+            netUtils.when(() -> NetUtils.normalizeToHostName(
+                    eq(InetAddress.getLocalHost().getHostAddress()))).thenReturn("bookie1");
             netUtils.when(() -> NetUtils.normalizeToHostName(eq("127.0.0.4"))).thenReturn("bookie22");
 
             // Initialize RackawareEnsemblePlacementPolicy.
@@ -518,7 +520,8 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                     addr1.toBookieId(), new HashSet<>()).getResult();
             assertEquals(addr2.toBookieId(), replacedBookie);
 
-            netUtils.verify(() -> NetUtils.normalizeToHostName(eq(InetAddress.getLocalHost().getHostAddress())), times(1));
+            netUtils.verify(() -> NetUtils.normalizeToHostName(
+                    eq(InetAddress.getLocalHost().getHostAddress())), times(1));
             netUtils.verify(() -> NetUtils.normalizeToHostName(eq("127.0.0.4")), times(1));
         }
     }
