@@ -384,15 +384,21 @@ public class DefaultEntryLogger implements EntryLogger {
      */
     private int readFromLogChannel(long entryLogId, BufferedReadChannel channel, ByteBuf buff, long pos)
             throws IOException {
+        return readFromLogChannel(entryLogId, channel, buff, pos, 0);
+    }
+
+    private int readFromLogChannel(long entryLogId, BufferedReadChannel channel, ByteBuf buff, long pos,
+                                   int readExtraBytes)
+            throws IOException {
         BufferedLogChannel bc = entryLogManager.getCurrentLogIfPresent(entryLogId);
         if (null != bc) {
             synchronized (bc) {
                 if (pos + buff.writableBytes() >= bc.getFileChannelPosition()) {
-                    return bc.read(buff, pos);
+                    return bc.read(buff, pos, buff.writableBytes(), readExtraBytes);
                 }
             }
         }
-        return channel.read(buff, pos);
+        return channel.read(buff, pos, buff.writableBytes(), readExtraBytes);
     }
 
     /**
@@ -828,16 +834,27 @@ public class DefaultEntryLogger implements EntryLogger {
     @Override
     public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
             throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(ledgerId, entryId, entryLocation, true /* validateEntry */);
+        return internalReadEntry(ledgerId, entryId, entryLocation, true /* validateEntry */,
+                0).getRight();
+    }
+
+    @Override
+    public Pair<Integer, ByteBuf> readEntryAndExtraBytes(long ledgerId, long entryId, long entryLocation,
+                                                         int extraBytes)
+        throws IOException, Bookie.NoEntryException {
+        return internalReadEntry(ledgerId, entryId, entryLocation, true /* validateEntry */,
+                extraBytes);
     }
 
     @Override
     public ByteBuf readEntry(long location) throws IOException, Bookie.NoEntryException {
-        return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
+        return internalReadEntry(-1L, -1L, location, false /* validateEntry */,
+                0).getRight();
     }
 
 
-    private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
+    private Pair<Integer, ByteBuf> internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry,
+                                      int readExtraBytes)
             throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = posForOffset(location);
@@ -857,18 +874,20 @@ public class DefaultEntryLogger implements EntryLogger {
             throw new IOException("Bad entry read from log file id: " + entryLogId, e);
         }
 
-        ByteBuf data = allocator.buffer(entrySize, entrySize);
-        int rc = readFromLogChannel(entryLogId, fc, data, pos);
-        if (rc != entrySize) {
+        int readSize = entrySize + readExtraBytes;
+        ByteBuf data = allocator.buffer(readSize, readSize);
+        int rc = readFromLogChannel(entryLogId, fc, data, pos, readExtraBytes);
+        if (rc < entrySize) {
             ReferenceCountUtil.release(data);
             throw new IOException("Bad entry read from log file id: " + entryLogId,
                     new EntryLookupException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
-                                              + pos + "(" + rc + "!=" + entrySize + ")"));
+                                              + pos + "(" + rc + "<" + entrySize + "@"
+                                              + rc + "!=" + readSize + ")"));
         }
-        data.writerIndex(entrySize);
+        data.writerIndex(rc);
 
-        return data;
+        return Pair.of(entrySize, data);
     }
 
     /**

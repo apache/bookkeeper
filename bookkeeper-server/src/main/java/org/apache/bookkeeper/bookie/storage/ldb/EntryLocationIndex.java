@@ -49,7 +49,7 @@ public class EntryLocationIndex implements Closeable {
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
     private final EntryLocationIndexStats stats;
     private boolean isCompacting;
-
+    private final LocationCache locationCache = new LocationCache();
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
         locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
@@ -236,6 +236,9 @@ public class EntryLocationIndex implements Closeable {
                 firstKeyWrapper.set(ledgerId, 0);
                 lastKeyWrapper.set(ledgerId, Long.MAX_VALUE);
 
+
+                // remove ledger from location cache
+                locationCache.removeLedger(ledgerId);
                 batch.deleteRange(firstKeyWrapper.array, lastKeyWrapper.array);
             }
 
@@ -250,6 +253,20 @@ public class EntryLocationIndex implements Closeable {
 
         log.info("Deleted indexes from {} ledgers in {} seconds", ledgersToDelete.size(),
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) / 1000.0);
+    }
+
+    public long tryGetLocationFromLocationCache(long ledgerId, long entryId) {
+        return locationCache.getIfExists(ledgerId, entryId);
+    }
+
+    public void updateLocationToLocationCache(long ledgerId, long entryId, long location) {
+        locationCache.put(ledgerId, entryId, location);
+    }
+
+    public void updateIndexCache(Iterable<EntryLocation> newLocations) {
+        for (EntryLocation location : newLocations) {
+            locationCache.put(location.ledger, location.entry, location.location);
+        }
     }
 
     private static final Logger log = LoggerFactory.getLogger(EntryLocationIndex.class);

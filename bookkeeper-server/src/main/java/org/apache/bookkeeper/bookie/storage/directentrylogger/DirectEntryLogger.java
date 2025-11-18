@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.AbstractLogCompactor;
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
@@ -59,6 +60,7 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.LedgerDirUtil;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * DirectEntryLogger.
@@ -209,6 +211,13 @@ public class DirectEntryLogger implements EntryLogger {
     public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
             throws IOException, NoEntryException {
         return internalReadEntry(ledgerId, entryId, entryLocation, true);
+    }
+
+    @Override
+    public Pair<Integer, ByteBuf> readEntryAndExtraBytes(long ledgerId, long entryId, long entryLocation,
+                                                         int readBufferSize)
+        throws IOException, Bookie.NoEntryException {
+        throw new UnsupportedOperationException("readEntryAndExtraBytes is not supported in DirectEntryLogger");
     }
 
     private LogReader getReader(int logId) throws IOException {

@@ -242,12 +242,11 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     }
 
     @Override
-    public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
+    public synchronized int read(ByteBuf dest, long pos, int length, int readExtraBytes) throws IOException {
         if (dest.writableBytes() < length) {
             throw new IllegalArgumentException("dest buffer remaining capacity is not enough"
                     + "(must be at least as \"length\"=" + length + ")");
         }
-
         long prevPos = pos;
         while (length > 0) {
             // check if it is in the write buffer
@@ -255,6 +254,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
                 int positionInBuffer = (int) (pos - writeBufferStartPosition.get());
                 int bytesToCopy = Math.min(writeBuffer.writerIndex() - positionInBuffer, dest.writableBytes());
 
+                if (bytesToCopy == 0 && length <= readExtraBytes) {
+                    // try to read next entry position, but we have reached the last entry
+                    break;
+                }
                 if (bytesToCopy == 0) {
                     throw new IOException("Read past EOF");
                 }
@@ -278,6 +281,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
                 int readBytes = fileChannel.read(readBuffer.internalNioBuffer(0, readCapacity),
                         readBufferStartPosition);
+                if (readBytes <= 0 && length <= readExtraBytes) {
+                    // we have reached the last entry
+                    break;
+                }
                 if (readBytes <= 0) {
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }

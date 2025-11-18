@@ -82,6 +82,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
     public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
+    public static final String DISABLE_READ_CACHE = "dbStorage_disableReadCache";
+    public static final String ENABLE_LOCATION_CACHE = "dbStorage_enableLocationCache";
     public static final String DIRECT_IO_ENTRYLOGGER = "dbStorage_directIOEntryLogger";
     public static final String DIRECT_IO_ENTRYLOGGER_TOTAL_WRITEBUFFER_SIZE_MB =
         "dbStorage_directIOEntryLoggerTotalWriteBufferSizeMB";
@@ -101,6 +103,8 @@ public class DbLedgerStorage implements LedgerStorage {
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB =
         (long) (0.25 * PlatformDependent.estimateMaxDirectMemory()) / MB;
 
+    private static final boolean DEFAULT_DISABLE_READ_CACHE = false;
+    private static final boolean DEFAULT_ENABLE_LOCATION_CACHE = false;
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
     static final String READ_AHEAD_CACHE_BATCH_BYTES_SIZE = "dbStorage_readAheadCacheBatchBytesSize";
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
@@ -155,13 +159,20 @@ public class DbLedgerStorage implements LedgerStorage {
                 DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
         boolean directIOEntryLogger = getBooleanVariableOrDefault(conf, DIRECT_IO_ENTRYLOGGER, false);
 
+        boolean disableReadCache = getBooleanVariableOrDefault(conf, DISABLE_READ_CACHE, DEFAULT_DISABLE_READ_CACHE);
+        boolean enableLocationCache = getBooleanVariableOrDefault(conf, ENABLE_LOCATION_CACHE,
+                DEFAULT_ENABLE_LOCATION_CACHE);
         this.allocator = allocator;
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
 
         log.info("Started Db Ledger Storage");
         log.info(" - Number of directories: {}", numberOfDirs);
         log.info(" - Write cache size: {} MB", writeCacheMaxSize / MB);
-        log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
+        if (disableReadCache) {
+            log.info(" - Read Cache: DISABLED");
+        } else {
+            log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
+        }
 
         if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.estimateMaxDirectMemory()) {
             throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
@@ -242,7 +253,7 @@ public class DbLedgerStorage implements LedgerStorage {
                 idm, entrylogger,
                 statsLogger, perDirectoryWriteCacheSize,
                 perDirectoryReadCacheSize,
-                readAheadCacheBatchSize, readAheadCacheBatchBytesSize));
+                readAheadCacheBatchSize, readAheadCacheBatchBytesSize, disableReadCache, enableLocationCache));
             ldm.getListeners().forEach(ledgerDirsManager::addLedgerDirsListener);
             if (!lDirs[0].getPath().equals(iDirs[0].getPath())) {
                 idm.getListeners().forEach(indexDirsManager::addLedgerDirsListener);
@@ -281,11 +292,13 @@ public class DbLedgerStorage implements LedgerStorage {
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
             EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
+            int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize, boolean disableReadCache,
+                                                                               boolean enableLocationCache)
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
                                                   statsLogger, allocator, writeCacheSize, readCacheSize,
-                                                  readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
+                                                  readAheadCacheBatchSize, readAheadCacheBatchBytesSize, disableReadCache,
+                enableLocationCache);
     }
 
     @Override

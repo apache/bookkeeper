@@ -56,7 +56,8 @@ public class DbLedgerStorageWriteCacheTest {
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
             EntryLogger entryLogger, StatsLogger statsLogger,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
+            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize,
+            boolean disableReadCache, boolean enableLocationCache)
                 throws IOException {
             return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                 entryLogger, statsLogger, allocator, writeCacheSize,
@@ -72,7 +73,7 @@ public class DbLedgerStorageWriteCacheTest {
                     throws IOException {
                 super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
                       statsLogger, allocator, writeCacheSize, readCacheSize, readAheadCacheBatchSize,
-                      readAheadCacheBatchBytesSize);
+                      readAheadCacheBatchBytesSize, false, false);
             }
 
           @Override
