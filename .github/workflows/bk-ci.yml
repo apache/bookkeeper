@@ -209,7 +209,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     needs: [ 'build-and-license-check' ]
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
@@ -303,7 +303,7 @@ jobs:
   backward-compatibility-tests:
     name: Backward compatibility tests
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     needs: [ 'build-and-license-check' ]
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
     steps:
