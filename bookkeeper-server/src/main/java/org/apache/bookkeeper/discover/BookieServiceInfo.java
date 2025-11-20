@@ -154,10 +154,16 @@ public final class BookieServiceInfo {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Endpoint)) return false;
-            Endpoint endpoint = (Endpoint) o;
-            return port == endpoint.port && Objects.equals(id, endpoint.id) && Objects.equals(host, endpoint.host) && Objects.equals(protocol, endpoint.protocol) && Objects.equals(auth, endpoint.auth) && Objects.equals(extensions, endpoint.extensions);
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Endpoint)) {
+                return false;
+            }
+            final Endpoint endpoint = (Endpoint) o;
+            return port == endpoint.port && Objects.equals(id, endpoint.id) && Objects.equals(host, endpoint.host)
+                    && Objects.equals(protocol, endpoint.protocol) && Objects.equals(auth, endpoint.auth)
+                    && Objects.equals(extensions, endpoint.extensions);
         }
 
         @Override
@@ -175,8 +181,12 @@ public final class BookieServiceInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BookieServiceInfo)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BookieServiceInfo)) {
+            return false;
+        }
         final BookieServiceInfo that = (BookieServiceInfo) o;
         return Objects.equals(properties, that.properties) && Objects.equals(endpoints, that.endpoints);
     }
