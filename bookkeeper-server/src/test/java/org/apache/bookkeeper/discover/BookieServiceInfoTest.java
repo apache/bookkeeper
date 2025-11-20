@@ -22,13 +22,15 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.bookkeeper.discover.BookieServiceInfo.Endpoint;
 import org.apache.bookkeeper.net.BookieId;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -88,6 +90,24 @@ public class BookieServiceInfoTest {
             assertArrayEquals(e.getExtensions().toArray(), ep.getExtensions().toArray());
         }
         assertEquals(expected.getProperties(), provided.getProperties());
+    }
+
+    @Test
+    public void testComparableBookieServerInfo() throws Exception {
+        final BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint(
+                "http", 8080, "host1", "HTTP",
+                Lists.newArrayList("auth1"), Lists.newArrayList("ext1")
+        );
+        final Map<String, String> properties1 = Maps.newHashMap();
+        properties1.put("key", "value");
+        final BookieServiceInfo info = new BookieServiceInfo(
+                properties1,
+                Lists.newArrayList(endpoint)
+        );
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String bData = objectMapper.writeValueAsString(info);
+        final BookieServiceInfo another = objectMapper.readValue(bData, BookieServiceInfo.class);
+        Assert.assertEquals(info, another);
     }
 
 }
