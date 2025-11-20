@@ -175,7 +175,7 @@ public final class BookieServiceInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
+        if (this == o) return true;
         if (!(o instanceof BookieServiceInfo)) return false;
         final BookieServiceInfo that = (BookieServiceInfo) o;
         return Objects.equals(properties, that.properties) && Objects.equals(endpoints, that.endpoints);
