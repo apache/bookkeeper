@@ -206,6 +206,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     //For batch read api, it the batch read is not stable, we can fail back to single read by this config.
     protected static final String BATCH_READ_ENABLED = "batchReadEnabled";
 
+    // SO_KEEPALIVE related configurations
+    public static final String TCP_KEEPIDLE = "tcpKeepIdle";
+    public static final String TCP_KEEPINTVL = "tcpKeepIntvl";
+    public static final String TCP_KEEPCNT = "tcpKeepCnt";
+
     /**
      * Construct a default client-side configuration.
      */
@@ -2105,6 +2110,60 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     public boolean isBatchReadEnabled() {
         return getBoolean(BATCH_READ_ENABLED, true);
+    }
+
+    /**
+     * Set TCP_KEEPIDLE value for SO_KEEPALIVE.
+     * @param keepIdle time in seconds
+     * @return client configuration
+     */
+    public ClientConfiguration setTcpKeepIdle(int keepIdle) {
+        setProperty(TCP_KEEPIDLE, keepIdle);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPIDLE value for SO_KEEPALIVE.
+     * @return time in seconds, -1 means use system default
+     */
+    public int getTcpKeepIdle() {
+        return getInt(TCP_KEEPIDLE, -1);
+    }
+
+    /**
+     * Set TCP_KEEPINTVL value for SO_KEEPALIVE.
+     * @param keepIntvl time in seconds
+     * @return client configuration
+     */
+    public ClientConfiguration setTcpKeepIntvl(int keepIntvl) {
+        setProperty(TCP_KEEPINTVL, keepIntvl);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPINTVL value for SO_KEEPALIVE.
+     * @return time in seconds, -1 means use system default
+     */
+    public int getTcpKeepIntvl() {
+        return getInt(TCP_KEEPINTVL, -1);
+    }
+
+    /**
+     * Set TCP_KEEPCNT value for SO_KEEPALIVE.
+     * @param keepCnt count
+     * @return client configuration
+     */
+    public ClientConfiguration setTcpKeepCnt(int keepCnt) {
+        setProperty(TCP_KEEPCNT, keepCnt);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPCNT value for SO_KEEPALIVE.
+     * @return count, -1 means use system default
+     */
+    public int getTcpKeepCnt() {
+        return getInt(TCP_KEEPCNT, -1);
     }
 
     @Override
