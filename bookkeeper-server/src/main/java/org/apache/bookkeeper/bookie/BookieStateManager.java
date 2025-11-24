@@ -297,6 +297,10 @@ public class BookieStateManager implements StateManager {
         }
     }
 
+    public void doTransitionToWritableMode() {
+        doTransitionToWritableMode(false);
+    }
+
     @VisibleForTesting
     public void doTransitionToWritableMode(boolean isManuallyModify) {
         if (shuttingdown || forceReadOnly.get()) {
@@ -336,6 +340,10 @@ public class BookieStateManager implements StateManager {
             LOG.warn("Failed to delete bookie readonly state in zookeeper : ", e);
             return;
         }
+    }
+
+    public void doTransitionToReadOnlyMode() {
+        doTransitionToReadOnlyMode(false);
     }
 
     @VisibleForTesting
