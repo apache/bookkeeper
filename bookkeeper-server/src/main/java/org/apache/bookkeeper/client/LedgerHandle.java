@@ -2271,27 +2271,43 @@ public class LedgerHandle implements WriteHandle {
 
                         List<BookieId> newEnsemble = null;
                         Set<Integer> replaced = null;
+                        synchronized (metadataLock) {
+                            if (delayedWriteFailedBookies.isEmpty()) {
+                                newEnsemble = getCurrentEnsemble();
+                                replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
+                                LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
+                            }
+                        }
+
+                        if (newEnsemble != null) {
+                            // Resend write requests while changingEnsemble is true (unsetSuccess outside the lock).
+                            // sendAddSuccessCallbacks() is skipped in this state,
+                            // preventing pending adds from being marked complete prematurely.
+                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                        }
 
                         Map<Integer, BookieId> toReplace = null;
+                        List<BookieId> nextOrigEnsemble = null;
+                        boolean triggerCallbacks = false;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
                                 toReplace = new HashMap<>(delayedWriteFailedBookies);
                                 delayedWriteFailedBookies.clear();
+                                nextOrigEnsemble = newEnsemble != null ? newEnsemble : origEnsemble;
                             } else {
-                                newEnsemble = getCurrentEnsemble();
-                                replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
-                                LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
-
                                 changingEnsemble = false;
+                                triggerCallbacks = true;
                             }
                         }
 
-                        if (toReplace != null && !toReplace.isEmpty()) {
-                            ensembleChangeLoop(origEnsemble, toReplace);
+                        if (triggerCallbacks) {
+                            // Trigger sendAddSuccessCallbacks() after changingEnsemble is set to false,
+                            // so that pending adds can complete once the ensemble change is finished.
+                            sendAddSuccessCallbacks();
                         }
 
-                        if (newEnsemble != null) { // unsetSuccess outside of lock
-                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                        if (toReplace != null && !toReplace.isEmpty()) {
+                            ensembleChangeLoop(nextOrigEnsemble, toReplace);
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
@@ -2303,6 +2319,21 @@ public class LedgerHandle implements WriteHandle {
                 pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
             }
         }
+        // Suppose that unset doesn't happen on the write set of an entry. In this
+        // case we don't need to resend the write request upon an ensemble change.
+        // We do need to invoke #sendAddSuccessCallbacks() for such entries because
+        // they may have already completed, but they are just waiting for the ensemble
+        // to change.
+        // E.g.
+        // ensemble (A, B, C, D), entry k is written to (A, B, D). An ensemble change
+        // happens to replace C with E. Entry k does not complete until C is
+        // replaced with E successfully. When the ensemble change completes, it tries
+        // to unset entry k. C however is not in k's write set, so no entry is written
+        // again, and no one triggers #sendAddSuccessCallbacks. Consequently, k never
+        // completes.
+        //
+        // We call sendAddSuccessCallback to cover this case.
+        sendAddSuccessCallbacks();
     }
 
     void registerOperationFailureOnBookie(BookieId bookie, long entryId) {
