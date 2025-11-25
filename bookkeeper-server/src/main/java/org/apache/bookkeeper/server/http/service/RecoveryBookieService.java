@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -54,6 +55,7 @@ public class RecoveryBookieService implements HttpEndpointService {
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
     protected ExecutorService executor;
+    protected volatile Future<?> recoverTask;
 
     public RecoveryBookieService(ServerConfiguration conf, BookKeeperAdmin bka, ExecutorService executor) {
         checkNotNull(conf);
@@ -83,53 +85,73 @@ public class RecoveryBookieService implements HttpEndpointService {
         String requestBody = request.getBody();
         RecoveryRequestJsonBody requestJsonBody;
 
-        if (requestBody == null) {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("No request body provide.");
-            return response;
-        }
-
-        try {
-            requestJsonBody = JsonUtil.fromJson(requestBody, RecoveryRequestJsonBody.class);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("bookie_src: [" + requestJsonBody.bookieSrc.get(0)
-                        + "],  delete_cookie: [" + requestJsonBody.deleteCookie + "]");
+        if (HttpServer.Method.GET == request.getMethod()) {
+            if (recoverTask == null || recoverTask.isDone()) {
+                response.setCode(HttpServer.StatusCode.OK);
+                response.setBody("There is not a RecoveryBookie task currently running.");
+            } else {
+                response.setCode(HttpServer.StatusCode.OK);
+                response.setBody("There is a RecoveryBookie task currently running.");
             }
-        } catch (JsonUtil.ParseJsonException e) {
-            LOG.error("Meet Exception: ", e);
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("ERROR parameters: " + e.getMessage());
-            return response;
-        }
 
-        if (HttpServer.Method.PUT == request.getMethod() && !requestJsonBody.bookieSrc.isEmpty()) {
-            runFunctionWithRegistrationManager(conf, rm -> {
-                final String bookieSrcSerialized = requestJsonBody.bookieSrc.get(0);
-                executor.execute(() -> {
-                    try {
-                        BookieId bookieSrc = BookieId.parse(bookieSrcSerialized);
-                        boolean deleteCookie = requestJsonBody.deleteCookie;
-                        LOG.info("Start recovering bookie.");
-                        bka.recoverBookieData(bookieSrc);
-                        if (deleteCookie) {
-                            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
-                            cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
-                        }
-                        LOG.info("Complete recovering bookie");
-                    } catch (Exception e) {
-                        LOG.error("Exception occurred while recovering bookie", e);
-                    }
-                });
-                return null;
-            });
-
-            response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Success send recovery request command.");
             return response;
         } else {
-            response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT method");
-            return response;
+            if (requestBody == null) {
+                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setBody("No request body provide.");
+                return response;
+            }
+
+            try {
+                requestJsonBody = JsonUtil.fromJson(requestBody, RecoveryRequestJsonBody.class);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("bookie_src: [" + requestJsonBody.bookieSrc.get(0)
+                            + "],  delete_cookie: [" + requestJsonBody.deleteCookie + "]");
+                }
+            } catch (JsonUtil.ParseJsonException e) {
+                LOG.error("Meet Exception: ", e);
+                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setBody("ERROR parameters: " + e.getMessage());
+                return response;
+            }
+
+            if (HttpServer.Method.PUT == request.getMethod() && !requestJsonBody.bookieSrc.isEmpty()) {
+                if (recoverTask == null || recoverTask.isDone()) {
+                    runFunctionWithRegistrationManager(conf, rm -> {
+                        final String bookieSrcSerialized = requestJsonBody.bookieSrc.get(0);
+                        recoverTask = executor.submit(() -> {
+                            try {
+                                BookieId bookieSrc = BookieId.parse(bookieSrcSerialized);
+                                boolean deleteCookie = requestJsonBody.deleteCookie;
+                                LOG.info("Start recovering bookie.");
+                                bka.recoverBookieData(bookieSrc);
+                                if (deleteCookie) {
+                                    Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
+                                    cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
+                                }
+                                LOG.info("Complete recovering bookie");
+                            } catch (Exception e) {
+                                LOG.error("Exception occurred while recovering bookie", e);
+                            } finally {
+                                recoverTask = null;
+                            }
+                        });
+                        return null;
+                    });
+
+                    response.setCode(HttpServer.StatusCode.OK);
+                    response.setBody("Success send recovery request command.");
+                } else {
+                    response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                    response.setBody("There is an already RecoveryBookie task running, ignoring this request.");
+                }
+
+                return response;
+            } else {
+                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setBody("Not found method. Should be PUT method");
+                return response;
+            }
         }
     }
 }

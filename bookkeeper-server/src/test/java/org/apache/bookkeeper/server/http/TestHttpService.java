@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.bookie.LedgerStorage;
@@ -64,6 +65,7 @@ import org.apache.bookkeeper.server.http.service.BookieSanityService.BookieSanit
 import org.apache.bookkeeper.server.http.service.BookieStateReadOnlyService.ReadOnlyState;
 import org.apache.bookkeeper.server.http.service.BookieStateService.BookieState;
 import org.apache.bookkeeper.server.http.service.ClusterInfoService;
+import org.apache.bookkeeper.server.http.service.RecoveryBookieService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.jupiter.api.AfterEach;
@@ -591,10 +593,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpEndpointService recoveryBookieService = bkHttpServiceProvider
           .provideHttpEndpointService(HttpServer.ApiType.RECOVERY_BOOKIE);
 
-        //1,  null body of GET, should return error
+        //1,  null body of GET, should return recoverTask status
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = recoveryBookieService.handle(request1);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        assertEquals("There is not a RecoveryBookie task currently running.", response1.getBody());
 
         //2,  null body of PUT, should return error
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
@@ -614,6 +617,16 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request5 = new HttpServiceRequest(putBody5, HttpServer.Method.PUT, null);
         HttpServiceResponse response5 = recoveryBookieService.handle(request5);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
+
+        //6, body with bookie_src of PUT, and recoverTask has running now, should return error.
+        RecoveryBookieService rbs = (RecoveryBookieService) recoveryBookieService;
+        Field recoverTaskField = rbs.getClass().getDeclaredField("recoverTask");
+        recoverTaskField.setAccessible(true);
+        recoverTaskField.set(rbs, new FutureTask(() -> {}, null));
+        HttpServiceResponse response6 = rbs.handle(request5);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response6.getStatusCode());
+        assertEquals("There is an already RecoveryBookie task running, ignoring this request.",
+                response6.getBody());
     }
 
     AuditorElector auditorElector;
