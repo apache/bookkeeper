@@ -207,6 +207,7 @@
     <otel.version>1.56.0</otel.version>
     <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
     <otel.semconv.version>1.37.0</otel.semconv.version>
+    <otel.contrib.version>1.52.0</otel.contrib.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
@@ -666,7 +667,7 @@
       <dependency>
         <groupId>io.opentelemetry.contrib</groupId>
         <artifactId>opentelemetry-gcp-resources</artifactId>
-        <version>${otel.version}-alpha</version>
+        <version>${otel.contrib.version}-alpha</version>
       </dependency>
       <dependency>
         <groupId>io.opentelemetry</groupId>
