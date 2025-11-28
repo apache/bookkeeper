@@ -208,6 +208,9 @@
     <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
     <otel.semconv.version>1.37.0</otel.semconv.version>
     <otel.contrib.version>1.52.0</otel.contrib.version>
+    <okhttp3.version>5.3.1</okhttp3.version>
+    <!-- use okio version that matches the okhttp3 version -->
+    <okio.version>3.16.3</okio.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
@@ -475,20 +478,21 @@
         <version>${failsafe.version}</version>
       </dependency>
 
-      <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp-bom</artifactId>
-        <version>4.12.0</version>
+        <version>${okhttp3.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- okhttp 4.12.0 use kotlin stdlib 1.8.21 -->
       <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-common</artifactId>
-        <version>1.8.21</version>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-bom</artifactId>
+        <version>${okio.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
+
 
       <!-- rocksdb dependencies -->
       <dependency>
