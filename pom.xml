@@ -204,9 +204,9 @@
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.45.0</otel.version>
-    <otel.instrumentation.version>1.33.6</otel.instrumentation.version>
-    <otel.semconv.version>1.29.0-alpha</otel.semconv.version>
+    <otel.version>1.56.0</otel.version>
+    <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
+    <otel.semconv.version>1.37.0</otel.semconv.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
