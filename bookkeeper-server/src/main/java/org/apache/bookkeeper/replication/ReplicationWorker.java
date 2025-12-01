@@ -192,7 +192,7 @@ public class ReplicationWorker implements Runnable {
         this.underreplicationManager = bkc.getLedgerManagerFactory().newLedgerUnderreplicationManager();
         this.ledgerManager = bkc.getLedgerManagerFactory().newLedgerManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger, new ClientConfiguration(conf));
-        this.ledgerChecker = new LedgerChecker(bkc);
+        this.ledgerChecker = new LedgerChecker(bkc, conf.getInFlightReadEntryNumInLedgerChecker());
         this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
