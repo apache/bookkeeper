@@ -1084,8 +1084,10 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            SanityTestCommand command = new SanityTestCommand();
             SanityTestCommand.SanityFlags flags = new SanityTestCommand.SanityFlags();
+            flags.entries(getOptionIntValue(cmdLine, "e", 10));
+            flags.timeout(getOptionIntValue(cmdLine, "t", 1));
+            SanityTestCommand command = SanityTestCommand.newSanityTestCommand(flags);
             boolean result = command.apply(bkConf, flags);
             return (result) ? 0 : -1;
         }
