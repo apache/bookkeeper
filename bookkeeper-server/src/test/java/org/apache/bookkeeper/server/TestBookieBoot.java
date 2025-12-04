@@ -25,6 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
@@ -40,7 +41,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.PortManager;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +75,9 @@ public class TestBookieBoot extends BookKeeperClusterTestCase {
         }
 
         File confFile = File.createTempFile("test", "conf");
-        propsConf.save(confFile);
+        try (FileWriter writer = new FileWriter(confFile)) {
+            propsConf.write(writer);
+        }
 
         log.info("Conf: {}", confFile);
 

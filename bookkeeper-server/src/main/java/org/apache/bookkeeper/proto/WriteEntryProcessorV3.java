@@ -136,8 +136,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             logger.error("Error writing entry:{} to ledger:{}",
                     entryId, ledgerId, e);
             status = StatusCode.EIO;
-        } catch (BookieException.LedgerFencedException e) {
-            logger.error("Ledger fenced while writing entry:{} to ledger:{}",
+        } catch (BookieException.LedgerFencedException | BookieException.LedgerFencedAndDeletedException e) {
+            logger.error("Ledger fenced/deleted while writing entry:{} to ledger:{}",
                     entryId, ledgerId, e);
             status = StatusCode.EFENCED;
         } catch (BookieException e) {

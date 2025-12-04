@@ -215,9 +215,10 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 }
             }
             return readEntry(readResponse, entryId, startTimeSw);
-        } catch (Bookie.NoLedgerException e) {
+        } catch (Bookie.NoLedgerException | BookieException.LedgerFencedAndDeletedException e) {
             if (RequestUtils.isFenceRequest(readRequest)) {
-                LOG.info("No ledger found reading entry {} when fencing ledger {}", entryId, ledgerId);
+                LOG.info("No ledger found(or it has been deleted) reading entry {} when fencing ledger {}",
+                    entryId, ledgerId);
             } else if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
                 LOG.info("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
             } else if (LOG.isDebugEnabled()) {

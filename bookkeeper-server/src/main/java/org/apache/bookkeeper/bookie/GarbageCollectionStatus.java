@@ -42,6 +42,8 @@ public class GarbageCollectionStatus {
 
     private long lastMajorCompactionTime;
     private long lastMinorCompactionTime;
+    private long lastEntryLocationCompactionTime;
     private long majorCompactionCounter;
     private long minorCompactionCounter;
+    private long entryLocationCompactionCounter;
 }

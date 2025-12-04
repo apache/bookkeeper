@@ -117,8 +117,16 @@ public class EntryLocationIndex implements Closeable {
     private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
         LongPairWrapper maxEntryId = LongPairWrapper.get(ledgerId, Long.MAX_VALUE);
 
+        long startTimeNanos = MathUtils.nowInNano();
         // Search the last entry in storage
         Entry<byte[], byte[]> entry = locationsDb.getFloor(maxEntryId.array);
+        if (entry != null) {
+            stats.getGetLastEntryInLedgerStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+        } else {
+            stats.getGetLastEntryInLedgerStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+        }
         maxEntryId.recycle();
 
         if (entry == null) {
@@ -139,10 +147,10 @@ public class EntryLocationIndex implements Closeable {
     }
 
     public void addLocation(long ledgerId, long entryId, long location) throws IOException {
-        Batch batch = locationsDb.newBatch();
-        addLocation(batch, ledgerId, entryId, location);
-        batch.flush();
-        batch.close();
+        try (Batch batch = locationsDb.newBatch()) {
+            addLocation(batch, ledgerId, entryId, location);
+            batch.flush();
+        }
     }
 
     public Batch newBatch() {
@@ -170,18 +178,17 @@ public class EntryLocationIndex implements Closeable {
             log.debug("Update locations -- {}", Iterables.size(newLocations));
         }
 
-        Batch batch = newBatch();
-        // Update all the ledger index pages with the new locations
-        for (EntryLocation e : newLocations) {
-            if (log.isDebugEnabled()) {
-                log.debug("Update location - ledger: {} -- entry: {}", e.ledger, e.entry);
+        try (Batch batch = newBatch()) {
+            // Update all the ledger index pages with the new locations
+            for (EntryLocation e : newLocations) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Update location - ledger: {} -- entry: {}", e.ledger, e.entry);
+                }
+
+                addLocation(batch, e.ledger, e.entry, e.location);
             }
-
-            addLocation(batch, e.ledger, e.entry, e.location);
+            batch.flush();
         }
-
-        batch.flush();
-        batch.close();
     }
 
     public void delete(long ledgerId) throws IOException {

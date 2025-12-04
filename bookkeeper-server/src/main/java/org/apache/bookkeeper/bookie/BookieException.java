@@ -69,6 +69,8 @@ public abstract class BookieException extends Exception {
             return new MetadataStoreException();
         case Code.UnknownBookieIdException:
             return new UnknownBookieIdException();
+        case Code.LedgerFencedAndDeletedException:
+            return new LedgerFencedAndDeletedException();
         case Code.DataUnknownException:
             return new DataUnknownException();
         default:
@@ -95,6 +97,7 @@ public abstract class BookieException extends Exception {
         int CookieExistsException = -109;
         int EntryLogMetadataMapException = -110;
         int DataUnknownException = -111;
+        int LedgerFencedAndDeletedException = -112;
     }
 
     public int getCode() {
@@ -195,6 +198,15 @@ public abstract class BookieException extends Exception {
      */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
+            super(Code.LedgerFencedException);
+        }
+    }
+
+    /**
+     * Signals that a ledger has been fenced in a bookie. No more entries can be appended to that ledger.
+     */
+    public static class LedgerFencedAndDeletedException extends BookieException {
+        public LedgerFencedAndDeletedException() {
             super(Code.LedgerFencedException);
         }
     }

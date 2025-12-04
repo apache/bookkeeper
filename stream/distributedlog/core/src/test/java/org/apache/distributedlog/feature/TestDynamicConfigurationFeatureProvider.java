@@ -17,16 +17,18 @@
  */
 package org.apache.distributedlog.feature;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.PropertiesWriter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test case for dynamic configuration based feature provider.
@@ -37,7 +39,7 @@ public class TestDynamicConfigurationFeatureProvider {
      * Make sure config is reloaded.
      *Give FileChangedReloadingStrategy some time to allow reloading
      * Make sure now!=lastChecked
-     * {@link org.apache.commons.configuration.reloading.FileChangedReloadingStrategy#reloadingRequired()}
+     * {@link org.apache.commons.configuration2.reloading.FileChangedReloadingStrategy#reloadingRequired()}
      */
     private void ensureConfigReloaded() throws InterruptedException {
         // sleep 1 ms so that System.currentTimeMillis() !=
@@ -45,7 +47,8 @@ public class TestDynamicConfigurationFeatureProvider {
         Thread.sleep(1);
     }
 
-    @Test(timeout = 60000)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    @Test
     public void testLoadFeaturesFromBase() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
         writer.setProperty("feature_1", "10000");
@@ -116,7 +119,7 @@ public class TestDynamicConfigurationFeatureProvider {
         provider.stop();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReloadFeaturesFromOverlay() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
         writer.setProperty("feature_1", "10000");

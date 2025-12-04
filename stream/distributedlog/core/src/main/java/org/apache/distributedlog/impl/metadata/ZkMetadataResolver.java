@@ -19,7 +19,7 @@ package org.apache.distributedlog.impl.metadata;
 
 import java.io.IOException;
 import java.net.URI;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.metadata.MetadataResolver;

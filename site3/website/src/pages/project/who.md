@@ -21,7 +21,7 @@ mmerli | Matteo Merli | StreamNative | -8
 rakeshr | Rakesh Radhakrishnan | Huawei | +5:30
 sijie | Sijie Guo | StreamNative | -8
 umamahesh | Uma Maheswara Rao G | Intel | +5
-zhaijia	| Jia Zhai | StreamNative | +8
+zhaijia	| Jia Zhai | AscentStream | +8
 
 ## Committers
 
@@ -49,4 +49,4 @@ sboobna | Siddharth Boobna | Salesforce | -8
 sijie | Sijie Guo | StreamNative | -8
 sjust | Sam Just | Salesforce | -8
 umamahesh | Uma Maheswara Rao G | Intel | +5
-zhaijia	| Jia Zhai | StreamNative | +8
+zhaijia	| Jia Zhai | AscentStream | +8

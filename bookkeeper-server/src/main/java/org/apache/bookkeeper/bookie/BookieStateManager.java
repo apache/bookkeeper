@@ -202,7 +202,7 @@ public class BookieStateManager implements StateManager {
     @Override
     public void initState(){
         if (forceReadOnly.get()) {
-            this.bookieStatus.setToReadOnlyMode();
+            this.bookieStatus.setToReadOnlyMode(false);
         } else if (conf.isPersistBookieStatusEnabled()) {
             this.bookieStatus.readFromDirectories(statusDirs);
         }
@@ -293,22 +293,22 @@ public class BookieStateManager implements StateManager {
     }
 
     @Override
-    public Future<Void> transitionToWritableMode() {
+    public Future<Void> transitionToWritableMode(boolean isManuallyModify) {
         return stateService.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception{
-                doTransitionToWritableMode();
+                doTransitionToWritableMode(isManuallyModify);
                 return null;
             }
         });
     }
 
     @Override
-    public Future<Void> transitionToReadOnlyMode() {
+    public Future<Void> transitionToReadOnlyMode(boolean isManuallyModify) {
         return stateService.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception{
-                doTransitionToReadOnlyMode();
+                doTransitionToReadOnlyMode(isManuallyModify);
                 return null;
             }
         });
@@ -334,9 +334,18 @@ public class BookieStateManager implements StateManager {
         }
     }
 
-    @VisibleForTesting
     public void doTransitionToWritableMode() {
+        doTransitionToWritableMode(false);
+    }
+
+    @VisibleForTesting
+    public void doTransitionToWritableMode(boolean isManuallyModify) {
         if (shuttingdown || forceReadOnly.get()) {
+            return;
+        }
+        if (!isManuallyModify && bookieStatus.isInReadOnlyMode() && bookieStatus.isManuallyModifiedToReadOnly()) {
+            LOG.info("Skip to transition Bookie to Writable mode automatically because it is manually set to read-only"
+                    + " mode, which can only be changed manually.");
             return;
         }
 
@@ -370,12 +379,16 @@ public class BookieStateManager implements StateManager {
         }
     }
 
-    @VisibleForTesting
     public void doTransitionToReadOnlyMode() {
+        doTransitionToReadOnlyMode(false);
+    }
+
+    @VisibleForTesting
+    public void doTransitionToReadOnlyMode(boolean isManuallyModify) {
         if (shuttingdown) {
             return;
         }
-        if (!bookieStatus.setToReadOnlyMode()) {
+        if (!bookieStatus.setToReadOnlyMode(isManuallyModify)) {
             return;
         }
         if (!conf.isReadOnlyModeEnabled()) {

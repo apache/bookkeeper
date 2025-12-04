@@ -273,7 +273,7 @@ class BookieWatcherImpl implements BookieWatcher {
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
                 if (ensembleSize > 1) {
-                    log.warn("New ensemble: {} is not adhering to Placement Policy. quarantinedBookies: {}",
+                    log.info("New ensemble: {} is not adhering to Placement Policy. quarantinedBookies: {}",
                             socketAddresses, quarantinedBookiesSet);
                 }
             }
@@ -289,7 +289,7 @@ class BookieWatcherImpl implements BookieWatcher {
             isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.getAdheringToPolicy();
             if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
                 ensembleNotAdheringToPlacementPolicy.inc();
-                log.warn("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
+                log.info("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
             }
             newEnsembleTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }

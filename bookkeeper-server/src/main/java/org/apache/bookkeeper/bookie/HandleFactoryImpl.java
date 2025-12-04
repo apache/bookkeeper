@@ -57,7 +57,7 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
 
         if (handle == null) {
             if (!journalReplay && recentlyFencedAndDeletedLedgers.getIfPresent(ledgerId) != null) {
-                throw BookieException.create(BookieException.Code.LedgerFencedException);
+                throw BookieException.create(BookieException.Code.LedgerFencedAndDeletedException);
             }
             handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
             ledgers.putIfAbsent(ledgerId, handle);

@@ -52,6 +52,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -137,7 +138,7 @@ public class LedgerHandle implements WriteHandle {
      */
     private int stickyBookieIndex;
 
-    long length;
+    final AtomicLong length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
@@ -188,10 +189,10 @@ public class LedgerHandle implements WriteHandle {
         LedgerMetadata metadata = versionedMetadata.getValue();
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
-            length = metadata.getLength();
+            length = new AtomicLong(metadata.getLength());
         } else {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
-            length = 0;
+            length = new AtomicLong();
         }
 
         this.pendingAddsSequenceHead = lastAddConfirmed;
@@ -365,7 +366,7 @@ public class LedgerHandle implements WriteHandle {
                 LedgerMetadata metadata = versionedMetadata.getValue();
                 if (metadata.isClosed()) {
                     lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
-                    length = metadata.getLength();
+                    length.set(metadata.getLength());
                 }
                 return true;
             } else {
@@ -422,9 +423,8 @@ public class LedgerHandle implements WriteHandle {
      * @param delta
      * @return the length of the ledger after the addition
      */
-    synchronized long addToLength(long delta) {
-        this.length += delta;
-        return this.length;
+    long addToLength(long delta) {
+        return length.addAndGet(delta);
     }
 
     /**
@@ -433,8 +433,8 @@ public class LedgerHandle implements WriteHandle {
      * @return the length of the ledger in bytes
      */
     @Override
-    public synchronized long getLength() {
-        return this.length;
+    public long getLength() {
+        return this.length.get();
     }
 
     /**
@@ -559,7 +559,7 @@ public class LedgerHandle implements WriteHandle {
 
                         // taking the length must occur after draining, as draining changes the length
                         lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
-                        finalLength = LedgerHandle.this.length;
+                        finalLength = LedgerHandle.this.length.get();
                         handleState = HandleState.CLOSED;
                     }
 
@@ -754,10 +754,10 @@ public class LedgerHandle implements WriteHandle {
      */
     public void asyncBatchReadEntries(long startEntry, int maxCount, long maxSize, ReadCallback cb, Object ctx) {
         // Little sanity check
-        if (startEntry > lastAddConfirmed) {
-            LOG.error("ReadEntries exception on ledgerId:{} firstEntry:{} lastAddConfirmed:{}",
+        if (startEntry < 0 || startEntry > lastAddConfirmed) {
+            LOG.error("IncorrectParameterException on ledgerId:{} startEntry:{} lastAddConfirmed:{}",
                     ledgerId, startEntry, lastAddConfirmed);
-            cb.readComplete(BKException.Code.ReadException, this, null, ctx);
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
         if (notSupportBatchRead()) {
@@ -956,13 +956,17 @@ public class LedgerHandle implements WriteHandle {
             boolean isRecoveryRead) {
         int nettyMaxFrameSizeBytes = clientCtx.getConf().nettyMaxFrameSizeBytes;
         if (maxSize > nettyMaxFrameSizeBytes) {
-            LOG.info(
-                "The max size is greater than nettyMaxFrameSizeBytes, use nettyMaxFrameSizeBytes:{} to replace it.",
-                nettyMaxFrameSizeBytes);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("The max size is greater than nettyMaxFrameSizeBytes, "
+                        + "use nettyMaxFrameSizeBytes:{} to replace it.", nettyMaxFrameSizeBytes);
+            }
             maxSize = nettyMaxFrameSizeBytes;
         }
         if (maxSize <= 0) {
-            LOG.info("The max size is negative, use nettyMaxFrameSizeBytes:{} to replace it.", nettyMaxFrameSizeBytes);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("The max size is negative, use nettyMaxFrameSizeBytes:{} to replace it.",
+                        nettyMaxFrameSizeBytes);
+            }
             maxSize = nettyMaxFrameSizeBytes;
         }
         BatchedReadOp op = new BatchedReadOp(this, clientCtx,
@@ -1649,7 +1653,7 @@ public class LedgerHandle implements WriteHandle {
             lacUpdateMissesCounter.inc();
         }
         lastAddPushed = Math.max(lastAddPushed, lac);
-        length = Math.max(length, len);
+        length.accumulateAndGet(len, (current, value) -> Math.max(current, value));
     }
 
     /**
@@ -1985,7 +1989,7 @@ public class LedgerHandle implements WriteHandle {
             isClosed = metadata.isClosed();
             if (isClosed) {
                 lastAddConfirmed = metadata.getLastEntryId();
-                length = metadata.getLength();
+                length.set(metadata.getLength());
             }
         }
         if (isClosed) {
@@ -2131,19 +2135,24 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void maybeHandleDelayedWriteBookieFailure() {
+        Map<Integer, BookieId> toReplace = null;
         synchronized (metadataLock) {
             if (delayedWriteFailedBookies.isEmpty()) {
                 return;
             }
-            Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
+            toReplace = new HashMap<>(delayedWriteFailedBookies);
             delayedWriteFailedBookies.clear();
-
-            // Original intent of this change is to do a best-effort ensemble change.
-            // But this is not possible until the local metadata is completely immutable.
-            // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
-            // handleBookieFailure() to handle delayed writes as regular bookie failures.
-            handleBookieFailure(toReplace);
         }
+
+        if (toReplace.isEmpty()) {
+            return;
+        }
+
+        // Original intent of this change is to do a best-effort ensemble change.
+        // But this is not possible until the local metadata is completely immutable.
+        // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
+        // handleBookieFailure() to handle delayed writes as regular bookie failures.
+        handleBookieFailure(toReplace);
     }
 
     void handleBookieFailure(final Map<Integer, BookieId> failedBookies) {
@@ -2262,12 +2271,12 @@ public class LedgerHandle implements WriteHandle {
 
                         List<BookieId> newEnsemble = null;
                         Set<Integer> replaced = null;
+
+                        Map<Integer, BookieId> toReplace = null;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
-                                Map<Integer, BookieId> toReplace = new HashMap<>(delayedWriteFailedBookies);
+                                toReplace = new HashMap<>(delayedWriteFailedBookies);
                                 delayedWriteFailedBookies.clear();
-
-                                ensembleChangeLoop(origEnsemble, toReplace);
                             } else {
                                 newEnsemble = getCurrentEnsemble();
                                 replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
@@ -2276,6 +2285,11 @@ public class LedgerHandle implements WriteHandle {
                                 changingEnsemble = false;
                             }
                         }
+
+                        if (toReplace != null && !toReplace.isEmpty()) {
+                            ensembleChangeLoop(origEnsemble, toReplace);
+                        }
+
                         if (newEnsemble != null) { // unsetSuccess outside of lock
                             unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                         }

@@ -117,6 +117,23 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
     @Override
     public void handleBookiesThatLeft(Set<BookieId> leftBookies) {
+        // case 1: (In some situation, eg, Broker and bookie restart concurrently.)
+        //1. Bookie X join cluster for the first time, encounters a region exception, and `address2Region` record X's
+        // region as default-region.
+        //2. Bookie X left cluster and is removed from knownBookies, but address2Region retains the information of
+        // bookie X.
+        //3. update Bookie X's rack info, and calling `onBookieRackChange` will only update address2Region for
+        // addresses present in knownBookies; therefore, bookie X's region info is not updated.
+        //4. Bookie X join cluster again, since address2Region contains the previous default-region information,
+        // getRegion will directly use cached data, resulting of an incorrect region.
+
+        // The bookie region is initialized to "default-region" in address2Region.
+        // We should ensure that when a bookie leaves the cluster,
+        // we also clean up the corresponding region information for that bookie in address2Region,
+        // so that it can update the correct region for the bookie during onBookieRackChange and
+        // handleBookiesThatJoined.
+        // to avoid traffic skew in ensemble selection.
+        leftBookies.forEach(address2Region::remove);
         super.handleBookiesThatLeft(leftBookies);
 
         for (TopologyAwareEnsemblePlacementPolicy policy: perRegionPlacement.values()) {
@@ -662,5 +679,13 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
          * - https://github.com/apache/bookkeeper/issues/1898
          */
         return PlacementPolicyAdherence.MEETS_STRICT;
+    }
+
+    @Override
+    public void updateBookieInfo(Map<BookieId, BookieInfoReader.BookieInfo> bookieInfoMap) {
+        super.updateBookieInfo(bookieInfoMap);
+        for (TopologyAwareEnsemblePlacementPolicy policy : perRegionPlacement.values()) {
+            policy.updateBookieInfo(bookieInfoMap);
+        }
     }
 }

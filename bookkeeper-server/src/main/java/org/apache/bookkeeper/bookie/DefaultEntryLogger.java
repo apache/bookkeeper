@@ -1061,7 +1061,7 @@ public class DefaultEntryLogger implements EntryLogger {
         } catch (FileNotFoundException fne) {
             LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
             throw fne;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
 
             // Fall-back to scanning
@@ -1149,6 +1149,10 @@ public class DefaultEntryLogger implements EntryLogger {
         if (meta.getLedgersMap().size() != header.ledgersCount) {
             throw new IOException("Not all ledgers were found in ledgers map index. expected: " + header.ledgersCount
                     + " -- found: " + meta.getLedgersMap().size() + " -- entryLogId: " + entryLogId);
+        }
+
+        if (header.ledgersCount == 0) {
+            throw new IOException("No ledgers map found in entryLogId " + entryLogId + ", do scan to double confirm");
         }
 
         return meta;

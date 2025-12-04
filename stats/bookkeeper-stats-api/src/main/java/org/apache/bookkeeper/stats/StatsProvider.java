@@ -18,8 +18,8 @@ package org.apache.bookkeeper.stats;
 
 import java.io.IOException;
 import java.io.Writer;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Provider to provide stats logger for different scopes.

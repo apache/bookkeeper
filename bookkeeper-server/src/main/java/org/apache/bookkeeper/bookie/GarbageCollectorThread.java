@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,6 +88,10 @@ public class GarbageCollectorThread implements Runnable {
     long majorCompactionMaxTimeMillis;
     long lastMajorCompactionTime;
 
+    final long entryLocationCompactionInterval;
+    long randomCompactionDelay;
+    long lastEntryLocationCompactionTime;
+
     @Getter
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -97,6 +102,7 @@ public class GarbageCollectorThread implements Runnable {
     // Stats loggers for garbage collection operations
     private final GarbageCollectorStats gcStats;
 
+    private volatile long activeEntryLogSize;
     private volatile long totalEntryLogSize;
     private volatile int numActiveEntryLogs;
     private volatile double entryLogCompactRatio;
@@ -175,6 +181,7 @@ public class GarbageCollectorThread implements Runnable {
         this.gcWaitTime = conf.getGcWaitTime();
 
         this.numActiveEntryLogs = 0;
+        this.activeEntryLogSize = 0L;
         this.totalEntryLogSize = 0L;
         this.entryLogCompactRatio = 0.0;
         this.currentEntryLogUsageBuckets = new int[ENTRY_LOG_USAGE_SEGMENT_COUNT];
@@ -182,6 +189,7 @@ public class GarbageCollectorThread implements Runnable {
         this.gcStats = new GarbageCollectorStats(
             statsLogger,
             () -> numActiveEntryLogs,
+            () -> activeEntryLogSize,
             () -> totalEntryLogSize,
             () -> garbageCollector.getNumActiveLedgers(),
             () -> entryLogCompactRatio,
@@ -208,6 +216,10 @@ public class GarbageCollectorThread implements Runnable {
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         majorCompactionMaxTimeMillis = conf.getMajorCompactionMaxTimeMillis();
         minorCompactionMaxTimeMillis = conf.getMinorCompactionMaxTimeMillis();
+        entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval() * SECOND;
+        if (entryLocationCompactionInterval > 0) {
+            randomCompactionDelay = ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
+        }
 
         boolean isForceAllowCompaction = conf.isForceAllowCompaction();
 
@@ -274,12 +286,22 @@ public class GarbageCollectorThread implements Runnable {
             }
         }
 
+        if (entryLocationCompactionInterval > 0) {
+            if (entryLocationCompactionInterval < gcWaitTime) {
+                throw new IOException(
+                        "Too short entry location compaction interval : " + entryLocationCompactionInterval);
+            }
+        }
+
         LOG.info("Minor Compaction : enabled=" + enableMinorCompaction + ", threshold="
                + minorCompactionThreshold + ", interval=" + minorCompactionInterval);
         LOG.info("Major Compaction : enabled=" + enableMajorCompaction + ", threshold="
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
+        LOG.info("Entry Location Compaction : interval=" + entryLocationCompactionInterval + ", randomCompactionDelay="
+                + randomCompactionDelay);
 
-        lastMinorCompactionTime = lastMajorCompactionTime = System.currentTimeMillis();
+        lastMinorCompactionTime = lastMajorCompactionTime =
+            lastEntryLocationCompactionTime = System.currentTimeMillis();
     }
 
     private EntryLogMetadataMap createEntryLogMetadataMap() throws IOException {
@@ -467,6 +489,7 @@ public class GarbageCollectorThread implements Runnable {
                     gcStats.getMajorCompactionCounter().inc();
                     majorCompacting.set(false);
                 }
+
             } else if (((isForceMinorCompactionAllow && force) || (enableMinorCompaction
                     && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)))
                     && (!suspendMinor)) {
@@ -486,6 +509,20 @@ public class GarbageCollectorThread implements Runnable {
                     minorCompacting.set(false);
                 }
             }
+            if (entryLocationCompactionInterval > 0 && (curTime - lastEntryLocationCompactionTime > (
+                    entryLocationCompactionInterval + randomCompactionDelay))) {
+                // enter entry location compaction
+                LOG.info(
+                        "Enter entry location compaction, entryLocationCompactionInterval {}, randomCompactionDelay "
+                                + "{}, lastEntryLocationCompactionTime {}",
+                        entryLocationCompactionInterval, randomCompactionDelay, lastEntryLocationCompactionTime);
+                ledgerStorage.entryLocationCompact();
+                lastEntryLocationCompactionTime = System.currentTimeMillis();
+                randomCompactionDelay = ThreadLocalRandom.current().nextLong(entryLocationCompactionInterval);
+                LOG.info("Next entry location compaction interval {}",
+                        entryLocationCompactionInterval + randomCompactionDelay);
+                gcStats.getEntryLocationCompactionCounter().inc();
+            }
             gcStats.getCompactRuntime()
                     .registerSuccessfulEvent(MathUtils.elapsedNanos(compactStart), TimeUnit.NANOSECONDS);
             gcStats.getGcThreadRuntime().registerSuccessfulEvent(
@@ -493,6 +530,10 @@ public class GarbageCollectorThread implements Runnable {
         } catch (EntryLogMetadataMapException e) {
             LOG.error("Error in entryLog-metadatamap, Failed to complete GC/Compaction due to entry-log {}",
                     e.getMessage(), e);
+            gcStats.getGcThreadRuntime().registerFailedEvent(MathUtils.elapsedNanos(threadStart), TimeUnit.NANOSECONDS);
+        } catch (Throwable e) {
+            LOG.error("Error in garbage collector thread, Failed to complete GC/Compaction due to {}",
+                e.getMessage(), e);
             gcStats.getGcThreadRuntime().registerFailedEvent(MathUtils.elapsedNanos(threadStart), TimeUnit.NANOSECONDS);
         } finally {
             if (force && forceGarbageCollection.compareAndSet(true, false)) {
@@ -524,6 +565,7 @@ public class GarbageCollectorThread implements Runnable {
      */
     private void doGcEntryLogs() throws EntryLogMetadataMapException {
         // Get a cumulative count, don't update until complete
+        AtomicLong activeEntryLogSizeAcc = new AtomicLong(0L);
         AtomicLong totalEntryLogSizeAcc = new AtomicLong(0L);
 
         // Loop through all of the entry logs and remove the non-active ledgers.
@@ -550,9 +592,10 @@ public class GarbageCollectorThread implements Runnable {
                 // schedule task
                 LOG.warn("Failed to remove ledger from entry-log metadata {}", entryLogId, e);
             }
-           totalEntryLogSizeAcc.getAndAdd(meta.getRemainingSize());
+            activeEntryLogSizeAcc.getAndAdd(meta.getRemainingSize());
+            totalEntryLogSizeAcc.getAndAdd(meta.getTotalSize());
         });
-
+        this.activeEntryLogSize = activeEntryLogSizeAcc.get();
         this.totalEntryLogSize = totalEntryLogSizeAcc.get();
         this.numActiveEntryLogs = entryLogMetaMap.size();
     }
@@ -803,11 +846,12 @@ public class GarbageCollectorThread implements Runnable {
                 continue;
             }
 
-            LOG.info("Extracting entry log meta from entryLogId: {}", entryLogId);
 
             try {
                 // Read through the entry log file and extract the entry log meta
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId, throttler);
+                LOG.info("Extracted entry log meta from entryLogId: {}, ledgers {}",
+                    entryLogId, entryLogMeta.getLedgersMap().keys());
                 removeIfLedgerNotExists(entryLogMeta);
                 if (entryLogMeta.isEmpty()) {
                     // This means the entry log is not associated with any active
@@ -823,8 +867,13 @@ public class GarbageCollectorThread implements Runnable {
                     entryLogMetaMap.put(entryLogId, entryLogMeta);
                 }
             } catch (IOException | RuntimeException e) {
-                LOG.warn("Premature exception when processing " + entryLogId
-                         + " recovery will take care of the problem", e);
+                LOG.warn("Premature exception when processing {} recovery will take care of the problem",
+                        entryLogId, e);
+            } catch (OutOfMemoryError oome) {
+                // somewhat similar to https://github.com/apache/bookkeeper/pull/3901
+                // entrylog file can be corrupted but instead having a negative entry size
+                // it ends up with very large value for the entry size causing OODME
+                LOG.warn("OutOfMemoryError when processing {} - skipping the entry log", entryLogId, oome);
             }
         }
     }
@@ -845,8 +894,10 @@ public class GarbageCollectorThread implements Runnable {
             .minorCompacting(minorCompacting.get())
             .lastMajorCompactionTime(lastMajorCompactionTime)
             .lastMinorCompactionTime(lastMinorCompactionTime)
+            .lastEntryLocationCompactionTime(lastEntryLocationCompactionTime)
             .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
             .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
+            .entryLocationCompactionCounter(gcStats.getEntryLocationCompactionCounter().get())
             .build();
     }
 }

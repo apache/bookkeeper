@@ -40,7 +40,7 @@ import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointMan
 import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.bookkeeper.stream.storage.StorageResourcesSpec;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;

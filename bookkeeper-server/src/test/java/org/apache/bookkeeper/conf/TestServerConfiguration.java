@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +158,7 @@ public class TestServerConfiguration {
     public void testCompactionSettings() throws ConfigurationException {
         ServerConfiguration conf = new ServerConfiguration();
         long major, minor;
+        long entryLocationCompactionInterval;
 
         // Default Values
         major = conf.getMajorCompactionMaxTimeMillis();
@@ -239,5 +240,24 @@ public class TestServerConfiguration {
         minorThreshold = conf.getMinorCompactionThreshold();
         Assert.assertEquals(0.6, majorThreshold, 0.00001);
         Assert.assertEquals(0.3, minorThreshold, 0.00001);
+
+        // Default Values
+        entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval();
+        Assert.assertEquals(-1, entryLocationCompactionInterval);
+
+        // Set entry location compaction
+        conf.setEntryLocationCompactionInterval(3600);
+        entryLocationCompactionInterval = conf.getEntryLocationCompactionInterval();
+        Assert.assertEquals(3600, entryLocationCompactionInterval);
+
+        conf.setEntryLocationCompactionInterval(550);
+        try {
+            conf.validate();
+            fail();
+        } catch (ConfigurationException ignore) {
+        }
+
+        conf.setEntryLocationCompactionInterval(650);
+        conf.validate();
     }
 }

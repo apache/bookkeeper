@@ -159,6 +159,13 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Tune Java DNS TTL settings
+        run: |
+          sudo tee -a $JAVA_HOME/conf/security/java.security <<EOF
+          networkaddress.cache.ttl=1
+          networkaddress.cache.negative.ttl=1
+          EOF
+
       - name: Build
         run: |
           projects_list=
@@ -233,6 +240,13 @@ jobs:
           distribution: 'temurin'
           java-version: 11
 
+      - name: Tune Java DNS TTL settings
+        run: |
+          sudo tee -a $JAVA_HOME/conf/security/java.security <<EOF
+          networkaddress.cache.ttl=1
+          networkaddress.cache.negative.ttl=1
+          EOF
+
       - name: Pick ubuntu mirror for the docker image build
         run: |
           # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
@@ -242,7 +256,9 @@ jobs:
         run: mvn -B -nsu clean install -Pdocker -DskipTests
 
       - name: Run metadata driver tests
-        run: mvn -B -nsu -f metadata-drivers/pom.xml test -DintegrationTests
+        # Exclude jetcd-core-shaded from integration tests, as it’s a POM-only project used internally,
+        # and maven prioritizes workspace artifacts during testing.
+        run: mvn -B -nsu -f metadata-drivers/pom.xml -pl '!jetcd-core-shaded' test -DintegrationTests
 
       - name: Run all integration tests (except backward compatibility tests)
         run: |

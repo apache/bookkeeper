@@ -105,7 +105,8 @@ public class DataIntegrityCheckTest {
 
     private static ServerConfiguration serverConf() {
         ServerConfiguration conf = new ServerConfiguration();
-        conf.setAdvertisedAddress("foobar");
+        conf.setAdvertisedAddress("localhost");
+        conf.setAllowLoopback(true);
         return conf;
     }
 

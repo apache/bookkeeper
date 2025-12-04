@@ -89,7 +89,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -1218,14 +1218,52 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public void asyncOpenLedger(final long lId, final DigestType digestType, final byte[] passwd,
                                 final OpenCallback cb, final Object ctx) {
+        asyncOpenLedger(lId, digestType, passwd, cb, ctx, false);
+    }
+
+    /**
+     * Open existing ledger asynchronously for reading.
+     *
+     * <p>Opening a ledger with this method invokes fencing and recovery on the ledger
+     * if the ledger has not been closed. Fencing will block all other clients from
+     * writing to the ledger. Recovery will make sure that the ledger is closed
+     * before reading from it.
+     *
+     * <p>Recovery also makes sure that any entries which reached one bookie, but not a
+     * quorum, will be replicated to a quorum of bookies. This occurs in cases were
+     * the writer of a ledger crashes after sending a write request to one bookie but
+     * before being able to send it to the rest of the bookies in the quorum.
+     *
+     * <p>If the ledger is already closed, neither fencing nor recovery will be applied.
+     *
+     * @see LedgerHandle#asyncClose
+     *
+     * @param lId
+     *          ledger identifier
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param ctx
+     *          optional control object
+     * @param keepUpdateMetadata
+     *          Whether update ledger metadata if the auto-recover component modified the ledger's ensemble.
+     */
+    public void asyncOpenLedger(final long lId, final DigestType digestType, final byte[] passwd,
+                                final OpenCallback cb, final Object ctx, boolean keepUpdateMetadata) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
                 return;
             }
-            new LedgerOpenOp(BookKeeper.this, clientStats,
-                             lId, digestType, passwd, cb, ctx).initiate();
+            LedgerOpenOp ledgerOpenOp = new LedgerOpenOp(BookKeeper.this, clientStats,
+                 lId, digestType, passwd, cb, ctx);
+            if (keepUpdateMetadata) {
+                ledgerOpenOp.initiateWithKeepUpdateMetadata();
+            } else {
+                ledgerOpenOp.initiate();
+            }
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1293,13 +1331,36 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public LedgerHandle openLedger(long lId, DigestType digestType, byte[] passwd)
             throws BKException, InterruptedException {
+        return openLedger(lId, digestType, passwd, false);
+    }
+
+
+    /**
+     * Synchronous open ledger call.
+     *
+     * @see #asyncOpenLedger
+     * @param lId
+     *          ledger identifier
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     *
+     * @param keepUpdateMetadata
+     *          Whether update ledger metadata if the auto-recover component modified the ledger's ensemble.
+     * @return a handle to the open ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle openLedger(long lId, DigestType digestType, byte[] passwd, boolean keepUpdateMetadata)
+            throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
 
         /*
          * Calls async open ledger
          */
-        asyncOpenLedger(lId, digestType, passwd, result, null);
+        asyncOpenLedger(lId, digestType, passwd, result, null, keepUpdateMetadata);
 
         return SyncCallbackUtils.waitForResult(future);
     }

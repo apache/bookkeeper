@@ -30,7 +30,7 @@ import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeaderS
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerController;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 

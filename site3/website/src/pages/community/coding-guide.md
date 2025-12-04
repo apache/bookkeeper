@@ -68,7 +68,7 @@ Please log the _stack traces_ at **ERROR** level, but never at **INFO** level or
 
 * Names should be thought through from the point of view of the person using the config.
 * The default values should be thought as best value for people who runs the program without tuning parameters.
-* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site/_data/config/bk_server.yaml).
+* All configuration settings should be added to [default configuration file](https://github.com/apache/bookkeeper/blob/master/conf/bk_server.conf) and [documented](https://github.com/apache/bookkeeper/blob/master/site3/website/docs/reference/config.md).
 
 ### Concurrency
 
@@ -83,3 +83,17 @@ Apache BookKeeper is a low latency system. So it is implemented as a purely asyn
 ### Backwards Compatibility
 * Wire protocol should support backwards compatibility to enable no-downtime upgrades. This means the servers **MUST** be able to support requests from both old and new clients simultaneously.
 * Metadata formats and data formats should support backwards compatibility.
+
+### CI Workflow Management with BookKeeper Bot
+
+To facilitate easier CI workflow management and improve contributor experience, Apache BookKeeper utilizes a GitHub Actions bot ("BookKeeper Bot") that enables maintainers and contributors to rerun or cancel workflows directly via PR comments.
+
+**Usage Guidelines:**
+- The bot is triggered when a PR comment contains `/bkbot`.
+- Supported commands:
+    - `/bkbot rerun`: Reruns the latest failed, cancelled, timed out, or skipped workflow runs for the PR head SHA.
+    - `/bkbot rerun <keyword>`: Reruns jobs in the latest runs whose name matches the specified keyword.
+    - `/bkbot stop` or `/bkbot cancel`: Cancels all running (queued/in_progress) workflow runs associated with the PR.
+- The bot cannot rerun jobs from workflows that are currently running.
+
+Using these commands streamlines workflow/job management, reduces manual effort, and helps to address CI failures caused by infrastructure flakiness. Please use the bot commands as appropriate to manage CI jobs related to your PRs.

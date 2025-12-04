@@ -18,9 +18,7 @@ import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import java.io.File;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +35,7 @@ import org.apache.bookkeeper.common.component.ComponentInfoPublisher;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -73,10 +72,9 @@ import org.apache.bookkeeper.stream.storage.impl.sc.DefaultStorageContainerContr
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.ZkStorageContainerManager;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactoryImpl;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
 
 /**
@@ -104,12 +102,8 @@ public class StorageServer {
     private static void loadConfFile(CompositeConfiguration conf, String confFile)
         throws IllegalArgumentException {
         try {
-            Configuration loadedConf = new PropertiesConfiguration(
-                new File(confFile).toURI().toURL());
+            Configuration loadedConf = ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(confFile));
             conf.addConfiguration(loadedConf);
-        } catch (MalformedURLException e) {
-            log.error("Could not open configuration file {}", confFile, e);
-            throw new IllegalArgumentException("Could not open configuration file " + confFile, e);
         } catch (ConfigurationException e) {
             log.error("Malformed configuration file {}", confFile, e);
             throw new IllegalArgumentException("Malformed configuration file " + confFile, e);
@@ -170,6 +164,7 @@ public class StorageServer {
                 grpcUseHostname);
         } catch (Exception e) {
             log.error("Invalid storage configuration", e);
+            System.err.println(e.getMessage());
             return ExitCode.INVALID_CONF.code();
         }
 
@@ -181,8 +176,10 @@ public class StorageServer {
             // the server is interrupted.
             Thread.currentThread().interrupt();
             log.info("Storage server is interrupted. Exiting ...");
+            System.err.println(e.getMessage());
         } catch (ExecutionException e) {
             log.info("Storage server is exiting ...");
+            System.err.println(e.getMessage());
         }
         return ExitCode.OK.code();
     }

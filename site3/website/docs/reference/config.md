@@ -191,6 +191,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | Parameter | Description | Default
 | --------- | ----------- | ------- | 
 | gcWaitTime | How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will heart performance. It is better to give a higher number of gc interval if there is enough disk capacity. | 1000 | 
+| gcMetadataOpRateLimit | Rate limit for metadata operations in garbage collection, in operations per second. This is used to limit the rate of metadata operations during garbage collection to avoid overwhelming the metadata service. | 1000 |
 | gcOverreplicatedLedgerWaitTime | How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk. | 86400000 | 
 | gcOverreplicatedLedgerMaxConcurrentRequests | Max number of concurrent requests in garbage collection of overreplicated ledgers. | 1000 | 
 | isForceGCAllowWhenNoSpace | Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC. | false | 
