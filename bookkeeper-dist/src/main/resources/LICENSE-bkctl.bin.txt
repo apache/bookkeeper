@@ -276,7 +276,7 @@ Apache Software License, Version 2.
 - lib/org.apache.curator-curator-recipes-5.7.1.jar [33]
 - lib/com.google.errorprone-error_prone_annotations-2.9.0.jar [35]
 - lib/org.apache.yetus-audience-annotations-0.12.0.jar [36]
-- lib/org.jctools-jctools-core-2.1.2.jar [37]
+- lib/org.jctools-jctools-core-4.0.5.jar [37]
 - lib/org.apache.httpcomponents-httpclient-4.5.13.jar [38]
 - lib/org.apache.httpcomponents-httpcore-4.4.15.jar [39]
 - lib/org.apache.thrift-libthrift-0.14.2.jar [40]
@@ -333,7 +333,7 @@ Apache Software License, Version 2.
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.7.1
 [35] Source available at https://github.com/google/error-prone/tree/v2.9.0
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
-[37] Source available at https://github.com/JCTools/JCTools/tree/v2.1.2
+[37] Source available at https://github.com/JCTools/JCTools/tree/v4.0.5
 [38] Source available at https://github.com/apache/httpcomponents-client/tree/rel/v4.5.13
 [39] Source available at https://github.com/apache/httpcomponents-core/tree/rel/v4.4.15
 [40] Source available at https://github.com/apache/thrift/tree/0.14.2
