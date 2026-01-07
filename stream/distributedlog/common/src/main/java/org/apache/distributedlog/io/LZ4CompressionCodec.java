@@ -25,7 +25,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import java.nio.ByteBuffer;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4FastDecompressor;
+import net.jpountz.lz4.LZ4SafeDecompressor;
 
 /**
  * An {@code lz4} based {@link CompressionCodec} implementation.
@@ -44,7 +44,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
     // Used for compression
     private static final LZ4Compressor compressor = factory.fastCompressor();
     // Used to decompress when the size of the output is known
-    private static final LZ4FastDecompressor decompressor = factory.fastDecompressor();
+    private static final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
 
     @Override
     public ByteBuf compress(ByteBuf uncompressed, int headerLen) {
@@ -69,7 +69,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
     }
 
     @Override
-    // length parameter is ignored here because of the way the fastDecompressor works.
+    // length parameter is ignored here because of the way the safeDecompressor works.
     public ByteBuf decompress(ByteBuf compressed, int decompressedSize) {
         checkNotNull(compressed);
         checkArgument(compressed.readableBytes() >= 0);
@@ -80,7 +80,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
         ByteBuffer compressedNio = compressed.nioBuffer(compressed.readerIndex(), compressed.readableBytes());
 
         decompressor.decompress(
-                compressedNio, compressedNio.position(),
+                compressedNio, compressedNio.position(), compressedNio.remaining(),
                 uncompressedNio, uncompressedNio.position(), uncompressedNio.remaining());
         uncompressed.writerIndex(decompressedSize);
         return uncompressed;
