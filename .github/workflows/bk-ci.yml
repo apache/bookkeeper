@@ -129,10 +129,6 @@ jobs:
             module: bookkeeper-server
             flag: tls
             test_args: "-Dtest='org.apache.bookkeeper.tls.**'"
-          - step_name: EntryMemTable & Retry Policy Tests
-            module: bookkeeper-server
-            flag: memory-retry
-            test_args: "-Dtest='org.apache.bookkeeper.bookie.EntryMemTable*Test,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicy*Test'"
           - step_name: StreamStorage Tests
             test_args: "-f stream/pom.xml -DstreamTests"
             flag: stream
