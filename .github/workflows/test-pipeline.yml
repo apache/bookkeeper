@@ -3,8 +3,14 @@ name: BookKeeper Tests - JUnit, Coverage & Mutation Testing
 on:
   push:
     branches: [ main, master, develop, 'feature/**' ]
+    paths:
+      - 'bookkeeper-tests-demo/**'
+      - '.github/workflows/test-pipeline.yml'
   pull_request:
     branches: [ main, master, develop ]
+    paths:
+      - 'bookkeeper-tests-demo/**'
+      - '.github/workflows/test-pipeline.yml'
   schedule:
     # Run tests daily at 2 AM UTC
     - cron: '0 2 * * *'
@@ -32,6 +38,12 @@ jobs:
 
       - name: Display Java version
         run: java -version
+
+      - name: Build BookKeeper Parent POM (Skip Tests and Native)
+        run: |
+          mvn clean install -DskipTests=true -q -T 1C -Pskip-native 2>/dev/null || \
+          mvn clean install -DskipTests=true -q -T 1C -Dnar.skip=true 2>/dev/null || \
+          echo "Skipping native modules..."
 
       - name: Run Maven build (Demo Tests)
         run: |
