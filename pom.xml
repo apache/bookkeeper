@@ -1465,5 +1465,37 @@
         <UBUNTU_SECURITY_MIRROR>${env.UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
       </properties>
     </profile>
+    <profile>
+      <id>skip-native-modules</id>
+      <activation>
+        <property>
+          <name>skip-native-modules</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>buildtools</module>
+        <module>native-library-common</module>
+        <module>circe-checksum</module>
+        <module>bookkeeper-common</module>
+        <module>bookkeeper-common-allocator</module>
+        <module>stats</module>
+        <module>bookkeeper-proto</module>
+        <module>bookkeeper-server</module>
+        <module>bookkeeper-benchmark</module>
+        <module>bookkeeper-http</module>
+        <module>stream</module>
+        <module>tools</module>
+        <module>cpu-affinity</module>
+        <module>metadata-drivers</module>
+        <module>bookkeeper-dist</module>
+        <module>shaded</module>
+        <module>microbenchmarks</module>
+        <module>bookkeeper-slogger</module>
+        <module>tests</module>
+        <!-- native-io and cpu-affinity excluded -->
+        <module>testtools</module>
+      </modules>
+    </profile>
   </profiles>
 </project>

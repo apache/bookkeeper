@@ -30,7 +30,7 @@
 
 #ifdef _WIN32
 
-#define fsync(fd) fflush(fd)
+#define fsync(fd) _commit(fd)
 #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
 
 static ssize_t pread (int fd, void *buf, size_t count, off_t offset)
