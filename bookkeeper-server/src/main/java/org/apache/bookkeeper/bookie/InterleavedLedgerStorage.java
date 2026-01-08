@@ -141,7 +141,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             indexDirsManager,
             this,
             statsLogger,
-            allocator);
+            allocator,
+            false);
     }
 
     void initializeWithEntryLogListener(ServerConfiguration conf,
@@ -150,7 +151,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                         LedgerDirsManager indexDirsManager,
                                         EntryLogListener entryLogListener,
                                         StatsLogger statsLogger,
-                                        ByteBufAllocator allocator) throws IOException {
+                                        ByteBufAllocator allocator,
+                                        boolean listenEntrylog) throws IOException {
         initializeWithEntryLogger(
                 conf,
                 ledgerManager,
@@ -158,7 +160,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 indexDirsManager,
                 new DefaultEntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE),
                         allocator),
-                statsLogger);
+                statsLogger,
+                listenEntrylog);
     }
 
     @Override
@@ -179,11 +182,16 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 LedgerDirsManager ledgerDirsManager,
                 LedgerDirsManager indexDirsManager,
                 EntryLogger entryLogger,
-                StatsLogger statsLogger) throws IOException {
+                StatsLogger statsLogger,
+                boolean listenEntryLog) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = (DefaultEntryLogger) entryLogger;
-        this.entryLogger.addListener(this);
+        if (listenEntryLog) {
+            this.entryLogger.addListener(this);
+        } else {
+            LOG.info("Skip register this into entrylogger listeners");
+        }
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
