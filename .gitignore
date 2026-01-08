@@ -48,3 +48,8 @@ build/
 .gradle/
 *.log
 *.dat
+
+# EvoSuite generated files
+**/evosuite-report/
+**/evosuite-tests/
+**/.evosuite/
