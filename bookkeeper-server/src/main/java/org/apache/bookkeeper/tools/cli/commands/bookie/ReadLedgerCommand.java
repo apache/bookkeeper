@@ -188,35 +188,36 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                 BookieClient bookieClient = new BookieClientImpl(conf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT,
                                                                  executor, scheduler, NullStatsLogger.INSTANCE,
                                                                  bk.getBookieAddressResolver());
+                // if firstEntryId == lastEntryId == -1, it will cause an infinite loop
+                if (lastEntry >= 0) {
+                    LongStream.rangeClosed(flags.firstEntryId, lastEntry).forEach(entryId -> {
+                        CompletableFuture<Void> future = new CompletableFuture<>();
 
-                LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
-                    CompletableFuture<Void> future = new CompletableFuture<>();
+                        bookieClient.readEntry(bookie, flags.ledgerId, entryId,
+                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
+                                if (rc != BKException.Code.OK) {
+                                    LOG.error("Failed to read entry {} -- {}", entryId1,
+                                        BKException.getMessage(rc));
+                                    future.completeExceptionally(BKException.create(rc));
+                                    return;
+                                }
 
-                    bookieClient.readEntry(bookie, flags.ledgerId, entryId,
-                                           (rc, ledgerId1, entryId1, buffer, ctx) -> {
-                                               if (rc != BKException.Code.OK) {
-                                                   LOG.error("Failed to read entry {} -- {}", entryId1,
-                                                             BKException.getMessage(rc));
-                                                   future.completeExceptionally(BKException.create(rc));
-                                                   return;
-                                               }
+                                LOG.info("--------- Lid={}, Eid={} ---------",
+                                    ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
+                                if (flags.msg) {
+                                    LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
+                                }
 
-                                               LOG.info("--------- Lid={}, Eid={} ---------",
-                                                   ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
-                                               if (flags.msg) {
-                                                   LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
-                                               }
+                                future.complete(null);
+                            }, null, BookieProtocol.FLAG_NONE);
 
-                                               future.complete(null);
-                                           }, null, BookieProtocol.FLAG_NONE);
-
-                    try {
-                        future.get();
-                    } catch (Exception e) {
-                        LOG.error("Error future.get while reading entries from ledger {}", flags.ledgerId, e);
-                    }
-                });
-
+                        try {
+                            future.get();
+                        } catch (Exception e) {
+                            LOG.error("Error future.get while reading entries from ledger {}", flags.ledgerId, e);
+                        }
+                    });
+                }
                 eventLoopGroup.shutdownGracefully();
                 executor.shutdown();
                 bookieClient.close();
