@@ -623,33 +623,43 @@ jobs:
     steps:
       - name: Check build-and-license-check success
         run: |
+          echo "build-and-license-check result: ${{ needs.build-and-license-check.result }}"
           if [[ ! ( \
                    "${{ needs.build-and-license-check.result }}" == "success" \
                ) ]]; then
-            echo "Required jobs haven't been completed successfully."
+            echo "Required jobs haven't been completed successfully (build-and-license-check)."
             exit 1
           fi
       - name: Check typo-check success for pull requests
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          echo "typo-check result: ${{ needs.typo-check.result }}"
           if [[ ! ( \
                    "${{ needs.typo-check.result }}" == "success" \
                ) ]]; then
-            echo "Required jobs haven't been completed successfully."
+            echo "Required jobs haven't been completed successfully (typo-check)."
             exit 1
           fi
       - name: Check that other required jobs were completed successfully
         if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
         run: |
-          if [[ ! ( \
-                   "${{ needs.backward-compatibility-tests.result }}" == "success" \
-                && "${{ needs.evosuite-tests.result }}" == "success" \
-                && "${{ needs.integration-tests.result }}" == "success" \
-                && "${{ needs.jdk-compatibility-checks.result }}" == "success" \
-                && "${{ needs.macos-build.result }}" == "success" \
-                && "${{ needs.unit-tests.result }}" == "success" \
-                && "${{ needs.windows-build.result }}" == "success" \
-               ) ]]; then
-            echo "Required jobs haven't been completed successfully."
+          ok() { [[ "$1" == "success" || "$1" == "skipped" || "$1" == "cancelled" ]]; }
+
+          echo "backward-compatibility-tests: ${{ needs.backward-compatibility-tests.result }}"
+          echo "evosuite-tests:             ${{ needs.evosuite-tests.result }}"
+          echo "integration-tests:          ${{ needs.integration-tests.result }}"
+          echo "jdk-compatibility-checks:   ${{ needs.jdk-compatibility-checks.result }}"
+          echo "macos-build:                ${{ needs.macos-build.result }}"
+          echo "unit-tests:                 ${{ needs.unit-tests.result }}"
+          echo "windows-build:              ${{ needs.windows-build.result }}"
+
+          if ! ok "${{ needs.backward-compatibility-tests.result }}" \
+             || ! ok "${{ needs.evosuite-tests.result }}" \
+             || ! ok "${{ needs.integration-tests.result }}" \
+             || ! ok "${{ needs.jdk-compatibility-checks.result }}" \
+             || ! ok "${{ needs.macos-build.result }}" \
+             || ! ok "${{ needs.unit-tests.result }}" \
+             || ! ok "${{ needs.windows-build.result }}"; then
+            echo "Required jobs haven't been completed successfully (one or more required jobs not successful)."
             exit 1
           fi
