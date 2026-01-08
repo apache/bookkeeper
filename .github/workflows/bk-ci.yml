@@ -84,8 +84,8 @@ jobs:
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
-          mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests
-          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check spotless:check package -Ddistributedlog -DskipTests
+          mvn -T 1C -B -nsu clean install -Ddistributedlog -DskipTests -Dskip-native-modules=true
+          mvn -T 1C -B -nsu apache-rat:check checkstyle:check spotbugs:check spotless:check package -Ddistributedlog -DskipTests -Dskip-native-modules=true
 
       - name: Check license files
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -172,7 +172,7 @@ jobs:
           if [[ ! -z "${{ matrix.module }}" ]]; then
             projects_list="-pl ${{ matrix.module }}"
           fi
-          mvn -q -T 1C -B -nsu $projects_list install -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip
+          mvn -q -T 1C -B -nsu $projects_list install -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip -Dskip-native-modules=true
 
       - name: Test - ${{ matrix.step_name }}
         run: |
@@ -253,7 +253,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dskip-native-modules=true
 
       - name: Run metadata driver tests
         # Exclude jetcd-core-shaded from integration tests, as it’s a POM-only project used internally,
@@ -340,7 +340,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests
+        run: mvn -B -nsu clean install -Pdocker -DskipTests -Dskip-native-modules=true
 
       - name: Test current server with old clients
         run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :backward-compat-current-server-old-clients test
@@ -417,7 +417,7 @@ jobs:
           java-version: 11
 
       - name: mvn package
-        run: mvn -B -nsu clean package -DskipTests
+        run: mvn -B -nsu clean package -DskipTests -Dskip-native-modules=true
 
   macos-build:
     name: Build with macos on JDK 11
@@ -449,7 +449,7 @@ jobs:
           java-version: 11
 
       - name: mvn package
-        run: mvn -B -nsu clean package -DskipTests
+        run: mvn -B -nsu clean package -DskipTests -Dskip-native-modules=true
 
   jdk-compatibility-checks:
     name: ${{ matrix.step_name }}
@@ -494,7 +494,7 @@ jobs:
           java-version: ${{ matrix.jdk_version }}
 
       - name: Build with Maven
-        run: mvn clean package -B -nsu -DskipBookKeeperServerTests
+        run: mvn clean package -B -nsu -DskipBookKeeperServerTests -Dskip-native-modules=true
 
       - name: print JVM thread dumps when cancelled
         if: cancelled()
@@ -543,7 +543,7 @@ jobs:
       - name: run "clean install verify" to trigger dependency check
         # excluding dlfs because it includes hadoop lib with
         # CVEs that we cannot patch up anyway
-        run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs,!tests'
+        run: mvn -q -B -ntp clean install verify -Powasp-dependency-check -DskipTests -pl '!stream/distributedlog/io/dlfs,!tests' -Dskip-native-modules=true
 
       - name: Upload report
         uses: actions/upload-artifact@v4
@@ -581,7 +581,7 @@ jobs:
           java-version: 11
 
       - name: Build bookkeeper-tests-demo
-        run: mvn -B -nsu -pl bookkeeper-tests-demo clean test
+        run: mvn -B -nsu -pl bookkeeper-tests-demo clean test -Dskip-native-modules=true
 
       - name: Aggregates test reports
         if: ${{ always() }}
