@@ -1177,7 +1177,22 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
-          </excludes>
+
+            <!-- Debug and documentation markdown files -->
+            <exclude>CHECKLIST_COMPLETAMENTO.md</exclude>
+            <exclude>COMPARATIVE_ANALYSIS_MOCKSTUB_VS_LLM.md</exclude>
+            <exclude>COMPLETION_ALL_STEPS_DONE.md</exclude>
+            <exclude>EXECUTIVE_SUMMARY_FINAL.txt</exclude>
+            <exclude>EXECUTIVE_SUMMARY_TEST_COMPARISON.md</exclude>
+            <exclude>FINAL_VALIDATION_SIGN_OFF.md</exclude>
+            <exclude>GITHUB_ACTIONS_ACTIVATION_GUIDE.md</exclude>
+            <exclude>MONITORING_STEP_3_GUIDE.md</exclude>
+            <exclude>PROJECT_COMPLETION_SUMMARY.md</exclude>
+            <exclude>README_TEST_COMPARISON_PACKAGE.md</exclude>
+            <exclude>REPORT_TESTING_FRAMEWORK.md</exclude>
+            <exclude>TESTING_FRAMEWORK_CONFIGURATION.md</exclude>
+            <exclude>TEST_EXECUTION_REPORT.md</exclude>
+            <exclude>classes.txt</exclude>
           <consoleOutput>true</consoleOutput>
         </configuration>
       </plugin>
