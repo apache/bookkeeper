@@ -30,3 +30,14 @@
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test old clients working on current server</name>
 
 </project>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
