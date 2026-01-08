@@ -38,6 +38,8 @@
             <exclude>**/*.md</exclude>
             <exclude>**/*.txt</exclude>
             <exclude>**/classes.txt</exclude>
+            <exclude>**/dependency-reduced-pom.xml</exclude>
+            <exclude>**/pitest_output.log</exclude>
           </excludes>
         </configuration>
       </plugin>
