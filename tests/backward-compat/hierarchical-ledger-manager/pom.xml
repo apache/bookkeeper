@@ -33,13 +33,12 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>**/*.md</exclude>
-            <exclude>**/*.txt</exclude>
-            <exclude>**/classes.txt</exclude>
-          </excludes>
-        </configuration>
+        <executions>
+          <execution>
+            <id>default-cli</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
