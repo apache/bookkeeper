@@ -187,8 +187,8 @@ class ExponentialBackoffRetryPolicyControlFlowTest {
         // Verify all backoffs respect minimum baseBackoffTime
         for (int retryCount = 0; retryCount <= 5; retryCount++) {
             long backoff = retryPolicy.nextRetryWaitTime(retryCount, 0L);
-            assertThat(backoff, greaterThanOrEqualTo(100L),
-                "Math.max ensures backoff >= baseBackoffTime at retryCount=" + retryCount);
+            assertThat("Math.max ensures backoff >= baseBackoffTime at retryCount=" + retryCount,
+                backoff, greaterThanOrEqualTo(100L));
         }
     }
 
@@ -319,8 +319,8 @@ class ExponentialBackoffRetryPolicyControlFlowTest {
 
                 // Test nextRetryWaitTime path
                 long backoff = retryPolicy.nextRetryWaitTime(retryCount, elapsedTime);
-                assertThat(backoff, greaterThanOrEqualTo(100L),
-                    "nextRetryWaitTime path with elapsed=" + elapsedTime + " at count=" + retryCount);
+                assertThat("nextRetryWaitTime path with elapsed=" + elapsedTime + " at count=" + retryCount,
+                    backoff, greaterThanOrEqualTo(100L));
             }
         }
     }
