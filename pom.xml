@@ -1193,6 +1193,7 @@
             <exclude>TESTING_FRAMEWORK_CONFIGURATION.md</exclude>
             <exclude>TEST_EXECUTION_REPORT.md</exclude>
             <exclude>classes.txt</exclude>
+          </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
       </plugin>
