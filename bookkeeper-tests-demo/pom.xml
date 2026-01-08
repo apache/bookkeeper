@@ -66,6 +66,23 @@
             <version>${hamcrest.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- JUnit 4 for EvoSuite tests -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- EvoSuite standalone CLI as system dependency for runtime classes -->
+        <dependency>
+            <groupId>org.evosuite</groupId>
+            <artifactId>evosuite-standalone</artifactId>
+            <version>1.2.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../tools/evosuite-1.2.0.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
