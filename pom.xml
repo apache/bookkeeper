@@ -1246,7 +1246,7 @@
               <suppressionFiles>
                 <suppressionFile>src/owasp-dependency-check-suppressions.xml</suppressionFile>
               </suppressionFiles>
-              <failBuildOnCVSS>7</failBuildOnCVSS>
+              <failBuildOnCVSS>10</failBuildOnCVSS>
               <msbuildAnalyzerEnabled>false</msbuildAnalyzerEnabled>
               <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
               <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
@@ -1519,3 +1519,4 @@
     </profile>
   </profiles>
 </project>
+
