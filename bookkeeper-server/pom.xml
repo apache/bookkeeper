@@ -284,6 +284,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <argLine>@{argLine}</argLine>
           <trimStackTrace>false</trimStackTrace>
           <properties>
             <property>
@@ -311,6 +312,51 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.pitest</groupId>
+        <artifactId>pitest-maven</artifactId>
+        <version>1.15.3</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-junit5-plugin</artifactId>
+            <version>1.2.1</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <targetClasses>
+            <param>org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicy</param>
+            <param>org.apache.bookkeeper.bookie.EntryMemTable</param>
+          </targetClasses>
+          <targetTests>
+            <param>org.apache.bookkeeper.zookeeper.*Test</param>
+            <param>org.apache.bookkeeper.bookie.*Test</param>
+          </targetTests>
+          <outputFormats>
+            <outputFormat>HTML</outputFormat>
+            <outputFormat>XML</outputFormat>
+          </outputFormats>
+          <mutators>
+            <mutator>DEFAULTS</mutator>
+          </mutators>
+          <threads>2</threads>
+          <timeoutConstant>10000</timeoutConstant>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.evosuite.plugins</groupId>
+        <artifactId>evosuite-maven-plugin</artifactId>
+        <version>1.2.0</version>
+        <configuration>
+          <targetClasses>
+            <targetClass>org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicy</targetClass>
+            <targetClass>org.apache.bookkeeper.bookie.EntryMemTable</targetClass>
+          </targetClasses>
+          <timeInMinutesPerClass>2</timeInMinutesPerClass>
+          <memoryInMB>2000</memoryInMB>
+          <cores>2</cores>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
