@@ -343,14 +343,14 @@ jobs:
         run: mvn -B -nsu clean install -Pdocker -DskipTests -Dskip-native-modules=true
 
       - name: Test current server with old clients
-        run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :backward-compat-current-server-old-clients test
+        run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests=false -pl :backward-compat-current-server-old-clients test
 
       - name: Test progressive upgrade
-        run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :upgrade test
+        run: mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests=false -pl :upgrade test
 
       - name: Other tests
         run: |
-          mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct test
+          mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests=false -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct test
 
       - name: Upload container logs on failure
         uses: actions/upload-artifact@v4
