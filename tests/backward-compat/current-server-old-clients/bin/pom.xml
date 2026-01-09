@@ -29,7 +29,6 @@
   <packaging>jar</packaging>
   <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Test old clients working on current server</name>
 
-</project>
   <build>
     <plugins>
       <plugin>
@@ -41,3 +40,5 @@
       </plugin>
     </plugins>
   </build>
+</project>
+
