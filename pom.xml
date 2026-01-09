@@ -72,6 +72,7 @@
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
+    <module>bookkeeper-tests-demo</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -967,6 +968,7 @@
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
             <excludedGroups>flaky</excludedGroups>
+            <failIfNoTests>false</failIfNoTests>
           </configuration>
         </plugin>
         <plugin>
@@ -1231,6 +1233,9 @@
   <profiles>
     <profile>
       <id>owasp-dependency-check</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
       <build>
         <plugins>
           <plugin>
@@ -1515,8 +1520,10 @@
         <module>tests</module>
         <!-- native-io and cpu-affinity excluded -->
         <module>testtools</module>
+        <module>bookkeeper-tests-demo</module>
       </modules>
     </profile>
   </profiles>
 </project>
+
 
