@@ -64,6 +64,13 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- JUnit Vintage to run JUnit 4-based EvoSuite tests on JUnit 5 platform -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Mockito -->
         <dependency>
@@ -107,6 +114,26 @@
 
     <build>
         <plugins>
+            <!-- Include EvoSuite generated tests -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>add-evosuite-tests</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/evosuite-tests</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -196,7 +223,6 @@
                     </targetTests>
                     <mutators>
                         <mutator>DEFAULTS</mutator>
-                        <mutator>EXTENDED</mutator>
                     </mutators>
                     <outputFormats>
                         <outputFormat>XML</outputFormat>
