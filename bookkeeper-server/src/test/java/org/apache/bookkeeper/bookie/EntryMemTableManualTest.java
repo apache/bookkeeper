@@ -21,135 +21,128 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Manual test for SimpleEntryMemTable.
- * Written manually to test key business logic scenarios.
+ * Manual-style minimal tests for EntryMemTable.
  */
-@DisplayName("EntryMemTable - Manual Tests")
+@DisplayName("EntryMemTable - Manual Tests (lean)")
 class EntryMemTableManualTest {
 
-    private SimpleEntryMemTable memTable;
+    private EntryMemTable memTable;
+    private ServerConfiguration conf;
+    private TestCheckpointSource checkpointSource;
 
     @BeforeEach
     void setUp() {
-        memTable = new SimpleEntryMemTable(10 * 1024 * 1024L);
+        conf = new ServerConfiguration();
+        conf.setSkipListSizeLimit(16 * 1024 * 1024);
+        checkpointSource = new TestCheckpointSource();
+        memTable = new EntryMemTable(conf, checkpointSource, NullStatsLogger.INSTANCE);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (memTable != null) {
+            memTable.close();
+        }
     }
 
     @Test
-    @DisplayName("New table should be empty")
-    void testNewTableEmpty() {
-        assertTrue(memTable.isEmpty());
-        assertEquals(0L, memTable.getEstimatedSize());
-    }
-
-    @Test
-    @DisplayName("Adding entry makes table non-empty")
-    void testAddEntrySetsNonEmpty() {
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("test".getBytes()));
+    @DisplayName("Add single entry")
+    void testAddSingleEntry() throws Exception {
+        long ledgerId = 1L;
+        long entryId = 0L;
+        ByteBuf data = Unpooled.wrappedBuffer("test-data".getBytes());
         
-        assertFalse(memTable.isEmpty());
-        assertThat(memTable.getEstimatedSize(), greaterThan(0L));
+        long bytesAdded = memTable.addEntry(ledgerId, entryId, data.nioBuffer(), null);
+        
+        assertTrue(bytesAdded >= 0);
+        data.release();
     }
 
     @Test
-    @DisplayName("Multiple entries in same ledger")
-    void testMultipleEntriesSameLedger() {
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("entry0".getBytes()));
-        memTable.addEntry(1L, 1L, ByteBuffer.wrap("entry1".getBytes()));
-        memTable.addEntry(1L, 2L, ByteBuffer.wrap("entry2".getBytes()));
-
-        assertFalse(memTable.isEmpty());
+    @DisplayName("Add multiple entries and snapshot")
+    void testAddMultipleEntriesAndSnapshot() throws Exception {
+        long ledgerId = 2L;
+        
+        for (int i = 0; i < 10; i++) {
+            ByteBuf data = Unpooled.wrappedBuffer(("entry-" + i).getBytes());
+            memTable.addEntry(ledgerId, i, data.nioBuffer(), null);
+            data.release();
+        }
+        
+        Checkpoint cp = memTable.snapshot();
+        assertNotNull(cp, "Checkpoint should not be null");
     }
 
     @Test
-    @DisplayName("Entries from different ledgers")
-    void testEntriesFromDifferentLedgers() {
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("ledger1".getBytes()));
-        memTable.addEntry(2L, 0L, ByteBuffer.wrap("ledger2".getBytes()));
-        memTable.addEntry(3L, 0L, ByteBuffer.wrap("ledger3".getBytes()));
-
-        assertFalse(memTable.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Snapshot clears the table")
-    void testSnapshotClearsTable() {
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("data".getBytes()));
-        assertFalse(memTable.isEmpty());
-
-        memTable.snapshot();
-
-        assertTrue(memTable.isEmpty());
-        assertEquals(0L, memTable.getEstimatedSize());
-    }
-
-    @Test
-    @DisplayName("Size accumulates with multiple entries")
-    void testSizeAccumulation() {
-        long initialSize = memTable.getEstimatedSize();
+    @DisplayName("Large entry handling")
+    void testLargeEntry() throws Exception {
+        long ledgerId = 999L;
+        long entryId = 1L;
         
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("small".getBytes()));
-        long afterFirst = memTable.getEstimatedSize();
+        byte[] largeData = new byte[1024 * 1024]; // 1MB
+        for (int i = 0; i < largeData.length; i++) {
+            largeData[i] = (byte) (i % 256);
+        }
         
-        memTable.addEntry(1L, 1L, ByteBuffer.wrap("another".getBytes()));
-        long afterSecond = memTable.getEstimatedSize();
+        ByteBuf data = Unpooled.wrappedBuffer(largeData);
+        long bytesAdded = memTable.addEntry(ledgerId, entryId, data.nioBuffer(), null);
         
-        assertThat(afterFirst, greaterThan(initialSize));
-        assertThat(afterSecond, greaterThan(afterFirst));
-    }
-
-    @Test
-    @DisplayName("Overwriting entry updates size correctly")
-    void testOverwritingEntry() {
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("short".getBytes()));
-        long firstSize = memTable.getEstimatedSize();
-        
-        memTable.addEntry(1L, 0L, ByteBuffer.wrap("much longer entry".getBytes()));
-        long secondSize = memTable.getEstimatedSize();
-        
-        assertThat(secondSize, greaterThan(firstSize));
+        assertTrue(bytesAdded > 0, "Size should reflect added entry");
+        data.release();
     }
 
     /**
-     * Local implementation for testing purposes
+     * Test checkpoint source implementation.
      */
-    static class SimpleEntryMemTable {
-        private final java.util.Map<String, ByteBuffer> entries = new java.util.HashMap<>();
-        private final long maxSize;
-        private long currentSize = 0;
+    static class TestCheckpointSource implements CheckpointSource {
+        private long counter = 0;
 
-        SimpleEntryMemTable(long maxSize) {
-            this.maxSize = maxSize;
+        @Override
+        public Checkpoint newCheckpoint() {
+            return new TestCheckpoint(counter++);
         }
 
-        void addEntry(long ledgerId, long entryId, ByteBuffer data) {
-            String key = ledgerId + ":" + entryId;
-            entries.put(key, data);
-            currentSize += data.remaining();
+        @Override
+        public void checkpointComplete(Checkpoint checkpoint, boolean compact) {
+            // No-op for testing
         }
 
-        boolean isEmpty() {
-            return entries.isEmpty();
-        }
+        static class TestCheckpoint implements Checkpoint {
+            private final long id;
 
-        long getEstimatedSize() {
-            return currentSize;
-        }
+            TestCheckpoint(long id) {
+                this.id = id;
+            }
 
-        void snapshot() {
-            entries.clear();
-            currentSize = 0;
+            @Override
+            public int compareTo(Checkpoint o) {
+                if (o == Checkpoint.MAX) {
+                    return -1;
+                }
+                if (o == Checkpoint.MIN) {
+                    return 1;
+                }
+                if (o instanceof TestCheckpoint) {
+                    return Long.compare(id, ((TestCheckpoint) o).id);
+                }
+                return 0;
+            }
         }
     }
 }

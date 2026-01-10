@@ -36,7 +36,6 @@
 
   <modules>
     <module>shaded</module>
-    <module>docker-images</module>
     <module>integration-tests-base</module>
     <module>integration-tests-base-groovy</module>
     <module>integration-tests-utils</module>

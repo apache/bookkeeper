@@ -4,7 +4,7 @@
 ================================================================================
 
 PROJECT: Apache BookKeeper - Comprehensive Testing Framework
-DATE: 7 gennaio 2026
+DATE: 10 gennaio 2026
 COURSE: Ingegneria del Software - Testing e Qualità
 INSTRUCTOR: Guglielmo De Angelis (guglielmo.deangelis@iasi.cnr.it)
 
@@ -105,6 +105,7 @@ Benefits: Combines isolation power + coverage efficiency
 ✓ Comprehensive documentation (8+ guides)
 ✓ Team testing guide created
 ✓ All frameworks compatible and verified
+✓ Repository build validated end-to-end dopo rimozione moduli non più esistenti (bookkeeper-tests-demo, tests/docker-images)
 
 ================================================================================
 7. FRAMEWORK COMPATIBILITY VERIFIED
@@ -146,8 +147,8 @@ TEST FILES:
   ✓ EntryMemTableControlFlowTest.java (310 LOC, 20 tests)
 
 DEMO PROJECT:
-  ✓ bookkeeper-tests-demo/ (standalone working example)
-  ✓ 9/9 tests PASSING (proven functionality)
+  ✗ bookkeeper-tests-demo rimosso (modulo non più presente nel progetto)
+  ✗ docker-images (tests) rimosso; allineati i POM per build completa
 
 DOCUMENTATION:
   ✓ REPORT_TESTING_FRAMEWORK.md (~12 pages)
@@ -165,10 +166,11 @@ CI/CD:
   ✓ JaCoCo code coverage integration
   ✓ PITest mutation testing config
   ✓ Automated reporting
+  ✓ Maven reactor validate OK (10 gen 2026) con POM ripuliti
 
 GIT:
   ✓ All changes committed (commit 455dcaa22)
-  ✓ Pushed to origin/master
+  ✓ Pushed to origin/master (ultimo stato noto); ulteriori pulizie moduli applicate localmente
 
 ================================================================================
 9. QUALITY ASSURANCE CHECKLIST

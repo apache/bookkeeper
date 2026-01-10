@@ -1,0 +1,22 @@
+JaCoCo Coverage Summary - 10 gennaio 2026 (latest run)
+Scope: bookkeeper-server (tests: bookie + zookeeper suites)
+
+Totals (from jacoco.csv):
+- Instructions: covered 1,342 / total 189,126 (missed 187,784)  0.71%
+- Branches:     covered 92 / total 14,364 (missed 14,272)  0.64%
+- Lines:        covered 324 / total 42,985 (missed 42,661)  0.75%
+- Methods:      covered 76 / total 8,720 (missed 8,644)  0.87%
+- Complexity:   covered 105 / total 16,012 (missed 15,907)  0.66%
+
+Source data:
+- File: bookkeeper-server/target/site/jacoco/jacoco.csv
+- Exec: bookkeeper-server/target/jacoco.exec (generated this run)
+
+Command used:
+- mvn -pl bookkeeper-server -Dtest="org.apache.bookkeeper.bookie.EntryMemTableLLMTest,org.apache.bookkeeper.bookie.EntryMemTableManualTest,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyLLMTest,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyManualTest" test jacoco:report
+
+Notes:
+- Coverage is low because only focused suites (bookie + zookeeper retry) were executed; other modules/classes remain untested in this run.
+- Reports available at bookkeeper-server/target/site/jacoco/index.html.
+
+Generated: 10 gennaio 2026

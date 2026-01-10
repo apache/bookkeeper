@@ -1,0 +1,14 @@
+PIT Mutation Summary - 10 gennaio 2026
+Scope: Zookeeper class (ExponentialBackoffRetryPolicy) with our tests
+
+Totals:
+- Mutations: total 7; killed 5 (71.43%); survived 2; no-coverage 0; timed-out 0
+
+Classes:
+- org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicy
+
+Reports:
+- HTML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-zookeeper\index.html
+- XML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-zookeeper\mutations.xml
+
+Generated: 10 gennaio 2026

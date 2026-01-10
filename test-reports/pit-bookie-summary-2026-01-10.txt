@@ -1,0 +1,14 @@
+PIT Mutation Summary - 10 gennaio 2026
+Scope: Bookie class (EntryMemTable) with our tests
+
+Totals:
+- Mutations: total 90; killed 27 (30%); survived 39; no-coverage 23; timed-out 
+
+Classes:
+- org.apache.bookkeeper.bookie.EntryMemTable
+
+Reports:
+- HTML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-bookie\index.html
+- XML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-bookie\mutations.xml
+
+Generated: 10 gennaio 2026

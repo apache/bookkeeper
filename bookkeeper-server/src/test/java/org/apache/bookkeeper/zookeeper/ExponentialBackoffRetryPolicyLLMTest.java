@@ -28,75 +28,76 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.BeforeEach;
+import java.lang.reflect.Field;
+import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/**
- * Demo test for ExponentialBackoffRetryPolicy.
- * This is a standalone test that doesn't depend on BookKeeper libraries.
- */
-@DisplayName("ExponentialBackoffRetryPolicy - Demo Tests")
-class ExponentialBackoffRetryPolicyDemoTest {
+@DisplayName("ExponentialBackoffRetryPolicy - LLM minimal high-ROI tests")
+class ExponentialBackoffRetryPolicyLLMTest {
 
-    private SimpleRetryPolicy retryPolicy;
-
-    @BeforeEach
-    void setUp() {
-        retryPolicy = new SimpleRetryPolicy(100L, 5);
+    private static void setRandomSeed(Object policy, Class<?> clazz, long seed) throws Exception {
+        Field f = clazz.getDeclaredField("random");
+        f.setAccessible(true);
+        f.set(policy, new Random(seed));
     }
 
     @Test
-    @DisplayName("allowRetry with valid count should return true")
-    void testAllowRetryValid() {
-        assertTrue(retryPolicy.allowRetry(0, 0L), "Should allow retry at count 0");
-        assertTrue(retryPolicy.allowRetry(5, 0L), "Should allow retry at count 5");
+    @DisplayName("allowRetry boundaries: within limit true, beyond limit false")
+    void testAllowRetryBoundaries() {
+        ExponentialBackoffRetryPolicy policy = new ExponentialBackoffRetryPolicy(100L, 5);
+        assertTrue(policy.allowRetry(0, 0L));
+        assertTrue(policy.allowRetry(5, 0L));
+        assertFalse(policy.allowRetry(6, 0L));
     }
 
     @Test
-    @DisplayName("allowRetry exceeding max should return false")
-    void testAllowRetryExceeds() {
-        assertFalse(retryPolicy.allowRetry(6, 0L), "Should reject retry at count 6");
-        assertFalse(retryPolicy.allowRetry(10, 0L), "Should reject retry at count 10");
+    @DisplayName("nextRetryWaitTime within expected exponential range")
+    void testNextRetryWaitTimeRange() {
+        ExponentialBackoffRetryPolicy policy = new ExponentialBackoffRetryPolicy(100L, 10);
+        long w0 = policy.nextRetryWaitTime(0, 0L); // max multiplier 2
+        long w5 = policy.nextRetryWaitTime(5, 0L); // max multiplier 64
+        assertThat(w0, greaterThanOrEqualTo(100L));
+        assertThat(w0, lessThanOrEqualTo(200L));
+        assertThat(w5, greaterThanOrEqualTo(100L));
+        assertThat(w5, lessThanOrEqualTo(6400L));
     }
 
     @Test
-    @DisplayName("nextRetryWaitTime should be >= baseBackoffTime")
-    void testNextRetryWaitTime() {
-        long waitTime = retryPolicy.nextRetryWaitTime(0, 0L);
-        assertThat(waitTime, greaterThanOrEqualTo(100L));
+    @DisplayName("Zero and negative maxRetries handling")
+    void testMaxRetriesEdgeCases() {
+        ExponentialBackoffRetryPolicy zero = new ExponentialBackoffRetryPolicy(100L, 0);
+        assertTrue(zero.allowRetry(0, 0L));
+        assertFalse(zero.allowRetry(1, 0L));
+
+        ExponentialBackoffRetryPolicy negative = new ExponentialBackoffRetryPolicy(100L, -1);
+        assertFalse(negative.allowRetry(0, 0L));
     }
 
     @Test
-    @DisplayName("nextRetryWaitTime should increase with retry count")
-    void testBackoffIncrease() {
-        long waitTime0 = retryPolicy.nextRetryWaitTime(0, 0L);
-        long waitTime3 = retryPolicy.nextRetryWaitTime(3, 0L);
-        
-        assertThat(waitTime0, greaterThanOrEqualTo(100L));
-        assertThat(waitTime3, greaterThanOrEqualTo(100L));
+    @DisplayName("BoundExponentialBackoffRetryPolicy caps wait time")
+    void testBoundedBackoffIsCapped() throws Exception {
+        long base = 100L;
+        long cap = 250L;
+        BoundExponentialBackoffRetryPolicy policy = new BoundExponentialBackoffRetryPolicy(base, cap, 10);
+        setRandomSeed(policy, ExponentialBackoffRetryPolicy.class, 1L);
+        long wait = policy.nextRetryWaitTime(8, 0L); // large multiplier before cap
+        assertThat(wait, greaterThanOrEqualTo(base));
+        assertThat(wait, lessThanOrEqualTo(cap));
     }
 
-    /**
-     * Simple implementation for testing purposes
-     */
-    static class SimpleRetryPolicy {
-        private final long baseBackoffTime;
-        private final int maxRetries;
-        private final java.util.Random random;
+    @Test
+    @DisplayName("Deadline policy clamps to remaining time and obeys limits")
+    void testDeadlinePolicyClampAndAllowRetry() throws Exception {
+        long deadline = 100L;
+        ExponentialBackOffWithDeadlinePolicy policy = new ExponentialBackOffWithDeadlinePolicy(10L, deadline, 2);
+        setRandomSeed(policy, ExponentialBackOffWithDeadlinePolicy.class, 2L);
 
-        SimpleRetryPolicy(long baseBackoffTime, int maxRetries) {
-            this.baseBackoffTime = baseBackoffTime;
-            this.maxRetries = maxRetries;
-            this.random = new java.util.Random(System.currentTimeMillis());
-        }
+        assertTrue(policy.allowRetry(1, 20L));
+        assertFalse(policy.allowRetry(3, 20L)); // over max retries
+        assertFalse(policy.allowRetry(1, 150L)); // past deadline
 
-        boolean allowRetry(int retryCount, long elapsedRetryTime) {
-            return retryCount <= maxRetries;
-        }
-
-        long nextRetryWaitTime(int retryCount, long elapsedRetryTime) {
-            return baseBackoffTime * Math.max(1, random.nextInt(Math.max(1, 1 << (retryCount + 1))));
-        }
+        long wait = policy.nextRetryWaitTime(5, 80L); // would exceed deadline -> clamp
+        assertEquals(deadline - 80L, wait);
     }
 }

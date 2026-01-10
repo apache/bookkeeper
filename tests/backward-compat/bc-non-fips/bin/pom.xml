@@ -71,11 +71,6 @@
           <skip>true</skip>
         </configuration>
       </plugin>
-    </plugins>
-  </build>
-
-  <build>
-    <plugins>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
@@ -86,4 +81,5 @@
     </plugins>
   </build>
 </project>
+
 

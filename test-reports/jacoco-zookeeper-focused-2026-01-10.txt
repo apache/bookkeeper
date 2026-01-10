@@ -1,0 +1,15 @@
+JaCoCo Focused Coverage - 10 gennaio 2026
+Scope: ExponentialBackoffRetryPolicy (only our tests)
+
+Coverage:
+- Instructions: covered 40 / total 40 (100%)
+- Branches:     covered 2 / total 2 (100%)
+- Lines:        covered 7 / total 7 (100%)
+- Methods:      covered 3 / total 3 (100%)
+- Complexity:   covered 4 / total 4 (100%)
+
+Source data:
+- CSV: C:\Users\hp\Desktop\bookkeeper\bookkeeper-server\target\site\jacoco\jacoco.csv (row PACKAGE=org.apache.bookkeeper.zookeeper, CLASS=ExponentialBackoffRetryPolicy)
+- Exec: C:\Users\hp\Desktop\bookkeeper\bookkeeper-server\target\jacoco.exec
+
+Generated: 10 gennaio 2026

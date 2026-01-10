@@ -1,0 +1,116 @@
+================================================================================
+CATEGORY PARTITION — Apache BookKeeper (bookkeeper-server)
+Date: 10 gennaio 2026
+Scope: EntryMemTable (bookie) + ExponentialBackoffRetryPolicy (zookeeper)
+Strategia: LLM = alta copertura/branch/edge; Manual = bravo studente (happy path + boundary base)
+================================================================================
+
+[1] EntryMemTable — Categorie e Scelte
+- Stato tabella
+  - C1: Vuota
+  - C2: Non vuota
+  - C3: Dopo flush
+  - C4: Snapshot creato (pre/post)
+- Operazioni
+  - O1: addEntry
+  - O2: getEntry
+  - O3: removeEntry
+  - O4: flush
+  - O5: snapshot
+  - O6: iterator(entries)
+  - O7: cloneWithAllocator
+- Chiavi (ledgerId, entryId)
+  - K1: Nuova chiave
+  - K2: Duplicata (overwrite/no overwrite, se applicabile)
+  - K3: Inesistente
+- Dimensione payload
+  - S1: Zero byte
+  - S2: Piccola (<= 1KB)
+  - S3: Grande (> size limit/near limit)
+  - S4: Esattamente boundary (== size limit)
+- Limite dimensione/contatori
+  - L1: Sotto limite
+  - L2: Raggiunge il limite (trigger)
+  - L3: Oltre limite (rigetto/flush richiesto)
+- Ordine/Iterazione
+  - I1: Ordinamento per (ledgerId, entryId)
+  - I2: Mix di ledger/entry non sequenziali
+- Concorrenza
+  - T1: Single-thread
+  - T2: Add + Flush concorrenti
+  - T3: Add + Remove concorrenti
+- Errori/edge
+  - E1: remove su chiave inesistente
+  - E2: flush su vuoto (no-op)
+  - E3: get dopo flush/snapshot (coerenza)
+  - E4: iterator dopo remove/flush (validità)
+- Vincoli (Constraints)
+  - V1: flush su tabella vuota non invoca callback
+  - V2: flush pulisce e invoca callback
+  - V3: size limit “boundary” consente inserimento esatto
+  - V4: iterator restituisce in ordine e completo
+  - V5: cloneWithAllocator mantiene le entries
+  - V6: remove non elimina altre chiavi
+  - V7: contatori/stats coerenti dopo add/remove/flush
+
+Mapping test
+- LLM: copre C1–C4, O1–O7, K1–K3, S1–S4, L1–L3, I1–I2, T1–T2, E1–E4, V1–V7
+- Manual: copre C1–C2, O1–O5, K1–K3, S2–S4, L1–L2, V1–V3
+
+Obbligazioni di test (essenziali)
+- O1+L2+S4 (add al boundary → non supera limite)
+- O4+C1+V1 (flush su vuoto → no callback)
+- O4+C2+V2 (flush con dati → pulizia e callback)
+- O6+I1 (iterazione in ordine completo)
+- O3+K3+V6 (remove di inesistente non altera altre chiavi)
+
+--------------------------------------------------------------------------------
+
+[2] ExponentialBackoffRetryPolicy — Categorie e Scelte
+- Parametri di base
+  - P1: baseDelay (ms) {0, piccolo, grande}
+  - P2: multiplier {=1, >1}
+  - P3: maxDelay (cap) {assente, presente}
+  - P4: jitter {off, on (boundato)}
+- Controllo tentativi
+  - R1: maxRetries {0, piccolo, grande}
+  - R2: attemptIndex {0..N}
+- Deadline
+  - D1: assente
+  - D2: presente (tempo residuo > 0)
+  - D3: scaduta (<= 0)
+- Funzioni
+  - F1: allowRetry(nTentativi, ora, deadline)
+  - F2: nextRetryWaitTime(nTentativi, ora, deadline)
+- Vincoli (Constraints)
+  - V8: allowRetry → false se maxRetries esaurito
+  - V9: allowRetry → false se deadline scaduta
+  - V10: crescita esponenziale monotona (senza jitter)
+  - V11: clamp a maxDelay (cap)
+  - V12: clamp al tempo residuo (deadline)
+  - V13: jitter entro bounds (no superamento cap)
+  - V14: parametri invalidi (base=0, multiplier=1) gestiti con risultati coerenti
+
+Mapping test
+- LLM: copre P1–P4, R1–R2, D1–D3, F1–F2, V8–V14 incl. jitter/cap/deadline clamp
+- Manual: copre V8 (maxRetries), V11 (cap), V12 (deadline clamp), V10 (crescita di base)
+
+Obbligazioni di test (essenziali)
+- F1 con R1=0 → false
+- F1 con D3 (deadline scaduta) → false
+- F2 clamp a maxDelay
+- F2 clamp al tempo residuo (deadline)
+- Sequenza F2 monotona (senza jitter), jitter entro bounds (se on)
+
+--------------------------------------------------------------------------------
+
+[3] Note di copertura e forza (JaCoCo vs PITest)
+- JaCoCo (focused sui nostri test): indica linee/branch eseguiti.
+- PITest (target class + nostri test): misura robustezza asserzioni (mutations killed vs survived/no-coverage).
+- Strategia: mantenere pochi test ad alto ROI (LLM) per rami/edge principali; manuali come baseline didattica (happy path + boundaries chiari).
+
+[4] Next steps opzionali
+- Bookie: coprire metodi/rami NO_COVERAGE (iterator post-remove/flush, stats/contatori dopo operazioni).
+- ZK: aggiungere casi su jitter bounds e serie di tentativi 1..N per formule di backoff con cap/deadline.
+
+================================================================================

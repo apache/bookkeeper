@@ -1,0 +1,42 @@
+PIT Combined Summary - 10 gennaio 2026
+Scope: Our focused tests only
+
+Zookeeper:
+PIT Mutation Summary - 10 gennaio 2026
+Scope: Zookeeper class (ExponentialBackoffRetryPolicy) with our tests
+
+Totals:
+- Mutations: total 7; killed 5 (71.43%); survived 2; no-coverage 0; timed-out 0
+
+Classes:
+- org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicy
+
+Reports:
+- HTML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-zookeeper\index.html
+- XML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-zookeeper\mutations.xml
+
+Generated: 10 gennaio 2026
+
+
+Bookie:
+PIT Mutation Summary - 10 gennaio 2026
+Scope: Bookie class (EntryMemTable) with our tests
+
+Totals:
+- Mutations: total 90; killed 27 (30%); survived 39; no-coverage 23; timed-out 
+
+Classes:
+- org.apache.bookkeeper.bookie.EntryMemTable
+
+Reports:
+- HTML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-bookie\index.html
+- XML: C:\Users\hp\Desktop\bookkeeper\test-reports\pit-bookie\mutations.xml
+
+Generated: 10 gennaio 2026
+
+
+Notes:
+- PIT restricted to target classes + our tests.
+- Use the HTML reports for per-line mutation details.
+
+Generated: 10 gennaio 2026

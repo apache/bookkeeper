@@ -1,0 +1,30 @@
+Apache BookKeeper - Test Report Summary (latest)
+Date: 10 gennaio 2026
+Scope: bookkeeper-server module (bookie + zookeeper tests)
+
+Overall Status: ALL TESTS PASSING 
+Total Tests Executed (latest run): 17 (0 failures, 0 errors, 0 skipped)
+
+Breakdown by suite
+- Bookie (EntryMemTable): 8 tests  PASS
+   EntryMemTableLLMTest: 5
+   EntryMemTableManualTest: 3
+- Zookeeper (ExponentialBackoffRetryPolicy): 9 tests  PASS
+   ExponentialBackoffRetryPolicyLLMTest: 5
+   ExponentialBackoffRetryPolicyManualTest: 4
+
+Latest execution
+- Command: mvn -pl bookkeeper-server -Dtest="org.apache.bookkeeper.bookie.EntryMemTableLLMTest,org.apache.bookkeeper.bookie.EntryMemTableManualTest,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyLLMTest,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyManualTest" test jacoco:report
+- Result: BUILD SUCCESS
+- Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+- Time: ~40 s (wall clock) including JaCoCo report generation
+
+Coverage
+- JaCoCo agent active; reports written to bookkeeper-server/target/site/jacoco/
+- Execution data: bookkeeper-server/target/jacoco.exec (fresh from latest run)
+
+Notes
+- ByteBuf allocations and checkpoint helpers are released/closed in teardown.
+- Previous test-report files were removed per request before regeneration.
+
+Generated: 10 gennaio 2026

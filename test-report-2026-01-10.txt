@@ -1,0 +1,48 @@
+Apache BookKeeper - Test Report (ExponentialBackoffRetryPolicy)
+Date: 2026-01-10
+Environment: Windows (x86_64), Maven Surefire 3.2.5, JDK 8
+Command: mvn -pl bookkeeper-server "-Dtest=org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyLLMTest,org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyControlFlowTest" test
+
+Summary
+- Module: bookkeeper-server
+- Total tests: 38
+- Failures: 0
+- Errors: 0
+- Skipped: 0
+- Status: BUILD SUCCESS
+- Duration: ~23 s (module build + tests)
+
+Class-level detail
+- org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyManualTest
+  - Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+  - Category partitions:
+    * CF-1/2/3: allowRetry true/false + boundary (retryCount <= / > maxRetries)
+    * CF-4: elapsedRetryTime independence
+    * CF-5/6/7/9: nextRetryWaitTime ranges, exponential growth, Math.max floor, multiplication bounds
+    * CF-8: randomization diversity (set size > 1)
+    * CF-10/11: constructor initialization and Random seed variation
+    * CF-12: integrated retry sequence (0..7) allow/deny + backoff >= base
+    * CF-13: elapsed time variations with allowRetry + nextRetryWaitTime
+    * CF-14: edge cases (zero base, large maxRetries, negative elapsed)
+    * CF-15: coverage verification assertions across allowRetry/nextRetryWaitTime
+  - Output: all assertions passed; backoff values always within asserted ranges; randomization produced >1 distinct values; no skips.
+- org.apache.bookkeeper.zookeeper.ExponentialBackoffRetryPolicyLLMTest
+  - Tests run: 23, Failures: 0, Errors: 0, Skipped: 0
+  - Category partitions (parameterized counts expand total to 23):
+    * Default configuration happy path (base=100, maxRetries=5)
+    * Allow within limit (retryCount 0..5) — 6 cases
+    * Reject beyond limit (retryCount 6,7,10,100) — 4 cases
+    * Minimum wait time for various retryCount/baseBackoff pairs — 4 cases
+    * Exponential backoff growth (retryCount 0 vs 5 upper bounds)
+    * Large/small base backoff single cases
+    * High retry count (retryCount 15 with large maxRetries)
+    * Zero maxRetries boundary
+    * Negative maxRetries behavior
+    * ElapsedRetryTime ignored (0, 1000, MAX_VALUE)
+    * Independence of multiple instances (different bases/maxRetries)
+  - Output: all assertions passed; allowRetry honors limits; wait times respect baseBackoff floors and exponential caps; negative/zero maxRetries handled as asserted; no skips.
+
+Notes
+- JaCoCo agent enabled (target/jacoco.exec updated)
+- No missing modules after cleanup (bookkeeper-tests-demo, tests/docker-images removed earlier)
+- Test sources recompiled (4 test files) with javac release 8

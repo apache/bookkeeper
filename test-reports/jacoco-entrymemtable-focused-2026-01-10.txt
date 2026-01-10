@@ -1,0 +1,15 @@
+JaCoCo Focused Coverage - 10 gennaio 2026
+Scope: EntryMemTable (only our tests)
+
+Coverage:
+- Instructions: covered 606 / total 729 (83.13%)
+- Branches:     covered 53 / total 72 (73.61%)
+- Lines:        covered 145 / total 175 (82.86%)
+- Methods:      covered 19 / total 21 (90.48%)
+- Complexity:   covered 37 / total 57 (64.91%)
+
+Source data:
+- CSV: C:\Users\hp\Desktop\bookkeeper\bookkeeper-server\target\site\jacoco\jacoco.csv (row PACKAGE=org.apache.bookkeeper.bookie, CLASS=EntryMemTable)
+- Exec: C:\Users\hp\Desktop\bookkeeper\bookkeeper-server\target\jacoco.exec
+
+Generated: 10 gennaio 2026
