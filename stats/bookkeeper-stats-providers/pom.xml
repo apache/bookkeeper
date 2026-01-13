@@ -19,7 +19,7 @@
   <parent>
     <artifactId>bookkeeper-stats-parent</artifactId>
     <groupId>org.apache.bookkeeper.stats</groupId>
-    <version>4.17.3</version>
+    <version>4.17.3-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>bookkeeper-stats-providers</artifactId>
