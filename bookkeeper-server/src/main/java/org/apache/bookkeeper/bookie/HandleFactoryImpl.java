@@ -60,9 +60,9 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
                 throw BookieException.create(BookieException.Code.LedgerFencedAndDeletedException);
             }
             handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
-            LedgerDescriptor handlePut = ledgers.putIfAbsent(ledgerId, handle);
+            LedgerDescriptor storedValue = ledgers.putIfAbsent(ledgerId, handle);
             // If it has been modified by other thread, use the previous one.
-            if (handlePut != handle) {
+            if (storedValue != null && storedValue != handle) {
                 return getHandle(ledgerId, masterKey, journalReplay);
             }
         }
