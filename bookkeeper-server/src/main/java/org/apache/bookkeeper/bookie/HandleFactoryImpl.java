@@ -53,18 +53,20 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
     @Override
     public LedgerDescriptor getHandle(final long ledgerId, final byte[] masterKey, boolean journalReplay)
             throws IOException, BookieException {
-        if (!ledgers.containsKey(ledgerId)) {
-            synchronized (ledgers) {
-                if (!ledgers.containsKey(ledgerId)) {
-                    if (!journalReplay && recentlyFencedAndDeletedLedgers.getIfPresent(ledgerId) != null) {
-                        throw BookieException.create(BookieException.Code.LedgerFencedAndDeletedException);
-                    }
-                    LedgerDescriptor handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
-                    ledgers.putIfAbsent(ledgerId, handle);
-                }
+        LedgerDescriptor handle = ledgers.get(ledgerId);
+
+        if (handle == null) {
+            if (!journalReplay && recentlyFencedAndDeletedLedgers.getIfPresent(ledgerId) != null) {
+                throw BookieException.create(BookieException.Code.LedgerFencedAndDeletedException);
+            }
+            handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
+            LedgerDescriptor handlePut = ledgers.putIfAbsent(ledgerId, handle);
+            // If it has been modified by other thread, use the previous one.
+            if (handlePut != handle) {
+                return getHandle(ledgerId, masterKey, journalReplay);
             }
         }
-        LedgerDescriptor handle = ledgers.get(ledgerId);
+
         handle.checkAccess(masterKey);
         return handle;
     }
