@@ -63,6 +63,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     public static final String REPP_DISABLE_DURABILITY_ENFORCEMENT_FEATURE = "reppDisableDurabilityEnforcementFeature";
     public static final String REPP_ENABLE_VALIDATION = "reppEnableValidation";
     public static final String REGION_AWARE_ANOMALOUS_ENSEMBLE = "region_aware_anomalous_ensemble";
+    public static final String REPP_LOCAL_REGION = "reppLocalRegion";
     static final int MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT = 2;
     static final int REGIONID_DISTANCE_FROM_LEAVES = 2;
     static final String UNKNOWN_REGION = "UnknownRegion";
@@ -79,7 +80,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected Feature disableDurabilityFeature;
     private int lastRegionIndex = 0;
 
-    RegionAwareEnsemblePlacementPolicy() {
+    protected RegionAwareEnsemblePlacementPolicy() {
         super();
         perRegionPlacement = new HashMap<String, TopologyAwareEnsemblePlacementPolicy>();
         address2Region = new ConcurrentHashMap<BookieId, String>();
@@ -247,6 +248,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger, bookieAddressResolver)
                 .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
         myRegion = getLocalRegion(localNode);
+        String localRegion = conf.getString(REPP_LOCAL_REGION, null);
+        if (null != localRegion) {
+            myRegion = localRegion;
+        }
         enableValidation = conf.getBoolean(REPP_ENABLE_VALIDATION, true);
         // We have to statically provide regions we want the writes to go through and how many regions
         // are required for durability. This decision cannot be driven by the active bookies as the
