@@ -640,6 +640,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         for (BookieId faultyBookie : faultyBookies) {
             if (Math.random() <= bookieQuarantineRatio) {
                 bookieWatcher.quarantineBookie(faultyBookie);
+                bookieClient.closeQuarantinedBookieChannels(faultyBookie);
                 statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE).inc();
             } else {
                 statsLogger.getCounter(BookKeeperServerStats.BOOKIE_QUARANTINE_SKIP).inc();
