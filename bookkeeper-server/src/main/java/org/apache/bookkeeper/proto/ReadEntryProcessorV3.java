@@ -19,10 +19,12 @@ package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +53,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected final ReadRequest readRequest;
     protected final long ledgerId;
     protected final long entryId;
+
+    private volatile ByteBuf entryBody;
 
     // Stats
     protected final OpStatsLogger readStats;
@@ -92,8 +96,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     /**
      * Handle read result for fence read.
      *
-     * @param entryBody
-     *          read result
      * @param readResponseBuilder
      *          read response builder
      * @param entryId
@@ -102,7 +104,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
      *          timer for the read request
      */
     protected void handleReadResultForFenceRead(
-        final ByteBuf entryBody,
         final ReadResponse.Builder readResponseBuilder,
         final long entryId,
         final Stopwatch startTimeSw) {
@@ -170,25 +171,21 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
         throws IOException, BookieException {
-        ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
+        entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
         if (null != fenceResult) {
-            handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
+            handleReadResultForFenceRead(readResponseBuilder, entryId, startTimeSw);
             return null;
         } else {
-            try {
-                readResponseBuilder.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
-                if (readLACPiggyBack) {
-                    readResponseBuilder.setEntryId(entryId);
-                } else {
-                    long knownLAC = requestProcessor.getBookie().readLastAddConfirmed(ledgerId);
-                    readResponseBuilder.setMaxLAC(knownLAC);
-                }
-                registerSuccessfulEvent(readStats, startTimeSw);
-                readResponseBuilder.setStatus(StatusCode.EOK);
-                return readResponseBuilder.build();
-            } finally {
-                ReferenceCountUtil.release(entryBody);
+            readResponseBuilder.setBody(unsafeWrapAsByteString(entryBody));
+            if (readLACPiggyBack) {
+                readResponseBuilder.setEntryId(entryId);
+            } else {
+                long knownLAC = requestProcessor.getBookie().readLastAddConfirmed(ledgerId);
+                readResponseBuilder.setMaxLAC(knownLAC);
             }
+            registerSuccessfulEvent(readStats, startTimeSw);
+            readResponseBuilder.setStatus(StatusCode.EOK);
+            return readResponseBuilder.build();
         }
     }
 
@@ -288,12 +285,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
-            readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+            readResponse.setBody(unsafeWrapAsByteString(entryBody));
             registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
-        }
-
-        if (null != entryBody) {
-            ReferenceCountUtil.release(entryBody);
         }
 
         readResponse.setStatus(status);
@@ -348,6 +341,51 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             statsLogger.registerFailedEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         } else {
             statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+        }
+    }
+
+    /**
+     * Wrap the entry body as a ByteString.
+     * <p>
+     * This method is used to wrap the entry body as a ByteString. It tries to avoid copying the entry body.
+     *
+     * @param entryBody
+     *          entry body
+     * @return entry body as a ByteString, the lifetime of the returned ByteString is managed by the entryBody.
+     */
+    ByteString unsafeWrapAsByteString(ByteBuf entryBody) {
+        ByteString aggregated = null;
+        if (entryBody.nioBufferCount() > 1) {
+            ByteString piece;
+            for (ByteBuffer nioBuffer : entryBody.nioBuffers()) {
+                piece = UnsafeByteOperations.unsafeWrap(nioBuffer);
+                aggregated = (aggregated == null) ? piece : aggregated.concat(piece);
+            }
+        } else {
+            if (entryBody.hasArray()) {
+                aggregated = UnsafeByteOperations.unsafeWrap(entryBody.array(), entryBody.arrayOffset(),
+                        entryBody.readableBytes());
+            } else {
+                aggregated = UnsafeByteOperations.unsafeWrap(entryBody.nioBuffer());
+            }
+        }
+        return aggregated;
+    }
+
+
+    @Override
+    protected void onSendResponseFailure() {
+        super.onSendResponseFailure();
+        if (null != entryBody) {
+            ReferenceCountUtil.release(entryBody);
+        }
+    }
+
+    @Override
+    protected void onSendResponseSuccess() {
+        super.onSendResponseSuccess();
+        if (null != entryBody) {
+            ReferenceCountUtil.release(entryBody);
         }
     }
 
