@@ -26,6 +26,8 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 
+import static org.apache.bookkeeper.bookie.storage.directentrylogger.LogMetadata.INVALID_LID;
+
 class LogReaderScan {
     static void scan(ByteBufAllocator allocator, LogReader reader, EntryLogScanner scanner) throws IOException {
         int offset = Header.LOGFILE_LEGACY_HEADER_SIZE;
@@ -47,11 +49,27 @@ class LogReaderScan {
                 // have realigned on the block boundary.
                 offset += Integer.BYTES;
 
+                long ledgerId = reader.readLongAt(offset);
+                if (ledgerId == INVALID_LID || !scanner.accept(ledgerId)) {
+                    offset += entrySize;
+                    continue;
+                }
+
                 entry.clear();
-                reader.readIntoBufferAt(entry, offset, entrySize);
-                long ledgerId = entry.getLong(0);
-                if (ledgerId >= 0 && scanner.accept(ledgerId)) {
-                    scanner.process(ledgerId, initOffset, entry);
+                switch (scanner.getReadLengthType()) {
+                    case READ_NOTHING:
+                        scanner.process(ledgerId, initOffset, entrySize);
+                        break;
+                    case READ_LEDGER_ENTRY_ID:
+                        long entryId = reader.readLongAt(offset + Long.BYTES);
+                        scanner.process(ledgerId, initOffset, entrySize, entryId);
+                        break;
+                    case READ_ALL:
+                        reader.readIntoBufferAt(entry, offset, entrySize);
+                        scanner.process(ledgerId, initOffset, entry);
+                        break;
+                    default:
+                        throw new IOException("Unknown read length type: " + scanner.getReadLengthType());
                 }
                 offset += entrySize;
             }

@@ -326,17 +326,19 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
-                    long lid = entry.getLong(entry.readerIndex());
-                    long entryId = entry.getLong(entry.readerIndex() + 8);
-                    if (lid != ledgerId || entryId < -1) {
-                        LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
-                                + "with ledgerId {} entryId {} at offset {}",
-                                ledgerId, lid, entryId, offset);
+                public void process(long ledgerId, long offset, int entrySize, long entryId) throws IOException {
+                    if (entryId < -1) {
+                        LOG.warn("Scanning found invalid entry with ledgerId {} entryId {} at offset {}",
+                                ledgerId, entryId, offset);
                         throw new IOException("Invalid entry found @ offset " + offset);
                     }
                     long location = (compactionLog.getDstLogId() << 32L) | (offset + 4);
-                    offsets.add(new EntryLocation(lid, entryId, location));
+                    offsets.add(new EntryLocation(ledgerId, entryId, location));
+                }
+
+                @Override
+                public ReadLengthType getReadLengthType() {
+                    return ReadLengthType.READ_LEDGER_ENTRY_ID;
                 }
             });
             LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getDstLogId());
