@@ -375,8 +375,8 @@ public class Journal implements CheckpointSource {
         private long logId;
         private boolean flushed;
 
-        public int process(ObjectHashSet<BookieRequestHandler> writeHandlers) {
-            closeFileIfNecessary();
+        public int process(ObjectHashSet<BookieRequestHandler> writeHandlers, JournalStats journalStats) {
+            closeFileIfNecessary(journalStats);
 
             // Notify the waiters that the force write succeeded
             for (int i = 0; i < forceWriteWaiters.size(); i++) {
@@ -393,20 +393,29 @@ public class Journal implements CheckpointSource {
             return forceWriteWaiters.size();
         }
 
-        private void flushFileToDisk() throws IOException {
+        private void flushFileToDisk(JournalStats journalStats) throws IOException {
             if (!flushed) {
-                logFile.forceWrite(false);
-                flushed = true;
+                long fsyncStartTime = MathUtils.nowInNano();
+                try {
+                    logFile.forceWrite(false);
+                    flushed = true;
+                    journalStats.getJournalSyncStats().registerSuccessfulEvent(MathUtils.elapsedNanos(fsyncStartTime),
+                            TimeUnit.NANOSECONDS);
+                } catch (IOException ioe) {
+                    journalStats.getJournalSyncStats()
+                            .registerFailedEvent(MathUtils.elapsedNanos(fsyncStartTime), TimeUnit.NANOSECONDS);
+                    throw ioe;
+                }
             }
         }
 
-        public void closeFileIfNecessary() {
+        public void closeFileIfNecessary(JournalStats journalStats) {
             // Close if shouldClose is set
             if (shouldClose) {
                 // We should guard against exceptions so its
                 // safe to call in catch blocks
                 try {
-                    flushFileToDisk();
+                    flushFileToDisk(journalStats);
                     logFile.close();
                     // Call close only once
                     shouldClose = false;
@@ -511,7 +520,7 @@ public class Journal implements CheckpointSource {
                     // responses
                     for (int i = 0; i < requestsCount; i++) {
                         ForceWriteRequest req = localRequests[i];
-                        numEntriesInLastForceWrite += req.process(writeHandlers);
+                        numEntriesInLastForceWrite += req.process(writeHandlers, journalStats);
                         localRequests[i] = null;
                         req.recycle();
                     }
@@ -538,17 +547,8 @@ public class Journal implements CheckpointSource {
         }
 
         private void syncJournal(ForceWriteRequest lastRequest) throws IOException {
-            long fsyncStartTime = MathUtils.nowInNano();
-            try {
-                lastRequest.flushFileToDisk();
-                journalStats.getJournalSyncStats().registerSuccessfulEvent(MathUtils.elapsedNanos(fsyncStartTime),
-                        TimeUnit.NANOSECONDS);
-                lastLogMark.setCurLogMark(lastRequest.logId, lastRequest.lastFlushedPosition);
-            } catch (IOException ioe) {
-                journalStats.getJournalSyncStats()
-                        .registerFailedEvent(MathUtils.elapsedNanos(fsyncStartTime), TimeUnit.NANOSECONDS);
-                throw ioe;
-            }
+            lastRequest.flushFileToDisk(journalStats);
+            lastLogMark.setCurLogMark(lastRequest.logId, lastRequest.lastFlushedPosition);
         }
 
         // shutdown sync thread
