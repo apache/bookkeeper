@@ -78,8 +78,7 @@ public class ResumeCompactionService implements HttpEndpointService {
             }
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT to resume major or minor compaction, Or GET to get "
-                    + "compaction state.");
+            response.setBody("Not found method. Should be PUT to resume major or minor compaction.");
             return response;
         }
     }
