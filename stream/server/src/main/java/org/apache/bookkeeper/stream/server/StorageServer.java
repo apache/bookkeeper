@@ -111,13 +111,18 @@ public class StorageServer {
         log.info("Loaded configuration file {}", confFile);
     }
 
-    public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
+    public static Endpoint createLocalEndpoint(String advertisedAddress, int port, boolean useHostname)
+        throws UnknownHostException {
         String hostname;
         log.warn("Determining hostname for stream storage");
         if (useHostname) {
             hostname = InetAddress.getLocalHost().getCanonicalHostName();
         } else {
-            hostname = InetAddress.getLocalHost().getHostAddress();
+            if (advertisedAddress != null) {
+                hostname = advertisedAddress;
+            } else {
+                hostname = InetAddress.getLocalHost().getHostAddress();
+            }
         }
 
         log.warn("Decided to use hostname {}", hostname);
@@ -225,7 +230,9 @@ public class StorageServer {
         storageConf.validate();
 
         // Get my local endpoint
-        Endpoint myEndpoint = createLocalEndpoint(grpcPort, useHostname);
+        ServerConfiguration serverConfiguration = new ServerConfiguration();
+        serverConfiguration.loadConf(bkConf.getUnderlyingConf());
+        Endpoint myEndpoint = createLocalEndpoint(serverConfiguration.getAdvertisedAddress(), grpcPort, useHostname);
 
         // Create shared resources
         StorageResources storageResources = StorageResources.create();

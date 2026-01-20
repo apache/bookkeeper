@@ -18,11 +18,16 @@
 
 package org.apache.bookkeeper.stream.server;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.bookkeeper.common.component.LifecycleComponent;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This is a {@link ServerLifecycleComponent} to allow run stream storage component as part of bookie server.
@@ -36,6 +41,9 @@ public class StreamStorageLifecycleComponent extends ServerLifecycleComponent {
         super("stream-storage", conf, statsLogger);
 
         StorageServerConfiguration ssConf = StorageServerConfiguration.of(conf.getUnderlyingConf());
+
+        // initialize the zk cluster
+        initializeZKCluster(conf.getServerConf().getMetadataServiceUri());
 
         this.streamStorage = StorageServer.buildStorageServer(
             conf.getUnderlyingConf(),
@@ -58,5 +66,18 @@ public class StreamStorageLifecycleComponent extends ServerLifecycleComponent {
     @Override
     protected void doClose() {
         this.streamStorage.close();
+    }
+
+    private void initializeZKCluster(String metaServiceUri) {
+        ServiceURI serviceURI = ServiceURI.create(metaServiceUri);
+        checkArgument(ServiceURI.SERVICE_ZK.equals(serviceURI.getServiceName()),
+                "Only support zookeeper based metadata service now");
+        String[] serviceHosts = serviceURI.getServiceHosts();
+        String metadataServers = StringUtils.join(serviceHosts, ',');
+
+        new ZkClusterInitializer(metadataServers).initializeCluster(
+                serviceURI.getUri(),
+                serviceHosts.length * 2);
+
     }
 }
