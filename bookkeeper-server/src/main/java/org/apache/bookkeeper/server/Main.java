@@ -61,7 +61,9 @@ public class Main {
         BK_OPTS.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
         BK_OPTS.addOption("p", "bookieport", true, "bookie port exported");
         BK_OPTS.addOption("hp", "httpport", true, "bookie http port exported");
-        BK_OPTS.addOption("j", "journal", true, "bookie journal directory");
+        Option journalDirs = new Option ("j", "journaldirs", true, "bookie journal directories");
+        journalDirs.setArgs(10);
+        BK_OPTS.addOption(journalDirs);
         Option indexDirs = new Option ("i", "indexdirs", true, "bookie index directories");
         indexDirs.setArgs(10);
         BK_OPTS.addOption(indexDirs);
@@ -81,8 +83,10 @@ public class Main {
             + "The settings in configuration file will be overwrite by provided arguments.\n"
             + "Options including:\n";
         String footer = "Here is an example:\n"
-            + "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers "
-            + "-p 3181 -j /mnt/journal -i \"/mnt/index1 /mnt/index2\""
+            + "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers"
+            + " -p 3181"
+            + " -j \"/mnt/journal1 /mnt/journal2\""
+            + " -i \"/mnt/index1 /mnt/index2\""
             + " -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
         hf.printHelp("BookieServer [options]\n", header, BK_OPTS, footer, true);
     }
@@ -166,9 +170,12 @@ public class Main {
             }
 
             if (cmdLine.hasOption('j')) {
-                String sJournalDir = cmdLine.getOptionValue('j');
-                log.info("Get cmdline journal dir: {}", sJournalDir);
-                conf.setJournalDirName(sJournalDir);
+                String[] sJournalDirs = cmdLine.getOptionValues('j');
+                log.info("Get cmdline journal dirs: ");
+                for (String journal : sJournalDirs) {
+                    log.info("journalDir : {}", journal);
+                }
+                conf.setJournalDirsName(sJournalDirs);
             }
 
             if (cmdLine.hasOption('i')) {
