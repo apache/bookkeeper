@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -81,7 +82,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.collections4.IteratorUtils;
@@ -93,6 +93,8 @@ import org.slf4j.LoggerFactory;
  * write operations to a ledger.
  */
 public class LedgerHandle implements WriteHandle {
+    public static Set<LedgerHandle> INSTANCES = ConcurrentHashMap.newKeySet();
+
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     private static final int STICKY_READ_BOOKIE_INDEX_UNSET = -1;
@@ -248,17 +250,6 @@ public class LedgerHandle implements WriteHandle {
         lacUpdateHitsCounter = clientCtx.getClientStats().getLacUpdateHitsCounter();
         lacUpdateMissesCounter = clientCtx.getClientStats().getLacUpdateMissesCounter();
         clientChannelWriteWaitStats = clientCtx.getClientStats().getClientChannelWriteWaitLogger();
-
-        clientCtx.getClientStats().registerPendingAddsGauge(new Gauge<Integer>() {
-                @Override
-                public Integer getDefaultValue() {
-                    return 0;
-                }
-                @Override
-                public Integer getSample() {
-                    return pendingAddOps.size();
-                }
-            });
 
         initializeWriteHandleState();
     }
@@ -522,6 +513,8 @@ public class LedgerHandle implements WriteHandle {
             errorOutPendingAdds(BookKeeper.getReturnRc(clientCtx.getBookieClient(), rc));
             cb.closeComplete(BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
                              this, ctx);
+        } finally {
+            LedgerHandle.INSTANCES.remove(this);
         }
     }
 
