@@ -57,6 +57,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
@@ -81,6 +82,7 @@ import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +93,11 @@ import org.slf4j.LoggerFactory;
  * <p>This is meant only to be used from {@link DbLedgerStorage}.
  */
 public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage {
+
+    static final long INVALID_LID = -1L;
+
+    static final long INVALID_ENTRY_ID = -2L;
+    static final int NEXT_POSITION_READ_BYTES = 4/*entry size*/ + 8/*ledgerId*/ + 8/*entryId*/;
     private final EntryLogger entryLogger;
 
     private final LedgerMetadataIndex ledgerIndex;
@@ -152,12 +159,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final boolean singleLedgerDirs;
     private final String ledgerBaseDir;
     private final String indexBaseDir;
+    private final boolean disableReadCache;
+    private final boolean enableLocationCache;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                                           EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
                                           long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize,
-                                          long readAheadCacheBatchBytesSize)
+                                          long readAheadCacheBatchBytesSize,
+                                          boolean disableReadCache, boolean enableLocationCache)
             throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
@@ -196,7 +206,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 DEFAULT_MAX_THROTTLE_TIME_MILLIS);
         maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 
-        readCache = new ReadCache(allocator, readCacheMaxSize);
+        this.enableLocationCache = enableLocationCache;
+        this.disableReadCache = disableReadCache;
+        if (disableReadCache) {
+            readCache = new DisableReadCache(allocator, readCacheMaxSize);
+        } else {
+            readCache = new ReadCache(allocator, readCacheMaxSize);
+        }
 
         ledgerIndex = new LedgerMetadataIndex(conf,
                 KeyValueStorageRocksDB.factory, indexBaseDir, ledgerIndexDirStatsLogger);
@@ -623,44 +639,85 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         dbLedgerStorageStats.getWriteCacheMissCounter().inc();
 
-        // Try reading from read-ahead cache
-        entry = readCache.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getReadCacheHitCounter().inc();
-            return entry;
+        if (!disableReadCache) {
+            // Try reading from read-ahead cache
+            entry = readCache.get(ledgerId, entryId);
+            if (entry != null) {
+                dbLedgerStorageStats.getReadCacheHitCounter().inc();
+                return entry;
+            }
+            dbLedgerStorageStats.getReadCacheMissCounter().inc();
         }
 
-        dbLedgerStorageStats.getReadCacheMissCounter().inc();
-
         // Read from main storage
-        long entryLocation;
-        long locationIndexStartNano = MathUtils.nowInNano();
-        try {
+        long entryLocation = 0;
+        if (enableLocationCache) {
+            entryLocation = entryLocationIndex.tryGetLocationFromLocationCache(ledgerId, entryId);
+        }
+        if (entryLocation == 0) {
+            long locationIndexStartNano = MathUtils.nowInNano();
             entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
             if (entryLocation == 0) {
                 // Only a negative result while in limbo equates to unknown
                 throwIfLimbo(ledgerId);
 
+                dbLedgerStorageStats.getReadFromLocationIndexTime()
+                    .registerFailedEvent(MathUtils.elapsedNanos(locationIndexStartNano),
+                            TimeUnit.NANOSECONDS);
                 throw new NoEntryException(ledgerId, entryId);
             }
-        } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                    MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
+            dbLedgerStorageStats.getReadFromLocationIndexTime()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(locationIndexStartNano),
+                            TimeUnit.NANOSECONDS);
         }
 
         long readEntryStartNano = MathUtils.nowInNano();
+        Pair<Integer, ByteBuf> entrySizeAndEntry = null;
         try {
-            entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-        } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
+            if (enableLocationCache
+                    && entryLogger instanceof DefaultEntryLogger) {
+                entrySizeAndEntry = entryLogger.readEntryAndExtraBytes(ledgerId, entryId, entryLocation,
+                    NEXT_POSITION_READ_BYTES);
+            } else {
+                ByteBuf buf = entryLogger.readEntry(ledgerId, entryId, entryLocation);
+                entrySizeAndEntry = Pair.of(buf.readableBytes(), buf);
+            }
+        } catch (Throwable t) {
+            dbLedgerStorageStats.getReadFromEntryLogTime().registerFailedEvent(
                     MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
+            throw t;
+        }
+        dbLedgerStorageStats.getReadFromEntryLogTime().registerSuccessfulEvent(
+                MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
+
+        entry = entrySizeAndEntry.getRight();
+        // calculate next position and put it in the index cache
+        int entrySize = entrySizeAndEntry.getLeft();
+        int writeIndex = entry.writerIndex();
+        if (entry.readableBytes() == entrySize + NEXT_POSITION_READ_BYTES) {
+            // has read next entry position
+            long nextLedgerId = entry.getLong(writeIndex - 16);
+            long nextEntryId = entry.getLong(writeIndex - 8);
+            entry.writerIndex(writeIndex - NEXT_POSITION_READ_BYTES);
+            if (nextLedgerId >= 0 && nextEntryId >= 0) {
+                long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+                entryLocationIndex.updateLocationToLocationCache(nextLedgerId, nextEntryId, nextEntryLocation);
+            } else if (nextLedgerId != INVALID_LID || nextEntryId != INVALID_ENTRY_ID) {
+                log.error("Invalid next entry: {}@{}", nextLedgerId, nextEntryId);
+            }
+        } else if (entry.readableBytes() < entrySize) {
+            log.error("Invalid entry size: {} != {}", entry.readableBytes(), entrySize);
+            throw new IOException("Invalid entry size: " + entry.readableBytes() + " != " + entrySize);
+        } else {
+            entry.writerIndex(entry.readerIndex() + entrySize);
         }
 
-        readCache.put(ledgerId, entryId, entry);
-
-        // Try to read more entries
-        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        if (!disableReadCache) {
+            readCache.put(ledgerId, entryId, entry);
+            // Try to read more entries
+            long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+            fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        }
 
         return entry;
     }
@@ -701,15 +758,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     ReferenceCountUtil.release(entry);
                 }
             }
+            dbLedgerStorageStats.getReadAheadTime().registerSuccessfulEvent(
+                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
                 log.debug("Exception during read ahead for ledger: {}: e", originalLedgerId, e);
             }
+            dbLedgerStorageStats.getReadAheadTime().registerFailedEvent(
+                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         } finally {
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
-            dbLedgerStorageStats.getReadAheadTime().addLatency(
-                    MathUtils.elapsedNanos(readAheadStartNano), TimeUnit.NANOSECONDS);
         }
     }
 
@@ -775,12 +834,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
 
         long entryLocation = entryLocationIndex.getLocation(ledgerId, lastEntryId);
-        dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
+        dbLedgerStorageStats.getReadFromLocationIndexTime().registerSuccessfulEvent(
+                MathUtils.elapsedNanos(locationIndexStartNano),
+                TimeUnit.NANOSECONDS);
 
         long readEntryStartNano = MathUtils.nowInNano();
         ByteBuf content = entryLogger.readEntry(ledgerId, lastEntryId, entryLocation);
-        dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
+        dbLedgerStorageStats.getReadFromEntryLogTime().registerSuccessfulEvent(
                 MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
         return content;
     }
@@ -981,6 +1041,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         flushMutex.lock();
         flushMutex.unlock();
 
+        entryLocationIndex.updateIndexCache(locations);
         // We don't need to keep the flush mutex locked here while updating the DB.
         // It's fine to have a concurrent flush operation at this point, because we
         // know that none of the entries being flushed was included in the compaction
