@@ -52,6 +52,8 @@ public class TestBKConfiguration {
         // enable journal format version
         confReturn.setJournalFormatVersionToWrite(5);
         confReturn.setAllowEphemeralPorts(false);
+        // use 127.0.0.1 to connect to avoid DNS resolution issues in tests
+        confReturn.setAdvertisedAddress("127.0.0.1");
         confReturn.setBookiePort(PortManager.nextFreePort());
         confReturn.setGcWaitTime(1000);
         confReturn.setDiskUsageThreshold(0.999f);

@@ -88,6 +88,10 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         baseConf.setOpenLedgerRereplicationGracePeriod(openLedgerRereplicationGracePeriod);
         baseConf.setRwRereplicateBackoffMs(500);
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
+
         baseClientConf.setLedgerManagerFactoryClassName(
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         this.digestType = DigestType.MAC;
