@@ -147,6 +147,7 @@ public class ReplicationWorker implements Runnable {
     private final Counter numNotAdheringPlacementLedgersReplicated;
     private final Map<String, Counter> exceptionCounters;
     final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
+    @VisibleForTesting
     final LoadingCache<Long, ConcurrentSkipListSet<Long>> unableToReadEntriesForReplication;
 
     /**
@@ -323,8 +324,7 @@ public class ReplicationWorker implements Runnable {
             .releaseUnderreplicatedLedger(ledgerIdToReplicate);
         getExceptionCounter(e.getClass().getSimpleName()).inc();
     }
-
-    private boolean tryReadingFaultyEntries(LedgerHandle lh, LedgerFragment ledgerFragment) {
+    public boolean tryReadingFaultyEntries(LedgerHandle lh, LedgerFragment ledgerFragment) {
         long ledgerId = lh.getId();
         ConcurrentSkipListSet<Long> entriesUnableToReadForThisLedger = unableToReadEntriesForReplication
                 .getIfPresent(ledgerId);
@@ -333,6 +333,9 @@ public class ReplicationWorker implements Runnable {
         }
         long firstEntryIdOfFragment = ledgerFragment.getFirstEntryId();
         long lastEntryIdOfFragment = ledgerFragment.getLastKnownEntryId();
+        if (firstEntryIdOfFragment > lastEntryIdOfFragment) {
+            return true;
+        }
         NavigableSet<Long> entriesOfThisFragmentUnableToRead = entriesUnableToReadForThisLedger
                 .subSet(firstEntryIdOfFragment, true, lastEntryIdOfFragment, true);
         if (entriesOfThisFragmentUnableToRead.isEmpty()) {
