@@ -350,6 +350,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_BATCH_READ_SIZE = "maxBatchReadSize";
     protected static final int DEFAULT_MAX_BATCH_READ_SIZE = 5 * 1024 * 1024; // 5MB
 
+    // Is true if only Secure Client Connections are allowed.
+    protected static final String ONLY_SECURE_CLIENTS_ALLOWED = "onlySecureClientsAllowed";
+
     /**
      * Construct a default configuration object.
      */
@@ -4223,5 +4226,20 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         }
         // Return the original file name if no path was found in the classpath
         return fileName;
+    }
+
+    /*
+     * True if only secured client connections are allowed.
+     */
+    public boolean isOnlySecureClientConnectionAllowed() {
+        return this.getBoolean(ONLY_SECURE_CLIENTS_ALLOWED, false);
+    }
+
+    /**
+     * Enable/Disable the feature to allow only Secure Client Connections.
+     */
+    public ServerConfiguration setOnlySecureClientConnectionAllowed(boolean onlySecureClientConnectionAllowed) {
+        this.setProperty(ONLY_SECURE_CLIENTS_ALLOWED, Boolean.toString(onlySecureClientConnectionAllowed));
+        return this;
     }
 }
