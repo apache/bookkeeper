@@ -96,9 +96,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         this.selfBookieAddress = BookieImpl.getBookieId(conf);
 
         this.gcOverReplicatedLedgerIntervalMillis = conf.getGcOverreplicatedLedgerWaitTimeMillis();
-        this.lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
             this.enableGcOverReplicatedLedger = true;
+            this.lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis()
+                    + (long) (gcOverReplicatedLedgerIntervalMillis * Math.random());
         }
         this.maxConcurrentRequests = conf.getGcOverreplicatedLedgerMaxConcurrentRequests();
         LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequests={}",
