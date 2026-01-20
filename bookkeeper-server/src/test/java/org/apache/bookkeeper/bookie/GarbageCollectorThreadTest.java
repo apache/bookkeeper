@@ -294,7 +294,9 @@ public class GarbageCollectorThreadTest {
 
         storage.deleteLedger(1);
         // only logId 1 will be compacted.
-        gcThread.runWithFlags(true, true, false);
+        gcThread.runWithFlags(true, true, false, conf.getMajorCompactionThreshold(),
+                conf.getMinorCompactionThreshold(), conf.getMajorCompactionMaxTimeMillis(),
+                conf.getMinorCompactionMaxTimeMillis());
 
         // logId1 and logId2 should be compacted
         assertFalse(entryLogger.logExists(logId1));
@@ -361,7 +363,9 @@ public class GarbageCollectorThreadTest {
         assertTrue(entryLogMetaMap.containsKey(logId2));
         assertTrue(entryLogger.logExists(logId3));
 
-        gcThread.runWithFlags(true, true, false);
+        gcThread.runWithFlags(true, true, false, conf.getMajorCompactionThreshold(),
+                conf.getMinorCompactionThreshold(), conf.getMajorCompactionMaxTimeMillis(),
+                conf.getMinorCompactionMaxTimeMillis());
 
         assertTrue(entryLogger.logExists(logId1));
         assertTrue(entryLogger.logExists(logId2));
