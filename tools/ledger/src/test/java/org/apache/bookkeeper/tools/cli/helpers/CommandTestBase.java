@@ -85,8 +85,7 @@ public class CommandTestBase extends MockCommandSupport {
                 .runFunctionWithLedgerManagerFactory(any(ServerConfiguration.class), any(Function.class))
         ).then(invocation -> {
             Function<LedgerManagerFactory, ?> func = invocation.getArgument(1);
-            func.apply(ledgerManagerFactory);
-            return true;
+            return func.apply(ledgerManagerFactory);
         });
     }
 

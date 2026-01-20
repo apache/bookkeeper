@@ -121,13 +121,14 @@ public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.Delet
                 configuration.addConfiguration(conf);
                 bookKeeper = new BookKeeper(configuration);
                 bookKeeper.deleteLedger(flags.ledgerId);
+                return true;
+            } else {
+                return false;
             }
         } finally {
             if (bookKeeper != null) {
                 bookKeeper.close();
             }
         }
-
-        return true;
     }
 }

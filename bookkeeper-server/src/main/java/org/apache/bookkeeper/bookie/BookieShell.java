@@ -53,6 +53,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.MarkLedgerReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.QueryAutoRecoveryStatusCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
@@ -137,6 +138,7 @@ public class BookieShell implements Tool {
     static final String CMD_LISTLEDGERS = "listledgers";
     static final String CMD_LEDGERMETADATA = "ledgermetadata";
     static final String CMD_LISTUNDERREPLICATED = "listunderreplicated";
+    static final String CMD_MARKLEDGERREPLICATED = "markledgerreplicated";
     static final String CMD_WHOISAUDITOR = "whoisauditor";
     static final String CMD_WHATISINSTANCEID = "whatisinstanceid";
     static final String CMD_SIMPLETEST = "simpletest";
@@ -781,6 +783,48 @@ public class BookieShell implements Tool {
             ListUnderReplicatedCommand cmd = new ListUnderReplicatedCommand(ledgerIdFormatter);
             cmd.apply(bkConf, flags);
             return 0;
+        }
+    }
+
+    /**
+     * Command to delete a given ledger.
+     */
+    class MarkLedgerReplicatedCmd extends MyCommand {
+
+        MarkLedgerReplicatedCmd() {
+            super(CMD_MARKLEDGERREPLICATED);
+            opts.addOption("l", "ledgerid", true, "Ledger ID");
+            opts.addOption("f", "force", false, "Whether to force mark the Ledger replicated without prompt..?");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            final long lid = getOptionLedgerIdValue(cmdLine, "ledgerid", -1);
+
+            boolean force = cmdLine.hasOption("f");
+            MarkLedgerReplicatedCommand cmd = new MarkLedgerReplicatedCommand(ledgerIdFormatter);
+
+            MarkLedgerReplicatedCommand.MarkLedgerReplicatedFlags flags =
+                    new MarkLedgerReplicatedCommand.MarkLedgerReplicatedFlags()
+                    .ledgerId(lid).force(force);
+            cmd.apply(bkConf, flags);
+
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "Mark a ledger replicated.";
+        }
+
+        @Override
+        String getUsage() {
+            return "markledgerreplicated -ledgerid <ledgerid> [-force]";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
         }
     }
 
@@ -2577,6 +2621,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LISTLEDGERS, new ListLedgersCmd());
         commands.put(CMD_ACTIVE_LEDGERS_ON_ENTRY_LOG_FILE, new ListActiveLedgersCmd());
         commands.put(CMD_LISTUNDERREPLICATED, new ListUnderreplicatedCmd());
+        commands.put(CMD_MARKLEDGERREPLICATED, new MarkLedgerReplicatedCmd());
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
         commands.put(CMD_WHATISINSTANCEID, new WhatIsInstanceId());
         commands.put(CMD_LEDGERMETADATA, new LedgerMetadataCmd());
