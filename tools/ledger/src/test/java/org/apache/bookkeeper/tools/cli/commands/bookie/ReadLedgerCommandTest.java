@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import lombok.SneakyThrows;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -42,9 +44,11 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClientImpl;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.stubbing.Stubber;
 
 /**
  * Unit test for {@link ReadLedgerCommand}.
@@ -61,6 +65,30 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
 
     public ReadLedgerCommandTest() {
         super(3, 0);
+    }
+
+    protected void mockBookieClientImplConstruction(LedgerEntry entry) {
+        mockConstruction(BookieClientImpl.class, (bookieClient, context) -> {
+            Stubber stub = doAnswer(invokation -> {
+                Object[] args = invokation.getArguments();
+                long ledgerId = (Long) args[1];
+                long entryId = (Long) args[2];
+                BookkeeperInternalCallbacks.ReadEntryCallback callback =
+                        (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
+
+                if (entryId <= 10) {
+                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, entry.getEntryBuffer(),
+                            args[4]);
+                } else {
+                    callback.readEntryComplete(BKException.Code.NoSuchEntryException, ledgerId, entryId, null, args[4]);
+                }
+                return null;
+            });
+
+            stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+                    any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                    any(), anyInt());
+        });
     }
 
     @Override
@@ -93,6 +121,8 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
             }
         });
 
+        mockBookieClientImplConstruction(entry);
+
         mockConstruction(NioEventLoopGroup.class);
 
 
@@ -110,9 +140,6 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class)))
                 .thenReturn(scheduledExecutorService);
 
-        mockConstruction(BookieClientImpl.class);
-
-
     }
 
     @Test
@@ -128,7 +155,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
     }
 
     @Test
-    public void testWithBookieAddress() throws Exception {
+    public void testWithBookieAddressWithoutEntryRange() throws Exception {
         ReadLedgerCommand cmd = new ReadLedgerCommand();
         Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b", bookieSocketAddress.getId() }));
         Assert.assertEquals(1, getMockedConstruction(NioEventLoopGroup.class).constructed().size());
@@ -137,6 +164,28 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
         verify(getMockedConstruction(NioEventLoopGroup.class).constructed().get(0), times(1)).shutdownGracefully();
         verify(orderedExecutor, times(1)).shutdown();
         verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(1)).close();
+        // read from default entry -1 to entry 11. entry 11 is not found
+        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(13))
+                .readEntry(any(), anyLong(), anyLong(),
+                        any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                        any(), anyInt());
     }
 
+    @Test
+    public void testWithBookieAddressWithEntryRange() throws Exception {
+        ReadLedgerCommand cmd = new ReadLedgerCommand();
+        Assert.assertTrue(cmd.apply(bkFlags, new String[] { "-b",
+                bookieSocketAddress.getId(), "-fe", "5", "-le", "100" }));
+        Assert.assertEquals(1, getMockedConstruction(NioEventLoopGroup.class).constructed().size());
+        Assert.assertEquals(1, getMockedConstruction(DefaultThreadFactory.class).constructed().size());
+        Assert.assertEquals(1, getMockedConstruction(BookieClientImpl.class).constructed().size());
+        verify(getMockedConstruction(NioEventLoopGroup.class).constructed().get(0), times(1)).shutdownGracefully();
+        verify(orderedExecutor, times(1)).shutdown();
+        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(1)).close();
+        // read from entry 5 to entry 11. entry 11 is not found
+        verify(getMockedConstruction(BookieClientImpl.class).constructed().get(0), times(7))
+                .readEntry(any(), anyLong(), anyLong(),
+                        any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                        any(), anyInt());
+    }
 }
