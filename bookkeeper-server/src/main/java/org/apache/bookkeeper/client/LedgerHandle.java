@@ -2148,10 +2148,8 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        // Original intent of this change is to do a best-effort ensemble change.
-        // But this is not possible until the local metadata is completely immutable.
-        // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
-        // handleBookieFailure() to handle delayed writes as regular bookie failures.
+        // Treat delayed-write failures as regular bookie failures and trigger an ensemble change.
+        // LedgerMetadata is immutable now (#281), so this is handled via MetadataUpdateLoop.
         handleBookieFailure(toReplace);
     }
 
