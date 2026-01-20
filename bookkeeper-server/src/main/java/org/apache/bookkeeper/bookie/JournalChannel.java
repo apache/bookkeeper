@@ -259,7 +259,9 @@ class JournalChannel implements Closeable {
         fc.write(bb);
 
         bc = bcBuilder.create(fc, writeBufferSize);
-        forceWrite(true);
+        if (configuration.getJournalSyncData()) {
+            forceWrite(true);
+        }
         nextPrealloc = this.preAllocSize;
         fc.write(zeros, nextPrealloc - journalAlignSize);
     }
