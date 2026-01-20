@@ -20,6 +20,7 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -66,6 +67,13 @@ public class BookieStateReadOnlyService implements HttpEndpointService {
                     return response;
                 }
                 stateManager.transitionToReadOnlyMode(true).get();
+            }
+            Map<String, String> params = request.getParams();
+            if (params != null) {
+                boolean isForce = params.getOrDefault("force", "false").equals("true");
+                if (stateManager.isReadOnly() && isForce) {
+                    stateManager.forceToReadOnly();
+                }
             }
         } else if (!HttpServer.Method.GET.equals(request.getMethod())) {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
