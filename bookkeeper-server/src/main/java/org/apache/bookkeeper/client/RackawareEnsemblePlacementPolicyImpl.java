@@ -359,32 +359,31 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      */
     protected Set<BookieId> addDefaultRackBookiesIfMinNumRacksIsEnforced(
             Set<BookieId> excludeBookies) {
-        Set<BookieId> comprehensiveExclusionBookiesSet;
-        if (enforceMinNumRacksPerWriteQuorum) {
-            Set<BookieId> bookiesInDefaultRack = null;
-            Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
-            for (Node node : defaultRackLeaves) {
-                if (node instanceof BookieNode) {
-                    if (bookiesInDefaultRack == null) {
-                        bookiesInDefaultRack = new HashSet<BookieId>(excludeBookies);
-                    }
-                    bookiesInDefaultRack.add(((BookieNode) node).getAddr());
-                } else {
-                    LOG.error("found non-BookieNode: {} as leaf of defaultrack: {}", node, getDefaultRack());
-                }
-            }
-            if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
-                comprehensiveExclusionBookiesSet = excludeBookies;
-            } else {
-                comprehensiveExclusionBookiesSet = new HashSet<BookieId>(excludeBookies);
-                comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
-                LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
-                        bookiesInDefaultRack);
-            }
-        } else {
-            comprehensiveExclusionBookiesSet = excludeBookies;
+        if (!enforceMinNumRacksPerWriteQuorum) {
+            return excludeBookies;
         }
-        return comprehensiveExclusionBookiesSet;
+
+        Set<BookieId> bookiesInDefaultRack = null;
+        Set<Node> defaultRackLeaves = topology.getLeaves(getDefaultRack());
+        for (Node node : defaultRackLeaves) {
+            if (node instanceof BookieNode) {
+                if (bookiesInDefaultRack == null) {
+                    bookiesInDefaultRack = new HashSet<>();
+                }
+                bookiesInDefaultRack.add(((BookieNode) node).getAddr());
+            } else {
+                LOG.error("found non-BookieNode: {} as leaf of defaultRack: {}", node, getDefaultRack());
+            }
+        }
+        if ((bookiesInDefaultRack == null) || bookiesInDefaultRack.isEmpty()) {
+            return excludeBookies;
+        } else {
+            Set<BookieId> comprehensiveExclusionBookiesSet = new HashSet<>(excludeBookies);
+            comprehensiveExclusionBookiesSet.addAll(bookiesInDefaultRack);
+            LOG.info("enforceMinNumRacksPerWriteQuorum is enabled, so Excluding bookies of defaultRack: {}",
+                    bookiesInDefaultRack);
+            return comprehensiveExclusionBookiesSet;
+        }
     }
 
     @Override
