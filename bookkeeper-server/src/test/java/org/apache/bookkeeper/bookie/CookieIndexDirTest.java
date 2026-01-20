@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -974,32 +975,69 @@ public class CookieIndexDirTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Compatibility test
-     * 1. First create bookie without indexDirName
-     * 2. Configure indexDirName to start bookie
+     * Compatibility test.
      */
     @Test
-    public void testNewBookieStartingWithOldCookie() throws Exception {
+    public void testCookieCompatibility() throws Exception {
         String journalDir = newDirectory();
         String[] ledgerDirs = {newDirectory(), newDirectory()};
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir)
-                .setLedgerDirNames(ledgerDirs)
-                .setBookiePort(bookiePort)
-                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
-        validateConfig(conf);
+        String[] indexDirs = {newDirectory()};
 
-        conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir)
+        ServerConfiguration confWithDirs = TestBKConfiguration.newServerConfiguration();
+        confWithDirs.setJournalDirName(journalDir)
                 .setLedgerDirNames(ledgerDirs)
-                .setIndexDirName(ledgerDirs)
+                .setIndexDirName(indexDirs)
                 .setBookiePort(bookiePort)
                 .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        String instanceId = UUID.randomUUID().toString();
+
+        Cookie.Builder builder = Cookie.generateCookie(confWithDirs);
+        builder.setLayoutVersion(4);
+        builder.setIndexDirs(null);
+        builder.setInstanceId(instanceId);
+        Cookie version4Cookie = builder.build();
+
+        Cookie.Builder builder1 = Cookie.generateCookie(confWithDirs);
+        builder1.setInstanceId(instanceId);
+        Cookie version5CookieWithIndexDirs = builder1.build();
+
+        ServerConfiguration confWithoutDirs = TestBKConfiguration.newServerConfiguration();
+        confWithoutDirs.setJournalDirName(journalDir)
+                .setLedgerDirNames(ledgerDirs)
+                .setBookiePort(bookiePort)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        Cookie.Builder builder2 = Cookie.generateCookie(confWithoutDirs);
+        builder2.setInstanceId(instanceId);
+        Cookie version5CookieWithoutIndexDirs = builder2.build();
+
+        version5CookieWithIndexDirs.verify(version4Cookie);
+        version5CookieWithIndexDirs.verifyIsSuperSet(version4Cookie);
+
+        version5CookieWithoutIndexDirs.verify(version4Cookie);
+        version5CookieWithoutIndexDirs.verifyIsSuperSet(version4Cookie);
+
         try {
-            validateConfig(conf);
-        } catch (InvalidCookieException ice) {
-            // error behaviour
-            fail("Validate failed, error info: " + ice.getMessage());
+            version5CookieWithIndexDirs.verify(version5CookieWithoutIndexDirs);
+            fail("Shouldn't compatible");
+        } catch (Exception ignore) {
+        }
+
+        try {
+            version5CookieWithIndexDirs.verifyIsSuperSet(version5CookieWithoutIndexDirs);
+            fail("Shouldn't compatible");
+        } catch (Exception ignore) {
+        }
+
+        try {
+            version5CookieWithoutIndexDirs.verify(version5CookieWithIndexDirs);
+            fail("Shouldn't compatible");
+        } catch (Exception ignore) {
+        }
+
+        try {
+            version5CookieWithoutIndexDirs.verifyIsSuperSet(version5CookieWithIndexDirs);
+            fail("Shouldn't compatible");
+        } catch (Exception ignore) {
         }
     }
 }
