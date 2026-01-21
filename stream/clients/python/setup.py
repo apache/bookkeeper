@@ -17,7 +17,7 @@ import setuptools
 
 # Package metadata.
 
-name = 'apache-bookkeeper-client'
+name = 'apache_bookkeeper_client'
 description = 'Apache BookKeeper client library'
 version = '4.17.3'
 # Should be one of:
