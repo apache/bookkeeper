@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -209,36 +209,41 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#keepUpdateMetadata">keepUpdateMetadata</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ledgerId">ledgerId</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#lh">lh</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) static org.slf4j.Logger</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#LOG">LOG</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#openOpLogger">openOpLogger</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) byte[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#passwd">passwd</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#startTime">startTime</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#suggestedDigestType">suggestedDigestType</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -307,12 +312,20 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiateWithKeepUpdateMetadata()">initiateWithKeepUpdateMetadata</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Different with <a href="#initiate()"><code>initiate()</code></a>, the method keep update metadata once the auto-recover component modified
+ the ensemble.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initiateWithoutRecovery()">initiateWithoutRecovery</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Inititates the ledger open operation without recovery.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#openComplete(int,org.apache.bookkeeper.client.LedgerHandle)">openComplete</a></span>&#8203;(int&nbsp;rc,
             <a href="LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code></th>
@@ -412,6 +425,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>doRecovery</h4>
 <pre>boolean doRecovery</pre>
+</li>
+</ul>
+<a id="keepUpdateMetadata">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>keepUpdateMetadata</h4>
+<pre>boolean keepUpdateMetadata</pre>
 </li>
 </ul>
 <a id="administrativeOpen">
@@ -535,6 +557,17 @@ extends java.lang.Object</pre>
 <h4>initiateWithoutRecovery</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;initiateWithoutRecovery()</pre>
 <div class="block">Inititates the ledger open operation without recovery.</div>
+</li>
+</ul>
+<a id="initiateWithKeepUpdateMetadata()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>initiateWithKeepUpdateMetadata</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;initiateWithKeepUpdateMetadata()</pre>
+<div class="block">Different with <a href="#initiate()"><code>initiate()</code></a>, the method keep update metadata once the auto-recover component modified
+ the ensemble.</div>
 </li>
 </ul>
 <a id="openComplete(int,org.apache.bookkeeper.client.LedgerHandle)">

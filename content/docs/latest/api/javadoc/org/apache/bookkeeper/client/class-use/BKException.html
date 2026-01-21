@@ -758,12 +758,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#openLedger(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,boolean)">openLedger</a></span>&#8203;(long&nbsp;lId,
+          <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
+          byte[]&nbsp;passwd,
+          boolean&nbsp;keepUpdateMetadata)</code></th>
+<td class="colLast">
+<div class="block">Synchronous open ledger call.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#openLedger(long)">openLedger</a></span>&#8203;(long&nbsp;lId)</code></th>
 <td class="colLast">
 <div class="block">Open a ledger as an administrator.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#openLedgerNoRecovery(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D)">openLedgerNoRecovery</a></span>&#8203;(long&nbsp;lId,
                     <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -772,14 +782,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Synchronous, unsafe open ledger call.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#openLedgerNoRecovery(long)">openLedgerNoRecovery</a></span>&#8203;(long&nbsp;lId)</code></th>
 <td class="colLast">
 <div class="block">Open a ledger as an administrator without recovering the ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>java.lang.Iterable&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#readEntries(long,long,long)">readEntries</a></span>&#8203;(long&nbsp;ledgerId,
            long&nbsp;firstEntry,
@@ -788,7 +798,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read entries from a ledger synchronously.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#readEntries(long,long)">readEntries</a></span>&#8203;(long&nbsp;firstEntry,
            long&nbsp;lastEntry)</code></th>
@@ -796,24 +806,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Read a sequence of entries synchronously.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#readExplicitLastConfirmed()">readExplicitLastConfirmed</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#readLastConfirmed()">readLastConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#readLastEntry()">readLastEntry</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>java.util.Enumeration&lt;<a href="../LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#readUnconfirmedEntries(long,long)">readUnconfirmedEntries</a></span>&#8203;(long&nbsp;firstEntry,
                       long&nbsp;lastEntry)</code></th>
@@ -823,7 +833,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  <a href="../LedgerHandle.html#asyncReadUnconfirmedEntries(long,long,org.apache.bookkeeper.client.AsyncCallback.ReadCallback,java.lang.Object)"><code>LedgerHandle.asyncReadUnconfirmedEntries(long, long, ReadCallback, Object)</code></a></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(long,java.util.Set,boolean,boolean)">recoverBookieData</a></span>&#8203;(long&nbsp;lid,
                  java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
@@ -831,19 +841,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  boolean&nbsp;skipOpenLedgers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(java.util.Set,boolean,boolean,boolean)">recoverBookieData</a></span>&#8203;(java.util.Set&lt;<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
@@ -851,7 +861,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  boolean&nbsp;skipUnrecoverableLedgers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#recoverBookieData(org.apache.bookkeeper.net.BookieId)">recoverBookieData</a></span>&#8203;(<a href="../../net/BookieId.html" title="class in org.apache.bookkeeper.net">BookieId</a>&nbsp;bookieSrc)</code></th>
 <td class="colLast">
@@ -859,7 +869,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  was stored on the source bookie.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#replicateLedgerFragment(org.apache.bookkeeper.client.LedgerHandle,org.apache.bookkeeper.client.LedgerFragment,java.util.function.BiConsumer)">replicateLedgerFragment</a></span>&#8203;(<a href="../LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        <a href="../LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
@@ -868,28 +878,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../LedgerHandle.html#tryReadLastConfirmed()">tryReadLastConfirmed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static &lt;T&gt;&nbsp;T</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SyncCallbackUtils.</span><code><span class="memberNameLink"><a href="../SyncCallbackUtils.html#waitForResult(java.util.concurrent.CompletableFuture)">waitForResult</a></span>&#8203;(java.util.concurrent.CompletableFuture&lt;T&gt;&nbsp;future)</code></th>
 <td class="colLast">
 <div class="block">Wait for a result.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchReadOnlyBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchReadOnlyBookiesChanged</a></span>&#8203;(<a href="../../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)</code></th>
 <td class="colLast">
 <div class="block">Notify when the available list of read only bookies changes.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#watchWritableBookiesChanged(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener)">watchWritableBookiesChanged</a></span>&#8203;(<a href="../../discover/RegistrationClient.RegistrationListener.html" title="interface in org.apache.bookkeeper.discover">RegistrationClient.RegistrationListener</a>&nbsp;listener)</code></th>
 <td class="colLast">

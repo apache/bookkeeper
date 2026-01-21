@@ -173,6 +173,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#asyncOpenLedger(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,org.apache.bookkeeper.client.AsyncCallback.OpenCallback,java.lang.Object,boolean)">asyncOpenLedger</a></span>&#8203;(long&nbsp;lId,
+               <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
+               byte[]&nbsp;passwd,
+               <a href="../AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
+               java.lang.Object&nbsp;ctx,
+               boolean&nbsp;keepUpdateMetadata)</code></th>
+<td class="colLast">
+<div class="block">Open existing ledger asynchronously for reading.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#asyncOpenLedger(long,org.apache.bookkeeper.client.AsyncCallback.OpenCallback,java.lang.Object)">asyncOpenLedger</a></span>&#8203;(long&nbsp;lId,
                <a href="../AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,
                java.lang.Object&nbsp;ctx)</code></th>
@@ -180,7 +192,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Open a ledger as an administrator.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../BookKeeper.html#asyncOpenLedgerNoRecovery(long,org.apache.bookkeeper.client.BookKeeper.DigestType,byte%5B%5D,org.apache.bookkeeper.client.AsyncCallback.OpenCallback,java.lang.Object)">asyncOpenLedgerNoRecovery</a></span>&#8203;(long&nbsp;lId,
                          <a href="../BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -192,7 +204,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  recover the ledger if it is not yet closed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../BookKeeperAdmin.html#asyncOpenLedgerNoRecovery(long,org.apache.bookkeeper.client.AsyncCallback.OpenCallback,java.lang.Object)">asyncOpenLedgerNoRecovery</a></span>&#8203;(long&nbsp;lId,
                          <a href="../AsyncCallback.OpenCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.OpenCallback</a>&nbsp;cb,

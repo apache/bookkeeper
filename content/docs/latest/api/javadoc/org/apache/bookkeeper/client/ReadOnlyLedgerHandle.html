@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -220,7 +220,7 @@ implements <a href="../proto/BookkeeperInternalCallbacks.LedgerMetadataListener.
                     <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                     <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;password,
-                    boolean&nbsp;watch)</code></th>
+                    boolean&nbsp;watchImmediately)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -351,6 +351,11 @@ implements <a href="../proto/BookkeeperInternalCallbacks.LedgerMetadataListener.
 </td>
 </tr>
 <tr id="i15" class="rowColor">
+<td class="colFirst"><code>(package private) void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerLedgerMetadataListener()">registerLedgerMetadataListener</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -411,7 +416,7 @@ implements <a href="../proto/BookkeeperInternalCallbacks.LedgerMetadataListener.
                      <a href="../versioning/Versioned.html" title="class in org.apache.bookkeeper.versioning">Versioned</a>&lt;<a href="api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                      <a href="BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                      byte[]&nbsp;password,
-                     boolean&nbsp;watch)
+                     boolean&nbsp;watchImmediately)
               throws java.security.GeneralSecurityException,
                      java.lang.NumberFormatException</pre>
 <dl>
@@ -431,6 +436,15 @@ implements <a href="../proto/BookkeeperInternalCallbacks.LedgerMetadataListener.
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="registerLedgerMetadataListener()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>registerLedgerMetadataListener</h4>
+<pre class="methodSignature">void&nbsp;registerLedgerMetadataListener()</pre>
+</li>
+</ul>
 <a id="close()">
 <!--   -->
 </a>
