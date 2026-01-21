@@ -7,7 +7,7 @@ const baseUrl = process.env.BASE_URL || "/"
 const deployUrl = process.env.DEPLOY_URL || "https://bookkeeper.apache.org";
 const variables = {
   /** They are used in .md files*/
-  latest_release: "4.17.2",
+  latest_release: "4.17.3",
   stable_release: "4.16.7",
   github_repo: "https://github.com/apache/bookkeeper",
   github_master: "https://github.com/apache/bookkeeper/tree/master",
@@ -95,27 +95,27 @@ const config = {
               {
                 label: "Coding guide",
                 to: "community/coding-guide"
-              },  
+              },
               {
                 label: "Testing guide",
                 to: "community/testing"
-              },  
+              },
               {
                 label: "Issue report guide",
                 to: "community/issue-report"
-              },  
+              },
               {
                 label: "Release guide",
                 to: "community/release-guide"
-              },  
+              },
               {
                 label: "Presentations",
                 to: "community/presentations"
-              },  
+              },
               {
                 label: "BookKeeper proposals (BP)",
                 to: "community/bookkeeper-proposals"
-              },  
+              },
             ]
           },
           {
@@ -235,7 +235,7 @@ const config = {
           ]
         },
         {
-          
+
           title: 'Project',
           items: [
             {
@@ -264,7 +264,7 @@ const config = {
             }
           ]
         }
-     
+
       ],
     },
 
@@ -272,7 +272,7 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
-      
+
     }),
     customFields: variables
 };
