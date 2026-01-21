@@ -241,7 +241,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
 
     @Override
     void handleUnrecoverableErrorDuringAdd(int rc) {
-        errorOutPendingAdds(rc);
+        executeOrdered(() -> errorOutPendingAdds(rc));
     }
 
     void recover(GenericCallback<Void> finalCb) {
