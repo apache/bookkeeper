@@ -68,6 +68,20 @@ public class AppendOnlyStreamWriter implements Closeable {
         }
     }
 
+    public void flush(boolean waitForCompletion) throws IOException {
+      try {
+        if (waitForCompletion) {
+          FutureUtils.result(logWriter.flush());
+        } else {
+          logWriter.flush();
+        }
+      } catch (IOException ioe) {
+        throw ioe;
+      } catch (Exception ex) {
+        throw new UnexpectedException("unexpected exception in AppendOnlyStreamWriter.flush", ex);
+      }
+    }
+
     public long position() {
         synchronized (syncPos) {
             return syncPos[0];
