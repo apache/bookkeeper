@@ -347,9 +347,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         try {
             flush();
 
-            while (!entryLocationIndex.compareAndSetCompacting(false, true)) {
-                Thread.sleep(100);
-            }
             gcThread.shutdown();
             entryLogger.close();
 

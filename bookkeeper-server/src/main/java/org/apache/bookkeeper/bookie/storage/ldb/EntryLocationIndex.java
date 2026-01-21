@@ -25,8 +25,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
@@ -68,6 +68,15 @@ public class EntryLocationIndex implements Closeable {
 
     @Override
     public void close() throws IOException {
+        while (!compacting.compareAndSet(false, true)) {
+            // Wait till the locationsDb stops compacting
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(e);
+            }
+        }
         locationsDb.close();
     }
 
@@ -215,10 +224,6 @@ public class EntryLocationIndex implements Closeable {
 
     public boolean isCompacting() {
         return compacting.get();
-    }
-
-    public boolean compareAndSetCompacting(boolean expectedValue, boolean newValue) {
-        return compacting.compareAndSet(expectedValue, newValue);
     }
 
     public void removeOffsetFromDeletedLedgers() throws IOException {
