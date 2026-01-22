@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.discover;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
@@ -179,14 +180,17 @@ public class ZKRegistrationClient implements RegistrationClient {
     private WatchTask watchWritableBookiesTask = null;
     @Getter(AccessLevel.PACKAGE)
     private WatchTask watchReadOnlyBookiesTask = null;
-    private final ConcurrentHashMap<BookieId, Versioned<BookieServiceInfo>> bookieServiceInfoCache =
-                                                                            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<BookieId, Versioned<BookieServiceInfo>> writableBookieInfo =
+            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<BookieId, Versioned<BookieServiceInfo>> readOnlyBookieInfo =
+            new ConcurrentHashMap<>();
     private final Watcher bookieServiceInfoCacheInvalidation;
     private final boolean bookieAddressTracking;
     // registration paths
     private final String bookieRegistrationPath;
     private final String bookieAllRegistrationPath;
     private final String bookieReadonlyRegistrationPath;
+    private final FutureUtils.Sequencer<Void> sequencer;
 
     public ZKRegistrationClient(ZooKeeper zk,
                                 String ledgersRootPath,
@@ -194,6 +198,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                                 boolean bookieAddressTracking) {
         this.zk = zk;
         this.scheduler = scheduler;
+        this.sequencer = FutureUtils.Sequencer.create();
         // Following Bookie Network Address Changes is an expensive operation
         // as it requires additional ZooKeeper watches
         // we can disable this feature, in case the BK cluster has only
@@ -239,7 +244,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         // we can only serve data from cache here,
         // because it can happen than this method is called inside the main
         // zookeeper client event loop thread
-        Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
+        Versioned<BookieServiceInfo> resultFromCache = writableBookieInfo.get(bookieId);
+        if (resultFromCache == null) {
+            resultFromCache = readOnlyBookieInfo.get(bookieId);
+        }
         if (log.isDebugEnabled()) {
             log.debug("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
         }
@@ -248,6 +256,21 @@ public class ZKRegistrationClient implements RegistrationClient {
         } else {
             return FutureUtils.exception(new BKException.BKBookieHandleNotAvailableException());
         }
+    }
+
+    private Versioned<BookieServiceInfo> updateBookieInfo(BookieId bookieId, boolean isReadonly,
+                                                                  byte[] bytes, Stat stat)
+            throws IOException {
+        BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
+        Versioned<BookieServiceInfo> result = new Versioned<>(bookieServiceInfo,
+                new LongVersion(stat.getCversion()));
+        log.info("Update BookieInfoCache (writable bookie) {} -> {}", bookieId, result.getValue());
+        if (isReadonly) {
+            readOnlyBookieInfo.put(bookieId, result);
+        } else {
+            writableBookieInfo.put(bookieId, result);
+        }
+        return result;
     }
 
     /**
@@ -263,35 +286,64 @@ public class ZKRegistrationClient implements RegistrationClient {
         CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
         zk.getData(pathAsWritable, bookieServiceInfoCacheInvalidation,
                 (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
-            if (KeeperException.Code.OK.intValue() == rc) {
-                try {
-                    BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
-                    Versioned<BookieServiceInfo> result = new Versioned<>(bookieServiceInfo,
-                            new LongVersion(stat.getCversion()));
-                    log.info("Update BookieInfoCache (writable bookie) {} -> {}", bookieId, result.getValue());
-                    bookieServiceInfoCache.put(bookieId, result);
-                    promise.complete(result);
-                } catch (IOException ex) {
-                    log.error("Cannot update BookieInfo for ", ex);
-                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
-                            .initCause(ex));
-                    return;
-                }
-            } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                // not found, looking for a readonly bookie
-                zk.getData(pathAsReadonly, bookieServiceInfoCacheInvalidation,
-                        (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
-                    if (KeeperException.Code.OK.intValue() == rc2) {
+                    if (KeeperException.Code.OK.intValue() == rc) {
                         try {
-                            BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes2);
                             Versioned<BookieServiceInfo> result =
-                                    new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion()));
-                            log.info("Update BookieInfoCache (readonly bookie) {} -> {}", bookieId, result.getValue());
-                            bookieServiceInfoCache.put(bookieId, result);
+                                    updateBookieInfo(bookieId, false, bytes, stat);
                             promise.complete(result);
                         } catch (IOException ex) {
                             log.error("Cannot update BookieInfo for ", ex);
-                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2)
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
+                                    .initCause(ex));
+                            return;
+                        }
+                    } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                        // not found, looking for a readonly bookie
+                        zk.getData(pathAsReadonly, bookieServiceInfoCacheInvalidation,
+                                (int rc2, String path2, Object o2, byte[] bytes2, Stat stat2) -> {
+                                    if (KeeperException.Code.OK.intValue() == rc2) {
+                                        try {
+                                            Versioned<BookieServiceInfo> result =
+                                                    updateBookieInfo(bookieId, true, bytes, stat);
+                                            promise.complete(result);
+                                        } catch (IOException ex) {
+                                            log.error("Cannot update BookieInfo for ", ex);
+                                            promise.completeExceptionally(
+                                                    KeeperException.create(KeeperException.Code.get(rc2), path2)
+                                                    .initCause(ex)
+                                            );
+                                            return;
+                                        }
+                                    } else {
+                                        // not found as writable and readonly, the bookie is offline
+                                        promise.completeExceptionally(
+                                                BKException.create(BKException.Code.NoBookieAvailableException)
+                                        );
+                                    }
+                                }, null);
+                    } else {
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                    }
+                }, null);
+        return promise;
+    }
+
+
+    private CompletableFuture<Versioned<BookieServiceInfo>> readBookieInfoAsReadonlyBookie(BookieId bookieId) {
+        String pathAsReadonly = bookieReadonlyRegistrationPath + "/" + bookieId;
+
+        CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
+        // not found, looking for a readonly bookie
+        zk.getData(pathAsReadonly, bookieServiceInfoCacheInvalidation,
+                (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
+                    if (KeeperException.Code.OK.intValue() == rc) {
+                        try {
+                            Versioned<BookieServiceInfo> result =
+                                    updateBookieInfo(bookieId, true, bytes, stat);
+                            promise.complete(result);
+                        } catch (IOException ex) {
+                            log.error("Cannot update BookieInfo for ", ex);
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
                                     .initCause(ex));
                             return;
                         }
@@ -300,10 +352,30 @@ public class ZKRegistrationClient implements RegistrationClient {
                         promise.completeExceptionally(BKException.create(BKException.Code.NoBookieAvailableException));
                     }
                 }, null);
-            } else {
-                promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
-            }
-        }, null);
+        return promise;
+    }
+
+    private CompletableFuture<Versioned<BookieServiceInfo>> readBookieInfoAsWritableBookie(BookieId bookieId) {
+        String pathAsWritable = bookieRegistrationPath + "/" + bookieId;
+
+        CompletableFuture<Versioned<BookieServiceInfo>> promise = new CompletableFuture<>();
+        zk.getData(pathAsWritable, bookieServiceInfoCacheInvalidation,
+                (int rc, String path, Object o, byte[] bytes, Stat stat) -> {
+                    if (KeeperException.Code.OK.intValue() == rc) {
+                        try {
+                            Versioned<BookieServiceInfo> result =
+                                    updateBookieInfo(bookieId, false, bytes, stat);
+                            promise.complete(result);
+                        } catch (IOException ex) {
+                            log.error("Cannot update BookieInfo for ", ex);
+                            promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
+                                    .initCause(ex));
+                            return;
+                        }
+                    }  else {
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
+                    }
+                }, null);
         return promise;
     }
 
@@ -358,7 +430,24 @@ public class ZKRegistrationClient implements RegistrationClient {
             List<CompletableFuture<Versioned<BookieServiceInfo>>> bookieInfoUpdated = new ArrayList<>(bookies.size());
             for (BookieId id : bookies) {
                 // update the cache for new bookies
-                if (!bookieServiceInfoCache.containsKey(id)) {
+                if (path.equals(bookieReadonlyRegistrationPath)) {
+                    if (readOnlyBookieInfo.get(id) == null) {
+                        bookieInfoUpdated.add(readBookieInfoAsReadonlyBookie(id));
+                        continue;
+                    }
+                }
+                if (path.equals(bookieRegistrationPath)) {
+                    if (writableBookieInfo.get(id) == null) {
+                        bookieInfoUpdated.add(readBookieInfoAsWritableBookie(id));
+                        continue;
+                    }
+
+                }
+                if (path.equals(bookieAllRegistrationPath)) {
+                    if (writableBookieInfo.get(id) != null || readOnlyBookieInfo.get(id) != null) {
+                        // jump to next bookie id
+                        continue;
+                    }
                     bookieInfoUpdated.add(readBookieServiceInfoAsync(id));
                 }
             }
@@ -484,30 +573,57 @@ public class ZKRegistrationClient implements RegistrationClient {
             if (log.isDebugEnabled()) {
                 log.debug("zk event {} for {} state {}", we.getType(), we.getPath(), we.getState());
             }
-            if (we.getState() == KeeperState.Expired) {
-                log.info("zk session expired, invalidating cache");
-                bookieServiceInfoCache.clear();
-                return;
-            }
+
             BookieId bookieId = stripBookieIdFromPath(we.getPath());
             if (bookieId == null) {
                 return;
             }
-            switch (we.getType()) {
-                case NodeDeleted:
-                    log.info("Invalidate cache for {}", bookieId);
-                    bookieServiceInfoCache.remove(bookieId);
-                    break;
-                case NodeDataChanged:
-                    log.info("refresh cache for {}", bookieId);
-                    readBookieServiceInfoAsync(bookieId);
-                    break;
-                default:
-                    if (log.isDebugEnabled()) {
-                        log.debug("ignore cache event {} for {}", we.getType(), bookieId);
-                    }
-                    break;
+            // make the notification callback run sequential in background.
+            final String path = we.getPath();
+            if (!path.startsWith(bookieReadonlyRegistrationPath) && !path.startsWith(bookieRegistrationPath)) {
+                // ignore unknown path
+                return;
             }
+            if (path.equals(bookieReadonlyRegistrationPath) || path.equals(bookieRegistrationPath)) {
+                // ignore root path
+                return;
+            }
+            sequencer.sequential(() -> {
+                if (we.getState() == KeeperState.Expired) {
+                    log.info("zk session expired, invalidating cache");
+                    readOnlyBookieInfo.clear();
+                    writableBookieInfo.clear();
+                }
+                switch (we.getType()) {
+                    case NodeDeleted:
+                        if (path.startsWith(bookieReadonlyRegistrationPath)) {
+                            log.info("Invalidate readonly cache for {}", bookieId);
+                            readOnlyBookieInfo.remove(bookieId);
+                        }
+                        if (path.startsWith(bookieRegistrationPath)) {
+                            log.info("Invalidate writable cache for {}", bookieId);
+                            writableBookieInfo.remove(bookieId);
+                        }
+                        break;
+                    case NodeDataChanged:
+                        if (path.startsWith(bookieReadonlyRegistrationPath)) {
+                            log.info("refresh readonly cache for {}. path: {}", bookieId, path);
+                            readBookieInfoAsReadonlyBookie(bookieId);
+                        }
+                        if (path.startsWith(bookieRegistrationPath)) {
+                            log.info("refresh writable cache for {}. path: {}", bookieId, path);
+                            readBookieInfoAsWritableBookie(bookieId);
+                        }
+                        break;
+                    default:
+                        if (log.isDebugEnabled()) {
+                            log.debug("ignore cache event {} for {}", we.getType(), bookieId);
+                        }
+                        break;
+
+                }
+                return completedFuture(null);
+            });
         }
     }
 
