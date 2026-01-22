@@ -21,14 +21,19 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.awaitility.Awaitility;
 import org.junit.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Unit test for {@link EntryLocationIndex}.
@@ -230,5 +235,40 @@ public class EntryLocationIndexTest {
         assertEquals(0, idx.getLocation(12345, 1));
         assertEquals(1, lookupEntryLocationOpStats.getFailureCount());
         assertEquals(1, lookupEntryLocationOpStats.getSuccessCount());
+    }
+
+    @Test
+    @Timeout(60)
+    public void testClose() throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
+
+        // mock EntryLocationIndex is compacting
+        idx.compacting.set(true);
+        AtomicBoolean closeFlag = new AtomicBoolean(false);
+        AtomicLong closeEscapedMills = new AtomicLong(0);
+        new Thread(() -> {
+            try {
+                long start = System.currentTimeMillis();
+                idx.close();
+                closeEscapedMills.set(System.currentTimeMillis() - start);
+                closeFlag.set(true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+        long sleepMills = 10_000;
+        Thread.sleep(sleepMills);
+        assertFalse(closeFlag.get());
+
+        // mock EntryLocationIndex finish compacting
+        idx.compacting.set(false);
+        Awaitility.await().untilAsserted(() -> assertTrue(closeFlag.get()));
+        assertTrue(closeEscapedMills.get() >= sleepMills);
     }
 }
