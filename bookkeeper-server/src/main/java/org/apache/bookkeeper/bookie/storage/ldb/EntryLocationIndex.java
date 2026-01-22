@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import java.io.Closeable;
 import java.io.IOException;
@@ -49,7 +50,8 @@ public class EntryLocationIndex implements Closeable {
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
     private final EntryLocationIndexStats stats;
-    private final AtomicBoolean compacting = new AtomicBoolean(false);
+    @VisibleForTesting
+    final AtomicBoolean compacting = new AtomicBoolean(false);
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
@@ -68,22 +70,19 @@ public class EntryLocationIndex implements Closeable {
 
     @Override
     public void close() throws IOException {
-        long start = System.currentTimeMillis();
         log.info("Closing EntryLocationIndex");
         while (!compacting.compareAndSet(false, true)) {
             // Wait till the locationsDb stops compacting
-            if ((System.currentTimeMillis() - start) % 1000 == 0) {
-                log.info("Waiting the locationsDb stops compacting");
-            }
+            log.info("Waiting the locationsDb stops compacting");
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException(e);
             }
         }
         locationsDb.close();
-        log.info("Closed EntryLocationIndex cost: {} mills", System.currentTimeMillis() - start);
+        log.info("Closed EntryLocationIndex");
     }
 
     public long getLocation(long ledgerId, long entryId) throws IOException {
