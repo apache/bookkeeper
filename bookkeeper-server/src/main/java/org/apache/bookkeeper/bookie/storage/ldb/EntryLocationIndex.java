@@ -68,8 +68,13 @@ public class EntryLocationIndex implements Closeable {
 
     @Override
     public void close() throws IOException {
+        long start = System.currentTimeMillis();
+        log.info("Closing EntryLocationIndex");
         while (!compacting.compareAndSet(false, true)) {
             // Wait till the locationsDb stops compacting
+            if ((System.currentTimeMillis() - start) % 1000 == 0) {
+                log.info("Waiting the locationsDb stops compacting");
+            }
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -78,6 +83,7 @@ public class EntryLocationIndex implements Closeable {
             }
         }
         locationsDb.close();
+        log.info("Closed EntryLocationIndex cost: {} mills", System.currentTimeMillis() - start);
     }
 
     public long getLocation(long ledgerId, long entryId) throws IOException {
