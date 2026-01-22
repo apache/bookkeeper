@@ -84,7 +84,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     private final WriteOptions optionSync;
     private final WriteOptions optionDontSync;
-    private Cache cache;
+    private Cache blockCache;
+    private Cache rowCache;
 
     private final ReadOptions optionCache;
     private final ReadOptions optionDontCache;
@@ -101,6 +102,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_BLOCK_SIZE = "dbStorage_rocksDB_blockSize";
     private static final String ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY = "dbStorage_rocksDB_bloomFilterBitsPerKey";
     private static final String ROCKSDB_BLOCK_CACHE_SIZE = "dbStorage_rocksDB_blockCacheSize";
+    private static final String ROCKSDB_ROW_CACHE_SIZE = "dbStorage_rocksDB_rowCacheSize";
     private static final String ROCKSDB_NUM_LEVELS = "dbStorage_rocksDB_numLevels";
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
     private static final String ROCKSDB_MAX_SIZE_IN_LEVEL1_MB = "dbStorage_rocksDB_maxSizeInLevel1MB";
@@ -164,6 +166,22 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 .setIgnoreUnknownOptions(false)
                 .setEnv(Env.getDefault())) {
             OptionsUtil.loadOptionsFromFile(cfgOpts, dbFilePath, dbOptions, cfDescs);
+
+            // Configure row cache if enabled and this is for EntryLocation
+            if (dbConfigType == DbConfigType.EntryLocation) {
+                long rowCacheSizeBytes = DbLedgerStorage.getLongVariableOrDefault(conf, ROCKSDB_ROW_CACHE_SIZE, 0);
+                if (rowCacheSizeBytes > 0) {
+                    this.rowCache = new LRUCache(rowCacheSizeBytes);
+                    dbOptions.setRowCache(rowCache);
+                    log.info("Enabled RocksDB row cache with size: {} bytes (config file mode)", rowCacheSizeBytes);
+                } else {
+                    this.rowCache = null;
+                    log.info("RocksDB row cache is disabled (config file mode)");
+                }
+            } else {
+                this.rowCache = null;
+            }
+
             // Configure file path
             String logPath = conf.getString(ROCKSDB_LOG_PATH, "");
             if (!logPath.isEmpty()) {
@@ -199,6 +217,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             long blockCacheSize = DbLedgerStorage.getLongVariableOrDefault(conf, ROCKSDB_BLOCK_CACHE_SIZE,
                 defaultRocksDBBlockCacheSizeBytes);
 
+            /* Set default RocksDB row-cache size to 0 (disabled by default) */
+            long rowCacheSizeBytes = DbLedgerStorage.getLongVariableOrDefault(conf, ROCKSDB_ROW_CACHE_SIZE, 0);
+
             long writeBufferSizeMB = conf.getInt(ROCKSDB_WRITE_BUFFER_SIZE_MB, 64);
             long sstSizeMB = conf.getInt(ROCKSDB_SST_SIZE_MB, 64);
             int numLevels = conf.getInt(ROCKSDB_NUM_LEVELS, -1);
@@ -225,10 +246,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setTargetFileSizeBase(sstSizeMB * 1024 * 1024);
             options.setDeleteObsoleteFilesPeriodMicros(TimeUnit.HOURS.toMicros(1));
 
-            this.cache = new LRUCache(blockCacheSize);
+            this.blockCache = new LRUCache(blockCacheSize);
             BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
             tableOptions.setBlockSize(blockSize);
-            tableOptions.setBlockCache(cache);
+            tableOptions.setBlockCache(blockCache);
             tableOptions.setFormatVersion(formatVersion);
             tableOptions.setChecksumType(checksumType);
             if (bloomFilterBitsPerKey > 0) {
@@ -240,8 +261,19 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setLevelCompactionDynamicLevelBytes(true);
 
             options.setTableFormatConfig(tableOptions);
+
+            // Configure row cache if enabled
+            if (rowCacheSizeBytes > 0) {
+                this.rowCache = new LRUCache(rowCacheSizeBytes);
+                options.setRowCache(rowCache);
+                log.info("Enabled RocksDB row cache with size: {} bytes", rowCacheSizeBytes);
+            } else {
+                this.rowCache = null;
+                log.info("RocksDB row cache is disabled");
+            }
         } else {
-            this.cache = null;
+            this.blockCache = null;
+            this.rowCache = null;
             BlockBasedTableConfig tableOptions = new BlockBasedTableConfig();
             tableOptions.setFormatVersion(formatVersion);
             tableOptions.setChecksumType(checksumType);
@@ -301,8 +333,11 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         } finally {
             closedLock.writeLock().unlock();
         }
-        if (cache != null) {
-            cache.close();
+        if (blockCache != null) {
+            blockCache.close();
+        }
+        if (rowCache != null) {
+            rowCache.close();
         }
         if (options != null) {
             options.close();
