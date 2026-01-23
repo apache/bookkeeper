@@ -528,9 +528,11 @@ public class ReplicationWorker implements Runnable {
             return false;
         } catch (BKNotEnoughBookiesException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
+            deferLedgerLockRelease = true;
             throw e;
         } catch (BKException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
+            deferLedgerLockRelease = true;
             return false;
         } finally {
             // we make sure we always release the underreplicated lock, unless we decided to defer it. If the lock has
