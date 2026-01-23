@@ -21,10 +21,10 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.AdditionalAnswers.answerVoid;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -46,10 +46,9 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.NullAppender;
 import org.hamcrest.CoreMatchers;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 /**
@@ -97,7 +96,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
                     )));
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         ClientConfiguration conf = new ClientConfiguration();
@@ -128,7 +127,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
             ))).when(mockAppender).append(any());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         lh.close();
         bkc.close();
@@ -141,11 +140,11 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testLedgerCreateFails() throws Exception {
+    void ledgerCreateFails() throws Exception {
         ThreadContext.put(MDC_REQUEST_ID, "ledger_create_fail");
         try {
             bkc.createLedgerAdv(99, 3, 2, BookKeeper.DigestType.CRC32, new byte[]{});
-            Assert.fail("should not get here");
+            fail("should not get here");
         } catch (BKException bke) {
             // expected
         }
@@ -153,7 +152,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testSimpleAdd() throws Exception {
+    void simpleAdd() throws Exception {
         ThreadContext.put(MDC_REQUEST_ID, "ledger_add_entry");
         lh.addEntry(0, entry);
 
@@ -164,7 +163,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAddWithEnsembleChange() throws Exception {
+    void addWithEnsembleChange() throws Exception {
         lh.addEntry(0, entry);
         startNewBookie();
         killBookie(0);
@@ -179,7 +178,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAddFailsWithReadOnlyBookie() throws Exception {
+    void addFailsWithReadOnlyBookie() throws Exception {
         for (int i = 0; i < 3; ++i) {
             Bookie bookie = serverByIndex(i).getBookie();
             File[] ledgerDirs = confByIndex(i).getLedgerDirs();
@@ -190,7 +189,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         ThreadContext.put(MDC_REQUEST_ID, "ledger_add_entry");
         try {
             lh.addEntry(0, entry);
-            Assert.fail("should not get here");
+            fail("should not get here");
         } catch (BKException bke) {
             // expected, pass
         }
@@ -204,13 +203,13 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAddFailsDuplicateEntry() throws Exception {
+    void addFailsDuplicateEntry() throws Exception {
         lh.addEntry(0, entry);
 
         ThreadContext.put(MDC_REQUEST_ID, "ledger_add_duplicate_entry");
         try {
             lh.addEntry(0, entry);
-            Assert.fail("should not get here");
+            fail("should not get here");
         } catch (BKException bke) {
             // expected, pass
         }
@@ -220,7 +219,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testReadEntryBeyondLac() throws Exception {
+    void readEntryBeyondLac() throws Exception {
         ThreadContext.put(MDC_REQUEST_ID, "ledger_read_entry");
 
         try {
@@ -233,7 +232,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testReadFromDeletedLedger() throws Exception {
+    void readFromDeletedLedger() throws Exception {
         lh.addEntry(0, entry);
         lh.close();
         bkc.deleteLedger(lh.ledgerId);
