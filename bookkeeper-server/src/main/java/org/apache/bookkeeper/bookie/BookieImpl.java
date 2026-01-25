@@ -36,11 +36,13 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -941,7 +943,17 @@ public class BookieImpl implements Bookie {
     }
 
     private Journal getJournal(long ledgerId) {
-        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
+        String dividendString = Double.toString(ledgerId);
+        byte[] secretBytes = null;
+        int index = 0;
+        try {
+            secretBytes = MessageDigest.getInstance("md5").digest(dividendString.getBytes());
+            BigInteger md5Code = new BigInteger(1, secretBytes);
+            index = md5Code.mod(new BigInteger(Integer.toString(journals.size()))).intValue();
+        } catch (Exception e) {
+            LOG.error("get journal directory failed exception:{}", e.getMessage());
+        }
+        return journals.get(index);
     }
 
     @VisibleForTesting
