@@ -151,7 +151,7 @@
     <junit.version>4.13.2</junit.version>
     <hamcrest.version>1.3</hamcrest.version>
     <junit5.version>5.10.2</junit5.version>
-    <assertj-core.version>3.25.3</assertj-core.version>
+    <assertj-core.version>3.27.7</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
     <libthrift.version>0.14.2</libthrift.version>
     <lombok.version>1.18.32</lombok.version>
