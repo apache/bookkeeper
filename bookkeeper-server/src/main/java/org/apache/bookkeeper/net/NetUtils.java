@@ -40,7 +40,7 @@ public class NetUtils {
      *             either a textual representation its IP address or its host name
      * @return its IP address in the string format
      */
-    public static String normalizeHostName(String name) {
+    public static String normalizeToIPAddress(String name) {
         try {
             return InetAddress.getByName(name).getHostAddress();
         } catch (UnknownHostException e) {
@@ -54,19 +54,51 @@ public class NetUtils {
      *
      * @param names a collection of string representations of hosts
      * @return a list of corresponding IP addresses in the string format
-     * @see #normalizeHostName(String)
+     * @see #normalizeToIPAddress(String)
      */
-    public static List<String> normalizeHostNames(Collection<String> names) {
-        List<String> hostNames = new ArrayList<String>(names.size());
+    public static List<String> normalizeToIPAddresses(Collection<String> names) {
+        List<String> ipAddresses = new ArrayList<>(names.size());
         for (String name : names) {
-            hostNames.add(normalizeHostName(name));
+            ipAddresses.add(normalizeToIPAddress(name));
+        }
+        return ipAddresses;
+    }
+
+    /**
+     * Given a string representation of an IP address, return its host name
+     * in textual presentation.
+     *
+     * @param name a string representation of an IP Address:
+     *             either a textual representation its IP address or its host name
+     * @return its host name in the string format
+     */
+    public static String normalizeToHostName(String name) {
+        try {
+            return InetAddress.getByName(name).getHostName();
+        } catch (UnknownHostException e) {
+            return name;
+        }
+    }
+
+    /**
+     * Given a collection of string representation of IP addresses, return a list of
+     * corresponding hosts in the textual representation.
+     *
+     * @param names a collection of string representations of IP addresses
+     * @return a list of corresponding hosts in the string format
+     * @see #normalizeToHostName(String)
+     */
+    public static List<String> normalizeToHostNames(Collection<String> names) {
+        List<String> hostNames = new ArrayList<>(names.size());
+        for (String name : names) {
+            hostNames.add(normalizeToHostName(name));
         }
         return hostNames;
     }
 
     public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver,
                                                 BookieSocketAddress addr) {
-        List<String> names = new ArrayList<String>(1);
+        List<String> names = new ArrayList<>(1);
 
         InetSocketAddress inetSocketAddress = addr.getSocketAddress();
         if (dnsResolver.useHostName()) {

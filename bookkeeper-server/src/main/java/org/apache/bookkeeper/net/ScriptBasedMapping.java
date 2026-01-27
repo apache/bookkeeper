@@ -64,6 +64,11 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
      */
     static final String SCRIPT_ARG_COUNT_KEY = CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY;
     /**
+     * Key to specify whether hostname should be used as an argument
+     * {@value}.
+     */
+    static final String SCRIPT_USE_HOSTNAME_KEY = CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_USE_HOSTNAME_ARGS_KEY;
+    /**
      * Text used in the {@link #toString()} method if there is no string
      * {@value}.
      */
@@ -122,6 +127,11 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         getRawMapping().setConf(conf);
     }
 
+    @Override
+    public boolean useHostName() {
+        return getRawMapping().useHostName();
+    }
+
     /**
      * This is the uncached script mapping that is fed into the cache managed
      * by the superclass {@link CachedDNSToSwitchMapping}.
@@ -129,6 +139,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
         private int maxArgs; //max hostnames per call of the script
+        private boolean useHostName;
         private static final Logger LOG = LoggerFactory.getLogger(RawScriptBasedMapping.class);
 
         /*
@@ -149,6 +160,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                 if (StringUtils.isNotBlank(scriptNameConfValue)) {
                     scriptName = scriptNameConfValue;
                     maxArgs = conf.getInt(SCRIPT_ARG_COUNT_KEY, DEFAULT_ARG_COUNT);
+                    useHostName = conf.getBoolean(SCRIPT_USE_HOSTNAME_KEY, false);
                 } else {
                     scriptName = null;
                     maxArgs = 0;
@@ -289,6 +301,11 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         public void reloadCachedMappings() {
             // Nothing to do here, since RawScriptBasedMapping has no cache, and
             // does not inherit from CachedDNSToSwitchMapping
+        }
+
+        @Override
+        public boolean useHostName() {
+            return useHostName;
         }
     }
 }
