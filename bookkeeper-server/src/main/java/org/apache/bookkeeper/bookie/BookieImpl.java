@@ -127,6 +127,7 @@ public class BookieImpl implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
+    private final boolean journalHashBasedSelection;
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -406,6 +407,7 @@ public class BookieImpl implements Bookie {
         this.ledgerDirsManager = ledgerDirsManager;
         this.indexDirsManager = indexDirsManager;
         this.writeDataToJournal = conf.getJournalWriteData();
+        this.journalHashBasedSelection = conf.getJournalHashBasedSelection();
         this.allocator = allocator;
         this.registrationManager = registrationManager;
         stateManager = initializeStateManager();
@@ -940,8 +942,30 @@ public class BookieImpl implements Bookie {
         return handles.getHandle(ledgerId, masterKey, false);
     }
 
+    /**
+     * Constant for Fibonacci hashing. Multiplying by this constant adds randomness, breaking
+     * patterns in ledger IDs that would otherwise cause uneven journal distribution.
+     *
+     * <p>This is the same constant used as {@code GOLDEN_GAMMA} in
+     * {@link java.util.concurrent.ThreadLocalRandom} and {@link java.util.SplittableRandom}
+     * for seed mixing.
+     */
+    private static final long FIBONACCI_HASH_CONSTANT = 0x9E3779B97F4A7C15L;
+
+    /**
+     * Returns the journal to use for the given ledger.
+     *
+     * <p>When hash-based selection is enabled, uses Fibonacci hashing to distribute ledgers
+     * across journals. The xor with the right-shifted value folds the high 32 bits into
+     * the low 32 bits, adding more mixing prior to the modulo.
+     */
     private Journal getJournal(long ledgerId) {
-        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
+        long index = ledgerId;
+        if (journalHashBasedSelection) {
+            index = ledgerId * FIBONACCI_HASH_CONSTANT;
+            index ^= index >>> 32;
+        }
+        return journals.get(MathUtils.signSafeMod(index, journals.size()));
     }
 
     @VisibleForTesting
