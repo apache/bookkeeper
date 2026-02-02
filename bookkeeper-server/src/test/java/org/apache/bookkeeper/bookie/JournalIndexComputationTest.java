@@ -65,8 +65,8 @@ public class JournalIndexComputationTest {
             {4, 3, "4 journals, stride=3"},
             {4, 4, "4 journals, stride=4 (worst case without hash)"},
             {8, 8, "8 journals, stride=8 (worst case without hash)"},
-            {4, 1024, "4 journals, stride=1024"},
-            {8, 1024, "8 journals, stride=1024"},
+            {4, 1024, "4 journals, stride=1024 (worst case without hash)"},
+            {8, 1024, "8 journals, stride=1024 (worst case without hash)"},
         });
     }
 
