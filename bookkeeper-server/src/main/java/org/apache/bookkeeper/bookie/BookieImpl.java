@@ -953,19 +953,32 @@ public class BookieImpl implements Bookie {
     private static final long FIBONACCI_HASH_CONSTANT = 0x9E3779B97F4A7C15L;
 
     /**
-     * Returns the journal to use for the given ledger.
+     * Computes the journal index for a given ledger ID.
      *
      * <p>When hash-based selection is enabled, uses Fibonacci hashing to distribute ledgers
      * across journals. The xor with the right-shifted value folds the high 32 bits into
      * the low 32 bits, adding more mixing prior to the modulo.
+     *
+     * @param ledgerId the ledger ID
+     * @param numJournals the number of journals
+     * @param hashBasedSelection whether to use hash-based selection
+     * @return the journal index (0 to numJournals-1)
      */
-    private Journal getJournal(long ledgerId) {
+    @VisibleForTesting
+    static int computeJournalIndex(long ledgerId, int numJournals, boolean hashBasedSelection) {
         long index = ledgerId;
-        if (journalHashBasedSelection) {
+        if (hashBasedSelection) {
             index = ledgerId * FIBONACCI_HASH_CONSTANT;
             index ^= index >>> 32;
         }
-        return journals.get(MathUtils.signSafeMod(index, journals.size()));
+        return MathUtils.signSafeMod(index, numJournals);
+    }
+
+    /**
+     * Returns the journal to use for the given ledger.
+     */
+    private Journal getJournal(long ledgerId) {
+        return journals.get(computeJournalIndex(ledgerId, journals.size(), journalHashBasedSelection));
     }
 
     @VisibleForTesting
