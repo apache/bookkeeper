@@ -57,18 +57,8 @@ public class BufferedReadChannel extends BufferedChannelBase {
         this.readBuffer = Unpooled.buffer(readCapacity);
     }
 
-    /**
-     * Read as many bytes into dest as dest.capacity() starting at position pos in the
-     * FileChannel. This function can read from the buffer or the file channel
-     * depending on the implementation..
-     * @param dest
-     * @param pos
-     * @return The total number of bytes read.
-     *         -1 if the given position is greater than or equal to the file's current size.
-     * @throws IOException if I/O error occurs
-     */
     public int read(ByteBuf dest, long pos) throws IOException {
-        return read(dest, pos, dest.writableBytes());
+        return read(dest, pos, dest.writableBytes(), 0);
     }
 
     @Override
@@ -88,6 +78,22 @@ public class BufferedReadChannel extends BufferedChannelBase {
     }
 
     public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
+        return read(dest, pos, length, 0);
+    }
+
+        /**
+     * Read as many bytes into dest as dest.capacity() starting at position pos in the
+     * FileChannel. This function can read from the buffer or the file channel
+     * depending on the implementation..
+     * @param dest
+     * @param pos
+     * @param length
+     * @param readExtraBytes
+     * @return The total number of bytes read.
+     *         -1 if the given position is greater than or equal to the file's current size.
+     * @throws IOException if I/O error occurs
+     */
+    public synchronized int read(ByteBuf dest, long pos, int length, int readExtraBytes) throws IOException {
         invocationCount++;
         long currentPosition = pos;
         long eof = size();
@@ -111,9 +117,12 @@ public class BufferedReadChannel extends BufferedChannelBase {
             } else {
                 // We don't have it in the buffer, so put necessary data in the buffer
                 readBufferStartPosition = currentPosition;
-                int readBytes = 0;
-                if ((readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
-                        currentPosition)) <= 0) {
+                int readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
+                        currentPosition);
+                if (readBytes <= 0 && length <= readExtraBytes) {
+                    break;
+                }
+                if (readBytes <= 0) {
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
                 readBuffer.writerIndex(readBytes);
