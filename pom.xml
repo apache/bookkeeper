@@ -129,7 +129,7 @@
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-logging.version>1.3.5</commons-logging.version>
     <commons-io.version>2.19.0</commons-io.version>
-    <bouncycastle.version>1.0.2.5</bouncycastle.version>
+    <bouncycastle.version>1.0.2.6</bouncycastle.version>
     <curator.version>5.7.1</curator.version>
     <disruptor.version>4.0.0</disruptor.version>
     <dropwizard.version>4.1.12.1</dropwizard.version>
