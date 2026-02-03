@@ -47,6 +47,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -215,10 +217,17 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         gcThread = new GarbageCollectorThread(conf,
                 ledgerManager, ledgerDirsManager, this, entryLogger, ledgerIndexDirStatsLogger);
 
+        // Because the writeCache and the writeCacheBeingFlushed are swapped during flushes, it is
+        // safer to acquire the underlying cache size and count references and then use those for metrics.
+        final AtomicLong finalWriteCacheSize = writeCache.cacheSize;
+        final AtomicLong finalWriteCacheBeingFlushedSize = writeCacheBeingFlushed.cacheSize;
+        final LongAdder finalWriteCacheCounter = writeCache.cacheCount;
+        final LongAdder finalWriteCacheBeingFlushedCounter = writeCacheBeingFlushed.cacheCount;
+
         dbLedgerStorageStats = new DbLedgerStorageStats(
             ledgerIndexDirStatsLogger,
-            () -> writeCache.size() + writeCacheBeingFlushed.size(),
-            () -> writeCache.count() + writeCacheBeingFlushed.count(),
+            () -> finalWriteCacheSize.get() + finalWriteCacheBeingFlushedSize.get(),
+            () -> finalWriteCacheCounter.sum() + finalWriteCacheBeingFlushedCounter.sum(),
             () -> readCache.size(),
             () -> readCache.count()
         );
