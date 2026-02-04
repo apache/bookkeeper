@@ -265,13 +265,13 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-3.9.3.jar [21]
 - lib/org.apache.zookeeper-zookeeper-jute-3.9.3.jar [21]
 - lib/org.apache.zookeeper-zookeeper-3.9.3-tests.jar [21]
-- lib/org.eclipse.jetty-jetty-http-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-io-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-security-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-server-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-servlet-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-util-9.4.57.v20241219.jar [22]
-- lib/org.eclipse.jetty-jetty-util-ajax-9.4.57.v20241219.jar [22]
+- lib/org.eclipse.jetty-jetty-http-12.1.6.jar [22]
+- lib/org.eclipse.jetty-jetty-io-12.1.6.jar [22]
+- lib/org.eclipse.jetty-jetty-security-12.1.6.jar [22]
+- lib/org.eclipse.jetty-jetty-server-12.1.6.jar [22]
+- lib/org.eclipse.jetty-jetty-session-12.1.6.jar [22]
+- lib/org.eclipse.jetty-jetty-util-12.1.6.jar [22]
+- lib/org.eclipse.jetty.ee8-jetty-ee8-servlet-12.1.6.jar [22]
 - lib/org.rocksdb-rocksdbjni-9.9.3.jar [23]
 - lib/com.beust-jcommander-1.82.jar [24]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
@@ -375,7 +375,7 @@ Apache Software License, Version 2.
 [19] Source available at https://github.com/apache/commons-collections/tree/collections-4.1
 [20] Source available at https://github.com/apache/commons-lang/tree/LANG_3_6
 [21] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
-[22] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.48.v20220622
+[22] Source available at https://github.com/jetty/jetty.project/tree/jetty-12.1.6
 [23] Source available at https://github.com/facebook/rocksdb/tree/v9.9.3
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.82
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
