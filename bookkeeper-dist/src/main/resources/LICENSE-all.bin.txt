@@ -281,25 +281,25 @@ Apache Software License, Version 2.
 - lib/com.google.code.gson-gson-2.11.0.jar [29]
 - lib/io.opencensus-opencensus-api-0.31.1.jar [30]
 - lib/io.opencensus-opencensus-contrib-http-util-0.31.1.jar [30]
-- lib/io.grpc-grpc-all-1.72.0.jar [33]
-- lib/io.grpc-grpc-alts-1.72.0.jar [33]
-- lib/io.grpc-grpc-api-1.72.0.jar [33]
-- lib/io.grpc-grpc-auth-1.72.0.jar [33]
-- lib/io.grpc-grpc-context-1.72.0.jar [33]
-- lib/io.grpc-grpc-core-1.72.0.jar [33]
-- lib/io.grpc-grpc-grpclb-1.72.0.jar [33]
-- lib/io.grpc-grpc-inprocess-1.72.0.jar [33]
-- lib/io.grpc-grpc-opentelemetry-1.72.0.jar [33]
-- lib/io.grpc-grpc-netty-shaded-1.72.0.jar [33]
-- lib/io.grpc-grpc-protobuf-1.72.0.jar [33]
-- lib/io.grpc-grpc-protobuf-lite-1.72.0.jar [33]
-- lib/io.grpc-grpc-services-1.72.0.jar [33]
-- lib/io.grpc-grpc-stub-1.72.0.jar [33]
-- lib/io.grpc-grpc-testing-1.72.0.jar [33]
-- lib/io.grpc-grpc-util-1.72.0.jar [33]
-- lib/io.grpc-grpc-xds-1.72.0.jar [33]
-- lib/io.grpc-grpc-rls-1.72.0.jar[33]
-- lib/io.grpc-grpc-gcp-csm-observability-1.72.0.jar [33]
+- lib/io.grpc-grpc-all-1.79.0.jar [33]
+- lib/io.grpc-grpc-alts-1.79.0.jar [33]
+- lib/io.grpc-grpc-api-1.79.0.jar [33]
+- lib/io.grpc-grpc-auth-1.79.0.jar [33]
+- lib/io.grpc-grpc-context-1.79.0.jar [33]
+- lib/io.grpc-grpc-core-1.79.0.jar [33]
+- lib/io.grpc-grpc-grpclb-1.79.0.jar [33]
+- lib/io.grpc-grpc-inprocess-1.79.0.jar [33]
+- lib/io.grpc-grpc-opentelemetry-1.79.0.jar [33]
+- lib/io.grpc-grpc-netty-shaded-1.79.0.jar [33]
+- lib/io.grpc-grpc-protobuf-1.79.0.jar [33]
+- lib/io.grpc-grpc-protobuf-lite-1.79.0.jar [33]
+- lib/io.grpc-grpc-services-1.79.0.jar [33]
+- lib/io.grpc-grpc-stub-1.79.0.jar [33]
+- lib/io.grpc-grpc-testing-1.79.0.jar [33]
+- lib/io.grpc-grpc-util-1.79.0.jar [33]
+- lib/io.grpc-grpc-xds-1.79.0.jar [33]
+- lib/io.grpc-grpc-rls-1.79.0.jar[33]
+- lib/io.grpc-grpc-gcp-csm-observability-1.79.0.jar [33]
 - lib/org.apache.curator-curator-client-5.7.1.jar [34]
 - lib/org.apache.curator-curator-framework-5.7.1.jar [34]
 - lib/org.apache.curator-curator-recipes-5.7.1.jar [34]
@@ -387,7 +387,7 @@ Apache Software License, Version 2.
 [28] Source available at https://github.com/googleapis/java-common-protos/tree/v2.51.0
 [29] Source available at https://github.com/google/gson/tree/gson-parent-2.11.0
 [30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.31.1
-[33] Source available at https://github.com/grpc/grpc-java/tree/v1.72.0
+[33] Source available at https://github.com/grpc/grpc-java/tree/v1.79.0
 [34] Source available at https://github.com/apache/curator/releases/tag/apache.curator-5.7.1
 [36] Source available at https://github.com/google/error-prone/tree/v2.9.0
 [37] Source available at https://github.com/apache/yetus/tree/rel/0.12.0
@@ -685,14 +685,14 @@ This product bundles Google Protocol Buffers, which is available under a "3-clau
 license.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-3.25.5.jar
-Source available at https://github.com/google/protobuf/tree/v3.25.5
-For details, see deps/protobuf-3.14.0/LICENSE.
+  - lib/com.google.protobuf-protobuf-java-4.34.0.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v34.0/java
+For details, see deps/protobuf/LICENSE.
 
 Bundled as
-  - lib/com.google.protobuf-protobuf-java-util-3.25.5.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v3.25.5
-For details, see deps/protobuf-3.12.0/LICENSE.
+  - lib/com.google.protobuf-protobuf-java-util-4.34.0.jar
+Source available at https://github.com/protocolbuffers/protobuf/tree/v34.0/java
+For details, see deps/protobuf/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
 CDDL 1.1 license. For details, see deps/javax.servlet-api-4.0.0/CDDL+GPL-1.1.
