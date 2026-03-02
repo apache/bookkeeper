@@ -216,7 +216,6 @@
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
     <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-    <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
     <dependency-check-maven.version>12.1.0</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
