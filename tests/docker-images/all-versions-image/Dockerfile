@@ -16,6 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+# openjdk-11 is used for running old bookkeeper version, 4.18+ will use Java 17
+FROM eclipse-temurin:11-jdk-jammy AS openjdk-11
+
+# Java 17 is part of the parent image
 FROM apachebookkeeper/bookkeeper-all-released-versions:latest
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
@@ -24,6 +29,8 @@ ARG BK_TARBALL=DOESNOTEXIST
 RUN mkdir /tarballs
 WORKDIR /tarballs
 COPY ${BK_TARBALL} /tarballs/
+
+COPY --from=openjdk-11 /opt/java/openjdk /opt/java/openjdk-11
 
 RUN /install-tarball.sh *.tar.gz && rm -rf /tarballs
 
