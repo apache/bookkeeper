@@ -468,6 +468,10 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-servlet-jakarta</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
