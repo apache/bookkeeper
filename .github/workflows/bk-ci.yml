@@ -302,7 +302,8 @@ jobs:
 
   backward-compatibility-tests:
     name: Backward compatibility tests
-    runs-on: ubuntu-latest
+    # The old Arquillian requires an old version of Docker Engine, so we need to run it on ubuntu-22.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 75
     needs: [ 'build-and-license-check' ]
     if: ${{ needs.build-and-license-check.outputs.docs_only != 'true' }}
