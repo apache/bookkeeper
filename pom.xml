@@ -134,6 +134,7 @@
       --add-opens java.base/sun.nio.ch=ALL-UNNAMED
       --add-opens java.base/sun.security.jca=ALL-UNNAMED
       --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
+      --add-opens java.desktop/java.beans=ALL-UNNAMED
     </test.additional.args>
 
     <!-- dependencies -->
