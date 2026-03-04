@@ -17,8 +17,8 @@
 # under the License.
 #
 
-# openjdk-11 is used for running old bookkeeper version, 4.18+ will use Java 17
-FROM eclipse-temurin:11-jdk-jammy AS openjdk-11
+# openjdk-8 is used for running old bookkeeper version, 4.18+ will use Java 17
+FROM eclipse-temurin:8-jdk-jammy AS openjdk-8
 
 # Java 17 is part of the parent image
 FROM apachebookkeeper/bookkeeper-all-released-versions:latest
@@ -30,7 +30,7 @@ RUN mkdir /tarballs
 WORKDIR /tarballs
 COPY ${BK_TARBALL} /tarballs/
 
-COPY --from=openjdk-11 /opt/java/openjdk /opt/java/openjdk-11
+COPY --from=openjdk-8 /opt/java/openjdk /opt/java/openjdk-8
 
 RUN /install-tarball.sh *.tar.gz && rm -rf /tarballs
 
