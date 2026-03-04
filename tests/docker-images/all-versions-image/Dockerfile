@@ -31,6 +31,8 @@ WORKDIR /tarballs
 COPY ${BK_TARBALL} /tarballs/
 
 COPY --from=openjdk-8 /opt/java/openjdk /opt/java/openjdk-8
+RUN echo networkaddress.cache.ttl=1 >> /opt/java/openjdk-8/jre/lib/security/java.security \
+  && echo networkaddress.cache.negative.ttl=1 >> /opt/java/openjdk-8/jre/lib/security/java.security
 
 RUN /install-tarball.sh *.tar.gz && rm -rf /tarballs
 
