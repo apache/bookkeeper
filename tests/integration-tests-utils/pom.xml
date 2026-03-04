@@ -83,6 +83,11 @@
       <artifactId>log4j-slf4j2-impl</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>
