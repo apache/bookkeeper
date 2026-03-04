@@ -283,7 +283,8 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
                     int retryExecThreadCount,
                     double rate,
                     boolean allowReadOnlyMode) throws IOException {
-        super(connectString, sessionTimeoutMs, watcherManager, allowReadOnlyMode);
+        super(connectString, sessionTimeoutMs, watcherManager, allowReadOnlyMode,
+                new CustomZooKeeperHostProvider(connectString));
         this.connectString = connectString;
         this.sessionTimeoutMs = sessionTimeoutMs;
         this.allowReadOnlyMode =  allowReadOnlyMode;

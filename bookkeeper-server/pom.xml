@@ -237,6 +237,11 @@
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.burningwave</groupId>
+      <artifactId>tools</artifactId>
+      <version>0.27.2</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
