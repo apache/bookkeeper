@@ -48,7 +48,7 @@ mv bookkeeper-server-$VERSION /opt/bookkeeper/$VERSION
 VERSION_BASE=$(echo $VERSION | sed 's/-SNAPSHOT//')
 # if version isn't 4.18 or higher, use Java 11
 if [[ $(printf '%s\n' "4.18" "$VERSION_BASE" | sort -V | head -1) != "4.18" ]]; then
-    JAVA_ENV='environment=JAVA_HOME="/opt/java/openjdk-11",PATH="/opt/java/openjdk-11/bin:%(ENV_PATH)s"'
+    JAVA_ENV='environment=JAVA_HOME="/opt/java/openjdk-11",PATH="/opt/java/openjdk-11/bin:%(ENV_PATH)s",JDK_JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"'
 else
     JAVA_ENV=""
 fi
