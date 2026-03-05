@@ -110,10 +110,14 @@ public class MavenClassLoader implements AutoCloseable {
                 createExclusion("org.slf4j", "slf4j-log4j12"),
                 createExclusion("ch.qos.reload4j", "log4j"),
                 createExclusion("org.slf4j", "slf4j-reload4j"),
-                createExclusion("org.apache.logging.log4j", "*")
+                createExclusion("org.apache.logging.log4j", "*"),
+                createExclusion("org.apache.zookeeper", "zookeeper")
                 );
         List<MavenDependency> deps = Lists.newArrayList(
                 dependency);
+        // use newer zookeeper version in all cases
+        deps.add(MavenDependencies.createDependency("org.apache.zookeeper:zookeeper:3.9.3",
+                ScopeType.COMPILE, false));
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
                     ScopeType.COMPILE, false));

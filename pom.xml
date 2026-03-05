@@ -106,14 +106,36 @@
     </developer>
   </developers>
   <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <testRetryCount>2</testRetryCount>
     <src.dir>src/main/java</src.dir>
-    <test.additional.args />
+    <test.additional.args>
+      --add-opens java.base/java.io=ALL-UNNAMED
+      --add-opens java.base/java.lang=ALL-UNNAMED
+      --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+      --add-opens java.base/java.net=ALL-UNNAMED
+      --add-opens java.base/java.nio=ALL-UNNAMED
+      --add-opens java.base/java.nio.channels.spi=ALL-UNNAMED
+      --add-opens java.base/java.nio.file=ALL-UNNAMED
+      --add-opens java.base/java.util=ALL-UNNAMED
+      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+      --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED
+      --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
+      --add-opens java.base/java.util.stream=ALL-UNNAMED
+      --add-opens java.base/java.util.zip=ALL-UNNAMED
+      --add-opens java.base/java.time=ALL-UNNAMED
+      --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+      --add-opens java.base/sun.net.dns=ALL-UNNAMED
+      --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+      --add-opens java.base/sun.security.jca=ALL-UNNAMED
+      --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
+      --add-opens java.desktop/java.beans=ALL-UNNAMED
+    </test.additional.args>
 
     <!-- dependencies -->
     <arquillian-cube.version>1.18.2</arquillian-cube.version>
@@ -138,10 +160,10 @@
     <freebuilder.version>2.8.0</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.9.0</google.errorprone.version>
-    <grpc.version>1.72.0</grpc.version>
+    <grpc.version>1.79.0</grpc.version>
     <guava.version>32.0.1-jre</guava.version>
     <kerby.version>1.1.1</kerby.version>
-    <hadoop.version>3.3.5</hadoop.version>
+    <hadoop.version>3.4.2</hadoop.version>
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
@@ -154,18 +176,18 @@
     <assertj-core.version>3.25.3</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
     <libthrift.version>0.14.2</libthrift.version>
-    <lombok.version>1.18.32</lombok.version>
+    <lombok.version>1.18.42</lombok.version>
     <log4j.version>2.23.1</log4j.version>
-    <lz4.version>1.3.0</lz4.version>
+    <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.121.Final</netty.version>
+    <netty.version>4.1.130.Final</netty.version>
     <netty-iouring.version>0.0.26.Final</netty-iouring.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
-    <protobuf.version>3.25.5</protobuf.version>
-    <protoc3.version>${protobuf.version}</protoc3.version>
+    <protobuf.version>4.34.0</protobuf.version>
+    <protoc.version>${protobuf.version}</protoc.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
     <rocksdb.version>9.9.3</rocksdb.version>
@@ -176,7 +198,7 @@
     <spotless.version>2.43.0</spotless.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.19.4</testcontainers.version>
-    <vertx.version>4.5.11</vertx.version>
+    <vertx.version>4.5.24</vertx.version>
     <zookeeper.version>3.9.4</zookeeper.version>
     <snappy.version>1.1.10.5</snappy.version>
     <jctools.version>2.1.2</jctools.version>
@@ -192,8 +214,9 @@
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <dependency-check-maven.version>12.1.0</dependency-check-maven.version>
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
@@ -204,9 +227,13 @@
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.45.0</otel.version>
-    <otel.instrumentation.version>1.33.6</otel.instrumentation.version>
-    <otel.semconv.version>1.29.0-alpha</otel.semconv.version>
+    <otel.version>1.56.0</otel.version>
+    <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
+    <otel.semconv.version>1.37.0</otel.semconv.version>
+    <otel.contrib.version>1.52.0</otel.contrib.version>
+    <okhttp3.version>5.3.1</okhttp3.version>
+    <!-- use okio version that matches the okhttp3 version -->
+    <okio.version>3.16.3</okio.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
   </properties>
@@ -287,6 +314,12 @@
         <groupId>commons-beanutils</groupId>
         <artifactId>commons-beanutils</artifactId>
         <version>${commons-beanutils.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -333,9 +366,9 @@
 
       <!-- compression libs -->
       <dependency>
-        <groupId>net.jpountz.lz4</groupId>
-        <artifactId>lz4</artifactId>
-        <version>${lz4.version}</version>
+        <groupId>at.yawk.lz4</groupId>
+        <artifactId>lz4-java</artifactId>
+        <version>${lz4-java.version}</version>
       </dependency>
 
       <!-- yaml dependencies -->
@@ -458,6 +491,10 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-servlet-jakarta</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -468,20 +505,21 @@
         <version>${failsafe.version}</version>
       </dependency>
 
-      <!-- override otel's okhttp 4.11.0 for now, wait for otel update -->
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp-bom</artifactId>
-        <version>4.12.0</version>
+        <version>${okhttp3.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- okhttp 4.12.0 use kotlin stdlib 1.8.21 -->
       <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-common</artifactId>
-        <version>1.8.21</version>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-bom</artifactId>
+        <version>${okio.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
+
 
       <!-- rocksdb dependencies -->
       <dependency>
@@ -660,7 +698,7 @@
       <dependency>
         <groupId>io.opentelemetry.contrib</groupId>
         <artifactId>opentelemetry-gcp-resources</artifactId>
-        <version>${otel.version}-alpha</version>
+        <version>${otel.contrib.version}-alpha</version>
       </dependency>
       <dependency>
         <groupId>io.opentelemetry</groupId>
@@ -927,6 +965,26 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <showDeprecation>true</showDeprecation>
+            <showWarnings>true</showWarnings>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+            </annotationProcessorPaths>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${maven-checkstyle-plugin.version}</version>
           <dependencies>
@@ -986,31 +1044,36 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[17,18),[21,22),[25,26)</version>
+                  <message>Java 17, 21 or 25 is required to build Bookkeeper.</message>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>3.6.1</version>
+                  <message>Maven 3.6.1 or newer is required to build Bookkeeper.</message>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>${spotbugs-maven-plugin.version}</version>
         <configuration>
           <excludeFilterFile>${session.executionRootDirectory}/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml</excludeFilterFile>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>${lombok.version}</version>
-            </path>
-          </annotationProcessorPaths>
-          <compilerArgs>
-            <arg>-parameters</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
@@ -1367,53 +1430,6 @@
       <properties>
         <nar.aolProperties>src/aarch64_aol.properties</nar.aolProperties>
       </properties>
-    </profile>
-    <profile>
-      <id>jdk11</id>
-      <activation>
-        <jdk>[11,)</jdk>
-      </activation>
-      <properties>
-        <!-- prevents silent NoSuchMethodErrors that happen at runtime on Java 8 -->
-        <!-- see https://github.com/apache/bookkeeper/issues/4202 -->
-        <maven.compiler.release>${maven.compiler.target}</maven.compiler.release>
-        <!-- required for running tests on Java 11+ -->
-        <test.additional.args>
-          --add-opens java.base/java.io=ALL-UNNAMED
-          --add-opens java.base/java.lang=ALL-UNNAMED
-          --add-opens java.base/java.lang.reflect=ALL-UNNAMED
-          --add-opens java.base/java.net=ALL-UNNAMED
-          --add-opens java.base/java.nio=ALL-UNNAMED
-          --add-opens java.base/java.nio.channels.spi=ALL-UNNAMED
-          --add-opens java.base/java.nio.file=ALL-UNNAMED
-          --add-opens java.base/java.util=ALL-UNNAMED
-          --add-opens java.base/java.util.concurrent=ALL-UNNAMED
-          --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED
-          --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
-          --add-opens java.base/java.util.stream=ALL-UNNAMED
-          --add-opens java.base/java.util.zip=ALL-UNNAMED
-          --add-opens java.base/java.time=ALL-UNNAMED
-          --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
-          --add-opens java.base/sun.net.dns=ALL-UNNAMED
-          --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-          --add-opens java.base/sun.security.jca=ALL-UNNAMED
-          --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
-        </test.additional.args>
-      </properties>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-compiler-plugin</artifactId>
-              <configuration>
-                <!-- for some reason, setting maven.compiler.release property alone doesn't work -->
-                <release>${maven.compiler.release}</release>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
     </profile>
     <profile>
       <id>apache-release</id>
