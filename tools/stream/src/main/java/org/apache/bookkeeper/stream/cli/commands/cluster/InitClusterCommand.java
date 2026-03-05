@@ -108,7 +108,7 @@ public class InitClusterCommand extends BKCommand<Flags> {
     }
 
     @Override
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "DMI_DOH"})
     protected boolean apply(ServiceURI ignored,
                             CompositeConfiguration conf,
                             BKFlags globalFlags,
