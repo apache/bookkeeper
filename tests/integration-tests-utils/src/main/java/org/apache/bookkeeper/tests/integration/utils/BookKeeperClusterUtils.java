@@ -20,13 +20,11 @@ package org.apache.bookkeeper.tests.integration.utils;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CopyArchiveToContainerCmd;
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Cleanup;
@@ -35,7 +33,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.client.HostProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,30 +75,31 @@ public class BookKeeperClusterUtils {
     }
 
     public static ZooKeeper zookeeperClient(DockerClient docker) throws Exception {
-        String connectString = zookeeperConnectString(docker);
-        return createZookeeperClient(connectString);
+        String connectString = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        ZooKeeper zk = new ZooKeeper(connectString, 10000,
+                                     (e) -> {
+                                         if (e.getState().equals(KeeperState.SyncConnected)) {
+                                             future.complete(null);
+                                         }
+                                     });
+        future.get();
+        return zk;
     }
 
     @SneakyThrows
     public static boolean zookeeperRunning(DockerClient docker, String containerId) {
         String ip = DockerUtils.getContainerIP(docker, containerId);
-        String connectString = ip + ":2181";
-        createZookeeperClient(connectString).close();
-        return true;
-    }
-
-    private static ZooKeeper createZookeeperClient(String connectString)
-            throws IOException, InterruptedException, ExecutionException {
-        HostProvider hostProvider = new CustomZooKeeperHostProvider(connectString);
         CompletableFuture<Void> future = new CompletableFuture<>();
-        ZooKeeper zk = new ZooKeeper(connectString, 10000,
+        @Cleanup
+        ZooKeeper zk = new ZooKeeper(ip + ":2181", 10000,
                 (e) -> {
                     if (e.getState().equals(KeeperState.SyncConnected)) {
                         future.complete(null);
                     }
-                }, false, hostProvider);
+                });
         future.get();
-        return zk;
+        return true;
     }
 
     public static void legacyMetadataFormat(DockerClient docker) throws Exception {
