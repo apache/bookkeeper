@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -734,6 +735,178 @@ public class CustomZooKeeperHostProviderTest extends ZKTestCase {
 
         // Assert
         assertThat(disconnect, equalTo(false));
+    }
+
+    // ==================== isMyServerInNewConfig tests ====================
+
+    /**
+     * Builds a Resolver backed by a map; names not in the map throw UnknownHostException.
+     */
+    private static StaticHostProvider.Resolver mapResolver(Map<String, InetAddress[]> map) {
+        return name -> {
+            InetAddress[] result = map.get(name);
+            if (result == null) {
+                throw new UnknownHostException(name);
+            }
+            return result;
+        };
+    }
+
+    /**
+     * Port mismatch: server hostname matches but port differs → not found.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_PortMismatch() {
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.mock", 2181));
+        InetSocketAddress myServer = InetSocketAddress.createUnresolved("testhost-1.mock", 2182);
+
+        assertFalse(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(Collections.emptyMap()), connectAddresses, myServer));
+    }
+
+    /**
+     * Exact hostname string match (branch 1): connect hostname == myServer hostname.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_HostnameStringMatch() {
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.mock", 2181));
+        InetSocketAddress myServer = InetSocketAddress.createUnresolved("testhost-1.mock", 2181);
+
+        assertTrue(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(Collections.emptyMap()), connectAddresses, myServer));
+    }
+
+    /**
+     * IP string match (branch 2): connect hostname is an IP literal that matches myServer's resolved IP.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_IPStringMatch() throws UnknownHostException {
+        // Arrange
+        byte[] ip = {10, 2, 3, 1};
+        InetAddress resolvedIP = InetAddress.getByAddress("testhost-1.mock", ip);
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("10.2.3.1", 2181));
+        InetSocketAddress myServer = new InetSocketAddress(resolvedIP, 2181);
+
+        assertTrue(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(Collections.emptyMap()), connectAddresses, myServer));
+    }
+
+    /**
+     * Resolved connect-address IP matches myServer's IP (branch 3).
+     * Also serves as a regression test for the NPE fix: when the resolver does return addresses,
+     * the loop must not throw NullPointerException.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_ResolvedConnectIPMatchesMyServerIP() throws UnknownHostException {
+        // Arrange
+        byte[] ip = {10, 2, 3, 1};
+        InetAddress addr = InetAddress.getByAddress("testhost-1.mock", ip);
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.mock", 2181));
+        // myServer has a different hostname string so branch 1 is skipped
+        InetSocketAddress myServer = new InetSocketAddress(
+                InetAddress.getByAddress("alias.mock", ip), 2181);
+
+        Map<String, InetAddress[]> dnsMap = new HashMap<>();
+        dnsMap.put("testhost-1.mock", new InetAddress[]{addr});
+
+        assertTrue(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(dnsMap), connectAddresses, myServer));
+    }
+
+    /**
+     * Regression test for NPE fix: when the resolver throws UnknownHostException for the connect
+     * hostname, resolvedConnectAddresses is null; iterating it must not throw NullPointerException.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_UnknownHostForConnectAddress_NoNPE() throws UnknownHostException {
+        // Arrange
+        byte[] ip = {10, 2, 3, 1};
+        InetAddress myServerIP = InetAddress.getByAddress("testhost-1.mock", ip);
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("unresolvable-connect.mock", 2181));
+        // myServer is resolved so the (previously broken) branch would have been entered
+        InetSocketAddress myServer = new InetSocketAddress(myServerIP, 2181);
+
+        // resolver throws UnknownHostException for everything → resolvedConnectAddresses stays null
+        assertFalse(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(Collections.emptyMap()), connectAddresses, myServer));
+    }
+
+    /**
+     * Cross-matched resolved IPs (branch 4): myServer is unresolved (skipping the direct IP check),
+     * but both the connect hostname and myServer's hostname resolve to overlapping IPs.
+     * Models the case where the same server is reachable via two different DNS names
+     * (e.g. testhost-1.mock and testhost-1.othermock, as set up in setupDNSMocks).
+     */
+    @Test
+    public void testIsMyServerInNewConfig_CrossMatchedResolvedIPs() throws UnknownHostException {
+        // Arrange – both names share the same IPs (mirrors setupDNSMocks for testhost-1.*)
+        byte[] ip1 = {10, 2, 3, 1};
+        byte[] ip2 = {10, 50, 50, 1};
+        InetAddress addr1 = InetAddress.getByAddress("testhost-1.mock", ip1);
+        InetAddress addr2 = InetAddress.getByAddress("testhost-1.mock", ip2);
+
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.othermock", 2181));
+        // myServer is unresolved → the direct IP comparison (branch 3) is skipped
+        InetSocketAddress myServer = InetSocketAddress.createUnresolved("testhost-1.mock", 2181);
+
+        Map<String, InetAddress[]> dnsMap = new HashMap<>();
+        dnsMap.put("testhost-1.othermock", new InetAddress[]{addr1, addr2});
+        dnsMap.put("testhost-1.mock", new InetAddress[]{addr1, addr2});
+
+        assertTrue(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(dnsMap), connectAddresses, myServer));
+    }
+
+    /**
+     * Reverse-DNS match (branch 5): a resolved IP of myServer's hostname carries the connect
+     * hostname as its own hostname — simulating a successful reverse-DNS lookup.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_ReverseDNSMatch() throws UnknownHostException {
+        // Arrange
+        byte[] ip = {10, 2, 3, 1};
+        // InetAddress.getByAddress(host, bytes) sets getHostName() to the given host string,
+        // which lets us simulate a reverse-DNS result without real network calls.
+        InetAddress reverseDNSResult = InetAddress.getByAddress("testhost-1.mock", ip);
+
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.mock", 2181));
+        // myServer uses a different hostname so branches 1–4 all fail
+        InetSocketAddress myServer = InetSocketAddress.createUnresolved("my-server.zk", 2181);
+
+        Map<String, InetAddress[]> dnsMap = new HashMap<>();
+        // connect address resolution fails (no entry) → resolvedConnectAddresses = null
+        // myServer resolution returns an address whose getHostName() == "testhost-1.mock"
+        dnsMap.put("my-server.zk", new InetAddress[]{reverseDNSResult});
+
+        assertTrue(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(dnsMap), connectAddresses, myServer));
+    }
+
+    /**
+     * No match: myServer is genuinely absent from the connect list, all resolution strategies fail.
+     */
+    @Test
+    public void testIsMyServerInNewConfig_NoMatch() throws UnknownHostException {
+        // Arrange
+        byte[] ip1 = {10, 2, 3, 1};
+        byte[] ip9 = {10, 2, 3, 9};
+        List<InetSocketAddress> connectAddresses = Collections.singletonList(
+                InetSocketAddress.createUnresolved("testhost-1.mock", 2181));
+        InetSocketAddress myServer = InetSocketAddress.createUnresolved("testhost-9.mock", 2181);
+
+        Map<String, InetAddress[]> dnsMap = new HashMap<>();
+        dnsMap.put("testhost-1.mock", new InetAddress[]{InetAddress.getByAddress("testhost-1.mock", ip1)});
+        dnsMap.put("testhost-9.mock", new InetAddress[]{InetAddress.getByAddress("testhost-9.mock", ip9)});
+
+        assertFalse(CustomZooKeeperHostProvider.isMyServerInNewConfig(
+                mapResolver(dnsMap), connectAddresses, myServer));
     }
 
     private class TestResolver implements StaticHostProvider.Resolver {
