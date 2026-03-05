@@ -17,16 +17,17 @@
 package org.apache.bookkeeper.stats.otel;
 
 // CHECKSTYLE.OFF: IllegalImport
+
 import io.netty.util.internal.PlatformDependent;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.BufferPools;
 import io.opentelemetry.instrumentation.runtimemetrics.java8.Classes;
 import io.opentelemetry.instrumentation.runtimemetrics.java8.Cpu;
 import io.opentelemetry.instrumentation.runtimemetrics.java8.GarbageCollector;
 import io.opentelemetry.instrumentation.runtimemetrics.java8.MemoryPools;
 import io.opentelemetry.instrumentation.runtimemetrics.java8.Threads;
+import io.opentelemetry.instrumentation.runtimemetrics.java8.internal.ExperimentalBufferPools;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
@@ -96,11 +97,11 @@ public class OtelMetricsProvider implements StatsProvider {
         if (exposeDefaultJVMMetrics) {
             // Include standard JVM stats
             MemoryPools.registerObservers(openTelemetry);
-            BufferPools.registerObservers(openTelemetry);
+            ExperimentalBufferPools.registerObservers(openTelemetry);
             Classes.registerObservers(openTelemetry);
             Cpu.registerObservers(openTelemetry);
             Threads.registerObservers(openTelemetry);
-            GarbageCollector.registerObservers(openTelemetry);
+            GarbageCollector.registerObservers(openTelemetry, true);
 
             meter.gaugeBuilder("process.runtime.jvm.memory.direct_bytes_used")
                     .buildWithCallback(odm -> odm.record(getDirectMemoryUsage.get()));

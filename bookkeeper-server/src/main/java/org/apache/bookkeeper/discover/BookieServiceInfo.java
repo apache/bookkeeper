@@ -20,6 +20,7 @@ package org.apache.bookkeeper.discover;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -150,12 +151,49 @@ public final class BookieServiceInfo {
             this.extensions = extensions;
         }
 
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Endpoint)) {
+                return false;
+            }
+            final Endpoint endpoint = (Endpoint) o;
+            return port == endpoint.port && Objects.equals(id, endpoint.id) && Objects.equals(host, endpoint.host)
+                    && Objects.equals(protocol, endpoint.protocol) && Objects.equals(auth, endpoint.auth)
+                    && Objects.equals(extensions, endpoint.extensions);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, port, host, protocol, auth, extensions);
+        }
+
         @Override
         public String toString() {
             return "EndpointInfo{" + "id=" + id + ", port=" + port + ", host=" + host + ", protocol=" + protocol + ", "
                     + "auth=" + auth + ", extensions=" + extensions + '}';
         }
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BookieServiceInfo)) {
+            return false;
+        }
+        final BookieServiceInfo that = (BookieServiceInfo) o;
+        return Objects.equals(properties, that.properties) && Objects.equals(endpoints, that.endpoints);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(properties, endpoints);
     }
 
     @Override
