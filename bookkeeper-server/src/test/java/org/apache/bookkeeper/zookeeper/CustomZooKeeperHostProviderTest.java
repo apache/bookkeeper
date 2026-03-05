@@ -1059,7 +1059,7 @@ public class CustomZooKeeperHostProviderTest extends ZKTestCase {
         assertFalse(resolvedThird.isUnresolved(), "HostProvider should return resolved addresses");
         assertThat("Bad IP address returned", ipList, hasItems(resolvedThird.getAddress().getHostAddress()));
 
-        verify(spyResolver, times(3)).getAllByName("www.apache.org");  // resolution occured every time
+        verify(spyResolver, times(3)).getAllByName("www.apache.org");  // resolution occurred every time
     }
 
     @Test
