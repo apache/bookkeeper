@@ -22,6 +22,11 @@ set -e
 
 TARBALL=$1
 
+if [ ! -f "$TARBALL" ]; then
+  echo "tar file '$TARBALL' doesn't exist. exiting."
+  exit 0
+fi
+
 if [ -f $TARBALL.sha1 ]; then
     sha1sum --check $TARBALL.sha1 > /dev/null
 fi
@@ -40,6 +45,14 @@ VERSION=$(echo $TARBALL | sed -nE 's!^bookkeeper-(dist-)?server-([^-]*(-SNAPSHOT
 tar -zxf $TARBALL
 mv bookkeeper-server-$VERSION /opt/bookkeeper/$VERSION
 
+VERSION_BASE=$(echo $VERSION | sed 's/-SNAPSHOT//')
+# if version isn't 4.18 or higher, use Java 8
+if [[ $(printf '%s\n' "4.18" "$VERSION_BASE" | sort -V | head -1) != "4.18" ]]; then
+    JAVA_ENV='environment=JAVA_HOME="/opt/java/openjdk-8",PATH="/opt/java/openjdk-8/bin:%(ENV_PATH)s"'
+else
+    JAVA_ENV=""
+fi
+
 cat > /etc/supervisord/conf.d/bookkeeper-$VERSION.conf <<EOF
 [program:bookkeeper-$VERSION]
 autostart=false
@@ -47,4 +60,5 @@ redirect_stderr=true
 stdout_logfile=/var/log/bookkeeper/stdout-$VERSION.log
 directory=/opt/bookkeeper/$VERSION
 command=/opt/bookkeeper/$VERSION/bin/bookkeeper bookie
+$JAVA_ENV
 EOF
