@@ -380,7 +380,7 @@ Apache Software License, Version 2.
 [19] Source available at https://github.com/apache/commons-collections/tree/collections-4.1
 [20] Source available at https://github.com/apache/commons-lang/tree/LANG_3_6
 [21] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
-[22] Source available at https://github.com/jetty/jetty.project/tree/jetty-12.1.6
+[22] Source available at https://github.com/jetty/jetty.project/tree/jetty-12.1.7
 [23] Source available at https://github.com/facebook/rocksdb/tree/v9.9.3
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.82
 [25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
