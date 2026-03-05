@@ -32,6 +32,10 @@
   <properties>
     <groovy-eclipse-compiler.version>3.7.0</groovy-eclipse-compiler.version>
     <groovy-eclipse-batch.version>3.0.8-01</groovy-eclipse-batch.version>
+    <!-- org.codehaus.groovy:groovy-eclipse compiler doesn't support Java 17, use Java 11 -->
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
   </properties>
 
   <build>

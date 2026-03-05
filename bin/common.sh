@@ -68,43 +68,34 @@ source ${BK_CONFDIR}/nettyenv.sh
 source ${BK_CONFDIR}/bkenv.sh
 source ${BK_CONFDIR}/bk_cli_env.sh
 
-detect_jdk8() {
-  local is_java_8=$($JAVA -version 2>&1 | grep version | grep '"1\.8')
-  if [ -z "$is_java_8" ]; then
-     echo "0"
-  else
-     echo "1"
-  fi
-}
+for token in $("$JAVA" -version 2>&1 | grep 'version "'); do
+    if [[ $token =~ \"([[:digit:]]+)\.([[:digit:]]+)(.*)\" ]]; then
+        if [[ ${BASH_REMATCH[1]} == "1" ]]; then
+          JAVA_MAJOR_VERSION=${BASH_REMATCH[2]}
+        else
+          JAVA_MAJOR_VERSION=${BASH_REMATCH[1]}
+        fi
+        break
+    elif [[ $token =~ \"([[:digit:]]+)(.*)\" ]]; then
+        # Process the java versions without dots, such as `17-internal`.
+        JAVA_MAJOR_VERSION=${BASH_REMATCH[1]}
+        break
+    fi
+done
+
+if [[ $JAVA_MAJOR_VERSION -lt 17 ]]; then
+    echo "Error: BookKeeper requires Java 17 or later." 1>&2
+    exit 1
+fi
 
 # default netty settings
 NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
 
-USING_JDK8=$(detect_jdk8)
-
-if [ "$USING_JDK8" -ne "1" ]; then
-   DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
-    -XX:MaxGCPauseMillis=10 \
-    -XX:+ParallelRefProcEnabled \
-    -XX:+DisableExplicitGC"
-   DEFAULT_BOOKIE_GC_LOGGING_OPTS=""
-else
-  DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
-    -XX:MaxGCPauseMillis=10 \
-    -XX:+ParallelRefProcEnabled \
-    -XX:+UnlockExperimentalVMOptions \
-    -XX:+DoEscapeAnalysis \
-    -XX:ParallelGCThreads=32 \
-    -XX:ConcGCThreads=32 \
-    -XX:G1NewSizePercent=50 \
-    -XX:+DisableExplicitGC \
-    -XX:-ResizePLAB"
-  DEFAULT_BOOKIE_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
-    -XX:+PrintGCApplicationStoppedTime  \
-    -XX:+UseGCLogFileRotation \
-    -XX:NumberOfGCLogFiles=5 \
-    -XX:GCLogFileSize=64m"
-fi
+DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
+-XX:MaxGCPauseMillis=10 \
+-XX:+ParallelRefProcEnabled \
+-XX:+DisableExplicitGC"
+DEFAULT_BOOKIE_GC_LOGGING_OPTS=""
 
 BOOKIE_MAX_HEAP_MEMORY=${BOOKIE_MAX_HEAP_MEMORY:-"1g"}
 BOOKIE_MIN_HEAP_MEMORY=${BOOKIE_MIN_HEAP_MEMORY:-"1g"}
@@ -116,15 +107,7 @@ BOOKIE_GC_LOGGING_OPTS=${BOOKIE_GC_LOGGING_OPTS:-"${DEFAULT_BOOKIE_GC_LOGGING_OP
 # default CLI JVM settings
 DEFAULT_CLI_GC_OPTS="-XX:+UseG1GC \
     -XX:MaxGCPauseMillis=10"
-if [ "$USING_JDK8" -ne "1" ]; then
-  DEFAULT_CLI_GC_LOGGING_OPTS=""
-else
-  DEFAULT_CLI_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
-    -XX:+PrintGCApplicationStoppedTime  \
-    -XX:+UseGCLogFileRotation \
-    -XX:NumberOfGCLogFiles=5 \
-    -XX:GCLogFileSize=64m"
-fi
+DEFAULT_CLI_GC_LOGGING_OPTS=""
 
 CLI_MAX_HEAP_MEMORY=${CLI_MAX_HEAP_MEMORY:-"512M"}
 CLI_MIN_HEAP_MEMORY=${CLI_MIN_HEAP_MEMORY:-"256M"}
@@ -260,34 +243,24 @@ set_module_classpath() {
 build_bookie_jvm_opts() {
   LOG_DIR=$1
   GC_LOG_FILENAME=$2
-  if [ "$USING_JDK8" -eq "1" ]; then
-    echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
-  else
-    echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
-  fi
+  echo "$BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
   return
 }
 
 build_cli_jvm_opts() {
   LOG_DIR=$1
   GC_LOG_FILENAME=$2
-  if [ "$USING_JDK8" -eq "1" ]; then
-    echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xloggc:${LOG_DIR}/${GC_LOG_FILENAME}"
-  else
-    echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
-  fi
+  echo "$CLI_MEM_OPTS $CLI_GC_OPTS $CLI_GC_LOGGING_OPTS -Xlog:gc=info:file=${LOG_DIR}/${GC_LOG_FILENAME}::filecount=5,filesize=64m"
   return
 }
 
 build_netty_opts() {
   NETTY_OPTS="-Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL} -Dio.netty.tryReflectionSetAccessible=true"
   # --add-opens does not exist on jdk8
-  if [ "$USING_JDK8" -eq "0" ]; then
-    # Enable java.nio.DirectByteBuffer
-    # https://github.com/netty/netty/blob/4.1/common/src/main/java/io/netty/util/internal/PlatformDependent0.java
-    # https://github.com/netty/netty/issues/12265
-    NETTY_OPTS="$NETTY_OPTS --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
-  fi
+  # Enable java.nio.DirectByteBuffer
+  # https://github.com/netty/netty/blob/4.1/common/src/main/java/io/netty/util/internal/PlatformDependent0.java
+  # https://github.com/netty/netty/issues/12265
+  NETTY_OPTS="$NETTY_OPTS --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
   echo $NETTY_OPTS
 }
 
@@ -322,12 +295,10 @@ build_cli_logging_opts() {
 build_bookie_opts() {
   BOOKIE_OPTS="-Djava.net.preferIPv4Stack=true"
   # --add-opens does not exist on jdk8
-  if [ "$USING_JDK8" -eq "0" ]; then
-    # enable posix_fadvise usage in the Journal
-    BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
-    # DirectMemoryCRC32Digest
-    BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.util.zip=ALL-UNNAMED"
-  fi
+  # enable posix_fadvise usage in the Journal
+  BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
+  # DirectMemoryCRC32Digest
+  BOOKIE_OPTS="$BOOKIE_OPTS --add-opens java.base/java.util.zip=ALL-UNNAMED"
   echo $BOOKIE_OPTS
 }
 
