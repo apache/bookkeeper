@@ -16,6 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+# openjdk-8 is used for running old bookkeeper version, 4.18+ will use Java 17
+FROM eclipse-temurin:8-jdk-jammy AS openjdk-8
+
+# Java 17 is part of the parent image
 FROM apachebookkeeper/bookkeeper-all-released-versions:latest
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
@@ -24,6 +29,10 @@ ARG BK_TARBALL=DOESNOTEXIST
 RUN mkdir /tarballs
 WORKDIR /tarballs
 COPY ${BK_TARBALL} /tarballs/
+
+COPY --from=openjdk-8 /opt/java/openjdk /opt/java/openjdk-8
+RUN echo networkaddress.cache.ttl=1 >> /opt/java/openjdk-8/jre/lib/security/java.security \
+  && echo networkaddress.cache.negative.ttl=1 >> /opt/java/openjdk-8/jre/lib/security/java.security
 
 RUN /install-tarball.sh *.tar.gz && rm -rf /tarballs
 
