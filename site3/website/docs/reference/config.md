@@ -123,8 +123,9 @@ The table below lists parameters that you can set to configure bookies. All conf
 | journalFlushWhenQueueEmpty | If we should flush the journal when journal queue is empty. | false | 
 | journalAlignmentSize | All the journal writes and commits should be aligned to given size. If not, zeros will be padded to align to given size. | 512 | 
 | journalBufferedEntriesThreshold | Maximum entries to buffer to impose on a journal write to achieve grouping. |  | 
-| journalFlushWhenQueueEmpty | If we should flush the journal when journal queue is empty. | false | 
-| journalQueueSize | Set the size of the journal queue. | 10000 | 
+| journalFlushWhenQueueEmpty | If we should flush the journal when journal queue is empty. | false |
+| journalQueueSize | Set the size of the journal queue. | 10000 |
+| journalHashBasedSelection | Enable hash-based selection of journals for ledgers in multi-journal setups. By default, ledgers are assigned to journals using ledgerId % numJournals. In some deployments (e.g., sharded setups), patterns in ledger IDs can cause uneven distribution across journals. When enabled, Fibonacci hashing is used for better distribution.<br /><br />**WARNING**: This setting is not backwards compatible. Changing this setting on an existing bookie will cause ledgers to be mapped to different journals than before, which can cause issues during recovery. Only enable this on new clusters or after careful migration planning. | false |
 
 
 ## Ledger storage settings
