@@ -52,6 +52,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
     @BeforeClass
     public static void setupJAAS() throws IOException {
         System.setProperty("zookeeper.authProvider.1", "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
+        // Disable FIPS mode to allow DIGEST-MD5 SASL authentication (ZOOKEEPER-4889)
+        System.setProperty("zookeeper.fips-mode", "false");
         File tmpJaasDir = Files.createTempDirectory("jassTmpDir").toFile();
         File tmpJaasFile = new File(tmpJaasDir, "jaas.conf");
         String jassFileContent = "Server {\n"
@@ -74,6 +76,7 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
         System.clearProperty("java.security.auth.login.config");
         Configuration.getConfiguration().refresh();
         System.clearProperty("zookeeper.authProvider.1");
+        System.clearProperty("zookeeper.fips-mode");
     }
 
     @Test
