@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.util.ReferenceCountUtil;
 import java.util.BitSet;
 import java.util.List;
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 class PendingWriteLacOp implements WriteLacCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ByteBufList toSend;
+    volatile ByteBufList toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -59,11 +60,11 @@ class PendingWriteLacOp implements WriteLacCallback {
         this.cb = cb;
         this.ctx = ctx;
         this.lac = LedgerHandle.INVALID_ENTRY_ID;
-        ackSet = lh.distributionSchedule.getAckSet();
+        ackSet = lh.getDistributionSchedule().getAckSet();
         currentEnsemble = ensemble;
     }
 
-    void setLac(long lac) {
+    synchronized void setLac(long lac) {
         this.lac = lac;
 
         this.receivedResponseSet = new BitSet(
@@ -86,10 +87,14 @@ class PendingWriteLacOp implements WriteLacCallback {
     }
 
     @Override
-    public void writeLacComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
+    public synchronized void writeLacComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
+        // We got response.
+        receivedResponseSet.clear(bookieIndex);
+
         if (completed) {
+            maybeRecycle();
             return;
         }
 
@@ -97,13 +102,11 @@ class PendingWriteLacOp implements WriteLacCallback {
             lastSeenError = rc;
         }
 
-        // We got response.
-        receivedResponseSet.clear(bookieIndex);
-
         if (rc == BKException.Code.OK) {
             if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {
                 completed = true;
                 cb.addLacComplete(rc, lh, ctx);
+                maybeRecycle();
                 return;
             }
         } else {
@@ -114,5 +117,15 @@ class PendingWriteLacOp implements WriteLacCallback {
             completed = true;
             cb.addLacComplete(lastSeenError, lh, ctx);
         }
+
+        maybeRecycle();
     }
+
+    private void maybeRecycle() {
+        if (receivedResponseSet.isEmpty() && toSend != null) {
+            ReferenceCountUtil.release(toSend);
+            toSend = null;
+        }
+    }
+
 }
