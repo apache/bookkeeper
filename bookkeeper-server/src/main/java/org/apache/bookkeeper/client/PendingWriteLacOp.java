@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 class PendingWriteLacOp implements WriteLacCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ByteBufList toSend;
+    volatile ByteBufList toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
