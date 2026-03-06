@@ -27,10 +27,10 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.List;
 import javax.servlet.Servlet;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.ee8.webapp.WebAppContext;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 /**
  * Jetty based http server.

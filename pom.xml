@@ -167,7 +167,7 @@
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
-    <jetty.version>9.4.57.v20241219</jetty.version>
+    <jetty.version>12.1.7</jetty.version>
     <jmh.version>1.37</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <junit.version>4.13.2</junit.version>
@@ -625,13 +625,13 @@
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-webapp</artifactId>
+        <groupId>org.eclipse.jetty.ee8</groupId>
+        <artifactId>jetty-ee8-webapp</artifactId>
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-servlet</artifactId>
+        <groupId>org.eclipse.jetty.ee8</groupId>
+        <artifactId>jetty-ee8-servlet</artifactId>
         <version>${jetty.version}</version>
       </dependency>
 
