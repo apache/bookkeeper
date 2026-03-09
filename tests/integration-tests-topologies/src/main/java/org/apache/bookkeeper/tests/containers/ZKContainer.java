@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test container that runs zookeeper.
@@ -31,7 +31,6 @@ import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
 public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStoreContainer<SelfT> {
 
     private static final int ZK_PORT = 2181;
-    private static final int ZK_HTTP_PORT = 8080;
 
     private static final String IMAGE_NAME = "apachebookkeeper/bookkeeper-current:latest";
     public static final String HOST_NAME = "metadata-store";
@@ -53,19 +52,16 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
 
     @Override
     protected void configure() {
-        addExposedPorts(
-            ZK_PORT,
-            ZK_HTTP_PORT);
+        addExposedPorts(ZK_PORT);
         setCommand("zookeeper");
-        addEnv("BK_admin.serverPort", "" + ZK_HTTP_PORT);
+        // Disable the ZK admin server since it requires Jetty 9.x classes
+        // (org.eclipse.jetty.servlet.*) which are not available with Jetty 12.x
+        addEnv("BK_admin.enableServer", "false");
     }
 
     @Override
     public void start() {
-        this.waitStrategy = new HttpWaitStrategy()
-                .forPath("/commands/ruok")
-                .forStatusCode(200)
-                .forPort(ZK_HTTP_PORT)
+        this.waitStrategy = new HostPortWaitStrategy()
                 .withStartupTimeout(Duration.of(60, SECONDS));
 
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
