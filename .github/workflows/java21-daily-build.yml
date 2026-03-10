@@ -35,12 +35,12 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean install
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         uses: ./.github/actions/copy-test-reports
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: jdk21-tests-reports

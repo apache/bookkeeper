@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: unit-${{ matrix.step_name }}-reports
@@ -290,7 +290,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: integration-tests-reports
@@ -351,6 +351,10 @@ jobs:
         run: |
           mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct test
 
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps
+
       - name: Upload container logs on failure
         uses: actions/upload-artifact@v4
         if: ${{ !success() }}
@@ -375,7 +379,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: backward-compatibility-tests-reports
