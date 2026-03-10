@@ -24,6 +24,11 @@
 # Usage: download-released-versions.sh [DEST_DIR]
 #   DEST_DIR defaults to /released-versions
 
+if [ "${CURRENT_VERSION_ONLY}" = "true" ]; then
+  echo "Skipping downloading of old BookKeeper versions..."
+  exit 0
+fi
+
 set -e
 
 DEST_DIR="${1:-/released-versions}"

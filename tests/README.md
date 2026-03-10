@@ -77,7 +77,8 @@ Remember to start the unix socket proxy for docker as described in the previous 
 # remove possible remaining python client versions from previous builds
 git clean -fdx -- stream/clients/python
 # build the project and docker images
-mvn -B -nsu clean install -Pdocker -DskipTests
+# currentVersionOnly profile avoids downloading old Bookkeeper releases. This is required for backward compatibility tests.
+mvn -B -nsu clean install -Pdocker,currentVersionOnly -DskipTests
 docker images | grep apachebookkeeper
 ```
 
@@ -92,6 +93,9 @@ mvn -f tests/pom.xml test -DintegrationTests -DredirectTestOutputToFile=false -D
 ```
 
 ### Running backward compatibility tests
+
+Building docker images with `-Pdocker` is required to build the docker images for backward compatibility tests.
+The `currentVersionOnly` profile shouldn't be active.
 
 ```bash
 # Test current server with old clients

@@ -23,6 +23,8 @@
 # versions are extracted and installed into /opt/bookkeeper/.
 FROM alpine:3 AS installer
 
+ARG CURRENT_VERSION_ONLY=false
+
 RUN apk add --no-cache bash curl gnupg ca-certificates coreutils
 
 RUN mkdir -p /opt/bookkeeper /etc/supervisord/conf.d
@@ -34,7 +36,7 @@ ADD scripts/download-released-versions.sh /download-released-versions.sh
 ADD scripts/install-all-tarballs.sh /install-all-tarballs.sh
 ADD scripts/install-tarball.sh /install-tarball.sh
 
-RUN bash /download-released-versions.sh && bash /install-all-tarballs.sh
+RUN if [ "$CURRENT_VERSION_ONLY" != "true" ]; then bash /download-released-versions.sh && bash /install-all-tarballs.sh; fi
 
 # Stage 2: runtime image.
 FROM eclipse-temurin:17-jdk-jammy
