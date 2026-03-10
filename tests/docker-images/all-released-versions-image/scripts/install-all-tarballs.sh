@@ -20,8 +20,8 @@
 
 set -e
 
-gpg --import /released-versions/KEYS
-gpg --import /released-versions/KEYS.old
+gpg --allow-weak-key-signatures --import /released-versions/KEYS
+gpg --allow-weak-key-signatures --import /released-versions/KEYS.old
 
 mkdir -p /opt/bookkeeper
 
