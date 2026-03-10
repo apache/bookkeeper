@@ -24,15 +24,15 @@
 # Usage: download-released-versions.sh [DEST_DIR]
 #   DEST_DIR defaults to /released-versions
 
-if [ "${CURRENT_VERSION_ONLY}" = "true" ]; then
-  echo "Skipping downloading of old BookKeeper versions..."
-  exit 0
-fi
-
 set -e
 
 DEST_DIR="${1:-/released-versions}"
 mkdir -p "$DEST_DIR"
+
+if [ "${CURRENT_VERSION_ONLY}" = "true" ]; then
+  echo "Skipping downloading of old BookKeeper versions..."
+  exit 0
+fi
 
 if command -v curl &>/dev/null; then
     # --retry 5                   : retry up to 5 times on transient failures
