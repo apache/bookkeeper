@@ -17,6 +17,26 @@
 # under the License.
 #
 
+# Stage 1: download and install all released BookKeeper versions.
+# Pre-downloaded tarballs from .released-versions (populated and cached by CI)
+# are copied into the build; the download script fills any gaps, then all
+# versions are extracted and installed into /opt/bookkeeper/.
+FROM alpine:3 AS installer
+
+RUN apk add --no-cache bash curl gnupg ca-certificates coreutils
+
+RUN mkdir -p /opt/bookkeeper /etc/supervisord/conf.d
+
+# Copy pre-downloaded tarballs and key files from the .released-versions cache.
+# The download script will fetch anything that is still missing.
+COPY .released-versions/ /released-versions/
+ADD scripts/download-released-versions.sh /download-released-versions.sh
+ADD scripts/install-all-tarballs.sh /install-all-tarballs.sh
+ADD scripts/install-tarball.sh /install-tarball.sh
+
+RUN bash /download-released-versions.sh && bash /install-all-tarballs.sh
+
+# Stage 2: runtime image.
 FROM eclipse-temurin:17-jdk-jammy
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
@@ -39,29 +59,11 @@ RUN sed -i -e "s|http://archive\.ubuntu\.com/ubuntu/|${UBUNTU_MIRROR:-http://arc
     && echo networkaddress.cache.ttl=1 >> $JAVA_HOME/conf/security/java.security \
     && echo networkaddress.cache.negative.ttl=1 >> $JAVA_HOME/conf/security/java.security
 
-RUN mkdir /tarballs
-WORKDIR /tarballs
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.1.0/bookkeeper-server-4.1.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/zookeeper/bookkeeper/bookkeeper-4.2.0/bookkeeper-server-4.2.0-bin.tar.gz{,.sha1,.md5,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.8.2/bookkeeper-server-4.8.2-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.9.2/bookkeeper-server-4.9.2-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.10.0/bookkeeper-server-4.10.0-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.11.1/bookkeeper-server-4.11.1-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.12.1/bookkeeper-server-4.12.1-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.13.0/bookkeeper-server-4.13.0-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.14.8/bookkeeper-server-4.14.8-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.15.5/bookkeeper-server-4.15.5-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.16.7/bookkeeper-server-4.16.7-bin.tar.gz{,.sha512,.asc}
-RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.17.2/bookkeeper-server-4.17.2-bin.tar.gz{,.sha512,.asc}
-
-RUN wget -nv https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
-RUN wget -nv http://svn.apache.org/repos/asf/zookeeper/bookkeeper/dist/KEYS?p=1620552 -O KEYS.old
+COPY --from=installer /opt/bookkeeper /opt/bookkeeper
 
 RUN mkdir -p /etc/supervisord/conf.d && mkdir -p /var/run/supervisor && mkdir -p /var/log/bookkeeper
 ADD conf/supervisord.conf /etc/supervisord.conf
-ADD scripts/install-all-tarballs.sh /install-all-tarballs.sh
-ADD scripts/install-tarball.sh /install-tarball.sh
-RUN bash /install-all-tarballs.sh && rm -rf /tarballs
+COPY --from=installer /etc/supervisord/conf.d /etc/supervisord/conf.d
 
 WORKDIR /
 ADD scripts/update-conf-and-boot.sh /update-conf-and-boot.sh

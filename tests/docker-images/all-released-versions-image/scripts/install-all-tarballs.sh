@@ -20,12 +20,11 @@
 
 set -e
 
-gpg --import KEYS
-gpg --import KEYS.old
+gpg --import /released-versions/KEYS
+gpg --import /released-versions/KEYS.old
 
 mkdir -p /opt/bookkeeper
 
-for T in bookkeeper-server-*-bin.tar.gz; do
-    /install-tarball.sh $T
+for T in /released-versions/bookkeeper-server-*-bin.tar.gz; do
+    /install-tarball.sh "$T"
 done
-

@@ -48,3 +48,6 @@ build/
 .gradle/
 *.log
 *.dat
+
+# Downloaded released BookKeeper versions (cached by CI, not committed)
+.released-versions/

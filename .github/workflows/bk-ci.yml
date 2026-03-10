@@ -251,6 +251,14 @@ jobs:
           networkaddress.cache.negative.ttl=1
           EOF
 
+      - name: Restore released versions cache
+        uses: actions/cache/restore@v4
+        with:
+          path: tests/docker-images/all-released-versions-image/.released-versions
+          key: released-versions-${{ hashFiles('tests/docker-images/all-released-versions-image/scripts/download-released-versions.sh') }}
+          restore-keys: |
+            released-versions-
+
       - name: Pick ubuntu mirror for the docker image build
         run: |
           # pick the closest ubuntu mirror and set it to UBUNTU_MIRROR environment variable
@@ -340,6 +348,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Restore released versions cache
+        uses: actions/cache/restore@v4
+        with:
+          path: tests/docker-images/all-released-versions-image/.released-versions
+          key: released-versions-${{ hashFiles('tests/docker-images/all-released-versions-image/scripts/download-released-versions.sh') }}
+          restore-keys: |
+            released-versions-
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
