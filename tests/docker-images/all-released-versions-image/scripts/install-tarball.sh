@@ -20,12 +20,18 @@
 
 set -e
 
-TARBALL=$1
+TARBALL_PATH=$1
+TARBALL=$(basename "$TARBALL_PATH")
+TARBALL_DIR=$(dirname "$TARBALL_PATH")
 
-if [ ! -f "$TARBALL" ]; then
-  echo "tar file '$TARBALL' doesn't exist. exiting."
+if [ ! -f "$TARBALL_PATH" ]; then
+  echo "tar file '$TARBALL_PATH' doesn't exist. exiting."
   exit 0
 fi
+
+# Change to the directory containing the tarball so that checksum files
+# (which reference the tarball by bare filename) resolve correctly.
+cd "$TARBALL_DIR"
 
 if [ -f $TARBALL.sha1 ]; then
     sha1sum --check $TARBALL.sha1 > /dev/null
@@ -33,17 +39,22 @@ fi
 if [ -f $TARBALL.sha512 ]; then
     sha512sum --check $TARBALL.sha512 > /dev/null
 fi
-if [ -f $T.md5 ]; then
+if [ -f $TARBALL.md5 ]; then
     md5sum --check $TARBALL.md5 > /dev/null
 fi
-if [ -f $T.asc ]; then
+if [ -f $TARBALL.asc ]; then
     gpg --verify $TARBALL.asc
 fi
 
 VERSION=$(echo $TARBALL | sed -nE 's!^bookkeeper-(dist-)?server-([^-]*(-SNAPSHOT)?)-bin.tar.gz$!\2!p')
 
-tar -zxf $TARBALL
+# Extract into a temporary directory to avoid polluting the /released-versions volume.
+EXTRACT_DIR=$(mktemp -d)
+cd "$EXTRACT_DIR"
+tar -zxf "$TARBALL_PATH"
 mv bookkeeper-server-$VERSION /opt/bookkeeper/$VERSION
+cd /
+rm -rf "$EXTRACT_DIR"
 
 VERSION_BASE=$(echo $VERSION | sed 's/-SNAPSHOT//')
 # if version isn't 4.18 or higher, use Java 8

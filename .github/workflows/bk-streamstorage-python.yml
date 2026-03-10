@@ -66,6 +66,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
