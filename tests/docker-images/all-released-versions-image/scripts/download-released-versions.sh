@@ -30,7 +30,11 @@ DEST_DIR="${1:-/released-versions}"
 mkdir -p "$DEST_DIR"
 
 if command -v curl &>/dev/null; then
-    _fetch() { curl -fsSL "$1" -o "$2"; }
+    # --retry 5                   : retry up to 5 times on transient failures
+    # --retry-delay 5             : wait 5 s between retries
+    # --connect-timeout 30        : fail if the connection cannot be established within 30 s
+    # --speed-limit 1 --speed-time 15 : abort (and retry) if the transfer is idle for 15 s
+    _fetch() { curl -fsSL --retry 5 --retry-delay 5 --connect-timeout 30 --speed-limit 1 --speed-time 15 "$1" -o "$2"; }
 else
     _fetch() { wget -nv "$1" -O "$2"; }
 fi
