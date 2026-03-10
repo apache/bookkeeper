@@ -64,6 +64,7 @@ COPY --from=installer /opt/bookkeeper /opt/bookkeeper
 RUN mkdir -p /etc/supervisord/conf.d && mkdir -p /var/run/supervisor && mkdir -p /var/log/bookkeeper
 ADD conf/supervisord.conf /etc/supervisord.conf
 COPY --from=installer /etc/supervisord/conf.d /etc/supervisord/conf.d
+ADD scripts/install-tarball.sh /install-tarball.sh
 
 WORKDIR /
 ADD scripts/update-conf-and-boot.sh /update-conf-and-boot.sh
