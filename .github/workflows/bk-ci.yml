@@ -120,7 +120,7 @@ jobs:
           - step_name: Replication Tests
             module: bookkeeper-server
             flag: replication
-            test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
+            test_args: "-DreuseForks=false -Dtest='org.apache.bookkeeper.replication.**'"
           - step_name: Remaining Tests
             module: bookkeeper-server
             flag: remaining
