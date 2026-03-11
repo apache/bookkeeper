@@ -32,7 +32,7 @@ networkMode: bridge
 
 zookeeper:
   size: 3
-  image: zookeeper:3.8.0
+  image: zookeeper:3.9.5
   adminPort: 8080
   clientPort: 2181
   peerPort: 2888
