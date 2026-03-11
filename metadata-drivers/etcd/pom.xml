@@ -58,30 +58,6 @@
       <artifactId>grpc-netty-shaded</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.arquillian.cube</groupId>
-      <artifactId>arquillian-cube-docker</artifactId>
-      <version>${arquillian-cube.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.github.docker-java</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.arquillian.junit</groupId>
-      <artifactId>arquillian-junit-standalone</artifactId>
-      <version>${arquillian-junit.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.github.docker-java</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
       <scope>test</scope>

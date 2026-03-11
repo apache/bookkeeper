@@ -72,6 +72,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -118,7 +120,7 @@ jobs:
           - step_name: Replication Tests
             module: bookkeeper-server
             flag: replication
-            test_args: "-Dtest='org.apache.bookkeeper.replication.**'"
+            test_args: "-DreuseForks=false -Dtest='org.apache.bookkeeper.replication.**'"
           - step_name: Remaining Tests
             module: bookkeeper-server
             flag: remaining
@@ -150,6 +152,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -193,7 +197,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: unit-${{ matrix.step_name }}-reports
@@ -231,6 +235,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -251,7 +257,7 @@ jobs:
           $GITHUB_WORKSPACE/dev/ci-tool pick_ubuntu_mirror
 
       - name: Build with Maven
-        run: mvn -B -nsu clean install -Pdocker -DskipTests
+        run: mvn -B -nsu clean install -Pdocker,currentVersionOnly -DskipTests
 
       - name: Run metadata driver tests
         # Exclude jetcd-core-shaded from integration tests, as it’s a POM-only project used internally,
@@ -290,7 +296,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: integration-tests-reports
@@ -326,12 +332,22 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Restore released versions cache
+        uses: actions/cache/restore@v4
+        with:
+          path: tests/docker-images/all-released-versions-image/.released-versions
+          key: released-versions-${{ hashFiles('tests/docker-images/all-released-versions-image/scripts/download-released-versions.sh') }}
+          restore-keys: |
+            released-versions-
 
       - name: Pick ubuntu mirror for the docker image build
         run: |
@@ -350,6 +366,10 @@ jobs:
       - name: Other tests
         run: |
           mvn -B -nsu -DbackwardCompatTests -DfailIfNoTests -pl :bc-non-fips,:hierarchical-ledger-manager,:hostname-bookieid,:old-cookie-new-cluster,:recovery-no-password,:upgrade-direct test
+
+      - name: print JVM thread dumps when cancelled
+        if: cancelled()
+        run: ./dev/ci-tool print_thread_dumps
 
       - name: Upload container logs on failure
         uses: actions/upload-artifact@v4
@@ -375,7 +395,7 @@ jobs:
 
       - name: Upload Surefire reports
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !success() }}
         continue-on-error: true
         with:
           name: backward-compatibility-tests-reports
@@ -408,6 +428,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -440,6 +462,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -481,6 +505,8 @@ jobs:
             !~/.m2/repository/org/apache/bookkeeper
             !~/.m2/repository/org/apache/distributedlog
           key: ${{ runner.os }}-bookkeeper-all-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-bookkeeper-all-
 
       - name: Set up JDK ${{ matrix.jdk_version }}
         uses: actions/setup-java@v4
