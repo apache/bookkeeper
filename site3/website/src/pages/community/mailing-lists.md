@@ -37,7 +37,7 @@ the emails in your inbox.
 - from:(git@git.apache.org) to:(issues@bookkeeper.apache.org): all the notifications from github repo.
 - from:(jenkins@builds.apache.org) to:(issues@bookkeeper.apache.org): all the notifications from jenkins CI.
 - from:(jira@apache.org) to:(dev@bookkeeper.apache.org): all the notifications from JIRA.
-- to:(bookkeeper@noreply.github.com, mention@noreply.github.com, ${user email}): all the notifications when you were tagged on github.
+- to:(bookkeeper@noreply.github.com, mention@noreply.github.com, `${user email}`): all the notifications when you were tagged on github.
 
 ## Commits
 

@@ -21,7 +21,7 @@ If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`]
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>{{ site.latest_release }}</bookkeeper.version>
+<bookkeeper.version>{{site.latest_release}}</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>
@@ -37,7 +37,7 @@ shaded library, which relocate classes of protobuf and guava into a different na
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>{{ site.latest_release }}</bookkeeper.version>
+<bookkeeper.version>{{site.latest_release}}</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>
@@ -53,12 +53,12 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.latest_release }}'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{site.latest_release}}'
 }
 
 // Alternatively:
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.latest_release }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server:{{site.latest_release}}'
 }
 ```
 
@@ -67,7 +67,7 @@ Similarly as using maven, you can also configure to use the shaded jars.
 ```groovy
 // use the `bookkeeper-server-shaded` jar
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest_release }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{site.latest_release}}'
 }
 ```
 
@@ -81,7 +81,7 @@ When interacting with BookKeeper using the Java client, you need to provide your
 
 ## Creating a new client
 
-In order to create a new [`BookKeeper`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/BookKeeper) client object, you need to pass in a [connection string](#connection-string). Here is an example client object using a ZooKeeper connection string:
+In order to create a new [`BookKeeper`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/BookKeeper) client object, you need to pass in a [connection string](#connection-string). Here is an example client object using a ZooKeeper connection string:
 
 ```java
 try {
@@ -92,11 +92,11 @@ try {
 }
 ```
 
-> If you're running BookKeeper [locally](../getting-started/run-locally), using the [`localbookie`](../reference/cli#bookkeeper-localbookie) command, use `"127.0.0.1:2181"` for your connection string, as in the example above.
+> If you're running BookKeeper [locally](../getting-started/run-locally), using the [`localbookie`](../reference/cli#bookkeeper-shell-localbookie) command, use `"127.0.0.1:2181"` for your connection string, as in the example above.
 
 There are, however, other ways that you can create a client object:
 
-* By passing in a [`ClientConfiguration`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/conf/ClientConfiguration) object. Here's an example:
+* By passing in a [`ClientConfiguration`]({{site.javadoc_base_url}}/org/apache/bookkeeper/conf/ClientConfiguration) object. Here's an example:
 
   ```java
   ClientConfiguration config = new ClientConfiguration();
@@ -122,7 +122,7 @@ There are, however, other ways that you can create a client object:
 
 ## Creating ledgers
 
-The easiest way to create a ledger using the Java client is via the `createLedger` method, which creates a new ledger synchronously and returns a [`LedgerHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/LedgerHandle). You must specify at least a [`DigestType`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/BookKeeper.DigestType) and a password.
+The easiest way to create a ledger using the Java client is via the `createLedger` method, which creates a new ledger synchronously and returns a [`LedgerHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/LedgerHandle). You must specify at least a [`DigestType`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/BookKeeper.DigestType) and a password.
 
 Here's an example:
 
@@ -501,7 +501,7 @@ Value = 1, isLeader = false
 ## New API
 
 Since 4.6 BookKeeper provides a new client API which leverages Java8 [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) facility.
-[WriteHandle]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteHandle), [WriteAdvHandle]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteAdvHandle), [ReadHandle]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ReadHandle) are introduced for replacing the generic [LedgerHandle]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/LedgerHandle).
+[WriteHandle]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteHandle), [WriteAdvHandle]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteAdvHandle), [ReadHandle]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ReadHandle) are introduced for replacing the generic [LedgerHandle]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/LedgerHandle).
 
 > All the new API now is available in `org.apache.bookkeeper.client.api`. You should only use interfaces defined in this package.
 
@@ -509,7 +509,7 @@ Since 4.6 BookKeeper provides a new client API which leverages Java8 [Completabl
 
 ### Create a new client
 
-In order to create a new [`BookKeeper`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BookKeeper) client object, you need to construct a [`ClientConfiguration`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/conf/ClientConfiguration) object and set a [connection string](#connection-string) first, and then use [`BookKeeperBuilder`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BookKeeperBuilder) to build the client.
+In order to create a new [`BookKeeper`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/BookKeeper) client object, you need to construct a [`ClientConfiguration`]({{site.javadoc_base_url}}/org/apache/bookkeeper/conf/ClientConfiguration) object and set a [connection string](#connection-string) first, and then use [`BookKeeperBuilder`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/BookKeeperBuilder) to build the client.
 
 Here is an example building the bookkeeper client.
 
@@ -529,8 +529,8 @@ BookKeeper bk = BookKeeper.newBuilder(conf)
 
 ### Create ledgers
 
-the easiest way to create a ledger using the java client is via the [`createbuilder`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/createbuilder). you must specify at least
-a [`digesttype`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/digesttype) and a password.
+the easiest way to create a ledger using the java client is via the [`createbuilder`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/createbuilder). you must specify at least
+a [`digesttype`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/digesttype) and a password.
 
 here's an example:
 
@@ -549,11 +549,11 @@ WriteHandle wh = bk.newCreateLedgerOp()
     .get();             // wait for the execution to complete
 ```
 
-A [`WriteHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteHandle) is returned for applications to write and read entries to and from the ledger.
+A [`WriteHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteHandle) is returned for applications to write and read entries to and from the ledger.
 
 ### Write flags
 
-You can specify behaviour of the writer by setting [`WriteFlags`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteFlag) at ledger creation type.
+You can specify behaviour of the writer by setting [`WriteFlags`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteFlag) at ledger creation type.
 These flags are applied only during write operations and are not recorded on metadata.
 
 
@@ -582,7 +582,7 @@ WriteHandle wh = bk.newCreateLedgerOp()
 
 ### Append entries to ledgers
 
-The [`WriteHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteHandle) can be used for applications to append entries to the ledgers.
+The [`WriteHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteHandle) can be used for applications to append entries to the ledgers.
 
 ```java
 WriteHandle wh = ...;
@@ -623,7 +623,7 @@ It is recommended to use `ByteBuf` as it is more gc friendly.
 
 ### Open ledgers
 
-You can open ledgers to read entries. Opening ledgers is done by [`openBuilder`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/openBuilder). You must specify the ledgerId and the password
+You can open ledgers to read entries. Opening ledgers is done by [`openBuilder`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/openBuilder). You must specify the ledgerId and the password
 in order to open the ledgers.
 
 here's an example:
@@ -641,11 +641,11 @@ ReadHandle rh = bk.newOpenLedgerOp()
     .get();             // wait for the execution to complete
 ```
 
-A [`ReadHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ReadHandle) is returned for applications to read entries to and from the ledger.
+A [`ReadHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ReadHandle) is returned for applications to read entries to and from the ledger.
 
 #### Recovery vs NoRecovery
 
-By default, the [`openBuilder`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/openBuilder) opens the ledger in a `NoRecovery` mode. You can open the ledger in `Recovery` mode by specifying
+By default, the [`openBuilder`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/openBuilder) opens the ledger in a `NoRecovery` mode. You can open the ledger in `Recovery` mode by specifying
 `withRecovery(true)` in the open builder.
 
 ```java
@@ -666,13 +666,13 @@ ReadHandle rh = bk.newOpenLedgerOp()
 **What is the difference between "Recovery" and "NoRecovery"?**
 
 If you are opening a ledger in "Recovery" mode, it will basically fence and seal the ledger -- no more entries are allowed
-to be appended to it. The writer which is currently appending entries to the ledger will fail with [`LedgerFencedException`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BKException.Code#LedgerFencedException).
+to be appended to it. The writer which is currently appending entries to the ledger will fail with [`LedgerFencedException`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/BKException.Code#LedgerFencedException).
 
 In constraint, opening a ledger in "NoRecovery" mode, it will not fence and seal the ledger. "NoRecovery" mode is usually used by applications to tailing-read from a ledger.
 
 ### Read entries from ledgers
 
-The [`ReadHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ReadHandle) returned from the open builder can be used for applications to read entries from the ledgers.
+The [`ReadHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ReadHandle) returned from the open builder can be used for applications to read entries from the ledgers.
 
 ```java
 ReadHandle rh = ...;
@@ -710,11 +710,11 @@ readFuture.whenComplete(new FutureEventListener<>() {
 });
 ```
 
-Once you are done with processing the [`LedgerEntries`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/LedgerEntries), you can call `#close()` on the `LedgerEntries` instance to
+Once you are done with processing the [`LedgerEntries`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/LedgerEntries), you can call `#close()` on the `LedgerEntries` instance to
 release the buffers held by it.
 
-Applications are allowed to read any entries between `0` and [`LastAddConfirmed`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed). If the applications
-attempts to read entries beyond `LastAddConfirmed`, they will receive [`IncorrectParameterException`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/BKException.Code#IncorrectParameterException).
+Applications are allowed to read any entries between `0` and [`LastAddConfirmed`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed). If the applications
+attempts to read entries beyond `LastAddConfirmed`, they will receive [`IncorrectParameterException`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/BKException.Code#IncorrectParameterException).
 
 ### Read unconfirmed entries from ledgers
 
@@ -789,7 +789,7 @@ while (!rh.isClosed() || nextEntryId <= rh.getLastAddConfirmed()) {
 
 ### Delete ledgers
 
-Ledgers can be deleted by using [`DeleteBuilder`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/DeleteBuilder).
+Ledgers can be deleted by using [`DeleteBuilder`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/DeleteBuilder).
 
 ```java
 BookKeeper bk = ...;
@@ -807,17 +807,17 @@ In BookKeeper by default each write will be acklowledged to the client if and on
 In this case the LastAddConfirmed pointer is updated on the writer side, this is the guarantee for the writer that data will not be lost and it will
 be always readable by other clients.
 
-On the client side you can temporary relax this constraint by using the [`DEFERRED_SYNC`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/WriteFlag) Write flag. Using this flag bookies will acknowledge each entry after
+On the client side you can temporary relax this constraint by using the [`DEFERRED_SYNC`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/WriteFlag) Write flag. Using this flag bookies will acknowledge each entry after
 writing the entry to SO buffers without waiting for an fsync.
 In this case the LastAddConfirmed pointer is not advanced to the writer side neither is updated on the reader's side, this is because **there is some chance to lose the entry**.
 Such entries will be still readable using readUnconfirmed() API, but they won't be readable using Long Poll reads or regular read() API.
 
-In order to get guarantees of durability the writer must use explicitly the [force()]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble acknowledge the call after
+In order to get guarantees of durability the writer must use explicitly the [force()]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ForceableHandle) API which will return only after all the bookies in the ensemble acknowledge the call after
 performing an fsync to the disk which is storing the journal.
 This way the LastAddConfirmed pointer is advanced on the writer side and it will be eventually available to the readers.
 
 The *close()* operation on the writer writes on ledger's metadata the current LastAddConfirmed pointer, **it is up to the application to call force() before issuing the close command**.
-In case that you never call explicitly [force()]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/api/ForceableHandle) the LastAddConfirmed will remain unset (-1) on ledger metadata and regular readers won't be able to access data.
+In case that you never call explicitly [force()]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/api/ForceableHandle) the LastAddConfirmed will remain unset (-1) on ledger metadata and regular readers won't be able to access data.
 
 
 ```java

@@ -61,14 +61,18 @@ Once you have a GPG key associated with your Apache count, then:
 
 **First**, Determine your Apache GPG Key and Key ID, as follows:
 
-    gpg --list-keys
+```
+gpg --list-keys
+```
 
 This will list your GPG keys. One of these should reflect your Apache account, for example:
 
-    --------------------------------------------------
-    pub   2048R/845E6689 2016-02-23
-    uid                  Nomen Nescio <anonymous@apache.org>
-    sub   2048R/BA4D50BE 2016-02-23
+```
+--------------------------------------------------
+pub   2048R/845E6689 2016-02-23
+uid                  Nomen Nescio <anonymous@apache.org>
+sub   2048R/BA4D50BE 2016-02-23
+```
 
 Here, the key ID is the 8-digit hex string in the `pub` line: `845E6689`.
 
@@ -93,15 +97,19 @@ Once you committed, please verify if your GPG key shows up in the BookkKeeper's 
 
 **Third**, configure `git` to use this key when signing code by giving it your key ID, as follows:
 
-    git config --global user.signingkey 845E6689
+```
+git config --global user.signingkey 845E6689
+```
 
 You may drop the `--global` option if you'd prefer to use this key for the current repository only.
 
 You may wish to start `gpg-agent` to unlock your GPG key only once using your passphrase. Otherwise, you may need to enter this passphrase hundreds of times. The setup for `gpg-agent` varies based on operating system, but may be something like this:
 
-    eval $(gpg-agent --daemon --no-grab --write-env-file $HOME/.gpg-agent-info)
-    export GPG_TTY=$(tty)
-    export GPG_AGENT_INFO
+```
+eval $(gpg-agent --daemon --no-grab --write-env-file $HOME/.gpg-agent-info)
+export GPG_TTY=$(tty)
+export GPG_AGENT_INFO
+```
 
 #### Access to Apache Nexus repository
 
@@ -113,20 +121,22 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
 4. Choose `User Token` from the dropdown, then click `Access User Token`. Copy a snippet of the Maven XML configuration block.
 5. Insert the following snippet into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
 
-        <settings>
-          <servers>
-            <server>
-              <id>apache.releases.https</id>
-              <username>TOKEN_NAME</username>
-              <password>TOKEN_PASSWORD</password>
-            </server>
-            <server>
-              <id>apache.snapshots.https</id>
-              <username>TOKEN_NAME</username>
-              <password>TOKEN_PASSWORD</password>
-            </server>
-          </servers>
-        </settings>
+```
+    <settings>
+      <servers>
+        <server>
+          <id>apache.releases.https</id>
+          <username>TOKEN_NAME</username>
+          <password>TOKEN_PASSWORD</password>
+        </server>
+        <server>
+          <id>apache.snapshots.https</id>
+          <username>TOKEN_NAME</username>
+          <password>TOKEN_PASSWORD</password>
+        </server>
+      </servers>
+    </settings>
+```
 
 #### Create an account on PyPi
 
@@ -200,26 +210,32 @@ Release candidates are built from a release branch. As a final step in preparati
 
 Check out the version of the codebase from which you start the release. For a new minor or major release, this may be `HEAD` of the `master` branch. To build a hotfix/incremental release, instead of the `master` branch, use the release tag of the release being patched. (Please make sure your cloned repository is up-to-date before starting.)
 
-    git checkout <master branch OR release tag>
+```
+git checkout <master branch OR release tag>
+```
 
 
 Set up a few environment variables to simplify Maven commands that follow. (We use `bash` Unix syntax in this guide.)
 
 For a major release (for instance 4.5.0):
 
-    MAJOR_VERSION="4.5"
-    VERSION="4.5.0"
-    NEXT_VERSION="4.6.0"
-    BRANCH_NAME="branch-${MAJOR_VERSION}"
-    DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+```
+MAJOR_VERSION="4.5"
+VERSION="4.5.0"
+NEXT_VERSION="4.6.0"
+BRANCH_NAME="branch-${MAJOR_VERSION}"
+DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+```
 
 For a minor release (for instance 4.5.1):
 
-    MAJOR_VERSION="4.5"
-    VERSION="4.5.1"
-    NEXT_VERSION="4.5.2"
-    BRANCH_NAME="branch-${MAJOR_VERSION}"
-    DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+```
+MAJOR_VERSION="4.5"
+VERSION="4.5.1"
+NEXT_VERSION="4.5.2"
+BRANCH_NAME="branch-${MAJOR_VERSION}"
+DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+```
 
 Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.
 
@@ -234,10 +250,12 @@ If you are cutting a major release use Maven release plugin to create the releas
 > at the end of this command. "dry run" will generate some temporary files in the project folder, you can remove
 > them by running "mvn release:clean".
 
-    mvn release:branch \
-        -DbranchName=${BRANCH_NAME} \
-        -DdevelopmentVersion=${DEVELOPMENT_VERSION} \
-        [-DdryRun]
+```
+mvn release:branch \
+    -DbranchName=${BRANCH_NAME} \
+    -DdevelopmentVersion=${DEVELOPMENT_VERSION} \
+    [-DdryRun]
+```
 
 > If you failed at the middle of running this command, please check if you have `push` permissions on `github.com`.
 > You need use [personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/) rather than your own password, if you enabled `2 factor authentication`.
@@ -259,7 +277,9 @@ Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1328) [int
 
 Check out the release branch.
 
-    git checkout ${BRANCH_NAME}
+```
+git checkout ${BRANCH_NAME}
+```
 
 The rest of this guide assumes that commands are run in the root of a repository on `${BRANCH_NAME}` with the above environment variables set.
 
@@ -288,10 +308,12 @@ The core of the release process is the build-vote-fix cycle. Each cycle produces
 
 Set up a few environment variables to simplify Maven commands that follow. This identifies the release candidate being built. Start with `release candidate number` equal to `0` and increment it for each candidate.
 
-    RC_NUM="0"
-    TAG="release-${VERSION}"
-    RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
-    RC_TAG="v${VERSION}-rc${RC_NUM}"
+```
+RC_NUM="0"
+TAG="release-${VERSION}"
+RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
+RC_TAG="v${VERSION}-rc${RC_NUM}"
+```
 
 > Please make sure `gpg` command is in your $PATH. The maven release plugin use `gpg` to sign generated jars and packages.
 
@@ -332,7 +354,7 @@ Use Maven release plugin to stage these artifacts on the Apache Nexus repository
 ```
 
 > If `release:perform` failed, 
-> delete the release tag: git tag -d release-${VERSION} && git push apache :refs/tags/release-${VERSION}
+> delete the release tag: `git tag -d release-${VERSION} && git push apache :refs/tags/release-${VERSION}`
 > 
 > Also, you need to check the git commits on the github and if needed you may have to
 > force push backed out local git branch to github again.
@@ -366,64 +388,68 @@ Once you have built and individually reviewed the release candidate, please shar
 
 Start the review-and-vote thread on the dev@ mailing list. Here's an email template; please adjust as you see fit.
 
-    From: Release Manager
-    To: dev@bookkeeper.apache.org
-    Subject: [VOTE] Release 4.5.0, release candidate #0
+```
+From: Release Manager
+To: dev@bookkeeper.apache.org
+Subject: [VOTE] Release 4.5.0, release candidate #0
 
-    Hi everyone,
-    Please review and vote on the release candidate #0 for the version 0.4.0, as follows:
-    [ ] +1, Approve the release
-    [ ] -1, Do not approve the release (please provide specific comments)
+Hi everyone,
+Please review and vote on the release candidate #0 for the version 0.4.0, as follows:
+[ ] +1, Approve the release
+[ ] -1, Do not approve the release (please provide specific comments)
 
-    The complete staging area is available for your review, which includes:
-    * Release notes [1]
-    * The official Apache source and binary distributions to be deployed to dist.apache.org [2]
-    * All artifacts to be deployed to the Maven Central Repository [3]
-    * Source code tag "release-4.5.0" [4] with git sha XXXXXXXXXXXXXXXXXXXX
+The complete staging area is available for your review, which includes:
+* Release notes [1]
+* The official Apache source and binary distributions to be deployed to dist.apache.org [2]
+* All artifacts to be deployed to the Maven Central Repository [3]
+* Source code tag "release-4.5.0" [4] with git sha XXXXXXXXXXXXXXXXXXXX
 
-    BookKeeper's KEYS file contains PGP keys we used to sign this release:
-    https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
+BookKeeper's KEYS file contains PGP keys we used to sign this release:
+https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 
-    Please download these packages and review this release candidate:
+Please download these packages and review this release candidate:
 
-    - Review release notes
-    - Download the source package (verify shasum, and asc) and follow the
-    instructions to build and run the bookkeeper service.
-    - Download the binary package (verify shasum, and asc) and follow the
-    instructions to run the bookkeeper service.
-    - Review maven repo, release tag, licenses, and any other things you think
-    it is important to a release.
+- Review release notes
+- Download the source package (verify shasum, and asc) and follow the
+instructions to build and run the bookkeeper service.
+- Download the binary package (verify shasum, and asc) and follow the
+instructions to run the bookkeeper service.
+- Review maven repo, release tag, licenses, and any other things you think
+it is important to a release.
 
-    The vote will be open for at least 72 hours. It is adopted by majority approval, with at least 3 PMC affirmative votes.
+The vote will be open for at least 72 hours. It is adopted by majority approval, with at least 3 PMC affirmative votes.
 
-    Thanks,
-    Release Manager
+Thanks,
+Release Manager
 
-    [1] link
-    [2] link
-    [3] link
-    [4] link
-    [5] link
+[1] link
+[2] link
+[3] link
+[4] link
+[5] link
+```
 
 If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There's no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don't require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
 
 If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here's an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
 
-    From: Release Manager
-    To: dev@bookkeeper.apache.org
-    Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
+```
+From: Release Manager
+To: dev@bookkeeper.apache.org
+Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
 
-    I'm happy to announce that we have unanimously approved this release.
+I'm happy to announce that we have unanimously approved this release.
 
-    There are XXX approving votes, XXX of which are binding:
-    * approver 1
-    * approver 2
-    * approver 3
-    * approver 4
+There are XXX approving votes, XXX of which are binding:
+* approver 1
+* approver 2
+* approver 3
+* approver 4
 
-    There are no disapproving votes.
+There are no disapproving votes.
 
-    Thanks everyone!
+Thanks everyone!
+```
 
 
 ### Checklist to proceed to the finalization step
@@ -458,7 +484,9 @@ Use the Apache Nexus repository to release the staged binary artifacts to the Ma
 
 Copy the source release from the `dev` repository to the `release` repository at `dist.apache.org` using Subversion.
 
-    svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+```
+svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+```
 
 ### Update Website
 
@@ -466,15 +494,19 @@ Copy the source release from the `dev` repository to the `release` repository at
    #### Patch release
    For each minor release only the latest patch version documentation is kept.
    
-       export LATEST_RELEASED= # version to replace
-       export NEW_RELEASE=${VERSION}
+```
+   export LATEST_RELEASED= # version to replace
+   export NEW_RELEASE=${VERSION}
    
-       ./site3/website/scripts/release-minor.sh
+   ./site3/website/scripts/release-minor.sh
+```
    
    #### Major/minor release
    
-        export NEW_RELEASE=${VERSION}
-        ./site3/website/scripts/release-major.sh
+```
+    export NEW_RELEASE=${VERSION}
+    ./site3/website/scripts/release-major.sh
+```
    
    Update the `latest_release` and `stable_release` in the docusaurus.config.js file if needed. 
    Once run the above commands, please send a pull request for it and get approval from any committers, then merge it.
@@ -558,9 +590,11 @@ Use the Maven Release plugin in order to advance the version in all poms.
 
 > This command will upgrade the &lt;version&gt; tag on every pom.xml locally to your workspace.
 
-    mvn release:update-versions
-        -DdevelopmentVersion=${DEVELOPMENT_VERSION}
-        -Dstream
+```
+mvn release:update-versions
+    -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+    -Dstream
+```
 
 For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
 Then you have to create a PR and submit it for review.
@@ -614,34 +648,36 @@ Use the template below for all the messages.
 > NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.
 
 
-    From: xxx@apache.org
-    To: dev@bookkeeper.apache.org, user@bookkeeper.apache.org, announce@apache.org
-    Subject: [ANNOUNCE] Apache BookKeeper x.y.z released
-     
-    The Apache BookKeeper team is proud to announce Apache BookKeeper version
-    x.y.z.
+```
+From: xxx@apache.org
+To: dev@bookkeeper.apache.org, user@bookkeeper.apache.org, announce@apache.org
+Subject: [ANNOUNCE] Apache BookKeeper x.y.z released
+ 
+The Apache BookKeeper team is proud to announce Apache BookKeeper version
+x.y.z.
 
-    Apache BookKeeper is a scalable, fault-tolerant, and low-latency storage service optimized for
-    real-time workloads. It has been used for a fundamental service to build reliable services.
-    It is also the log segment store for Apache DistributedLog and the message store for Apache Pulsar.
+Apache BookKeeper is a scalable, fault-tolerant, and low-latency storage service optimized for
+real-time workloads. It has been used for a fundamental service to build reliable services.
+It is also the log segment store for Apache DistributedLog and the message store for Apache Pulsar.
 
-    This is the N release of the Apache BookKeeper.
+This is the N release of the Apache BookKeeper.
 
-    [highlights the release and why users need to try the release]
-     
-    For BookKeeper release details and downloads, visit:
-     
-    [download link]
-     
-    BookKeeper x.y.z Release Notes are at:
+[highlights the release and why users need to try the release]
+ 
+For BookKeeper release details and downloads, visit:
+ 
+[download link]
+ 
+BookKeeper x.y.z Release Notes are at:
 
-    [release notes link]
-     
-    We would like to thank the contributors that made the release possible.
-     
-    Regards,
-     
-    The BookKeeper Team
+[release notes link]
+ 
+We would like to thank the contributors that made the release possible.
+ 
+Regards,
+ 
+The BookKeeper Team
+```
 
 
 ### Recordkeeping

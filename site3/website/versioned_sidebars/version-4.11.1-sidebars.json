@@ -1,8 +1,8 @@
 {
-  "version-4.11.1/docsSidebar": [
+  "docsSidebar": [
     {
       "type": "doc",
-      "id": "version-4.11.1/overview/overview",
+      "id": "overview/overview",
       "label": "Overview"
     },
     {
@@ -11,17 +11,17 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/getting-started/installation",
+          "id": "getting-started/installation",
           "label": "Installation"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/getting-started/run-locally",
+          "id": "getting-started/run-locally",
           "label": "Run bookies locally"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/getting-started/concepts",
+          "id": "getting-started/concepts",
           "label": "Concepts and architecture"
         }
       ]
@@ -32,12 +32,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/deployment/manual",
+          "id": "deployment/manual",
           "label": "Manual deployment"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/deployment/kubernetes",
+          "id": "deployment/kubernetes",
           "label": "BookKeeper on Kubernetes"
         }
       ]
@@ -48,32 +48,32 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/bookies",
+          "id": "admin/bookies",
           "label": "BookKeeper administration"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/autorecovery",
+          "id": "admin/autorecovery",
           "label": "AutoRecovery"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/metrics",
+          "id": "admin/metrics",
           "label": "Metrics collection"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/upgrade",
+          "id": "admin/upgrade",
           "label": "Upgrade"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/http",
+          "id": "admin/http",
           "label": "Admin REST API"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/admin/decomission",
+          "id": "admin/decomission",
           "label": "Decommissioning Bookies"
         }
       ]
@@ -84,22 +84,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/api/overview",
+          "id": "api/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/api/ledger-api",
+          "id": "api/ledger-api",
           "label": "Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/api/ledger-adv-api",
+          "id": "api/ledger-adv-api",
           "label": "Advanced Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/api/distributedlog-api",
+          "id": "api/distributedlog-api",
           "label": "DistributedLog"
         }
       ]
@@ -110,22 +110,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/security/overview",
+          "id": "security/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/security/tls",
+          "id": "security/tls",
           "label": "TLS Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/security/sasl",
+          "id": "security/sasl",
           "label": "SASL Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/security/zookeeper",
+          "id": "security/zookeeper",
           "label": "ZooKeeper Authentication"
         }
       ]
@@ -136,7 +136,7 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/development/protocol",
+          "id": "development/protocol",
           "label": "BookKeeper protocol"
         }
       ]
@@ -147,12 +147,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.11.1/reference/config",
+          "id": "reference/config",
           "label": "Configuration"
         },
         {
           "type": "doc",
-          "id": "version-4.11.1/reference/cli",
+          "id": "reference/cli",
           "label": "Command-line tools"
         }
       ]

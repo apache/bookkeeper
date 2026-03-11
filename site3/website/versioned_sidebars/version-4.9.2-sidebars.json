@@ -1,8 +1,8 @@
 {
-  "version-4.9.2/docsSidebar": [
+  "docsSidebar": [
     {
       "type": "doc",
-      "id": "version-4.9.2/overview/overview",
+      "id": "overview/overview",
       "label": "Overview"
     },
     {
@@ -11,17 +11,17 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/getting-started/installation",
+          "id": "getting-started/installation",
           "label": "Installation"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/getting-started/run-locally",
+          "id": "getting-started/run-locally",
           "label": "Run bookies locally"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/getting-started/concepts",
+          "id": "getting-started/concepts",
           "label": "Concepts and architecture"
         }
       ]
@@ -32,12 +32,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/deployment/manual",
+          "id": "deployment/manual",
           "label": "Manual deployment"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/deployment/kubernetes",
+          "id": "deployment/kubernetes",
           "label": "BookKeeper on Kubernetes"
         }
       ]
@@ -48,27 +48,27 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/admin/bookies",
+          "id": "admin/bookies",
           "label": "BookKeeper administration"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/admin/autorecovery",
+          "id": "admin/autorecovery",
           "label": "AutoRecovery"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/admin/metrics",
+          "id": "admin/metrics",
           "label": "Metrics collection"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/admin/upgrade",
+          "id": "admin/upgrade",
           "label": "Upgrade"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/admin/http",
+          "id": "admin/http",
           "label": "Admin REST API"
         }
         
@@ -80,22 +80,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/api/overview",
+          "id": "api/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/api/ledger-api",
+          "id": "api/ledger-api",
           "label": "Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/api/ledger-adv-api",
+          "id": "api/ledger-adv-api",
           "label": "Advanced Ledger API"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/api/distributedlog-api",
+          "id": "api/distributedlog-api",
           "label": "DistributedLog"
         }
       ]
@@ -106,22 +106,22 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/security/overview",
+          "id": "security/overview",
           "label": "Overview"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/security/tls",
+          "id": "security/tls",
           "label": "TLS Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/security/sasl",
+          "id": "security/sasl",
           "label": "SASL Authentication"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/security/zookeeper",
+          "id": "security/zookeeper",
           "label": "ZooKeeper Authentication"
         }
       ]
@@ -132,7 +132,7 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/development/protocol",
+          "id": "development/protocol",
           "label": "BookKeeper protocol"
         }
       ]
@@ -143,12 +143,12 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-4.9.2/reference/config",
+          "id": "reference/config",
           "label": "Configuration"
         },
         {
           "type": "doc",
-          "id": "version-4.9.2/reference/cli",
+          "id": "reference/cli",
           "label": "Command-line tools"
         }
       ]

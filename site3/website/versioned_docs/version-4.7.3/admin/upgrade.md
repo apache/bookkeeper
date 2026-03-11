@@ -3,7 +3,7 @@ id: upgrade
 title: Upgrade
 ---
 
-> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list]({{ community/mailing-lists) or [Slack Channel]({{ community/slack).
+> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list](/community/mailing-lists) or [Slack Channel](/community/slack).
 
 ## Overview
 
@@ -40,10 +40,10 @@ will repair this problematic bookie node by autorecovery. Nothing needs to be wo
 Once you determined a version is safe to upgrade in a few nodes in your cluster, you can perform following steps to upgrade all bookies in your cluster.
 
 1. Determine if autorecovery is running along with bookies. If yes, check if the clients (either new clients with new binary or old clients with new configurations)
-are allowed to talk to old bookies; if clients are not allowed to talk to old bookies, please [disable autorecovery](../reference/cli/#autorecovery-1) during upgrade.
+are allowed to talk to old bookies; if clients are not allowed to talk to old bookies, please [disable autorecovery](../reference/cli/#bookkeeper-shell-autorecovery) during upgrade.
 2. Decide on performing a rolling upgrade or a downtime upgrade.
 3. Upgrade all Bookies (more below)
-4. If autorecovery was disabled during upgrade, [enable autorecovery](../reference/cli/#autorecovery-1).
+4. If autorecovery was disabled during upgrade, [enable autorecovery](../reference/cli/#bookkeeper-shell-autorecovery).
 5. After all bookies are upgraded, build applications that use `BookKeeper client` against the new bookkeeper libraries and deploy the new versions.
 
 ### Upgrade Bookies

@@ -10,7 +10,7 @@ This sections covers these advanced APIs.
 
 ## LedgerHandleAdv
 
-[`LedgerHandleAdv`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/LedgerHandleAdv) is an advanced extension of [`LedgerHandle`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/LedgerHandle).
+[`LedgerHandleAdv`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/LedgerHandleAdv) is an advanced extension of [`LedgerHandle`]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/LedgerHandle).
 It allows user passing in an `entryId` when adding an entry.
 
 ### Creating advanced ledgers
@@ -59,7 +59,7 @@ LedgerHandleAdv handle = bkClient.createLedgerAdv(
 
 > Please note, it is users' responsibility to provide a unique ledger id when using the API above.
 > If a ledger already exists when users try to create an advanced ledger with same ledger id,
-> a [LedgerExistsException]({{ site.javadoc_base_url }}/org/apache/bookkeeper/client/BKException.BKLedgerExistException.html) is thrown by the bookkeeper client.
+> a [LedgerExistsException]({{site.javadoc_base_url}}/org/apache/bookkeeper/client/BKException.BKLedgerExistException.html) is thrown by the bookkeeper client.
 
 Creating advanced ledgers can be done through a fluent API since 4.6.
 

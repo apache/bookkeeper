@@ -54,13 +54,13 @@ AutoRecovery can be run in three ways:
 
 ## Running AutoRecovery
 
-You can start up AutoRecovery using the [`autorecovery`](../reference/cli#bookkeeper-autorecovery) command of the [`bookkeeper`](../reference/cli) CLI tool.
+You can start up AutoRecovery using the [`autorecovery`](../reference/cli#bookkeeper-shell-autorecovery) command of the [`bookkeeper`](../reference/cli) CLI tool.
 
 ```bash
 $ bin/bookkeeper autorecovery
 ```
 
-> The most important thing to ensure when starting up AutoRecovery is that the ZooKeeper connection string specified by the [`zkServers`](../reference/config#zkServers) parameter points to the right ZooKeeper cluster.
+> The most important thing to ensure when starting up AutoRecovery is that the ZooKeeper connection string specified by the [`zkServers`](../reference/config) parameter points to the right ZooKeeper cluster.
 
 If you start up AutoRecovery on a machine that is already running a bookie, then the AutoRecovery process will run alongside the bookie on a separate thread.
 
@@ -71,7 +71,7 @@ bookkeeper nodes will also handle rereplication work.
 
 ## Configuration
 
-There are a handful of AutoRecovery-related configs in the [`bk_server.conf`](../reference/config) configuration file. For a listing of those configs, see [AutoRecovery settings](../reference/config#autorecovery-settings).
+There are a handful of AutoRecovery-related configs in the [`bk_server.conf`](../reference/config) configuration file. For a listing of those configs, see [AutoRecovery settings](../reference/config#autorecovery-general-settings).
 
 ## Disable AutoRecovery
 
@@ -93,10 +93,10 @@ $ bin/bookkeeper shell autorecovery -enable
 
 AutoRecovery has two components:
 
-1. The [**auditor**](#auditor) (see the [`Auditor`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/replication/Auditor.html) class) is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.
-1. The [**replication worker**](#replication-worker) (see the [`ReplicationWorker`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/replication/ReplicationWorker.html) class) runs on each bookie and executes rereplication tasks provided by the auditor.
+1. The [**auditor**](#auditor) (see the [`Auditor`]({{site.javadoc_base_url}}/org/apache/bookkeeper/replication/Auditor.html) class) is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.
+1. The [**replication worker**](#replication-worker) (see the [`ReplicationWorker`]({{site.javadoc_base_url}}/org/apache/bookkeeper/replication/ReplicationWorker.html) class) runs on each bookie and executes rereplication tasks provided by the auditor.
 
-Both of these components run as threads in the [`AutoRecoveryMain`]({{ site.javadoc_base_url }}/org/apache/bookkeeper/replication/AutoRecoveryMain) process, which runs on each bookie in the cluster. All recovery nodes participate in leader election---using ZooKeeper---to decide which node becomes the auditor. Nodes that fail to become the auditor watch the elected auditor and run an election process again if they see that the auditor node has failed.
+Both of these components run as threads in the [`AutoRecoveryMain`]({{site.javadoc_base_url}}/org/apache/bookkeeper/replication/AutoRecoveryMain) process, which runs on each bookie in the cluster. All recovery nodes participate in leader election---using ZooKeeper---to decide which node becomes the auditor. Nodes that fail to become the auditor watch the elected auditor and run an election process again if they see that the auditor node has failed.
 
 ### Auditor
 
@@ -114,7 +114,7 @@ If the replication worker finds a fragment which needs rereplication, but does n
 
 This avoids the situation in which a client is writing to a ledger and one of the bookies goes down, but the client has not written an entry to that bookie before rereplication takes place. The client could continue writing to the old fragment, even though the ensemble for the fragment had changed. This could lead to data loss. Fencing prevents this scenario from happening. In the normal case, the client will try to write to the failed bookie within the grace period, and will have started a new fragment before rereplication starts.
 
-You can configure this grace period using the [`openLedgerRereplicationGracePeriod`](../reference/config#openLedgerRereplicationGracePeriod) parameter.
+You can configure this grace period using the [`openLedgerRereplicationGracePeriod`](../reference/config) parameter.
 
 ### The rereplication process
 

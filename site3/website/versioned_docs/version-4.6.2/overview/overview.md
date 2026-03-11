@@ -36,7 +36,7 @@ It is suitable for being used in following scenarios:
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
 - [Apache BookKeeper 4.6.2 Release Notes](/release-notes#462)
-- [Java API docs]({{ site.javadoc_base_url }})
+- [Java API docs]({{site.javadoc_base_url}})
 
 Or start using Apache BookKeeper today.
 

@@ -87,7 +87,7 @@ bookkeeper_server_BookieReadThreadPool_task_execution_sum{success="true", thread
 bookkeeper_server_BookieReadThreadPool_task_execution_sum{success="true", thread="3", threadPool="BookieReadThreadPool"}
 ```
 
-In order for thread scoped metrics to know which thread pool and thread ordinal the metrics of each thread should be labelled with, a thread registry is maintained. After each thread is started, the first work it performs is registering itself with a thread registry object that maps thread id -> {threadPool, thread}. In some cases this work can be performed outside of the thread itself, such as in a thread factory.
+In order for thread scoped metrics to know which thread pool and thread ordinal the metrics of each thread should be labelled with, a thread registry is maintained. After each thread is started, the first work it performs is registering itself with a thread registry object that maps thread id -> `{threadPool, thread}`. In some cases this work can be performed outside of the thread itself, such as in a thread factory.
 
 Each thread scoped metric registers per-thread metrics lazily. For example, when a thread scoped counter is incremented by a given thread, the first time that occurs on that given thread the thread labels are retrieved from the thread registry and a counter for that thread is created with the right labels and registered with the provider. In the case that the calling thread is unregistered, a default metric is used. Per thread OpStatsLoggers/Counters are not visible externally and are stored inside the thread scoped metric using a thread-local variable.
 

@@ -15,7 +15,7 @@ Provider | Provider class name
 [OpenTelemetry](https://opentelemetry.io/)|`org.apache.bookkeeper.stats.otel.OtelMetricsProvider`
 [Prometheus](https://prometheus.io/) | `org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider`
 
-> The [Prometheus]({{ site.github_master }}/bookkeeper-stats-providers/prometheus-metrics-provider) stats provider is the default provider.
+> The [Prometheus]({{site.github_master}}/stats/bookkeeper-stats-providers/prometheus-metrics-provider) stats provider is the default provider.
 
 ## Enabling stats providers in bookies
 

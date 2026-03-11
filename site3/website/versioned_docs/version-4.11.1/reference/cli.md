@@ -519,7 +519,7 @@ $ bin/bookkeeper shell updatecookie \
 
 | Flag | Description |
 | ---- | ----------- |
-| -bookieId <hostname|ip> | Bookie Id | 
+| -bookieId `<hostname\|ip>` | Bookie Id | 
 
 
 ### updateledgers {#bookkeeper-shell-updateledgers}
@@ -535,7 +535,7 @@ $ bin/bookkeeper shell updateledgers \
 
 | Flag | Description |
 | ---- | ----------- |
-| -bookieId <hostname|ip> | Bookie Id | 
+| -bookieId `<hostname\|ip>` | Bookie Id | 
 | -updatespersec N | Number of ledgers updating per second (default 5 per sec) | 
 | -limit N | Maximum number of ledgers to update (default no limit) | 
 | -verbose | Print status of the ledger updation (default false) | 

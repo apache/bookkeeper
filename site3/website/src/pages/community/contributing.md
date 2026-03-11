@@ -81,13 +81,17 @@ We assume you are using SSH-based authentication with GitHub. If necessary, exch
 
 Clone your personal BookKeeper’s GitHub fork.
 
-    $ git clone https://github.com/<Github_user>/bookkeeper.git
-    $ cd bookkeeper
+```
+$ git clone https://github.com/<Github_user>/bookkeeper.git
+$ cd bookkeeper
+```
 
 Add Apache Repo as additional Git remotes, where you can sync the changes (for committers, you need these two remotes for pushing changes).
 
-	$ git remote add apache https://github.com/apache/bookkeeper
-	$ git remote add apache-github https://github.com/apache/bookkeeper
+```
+$ git remote add apache https://github.com/apache/bookkeeper
+$ git remote add apache-github https://github.com/apache/bookkeeper
+```
 
 You are now ready to start developing!
 
@@ -104,12 +108,14 @@ IntelliJ supports checkstyle within the IDE using the Checkstyle-IDEA plugin.
 1. Configure the plugin by going to Settings -> Other Settings -> Checkstyle.
 1. Set the "Scan Scope" to "Only Java sources (including tests)".
 1. In the "Configuration File" pane, add a new configuration using the plus icon:
-    1. Set the "Description" to "BookKeeper".
-    1. Select "Use a local Checkstyle file", and point it to
-      "buildtools/src/main/resources/bookkeeper/checkstyle.xml" within
-      your repository.
-    1. Check the box for "Store relative to project location".
-    1. Click Next -> Next -> Finish.
+```
+1. Set the "Description" to "BookKeeper".
+1. Select "Use a local Checkstyle file", and point it to
+  "buildtools/src/main/resources/bookkeeper/checkstyle.xml" within
+  your repository.
+1. Check the box for "Store relative to project location".
+1. Click Next -> Next -> Finish.
+```
 1. Select "BookKeeper" as the only active configuration file, and click "Apply" and
    "OK".
 1. Checkstyle will now give warnings in the editor for any Checkstyle
@@ -130,11 +136,13 @@ Start Eclipse with a fresh workspace in a separate directory from your checkout.
 
 1. Import the bookkeeper projects
 
-	File
-	-> Import...
-	-> Browse to the directory you cloned into and select "bookkeeper"
-	-> make sure all bookkeeper projects are selected
-	-> Finalize
+```
+File
+-> Import...
+-> Browse to the directory you cloned into and select "bookkeeper"
+-> make sure all bookkeeper projects are selected
+-> Finalize
+```
 
 You now should have all the bookkeeper projects imported into eclipse and should see no compile errors.
 
@@ -143,18 +151,22 @@ Eclipse supports checkstyle within the IDE using the Checkstyle plugin.
 
 1. Install the [Checkstyle plugin](https://marketplace.eclipse.org/content/checkstyle-plug).
 1. Configure Checkstyle plugin by going to Preferences - Checkstyle.
-    1. Click "New...".
-    1. Select "External Configuration File" for type.
-    1. Click "Browse..." and select "buildtools/src/main/resources/bookkeeper/checkstyle.xml".
-    1. Enter "BookKeeper Checks" under "Name:".
-    1. Click "OK", then "OK".
+```
+1. Click "New...".
+1. Select "External Configuration File" for type.
+1. Click "Browse..." and select "buildtools/src/main/resources/bookkeeper/checkstyle.xml".
+1. Enter "BookKeeper Checks" under "Name:".
+1. Click "OK", then "OK".
+```
 
 ### Create a branch in your fork
 
 You’ll work on your contribution in a branch in your own (forked) repository. Create a local branch, initialized with the state of the branch you expect your changes to be merged into. Keep in mind that we use several branches, including `master`, feature-specific, and release-specific branches. If you are unsure, initialize with the state of the `master` branch.
 
-	$ git fetch apache
-	$ git checkout -b <my-branch> apache/master
+```
+$ git fetch apache
+$ git checkout -b `<my-branch>` apache/master
+```
 
 At this point, you can start making and committing changes to this branch in a standard way.
 
@@ -162,13 +174,17 @@ At this point, you can start making and committing changes to this branch in a s
 
 Periodically while you work, and certainly before submitting a pull request, you should update your branch with the most recent changes to the target branch.
 
-    $ git pull --rebase
+```
+$ git pull --rebase
+```
 
 Remember to always use `--rebase` parameter to avoid extraneous merge commits.
 
 Then you can push your local, committed changes to your (forked) repository on GitHub. Since rebase may change that branch's history, you may need to force push. You'll run:
 
-	$ git push <GitHub_user> <my-branch> --force
+```
+$ git push <GitHub_user> <my-branch> --force
+```
 
 ### Testing
 
@@ -182,19 +198,25 @@ Once the initial code is complete and the tests pass, it’s time to start the c
 
 Organize your commits to make a committer’s job easier when reviewing. Committers normally prefer multiple small pull requests, instead of a single large pull request. Within a pull request, a relatively small number of commits that break the problem into logical steps is preferred. For most pull requests, you'll squash your changes down to 1 commit. You can use the following command to re-order, squash, edit, or change description of individual commits.
 
-    $ git rebase -i apache/master
+```
+$ git rebase -i apache/master
+```
 
 You'll then push to your branch on GitHub. Note: when updating your commit after pull request feedback and use squash to get back to one commit, you will need to do a force submit to the branch on your repo.
 
 Navigate to the [BookKeeper GitHub Repo](https://github.com/apache/bookkeeper) to create a pull request. The title of the pull request should be strictly in the following format:
 
-	Issue <Github-issue-#> <Title of the pull request>
+```
+Issue `<Github-issue-#>` `<Title of the pull request>`
+```
 
 Please include a descriptive pull request message to help make the committer’s job easier when reviewing. It’s fine to refer to existing design docs or the contents of the associated JIRA as appropriate.
 
 If you know a good committer to review your pull request, please make a comment like the following. If not, don’t worry -- a committer will pick it up.
 
-	Hi @<GitHub-committer-username>, can you please take a look?
+```
+Hi @<GitHub-committer-username>, can you please take a look?
+```
 
 When choosing a committer to review, think about who is the expert on the relevant code, who the stakeholders are for this change, and who else would benefit from becoming familiar with the code. If you’d appreciate comments from additional folks but already have a main committer, you can explicitly cc them using `@<GitHub-committer-username>`.
 
@@ -217,9 +239,11 @@ Once the pull request is merged into the BookKeeper repository, you can safely d
 
 From another local branch, run:
 
-	$ git fetch origin
-	$ git branch -d <my-branch>
-	$ git push origin --delete <my-branch>
+```
+$ git fetch origin
+$ git branch -d <my-branch>
+$ git push origin --delete <my-branch>
+```
 
 ## Commit (committers only)
 
@@ -249,7 +273,7 @@ At some point in the review process, you should take the pull request over and c
 
 ### Website
 
-The BookKeeper website is in the same [BookKeeper Github Repo](https://github.com/apache/bookkeeper). The source files are hosted under `site` directory in `master` branch,
+The BookKeeper website is in the same [BookKeeper Github Repo](https://github.com/apache/bookkeeper). The source files are hosted under `site3` directory in `master` branch,
 the static content is generated by CI job and merged into the `asf-site` branch.
 
-Follow the [README](https://github.com/apache/bookkeeper/tree/master/site3) for making contributions to the website.
+Follow the [README]({{site.github_master}}/site3) for making contributions to the website.

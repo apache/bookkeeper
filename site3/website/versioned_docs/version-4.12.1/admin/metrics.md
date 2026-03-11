@@ -16,7 +16,7 @@ Provider | Provider class name
 [Codahale Metrics](https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/codahale-metrics-provider) | `org.apache.bookkeeper.stats.CodahaleMetricsProvider`
 [Prometheus](https://prometheus.io/) | `org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider`
 
-> The [Codahale Metrics]({{ site.github_master }}/bookkeeper-stats-providers/codahale-metrics-provider) stats provider is the default provider.
+> The [Codahale Metrics]({{site.github_master}}/stats/bookkeeper-stats-providers/codahale-metrics-provider) stats provider is the default provider.
 
 ## Enabling stats providers in bookies
 

@@ -38,7 +38,7 @@ Object/BLOG storage | Storing snapshots to replicated state machines.
 Learn more about Apache BookKeeper and what it can do for your organization:
 
 - [Apache BookKeeper 4.5.1 Release Notes](/release-notes#451)
-- [Java API docs]({{ site.javadoc_base_url }})
+- [Java API docs]({{site.javadoc_base_url}})
 
 Or start using Apache BookKeeper today.
 

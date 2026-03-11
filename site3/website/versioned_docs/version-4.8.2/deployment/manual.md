@@ -24,7 +24,7 @@ zkServers=100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181
 
 > A full listing of configurable parameters available in `bookkeeper-server/conf/bk_server.conf` can be found in the [Configuration](../reference/config) reference manual.
 
-Once the bookie's configuration is set, you can start it up using the [`bookie`](../reference/cli#bookkeeper-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper) CLI tool:
+Once the bookie's configuration is set, you can start it up using the [`bookie`](../reference/cli#bookkeeper-shell-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper-command) CLI tool:
 
 ```shell
 $ bookkeeper-server/bin/bookkeeper bookie

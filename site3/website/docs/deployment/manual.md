@@ -40,7 +40,7 @@ Once cluster metadata formatting has been completed, your BookKeeper cluster is 
 
   
 
-Before you start up your bookies, you should make sure that all bookie hosts have the correct configuration, then you can start up as many bookies as you'd like to form a cluster by using the [`bookie`](../reference/cli#bookkeeper-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper) CLI tool:
+Before you start up your bookies, you should make sure that all bookie hosts have the correct configuration, then you can start up as many bookies as you'd like to form a cluster by using the [`bookie`](../reference/cli#bookkeeper-shell-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper-command) CLI tool:
 
 ```shell
 $ bookkeeper-server/bin/bookkeeper bookie
