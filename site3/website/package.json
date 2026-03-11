@@ -5,7 +5,6 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "replace-build": "node ./scripts/replace.js && docusaurus build",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -37,7 +36,5 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "replace-in-file": "^6.3.2"
-  }
+  "devDependencies": {}
 }
