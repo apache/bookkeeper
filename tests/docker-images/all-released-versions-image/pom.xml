@@ -25,7 +25,16 @@
   <artifactId>all-released-versions-image</artifactId>
   <name>Apache BookKeeper :: Tests :: Docker Images :: All Released Versions</name>
   <packaging>pom</packaging>
+  <properties>
+    <current.version.only>false</current.version.only>
+  </properties>
   <profiles>
+    <profile>
+      <id>currentVersionOnly</id>
+      <properties>
+        <current.version.only>true</current.version.only>
+      </properties>
+    </profile>
     <profile>
       <id>docker</id>
       <activation>
@@ -35,6 +44,29 @@
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>download-released-versions</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>bash</executable>
+                  <environmentVariables>
+                    <CURRENT_VERSION_ONLY>${current.version.only}</CURRENT_VERSION_ONLY>
+                  </environmentVariables>
+                  <arguments>
+                    <argument>${project.basedir}/scripts/download-released-versions.sh</argument>
+                    <argument>${project.basedir}/.released-versions</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>com.spotify</groupId>
             <artifactId>dockerfile-maven-plugin</artifactId>
@@ -64,6 +96,7 @@
               <buildArgs>
                 <UBUNTU_MIRROR>${UBUNTU_MIRROR}</UBUNTU_MIRROR>
                 <UBUNTU_SECURITY_MIRROR>${UBUNTU_SECURITY_MIRROR}</UBUNTU_SECURITY_MIRROR>
+                <CURRENT_VERSION_ONLY>${current.version.only}</CURRENT_VERSION_ONLY>
               </buildArgs>
             </configuration>
           </plugin>
