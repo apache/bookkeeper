@@ -18,25 +18,7 @@ const variables = {
   archive_releases_base_url: deployUrl + "/archives",
 }
 
-/**
- * Remark plugin that replaces {{ site.xxx }} template variables in markdown.
- * Works on text nodes and link/image URLs in the AST.
- */
-function makeVariableReplacer(vars) {
-  const pattern = /\{\{site\.([\w]+)\}\}/g;
-  function replaceVars(str) {
-    return str.replace(pattern, (match, key) => {
-      return key in vars ? String(vars[key]) : match;
-    });
-  }
-  function visitNode(node) {
-    if (typeof node.value === 'string') node.value = replaceVars(node.value);
-    if (typeof node.url === 'string') node.url = replaceVars(node.url);
-    if (Array.isArray(node.children)) node.children.forEach(visitNode);
-  }
-  return () => (tree) => visitNode(tree);
-}
-const variableReplacer = makeVariableReplacer(variables);
+
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -53,6 +35,11 @@ const config = {
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
+    preprocessor: ({fileContent}) => {
+      return fileContent.replace(/\{\{\s*site\.([\w]+)\s*\}\}/g, (match, key) => {
+        return key in variables ? String(variables[key]) : match;
+      });
+    },
   },
 
   presets: [
@@ -63,14 +50,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.json'),
           breadcrumbs: false,
-          remarkPlugins: [variableReplacer],
         },
         blog: {
           showReadingTime: true,
-          remarkPlugins: [variableReplacer],
         },
         pages: {
-          remarkPlugins: [variableReplacer],
         },
         theme: {
           customCss: require.resolve('./src/sass/index.scss'),
