@@ -20,12 +20,16 @@
 
 set -e
 
-gpg --import KEYS
-gpg --import KEYS.old
+gpg --allow-weak-key-signatures --import /released-versions/KEYS
+gpg --allow-weak-key-signatures --import /released-versions/KEYS.old
+
+# Keys not present in either KEYS file, fetched from keyserver.
+# 8C75C738C33372AE198FD10CC238A8CAAC055FD2 — used to sign bookkeeper-server-4.9.2
+gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys \
+    8C75C738C33372AE198FD10CC238A8CAAC055FD2
 
 mkdir -p /opt/bookkeeper
 
-for T in bookkeeper-server-*-bin.tar.gz; do
-    /install-tarball.sh $T
+for T in /released-versions/bookkeeper-server-*-bin.tar.gz; do
+    /install-tarball.sh "$T"
 done
-
