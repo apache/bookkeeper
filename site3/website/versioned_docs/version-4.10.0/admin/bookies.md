@@ -26,15 +26,15 @@ There is no constraint on the number of ZooKeeper nodes you can run with BookKee
 
 ## Starting and stopping bookies
 
-You can run bookies either in the foreground or in the background, using [nohup](https://en.wikipedia.org/wiki/Nohup). You can also run [local bookies](#local-bookie) for development purposes.
+You can run bookies either in the foreground or in the background, using [nohup](https://en.wikipedia.org/wiki/Nohup). You can also run [local bookies](#local-bookies) for development purposes.
 
-To start a bookie in the foreground, use the [`bookie`](../reference/cli#bookkeeper-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper) CLI tool:
+To start a bookie in the foreground, use the [`bookie`](../reference/cli#bookkeeper-shell-bookie) command of the [`bookkeeper`](../reference/cli#bookkeeper-command) CLI tool:
 
 ```shell
 $ bin/bookkeeper bookie
 ```
 
-To start a bookie in the background, use the [`bookkeeper-daemon.sh`](../reference/cli#bookkeeper-daemon.sh) script and run `start bookie`:
+To start a bookie in the background, use the [`bookkeeper-daemon.sh`](../reference/cli#bookkeeper-command) script and run `start bookie`:
 
 ```shell
 $ bin/bookkeeper-daemon.sh start bookie
@@ -42,7 +42,7 @@ $ bin/bookkeeper-daemon.sh start bookie
 
 ### Local bookies
 
-The instructions above showed you how to run bookies intended for production use. If you'd like to experiment with ensembles of bookies locally, you can use the [`localbookie`](../reference/cli#bookkeeper-localbookie) command of the `bookkeeper` CLI tool and specify the number of bookies you'd like to run.
+The instructions above showed you how to run bookies intended for production use. If you'd like to experiment with ensembles of bookies locally, you can use the [`localbookie`](../reference/cli#bookkeeper-shell-localbookie) command of the `bookkeeper` CLI tool and specify the number of bookies you'd like to run.
 
 This would spin up a local ensemble of 6 bookies:
 
@@ -62,8 +62,8 @@ Parameter | Description | Default
 :---------|:------------|:-------
 `bookiePort` | The TCP port that the bookie listens on | `3181`
 `zkServers` | A comma-separated list of ZooKeeper servers in `hostname:port` format | `localhost:2181`
-`journalDirectory` | The directory where the [log device](../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL) | `/tmp/bk-txn`
-`ledgerDirectories` | The directories where the [ledger device](../getting-started/concepts#ledger-device) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
+`journalDirectory` | The directory where the [log device](../getting-started/concepts#journals) stores the bookie's write-ahead log (WAL) | `/tmp/bk-txn`
+`ledgerDirectories` | The directories where the [ledger device](../getting-started/concepts#entry-logs) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
 
 > Ideally, the directories specified `journalDirectory` and `ledgerDirectories` should be on difference devices.
 
@@ -86,7 +86,7 @@ From time to time you may need to make changes to the filesystem layout of booki
 2017-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed
 ```
 
-BookKeeper provides a utility for upgrading the filesystem. You can perform an upgrade using the [`upgrade`](../reference/cli#bookkeeper-upgrade) command of the `bookkeeper` CLI tool. When running `bookkeeper upgrade` you need to specify one of three flags:
+BookKeeper provides a utility for upgrading the filesystem. You can perform an upgrade using the [`upgrade`](../reference/cli#bookkeeper-shell-upgrade) command of the `bookkeeper` CLI tool. When running `bookkeeper upgrade` you need to specify one of three flags:
 
 Flag | Action
 :----|:------
@@ -122,7 +122,7 @@ $ bin/bookkeeper upgrade --rollback
 
 ## Formatting
 
-You can format bookie metadata in ZooKeeper using the [`metaformat`](../reference/cli#bookkeeper-shell-metaformat) command of the [BookKeeper shell](../reference/cli#the-bookkeeper-shell).
+You can format bookie metadata in ZooKeeper using the [`metaformat`](../reference/cli#bookkeeper-shell-metaformat) command of the [BookKeeper shell](../reference/cli#bookkeeper-shell).
 
 By default, formatting is done in interactive mode, which prompts you to confirm the format operation if old data exists. You can disable confirmation using the `-nonInteractive` flag. If old data does exist, the format operation will abort *unless* you set the `-force` flag. Here's an example:
 
@@ -156,8 +156,8 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
 
 If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change *cannot* be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it.
 
-1. Increment the [`bookiePort`](../reference/config#bookiePort) parameter in the [`bk_server.conf`](../reference/config)
-1. Ensure that all directories specified by [`journalDirectory`](../reference/config#journalDirectory) and [`ledgerDirectories`](../reference/config#ledgerDirectories) are empty.
+1. Increment the [`bookiePort`](../reference/config) parameter in the [`bk_server.conf`](../reference/config)
+1. Ensure that all directories specified by [`journalDirectory`](../reference/config#journal-settings) and [`ledgerDirectories`](../reference/config#ledger-storage-settings) are empty.
 1. [Start the bookie](#starting-and-stopping-bookies).
 1. Run the following command to re-replicate the data:
 

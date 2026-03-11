@@ -17,7 +17,7 @@ Provider | Provider class name
 [Ostrich](https://github.com/twitter/ostrich) | `org.apache.bookkeeper.stats.OstrichProvider`
 [Twitter Science Provider](https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/twitter-science-provider) | `org.apache.bookkeeper.stats.TwitterStatsProvider`
 
-> The [Codahale Metrics]({{ site.github_master }}/bookkeeper-stats-providers/codahale-metrics-provider) stats provider is the default provider.
+> The [Codahale Metrics]({{site.github_master}}/stats/bookkeeper-stats-providers/codahale-metrics-provider) stats provider is the default provider.
 
 ## Enabling stats providers in bookies
 

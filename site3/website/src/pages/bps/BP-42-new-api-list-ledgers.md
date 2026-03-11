@@ -19,45 +19,47 @@ Currently there is no `ledgerId` property inside `LedgerMetadata` interface, thi
 
 This proposal adds new interfaces to `org.apache.bookkeeper.client.api` package, similar to `org.apache.bookkeeper.client.api.BookKeeper` methods. 
 
-    // new interface
-    interface LedgersIterator {
+```java
+// new interface
+interface LedgersIterator {
 
-        boolean hasNext() throws IOException;
+    boolean hasNext() throws IOException;
 
-        long next() throws IOException;
-    }
+    long next() throws IOException;
+}
 
-    // new interface
-    interface ListLedgersResult extends AutoCloseable {
+// new interface
+interface ListLedgersResult extends AutoCloseable {
 
-        LedgersIterator iterator();
+    LedgersIterator iterator();
 
-        Iterable<Long> toIterable();
-    }
+    Iterable<Long> toIterable();
+}
 
-    // new interface
-    interface ListLedgersResultBuilder extends OpBuilder<Void>{
+// new interface
+interface ListLedgersResultBuilder extends OpBuilder<Void>{
 
-        // empty now, maybe some filters in future
-    }
+    // empty now, maybe some filters in future
+}
 
-    interface BookKeeper {
+interface BookKeeper {
 
-        ....
+    ....
 
-        ListLedgersResultBuilder newListLedgersOp();
+    ListLedgersResultBuilder newListLedgersOp();
 
-        CompleatableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId);
+    CompleatableFuture<LedgerMetadata> getLedgerMetadata(long ledgerId);
 
-    }
+}
 
-    interface LedgerMetadata {
-        
-        ....
+interface LedgerMetadata {
+    
+    ....
 
-        long getLedgerId();
+    long getLedgerId();
 
-    }
+}
+```
 
 ### Proposed Changes
 

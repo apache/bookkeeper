@@ -48,9 +48,9 @@ jobs:
 
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '16'
+          node-version: '24'
 
       - name: Setup yarn
         run: npm install -g yarn

@@ -5,14 +5,14 @@ title: Deploying Apache BookKeeper on Kubernetes
 
 Apache BookKeeper can be easily deployed in [Kubernetes](https://kubernetes.io/) clusters. The managed clusters on [Google Container Engine](https://cloud.google.com/compute/) is the most convenient way.
 
-The deployment method shown in this guide relies on [YAML](http://yaml.org/) definitions for Kubernetes [resources](https://kubernetes.io/docs/resources-reference/v1.6/). The [`kubernetes`](https://github.com/apache/bookkeeper/tree/master/deploy/kubernetes) subdirectory holds resource definitions for:
+The deployment method shown in this guide relies on [YAML](http://yaml.org/) definitions for Kubernetes [resources](https://kubernetes.io/docs/resources-reference/v1.6/). The [`kubernetes`]({{site.github_master}}/deploy/kubernetes) subdirectory holds resource definitions for:
 
 * A three-node ZooKeeper cluster
 * A BookKeeper cluster with a bookie runs on each node.
 
 ## Setup on Google Container Engine
 
-To get started, get source code of [`kubernetes`](https://github.com/apache/bookkeeper/tree/master/deploy/kubernetes) from github by git clone.
+To get started, get source code of [`kubernetes`]({{site.github_master}}/deploy/kubernetes) from github by git clone.
 
 If you'd like to change the number of bookies,  or ZooKeeper nodes in your BookKeeper cluster, modify the `replicas` parameter in the `spec` section of the appropriate [`Deployment`](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) or [`StatefulSet`](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) resource.
 

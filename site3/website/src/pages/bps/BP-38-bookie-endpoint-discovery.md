@@ -120,16 +120,18 @@ The proposed change will be compatible with all existing clients.
 
 In case a new client is reading an empty znode it will assume a default configuration with a single 'bookie-rpc' endpoint, like in this example:
 
+```json
 {
     "endpoints": [
         {
          "name": "bookie",
          "hostname": "hostname-from-bookieid",
-         "port": port-from-bookieid,
+         "port": "port-from-bookieid",
          "protocol": "bookie-rpc"
         }
     ]
 }
+```
 
 This information is enough in order to use the RPC service.
 

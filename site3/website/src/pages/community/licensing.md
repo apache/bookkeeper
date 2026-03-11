@@ -31,7 +31,7 @@ When updating these files, use the following rules of thumb:
 
 # Handling new/updated source dependencies
 
-For bookkeeper, a source dependency is any code which has been copied in code form into our source tree. An example of this is [circe-checksum](https://github.com/apache/bookkeeper/tree/master/circe-checksum) which was copied into our codebase and modified. Depending on the license of source code, you may need to update the source distribution LICENSE and NOTICE files.
+For bookkeeper, a source dependency is any code which has been copied in code form into our source tree. An example of this is [circe-checksum]({{site.github_master}}/circe-checksum) which was copied into our codebase and modified. Depending on the license of source code, you may need to update the source distribution LICENSE and NOTICE files.
 
 In the case of circe-checksum, the original code is under the Apache Software License, Version 2 (ASLv2), and there is no NOTICE file, so neither LICENSE nor NOTICE need to be updated.
 

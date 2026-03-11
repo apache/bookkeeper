@@ -21,7 +21,7 @@ All the BPs are maintained in `site/bps` directory. To make a bookkeeper proposa
     - Write a brief description about what BP is for in this issue. This issue will be the master issue for tracking the status of this BP and its implementations.
       All the implementations of this BP should be listed and linked to this master issues.
 1. Write the proposal for this BP.
-    - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+    - Make a copy of the [BP-Template]({{site.github_master}}/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
     ```shell
     $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
     ```

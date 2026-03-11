@@ -87,7 +87,7 @@ example 1 (best case scenario):
 
 in this case (1, 2), (4, 5), (7, 8), (10, 11) are sequences and in this scenario there happens to be just one SequenceGroup, which can be represented like
 
-{ firstSequenceStart - 1, lastSequenceStart - 10, sequenceSize - 2, sequencePeriod - 3 }
+`{ firstSequenceStart - 1, lastSequenceStart - 10, sequenceSize - 2, sequencePeriod - 3 }`
 
 example 2 (an entry is missing):
 
@@ -97,7 +97,7 @@ example 2 (an entry is missing):
 in this case (1, 2, 3), (6, 7, 8), (11), (13), (16, 17, 18), (21, 22) are the sequences
 so the sequence groups are
 
-{ firstSequenceStart - 1, lastSequenceStart - 6, sequenceSize - 3, sequencePeriod - 5 }, { firstSequenceStart - 11, lastSequenceStart - 13, sequenceSize - 1, sequencePeriod - 2 }, { firstSequenceStart - 16, lastSequenceStart - 16, sequenceSize - 3, sequencePeriod - 0 }, { firstSequenceStart - 21, lastSequenceStart - 21, sequenceSize - 2, sequencePeriod - 0 }
+`{ firstSequenceStart - 1, lastSequenceStart - 6, sequenceSize - 3, sequencePeriod - 5 }, { firstSequenceStart - 11, lastSequenceStart - 13, sequenceSize - 1, sequencePeriod - 2 }, { firstSequenceStart - 16, lastSequenceStart - 16, sequenceSize - 3, sequencePeriod - 0 }, { firstSequenceStart - 21, lastSequenceStart - 21, sequenceSize - 2, sequencePeriod - 0 }`
 
 As you can notice to represent a SequenceGroup, two long values and two int values are needed, so each SequenceGroup can be represented with (2 * 8 + 2 * 4 = 24 bytes).
 

@@ -21,7 +21,7 @@ For precommit testing, BookKeeper uses GitHub Actions to ensure that pull reques
 These precommits verify correctness via unit/integration tests.
 
 In case of failures, you can re-run failing checks commenting `rerun failure checks` in the pull.
-More details on GitHub actions [here](https://github.com/apache/bookkeeper/tree/master/.github/workflows/bot.yml)
+More details on GitHub actions [here]({{site.github_master}}/.github/workflows/bot.yml)
 
 ### Postcommit
 

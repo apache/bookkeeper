@@ -1,8 +1,9 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const {themes: prismThemes} = require('prism-react-renderer');
+const lightCodeTheme = prismThemes.github;
+const darkCodeTheme = prismThemes.dracula;
 const baseUrl = process.env.BASE_URL || "/"
 const deployUrl = process.env.DEPLOY_URL || "https://bookkeeper.apache.org";
 const variables = {
@@ -17,17 +18,42 @@ const variables = {
   archive_releases_base_url: deployUrl + "/archives",
 }
 
+/**
+ * Remark plugin that replaces {{ site.xxx }} template variables in markdown.
+ * Works on text nodes and link/image URLs in the AST.
+ */
+function makeVariableReplacer(vars) {
+  const pattern = /\{\{site\.([\w]+)\}\}/g;
+  function replaceVars(str) {
+    return str.replace(pattern, (match, key) => {
+      return key in vars ? String(vars[key]) : match;
+    });
+  }
+  function visitNode(node) {
+    if (typeof node.value === 'string') node.value = replaceVars(node.value);
+    if (typeof node.url === 'string') node.url = replaceVars(node.url);
+    if (Array.isArray(node.children)) node.children.forEach(visitNode);
+  }
+  return () => (tree) => visitNode(tree);
+}
+const variableReplacer = makeVariableReplacer(variables);
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Apache BookKeeper',
   url: deployUrl,
   baseUrl,
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'apache',
   projectName: 'bookkeeper',
   plugins: ['docusaurus-plugin-sass'],
+  markdown: {
+    format: 'detect',
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
 
   presets: [
     [
@@ -36,10 +62,15 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.json'),
-          breadcrumbs: false
+          breadcrumbs: false,
+          remarkPlugins: [variableReplacer],
         },
         blog: {
           showReadingTime: true,
+          remarkPlugins: [variableReplacer],
+        },
+        pages: {
+          remarkPlugins: [variableReplacer],
         },
         theme: {
           customCss: require.resolve('./src/sass/index.scss'),

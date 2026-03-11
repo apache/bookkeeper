@@ -16,10 +16,10 @@ You can download Apache BookKeeper releases from the [Download page](/releases).
 
 ## Clone
 
-To build BookKeeper from source, clone the repository from the [GitHub mirror]({{ site.github_repo }}):
+To build BookKeeper from source, clone the repository from the [GitHub mirror]({{site.github_repo}}):
 
 ```shell
-$ git clone {{ site.github_repo }}
+$ git clone {{site.github_repo}}
 ```
 
 
@@ -44,7 +44,7 @@ The BookKeeper project contains several subfolders that you should be aware of:
 
 Subfolder | Contains
 :---------|:--------
-[`bookkeeper-server`]({{ site.github_repo }}/tree/master/bookkeeper-server) | The BookKeeper server and client
-[`bookkeeper-benchmark`]({{ site.github_repo }}/tree/master/bookkeeper-benchmark) | A benchmarking suite for measuring BookKeeper performance
-[`bookkeeper-stats`]({{ site.github_repo }}/tree/master/bookkeeper-stats) | A BookKeeper stats library
-[`bookkeeper-stats-providers`]({{ site.github_repo }}/tree/master/bookkeeper-stats-providers) | BookKeeper stats providers
+[`bookkeeper-server`]({{site.github_master}}/bookkeeper-server) | The BookKeeper server and client
+[`bookkeeper-benchmark`]({{site.github_master}}/bookkeeper-benchmark) | A benchmarking suite for measuring BookKeeper performance
+[`bookkeeper-stats`]({{site.github_master}}/bookkeeper-stats) | A BookKeeper stats library
+[`bookkeeper-stats-providers`]({{site.github_master}}/bookkeeper-stats-providers) | BookKeeper stats providers
