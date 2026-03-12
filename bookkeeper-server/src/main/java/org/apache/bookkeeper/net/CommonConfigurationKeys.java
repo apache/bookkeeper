@@ -29,6 +29,8 @@ public interface CommonConfigurationKeys {
     String NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY = "networkTopologyScriptFileName";
     // number of arguments that network topology resolve script used
     String NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY = "networkTopologyScriptNumberArgs";
+    // use hostname as an argument for network topology resolve script
+    String NET_TOPOLOGY_SCRIPT_USE_HOSTNAME_ARGS_KEY = "networkTopologyScriptUseHostNameArgs";
     // default value of NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY
     int NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_DEFAULT = 100;
 }
