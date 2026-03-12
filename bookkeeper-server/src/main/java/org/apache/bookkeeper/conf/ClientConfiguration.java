@@ -140,6 +140,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected static final String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
     protected static final String BOOKIE_QUARANTINE_RATIO = "bookieQuarantineRatio";
+    protected static final String BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE = "bookieConnectingErrorCountedIntoQuarantine";
 
     // Bookie info poll interval
     protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
@@ -1454,6 +1455,28 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     public ClientConfiguration setBookieErrorThresholdPerInterval(long thresholdPerInterval) {
         setProperty(BOOKIE_ERROR_THRESHOLD_PER_INTERVAL, thresholdPerInterval);
         return this;
+    }
+
+
+    /**
+     * Set if count the bookie connecting error into the quarantine condition. If this is enabled, the connection
+     * error will be counted into the BookieErrorThresholdPerInterval. So be careful to set the quarantine time.
+     *
+     * @param enabled
+     * @return
+     */
+    public ClientConfiguration setBookieConnectingErrorCountedIntoQuarantine(boolean enabled) {
+        setProperty(BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE, enabled);
+        return this;
+    }
+
+    /**
+     * Get if count the bookie connecting error into the quarantine condition.
+     *
+     * @return
+     */
+    public boolean getBookieConnectingErrorCountedIntoQuarantine() {
+        return getBoolean(BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE);
     }
 
     /**
