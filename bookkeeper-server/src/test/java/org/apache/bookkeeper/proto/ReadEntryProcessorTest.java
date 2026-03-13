@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -39,10 +40,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -294,5 +297,80 @@ public class ReadEntryProcessorTest {
         verify(channel, times(1)).writeAndFlush(any(), any(ChannelPromise.class));
         // onReadRequestFinish should have been called synchronously
         verify(requestProcessor, times(1)).onReadRequestFinish();
+    }
+
+    /**
+     * Verify that maxReadsInProgressLimit defaults to 10000 (enabled),
+     * ensuring non-blocking read response writes are bounded by default.
+     */
+    @Test
+    public void testDefaultMaxReadsInProgressLimitIsEnabled() {
+        ServerConfiguration conf = new ServerConfiguration();
+        assertEquals("maxReadsInProgressLimit should default to 10000",
+                10000, conf.getMaxReadsInProgressLimit());
+    }
+
+    /**
+     * Test that the read semaphore is held from request creation until the write future completes,
+     * not released when the read thread returns. This ensures that maxReadsInProgressLimit correctly
+     * bounds the number of read responses buffered in memory, even though the read thread is
+     * non-blocking.
+     */
+    @Test
+    public void testThrottledReadHoldsSemaphoreUntilWriteCompletes() throws Exception {
+        // Simulate maxReadsInProgressLimit=1 with a real semaphore
+        Semaphore readsSemaphore = new Semaphore(1);
+
+        doAnswer(inv -> {
+            readsSemaphore.acquireUninterruptibly();
+            return null;
+        }).when(requestProcessor).onReadRequestStart(any(Channel.class));
+        doAnswer(inv -> {
+            readsSemaphore.release();
+            return null;
+        }).when(requestProcessor).onReadRequestFinish();
+
+        // Setup non-event-loop thread
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(false);
+        doAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return null;
+        }).when(eventLoop).execute(any(Runnable.class));
+        when(channel.eventLoop()).thenReturn(eventLoop);
+
+        // Controllable write future
+        DefaultChannelPromise writeFuture = new DefaultChannelPromise(channel);
+        doAnswer(inv -> writeFuture).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, 1, (short) 0, new byte[]{});
+
+        // create() calls onReadRequestStart → semaphore acquired
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, null, true /* throttle */);
+
+        // Semaphore should be acquired (1 permit used)
+        assertEquals("semaphore should have 0 permits after read started",
+                0, readsSemaphore.availablePermits());
+
+        // Run the processor — thread returns immediately (non-blocking)
+        processor.run();
+
+        // Semaphore should STILL be held (write not completed)
+        assertEquals("semaphore should still have 0 permits while write is in progress",
+                0, readsSemaphore.availablePermits());
+
+        // A second read would be unable to acquire the semaphore
+        assertFalse("second read should not be able to acquire semaphore",
+                readsSemaphore.tryAcquire());
+
+        // Complete the write
+        writeFuture.setSuccess();
+
+        // Now semaphore should be released — a new read can proceed
+        assertEquals("semaphore should have 1 permit after write completes",
+                1, readsSemaphore.availablePermits());
     }
 }
