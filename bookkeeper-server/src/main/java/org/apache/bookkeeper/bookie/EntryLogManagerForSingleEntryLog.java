@@ -120,6 +120,11 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     }
 
     @Override
+    synchronized void createNewLog(long ledgerId, String reason) throws IOException {
+        super.createNewLog(ledgerId, reason);
+    }
+
+    @Override
     public synchronized void setCurrentLogForLedgerAndAddToRotate(long ledgerId, BufferedLogChannel logChannel) {
         BufferedLogChannel hasToRotateLogChannel = activeLogChannel;
         activeLogChannel = logChannel;
