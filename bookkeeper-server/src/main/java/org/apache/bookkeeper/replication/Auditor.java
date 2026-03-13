@@ -283,8 +283,13 @@ public class Auditor implements AutoCloseable {
     }
 
     /**
-     * Submit an audit task unconditionally. Used by tests and by the
+     * Submit a full bookie-check audit task unconditionally. Used by tests and by the
      * LostBookieRecoveryDelay-changed event handler.
+     *
+     * <p>Runs the full {@code auditBookies()} scan (which uses ledger metadata) rather
+     * than the lightweight {@link #runAuditTask()}, so that bookies which registered
+     * and died since the auditor started are correctly detected even if they were never
+     * added to {@code knownBookies}.
      */
     @VisibleForTesting
     synchronized Future<?> submitAuditTask() {
@@ -293,7 +298,7 @@ public class Auditor implements AutoCloseable {
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
-        return executor.submit(this::runAuditTask);
+        return executor.submit(() -> auditorBookieCheckTask.startAudit(false));
     }
 
     /**
