@@ -1,6 +1,6 @@
-<img src="https://bookkeeper.apache.org/img/bk-logo.svg" alt="logo" width="64"/>&nbsp;&nbsp;[![Maven Central](https://img.shields.io/maven-central/v/org.apache.bookkeeper/bookkeeper-server.svg)](https://central.sonatype.com/artifact/org.apache.bookkeeper/bookkeeper-server)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.bookkeeper/bookkeeper-server.svg)](https://central.sonatype.com/artifact/org.apache.bookkeeper/bookkeeper-server)
 
-# Apache BookKeeper
+# <img src="https://bookkeeper.apache.org/img/bk-logo.svg" alt="logo" width="50"/> Apache BookKeeper
 
 Apache BookKeeper is a scalable, fault-tolerant and low latency storage service optimized for append-only workloads.
 
