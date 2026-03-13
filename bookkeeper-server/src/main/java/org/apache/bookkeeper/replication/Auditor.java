@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -87,11 +88,13 @@ public class Auditor implements AutoCloseable {
     // Written by ZK watcher callback threads, read by the executor thread.
     private final AtomicReference<Set<String>> pendingWritableBookies = new AtomicReference<>();
     private final AtomicReference<Set<String>> pendingReadOnlyBookies = new AtomicReference<>();
-    // Guards against queuing more than one pending audit task per change type.
-    // Cleared at the start of the task so that changes arriving while the task is
-    // running cause a new task to be queued rather than being silently dropped.
-    private final AtomicBoolean writableAuditTaskQueued = new AtomicBoolean(false);
-    private final AtomicBoolean readOnlyAuditTaskQueued = new AtomicBoolean(false);
+    // Counts tasks (running + queued) per change type. Incremented when a task is
+    // submitted, decremented when it finishes. Capped at 2 (one in-progress + one
+    // queued): a queued task always reads the latest pending bookie set when it
+    // starts, so there is no value in queuing more than one additional task.
+    private static final int MAX_AUDIT_TASKS_PER_TYPE = 2;
+    private final AtomicInteger writableAuditTaskCount = new AtomicInteger(0);
+    private final AtomicInteger readOnlyAuditTaskCount = new AtomicInteger(0);
     protected AuditorBookieCheckTask auditorBookieCheckTask;
     protected AuditorTask auditorCheckAllLedgersTask;
     protected AuditorTask auditorPlacementPolicyCheckTask;
@@ -250,25 +253,33 @@ public class Auditor implements AutoCloseable {
 
     /**
      * Submit an audit task triggered by a bookie change notification from the watcher.
-     * At most one task per change type (writable/readonly) is queued at a time:
-     * the queued-flag is cleared when the task starts executing, so any watcher
-     * callbacks that arrive while the task is running will queue exactly one more task.
+     *
+     * <p>At most {@value #MAX_AUDIT_TASKS_PER_TYPE} tasks (one in-progress + one
+     * queued) are allowed per change type at any time. The counter is incremented on
+     * submission and decremented when the task finishes, so the limit is enforced
+     * across the full task lifetime. A queued task always reads the latest pending
+     * bookie set when it starts, so queuing more than one additional task would only
+     * duplicate work without improving correctness.
      */
     private synchronized void submitAuditTaskForBookieChange(boolean writableChange) {
         if (executor.isShutdown()) {
             return;
         }
-        AtomicBoolean queued = writableChange ? writableAuditTaskQueued : readOnlyAuditTaskQueued;
-        if (queued.compareAndSet(false, true)) {
-            executor.submit(() -> {
-                // Clear the flag before running so that watcher callbacks arriving
-                // during execution can queue a follow-up task instead of being dropped.
-                queued.set(false);
-                runAuditTask();
-            });
+        AtomicInteger count = writableChange ? writableAuditTaskCount : readOnlyAuditTaskCount;
+        if (count.get() >= MAX_AUDIT_TASKS_PER_TYPE) {
+            // One task is already running and one is queued. The queued task will
+            // pick up the latest pendingWritableBookies / pendingReadOnlyBookies
+            // when it executes, so no additional task is needed.
+            return;
         }
-        // else: a task is already queued; the latest pendingWritableBookies /
-        // pendingReadOnlyBookies will be picked up when that task starts.
+        count.incrementAndGet();
+        executor.submit(() -> {
+            try {
+                runAuditTask();
+            } finally {
+                count.decrementAndGet();
+            }
+        });
     }
 
     /**
