@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import lombok.SneakyThrows;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -42,6 +44,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClientImpl;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -89,6 +92,7 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 when(bookKeeperAdmin.getBookieAddressResolver())
                         .thenReturn(BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
                 when(bookKeeperAdmin.openLedger(anyLong())).thenReturn(ledgerHandle);
+                when(bookKeeperAdmin.openLedgerNoRecovery(anyLong())).thenReturn(ledgerHandle);
                 when(bookKeeperAdmin.readEntries(anyLong(), anyLong(), anyLong())).thenReturn(entries);
             }
         });
@@ -110,7 +114,18 @@ public class ReadLedgerCommandTest extends BookieCommandTestBase {
                 .newSingleThreadScheduledExecutor(any(DefaultThreadFactory.class)))
                 .thenReturn(scheduledExecutorService);
 
-        mockConstruction(BookieClientImpl.class);
+        mockConstruction(BookieClientImpl.class, (mock, contest) -> {
+            doAnswer(invocation -> {
+                ReadEntryCallback callback = invocation.getArgument(3);
+                callback.readEntryComplete(BKException.Code.OK,
+                        invocation.getArgument(1),  // ledgerId
+                        invocation.getArgument(2),  // entryId
+                        null,  // buffer
+                        invocation.getArgument(4));  // ctx
+                return null;
+            }).when(mock).readEntry(any(), anyLong(), anyLong(), any(), any(), anyInt());
+
+        });
 
 
     }
