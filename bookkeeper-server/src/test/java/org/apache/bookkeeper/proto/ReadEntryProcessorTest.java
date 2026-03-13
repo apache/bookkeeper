@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -194,5 +195,104 @@ public class ReadEntryProcessorTest {
         assertEquals(ledgerId, response.getLedgerId());
         assertEquals(BookieProtocol.READENTRY, response.getOpCode());
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
+    }
+
+    /**
+     * Test that when throttleReadResponses=true and the caller is not in the Netty event loop,
+     * the read thread is not blocked by the write. onReadRequestFinish() should only be called
+     * after the write future completes, preserving throttling without blocking the thread.
+     */
+    @Test
+    public void testThrottledReadNonBlockingOnSuccess() throws Exception {
+        // Setup event loop to simulate read worker thread (not event loop thread)
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(false);
+        doAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return null;
+        }).when(eventLoop).execute(any(Runnable.class));
+        when(channel.eventLoop()).thenReturn(eventLoop);
+
+        // Use a controllable promise so we can verify deferred behavior
+        DefaultChannelPromise writeFuture = new DefaultChannelPromise(channel);
+        doAnswer(inv -> writeFuture).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, 1, (short) 0, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, null, true /* throttle */);
+
+        // run() should return immediately without blocking on the write
+        processor.run();
+
+        // Write should have been issued
+        verify(channel, times(1)).writeAndFlush(any(Response.class));
+        // But onReadRequestFinish should NOT have been called yet — write not completed
+        verify(requestProcessor, never()).onReadRequestFinish();
+
+        // Complete the write
+        writeFuture.setSuccess();
+
+        // Now onReadRequestFinish should have been called
+        verify(requestProcessor, times(1)).onReadRequestFinish();
+    }
+
+    /**
+     * Test that onReadRequestFinish() is still called even when the write fails,
+     * so the read semaphore is always released.
+     */
+    @Test
+    public void testThrottledReadNonBlockingOnWriteFailure() throws Exception {
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(false);
+        doAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return null;
+        }).when(eventLoop).execute(any(Runnable.class));
+        when(channel.eventLoop()).thenReturn(eventLoop);
+
+        DefaultChannelPromise writeFuture = new DefaultChannelPromise(channel);
+        doAnswer(inv -> writeFuture).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, 1, (short) 0, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, null, true /* throttle */);
+
+        processor.run();
+
+        verify(channel, times(1)).writeAndFlush(any(Response.class));
+        verify(requestProcessor, never()).onReadRequestFinish();
+
+        // Fail the write
+        writeFuture.setFailure(new IOException("channel write failed"));
+
+        // onReadRequestFinish must still be called to release the read semaphore
+        verify(requestProcessor, times(1)).onReadRequestFinish();
+    }
+
+    /**
+     * Test that when throttleReadResponses=false, onReadRequestFinish() is called
+     * synchronously before run() returns.
+     */
+    @Test
+    public void testNonThrottledReadCallsOnFinishSynchronously() throws Exception {
+        // sendResponse (non-throttle path) uses channel.isActive() and two-arg writeAndFlush
+        when(channel.isActive()).thenReturn(true);
+        when(channel.writeAndFlush(any(), any(ChannelPromise.class))).thenReturn(mock(ChannelPromise.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, 1, (short) 0, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(
+                request, requestHandler, requestProcessor, null, false /* no throttle */);
+
+        processor.run();
+
+        verify(channel, times(1)).writeAndFlush(any(), any(ChannelPromise.class));
+        // onReadRequestFinish should have been called synchronously
+        verify(requestProcessor, times(1)).onReadRequestFinish();
     }
 }
