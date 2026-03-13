@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.BKException;
@@ -76,11 +77,21 @@ public class Auditor implements AutoCloseable {
     private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ScheduledExecutorService executor;
-    private List<String> knownBookies = new ArrayList<String>();
+    // volatile so the executor thread always sees the reference set by start()
+    private volatile List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
     protected volatile Future<?> auditTask;
     private final Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
+    // Latest bookie sets received from watcher callbacks (null until the first watcher fires).
+    // Written by ZK watcher callback threads, read by the executor thread.
+    private final AtomicReference<Set<String>> pendingWritableBookies = new AtomicReference<>();
+    private final AtomicReference<Set<String>> pendingReadOnlyBookies = new AtomicReference<>();
+    // Guards against queuing more than one pending audit task per change type.
+    // Cleared at the start of the task so that changes arriving while the task is
+    // running cause a new task to be queued rather than being silently dropped.
+    private final AtomicBoolean writableAuditTaskQueued = new AtomicBoolean(false);
+    private final AtomicBoolean readOnlyAuditTaskQueued = new AtomicBoolean(false);
     protected AuditorBookieCheckTask auditorBookieCheckTask;
     protected AuditorTask auditorCheckAllLedgersTask;
     protected AuditorTask auditorPlacementPolicyCheckTask;
@@ -237,6 +248,33 @@ public class Auditor implements AutoCloseable {
         }
     }
 
+    /**
+     * Submit an audit task triggered by a bookie change notification from the watcher.
+     * At most one task per change type (writable/readonly) is queued at a time:
+     * the queued-flag is cleared when the task starts executing, so any watcher
+     * callbacks that arrive while the task is running will queue exactly one more task.
+     */
+    private synchronized void submitAuditTaskForBookieChange(boolean writableChange) {
+        if (executor.isShutdown()) {
+            return;
+        }
+        AtomicBoolean queued = writableChange ? writableAuditTaskQueued : readOnlyAuditTaskQueued;
+        if (queued.compareAndSet(false, true)) {
+            executor.submit(() -> {
+                // Clear the flag before running so that watcher callbacks arriving
+                // during execution can queue a follow-up task instead of being dropped.
+                queued.set(false);
+                runAuditTask();
+            });
+        }
+        // else: a task is already queued; the latest pendingWritableBookies /
+        // pendingReadOnlyBookies will be picked up when that task starts.
+    }
+
+    /**
+     * Submit an audit task unconditionally. Used by tests and by the
+     * LostBookieRecoveryDelay-changed event handler.
+     */
     @VisibleForTesting
     synchronized Future<?> submitAuditTask() {
         if (executor.isShutdown()) {
@@ -244,78 +282,102 @@ public class Auditor implements AutoCloseable {
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
-        return executor.submit(() -> {
-            try {
-                waitIfLedgerReplicationDisabled();
-                int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
-                        .getLostBookieRecoveryDelay();
-                List<String> availableBookies = getAvailableBookies();
+        return executor.submit(this::runAuditTask);
+    }
 
-                // casting to String, as knownBookies and availableBookies
-                // contains only String values
-                // find new bookies(if any) and update the known bookie list
-                Collection<String> newBookies = CollectionUtils.subtract(
-                        availableBookies, knownBookies);
-                knownBookies.addAll(newBookies);
-                if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
-                    // the bookie, which went down earlier and had an audit scheduled for,
-                    // has come up. So let us stop tracking it and cancel the audit. Since
-                    // we allow delaying of audit when there is only one failed bookie,
-                    // bookiesToBeAudited should just have 1 element and hence containsAll
-                    // check should be ok
-                    if (auditTask != null && auditTask.cancel(false)) {
-                        auditTask = null;
-                        auditorStats.getNumDelayedBookieAuditsCancelled().inc();
-                    }
-                    bookiesToBeAudited.clear();
-                }
+    /**
+     * Core audit logic: determine which bookies have disappeared and trigger
+     * re-replication if needed. Runs on the single-threaded {@link #executor}.
+     *
+     * <p>Uses the bookie sets most recently received from the ZK watcher callbacks
+     * ({@link #pendingWritableBookies} / {@link #pendingReadOnlyBookies}) when
+     * both are available, avoiding a redundant ZK round-trip and the race where a
+     * fresh {@code getAvailableBookies()} call could see a different state than the
+     * event that triggered this task.
+     */
+    private void runAuditTask() {
+        try {
+            waitIfLedgerReplicationDisabled();
+            int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
+                    .getLostBookieRecoveryDelay();
 
-                // find lost bookies(if any)
-                bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
-                if (bookiesToBeAudited.size() == 0) {
-                    return;
-                }
-
-                knownBookies.removeAll(bookiesToBeAudited);
-                if (lostBookieRecoveryDelay == 0) {
-                    auditorBookieCheckTask.startAudit(false);
-                    bookiesToBeAudited.clear();
-                    return;
-                }
-                if (bookiesToBeAudited.size() > 1) {
-                    // if more than one bookie is down, start the audit immediately;
-                    LOG.info("Multiple bookie failure; not delaying bookie audit. "
-                                    + "Bookies lost now: {}; All lost bookies: {}",
-                            CollectionUtils.subtract(knownBookies, availableBookies),
-                            bookiesToBeAudited);
-                    if (auditTask != null && auditTask.cancel(false)) {
-                        auditTask = null;
-                        auditorStats.getNumDelayedBookieAuditsCancelled().inc();
-                    }
-                    auditorBookieCheckTask.startAudit(false);
-                    bookiesToBeAudited.clear();
-                    return;
-                }
-                if (auditTask == null) {
-                    // if there is no scheduled audit, schedule one
-                    auditTask = executor.schedule(() -> {
-                        auditorBookieCheckTask.startAudit(false);
-                        auditTask = null;
-                        bookiesToBeAudited.clear();
-                    }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
-                    auditorStats.getNumBookieAuditsDelayed().inc();
-                    LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
-                            bookiesToBeAudited);
-                }
-            } catch (BKException bke) {
-                LOG.error("Exception getting bookie list", bke);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                LOG.error("Interrupted while watching available bookies ", ie);
-            } catch (UnavailableException ue) {
-                LOG.error("Exception while watching available bookies", ue);
+            // Use the bookie sets captured synchronously by the watcher callbacks.
+            // Fall back to a fresh ZK read when the watchers haven't fired yet
+            // (e.g. direct test invocations via submitAuditTask()).
+            Set<String> writableSnapshot = pendingWritableBookies.get();
+            Set<String> readOnlySnapshot = pendingReadOnlyBookies.get();
+            List<String> availableBookies;
+            if (writableSnapshot != null && readOnlySnapshot != null) {
+                availableBookies = new ArrayList<>(writableSnapshot);
+                availableBookies.addAll(readOnlySnapshot);
+            } else {
+                availableBookies = getAvailableBookies();
             }
-        });
+
+            // casting to String, as knownBookies and availableBookies
+            // contains only String values
+            // find new bookies(if any) and update the known bookie list
+            Collection<String> newBookies = CollectionUtils.subtract(
+                    availableBookies, knownBookies);
+            knownBookies.addAll(newBookies);
+            if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
+                // the bookie, which went down earlier and had an audit scheduled for,
+                // has come up. So let us stop tracking it and cancel the audit. Since
+                // we allow delaying of audit when there is only one failed bookie,
+                // bookiesToBeAudited should just have 1 element and hence containsAll
+                // check should be ok
+                if (auditTask != null && auditTask.cancel(false)) {
+                    auditTask = null;
+                    auditorStats.getNumDelayedBookieAuditsCancelled().inc();
+                }
+                bookiesToBeAudited.clear();
+            }
+
+            // find lost bookies(if any)
+            bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
+            if (bookiesToBeAudited.size() == 0) {
+                return;
+            }
+
+            knownBookies.removeAll(bookiesToBeAudited);
+            if (lostBookieRecoveryDelay == 0) {
+                auditorBookieCheckTask.startAudit(false);
+                bookiesToBeAudited.clear();
+                return;
+            }
+            if (bookiesToBeAudited.size() > 1) {
+                // if more than one bookie is down, start the audit immediately;
+                LOG.info("Multiple bookie failure; not delaying bookie audit. "
+                                + "Bookies lost now: {}; All lost bookies: {}",
+                        CollectionUtils.subtract(knownBookies, availableBookies),
+                        bookiesToBeAudited);
+                if (auditTask != null && auditTask.cancel(false)) {
+                    auditTask = null;
+                    auditorStats.getNumDelayedBookieAuditsCancelled().inc();
+                }
+                auditorBookieCheckTask.startAudit(false);
+                bookiesToBeAudited.clear();
+                return;
+            }
+            if (auditTask == null) {
+                // if there is no scheduled audit, schedule one
+                auditTask = executor.schedule(() -> {
+                    auditorBookieCheckTask.startAudit(false);
+                    auditTask = null;
+                    bookiesToBeAudited.clear();
+                }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
+                auditorStats.getNumBookieAuditsDelayed().inc();
+                LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
+                        bookiesToBeAudited);
+            }
+        } catch (BKException bke) {
+            LOG.error("Exception getting bookie list", bke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted while watching available bookies ", ie);
+        } catch (UnavailableException ue) {
+            LOG.error("Exception while watching available bookies", ue);
+        }
     }
 
     synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
@@ -386,13 +448,12 @@ public class Auditor implements AutoCloseable {
             }
 
             try {
-                watchBookieChanges();
-                // Start with all available bookies
-                // to handle situations where the auditor
-                // is started after some bookies have already failed
+                // Initialize knownBookies before registering watchers so that any
+                // watcher callback that fires immediately sees a consistent baseline.
                 knownBookies = admin.getAllBookies().stream()
                         .map(BookieId::toString)
                         .collect(Collectors.toList());
+                watchBookieChanges();
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
             } catch (BKException bke) {
@@ -598,8 +659,18 @@ public class Auditor implements AutoCloseable {
     }
 
     private void watchBookieChanges() throws BKException {
-        admin.watchWritableBookiesChanged(bookies -> submitAuditTask());
-        admin.watchReadOnlyBookiesChanged(bookies -> submitAuditTask());
+        admin.watchWritableBookiesChanged(bookies -> {
+            pendingWritableBookies.set(bookies.getValue().stream()
+                    .map(BookieId::toString)
+                    .collect(Collectors.toSet()));
+            submitAuditTaskForBookieChange(true);
+        });
+        admin.watchReadOnlyBookiesChanged(bookies -> {
+            pendingReadOnlyBookies.set(bookies.getValue().stream()
+                    .map(BookieId::toString)
+                    .collect(Collectors.toSet()));
+            submitAuditTaskForBookieChange(false);
+        });
     }
 
     /**
