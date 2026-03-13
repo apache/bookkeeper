@@ -313,13 +313,28 @@ public class Auditor implements AutoCloseable {
                     .getLostBookieRecoveryDelay();
 
             // Use the bookie sets captured synchronously by the watcher callbacks.
-            // Fall back to a fresh ZK read when the watchers haven't fired yet
-            // (e.g. direct test invocations via submitAuditTask()).
+            // If only one type has fired so far, fetch only the other type from the
+            // admin API to avoid a redundant ZK round-trip for the known half.
+            // Fall back to a full getAvailableBookies() only when neither watcher
+            // has fired yet (e.g. direct test invocations via submitAuditTask()).
             Set<String> writableSnapshot = pendingWritableBookies.get();
             Set<String> readOnlySnapshot = pendingReadOnlyBookies.get();
             List<String> availableBookies;
             if (writableSnapshot != null && readOnlySnapshot != null) {
                 availableBookies = new ArrayList<>(writableSnapshot);
+                availableBookies.addAll(readOnlySnapshot);
+            } else if (writableSnapshot != null) {
+                // Readonly watcher hasn't fired yet; fetch only readonly bookies.
+                availableBookies = new ArrayList<>(writableSnapshot);
+                for (BookieId id : admin.getReadOnlyBookies()) {
+                    availableBookies.add(id.toString());
+                }
+            } else if (readOnlySnapshot != null) {
+                // Writable watcher hasn't fired yet; fetch only writable bookies.
+                availableBookies = new ArrayList<>();
+                for (BookieId id : admin.getAvailableBookies()) {
+                    availableBookies.add(id.toString());
+                }
                 availableBookies.addAll(readOnlySnapshot);
             } else {
                 availableBookies = getAvailableBookies();
