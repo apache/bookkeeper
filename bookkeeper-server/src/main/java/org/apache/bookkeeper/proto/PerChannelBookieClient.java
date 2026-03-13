@@ -1818,6 +1818,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     if (state != ConnectionState.CLOSED) {
                         state = ConnectionState.DISCONNECTED;
                     }
+                    if (conf.getBookieConnectingErrorCountedIntoQuarantine()) {
+                        recordError();
+                    }
                     failedConnectionCounter.inc();
                 }
 
