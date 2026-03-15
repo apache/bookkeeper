@@ -20,13 +20,18 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,39 +43,37 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
 
     private LedgerHandle lh;
     private ClientContext mockClientContext;
-    private ByteBufList toSend;
+    private BookieClient mockBookieClient;
     private boolean callbackInvoked;
 
     @Before
     public void setup() {
         lh = mock(LedgerHandle.class);
-
-        toSend = ByteBufList.get();
+        mockClientContext = mock(ClientContext.class);
+        mockBookieClient = mock(BookieClient.class);
+        doNothing().when(mockBookieClient).writeLac(any(BookieId.class), anyLong(), any(byte[].class), anyLong(), any(ByteBufList.class), any(BookkeeperInternalCallbacks.WriteLacCallback.class), any(Object.class));
+        when(mockClientContext.getBookieClient()).thenReturn(mockBookieClient);
         callbackInvoked = false;
     }
 
     @Test
-    public void testWriteLacOp() {
-
-        // 332
+    public void testWriteLacOp332() {
+        // 3-3-2: ack quorum=2, complete after 2 OK responses, release toSend after 3rd response
         when(lh.getDistributionSchedule())
                 .thenReturn(new RoundRobinDistributionSchedule(3, 2, 3));
-        PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
-                lh.getCurrentEnsemble(), this, null);
 
         LedgerMetadata ledgerMetadata = mock(LedgerMetadata.class);
         when(ledgerMetadata.getWriteQuorumSize()).thenReturn(3);
         when(ledgerMetadata.getAckQuorumSize()).thenReturn(2);
         when(lh.getLedgerMetadata()).thenReturn(ledgerMetadata);
 
+        PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
+                lh.getCurrentEnsemble(), this, null);
         writeLacOp.setLac(1000);
 
         assertEquals(1000, writeLacOp.lac);
         assertFalse(writeLacOp.completed);
         assertFalse(writeLacOp.receivedResponseSet.isEmpty());
-
-        writeLacOp.toSend = toSend;
-        assertEquals(1, toSend.refCnt());
 
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 0);
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 1);
@@ -78,33 +81,29 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
         assertTrue(callbackInvoked);
         assertTrue(writeLacOp.completed);
         assertFalse(writeLacOp.receivedResponseSet.isEmpty());
-        assertNotNull(writeLacOp.toSend);
 
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 2);
         assertTrue(writeLacOp.receivedResponseSet.isEmpty());
-        assertNull(writeLacOp.toSend);
-        assertEquals(0, toSend.refCnt());
+    }
 
-        // 333
-        callbackInvoked = false;
-        toSend = ByteBufList.get();
+    @Test
+    public void testWriteLacOp333() {
+        // 3-3-3: ack quorum=3, complete only after all 3 responses
         when(lh.getDistributionSchedule())
                 .thenReturn(new RoundRobinDistributionSchedule(3, 3, 3));
-        writeLacOp = new PendingWriteLacOp(lh, mockClientContext, lh.getCurrentEnsemble(), this, null);
 
-        ledgerMetadata = mock(LedgerMetadata.class);
+        LedgerMetadata ledgerMetadata = mock(LedgerMetadata.class);
         when(ledgerMetadata.getWriteQuorumSize()).thenReturn(3);
         when(ledgerMetadata.getAckQuorumSize()).thenReturn(3);
         when(lh.getLedgerMetadata()).thenReturn(ledgerMetadata);
 
+        PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
+                lh.getCurrentEnsemble(), this, null);
         writeLacOp.setLac(1000);
 
         assertEquals(1000, writeLacOp.lac);
         assertFalse(writeLacOp.completed);
         assertFalse(writeLacOp.receivedResponseSet.isEmpty());
-
-        writeLacOp.toSend = toSend;
-        assertEquals(1, toSend.refCnt());
 
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 0);
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 1);
@@ -112,42 +111,62 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
         assertFalse(callbackInvoked);
         assertFalse(writeLacOp.completed);
         assertFalse(writeLacOp.receivedResponseSet.isEmpty());
-        assertNotNull(writeLacOp.toSend);
 
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 2);
+        assertTrue(callbackInvoked);
+        assertTrue(writeLacOp.completed);
         assertTrue(writeLacOp.receivedResponseSet.isEmpty());
-        assertNull(writeLacOp.toSend);
-        assertEquals(0, toSend.refCnt());
+    }
 
-        // 111
-        callbackInvoked = false;
-        toSend = ByteBufList.get();
+    @Test
+    public void testWriteLacOp111() {
+        // 1-1-1: single bookie, complete immediately on first response
         when(lh.getDistributionSchedule())
                 .thenReturn(new RoundRobinDistributionSchedule(1, 1, 1));
-        writeLacOp = new PendingWriteLacOp(lh, mockClientContext, lh.getCurrentEnsemble(), this, null);
 
-        ledgerMetadata = mock(LedgerMetadata.class);
+        LedgerMetadata ledgerMetadata = mock(LedgerMetadata.class);
         when(ledgerMetadata.getWriteQuorumSize()).thenReturn(1);
         when(ledgerMetadata.getAckQuorumSize()).thenReturn(1);
         when(lh.getLedgerMetadata()).thenReturn(ledgerMetadata);
 
+        PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
+                lh.getCurrentEnsemble(), this, null);
         writeLacOp.setLac(1000);
 
-        assertEquals(1000, writeLacOp.lac);
         assertFalse(writeLacOp.completed);
         assertFalse(writeLacOp.receivedResponseSet.isEmpty());
-
-        writeLacOp.toSend = toSend;
-        assertEquals(1, toSend.refCnt());
 
         writeLacOp.writeLacComplete(BKException.Code.OK, 2000, null, 0);
 
         assertTrue(callbackInvoked);
         assertTrue(writeLacOp.completed);
         assertTrue(writeLacOp.receivedResponseSet.isEmpty());
-        assertNull(writeLacOp.toSend);
-        assertEquals(0, toSend.refCnt());
+    }
 
+    @Test
+    public void testInitiateReleasesBuffer() {
+        // Verify toSend buffer is released by initiate() after all requests are sent
+        when(lh.getDistributionSchedule())
+                .thenReturn(new RoundRobinDistributionSchedule(3, 2, 3));
+
+        LedgerMetadata ledgerMetadata = mock(LedgerMetadata.class);
+        when(ledgerMetadata.getWriteQuorumSize()).thenReturn(3);
+        when(ledgerMetadata.getAckQuorumSize()).thenReturn(2);
+        when(lh.getLedgerMetadata()).thenReturn(ledgerMetadata);
+        when(lh.getCurrentEnsemble()).thenReturn(Arrays.asList(BookieId.parse("bookie1"), BookieId.parse("bookie2"), BookieId.parse("bookie3")));
+
+        PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
+                lh.getCurrentEnsemble(), this, null);
+
+        writeLacOp.setLac(1000);
+
+        ByteBufList toSend = ByteBufList.get();
+        assertEquals(1, toSend.refCnt());
+
+        writeLacOp.initiate(toSend);
+
+        // After initiate(), the caller's reference should be released
+        assertEquals(0, toSend.refCnt());
     }
 
     @Override

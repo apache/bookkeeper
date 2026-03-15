@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
  */
 class PendingWriteLacOp implements WriteLacCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    volatile ByteBufList toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -73,17 +72,20 @@ class PendingWriteLacOp implements WriteLacCallback {
                 lh.getLedgerMetadata().getWriteQuorumSize());
     }
 
-    void sendWriteLacRequest(int bookieIndex) {
+    void sendWriteLacRequest(int bookieIndex, ByteBufList toSend) {
         clientCtx.getBookieClient().writeLac(currentEnsemble.get(bookieIndex),
                                              lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
     }
 
     void initiate(ByteBufList toSend) {
-        this.toSend = toSend;
-
-        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
-            sendWriteLacRequest(lh.distributionSchedule.getWriteSetBookieIndex(lac, i));
+        try {
+            for (int i = 0; i < lh.getDistributionSchedule().getWriteQuorumSize(); i++) {
+                sendWriteLacRequest(lh.getDistributionSchedule().getWriteSetBookieIndex(lac, i), toSend);
+            }
+        } finally {
+            ReferenceCountUtil.release(toSend);
         }
+
     }
 
     @Override
@@ -94,7 +96,6 @@ class PendingWriteLacOp implements WriteLacCallback {
         receivedResponseSet.clear(bookieIndex);
 
         if (completed) {
-            maybeRecycle();
             return;
         }
 
@@ -106,7 +107,6 @@ class PendingWriteLacOp implements WriteLacCallback {
             if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {
                 completed = true;
                 cb.addLacComplete(rc, lh, ctx);
-                maybeRecycle();
                 return;
             }
         } else {
@@ -116,15 +116,6 @@ class PendingWriteLacOp implements WriteLacCallback {
         if (receivedResponseSet.isEmpty()){
             completed = true;
             cb.addLacComplete(lastSeenError, lh, ctx);
-        }
-
-        maybeRecycle();
-    }
-
-    private void maybeRecycle() {
-        if (receivedResponseSet.isEmpty() && toSend != null) {
-            ReferenceCountUtil.release(toSend);
-            toSend = null;
         }
     }
 
