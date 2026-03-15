@@ -51,7 +51,8 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
         lh = mock(LedgerHandle.class);
         mockClientContext = mock(ClientContext.class);
         mockBookieClient = mock(BookieClient.class);
-        doNothing().when(mockBookieClient).writeLac(any(BookieId.class), anyLong(), any(byte[].class), anyLong(), any(ByteBufList.class), any(BookkeeperInternalCallbacks.WriteLacCallback.class), any(Object.class));
+        doNothing().when(mockBookieClient).writeLac(any(BookieId.class), anyLong(), any(byte[].class), anyLong(),
+                any(ByteBufList.class), any(BookkeeperInternalCallbacks.WriteLacCallback.class), any(Object.class));
         when(mockClientContext.getBookieClient()).thenReturn(mockBookieClient);
         callbackInvoked = false;
     }
@@ -153,7 +154,8 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
         when(ledgerMetadata.getWriteQuorumSize()).thenReturn(3);
         when(ledgerMetadata.getAckQuorumSize()).thenReturn(2);
         when(lh.getLedgerMetadata()).thenReturn(ledgerMetadata);
-        when(lh.getCurrentEnsemble()).thenReturn(Arrays.asList(BookieId.parse("bookie1"), BookieId.parse("bookie2"), BookieId.parse("bookie3")));
+        when(lh.getCurrentEnsemble()).thenReturn(Arrays.asList(BookieId.parse("bookie1"),
+                BookieId.parse("bookie2"), BookieId.parse("bookie3")));
 
         PendingWriteLacOp writeLacOp = new PendingWriteLacOp(lh, mockClientContext,
                 lh.getCurrentEnsemble(), this, null);
