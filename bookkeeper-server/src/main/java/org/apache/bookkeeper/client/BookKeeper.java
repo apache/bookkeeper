@@ -1583,17 +1583,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.parent = parent;
         }
 
-        @Override
+        /**
+         * ZooKeeper stores ledgers in a hierarchical tree (e.g. /ledgers/00/0000/...).
+         * {@code iterator} (LedgerRangeIterator) traverses the intermediate tree nodes (ranges/buckets),
+         * while {@code currentRange} iterates over the leaf-level ledger IDs within a single range.
+         *
+         * Therefore, when {@code currentRange} has no more leaf nodes, we need to check
+         * {@code iterator.hasNext()} to determine if there are more ranges to advance to.
+         */
         public boolean hasNext() throws IOException {
             parent.checkClosed();
-            if (currentRange != null) {
-                if (currentRange.hasNext()) {
-                    return true;
-                }
-            } else if (iterator.hasNext()) {
+            if (currentRange != null && currentRange.hasNext()) {
                 return true;
             }
-            return false;
+            return iterator.hasNext();
         }
 
         @Override
