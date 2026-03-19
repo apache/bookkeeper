@@ -140,7 +140,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected static final String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
     protected static final String BOOKIE_QUARANTINE_RATIO = "bookieQuarantineRatio";
-    protected static final String BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE = "bookieConnectingErrorCountedIntoQuarantine";
+    protected static final String BOOKIE_CONNECTING_ERROR_QUARANTINE_ENABLED = "bookieConnectionErrorQuarantineEnabled";
 
     // Bookie info poll interval
     protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
@@ -1465,8 +1465,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @param enabled
      * @return
      */
-    public ClientConfiguration setBookieConnectingErrorCountedIntoQuarantine(boolean enabled) {
-        setProperty(BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE, enabled);
+    public ClientConfiguration setBookieConnectionErrorQuarantineEnabled(boolean enabled) {
+        setProperty(BOOKIE_CONNECTING_ERROR_QUARANTINE_ENABLED, enabled);
         return this;
     }
 
@@ -1475,8 +1475,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @return
      */
-    public boolean getBookieConnectingErrorCountedIntoQuarantine() {
-        return getBoolean(BOOKIE_CONNECTING_ERROR_COUNTED_INTO_QUARANTINE);
+    public boolean getBookieConnectionErrorQuarantineEnabled() {
+        return getBoolean(BOOKIE_CONNECTING_ERROR_QUARANTINE_ENABLED, false);
     }
 
     /**
