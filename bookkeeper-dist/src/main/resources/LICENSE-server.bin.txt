@@ -260,7 +260,7 @@ Apache Software License, Version 2.
 - lib/org.apache.logging.log4j-log4j-slf4j-impl-2.18.0.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [19]
 - lib/org.apache.commons-commons-configuration2-2.12.0.jar [7]
-- lib/org.apache.commons-commons-lang3-3.17.0.jar [57]
+- lib/org.apache.commons-commons-lang3-3.20.0.jar [57]
 - lib/org.apache.commons-commons-text-1.13.1.jar [60]
 - lib/org.apache.zookeeper-zookeeper-3.9.3.jar [21]
 - lib/org.apache.zookeeper-zookeeper-jute-3.9.3.jar [21]
@@ -405,7 +405,7 @@ Apache Software License, Version 2.
 [54] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.56.0
 [55] Source available at https://github.com/JetBrains/kotlin/releases/tag/v2.2.21
 [56] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
-[57] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.17.0
+[57] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.20.0
 [58] Source available at https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/v2.21.0
 [59] Source available at https://github.com/prometheus/client_java/tree/v1.3.10
 [60] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.13.1
