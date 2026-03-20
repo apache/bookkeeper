@@ -1075,10 +1075,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get max number of reads in progress. 0 == unlimited.
      *
+     * <p>This limit bounds the memory used by read responses that have been read from storage
+     * but not yet flushed to the network. Since read response writes are non-blocking,
+     * without this limit a slow consumer could cause unbounded memory growth.
+     * The default value of 10000 provides a reasonable balance between throughput and memory usage.
+     * Tune based on your average entry size: memoryBudget / avgEntrySize.
+     *
      * @return Max number of reads in progress.
      */
     public int getMaxReadsInProgressLimit() {
-        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 0);
+        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 10000);
     }
 
     /**
