@@ -81,6 +81,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private final RocksDB db;
     private RocksObject options;
     private List<ColumnFamilyDescriptor> columnFamilyDescriptors;
+    private List<ColumnFamilyHandle> columnFamilyHandles;
 
     private final WriteOptions optionSync;
     private final WriteOptions optionDontSync;
@@ -175,6 +176,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
             this.options = dbOptions;
             this.columnFamilyDescriptors = cfDescs;
+            this.columnFamilyHandles = cfHandles;
             if (readOnly) {
                 return RocksDB.openReadOnly(dbOptions, dbPath, cfDescs, cfHandles);
             } else {
@@ -297,6 +299,12 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         try {
             closedLock.writeLock().lock();
             closed = true;
+            db.cancelAllBackgroundWork(true);
+            if (columnFamilyHandles != null) {
+                for (ColumnFamilyHandle cfh : columnFamilyHandles) {
+                    cfh.close();
+                }
+            }
             db.close();
         } finally {
             closedLock.writeLock().unlock();
