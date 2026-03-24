@@ -35,6 +35,7 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
+import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 
 /**
  * Maintains an index of the entry locations in the EntryLogger.
@@ -45,14 +46,24 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 @CustomLog
 public class EntryLocationIndex implements Closeable {
 
+    static final String LAST_ENTRY_CACHE_MAX_SIZE = "dbStorage_lastEntryCacheMaxSize";
+    private static final long DEFAULT_LAST_ENTRY_CACHE_MAX_SIZE = 10_000;
+
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
+    private final ConcurrentLongLongHashMap lastEntryCache;
+    private final long lastEntryCacheMaxSize;
     private final EntryLocationIndexStats stats;
     private boolean isCompacting;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
         locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
+
+        this.lastEntryCacheMaxSize = conf.getLong(LAST_ENTRY_CACHE_MAX_SIZE, DEFAULT_LAST_ENTRY_CACHE_MAX_SIZE);
+        this.lastEntryCache = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems((int) Math.min(lastEntryCacheMaxSize, Integer.MAX_VALUE))
+                .build();
 
         this.stats = new EntryLocationIndexStats(
             stats,
@@ -114,6 +125,18 @@ public class EntryLocationIndex implements Closeable {
     }
 
     private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
+        // Check in-memory cache first to avoid expensive getFloor() calls.
+        // ConcurrentLongLongHashMap.get() returns -1 if not found.
+        long cachedLastEntry = lastEntryCache.get(ledgerId);
+        if (cachedLastEntry >= 0) {
+            if (log.isDebugEnabled()) {
+                log.debug("Found last entry for ledger {} in cache: {}", ledgerId, cachedLastEntry);
+            }
+            stats.getGetLastEntryInLedgerStats()
+                    .registerSuccessfulEvent(0, TimeUnit.NANOSECONDS);
+            return cachedLastEntry;
+        }
+
         LongPairWrapper maxEntryId = LongPairWrapper.get(ledgerId, Long.MAX_VALUE);
 
         long startTimeNanos = MathUtils.nowInNano();
@@ -139,6 +162,11 @@ public class EntryLocationIndex implements Closeable {
                         .attr("ledgerId", ledgerId)
                         .attr("lastEntryId", lastEntryId)
                         .log("Found last page in storage db for ledger");
+                // Populate cache for future lookups
+                if (lastEntryCache.size() >= lastEntryCacheMaxSize) {
+                    lastEntryCache.clear();
+                }
+                lastEntryCache.put(ledgerId, lastEntryId);
                 return lastEntryId;
             } else {
                 throw new Bookie.NoEntryException(ledgerId, -1);
@@ -173,6 +201,18 @@ public class EntryLocationIndex implements Closeable {
             key.recycle();
             value.recycle();
         }
+
+        // Update the last entry cache if this entry is newer.
+        // ConcurrentLongLongHashMap.get() returns -1 if not found.
+        long cachedLastEntry = lastEntryCache.get(ledgerId);
+        if (cachedLastEntry < entryId) {
+            // Clear the cache if it exceeds the max size to bound memory usage.
+            // The cache will quickly repopulate with hot ledgers on subsequent reads.
+            if (cachedLastEntry < 0 && lastEntryCache.size() >= lastEntryCacheMaxSize) {
+                lastEntryCache.clear();
+            }
+            lastEntryCache.put(ledgerId, entryId);
+        }
     }
 
     public void updateLocations(Iterable<EntryLocation> newLocations) throws IOException {
@@ -196,6 +236,7 @@ public class EntryLocationIndex implements Closeable {
         // We need to find all the LedgerIndexPage records belonging to one specific
         // ledgers
         deletedLedgers.add(ledgerId);
+        lastEntryCache.remove(ledgerId);
     }
 
     public String getEntryLocationDBPath() {

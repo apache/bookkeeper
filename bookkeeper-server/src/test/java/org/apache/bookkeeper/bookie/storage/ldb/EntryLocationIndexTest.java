@@ -22,9 +22,11 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -203,6 +205,52 @@ public class EntryLocationIndexTest {
         idx.delete(40313);
         idx.removeOffsetFromDeletedLedgers();
         assertEquals(0, idx.getLocation(40312, 10));
+    }
+
+    @Test
+    public void testGetLastEntryInLedgerCache() throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
+
+        // Add entries for ledger 1
+        idx.addLocation(1, 0, 100);
+        idx.addLocation(1, 1, 101);
+        idx.addLocation(1, 2, 102);
+
+        // Add entries for ledger 2
+        idx.addLocation(2, 0, 200);
+        idx.addLocation(2, 5, 205);
+
+        // First call should hit RocksDB and populate cache
+        assertEquals(2, idx.getLastEntryInLedger(1));
+        assertEquals(5, idx.getLastEntryInLedger(2));
+
+        // Second call should hit cache and return same result
+        assertEquals(2, idx.getLastEntryInLedger(1));
+        assertEquals(5, idx.getLastEntryInLedger(2));
+
+        // Adding a newer entry should update cache
+        idx.addLocation(1, 10, 110);
+        assertEquals(10, idx.getLastEntryInLedger(1));
+
+        // Delete should invalidate cache
+        idx.delete(1);
+        try {
+            idx.getLastEntryInLedger(1);
+            fail("Should have thrown NoEntryException");
+        } catch (Bookie.NoEntryException e) {
+            // expected
+        }
+
+        // Ledger 2 should still work
+        assertEquals(5, idx.getLastEntryInLedger(2));
+
+        idx.close();
     }
 
     @Test
