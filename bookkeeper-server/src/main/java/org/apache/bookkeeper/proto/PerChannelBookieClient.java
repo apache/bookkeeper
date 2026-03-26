@@ -1535,7 +1535,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final BKPacketHeader header = response.getHeader();
 
         final CompletionKey key = newCompletionKey(header.getTxnId(), header.getOperation());
-        final CompletionValue completionValue = completionObjects.get(key);
+        final CompletionValue completionValue = completionObjects.remove(key);
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
@@ -1560,8 +1560,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
             });
         }
-
-        completionObjects.remove(key);
     }
 
     void initTLSHandshake() {
