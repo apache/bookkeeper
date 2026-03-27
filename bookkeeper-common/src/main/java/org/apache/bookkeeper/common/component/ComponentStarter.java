@@ -76,7 +76,12 @@ public class ComponentStarter {
                     component.getName(), t, e);
             System.err.println(e.getMessage());
             // start the shutdown hook when an uncaught exception happen in the lifecycle component.
-            shutdownHookThread.start();
+            try {
+                shutdownHookThread.start();
+            } catch (IllegalThreadStateException ise) {
+                // the shutdown hook thread is already running (e.g. triggered by a prior
+                // exception or by the JVM shutdown sequence), so there is nothing else to do.
+            }
         });
 
         component.publishInfo(new ComponentInfoPublisher());
