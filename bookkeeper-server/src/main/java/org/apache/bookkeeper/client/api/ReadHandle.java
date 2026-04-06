@@ -91,6 +91,22 @@ public interface ReadHandle extends Handle {
         return FutureUtils.result(batchReadAsync(startEntry, maxCount, maxSize), BKException.HANDLER);
     }
 
+
+    /**
+     * Read a sequence of entries in batch asynchronously, allowing to read after the LastAddConfirmed range.
+     *
+     * @param startEntry
+     *          start entry id
+     * @param maxCount
+     *          the total entries count.
+     * @param maxSize
+     *          the total entries size.
+     * @return he results of the operation
+     */
+    default CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long startEntry, int maxCount, long maxSize) {
+        return readUnconfirmedAsync(startEntry, startEntry + maxCount - 1);
+    }
+
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of

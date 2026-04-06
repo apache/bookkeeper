@@ -941,6 +941,39 @@ public class LedgerHandle implements WriteHandle {
         return future;
     }
 
+    @Override
+    public CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long startEntry, int maxCount, long maxSize) {
+        // Little sanity check
+        if (startEntry < 0 || maxCount < 0 || maxSize < 0) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} when batch read", ledgerId, startEntry);
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+        if (notSupportBatchRead()) {
+            long lastEntry = startEntry + maxCount - 1;
+            return readUnconfirmedAsync(startEntry, lastEntry);
+        }
+
+        CompletableFuture<LedgerEntries> future = new CompletableFuture<>();
+        if (!clientCtx.isClientClosed()) {
+            batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
+                    .whenCompleteAsync((entries, t) -> {
+                        if (t != null) {
+                            if (t instanceof BKException) {
+                                BKException bke = (BKException) t;
+                                future.completeExceptionally(bke);
+                            } else {
+                                future.completeExceptionally(BKException.create(Code.UnexpectedConditionException));
+                            }
+                        } else {
+                            future.complete(entries);
+                        }
+                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+        } else {
+            future.completeExceptionally(BKException.create(ClientClosedException));
+        }
+        return future;
+    }
+
     private boolean notSupportBatchRead() {
         if (!clientCtx.getConf().batchReadEnabled) {
             return true;

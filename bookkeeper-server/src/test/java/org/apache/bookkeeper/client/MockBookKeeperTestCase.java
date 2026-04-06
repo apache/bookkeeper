@@ -40,6 +40,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -247,6 +248,7 @@ public abstract class MockBookKeeperTestCase {
         setupBookieWatcherForNewEnsemble();
         setupBookieWatcherForEnsembleChange();
         setupBookieClientReadEntry();
+        setupBookieClientBatchReadEntry();
         setupBookieClientReadLac();
         setupBookieClientAddEntry();
         setupBookieClientForceLedger();
@@ -544,6 +546,84 @@ public abstract class MockBookKeeperTestCase {
         stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
                 any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
                 any(), anyInt(), any(), anyBoolean());
+    }
+
+    protected void setupBookieClientBatchReadEntry() {
+        final Stubber stub = doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            BookieId bookieSocketAddress = (BookieId) args[0];
+            long ledgerId = (Long) args[1];
+            long startEntryId = (Long) args[2];
+            int maxCount = (Integer) args[3];
+            long maxSize = (Long) args[4];
+            BookkeeperInternalCallbacks.BatchedReadEntryCallback callback =
+                (BookkeeperInternalCallbacks.BatchedReadEntryCallback) args[5];
+            Object ctx = args[6];
+            boolean fenced = (((Integer) args[7]) & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING;
+
+            executor.executeOrdered(ledgerId, () -> {
+                DigestManager macManager = null;
+                try {
+                    macManager = getDigestType(ledgerId);
+                } catch (GeneralSecurityException gse){
+                    LOG.error("Initialize macManager fail", gse);
+                }
+
+                Map<Long, MockEntry> mockEntries = new HashMap<>();
+                for (long entryId = startEntryId; entryId < startEntryId + maxCount; entryId++) {
+                    MockEntry mockEntry;
+                    try {
+                        mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
+                        if (mockEntry == null) {
+                            break;
+                        }
+                        mockEntries.put(entryId, mockEntry);
+                    } catch (BKException bke) {
+                        LOG.info("batchReadEntryAndFenceLedger - occur BKException {}@{} at {}", entryId, ledgerId,
+                                bookieSocketAddress);
+                        if (mockEntries.isEmpty()) {
+                            break;
+                        }
+                        callback.readEntriesComplete(bke.getCode(), ledgerId, startEntryId, null, ctx);
+                    }
+
+                }
+
+                if (fenced) {
+                    fencedLedgers.add(ledgerId);
+                }
+
+                ByteBufList bufList = ByteBufList.get();
+                long totalBytes = 0;
+                if (mockEntries.isEmpty()) {
+                    callback.readEntriesComplete(BKException.Code.NoSuchEntryException, ledgerId, startEntryId, null,
+                            ctx);
+                } else {
+                    for (Map.Entry<Long, MockEntry> kv : mockEntries.entrySet()) {
+                        long entryId = kv.getKey();
+                        MockEntry mockEntry = kv.getValue();
+                        ReferenceCounted entry = macManager.computeDigestAndPackageForSending(entryId,
+                            mockEntry.lastAddConfirmed, mockEntry.payload.length,
+                            Unpooled.wrappedBuffer(mockEntry.payload), new byte[20], 0);
+                        ByteBuf entryData = MockBookieClient.copyData(entry);
+                        totalBytes += entryData.readableBytes();
+                        if (totalBytes > maxSize) {
+                            break;
+                        }
+                        bufList.add(entryData);
+                    }
+                    callback.readEntriesComplete(BKException.Code.OK, ledgerId, startEntryId, bufList, ctx);
+                }
+            });
+            return null;
+        });
+
+        stub.when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt());
+        stub.when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt(), any());
+        stub.when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt(), any(), anyBoolean());
     }
 
     @SuppressWarnings("unchecked")

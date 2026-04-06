@@ -430,6 +430,45 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     }
 
     @Test
+    public void testBatchedReadUnconfirmedAsync() throws Exception {
+        long lId;
+        try (WriteHandle writer = newCreateLedgerOp()
+                .withAckQuorumSize(2)
+                .withWriteQuorumSize(2)
+                .withEnsembleSize(2)
+                .withPassword(password)
+                .execute().get()) {
+            lId = writer.getId();
+            // write data and populate LastAddConfirmed
+            writer.append(ByteBuffer.wrap(data));
+            writer.append(ByteBuffer.wrap(data));
+            writer.append(ByteBuffer.wrap(data));
+        }
+
+        try (ReadHandle reader = newOpenLedgerOp()
+                .withPassword(password)
+                .withRecovery(false)
+                .withLedgerId(lId)
+                .execute().get()) {
+            long lac = reader.getLastAddConfirmed();
+            assertEquals(2, lac);
+
+            try (LedgerEntries entries = reader.batchReadUnconfirmedAsync(0, 5, 5 * 1024 * 1024).get()) {
+                AtomicLong i = new AtomicLong(0);
+                for (LedgerEntry e : entries) {
+                    assertEquals(i.getAndIncrement(), e.getEntryId());
+                    assertArrayEquals(data, e.getEntryBytes());
+                }
+                i.set(0);
+                entries.forEach((e) -> {
+                    assertEquals(i.getAndIncrement(), e.getEntryId());
+                    assertArrayEquals(data, e.getEntryBytes());
+                });
+            }
+        }
+    }
+
+    @Test
     public void testBKExceptionCodeLogger() {
         assertEquals("OK: No problem", BKException.codeLogger(0).toString());
         assertEquals("ReadException: Error while reading ledger", BKException.codeLogger(-1).toString());
