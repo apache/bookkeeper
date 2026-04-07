@@ -623,6 +623,13 @@ public class Journal implements CheckpointSource {
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
+    // Guards checkpointComplete to ensure lastMark only advances forward.
+    // Without this, concurrent checkpointComplete calls from SyncThread and
+    // SingleDirectoryDbLedgerStorage.flush() can overwrite lastMark backwards,
+    // causing journal files to be deleted while still referenced by the older mark.
+    private final Object checkpointLock = new Object();
+    private final LogMark lastPersistedMark = new LogMark(0, 0);
+
     private static final String LAST_MARK_DEFAULT_NAME = "lastMark";
 
     private final String lastMarkFileName;
@@ -766,6 +773,11 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
+     * <p>Multiple threads (SyncThread and DbLedgerStorage flush) may call this concurrently.
+     * A monotonic check ensures the lastMark file only advances forward — a later call with
+     * an older mark is safely skipped. This prevents the race where a slower flush overwrites
+     * lastMark backwards, causing referenced journal files to be garbage collected prematurely.
+     *
      * @throws IOException
      */
     @Override
@@ -775,6 +787,15 @@ public class Journal implements CheckpointSource {
         }
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
+
+        // Monotonic check: only advance lastMark forward, never backwards.
+        synchronized (checkpointLock) {
+            if (mark.getCurMark().compare(lastPersistedMark) <= 0) {
+                return;
+            }
+            lastPersistedMark.setLogMark(
+                    mark.getCurMark().getLogFileId(), mark.getCurMark().getLogFileOffset());
+        }
 
         mark.rollLog(mark);
         if (compact) {
