@@ -623,12 +623,7 @@ public class Journal implements CheckpointSource {
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
-    // Guards checkpointComplete to ensure lastMark only advances forward.
-    // When singleLedgerDirs=true, SyncThread.flush() takes a checkpoint, then calls
-    // ledgerStorage.flush() → SingleDirectoryDbLedgerStorage.flush(), which internally
-    // takes a NEWER checkpoint and completes it (with garbage collection). When control
-    // returns, SyncThread completes its own OLDER checkpoint, overwriting lastMark backwards
-    // to a journal file already deleted by the inner garbage collection.
+    // Ensures lastMark only advances forward across concurrent checkpointComplete calls.
     private final Object checkpointLock = new Object();
     private final LogMark lastPersistedMark = new LogMark(0, 0);
 
@@ -775,9 +770,8 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
-     * <p>If the given checkpoint is not newer than the last persisted mark, the call is
-     * a no-op. This monotonic guarantee prevents lastMark from regressing backwards.
-     * See the comment on {@code checkpointLock} for the full scenario.
+     * <p>Skips if the checkpoint is not newer than the last persisted mark,
+     * preventing lastMark from regressing backwards.
      *
      * @throws IOException
      */
@@ -789,9 +783,7 @@ public class Journal implements CheckpointSource {
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
 
-        // Monotonic check: skip if this mark is not newer than what was already persisted.
-        // This prevents lastMark regression from nested checkpointComplete calls
-        // (see class-level comment on checkpointLock for the full scenario).
+        // Skip if this mark is not newer than what was already persisted.
         synchronized (checkpointLock) {
             if (mark.getCurMark().compare(lastPersistedMark) < 0) {
                 return;

@@ -884,32 +884,13 @@ public class DbLedgerStorageTest {
     }
 
     /**
-     * Simulates the journal-missing scenario caused by lastMark regression in single-dir
-     * mode (singleLedgerDirs=true) and verifies the monotonic fix prevents it.
-     *
-     * <p>The trigger is a single-thread nested call within SyncThread.flush():
-     * <pre>
-     * SyncThread.flush():
-     *   1. outerCheckpoint = newCheckpoint()          → captures mark(5, 100)
-     *   2. ledgerStorage.flush()                      → delegates to SingleDirectoryDbLedgerStorage.flush():
-     *      2a. innerCheckpoint = newCheckpoint()      → captures mark(7, 200), journal has advanced
-     *      2b. checkpoint(innerCheckpoint)            → flushes data to disk
-     *      2c. checkpointComplete(innerCheckpoint=7, compact=true)
-     *          → rollLog(7), garbage collects journal files 3,4,5,6 (id < 7)
-     *   3. checkpointComplete(outerCheckpoint=5, compact=false)
-     *      → rollLog(5) — OVERWRITES lastMark backwards from 7 to 5!
-     *      → journal file 5 was already deleted in step 2c
-     *   4. Bookie restarts: reads lastMark=5, looks for journal 5 → MISSING!
-     *      → throws "Recovery log 5 is missing"
-     * </pre>
-     *
-     * <p>This test simulates the core regression: a newer checkpoint is completed first
-     * (with garbage collection), then an older checkpoint attempts to overwrite lastMark
-     * backwards. With the monotonic fix, the older mark is skipped
-     * (5 &lt; lastPersistedMark 7), so lastMark stays at 7 and the restart succeeds.
+     * Verifies that the monotonic guard in checkpointComplete prevents lastMark regression.
+     * A newer checkpoint is completed first (with garbage collection deleting old journals),
+     * then a stale checkpoint attempts to overwrite lastMark backwards. The fix skips the
+     * stale mark, keeping lastMark at the newer position so restart succeeds.
      */
     @Test
-    public void testNestedCheckpointCompleteLastMarkRegression() throws Exception {
+    public void testConcurrentCheckpointCompleteLastMarkRegression() throws Exception {
         File baseDir = new File(tmpDir, "journalMissingTest");
         File ledgerDir = new File(baseDir, "ledger");
         File journalBaseDir = new File(baseDir, "journal");
@@ -943,25 +924,28 @@ public class DbLedgerStorageTest {
 
             CheckpointSource checkpointSource = new CheckpointSourceList(bookie.getJournals());
 
-            // === Simulate the lastMark regression ===
+            // === Simulate concurrent checkpointComplete causing lastMark regression ===
 
-            // Step 1: SyncThread takes checkpoint at mark(5, 100) before calling ledgerStorage.flush()
+            // Step 1: SyncThread.checkpoint() captures a checkpoint before heavy flush I/O.
+            // This mark becomes stale during the I/O as the journal continues advancing.
             journal.getLastLogMark().getCurMark().setLogMark(5, 100);
-            CheckpointSource.Checkpoint outerCheckpoint = checkpointSource.newCheckpoint();
+            CheckpointSource.Checkpoint staleCheckpoint = checkpointSource.newCheckpoint();
 
-            // Step 2: Inside ledgerStorage.flush() → SingleDirectoryDbLedgerStorage.flush()
-            // takes a newer checkpoint at mark(7, 200)
+            // Step 2: During SyncThread's I/O, triggerFlushAndAddEntry fires on a separate
+            // thread. SingleDirectoryDbLedgerStorage.flush() captures a newer checkpoint
+            // (the journal has advanced to file 7 during the I/O).
             journal.getLastLogMark().getCurMark().setLogMark(7, 200);
-            CheckpointSource.Checkpoint innerCheckpoint = checkpointSource.newCheckpoint();
+            CheckpointSource.Checkpoint newerCheckpoint = checkpointSource.newCheckpoint();
 
-            // Step 3: SingleDirectoryDbLedgerStorage.flush() completes its checkpoint FIRST
+            // Step 3: After SyncThread releases flushMutex, the SingleDirectoryDbLedgerStorage
+            // executor wins the race and calls checkpointComplete first.
             // checkpointComplete(mark=7, compact=true)
             // rollLog to 7, garbage collects journals with id < 7 (deletes 3,4,5,6)
-            checkpointSource.checkpointComplete(innerCheckpoint, true);
+            checkpointSource.checkpointComplete(newerCheckpoint, true);
 
-            LogMark markAfterSync = readLogMark(ledgerDirMark);
-            assertEquals("lastMark should be at 7 after inner flush", 7, markAfterSync.getLogFileId());
-            assertEquals(200, markAfterSync.getLogFileOffset());
+            LogMark markAfterNewer = readLogMark(ledgerDirMark);
+            assertEquals("lastMark should be at 7 after newer checkpoint", 7, markAfterNewer.getLogFileId());
+            assertEquals(200, markAfterNewer.getLogFileOffset());
 
             // Verify journals 3,4,5,6 were garbage collected, 7,8 still exist
             for (long id = 3; id <= 6; id++) {
@@ -973,12 +957,12 @@ public class DbLedgerStorageTest {
                 assertTrue("Journal " + id + " should still exist", journalFile.exists());
             }
 
-            // Step 4: Control returns to SyncThread, which completes its OLDER checkpoint
-            // checkpointComplete(mark=5, compact=false). The compact value does not matter here —
-            // the regression is caused by rollLog overwriting the lastMark file backwards.
+            // Step 4: SyncThread then calls checkpointComplete with its stale mark.
+            // The compact value does not matter — the regression is caused by rollLog
+            // overwriting the lastMark file backwards.
             // WITHOUT FIX: rollLog overwrites lastMark to 5, but journal 5 is already deleted!
             // WITH FIX: mark 5 < lastPersistedMark 7, so this is skipped entirely.
-            checkpointSource.checkpointComplete(outerCheckpoint, false);
+            checkpointSource.checkpointComplete(staleCheckpoint, true);
 
             // Verify: lastMark must NOT regress to 5. Should stay at 7.
             LogMark markAfterFlush = readLogMark(ledgerDirMark);
