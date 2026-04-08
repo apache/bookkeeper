@@ -909,7 +909,7 @@ public class DbLedgerStorageTest {
      * (5 &lt; lastPersistedMark 7), so lastMark stays at 7 and the restart succeeds.
      */
     @Test
-    public void testConcurrentCheckpointCompleteJournalMissing() throws Exception {
+    public void testNestedCheckpointCompleteLastMarkRegression() throws Exception {
         File baseDir = new File(tmpDir, "journalMissingTest");
         File ledgerDir = new File(baseDir, "ledger");
         File journalBaseDir = new File(baseDir, "journal");
@@ -947,17 +947,17 @@ public class DbLedgerStorageTest {
 
             // Step 1: SyncThread takes checkpoint at mark(5, 100) before calling ledgerStorage.flush()
             journal.getLastLogMark().getCurMark().setLogMark(5, 100);
-            CheckpointSource.Checkpoint cpFlush = checkpointSource.newCheckpoint();
+            CheckpointSource.Checkpoint outerCheckpoint = checkpointSource.newCheckpoint();
 
             // Step 2: Inside ledgerStorage.flush() → SingleDirectoryDbLedgerStorage.flush()
             // takes a newer checkpoint at mark(7, 200)
             journal.getLastLogMark().getCurMark().setLogMark(7, 200);
-            CheckpointSource.Checkpoint cpSync = checkpointSource.newCheckpoint();
+            CheckpointSource.Checkpoint innerCheckpoint = checkpointSource.newCheckpoint();
 
             // Step 3: SingleDirectoryDbLedgerStorage.flush() completes its checkpoint FIRST
             // checkpointComplete(mark=7, compact=true)
             // rollLog to 7, garbage collects journals with id < 7 (deletes 3,4,5,6)
-            checkpointSource.checkpointComplete(cpSync, true);
+            checkpointSource.checkpointComplete(innerCheckpoint, true);
 
             LogMark markAfterSync = readLogMark(ledgerDirMark);
             assertEquals("lastMark should be at 7 after inner flush", 7, markAfterSync.getLogFileId());
@@ -978,7 +978,7 @@ public class DbLedgerStorageTest {
             // the regression is caused by rollLog overwriting the lastMark file backwards.
             // WITHOUT FIX: rollLog overwrites lastMark to 5, but journal 5 is already deleted!
             // WITH FIX: mark 5 < lastPersistedMark 7, so this is skipped entirely.
-            checkpointSource.checkpointComplete(cpFlush, false);
+            checkpointSource.checkpointComplete(outerCheckpoint, false);
 
             // Verify: lastMark must NOT regress to 5. Should stay at 7.
             LogMark markAfterFlush = readLogMark(ledgerDirMark);
@@ -986,7 +986,9 @@ public class DbLedgerStorageTest {
                     7, markAfterFlush.getLogFileId());
             assertEquals(200, markAfterFlush.getLogFileOffset());
 
-            // Step 7: Simulate bookie restart — read lastMark and check journal exists
+            // Step 5: Simulate bookie restart — reset curMark to (0,0) first so readLog()
+            // actually loads from disk rather than being a no-op due to the in-memory value.
+            journal.getLastLogMark().getCurMark().setLogMark(0, 0);
             journal.getLastLogMark().readLog();
             LogMark restartMark = journal.getLastLogMark().getCurMark();
             assertEquals("Reloaded lastMark should be 7", 7, restartMark.getLogFileId());
