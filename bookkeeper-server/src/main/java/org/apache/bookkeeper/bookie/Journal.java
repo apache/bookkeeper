@@ -624,9 +624,11 @@ public class Journal implements CheckpointSource {
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
     // Guards checkpointComplete to ensure lastMark only advances forward.
-    // Without this, concurrent checkpointComplete calls from SyncThread and
-    // SingleDirectoryDbLedgerStorage.flush() can overwrite lastMark backwards,
-    // causing journal files to be deleted while still referenced by the older mark.
+    // When singleLedgerDirs=true, SyncThread.flush() takes a checkpoint, then calls
+    // ledgerStorage.flush() → SingleDirectoryDbLedgerStorage.flush(), which internally
+    // takes a NEWER checkpoint and completes it (with garbage collection). When control
+    // returns, SyncThread completes its own OLDER checkpoint, overwriting lastMark backwards
+    // to a journal file already deleted by the inner garbage collection.
     private final Object checkpointLock = new Object();
     private final LogMark lastPersistedMark = new LogMark(0, 0);
 
@@ -773,10 +775,9 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
-     * <p>Multiple threads (SyncThread and DbLedgerStorage flush) may call this concurrently.
-     * A monotonic check ensures the lastMark file only advances forward — a later call with
-     * an older mark is safely skipped. This prevents the race where a slower flush overwrites
-     * lastMark backwards, causing referenced journal files to be garbage collected prematurely.
+     * <p>If the given checkpoint is not newer than the last persisted mark, the call is
+     * a no-op. This monotonic guarantee prevents lastMark from regressing backwards.
+     * See the comment on {@code checkpointLock} for the full scenario.
      *
      * @throws IOException
      */
@@ -788,9 +789,11 @@ public class Journal implements CheckpointSource {
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
 
-        // Monotonic check: only advance lastMark forward, never backwards.
+        // Monotonic check: skip if this mark is not newer than what was already persisted.
+        // This prevents lastMark regression from nested checkpointComplete calls
+        // (see class-level comment on checkpointLock for the full scenario).
         synchronized (checkpointLock) {
-            if (mark.getCurMark().compare(lastPersistedMark) <= 0) {
+            if (mark.getCurMark().compare(lastPersistedMark) < 0) {
                 return;
             }
             lastPersistedMark.setLogMark(
