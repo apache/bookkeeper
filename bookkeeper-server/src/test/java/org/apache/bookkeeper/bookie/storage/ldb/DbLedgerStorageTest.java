@@ -884,26 +884,29 @@ public class DbLedgerStorageTest {
     }
 
     /**
-     * Simulates the full journal-missing scenario caused by concurrent checkpointComplete
-     * calls in single-dir mode and verifies the monotonic fix prevents it.
+     * Simulates the journal-missing scenario caused by lastMark regression in single-dir
+     * mode (singleLedgerDirs=true) and verifies the monotonic fix prevents it.
      *
-     * <p>Timeline of the original bug:
+     * <p>The trigger is a single-thread nested call within SyncThread.flush():
      * <pre>
-     * 1. SDLS.flush() starts: newCheckpoint → mark(5, 0), begins flushing data
-     * 2. SyncThread starts:   newCheckpoint → mark(7, 0), waits for flushMutex
-     * 3. SDLS.flush() completes flushing, releases flushMutex
-     * 4. SyncThread acquires flushMutex, finds writeCache empty, returns
-     * 5. SyncThread calls checkpointComplete(mark=7, compact=true) FIRST
-     *    → rollLog(7), GC deletes journal files 3,4,5,6 (all with id < 7)
-     * 6. SDLS.flush() calls checkpointComplete(mark=5, compact=true) SECOND
-     *    → rollLog(5) — OVERWRITES lastMark backwards from 7 to 5!
-     *    → journal file 5 was already deleted in step 5
-     * 7. Bookie restarts: reads lastMark=5, looks for journal file 5 → MISSING!
-     *    → throws "Recovery log 5 is missing"
+     * SyncThread.flush():
+     *   1. outerCheckpoint = newCheckpoint()          → captures mark(5, 100)
+     *   2. ledgerStorage.flush()                      → delegates to SingleDirectoryDbLedgerStorage.flush():
+     *      2a. innerCheckpoint = newCheckpoint()      → captures mark(7, 200), journal has advanced
+     *      2b. checkpoint(innerCheckpoint)            → flushes data to disk
+     *      2c. checkpointComplete(innerCheckpoint=7, compact=true)
+     *          → rollLog(7), garbage collects journal files 3,4,5,6 (id < 7)
+     *   3. checkpointComplete(outerCheckpoint=5, compact=false)
+     *      → rollLog(5) — OVERWRITES lastMark backwards from 7 to 5!
+     *      → journal file 5 was already deleted in step 2c
+     *   4. Bookie restarts: reads lastMark=5, looks for journal 5 → MISSING!
+     *      → throws "Recovery log 5 is missing"
      * </pre>
      *
-     * <p>With the monotonic fix, step 6 is skipped (mark 5 <= lastPersistedMark 7),
-     * so lastMark stays at 7 and the restart succeeds.
+     * <p>This test simulates the core regression: a newer checkpoint is completed first
+     * (with garbage collection), then an older checkpoint attempts to overwrite lastMark
+     * backwards. With the monotonic fix, the older mark is skipped
+     * (5 &lt; lastPersistedMark 7), so lastMark stays at 7 and the restart succeeds.
      */
     @Test
     public void testConcurrentCheckpointCompleteJournalMissing() throws Exception {
@@ -917,7 +920,7 @@ public class DbLedgerStorageTest {
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         conf.setLedgerDirNames(new String[] { ledgerDir.getCanonicalPath() });
         conf.setJournalDirName(journalBaseDir.getCanonicalPath());
-        // Set maxBackupJournals to 0 so GC aggressively deletes all old journals
+        // Set maxBackupJournals to 0 so garbage collection aggressively deletes all old journals
         conf.setMaxBackupJournals(0);
 
         BookieImpl bookie = new TestBookieImpl(conf);
@@ -940,38 +943,42 @@ public class DbLedgerStorageTest {
 
             CheckpointSource checkpointSource = new CheckpointSourceList(bookie.getJournals());
 
-            // === Simulate the race ===
+            // === Simulate the lastMark regression ===
 
-            // Step 1: SDLS.flush() captures checkpoint at mark(5, 100)
+            // Step 1: SyncThread takes checkpoint at mark(5, 100) before calling ledgerStorage.flush()
             journal.getLastLogMark().getCurMark().setLogMark(5, 100);
             CheckpointSource.Checkpoint cpFlush = checkpointSource.newCheckpoint();
 
-            // Step 2: SyncThread captures checkpoint at mark(7, 200) — newer position
+            // Step 2: Inside ledgerStorage.flush() → SingleDirectoryDbLedgerStorage.flush()
+            // takes a newer checkpoint at mark(7, 200)
             journal.getLastLogMark().getCurMark().setLogMark(7, 200);
             CheckpointSource.Checkpoint cpSync = checkpointSource.newCheckpoint();
 
-            // Step 5: SyncThread completes FIRST — checkpointComplete(mark=7, compact=true)
-            // This should: rollLog to 7, GC journals with id < 7 (deletes 3,4,5,6)
+            // Step 3: SingleDirectoryDbLedgerStorage.flush() completes its checkpoint FIRST
+            // checkpointComplete(mark=7, compact=true)
+            // rollLog to 7, garbage collects journals with id < 7 (deletes 3,4,5,6)
             checkpointSource.checkpointComplete(cpSync, true);
 
             LogMark markAfterSync = readLogMark(ledgerDirMark);
-            assertEquals("lastMark should be at 7 after SyncThread", 7, markAfterSync.getLogFileId());
+            assertEquals("lastMark should be at 7 after inner flush", 7, markAfterSync.getLogFileId());
             assertEquals(200, markAfterSync.getLogFileOffset());
 
-            // Verify journals 3,4,5,6 were GC'd, 7,8 still exist
+            // Verify journals 3,4,5,6 were garbage collected, 7,8 still exist
             for (long id = 3; id <= 6; id++) {
                 File journalFile = new File(journalDir, Long.toHexString(id) + ".txn");
-                assertFalse("Journal " + id + " should have been GC'd", journalFile.exists());
+                assertFalse("Journal " + id + " should have been garbage collected", journalFile.exists());
             }
             for (long id = 7; id <= 8; id++) {
                 File journalFile = new File(journalDir, Long.toHexString(id) + ".txn");
                 assertTrue("Journal " + id + " should still exist", journalFile.exists());
             }
 
-            // Step 6: SDLS.flush() completes SECOND — checkpointComplete(mark=5, compact=true)
-            // WITHOUT FIX: rollLog would overwrite lastMark to 5, but journal 5 is already deleted!
-            // WITH FIX: mark 5 <= lastPersistedMark 7, so this is skipped entirely.
-            checkpointSource.checkpointComplete(cpFlush, true);
+            // Step 4: Control returns to SyncThread, which completes its OLDER checkpoint
+            // checkpointComplete(mark=5, compact=false). The compact value does not matter here —
+            // the regression is caused by rollLog overwriting the lastMark file backwards.
+            // WITHOUT FIX: rollLog overwrites lastMark to 5, but journal 5 is already deleted!
+            // WITH FIX: mark 5 < lastPersistedMark 7, so this is skipped entirely.
+            checkpointSource.checkpointComplete(cpFlush, false);
 
             // Verify: lastMark must NOT regress to 5. Should stay at 7.
             LogMark markAfterFlush = readLogMark(ledgerDirMark);
