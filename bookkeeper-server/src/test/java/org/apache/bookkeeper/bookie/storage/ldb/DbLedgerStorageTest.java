@@ -53,8 +53,8 @@ import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LogMark;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
-import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
+import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -76,12 +76,12 @@ public class DbLedgerStorageTest {
     protected ServerConfiguration conf;
 
     protected static class TrackingDbLedgerStorage extends DbLedgerStorage {
-        static final AtomicInteger readEntryCalls = new AtomicInteger();
-        static final AtomicInteger readEntryIfFitsCalls = new AtomicInteger();
+        static final AtomicInteger READ_ENTRY_CALLS = new AtomicInteger();
+        static final AtomicInteger READ_ENTRY_IF_FITS_CALLS = new AtomicInteger();
 
         static void resetReadTracking() {
-            readEntryCalls.set(0);
-            readEntryIfFitsCalls.set(0);
+            READ_ENTRY_CALLS.set(0);
+            READ_ENTRY_IF_FITS_CALLS.set(0);
         }
 
         @Override
@@ -133,14 +133,14 @@ public class DbLedgerStorageTest {
 
         @Override
         public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation) throws IOException, NoEntryException {
-            TrackingDbLedgerStorage.readEntryCalls.incrementAndGet();
+            TrackingDbLedgerStorage.READ_ENTRY_CALLS.incrementAndGet();
             return delegate.readEntry(ledgerId, entryId, entryLocation);
         }
 
         @Override
         public ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
                 throws IOException, NoEntryException {
-            TrackingDbLedgerStorage.readEntryIfFitsCalls.incrementAndGet();
+            TrackingDbLedgerStorage.READ_ENTRY_IF_FITS_CALLS.incrementAndGet();
             return delegate.readEntryIfFits(ledgerId, entryId, entryLocation, maxEntrySize);
         }
 
@@ -424,8 +424,8 @@ public class DbLedgerStorageTest {
         ByteBuf result = storage.getEntryIfFits(4L, 12L, entry.readableBytes() + Integer.BYTES - 1L);
         try {
             assertNull(result);
-            assertEquals(0, TrackingDbLedgerStorage.readEntryCalls.get());
-            assertEquals(1, TrackingDbLedgerStorage.readEntryIfFitsCalls.get());
+            assertEquals(0, TrackingDbLedgerStorage.READ_ENTRY_CALLS.get());
+            assertEquals(1, TrackingDbLedgerStorage.READ_ENTRY_IF_FITS_CALLS.get());
         } finally {
             ReferenceCountUtil.release(result);
             ReferenceCountUtil.release(entry);
@@ -450,8 +450,8 @@ public class DbLedgerStorageTest {
         ByteBuf result = storage.getEntryIfFits(4L, 11L, entry.readableBytes() + Integer.BYTES - 1L);
         try {
             assertNull(result);
-            assertEquals(0, TrackingDbLedgerStorage.readEntryCalls.get());
-            assertEquals(0, TrackingDbLedgerStorage.readEntryIfFitsCalls.get());
+            assertEquals(0, TrackingDbLedgerStorage.READ_ENTRY_CALLS.get());
+            assertEquals(0, TrackingDbLedgerStorage.READ_ENTRY_IF_FITS_CALLS.get());
         } finally {
             ReferenceCountUtil.release(result);
             ReferenceCountUtil.release(entry);
