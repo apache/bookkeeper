@@ -145,6 +145,21 @@ public interface LedgerStorage {
     ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException;
 
     /**
+     * Read an entry from storage only if its serialized size, including the
+     * 4-byte per-entry framing delimiter, is less than or equal to maxEntrySize.
+     *
+     * <p>Returns {@code null} when the entry exists but does not fit the supplied budget.
+     */
+    default ByteBuf getEntryIfFits(long ledgerId, long entryId, long maxEntrySize) throws IOException, BookieException {
+        ByteBuf entry = getEntry(ledgerId, entryId);
+        if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
+            entry.release();
+            return null;
+        }
+        return entry;
+    }
+
+    /**
      * Get last add confirmed.
      *
      * @param ledgerId ledger id.

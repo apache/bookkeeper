@@ -46,16 +46,18 @@ public class DbLedgerStorageWithDirectEntryLoggerTest extends DbLedgerStorageTes
         int gcWaitTime = 1000;
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
-        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerStorageClass(getLedgerStorageClass().getName());
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setProperty("dbStorage_directIOEntryLogger", true);
         BookieImpl bookie = new TestBookieImpl(conf);
 
         ledgerDirsManager = bookie.getLedgerDirsManager();
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
+        TrackingDbLedgerStorage.resetReadTracking();
 
         storage.getLedgerStorageList().forEach(singleDirectoryDbLedgerStorage -> {
-            assertTrue(singleDirectoryDbLedgerStorage.getEntryLogger() instanceof DirectEntryLogger);
+            assertTrue(unwrapTrackingEntryLogger(singleDirectoryDbLedgerStorage.getEntryLogger())
+                    instanceof DirectEntryLogger);
         });
     }
 }

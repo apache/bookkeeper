@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,8 +36,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -49,7 +52,9 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LogMark;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
+import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -70,6 +75,134 @@ public class DbLedgerStorageTest {
     protected LedgerDirsManager ledgerDirsManager;
     protected ServerConfiguration conf;
 
+    protected static class TrackingDbLedgerStorage extends DbLedgerStorage {
+        static final AtomicInteger readEntryCalls = new AtomicInteger();
+        static final AtomicInteger readEntryIfFitsCalls = new AtomicInteger();
+
+        static void resetReadTracking() {
+            readEntryCalls.set(0);
+            readEntryIfFitsCalls.set(0);
+        }
+
+        @Override
+        protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
+                org.apache.bookkeeper.meta.LedgerManager ledgerManager,
+                LedgerDirsManager ledgerDirsManager,
+                LedgerDirsManager indexDirsManager,
+                EntryLogger entryLogger,
+                org.apache.bookkeeper.stats.StatsLogger statsLogger,
+                long writeCacheSize,
+                long readCacheSize,
+                int readAheadCacheBatchSize,
+                long readAheadCacheBatchBytesSize) throws IOException {
+            return new SingleDirectoryDbLedgerStorage(
+                    conf,
+                    ledgerManager,
+                    ledgerDirsManager,
+                    indexDirsManager,
+                    new TrackingEntryLogger(entryLogger),
+                    statsLogger,
+                    allocator,
+                    writeCacheSize,
+                    readCacheSize,
+                    readAheadCacheBatchSize,
+                    readAheadCacheBatchBytesSize);
+        }
+    }
+
+    protected static class TrackingEntryLogger implements EntryLogger {
+        private final EntryLogger delegate;
+
+        TrackingEntryLogger(EntryLogger delegate) {
+            this.delegate = delegate;
+        }
+
+        EntryLogger getDelegate() {
+            return delegate;
+        }
+
+        @Override
+        public long addEntry(long ledgerId, ByteBuf buf) throws IOException {
+            return delegate.addEntry(ledgerId, buf);
+        }
+
+        @Override
+        public ByteBuf readEntry(long entryLocation) throws IOException, NoEntryException {
+            return delegate.readEntry(entryLocation);
+        }
+
+        @Override
+        public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation) throws IOException, NoEntryException {
+            TrackingDbLedgerStorage.readEntryCalls.incrementAndGet();
+            return delegate.readEntry(ledgerId, entryId, entryLocation);
+        }
+
+        @Override
+        public ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
+                throws IOException, NoEntryException {
+            TrackingDbLedgerStorage.readEntryIfFitsCalls.incrementAndGet();
+            return delegate.readEntryIfFits(ledgerId, entryId, entryLocation, maxEntrySize);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        @Override
+        public CompactionEntryLog newCompactionLog(long logToCompact) throws IOException {
+            return delegate.newCompactionLog(logToCompact);
+        }
+
+        @Override
+        public Collection<CompactionEntryLog> incompleteCompactionLogs() {
+            return delegate.incompleteCompactionLogs();
+        }
+
+        @Override
+        public Collection<Long> getFlushedLogIds() {
+            return delegate.getFlushedLogIds();
+        }
+
+        @Override
+        public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
+            delegate.scanEntryLog(entryLogId, scanner);
+        }
+
+        @Override
+        public org.apache.bookkeeper.bookie.EntryLogMetadata getEntryLogMetadata(
+                long entryLogId,
+                org.apache.bookkeeper.bookie.AbstractLogCompactor.Throttler throttler) throws IOException {
+            return delegate.getEntryLogMetadata(entryLogId, throttler);
+        }
+
+        @Override
+        public boolean logExists(long logId) {
+            return delegate.logExists(logId);
+        }
+
+        @Override
+        public boolean removeEntryLog(long entryLogId) {
+            return delegate.removeEntryLog(entryLogId);
+        }
+    }
+
+    protected Class<? extends DbLedgerStorage> getLedgerStorageClass() {
+        return TrackingDbLedgerStorage.class;
+    }
+
+    protected EntryLogger unwrapTrackingEntryLogger(EntryLogger entryLogger) {
+        if (entryLogger instanceof TrackingEntryLogger) {
+            return ((TrackingEntryLogger) entryLogger).getDelegate();
+        }
+        return entryLogger;
+    }
+
     @Before
     public void setup() throws Exception {
         tmpDir = File.createTempFile("bkTest", ".dir");
@@ -81,15 +214,17 @@ public class DbLedgerStorageTest {
         int gcWaitTime = 1000;
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
-        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerStorageClass(getLedgerStorageClass().getName());
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         BookieImpl bookie = new TestBookieImpl(conf);
 
         ledgerDirsManager = bookie.getLedgerDirsManager();
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
+        TrackingDbLedgerStorage.resetReadTracking();
 
         storage.getLedgerStorageList().forEach(singleDirectoryDbLedgerStorage -> {
-            assertTrue(singleDirectoryDbLedgerStorage.getEntryLogger() instanceof DefaultEntryLogger);
+            assertTrue(unwrapTrackingEntryLogger(singleDirectoryDbLedgerStorage.getEntryLogger())
+                    instanceof DefaultEntryLogger);
         });
     }
 
@@ -253,6 +388,74 @@ public class DbLedgerStorageTest {
         System.out.println("res:       " + ByteBufUtil.hexDump(res));
         System.out.println("newEntry3: " + ByteBufUtil.hexDump(newEntry3));
         assertEquals(newEntry3, res);
+    }
+
+    @Test
+    public void testGetEntryIfFitsReturnsNullFromWriteCache() throws Exception {
+        storage.setMasterKey(4L, "key".getBytes());
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writeLong(4L);
+        entry.writeLong(10L);
+        entry.writeLong(9L);
+        entry.writeBytes("cache-entry".getBytes());
+        storage.addEntry(entry.retainedDuplicate());
+
+        ByteBuf result = storage.getEntryIfFits(4L, 10L, entry.readableBytes() + Integer.BYTES - 1L);
+        try {
+            assertNull(result);
+        } finally {
+            ReferenceCountUtil.release(result);
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    @Test
+    public void testGetEntryIfFitsUsesBoundedReadFromEntryLog() throws Exception {
+        storage.setMasterKey(4L, "key".getBytes());
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writeLong(4L);
+        entry.writeLong(12L);
+        entry.writeLong(11L);
+        entry.writeBytes("entry-log-entry".getBytes());
+        storage.addEntry(entry.retainedDuplicate());
+        storage.flush();
+
+        TrackingDbLedgerStorage.resetReadTracking();
+        ByteBuf result = storage.getEntryIfFits(4L, 12L, entry.readableBytes() + Integer.BYTES - 1L);
+        try {
+            assertNull(result);
+            assertEquals(0, TrackingDbLedgerStorage.readEntryCalls.get());
+            assertEquals(1, TrackingDbLedgerStorage.readEntryIfFitsCalls.get());
+        } finally {
+            ReferenceCountUtil.release(result);
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    @Test
+    public void testGetEntryIfFitsReturnsNullFromReadCache() throws Exception {
+        storage.setMasterKey(4L, "key".getBytes());
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writeLong(4L);
+        entry.writeLong(11L);
+        entry.writeLong(10L);
+        entry.writeBytes("read-cache-entry".getBytes());
+        storage.addEntry(entry.retainedDuplicate());
+        storage.flush();
+
+        ByteBuf warm = storage.getEntry(4L, 11L);
+        warm.release();
+
+        TrackingDbLedgerStorage.resetReadTracking();
+        ByteBuf result = storage.getEntryIfFits(4L, 11L, entry.readableBytes() + Integer.BYTES - 1L);
+        try {
+            assertNull(result);
+            assertEquals(0, TrackingDbLedgerStorage.readEntryCalls.get());
+            assertEquals(0, TrackingDbLedgerStorage.readEntryIfFitsCalls.get());
+        } finally {
+            ReferenceCountUtil.release(result);
+            ReferenceCountUtil.release(entry);
+        }
     }
 
     @Test

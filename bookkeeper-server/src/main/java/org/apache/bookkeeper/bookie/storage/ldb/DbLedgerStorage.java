@@ -426,6 +426,11 @@ public class DbLedgerStorage implements LedgerStorage {
         return getLedgerStorage(ledgerId).getEntryLocationIndex().getLocation(ledgerId, entryId);
     }
 
+    @Override
+    public ByteBuf getEntryIfFits(long ledgerId, long entryId, long maxEntrySize) throws IOException, BookieException {
+        return getLedgerStorage(ledgerId).getEntryIfFits(ledgerId, entryId, maxEntrySize);
+    }
+
     private SingleDirectoryDbLedgerStorage getLedgerStorage(long ledgerId) {
         return ledgerStorageList.get(MathUtils.signSafeMod(ledgerId, numberOfDirs));
     }

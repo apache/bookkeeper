@@ -836,6 +836,41 @@ public class DefaultEntryLogger implements EntryLogger {
         return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
     }
 
+    @Override
+    public ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
+            throws IOException, Bookie.NoEntryException {
+        long entryLogId = logIdForOffset(entryLocation);
+        long pos = posForOffset(entryLocation);
+
+        BufferedReadChannel fc = null;
+        int entrySize;
+        try {
+            fc = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+
+            ByteBuf sizeBuff = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
+            entrySize = sizeBuff.getInt(0);
+            validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);
+        } catch (EntryLookupException e) {
+            throw new IOException("Bad entry read from log file id: " + entryLogId, e);
+        }
+
+        if (entrySize + Integer.BYTES > maxEntrySize) {
+            return null;
+        }
+
+        ByteBuf data = allocator.buffer(entrySize, entrySize);
+        int rc = readFromLogChannel(entryLogId, fc, data, pos);
+        if (rc != entrySize) {
+            ReferenceCountUtil.release(data);
+            throw new IOException("Bad entry read from log file id: " + entryLogId,
+                    new EntryLookupException("Short read for " + ledgerId + "@"
+                                              + entryId + " in " + entryLogId + "@"
+                                              + pos + "(" + rc + "!=" + entrySize + ")"));
+        }
+        data.writerIndex(entrySize);
+        return data;
+    }
+
 
     private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
             throws IOException, Bookie.NoEntryException {

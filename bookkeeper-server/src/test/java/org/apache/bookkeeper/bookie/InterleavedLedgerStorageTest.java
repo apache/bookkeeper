@@ -24,6 +24,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
@@ -31,6 +33,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +49,7 @@ import java.util.stream.IntStream;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -110,6 +114,8 @@ public class InterleavedLedgerStorageTest {
                         long pos);
         }
         volatile CheckEntryListener testPoint;
+        volatile int readEntryCalls;
+        volatile int readEntryIfFitsCalls;
 
         public TestableDefaultEntryLogger(
                 ServerConfiguration conf,
@@ -123,6 +129,11 @@ public class InterleavedLedgerStorageTest {
             this.testPoint = testPoint;
         }
 
+        void resetReadTracking() {
+            readEntryCalls = 0;
+            readEntryIfFitsCalls = 0;
+        }
+
         @Override
         void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
             CheckEntryListener runBefore = testPoint;
@@ -130,6 +141,20 @@ public class InterleavedLedgerStorageTest {
                 runBefore.accept(ledgerId, entryId, logIdForOffset(location), posForOffset(location));
             }
             super.checkEntry(ledgerId, entryId, location);
+        }
+
+        @Override
+        public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
+                throws IOException, Bookie.NoEntryException {
+            readEntryCalls++;
+            return super.readEntry(ledgerId, entryId, entryLocation);
+        }
+
+        @Override
+        public ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
+                throws IOException, Bookie.NoEntryException {
+            readEntryIfFitsCalls++;
+            return super.readEntryIfFits(ledgerId, entryId, entryLocation, maxEntrySize);
         }
     }
 
@@ -241,6 +266,66 @@ public class InterleavedLedgerStorageTest {
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
                 return arrayList.get(i) == (i * entriesPerWrite);
             }));
+        }
+    }
+
+    @Test
+    public void testGetEntryIfFitsUsesBoundedLoggerRead() throws Exception {
+        long ledgerId = 0L;
+        long entryId = 0L;
+        long exactFitSize = Long.BYTES * 2 + "entry-0".getBytes(StandardCharsets.UTF_8).length + Integer.BYTES;
+
+        entryLogger.resetReadTracking();
+        ByteBuf oversized = interleavedStorage.getEntryIfFits(ledgerId, entryId, exactFitSize - 1);
+        assertNull(oversized);
+        assertEquals(0, entryLogger.readEntryCalls);
+        assertEquals(1, entryLogger.readEntryIfFitsCalls);
+
+        entryLogger.resetReadTracking();
+        ByteBuf exactFit = interleavedStorage.getEntryIfFits(ledgerId, entryId, exactFitSize);
+        try {
+            assertNotNull(exactFit);
+            assertEquals(ledgerId, exactFit.getLong(0));
+            assertEquals(entryId, exactFit.getLong(Long.BYTES));
+            assertEquals("entry-0", exactFit.toString(Long.BYTES * 2,
+                    exactFit.readableBytes() - (Long.BYTES * 2), StandardCharsets.UTF_8));
+            assertEquals(0, entryLogger.readEntryCalls);
+            assertEquals(1, entryLogger.readEntryIfFitsCalls);
+        } finally {
+            if (exactFit != null) {
+                exactFit.release();
+            }
+        }
+    }
+
+    @Test
+    public void testGetEntryIfFitsHonorsBudgetForLastAddConfirmed() throws Exception {
+        long ledgerId = 0L;
+        ByteBuf lastEntry = interleavedStorage.getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+        long exactFitSize = lastEntry.readableBytes() + Integer.BYTES;
+        long lastEntryId = lastEntry.getLong(Long.BYTES);
+        lastEntry.release();
+
+        entryLogger.resetReadTracking();
+        ByteBuf oversized = interleavedStorage.getEntryIfFits(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                exactFitSize - 1);
+        assertNull(oversized);
+        assertEquals(0, entryLogger.readEntryCalls);
+        assertEquals(1, entryLogger.readEntryIfFitsCalls);
+
+        entryLogger.resetReadTracking();
+        ByteBuf exactFit = interleavedStorage.getEntryIfFits(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                exactFitSize);
+        try {
+            assertNotNull(exactFit);
+            assertEquals(ledgerId, exactFit.getLong(0));
+            assertEquals(lastEntryId, exactFit.getLong(Long.BYTES));
+            assertEquals(0, entryLogger.readEntryCalls);
+            assertEquals(1, entryLogger.readEntryIfFitsCalls);
+        } finally {
+            if (exactFit != null) {
+                exactFit.release();
+            }
         }
     }
 

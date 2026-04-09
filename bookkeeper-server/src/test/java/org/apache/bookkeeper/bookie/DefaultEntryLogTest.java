@@ -392,6 +392,26 @@ public class DefaultEntryLogTest {
     }
 
     @Test
+    public void testReadEntryIfFitsHonorsFramingBudget() throws Exception {
+        long ledgerId = 1L;
+        long entryId = 1L;
+        ByteBuf entry = makeEntry(ledgerId, entryId, 128);
+        long location = entryLogger.addEntry(ledgerId, entry.slice());
+        entryLogger.flush();
+
+        assertNull(entryLogger.readEntryIfFits(ledgerId, entryId, location, entry.readableBytes() + 3));
+
+        ByteBuf actual = entryLogger.readEntryIfFits(ledgerId, entryId, location, entry.readableBytes() + 4);
+        try {
+            assertNotNull(actual);
+            assertEntryEquals(actual, entry);
+        } finally {
+            ReferenceCountUtil.release(actual);
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    @Test
     public void testLedgersMapIsEmpty() throws Exception {
         // create some entries
         entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());

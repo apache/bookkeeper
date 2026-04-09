@@ -162,7 +162,7 @@ class DirectReader implements LogReader {
     }
 
     @Override
-    public ByteBuf readEntryAt(int offset) throws IOException, EOFException {
+    public int readEntrySizeAt(int offset) throws IOException, EOFException {
         assertValidEntryOffset(offset);
         int sizeOffset = offset - Integer.BYTES;
         if (sizeOffset < 0) {
@@ -188,6 +188,12 @@ class DirectReader implements LogReader {
                                   .kv("maxSaneEntrySize", maxSaneEntrySize)
                                   .kv("readEntrySize", entrySize).toString());
         }
+        return entrySize;
+    }
+
+    @Override
+    public ByteBuf readEntryAt(int offset) throws IOException, EOFException {
+        int entrySize = readEntrySizeAt(offset);
         return readBufferAt(offset, entrySize);
     }
 

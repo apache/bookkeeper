@@ -68,6 +68,22 @@ public interface EntryLogger extends AutoCloseable {
             throws IOException, NoEntryException;
 
     /**
+     * Read an entry only if its serialized size, including the 4-byte per-entry
+     * framing delimiter, is less than or equal to maxEntrySize.
+     *
+     * <p>Returns {@code null} when the entry exists but does not fit the supplied budget.
+     */
+    default ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
+            throws IOException, NoEntryException {
+        ByteBuf entry = readEntry(ledgerId, entryId, entryLocation);
+        if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
+            entry.release();
+            return null;
+        }
+        return entry;
+    }
+
+    /**
      * Flush any outstanding writes to disk.
      */
     void flush() throws IOException;

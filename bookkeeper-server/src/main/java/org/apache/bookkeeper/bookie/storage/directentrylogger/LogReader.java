@@ -64,6 +64,12 @@ public interface LogReader extends AutoCloseable {
     long readLongAt(long offset) throws IOException, EOFException;
 
     /**
+     * Read the size of an entry at a given offset.
+     * The size is stored at {@code offset - Integer.BYTES}.
+     */
+    int readEntrySizeAt(int offset) throws IOException, EOFException;
+
+    /**
      * Read an entry at a given offset.
      * The size of the entry must be at (offset - Integer.BYTES).
      * The payload of the entry starts at offset.
