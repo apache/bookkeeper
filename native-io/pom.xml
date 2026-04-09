@@ -36,6 +36,7 @@
     <rust.zig.target.amd64.gnu>x86_64-unknown-linux-gnu</rust.zig.target.amd64.gnu>
     <rust.zig.target.arm64.gnu>aarch64-unknown-linux-gnu</rust.zig.target.arm64.gnu>
     <rust.lib.dir>${project.build.directory}/classes/lib</rust.lib.dir>
+    <native.io.pure.rust>false</native.io.pure.rust>
   </properties>
 
   <dependencies>
@@ -87,7 +88,10 @@
       -->
       <id>cargo-zigbuild</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>native.io.pure.rust</name>
+          <value>!true</value>
+        </property>
       </activation>
       <build>
         <plugins>
@@ -129,7 +133,6 @@
           </plugin>
           <plugin>
             <artifactId>maven-antrun-plugin</artifactId>
-            <version>3.1.0</version>
             <executions>
               <execution>
                 <id>copy-zig-libs</id>
@@ -144,6 +147,67 @@
                           failonerror="true" verbose="true"/>
                     <copy file="${rust.target.dir}/${rust.zig.target.arm64.gnu}/${rust.release.lib.relative.path}"
                           tofile="${rust.lib.dir}/linux-aarch64-gnu/libnative-io.so"
+                          failonerror="true" verbose="true"/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <!--
+        Opt-in local build that uses plain cargo for the current Linux host.
+        Enable with: mvn -pl native-io -Dnative.io.pure.rust=true test
+      -->
+      <id>pure-rust-build</id>
+      <activation>
+        <property>
+          <name>native.io.pure.rust</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>build-and-copy-pure-rust-lib</id>
+                <phase>process-classes</phase>
+                <goals><goal>run</goal></goals>
+                <configuration>
+                  <target>
+                    <fail message="Pure Rust native-io builds are supported on Linux hosts only.">
+                      <condition>
+                        <not>
+                          <equals arg1="${os.detected.name}" arg2="linux"/>
+                        </not>
+                      </condition>
+                    </fail>
+                    <condition property="rust.current.jar.directory" value="linux-x86_64-gnu">
+                      <or>
+                        <equals arg1="${os.detected.arch}" arg2="x86_64"/>
+                        <equals arg1="${os.detected.arch}" arg2="amd64"/>
+                      </or>
+                    </condition>
+                    <condition property="rust.current.jar.directory" value="linux-aarch64-gnu">
+                      <or>
+                        <equals arg1="${os.detected.arch}" arg2="aarch64"/>
+                        <equals arg1="${os.detected.arch}" arg2="arm64"/>
+                        <equals arg1="${os.detected.arch}" arg2="aarch_64"/>
+                      </or>
+                    </condition>
+                    <fail unless="rust.current.jar.directory"
+                          message="Pure Rust native-io builds are supported on Linux amd64/aarch64 hosts only."/>
+                    <mkdir dir="${rust.lib.dir}/${rust.current.jar.directory}"/>
+                    <exec executable="${rust.executable}" dir="${rust.dir}" failonerror="true">
+                      <arg value="build"/>
+                      <arg value="--release"/>
+                    </exec>
+                    <copy file="${rust.target.dir}/${rust.release.lib.relative.path}"
+                          tofile="${rust.lib.dir}/${rust.current.jar.directory}/libnative-io.so"
                           failonerror="true" verbose="true"/>
                   </target>
                 </configuration>
