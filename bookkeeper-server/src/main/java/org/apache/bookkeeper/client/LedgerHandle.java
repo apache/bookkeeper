@@ -948,30 +948,56 @@ public class LedgerHandle implements WriteHandle {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} when batch read", ledgerId, startEntry);
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
+
+        long lastEntry = startEntry + maxCount - 1;
         if (notSupportBatchRead()) {
-            long lastEntry = startEntry + maxCount - 1;
             return readUnconfirmedAsync(startEntry, lastEntry);
+        }
+        if (clientCtx.isClientClosed()) {
+            return FutureUtils.exception(BKException.create(ClientClosedException));
         }
 
         CompletableFuture<LedgerEntries> future = new CompletableFuture<>();
-        if (!clientCtx.isClientClosed()) {
-            batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
-                    .whenCompleteAsync((entries, t) -> {
-                        if (t != null) {
-                            if (t instanceof BKException) {
-                                BKException bke = (BKException) t;
-                                future.completeExceptionally(bke);
-                            } else {
-                                future.completeExceptionally(BKException.create(Code.UnexpectedConditionException));
-                            }
-                        } else {
-                            future.complete(entries);
-                        }
-                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
-        } else {
-            future.completeExceptionally(BKException.create(ClientClosedException));
-        }
+        batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
+                .whenCompleteAsync((entries, error) -> completeBatchReadUnconfirmed(
+                        startEntry, lastEntry, entries, error, future),
+                        clientCtx.getMainWorkerPool().chooseThread(ledgerId));
         return future;
+    }
+
+    private void completeBatchReadUnconfirmed(long startEntry,
+                                              long lastEntry,
+                                              LedgerEntries entries,
+                                              Throwable error,
+                                              CompletableFuture<LedgerEntries> future) {
+        if (error == null) {
+            future.complete(entries);
+            return;
+        }
+
+        if (error instanceof BKException.BKBookieHandleNotAvailableException) {
+            notSupportBatch = true;
+            readUnconfirmedAsync(startEntry, lastEntry)
+                    .whenComplete((fallbackEntries, fallbackError) ->
+                            completeBatchReadUnconfirmedResult(fallbackEntries, fallbackError, future));
+            return;
+        }
+
+        completeBatchReadUnconfirmedResult(null, error, future);
+    }
+
+    private void completeBatchReadUnconfirmedResult(LedgerEntries entries,
+                                                    Throwable error,
+                                                    CompletableFuture<LedgerEntries> future) {
+        if (error == null) {
+            future.complete(entries);
+            return;
+        }
+        if (error instanceof BKException) {
+            future.completeExceptionally(error);
+            return;
+        }
+        future.completeExceptionally(BKException.create(Code.UnexpectedConditionException));
     }
 
     private boolean notSupportBatchRead() {

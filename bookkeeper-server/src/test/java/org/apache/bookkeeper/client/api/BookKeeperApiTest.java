@@ -32,6 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
@@ -39,13 +44,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKDuplicateEntryIdException;
+import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchEntryException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.LoggerOutput;
 import org.junit.Rule;
 import org.junit.jupiter.api.Test;
@@ -70,6 +80,59 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             LedgerEntry entry = iterator.next();
             assertArrayEquals(data, entry.getEntryBytes());
         }
+    }
+
+    private long createLedgerWithEntries(int numEntries) throws Exception {
+        try (WriteHandle writer = result(newCreateLedgerOp()
+                .withAckQuorumSize(2)
+                .withWriteQuorumSize(2)
+                .withEnsembleSize(2)
+                .withPassword(password)
+                .execute())) {
+            long ledgerId = writer.getId();
+            for (int i = 0; i < numEntries; i++) {
+                writer.append(ByteBuffer.wrap(data));
+            }
+            return ledgerId;
+        }
+    }
+
+    private ReadHandle openReadHandle(long ledgerId) throws Exception {
+        return result(newOpenLedgerOp()
+                .withPassword(password)
+                .withRecovery(false)
+                .withLedgerId(ledgerId)
+                .execute());
+    }
+
+    private void failBatchReadRequests(int rc) {
+        doAnswer(invocation -> {
+            BookkeeperInternalCallbacks.BatchedReadEntryCallback callback = invocation.getArgument(5);
+            long ledgerId = invocation.getArgument(1);
+            long startEntryId = invocation.getArgument(2);
+            Object ctx = invocation.getArgument(6);
+            callback.readEntriesComplete(rc, ledgerId, startEntryId, null, ctx);
+            return null;
+        }).when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt());
+        doAnswer(invocation -> {
+            BookkeeperInternalCallbacks.BatchedReadEntryCallback callback = invocation.getArgument(5);
+            long ledgerId = invocation.getArgument(1);
+            long startEntryId = invocation.getArgument(2);
+            Object ctx = invocation.getArgument(6);
+            callback.readEntriesComplete(rc, ledgerId, startEntryId, null, ctx);
+            return null;
+        }).when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt(), any());
+        doAnswer(invocation -> {
+            BookkeeperInternalCallbacks.BatchedReadEntryCallback callback = invocation.getArgument(5);
+            long ledgerId = invocation.getArgument(1);
+            long startEntryId = invocation.getArgument(2);
+            Object ctx = invocation.getArgument(6);
+            callback.readEntriesComplete(rc, ledgerId, startEntryId, null, ctx);
+            return null;
+        }).when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt(), any(), anyBoolean());
     }
 
     @Test
@@ -431,29 +494,12 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     @Test
     public void testBatchedReadUnconfirmedAsync() throws Exception {
-        long lId;
-        try (WriteHandle writer = newCreateLedgerOp()
-                .withAckQuorumSize(2)
-                .withWriteQuorumSize(2)
-                .withEnsembleSize(2)
-                .withPassword(password)
-                .execute().get()) {
-            lId = writer.getId();
-            // write data and populate LastAddConfirmed
-            writer.append(ByteBuffer.wrap(data));
-            writer.append(ByteBuffer.wrap(data));
-            writer.append(ByteBuffer.wrap(data));
-        }
-
-        try (ReadHandle reader = newOpenLedgerOp()
-                .withPassword(password)
-                .withRecovery(false)
-                .withLedgerId(lId)
-                .execute().get()) {
+        long lId = createLedgerWithEntries(3);
+        try (ReadHandle reader = openReadHandle(lId)) {
             long lac = reader.getLastAddConfirmed();
             assertEquals(2, lac);
 
-            try (LedgerEntries entries = reader.batchReadUnconfirmedAsync(0, 5, 5 * 1024 * 1024).get()) {
+            try (LedgerEntries entries = result(reader.batchReadUnconfirmedAsync(0, 5, 5 * 1024 * 1024))) {
                 AtomicLong i = new AtomicLong(0);
                 for (LedgerEntry e : entries) {
                     assertEquals(i.getAndIncrement(), e.getEntryId());
@@ -465,6 +511,69 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                     assertArrayEquals(data, e.getEntryBytes());
                 });
             }
+        }
+    }
+
+    @Test
+    public void testBatchedReadUnconfirmedAsyncRejectsInvalidArguments() throws Exception {
+        long lId = createLedgerWithEntries(3);
+        try (ReadHandle reader = openReadHandle(lId)) {
+            assertThrows(BKIncorrectParameterException.class,
+                    () -> result(reader.batchReadUnconfirmedAsync(-1, 1, 1024)));
+            assertThrows(BKIncorrectParameterException.class,
+                    () -> result(reader.batchReadUnconfirmedAsync(0, -1, 1024)));
+            assertThrows(BKIncorrectParameterException.class,
+                    () -> result(reader.batchReadUnconfirmedAsync(0, 1, -1)));
+        }
+    }
+
+    @Test
+    public void testBatchedReadUnconfirmedAsyncPropagatesNoSuchEntryException() throws Exception {
+        long lId = createLedgerWithEntries(3);
+        try (ReadHandle reader = openReadHandle(lId)) {
+            assertThrows(BKNoSuchEntryException.class,
+                    () -> result(reader.batchReadUnconfirmedAsync(5, 1, 1024)));
+        }
+    }
+
+    @Test
+    public void testBatchedReadUnconfirmedAsyncFailsIfClientClosed() throws Exception {
+        long lId = createLedgerWithEntries(3);
+        try (ReadHandle reader = openReadHandle(lId)) {
+            closeBookkeeper();
+            assertThrows(BKClientClosedException.class,
+                    () -> result(reader.batchReadUnconfirmedAsync(0, 1, 1024)));
+        }
+    }
+
+    @Test
+    public void testBatchedReadUnconfirmedAsyncFallsBackWhenBatchReadIsUnsupported() throws Exception {
+        long lId = createLedgerWithEntries(3);
+        failBatchReadRequests(BKException.Code.BookieHandleNotAvailableException);
+
+        try (ReadHandle reader = openReadHandle(lId);
+             LedgerEntries entries = result(reader.batchReadUnconfirmedAsync(0, 3, 5 * 1024 * 1024))) {
+            AtomicLong i = new AtomicLong(0);
+            for (LedgerEntry e : entries) {
+                assertEquals(i.getAndIncrement(), e.getEntryId());
+                assertArrayEquals(data, e.getEntryBytes());
+            }
+            assertEquals(3, i.get());
+        }
+    }
+
+    @Test
+    public void testBatchedReadUnconfirmedAsyncTreatsZeroMaxCountAsUnlimited() throws Exception {
+        long lId = createLedgerWithEntries(3);
+
+        try (ReadHandle reader = openReadHandle(lId);
+             LedgerEntries entries = result(reader.batchReadUnconfirmedAsync(0, 0, 5 * 1024 * 1024))) {
+            AtomicLong i = new AtomicLong(0);
+            for (LedgerEntry e : entries) {
+                assertEquals(i.getAndIncrement(), e.getEntryId());
+                assertArrayEquals(data, e.getEntryBytes());
+            }
+            assertEquals(3, i.get());
         }
     }
 

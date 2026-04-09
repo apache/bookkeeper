@@ -40,8 +40,8 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -569,8 +569,8 @@ public abstract class MockBookKeeperTestCase {
                     LOG.error("Initialize macManager fail", gse);
                 }
 
-                Map<Long, MockEntry> mockEntries = new HashMap<>();
-                for (long entryId = startEntryId; entryId < startEntryId + maxCount; entryId++) {
+                Map<Long, MockEntry> mockEntries = new LinkedHashMap<>();
+                for (long entryId = startEntryId; maxCount <= 0 || entryId < startEntryId + maxCount; entryId++) {
                     MockEntry mockEntry;
                     try {
                         mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
@@ -581,10 +581,8 @@ public abstract class MockBookKeeperTestCase {
                     } catch (BKException bke) {
                         LOG.info("batchReadEntryAndFenceLedger - occur BKException {}@{} at {}", entryId, ledgerId,
                                 bookieSocketAddress);
-                        if (mockEntries.isEmpty()) {
-                            break;
-                        }
                         callback.readEntriesComplete(bke.getCode(), ledgerId, startEntryId, null, ctx);
+                        return;
                     }
 
                 }
@@ -606,8 +604,10 @@ public abstract class MockBookKeeperTestCase {
                             mockEntry.lastAddConfirmed, mockEntry.payload.length,
                             Unpooled.wrappedBuffer(mockEntry.payload), new byte[20], 0);
                         ByteBuf entryData = MockBookieClient.copyData(entry);
+                        entry.release();
                         totalBytes += entryData.readableBytes();
                         if (totalBytes > maxSize) {
+                            entryData.release();
                             break;
                         }
                         bufList.add(entryData);
