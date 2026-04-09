@@ -22,6 +22,7 @@ package org.apache.bookkeeper.common.util.nativeio;
 
 import java.util.List;
 import org.apache.bookkeeper.common.util.nativelib.NativeUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 class NativeIOJni {
 
@@ -57,7 +58,7 @@ class NativeIOJni {
             List<String> candidates = NativeIOLibraryPath.currentPlatformLibraryCandidates();
             if (candidates.isEmpty()) {
                 throw new IllegalStateException("No native-io JNI library candidates found for platform "
-                        + System.getProperty("os.name") + "/" + System.getProperty("os.arch"));
+                        + SystemUtils.OS_NAME + "/" + SystemUtils.OS_ARCH);
             }
 
             boolean loaded = false;
@@ -74,7 +75,7 @@ class NativeIOJni {
 
             if (!loaded) {
                 throw new IllegalStateException("Failed to load any native-io JNI library candidate for platform "
-                        + System.getProperty("os.name") + "/" + System.getProperty("os.arch"), lastFailure);
+                        + SystemUtils.OS_NAME + "/" + SystemUtils.OS_ARCH, lastFailure);
             }
         }
     }
