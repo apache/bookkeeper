@@ -1234,6 +1234,9 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- zig -->
+            <exclude>**/.zig-cache/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

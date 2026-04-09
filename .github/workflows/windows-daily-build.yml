@@ -43,6 +43,17 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
       - name: Build with Maven
         run: mvn -B clean install
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure

@@ -82,6 +82,22 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        if: steps.check_changes.outputs.docs_only != 'true'
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        if: steps.check_changes.outputs.docs_only != 'true'
+        run: cargo install --locked cargo-zigbuild
+
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
@@ -160,6 +176,20 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -243,6 +273,20 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -341,6 +385,20 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
+
       - name: Restore released versions cache
         uses: actions/cache/restore@v4
         with:
@@ -437,6 +495,20 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
+
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
 
@@ -470,6 +542,20 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -513,6 +599,20 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
+          targets: >-
+            x86_64-unknown-linux-gnu,
+            aarch64-unknown-linux-gnu
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
 
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests

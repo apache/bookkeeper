@@ -20,8 +20,8 @@
  */
 package org.apache.bookkeeper.common.util.nativeio;
 
+import java.util.List;
 import org.apache.bookkeeper.common.util.nativelib.NativeUtils;
-import org.apache.commons.lang3.SystemUtils;
 
 class NativeIOJni {
 
@@ -50,16 +50,32 @@ class NativeIOJni {
     static native int close(int fd) throws NativeIOException;
 
     static {
-        try {
-            if (SystemUtils.IS_OS_MAC_OSX) {
-                NativeUtils.loadLibraryFromJar("/lib/libnative-io.jnilib");
-            } else if (SystemUtils.IS_OS_LINUX) {
-                NativeUtils.loadLibraryFromJar("/lib/libnative-io.so");
-            } else {
-                throw new RuntimeException("OS not supported by Native-IO utils");
+        String explicitPath = NativeIOLibraryPath.configuredLibraryPath();
+        if (explicitPath != null) {
+            System.load(explicitPath);
+        } else {
+            List<String> candidates = NativeIOLibraryPath.currentPlatformLibraryCandidates();
+            if (candidates.isEmpty()) {
+                throw new IllegalStateException("No native-io JNI library candidates found for platform "
+                        + System.getProperty("os.name") + "/" + System.getProperty("os.arch"));
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+            boolean loaded = false;
+            Throwable lastFailure = null;
+            for (String candidate : candidates) {
+                try {
+                    NativeUtils.loadLibraryFromJar(candidate);
+                    loaded = true;
+                    break;
+                } catch (Exception | UnsatisfiedLinkError e) {
+                    lastFailure = e;
+                }
+            }
+
+            if (!loaded) {
+                throw new IllegalStateException("Failed to load any native-io JNI library candidate for platform "
+                        + System.getProperty("os.name") + "/" + System.getProperty("os.arch"), lastFailure);
+            }
         }
     }
 }
