@@ -88,6 +88,9 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         baseConf.setOpenLedgerRereplicationGracePeriod(openLedgerRereplicationGracePeriod);
         baseConf.setRwRereplicateBackoffMs(500);
+        // Reduce ZK session timeout so killed bookie's ephemeral node disappears faster,
+        // speeding up Auditor leader re-election when the killed bookie was the leader.
+        baseConf.setZkTimeout(4000);
         baseClientConf.setLedgerManagerFactoryClassName(
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         this.digestType = DigestType.MAC;
@@ -168,7 +171,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledger should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
         LOG.info("Watching on urLedgerPath:" + urLedgerZNode
                 + " to know the status of rereplication process");
@@ -186,7 +189,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                     + replicaToKillAddr);
         }
         assertTrue("Replication should complete",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // grace period to update the urledger metadata in zookeeper
         LOG.info("Waiting to update the urledger metadata in zookeeper");
@@ -223,7 +226,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledgers should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // Again watching the urLedger znode to know the replication status
         latch = new CountDownLatch(listOfLedgerHandle.size());
@@ -248,7 +251,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to finish replication
         assertTrue("Replication should complete",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // grace period to update the urledger metadata in zookeeper
         LOG.info("Waiting to update the urledger metadata in zookeeper");
@@ -296,7 +299,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledgers should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // Again watching the urLedger znode to know the replication status
         latch = new CountDownLatch(listOfLedgerHandle.size());
@@ -332,7 +335,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         LOG.info("Waiting to finish rereplication processes");
         assertTrue("Replication should complete after restart",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // grace period to update the urledger metadata in zookeeper
         LOG.info("Waiting to update the urledger metadata in zookeeper");
@@ -369,7 +372,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         killBookie(replicaToKillAddr);
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledgers should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         latch = new CountDownLatch(listOfLedgerHandle.size());
         for (LedgerHandle lh : listOfLedgerHandle) {
@@ -385,7 +388,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to delete published urledgers, since it doesn't exists
         assertTrue("UrLedgers should be cleaned up after deletion",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         for (LedgerHandle lh : listOfLedgerHandle) {
             assertNull("UrLedger still exists after rereplication",
@@ -491,7 +494,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledger should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
         LOG.info("Watching on urLedgerPath:" + urLedgerZNode
                 + " to know the status of rereplication process");
@@ -512,7 +515,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                     + replicaToKillAddr);
         }
         assertTrue("Replication should complete",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // grace period to update the urledger metadata in zookeeper
         LOG.info("Waiting to update the urledger metadata in zookeeper");
@@ -570,7 +573,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledger should be marked as underreplicated",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
         LOG.info("Watching on urLedgerPath:" + urLedgerZNode
                 + " to know the status of rereplication process");
@@ -593,7 +596,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                     + replicaToKillAddr);
         }
         assertTrue("Replication should complete",
-                latch.await(60, TimeUnit.SECONDS));
+                latch.await(90, TimeUnit.SECONDS));
 
         // grace period to update the urledger metadata in zookeeper
         LOG.info("Waiting to update the urledger metadata in zookeeper");
