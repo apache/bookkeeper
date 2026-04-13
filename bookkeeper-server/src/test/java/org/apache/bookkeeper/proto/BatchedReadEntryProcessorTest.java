@@ -21,6 +21,7 @@ package org.apache.bookkeeper.proto;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -302,6 +303,80 @@ public class BatchedReadEntryProcessorTest {
         verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
         verify(bookie, times(1)).readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), eq(exactRemainingBudget));
         verify(bookie, times(1)).readEntry(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testReadDataStopsOnMissingSubsequentEntry() throws Exception {
+        long ledgerId = 1237L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new Bookie.NoEntryException(ledgerId, firstEntryId + 1));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+    }
+
+    @Test
+    public void testReadDataPropagatesIOExceptionAfterFirstEntryAndReleasesAccumulatedData() throws Exception {
+        long ledgerId = 1238L;
+        long firstEntryId = 1L;
+
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        try {
+            processor.readData();
+            fail("Should propagate the storage failure");
+        } catch (IOException expected) {
+            assertEquals(0, firstEntry.refCnt());
+        }
+    }
+
+    @Test
+    public void testProcessPacketReturnsIoErrorWhenSubsequentBoundedReadFails() throws Exception {
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = 1239L;
+        long firstEntryId = 1L;
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        processor.run();
+
+        latch.await();
+        assertTrue(writtenObject.get() instanceof Response);
+        BookieProtocol.BatchedReadResponse response = (BookieProtocol.BatchedReadResponse) writtenObject.get();
+        try {
+            assertEquals(BookieProtocol.EIO, response.getErrorCode());
+            assertEquals(0, response.getData().size());
+            assertEquals(0, firstEntry.refCnt());
+        } finally {
+            response.release();
+        }
     }
 
     private BatchedReadEntryProcessor createProcessor(long ledgerId, long entryId, int maxCount, long maxSize) {

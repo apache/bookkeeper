@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.ReferenceCounted;
 import java.util.concurrent.ExecutorService;
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.proto.BookieProtocol.BatchedReadRequest;
 import org.apache.bookkeeper.util.ByteBufList;
 
@@ -76,11 +77,16 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
                     frameSize += entry.readableBytes() + 4;
                     data.add(entry);
                 }
-            } catch (Throwable e) {
+            } catch (Bookie.NoEntryException e) {
                 if (data == null) {
                     throw e;
                 }
                 break;
+            } catch (Throwable e) {
+                if (data != null) {
+                    data.release();
+                }
+                throw e;
             }
         }
         return data;
