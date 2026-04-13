@@ -55,6 +55,7 @@ import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -222,6 +223,10 @@ public class DirectEntryLogger implements EntryLogger {
 
         try {
             int entrySize = reader.readEntrySizeAt(pos);
+            if (entrySize + Integer.BYTES > maxEntrySize) {
+                stats.getReadEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+                return null;
+            }
             long thisLedgerId = reader.readLongAt(pos);
             long thisEntryId = reader.readLongAt(pos + Long.BYTES);
             if (thisLedgerId != ledgerId || thisEntryId != entryId) {
@@ -231,16 +236,11 @@ public class DirectEntryLogger implements EntryLogger {
                         .kv("foundLedger", thisLedgerId).kv("foundEntry", thisEntryId)
                         .toString());
             }
-            if (entrySize + Integer.BYTES > maxEntrySize) {
-                stats.getReadEntryStats().registerSuccessfulEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                return null;
-            }
-
             ByteBuf buf = reader.readBufferAt(pos, entrySize);
-            stats.getReadEntryStats().registerSuccessfulEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+            stats.getReadEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
             return buf;
         } catch (EOFException eof) {
-            stats.getReadEntryStats().registerFailedEvent(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+            stats.getReadEntryStats().registerFailedEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
             throw new NoEntryException(
                     exMsg("Entry location doesn't exist").kv("location", entryLocation).toString(),
                     ledgerId, entryId);

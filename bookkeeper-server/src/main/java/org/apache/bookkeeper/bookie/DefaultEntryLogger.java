@@ -849,13 +849,12 @@ public class DefaultEntryLogger implements EntryLogger {
 
             ByteBuf sizeBuff = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
             entrySize = sizeBuff.getInt(0);
+            if (entrySize + Integer.BYTES > maxEntrySize) {
+                return null;
+            }
             validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);
         } catch (EntryLookupException e) {
             throw new IOException("Bad entry read from log file id: " + entryLogId, e);
-        }
-
-        if (entrySize + Integer.BYTES > maxEntrySize) {
-            return null;
         }
 
         ByteBuf data = allocator.buffer(entrySize, entrySize);
