@@ -35,3 +35,4 @@ runs:
 
     - name: Install cargo-zigbuild
       run: cargo install --locked cargo-zigbuild
+      shell: bash
