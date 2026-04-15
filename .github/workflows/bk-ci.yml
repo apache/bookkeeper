@@ -82,21 +82,9 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
+      - name: Setup native build
         if: steps.check_changes.outputs.docs_only != 'true'
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        if: steps.check_changes.outputs.docs_only != 'true'
-        run: cargo install --locked cargo-zigbuild
+        uses: ./.github/actions/setup-native-build
 
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -177,19 +165,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -274,19 +251,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -385,19 +351,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Restore released versions cache
         uses: actions/cache/restore@v4
@@ -495,19 +450,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -543,19 +487,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -600,19 +533,8 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
-        with:
-          # Cross-compilation targets: Linux amd64 and arm64 (glibc)
-          targets: >-
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu
-
-      - name: Set up Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests
