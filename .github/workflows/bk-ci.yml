@@ -83,7 +83,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -92,7 +92,7 @@ jobs:
 
       - name: Set up Zig
         if: steps.check_changes.outputs.docs_only != 'true'
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         if: steps.check_changes.outputs.docs_only != 'true'
@@ -178,7 +178,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -186,7 +186,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -275,7 +275,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -283,7 +283,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -386,7 +386,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -394,7 +394,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -496,7 +496,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -504,7 +504,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -544,7 +544,7 @@ jobs:
           java-version: 17
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -552,7 +552,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -601,7 +601,7 @@ jobs:
           java-version: ${{ matrix.jdk_version }}
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           # Cross-compilation targets: Linux amd64 and arm64 (glibc)
           targets: >-
@@ -609,7 +609,7 @@ jobs:
             aarch64-unknown-linux-gnu
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
