@@ -88,13 +88,13 @@ class DbLedgerStorageStats {
             help = "time spent reading entries from the locations index of the db ledger storage engine",
             parent = READ_ENTRY
     )
-    private final Counter readFromLocationIndexTime;
+    private final OpStatsLogger readFromLocationIndexTime;
     @StatsDoc(
             name = READ_ENTRYLOG_TIME,
             help = "time spent reading entries from the entry log files of the db ledger storage engine",
             parent = READ_ENTRY
     )
-    private final Counter readFromEntryLogTime;
+    private final OpStatsLogger readFromEntryLogTime;
     @StatsDoc(
             name = WRITE_CACHE_HITS,
             help = "number of write cache hits (on reads)",
@@ -133,7 +133,7 @@ class DbLedgerStorageStats {
             name = READAHEAD_TIME,
             help = "Time spent on readahead operations"
     )
-    private final Counter readAheadTime;
+    private final OpStatsLogger readAheadTime;
     @StatsDoc(
         name = FLUSH,
         help = "operation stats of flushing write cache to entry log files"
@@ -203,15 +203,15 @@ class DbLedgerStorageStats {
                          Supplier<Long> readCacheCountSupplier) {
         addEntryStats = stats.getThreadScopedOpStatsLogger(ADD_ENTRY);
         readEntryStats = stats.getThreadScopedOpStatsLogger(READ_ENTRY);
-        readFromLocationIndexTime = stats.getThreadScopedCounter(READ_ENTRY_LOCATIONS_INDEX_TIME);
-        readFromEntryLogTime = stats.getThreadScopedCounter(READ_ENTRYLOG_TIME);
+        readFromLocationIndexTime = stats.getThreadScopedOpStatsLogger(READ_ENTRY_LOCATIONS_INDEX_TIME);
+        readFromEntryLogTime = stats.getThreadScopedOpStatsLogger(READ_ENTRYLOG_TIME);
         readCacheHitCounter = stats.getCounter(READ_CACHE_HITS);
         readCacheMissCounter = stats.getCounter(READ_CACHE_MISSES);
         writeCacheHitCounter = stats.getCounter(WRITE_CACHE_HITS);
         writeCacheMissCounter = stats.getCounter(WRITE_CACHE_MISSES);
         readAheadBatchCountStats = stats.getOpStatsLogger(READAHEAD_BATCH_COUNT);
         readAheadBatchSizeStats = stats.getOpStatsLogger(READAHEAD_BATCH_SIZE);
-        readAheadTime = stats.getThreadScopedCounter(READAHEAD_TIME);
+        readAheadTime = stats.getOpStatsLogger(READAHEAD_TIME);
         flushStats = stats.getOpStatsLogger(FLUSH);
         flushEntryLogStats = stats.getOpStatsLogger(FLUSH_ENTRYLOG);
         flushLocationIndexStats = stats.getOpStatsLogger(FLUSH_LOCATIONS_INDEX);

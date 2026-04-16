@@ -76,8 +76,12 @@ class HandleFactoryImpl implements HandleFactory, LedgerDeletionListener {
         LedgerDescriptor handle = readOnlyLedgers.get(ledgerId);
 
         if (handle == null) {
-            handle = LedgerDescriptor.createReadOnly(ledgerId, ledgerStorage);
-            readOnlyLedgers.putIfAbsent(ledgerId, handle);
+            synchronized (this) {
+                if ((handle = readOnlyLedgers.get(ledgerId)) == null) {
+                    handle = LedgerDescriptor.createReadOnly(ledgerId, ledgerStorage);
+                    readOnlyLedgers.putIfAbsent(ledgerId, handle);
+                }
+            }
         }
 
         return handle;
