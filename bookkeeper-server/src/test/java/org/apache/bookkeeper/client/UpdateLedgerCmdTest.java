@@ -55,6 +55,9 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         super(3);
         useUUIDasBookieId = false;
         baseConf.setGcWaitTime(100000);
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
 
     /**

@@ -56,6 +56,9 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     public UpdateCookieCmdTest() {
         super(0);
         useUUIDasBookieId = false;
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
 
     @Override

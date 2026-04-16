@@ -139,6 +139,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
     public BookieInitializationTest() {
         super(0);
+        // disable advertised address since it takes precedence over setUseHostNameAsBookieID setting
+        // which is used in this test
+        baseConf.setAdvertisedAddress(null);
     }
 
     @Override
