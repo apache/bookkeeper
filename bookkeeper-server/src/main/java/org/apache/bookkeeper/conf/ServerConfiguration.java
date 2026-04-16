@@ -156,6 +156,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_PAGECACHE_FLUSH_INTERVAL_MSEC = "journalPageCacheFlushIntervalMSec";
     protected static final String JOURNAL_CHANNEL_PROVIDER = "journalChannelProvider";
     protected static final String JOURNAL_REUSE_FILES = "journalReuseFiles";
+    protected static final String JOURNAL_HASH_BASED_SELECTION = "journalHashBasedSelection";
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
@@ -2338,6 +2339,40 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setJournalWriteData(boolean journalWriteData) {
         setProperty(JOURNAL_WRITE_DATA, journalWriteData);
+        return this;
+    }
+
+    /**
+     * Whether to use hash-based journal selection for ledgers.
+     *
+     * <p>When enabled, ledger IDs are hashed using Fibonacci hashing before
+     * selecting a journal. In some deployments (e.g., sharded setups), patterns
+     * in ledger IDs can cause uneven distribution across journals. This setting
+     * breaks those patterns.
+     *
+     * <p>WARNING: This setting is not backwards compatible. Changing this
+     * setting on an existing bookie will cause ledgers to be mapped to
+     * different journals than before, which can cause issues during recovery.
+     * Only enable this on new clusters or after careful migration planning.
+     *
+     * <p>Default is false for backwards compatibility.
+     *
+     * @return whether hash-based journal selection is enabled
+     */
+    public boolean getJournalHashBasedSelection() {
+        return getBoolean(JOURNAL_HASH_BASED_SELECTION, false);
+    }
+
+    /**
+     * Enable or disable hash-based journal selection for ledgers.
+     *
+     * <p>See {@link #getJournalHashBasedSelection()} for details.
+     *
+     * @param enabled whether to enable hash-based journal selection
+     * @return server configuration object
+     */
+    public ServerConfiguration setJournalHashBasedSelection(boolean enabled) {
+        setProperty(JOURNAL_HASH_BASED_SELECTION, enabled);
         return this;
     }
 

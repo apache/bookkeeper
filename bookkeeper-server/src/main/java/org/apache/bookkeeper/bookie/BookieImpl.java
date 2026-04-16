@@ -127,6 +127,7 @@ public class BookieImpl implements Bookie {
     private final ByteBufAllocator allocator;
 
     private final boolean writeDataToJournal;
+    private final boolean journalHashBasedSelection;
 
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
@@ -406,6 +407,7 @@ public class BookieImpl implements Bookie {
         this.ledgerDirsManager = ledgerDirsManager;
         this.indexDirsManager = indexDirsManager;
         this.writeDataToJournal = conf.getJournalWriteData();
+        this.journalHashBasedSelection = conf.getJournalHashBasedSelection();
         this.allocator = allocator;
         this.registrationManager = registrationManager;
         stateManager = initializeStateManager();
@@ -940,8 +942,43 @@ public class BookieImpl implements Bookie {
         return handles.getHandle(ledgerId, masterKey, false);
     }
 
+    /**
+     * Constant for Fibonacci hashing. Multiplying by this constant adds randomness, breaking
+     * patterns in ledger IDs that would otherwise cause uneven journal distribution.
+     *
+     * <p>This is the same constant used as {@code GOLDEN_GAMMA} in
+     * {@link java.util.concurrent.ThreadLocalRandom} and {@link java.util.SplittableRandom}
+     * for seed mixing.
+     */
+    private static final long FIBONACCI_HASH_CONSTANT = 0x9E3779B97F4A7C15L;
+
+    /**
+     * Computes the journal index for a given ledger ID.
+     *
+     * <p>When hash-based selection is enabled, uses Fibonacci hashing to distribute ledgers
+     * across journals. The xor with the right-shifted value folds the high 32 bits into
+     * the low 32 bits, adding more mixing prior to the modulo.
+     *
+     * @param ledgerId the ledger ID
+     * @param numJournals the number of journals
+     * @param hashBasedSelection whether to use hash-based selection
+     * @return the journal index (0 to numJournals-1)
+     */
+    @VisibleForTesting
+    static int computeJournalIndex(long ledgerId, int numJournals, boolean hashBasedSelection) {
+        long index = ledgerId;
+        if (hashBasedSelection) {
+            index = ledgerId * FIBONACCI_HASH_CONSTANT;
+            index ^= index >>> 32;
+        }
+        return MathUtils.signSafeMod(index, numJournals);
+    }
+
+    /**
+     * Returns the journal to use for the given ledger.
+     */
     private Journal getJournal(long ledgerId) {
-        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
+        return journals.get(computeJournalIndex(ledgerId, journals.size(), journalHashBasedSelection));
     }
 
     @VisibleForTesting
