@@ -889,7 +889,7 @@ class ReadAheadEntryReader implements
         if (segment.isPartiallyTruncated()
                 && segment.getMinActiveDLSN().compareTo(fromDLSN) > 0) {
             if (conf.getAlertWhenPositioningOnTruncated()) {
-                alertStatsLogger.raise("Trying to position reader on {} when {} is marked partially truncated",
+                alertStatsLogger.raise("Trying to position reader on %s when %s is marked partially truncated",
                     fromDLSN, segment);
             }
             if (!conf.getIgnoreTruncationStatus()) {

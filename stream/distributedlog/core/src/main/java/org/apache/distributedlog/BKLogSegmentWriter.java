@@ -1120,7 +1120,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 FailpointUtils.checkFailPoint(FailpointUtils.FailPointName.FP_TransmitFailGetBuffer);
             } catch (IOException e) {
                 if (e instanceof InvalidEnvelopedEntryException) {
-                    alertStatsLogger.raise("Invalid enveloped entry for segment {} : ", fullyQualifiedLogSegment, e);
+                    alertStatsLogger.raise("Invalid enveloped entry for segment %s : %s", fullyQualifiedLogSegment, e);
                 }
                 LOG.error("Exception while enveloping entries for segment: {}",
                           new Object[] {fullyQualifiedLogSegment}, e);
@@ -1128,7 +1128,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 // no future writes go through and violate ordering guarantees.
                 transmitResultUpdater.set(this, BKException.Code.WriteException);
                 if (e instanceof InvalidEnvelopedEntryException) {
-                    alertStatsLogger.raise("Invalid enveloped entry for segment {} : ", fullyQualifiedLogSegment, e);
+                    alertStatsLogger.raise("Invalid enveloped entry for segment %s : %s", fullyQualifiedLogSegment, e);
                     throw (InvalidEnvelopedEntryException) e;
                 } else {
                     throw new WriteException(streamName, "Envelope Error");
