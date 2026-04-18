@@ -18,11 +18,12 @@
 package org.apache.bookkeeper.util;
 
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SelectStrategy;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUring;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.channel.uring.IoUring;
+import io.netty.channel.uring.IoUringIoHandler;
 import java.util.concurrent.ThreadFactory;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -65,9 +66,9 @@ public class EventLoopUtil {
         // By default, io_uring will not be enabled, even if available. The environment variable will be used:
         // enable.io_uring=1
         if (StringUtils.equalsAnyIgnoreCase(enableIoUring, "1", "true")) {
-            // Throw exception if IOUring cannot be used
-            IOUring.ensureAvailability();
-            return new IOUringEventLoopGroup(numThreads, threadFactory);
+            // Throw exception if io_uring cannot be used
+            IoUring.ensureAvailability();
+            return new MultiThreadIoEventLoopGroup(numThreads, threadFactory, IoUringIoHandler.newFactory());
         } else {
             try {
                 if (!enableBusyWait) {
@@ -98,5 +99,10 @@ public class EventLoopUtil {
                 return new NioEventLoopGroup(numThreads, threadFactory);
             }
         }
+    }
+
+    public static boolean isIoUringGroup(EventLoopGroup group) {
+        return group instanceof MultiThreadIoEventLoopGroup
+                && ((MultiThreadIoEventLoopGroup) group).isIoType(IoUringIoHandler.class);
     }
 }
