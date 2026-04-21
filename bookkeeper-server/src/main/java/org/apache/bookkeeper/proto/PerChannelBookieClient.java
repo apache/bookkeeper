@@ -46,15 +46,14 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.channel.unix.Errors.NativeIoException;
+import io.netty.channel.uring.IoUringChannelOption;
+import io.netty.channel.uring.IoUringSocketChannel;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.incubator.channel.uring.IOUringChannelOption;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCounted;
@@ -128,6 +127,7 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
@@ -532,10 +532,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // Set up the ClientBootStrap so we can create a new Channel connection to the bookie.
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup);
-        if (eventLoopGroup instanceof IOUringEventLoopGroup) {
-            bootstrap.channel(IOUringSocketChannel.class);
+        if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+            bootstrap.channel(IoUringSocketChannel.class);
             try {
-                bootstrap.option(IOUringChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
+                bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
             } catch (NoSuchElementException e) {
                 // Property not set, so keeping default value.
             }

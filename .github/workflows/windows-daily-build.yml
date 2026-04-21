@@ -43,6 +43,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
       - name: Build with Maven
         run: mvn -B clean install
       - name: Aggregates all test reports to ./test-reports and ./surefire-reports directories If failure

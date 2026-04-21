@@ -73,6 +73,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
       - name: Build
         run: mvn -q -T 1C -B -nsu clean install -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Drat.skip -Dmaven.javadoc.skip
       - name: Pick ubuntu mirror for the docker image build
@@ -83,5 +85,3 @@ jobs:
         run: ./stream/clients/python/docker/build-local-image.sh
       - name: Test
         run: ./stream/clients/python/scripts/docker_integration_tests.sh
-
-

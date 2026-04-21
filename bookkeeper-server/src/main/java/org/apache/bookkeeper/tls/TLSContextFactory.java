@@ -541,12 +541,17 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             log.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
         }
 
-        if (type == NodeType.Client && ((ClientConfiguration) config).getHostnameVerificationEnabled()) {
+        if (type == NodeType.Client) {
+            // Netty 4.2 enables HTTPS endpoint identification by default on the client side. Honor the
+            // BookKeeper configuration by explicitly setting the algorithm (or clearing it when disabled).
             SSLParameters sslParameters = sslHandler.engine().getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            boolean hostnameVerificationEnabled =
+                    ((ClientConfiguration) config).getHostnameVerificationEnabled();
+            sslParameters.setEndpointIdentificationAlgorithm(hostnameVerificationEnabled ? "HTTPS" : null);
             sslHandler.engine().setSSLParameters(sslParameters);
             if (log.isDebugEnabled()) {
-                log.debug("Enabled endpointIdentificationAlgorithm: HTTPS");
+                log.debug("endpointIdentificationAlgorithm: {}",
+                        hostnameVerificationEnabled ? "HTTPS" : "disabled");
             }
         }
 

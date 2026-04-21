@@ -180,8 +180,7 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.130.Final</netty.version>
-    <netty-iouring.version>0.0.26.Final</netty-iouring.version>
+    <netty.version>4.2.12.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
@@ -425,28 +424,6 @@
         <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-x86_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-aarch_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-classes-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
       </dependency>
 
       <!-- grpc dependencies -->
@@ -1234,6 +1211,9 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- zig -->
+            <exclude>**/.zig-cache/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

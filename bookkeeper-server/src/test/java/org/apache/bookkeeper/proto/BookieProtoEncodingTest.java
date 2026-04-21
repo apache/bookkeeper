@@ -138,13 +138,18 @@ public class BookieProtoEncodingTest {
         RequestEnDeCoderPreV3 v2ReqEncoder = new RequestEnDeCoderPreV3(registry);
         BookieProtocol.BatchedReadRequest req = BookieProtocol.BatchedReadRequest.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 1L, 1L, FLAG_NONE, null, 1L, 10, 1024L);
+        // Capture expected values before encode() recycles the request.
+        long expectedLedgerId = req.ledgerId;
+        long expectedEntryId = req.entryId;
+        long expectedMaxSize = req.maxSize;
+        int expectedMaxCount = req.maxCount;
         ByteBuf buf = (ByteBuf) v2ReqEncoder.encode(req, UnpooledByteBufAllocator.DEFAULT);
         buf.readInt(); // Skip the frame size.
         BookieProtocol.BatchedReadRequest reqDecoded = (BookieProtocol.BatchedReadRequest) v2ReqEncoder.decode(buf);
-        assertEquals(req.ledgerId, reqDecoded.ledgerId);
-        assertEquals(req.entryId, reqDecoded.entryId);
-        assertEquals(req.maxSize, reqDecoded.maxSize);
-        assertEquals(req.maxCount, reqDecoded.maxCount);
+        assertEquals(expectedLedgerId, reqDecoded.ledgerId);
+        assertEquals(expectedEntryId, reqDecoded.entryId);
+        assertEquals(expectedMaxSize, reqDecoded.maxSize);
+        assertEquals(expectedMaxCount, reqDecoded.maxCount);
         reqDecoded.recycle();
     }
 
@@ -156,13 +161,18 @@ public class BookieProtoEncodingTest {
         ByteBufList data = ByteBufList.get(first, second);
         BookieProtocol.BatchedReadResponse res = new BookieProtocol.BatchedReadResponse(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, 1, 1L, 1L, 1L, data);
+        // Capture expected values before encode() releases the underlying data.
+        long expectedLedgerId = res.ledgerId;
+        long expectedEntryId = res.entryId;
+        int expectedDataSize = res.getData().size();
+        int expectedReadableBytes = res.getData().readableBytes();
         ByteBuf buf = (ByteBuf) v2ReqEncoder.encode(res, UnpooledByteBufAllocator.DEFAULT);
         buf.readInt(); // Skip the frame size.
         BookieProtocol.BatchedReadResponse resDecoded = (BookieProtocol.BatchedReadResponse) v2ReqEncoder.decode(buf);
-        assertEquals(res.ledgerId, resDecoded.ledgerId);
-        assertEquals(res.entryId, resDecoded.entryId);
-        assertEquals(res.getData().size(), resDecoded.getData().size());
-        assertEquals(res.getData().readableBytes(), resDecoded.getData().readableBytes());
+        assertEquals(expectedLedgerId, resDecoded.ledgerId);
+        assertEquals(expectedEntryId, resDecoded.entryId);
+        assertEquals(expectedDataSize, resDecoded.getData().size());
+        assertEquals(expectedReadableBytes, resDecoded.getData().readableBytes());
     }
 
 }
