@@ -18,12 +18,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.bookkeeper</groupId>
+    <groupId>com.ascentstream.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
     <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <groupId>org.apache.distributedlog</groupId>
+  <groupId>com.ascentstream.distributedlog</groupId>
   <artifactId>distributedlog-core-shaded</artifactId>
   <name>Apache BookKeeper :: Shaded :: distributedlog-core-shaded</name>
   <properties>
@@ -31,7 +31,7 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>com.ascentstream.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -75,14 +75,14 @@
                   <include>com.google.guava:guava</include>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>at.yawk.lz4:lz4-java</include>
-                  <include>org.apache.bookkeeper:bookkeeper-common</include>
-                  <include>org.apache.bookkeeper:bookkeeper-common-allocator</include>
-                  <include>org.apache.bookkeeper:native-library-common</include>
-                  <include>org.apache.bookkeeper:cpu-affinity</include>
-                  <include>org.apache.bookkeeper:bookkeeper-tools-framework</include>
-                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
-                  <include>org.apache.bookkeeper:bookkeeper-server</include>
-                  <include>org.apache.bookkeeper:circe-checksum</include>
+                  <include>com.ascentstream.bookkeeper:bookkeeper-common</include>
+                  <include>com.ascentstream.bookkeeper:bookkeeper-common-allocator</include>
+                  <include>com.ascentstream.bookkeeper:native-library-common</include>
+                  <include>com.ascentstream.bookkeeper:cpu-affinity</include>
+                  <include>com.ascentstream.bookkeeper:bookkeeper-tools-framework</include>
+                  <include>com.ascentstream.bookkeeper:bookkeeper-proto</include>
+                  <include>com.ascentstream.bookkeeper:bookkeeper-server</include>
+                  <include>com.ascentstream.bookkeeper:circe-checksum</include>
                   <include>org.apache.bookkeeper.http:http-server</include>
                   <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                   <include>org.apache.commons:commons-collections4</include>

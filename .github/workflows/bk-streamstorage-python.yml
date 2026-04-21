@@ -21,6 +21,7 @@ name: BookKeeper StreamStorage Python Client
 on:
   pull_request:
     branches:
+      - as-master
       - master
       - branch-*
     paths:

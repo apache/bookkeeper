@@ -23,6 +23,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
+      - as-master
       - master
       - branch-*
     paths:

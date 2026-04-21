@@ -105,11 +105,11 @@
       <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
       <excludes>
         <!-- All these dependencies are already included in stream-storage-java-client -->
-        <exclude>org.apache.bookkeeper:stream-storage-common</exclude>
-        <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
-        <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
-        <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
-        <exclude>org.apache.bookkeeper:stream-storage-java-kv-client</exclude>
+        <exclude>com.ascentstream.bookkeeper:stream-storage-common</exclude>
+        <exclude>com.ascentstream.bookkeeper:stream-storage-proto</exclude>
+        <exclude>com.ascentstream.bookkeeper:stream-storage-api</exclude>
+        <exclude>com.ascentstream.bookkeeper:stream-storage-java-client-base</exclude>
+        <exclude>com.ascentstream.bookkeeper:stream-storage-java-kv-client</exclude>
         <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
       </excludes>
     </dependencySet>

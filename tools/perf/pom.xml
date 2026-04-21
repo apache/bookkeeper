@@ -15,7 +15,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.bookkeeper</groupId>
+    <groupId>com.ascentstream.bookkeeper</groupId>
     <artifactId>bookkeeper-tools-parent</artifactId>
     <version>4.18.0-SNAPSHOT</version>
   </parent>
@@ -24,17 +24,17 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>bookkeeper-tools-framework</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>com.ascentstream.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>stream-storage-java-client</artifactId>
       <version>${project.version}</version>
     </dependency>

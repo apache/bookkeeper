@@ -27,7 +27,7 @@
   <name>Apache BookKeeper :: Tests :: distributedlog-core-shaded test</name>
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>com.ascentstream.distributedlog</groupId>
       <artifactId>distributedlog-core-shaded</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -37,7 +37,7 @@
            to verify protobuf and guava classes have been relocated -->
       <exclusions>
         <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
+          <groupId>com.ascentstream.bookkeeper</groupId>
           <artifactId>bookkeeper-server</artifactId>
         </exclusion>
         <exclusion>
@@ -45,23 +45,23 @@
           <artifactId>bookkeeper-http</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
+          <groupId>com.ascentstream.bookkeeper</groupId>
           <artifactId>circe-checksum</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
+          <groupId>com.ascentstream.bookkeeper</groupId>
           <artifactId>native-library-common</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.distributedlog</groupId>
+          <groupId>com.ascentstream.distributedlog</groupId>
           <artifactId>distributedlog-core</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.distributedlog</groupId>
+          <groupId>com.ascentstream.distributedlog</groupId>
           <artifactId>distributedlog-common</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.distributedlog</groupId>
+          <groupId>com.ascentstream.distributedlog</groupId>
           <artifactId>distributedlog-protocol</artifactId>
         </exclusion>
         <exclusion>

@@ -20,7 +20,7 @@
 
   <parent>
     <artifactId>stream-storage-parent</artifactId>
-    <groupId>org.apache.bookkeeper</groupId>
+    <groupId>com.ascentstream.bookkeeper</groupId>
     <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
@@ -28,27 +28,27 @@
   <name>Apache BookKeeper :: Stream Storage :: State Library</name>
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>com.ascentstream.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>stream-storage-common</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>stream-storage-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>stream-storage-proto</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
@@ -65,7 +65,7 @@
       <artifactId>protobuf-java</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>com.ascentstream.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
       <version>${project.parent.version}</version>
       <classifier>tests</classifier>
@@ -97,7 +97,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>testtools</artifactId>
       <version>${project.parent.version}</version>
       <scope>test</scope>

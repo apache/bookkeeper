@@ -31,7 +31,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <version>${project.version}</version>
     </dependency>

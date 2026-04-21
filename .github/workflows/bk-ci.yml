@@ -22,10 +22,12 @@ name: BookKeeper CI
 on:
   pull_request:
     branches:
+      - as-master
       - master
       - branch-*
   push:
     branches:
+      - as-master
       - master
       - branch-*
   workflow_dispatch:

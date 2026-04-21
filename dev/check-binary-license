@@ -59,12 +59,12 @@ EXIT=0
 
 # Check all bundled jars are mentioned in LICENSE
 for J in $JARS; do
-    echo $J | grep -q "org.apache.bookkeeper"
+    echo $J | grep -q "com.ascentstream.bookkeeper"
     if [ $? == 0 ]; then
         continue
     fi
 
-    echo $J | grep -q "org.apache.distributedlog"
+    echo $J | grep -q "com.ascentstream.distributedlog"
     if [ $? == 0 ]; then
         continue
     fi

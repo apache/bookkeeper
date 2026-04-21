@@ -22,7 +22,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>bookkeeper-dist</artifactId>
-    <groupId>org.apache.bookkeeper</groupId>
+    <groupId>com.ascentstream.bookkeeper</groupId>
     <version>4.18.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
@@ -34,7 +34,7 @@
   <dependencies>
     <!-- bookkeeper.tools (new CLI) -->
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>bookkeeper-tools</artifactId>
       <version>${project.version}</version>
       <exclusions>

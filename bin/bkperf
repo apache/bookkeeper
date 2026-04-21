@@ -27,7 +27,7 @@ source ${BK_HOME}/bin/common.sh
 source ${BK_HOME}/conf/bk_cli_env.sh
 
 CLI_MODULE_PATH=tools/perf
-CLI_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-perf"
+CLI_MODULE_NAME="(com.ascentstream.bookkeeper-)?bookkeeper-perf"
 CLI_MODULE_HOME=${BK_HOME}/${CLI_MODULE_PATH}
 
 # find the module jar

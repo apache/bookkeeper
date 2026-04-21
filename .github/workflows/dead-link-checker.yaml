@@ -20,6 +20,7 @@ on:
   push:
   pull_request:
     branches:
+      - as-master
       - master
       - branch-*
     paths:

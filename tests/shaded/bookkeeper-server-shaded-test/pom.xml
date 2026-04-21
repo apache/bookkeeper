@@ -27,7 +27,7 @@
   <name>Apache BookKeeper :: Tests :: bookkeeper-server-shaded test</name>
   <dependencies>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
+      <groupId>com.ascentstream.bookkeeper</groupId>
       <artifactId>bookkeeper-server-shaded</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
