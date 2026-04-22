@@ -43,6 +43,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Set up native build toolchain
+        uses: ./.github/actions/setup-native-build
 
       - name: Setup NodeJS
         uses: actions/setup-node@v6
