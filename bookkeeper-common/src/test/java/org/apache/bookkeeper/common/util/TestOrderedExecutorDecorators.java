@@ -32,6 +32,7 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LogEvent;
@@ -40,7 +41,6 @@ import org.apache.logging.log4j.core.appender.NullAppender;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import lombok.CustomLog;
 
 /**
  * Test that decorators applied by OrderedExecutor/Scheduler are correctly applied.

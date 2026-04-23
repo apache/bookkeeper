@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import lombok.CustomLog;
 
 /**
  * A mix of {@link AbstractComponent} and {@link LifecycleComponent}.

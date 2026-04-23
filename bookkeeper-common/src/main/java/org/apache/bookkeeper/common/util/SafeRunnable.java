@@ -18,8 +18,8 @@
 
 package org.apache.bookkeeper.common.util;
 
-import java.util.function.Consumer;
 import io.github.merlimat.slog.Logger;
+import java.util.function.Consumer;
 
 /**
  * A runnable that catches runtime exceptions.
