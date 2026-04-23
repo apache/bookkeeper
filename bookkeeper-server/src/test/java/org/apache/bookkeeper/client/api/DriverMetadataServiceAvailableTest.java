@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -44,7 +43,7 @@ public class DriverMetadataServiceAvailableTest extends BookKeeperClusterTestCas
         conf.setZkTimeout(3000);
         try (BookKeeper bkc = BookKeeper.newBuilder(conf).build()) {
             Awaitility.await().until(() -> bkc.isDriverMetadataServiceAvailable().get());
-            zkUtil.sleepCluster(5, TimeUnit.SECONDS, new CountDownLatch(1));
+            zkUtil.sleepCluster(5, TimeUnit.SECONDS);
             Awaitility.await().until(() -> !bkc.isDriverMetadataServiceAvailable().get());
             Awaitility.await().until(() -> bkc.isDriverMetadataServiceAvailable().get());
         }
