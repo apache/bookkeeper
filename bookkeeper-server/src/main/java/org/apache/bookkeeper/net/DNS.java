@@ -202,7 +202,7 @@ public class DNS {
 
 
     /**
-     * Returns the first available IP address associated with the provided
+     * Returns the first available IP address with a resolvable hostname associated with the provided
      * network interface or the local host IP if "default" is given.
      *
      * @param strInterface The name of the network interface or subinterface to query
@@ -214,7 +214,24 @@ public class DNS {
     public static String getDefaultIP(String strInterface)
             throws UnknownHostException {
         String[] ips = getIPs(strInterface);
-        return ips[0];
+        UnknownHostException lastException = null;
+        for (String ip : ips) {
+            String resolved = null;
+            try {
+                resolved = InetAddress.getByName(ip).getHostName();
+            } catch (UnknownHostException e) {
+                // skip ip addresses that cannot be resolved to a hostname
+                lastException = e;
+                continue;
+            }
+            if (resolved.equals(ip)) {
+                lastException = new UnknownHostException(
+                        "IP address " + ip + " for " + strInterface + " interface cannot be resolved to a hostname");
+                continue;
+            }
+            return ip;
+        }
+        throw lastException;
     }
 
     /**

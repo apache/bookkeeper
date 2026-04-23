@@ -23,10 +23,14 @@ package org.apache.bookkeeper.conf;
 
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
+import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.util.PortManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,11 +73,26 @@ public class TestBKConfiguration {
 
     private static String getLoopbackInterfaceName() {
         try {
+            Set<String> loopbackInterfaces = new LinkedHashSet<>();
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
             for (NetworkInterface nif : Collections.list(nifs)) {
                 if (nif.isLoopback()) {
-                    return nif.getName();
+                    String nifName = nif.getName();
+                    try {
+                        DNS.getDefaultIP(nifName);
+                    } catch (UnknownHostException e) {
+                        // skip interfaces that don't have a resolvable hostname
+                        continue;
+                    }
+                    loopbackInterfaces.add(nifName);
                 }
+            }
+            // prefer lo if available to avoid issues on Linux
+            if (loopbackInterfaces.contains("lo")) {
+                return "lo";
+            }
+            if (!loopbackInterfaces.isEmpty()) {
+                return loopbackInterfaces.iterator().next();
             }
         } catch (SocketException se) {
             LOG.warn("Exception while figuring out loopback interface. Will use null.", se);
