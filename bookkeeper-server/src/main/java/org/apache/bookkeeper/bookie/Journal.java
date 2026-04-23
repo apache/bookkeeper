@@ -623,6 +623,10 @@ public class Journal implements CheckpointSource {
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
+    // Ensures lastMark only advances forward across concurrent checkpointComplete calls.
+    private final Object checkpointLock = new Object();
+    private final LogMark lastPersistedMark = new LogMark(0, 0);
+
     private static final String LAST_MARK_DEFAULT_NAME = "lastMark";
 
     private final String lastMarkFileName;
@@ -766,6 +770,9 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
+     * <p>Skips if the checkpoint is not newer than the last persisted mark,
+     * preventing lastMark from regressing backwards.
+     *
      * @throws IOException
      */
     @Override
@@ -775,6 +782,15 @@ public class Journal implements CheckpointSource {
         }
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
+
+        // Skip if this mark is not newer than what was already persisted.
+        synchronized (checkpointLock) {
+            if (mark.getCurMark().compare(lastPersistedMark) < 0) {
+                return;
+            }
+            lastPersistedMark.setLogMark(
+                    mark.getCurMark().getLogFileId(), mark.getCurMark().getLogFileOffset());
+        }
 
         mark.rollLog(mark);
         if (compact) {
