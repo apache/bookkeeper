@@ -105,9 +105,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             }
             errorCode = BookieProtocol.ENOENTRY;
         } catch (IOException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", request, e);
-            }
+            LOG.error("IOException while reading {}", request, e);
             errorCode = BookieProtocol.EIO;
         } catch (BookieException.DataUnknownException e) {
             LOG.error("Ledger {} is in an unknown state", request.getLedgerId(), e);
