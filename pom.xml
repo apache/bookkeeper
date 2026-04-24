@@ -192,6 +192,7 @@
     <rocksdb.version>9.9.3</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
+    <slog.version>0.9.7</slog.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <spotless.version>2.43.0</spotless.version>
@@ -273,6 +274,11 @@
       </dependency>
 
       <!-- logging dependencies -->
+      <dependency>
+        <groupId>io.github.merlimat.slog</groupId>
+        <artifactId>slog</artifactId>
+        <version>${slog.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-bom</artifactId>
@@ -882,6 +888,10 @@
     </dependency>
 
     <!-- compilation dependencies (available at all classpaths) -->
+    <dependency>
+      <groupId>io.github.merlimat.slog</groupId>
+      <artifactId>slog</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
