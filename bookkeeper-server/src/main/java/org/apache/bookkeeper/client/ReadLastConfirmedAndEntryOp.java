@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
 import java.util.List;
@@ -36,16 +37,12 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Long poll read operation.
  */
 class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback,
                                              SpeculativeRequestExecutor {
-
-    static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
 
     ReadLACAndEntryRequest request;
     final BitSet heardFromHostsBitSet;
@@ -67,6 +64,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private long timeOutInMillis;
     private final List<BookieId> currentEnsemble;
     private ScheduledFuture<?> speculativeTask = null;
+    protected final Logger log;
 
     abstract class ReadLACAndEntryRequest implements AutoCloseable {
 
@@ -203,10 +201,13 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 ++numMissedEntryReads;
             }
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("{} while reading entry: {} ledgerId: {} from bookie: {}", errMsg, entryImpl.getEntryId(),
-                        lh.getId(), host);
-            }
+
+            log.debug()
+                    .attr("error", errMsg)
+                    .attr("entryId", entryImpl.getEntryId())
+                    .attr("bookieAddr", host)
+                    .log("Error while reading entry from bookie");
+
         }
 
         /**
@@ -259,7 +260,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 try {
                     sendReadTo(orderedEnsemble.get(i), to, this);
                 } catch (InterruptedException ie) {
-                    LOG.error("Interrupted reading entry {} : ", this, ie);
+                    log.error()
+                            .exception(ie)
+                            .log("Interrupted reading entry");
                     Thread.currentThread().interrupt();
                     fail(BKException.Code.InterruptedException);
                     return;
@@ -383,7 +386,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 sentReplicas.set(replica);
                 return to;
             } catch (InterruptedException ie) {
-                LOG.error("Interrupted reading entry " + this, ie);
+                log.error()
+                        .attr("addEntryOp", this)
+                        .exception(ie)
+                        .log("Interrupted reading entry");
                 Thread.currentThread().interrupt();
                 fail(BKException.Code.InterruptedException);
                 return null;
@@ -396,7 +402,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
             int replica = getReplicaIndex(bookieIndex);
             if (replica == NOT_FOUND) {
-                LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
+                log.error()
+                        .attr("bookieAddr", host)
+                        .attr("ensemble", ensemble)
+                        .log("Received error from a host which is not in the ensemble");
                 return;
             }
 
@@ -454,6 +463,11 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             - getLedgerMetadata().getAckQuorumSize();
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
         emptyResponsesFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
+        this.log = Logger.get(ReadLastConfirmedAndEntryOp.class)
+                .with()
+                .attr("ledgerId", lh.getId())
+                .attr("prevEntryId", prevEntryId)
+                .build();
     }
 
     protected LedgerMetadata getLedgerMetadata() {
@@ -481,10 +495,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             public Boolean call() throws Exception {
                 if (!requestComplete.get() && !request.isComplete()
                         && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Send speculative ReadLAC {} for ledger {} (previousLAC: {}). Hosts heard are {}.",
-                                request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet);
-                    }
+
+                    log.debug()
+                            .attr("request", request)
+                            .attr("lastAddConfirmed", lastAddConfirmed)
+                            .attr("heardFromHostsBitSet", heardFromHostsBitSet)
+                            .log("Send speculative ReadLAC for ledger");
                     return true;
                 }
                 return false;
@@ -507,10 +523,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     void sendReadTo(int bookieIndex, BookieId to, ReadLACAndEntryRequest entry) throws InterruptedException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Calling Read LAC and Entry with {} and long polling interval {} on Bookie {} - Parallel {}",
-                    prevEntryId, timeOutInMillis, to, parallelRead);
-        }
+        log.debug()
+                .attr("timeOutInMillis", timeOutInMillis)
+                .attr("bookieAddr", to)
+                .attr("parallelRead", parallelRead)
+                .log("Calling Read LAC and Entry with and long polling interval on Bookie - Parallel");
+
         clientCtx.getBookieClient().readEntryWaitForLACUpdate(to,
             lh.getId(),
             BookieProtocol.LAST_ADD_CONFIRMED,
@@ -552,18 +570,20 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     @Override
     public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("{} received response for (lid={}, eid={}) : {}",
-                    getClass().getName(), ledgerId, entryId, rc);
-        }
+        log.trace()
+                .attr("class", getClass().getName())
+                .attr("entryId", entryId)
+                .attr("rc", rc)
+                .log("received response");
+
         ReadLastConfirmedAndEntryContext rCtx = (ReadLastConfirmedAndEntryContext) ctx;
         BookieId bookie = rCtx.getBookieAddress();
         numResponsesPending--;
         if (BKException.Code.OK == rc) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Received lastAddConfirmed (lac={}) from bookie({}) for (lid={}).",
-                        rCtx.getLastAddConfirmed(), bookie, ledgerId);
-            }
+            log.trace()
+                    .attr("getLastAddConfirmed", rCtx.getLastAddConfirmed())
+                    .attr("bookieAddr", bookie)
+                    .log("Received lastAddConfirmed");
 
             if (rCtx.getLastAddConfirmed() > lastAddConfirmed) {
                 lastAddConfirmed = rCtx.getLastAddConfirmed();
@@ -598,20 +618,19 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                     // received advanced lac
                     completeRequest();
                 } else if (emptyResponsesFromHostsBitSet.cardinality() >= numEmptyResponsesAllowed) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Completed readLACAndEntry(lid = {}, previousEntryId = {}) "
-                                + "after received {} empty responses ('{}').",
-                                ledgerId, prevEntryId, emptyResponsesFromHostsBitSet.cardinality(),
-                                emptyResponsesFromHostsBitSet);
-                    }
+                    log.debug()
+                            .attr("cardinality", emptyResponsesFromHostsBitSet.cardinality())
+                            .attr("emptyResponsesFromHostsBitSet", emptyResponsesFromHostsBitSet)
+                            .log("Completed readLACAndEntry after received empty responses");
+
                     completeRequest();
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Received empty response for readLACAndEntry(lid = {}, previousEntryId = {}) from"
-                                        + " bookie {} @ {}, reattempting reading next bookie : lac = {}",
-                                ledgerId, prevEntryId, rCtx.getBookieAddress(),
-                                rCtx.getBookieAddress(), lastAddConfirmed);
-                    }
+                    log.debug()
+                            .attr("bookieAddr", rCtx.getBookieAddress())
+                            .attr("bookieAddr", rCtx.getBookieAddress())
+                            .attr("lastAddConfirmed", lastAddConfirmed)
+                            .log("Received empty response from bookie, reattempting reading next bookie");
+
                     request.logErrorAndReattemptRead(rCtx.getBookieIndex(), bookie, "Empty Response", rc);
                 }
                 return;

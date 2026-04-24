@@ -25,12 +25,11 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class is used for compaction. Compaction is done in several transactional phases.
@@ -39,9 +38,8 @@ import org.slf4j.LoggerFactory;
  * Phase 3: Flush ledger cache and .compacted file becomes .log file when this completes. Remove old
  * entry log file afterwards.
  */
+@CustomLog
 public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TransactionalEntryLogCompactor.class);
 
     final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
@@ -68,9 +66,11 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     @Override
     public void cleanUpAndRecover() {
         // clean up compacting logs and recover index for already compacted logs
-        for (CompactionEntryLog log : entryLogger.incompleteCompactionLogs()) {
-            LOG.info("Found compacted log file {} has partially flushed index, recovering index.", log);
-            CompactionPhase updateIndex = new UpdateIndexPhase(log, true);
+        for (CompactionEntryLog compLog : entryLogger.incompleteCompactionLogs()) {
+            log.info()
+                    .attr("compactionLog", compLog)
+                    .log("Found compacted log file has partially flushed index, recovering index.");
+            CompactionPhase updateIndex = new UpdateIndexPhase(compLog, true);
             updateIndex.run();
         }
     }
@@ -78,33 +78,41 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     @Override
     public boolean compact(EntryLogMetadata metadata) {
         if (metadata != null) {
-            LOG.info("Compacting entry log {} with usage {}.",
-                metadata.getEntryLogId(), metadata.getUsage());
+            log.info()
+                    .attr("entryLogId", metadata.getEntryLogId())
+                    .attr("usage", metadata.getUsage())
+                    .log("Compacting entry log");
             CompactionEntryLog compactionLog;
             try {
                 compactionLog = entryLogger.newCompactionLog(metadata.getEntryLogId());
             } catch (IOException ioe) {
-                LOG.error("Exception creating new compaction entry log", ioe);
+                log.error().exception(ioe).log("Exception creating new compaction entry log");
                 return false;
             }
             CompactionPhase scanEntryLog = new ScanEntryLogPhase(metadata, compactionLog);
             if (!scanEntryLog.run()) {
-                LOG.info("Compaction for entry log {} end in ScanEntryLogPhase.", metadata.getEntryLogId());
+                log.info()
+                        .attr("entryLogId", metadata.getEntryLogId())
+                        .log("Compaction for entry log end in ScanEntryLogPhase.");
                 return false;
             }
 
             CompactionPhase flushCompactionLog = new FlushCompactionLogPhase(compactionLog);
             if (!flushCompactionLog.run()) {
-                LOG.info("Compaction for entry log {} end in FlushCompactionLogPhase.", metadata.getEntryLogId());
+                log.info()
+                        .attr("entryLogId", metadata.getEntryLogId())
+                        .log("Compaction for entry log end in FlushCompactionLogPhase.");
                 return false;
             }
 
             CompactionPhase updateIndex = new UpdateIndexPhase(compactionLog);
             if (!updateIndex.run()) {
-                LOG.info("Compaction for entry log {} end in UpdateIndexPhase.", metadata.getEntryLogId());
+                log.info()
+                        .attr("entryLogId", metadata.getEntryLogId())
+                        .log("Compaction for entry log end in UpdateIndexPhase.");
                 return false;
             }
-            LOG.info("Compacted entry log : {}.", metadata.getEntryLogId());
+            log.info().attr("entryLogId", metadata.getEntryLogId()).log("Compacted entry log");
             return true;
         }
         return false;
@@ -125,7 +133,10 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 start();
                 return complete();
             } catch (IOException e) {
-                LOG.error("Encounter exception in compaction phase {}. Abort current compaction.", phaseName, e);
+                log.error()
+                        .exception(e)
+                        .attr("phaseName", phaseName)
+                        .log("Encountered exception in compaction phase, aborting current compaction");
                 abort();
             }
             return false;
@@ -175,18 +186,21 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                         long lid = entry.getLong(entry.readerIndex());
                         long entryId = entry.getLong(entry.readerIndex() + 8);
                         if (lid != ledgerId || entryId < -1) {
-                            LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
-                                    + "with ledgerId {} entryId {} at offset {}",
-                                    ledgerId, lid, entryId, offset);
+                            log.warn()
+                                    .attr("expectedLedgerId", ledgerId)
+                                    .attr("ledgerId", lid)
+                                    .attr("entryId", entryId)
+                                    .attr("offset", offset)
+                                    .log("Scanning expected ledger, but found invalid entry");
                             throw new IOException("Invalid entry found @ offset " + offset);
                         }
                         long newOffset = compactionLog.addEntry(ledgerId, entry);
                         offsets.add(new EntryLocation(ledgerId, entryId, newOffset));
-
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Compact add entry : lid = {}, eid = {}, offset = {}",
-                                    ledgerId, entryId, newOffset);
-                        }
+                                    log.debug()
+                                            .attr("ledgerId", ledgerId)
+                                            .attr("entryId", entryId)
+                                            .attr("newOffset", newOffset)
+                                            .log("Compact add entry");
                     }
                 }
             });
@@ -196,7 +210,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
         boolean complete() {
             if (offsets.isEmpty()) {
                 // no valid entries is compacted, delete entry log file
-                LOG.info("No valid entry is found in entry log after scan, removing entry log now.");
+                log.info("No valid entry is found in entry log after scan, removing entry log now.");
                 logRemovalListener.removeEntryLog(metadata.getEntryLogId());
                 compactionLog.abort();
                 compactingLogWriteDone();
@@ -247,7 +261,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 compactionLog.markCompacted();
                 return true;
             } catch (IOException ioe) {
-                LOG.warn("Error marking compaction as done", ioe);
+                log.warn().exception(ioe).log("Error marking compaction as done");
                 return false;
             } finally {
                 compactingLogWriteDone();
@@ -330,16 +344,22 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                     long lid = entry.getLong(entry.readerIndex());
                     long entryId = entry.getLong(entry.readerIndex() + 8);
                     if (lid != ledgerId || entryId < -1) {
-                        LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
-                                + "with ledgerId {} entryId {} at offset {}",
-                                ledgerId, lid, entryId, offset);
+                        log.warn()
+                                .attr("expectedLedgerId", ledgerId)
+                                .attr("ledgerId", lid)
+                                .attr("entryId", entryId)
+                                .attr("offset", offset)
+                                .log("Scanning expected ledger, but found invalid entry");
                         throw new IOException("Invalid entry found @ offset " + offset);
                     }
                     long location = (compactionLog.getDstLogId() << 32L) | (offset + 4);
                     offsets.add(new EntryLocation(lid, entryId, location));
                 }
             });
-            LOG.info("Recovered {} entry locations from compacted log {}", offsets.size(), compactionLog.getDstLogId());
+            log.info()
+                    .attr("size", offsets.size())
+                    .attr("dstLogId", compactionLog.getDstLogId())
+                    .log("Recovered entry locations from compacted log");
         }
     }
 }

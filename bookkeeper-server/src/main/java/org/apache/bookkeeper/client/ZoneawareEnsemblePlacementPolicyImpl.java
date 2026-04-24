@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -65,15 +66,12 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Simple zoneaware ensemble placement policy.
  */
+@CustomLog
 public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
-
-    static final Logger LOG = LoggerFactory.getLogger(ZoneawareEnsemblePlacementPolicyImpl.class);
 
     public static final String UNKNOWN_ZONE = "UnknownZone";
     /*
@@ -210,18 +208,21 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         if (this.isWeighted) {
             this.maxWeightMultiple = conf.getBookieMaxWeightMultipleForWeightBasedPlacement();
             this.weightedSelection = new DynamicWeightedRandomSelectionImpl<BookieNode>(this.maxWeightMultiple);
-            LOG.info("Weight based placement with max multiple of {}", this.maxWeightMultiple);
+            log.info()
+                    .attr("maxWeightMultiple", this.maxWeightMultiple)
+                    .log("Weight based placement enabled");
         } else {
-            LOG.info("Not weighted");
+            log.info("Not weighted");
         }
         this.minNumZonesPerWriteQuorum = conf.getMinNumZonesPerWriteQuorum();
         this.desiredNumZonesPerWriteQuorum = conf.getDesiredNumZonesPerWriteQuorum();
         this.enforceStrictZoneawarePlacement = conf.getEnforceStrictZoneawarePlacement();
         if (minNumZonesPerWriteQuorum > desiredNumZonesPerWriteQuorum) {
-            LOG.error(
-                    "It is misconfigured, for ZoneawareEnsemblePlacementPolicy, minNumZonesPerWriteQuorum: {} cann't be"
-                            + " greater than desiredNumZonesPerWriteQuorum: {}",
-                    minNumZonesPerWriteQuorum, desiredNumZonesPerWriteQuorum);
+            log.error()
+                    .attr("minNumZonesPerWriteQuorum", minNumZonesPerWriteQuorum)
+                    .attr("desiredNumZonesPerWriteQuorum", desiredNumZonesPerWriteQuorum)
+                    .log("It is misconfigured, for ZoneawareEnsemblePlacementPolicy,"
+                            + " minNumZonesPerWriteQuorum cannot be greater than desiredNumZonesPerWriteQuorum");
             throw new IllegalArgumentException("minNumZonesPerWriteQuorum: " + minNumZonesPerWriteQuorum
                     + " cann't be greater than desiredNumZonesPerWriteQuorum: " + desiredNumZonesPerWriteQuorum);
         }
@@ -251,11 +252,14 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             myNode = createDummyLocalBookieNode(InetAddress.getLocalHost().getHostAddress());
             myZone = getZoneAwareNodeLocation(myNode).getZone();
         } catch (IOException e) {
-            LOG.error("Failed to get local host address : ", e);
+            log.error().exception(e).log("Failed to get local host address");
             throw new RuntimeException(e);
         }
-        LOG.info("Initialized zoneaware ensemble placement policy @ {} @ {} : {}.", myNode,
-                myNode.getNetworkLocation(), dnsResolver.getClass().getName());
+        log.info()
+                .attr("myNode", myNode)
+                .attr("getNetworkLocation", myNode.getNetworkLocation())
+                .attr("getName", dnsResolver.getClass().getName())
+                .log("Initialized zoneaware ensemble placement policy");
 
         slowBookies = CacheBuilder.newBuilder()
                 .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
@@ -273,7 +277,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
         String[] parts = StringUtils.split(NodeBase.normalize(defaultFaultDomain), NodeBase.PATH_SEPARATOR);
         if (parts.length != 2) {
-            LOG.error("provided defaultFaultDomain: {} is not valid", defaultFaultDomain);
+            log.error().attr("defaultFaultDomain", defaultFaultDomain).log("provided defaultFaultDomain: is not valid");
             throw new IllegalArgumentException("invalid defaultFaultDomain");
         } else {
             unresolvedNodeLocation = new ZoneAwareNodeLocation(NodeBase.PATH_SEPARATOR_STR + parts[0],
@@ -359,7 +363,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                  *
                  * So prohibiting this combination of configuration.
                  */
-                LOG.error("It is illegal for ensembleSize to be not multiple of"
+                log.error("It is illegal for ensembleSize to be not multiple of"
                         + " writeQuorumSize When StrictZoneawarePlacement is enabled");
                 throw new IllegalArgumentException("It is illegal for ensembleSize to be not multiple of"
                         + " writeQuorumSize When StrictZoneawarePlacement is enabled");
@@ -382,7 +386,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                  *
                  * So prohibiting this combination of configuration.
                  */
-                LOG.error("It is illegal for writeQuorumSize to be lesser than or equal"
+                log.error("It is illegal for writeQuorumSize to be lesser than or equal"
                         + " to minNumZonesPerWriteQuorum When StrictZoneawarePlacement is enabled");
                 throw new IllegalArgumentException("It is illegal for writeQuorumSize to be lesser than or equal"
                         + " to minNumZonesPerWriteQuorum When StrictZoneawarePlacement is enabled");
@@ -444,7 +448,9 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         int ensembleSize = newEnsemble.size();
         Set<BookieNode> bookiesToConsider = getBookiesToConsider(excludeBookies);
         if (bookiesToConsider.size() < newEnsemble.size()) {
-            LOG.error("Not enough bookies are available to form ensemble of size: {}", newEnsemble.size());
+            log.error()
+                    .attr("size", newEnsemble.size())
+                    .log("Not enough bookies are available to form ensemble");
             throw new BKNotEnoughBookiesException();
         }
 
@@ -466,7 +472,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         int bookieToReplaceIndex = newEnsemble.indexOf(bookieToReplace);
 
         if (bookiesToConsider.isEmpty()) {
-            LOG.error("There is no bookie available to replace a bookie");
+            log.error("There is no bookie available to replace a bookie");
             throw new BKNotEnoughBookiesException();
         }
         BookieId candidateAddr = (selectCandidateNode(bookiesToConsider)).getAddr();
@@ -561,8 +567,11 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     writeQuorumSize, currentEnsemble, bookieToReplaceIndex, excludeBookies, zonesToExclude);
         }
         if (bookiesToConsiderAfterExcludingZonesAndUDs.isEmpty()) {
-            LOG.error("Not enough bookies are available to replaceBookie : {} in ensemble : {} with excludeBookies {}.",
-                    bookieToReplace, currentEnsemble, excludeBookies);
+            log.error()
+                    .attr("bookieToReplace", bookieToReplace)
+                    .attr("currentEnsemble", currentEnsemble)
+                    .attr("excludeBookies", excludeBookies)
+                    .log("Not enough bookies are available to replaceBookie");
             throw new BKNotEnoughBookiesException();
         }
 
@@ -583,7 +592,10 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             if (node instanceof BookieNode) {
                 comprehensiveExclusionBookiesSet.add(((BookieNode) node).getAddr());
             } else {
-                LOG.error("found non-BookieNode: {} as leaf of defaultFaultDomain: {}", node, getDefaultFaultDomain());
+                log.error()
+                        .attr("node", node)
+                        .attr("defaultFaultDomain", getDefaultFaultDomain())
+                        .log("Found non-BookieNode as leaf of defaultFaultDomain");
             }
         }
         return comprehensiveExclusionBookiesSet;
@@ -872,21 +884,24 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             BookieId bookieNode;
             if (ensembleList.size() % writeQuorumSize != 0) {
                 placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(
-                            "For ensemble: {}, ensembleSize: {} is not a multiple of writeQuorumSize: {}",
-                            ensembleList, ensembleList.size(), writeQuorumSize);
-                }
+
+                log.debug()
+                .attr("ensembleList", ensembleList)
+                .attr("size", ensembleList.size())
+                .attr("writeQuorumSize", writeQuorumSize)
+                .log("ensembleSize is not a multiple of writeQuorumSize");
+
                 return placementPolicyAdherence;
             }
             if (writeQuorumSize <= minNumZonesPerWriteQuorum) {
                 placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(
-                            "For ensemble: {}, writeQuorumSize: {} is less than or equal to"
-                            + " minNumZonesPerWriteQuorum: {}",
-                            ensembleList, writeQuorumSize, minNumZonesPerWriteQuorum);
-                }
+
+                log.debug()
+                .attr("ensembleList", ensembleList)
+                .attr("writeQuorumSize", writeQuorumSize)
+                .attr("minNumZonesPerWriteQuorum", minNumZonesPerWriteQuorum)
+                .log("writeQuorumSize is less than or equal to minNumZonesPerWriteQuorum");
+
                 return placementPolicyAdherence;
             }
             int desiredNumZonesPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, desiredNumZonesPerWriteQuorum);
@@ -899,10 +914,12 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     ZoneAwareNodeLocation nodeLocation = getZoneAwareNodeLocation(bookieNode);
                     if (nodeLocation.equals(unresolvedNodeLocation)) {
                         placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("ensemble: {}, contains bookie: {} for which network location is unresolvable",
-                                    ensembleList, bookieNode);
-                        }
+
+                        log.debug()
+                        .attr("ensembleList", ensembleList)
+                        .attr("bookieNode", bookieNode)
+                        .log("Ensemble contains bookie for which network location is unresolvable");
+
                         return placementPolicyAdherence;
                     }
                     String zone = nodeLocation.getZone();
@@ -921,27 +938,36 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 if (numOfBookiesInZones.entrySet().size() < minNumZonesPerWriteQuorum) {
                     placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("in ensemble: {}, writeset starting at: {} doesn't contain bookies from"
-                                + " minNumZonesPerWriteQuorum: {}", ensembleList, i, minNumZonesPerWriteQuorum);
-                    }
+
+                    log.debug()
+                    .attr("ensembleList", ensembleList)
+                    .attr("i", i)
+                    .attr("minNumZonesPerWriteQuorum", minNumZonesPerWriteQuorum)
+                    .log("Ensemble writeset doesn't contain bookies from minNumZonesPerWriteQuorum");
+
                     return placementPolicyAdherence;
                 } else if (numOfBookiesInZones.entrySet().size() >= desiredNumZonesPerWriteQuorumForThisEnsemble) {
                     if (!validateMinUDsAreMaintained(numOfBookiesInZones, bookiesLocationInWriteSet)) {
                         placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("in ensemble: {}, writeset starting at: {} doesn't maintain min of 2 UDs"
-                                    + " when there are multiple bookies from the same zone.", ensembleList, i);
-                        }
+
+                        log.debug()
+                        .attr("ensembleList", ensembleList)
+                        .attr("i", i)
+                        .log("in ensemble: writeset starting at: doesn't maintain min of 2 UDs"
+ + " when there are multiple bookies from the same zone.");
+
                         return placementPolicyAdherence;
                     }
                 } else {
                     if (!validateMinUDsAreMaintained(numOfBookiesInZones, bookiesLocationInWriteSet)) {
                         placementPolicyAdherence = PlacementPolicyAdherence.FAIL;
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("in ensemble: {}, writeset starting at: {} doesn't maintain min of 2 UDs"
-                                    + " when there are multiple bookies from the same zone.", ensembleList, i);
-                        }
+
+                        log.debug()
+                        .attr("ensembleList", ensembleList)
+                        .attr("i", i)
+                        .log("in ensemble: writeset starting at: doesn't maintain min of 2 UDs"
+ + " when there are multiple bookies from the same zone.");
+
                         return placementPolicyAdherence;
                     }
                     if (placementPolicyAdherence == PlacementPolicyAdherence.MEETS_STRICT) {
@@ -984,14 +1010,14 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
             areAckedBookiesAdheringToPlacementPolicy = ((zonesOfAckedBookies
                     .size() >= minNumZonesPerWriteQuorumForThisEnsemble) && (ackedBookies.size() >= ackQuorumSize));
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(
-                        "areAckedBookiesAdheringToPlacementPolicy returning {}, because number of ackedBookies = {},"
-                                + " number of Zones of ackedbookies = {},"
-                                + " number of minNumZonesPerWriteQuorumForThisEnsemble = {}",
-                        areAckedBookiesAdheringToPlacementPolicy, ackedBookies.size(), zonesOfAckedBookies.size(),
-                        minNumZonesPerWriteQuorumForThisEnsemble);
-            }
+
+            log.debug()
+            .attr("areAckedBookiesAdheringToPlacementPolicy", areAckedBookiesAdheringToPlacementPolicy)
+            .attr("size", ackedBookies.size())
+            .attr("size", zonesOfAckedBookies.size())
+            .attr("minNumZonesPerWriteQuorumForThisEnsemble", minNumZonesPerWriteQuorumForThisEnsemble)
+            .log("areAckedBookiesAdheringToPlacementPolicy");
+
         } finally {
             readLock.unlock();
         }

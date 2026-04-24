@@ -27,18 +27,17 @@ import java.util.Arrays;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
  * to write entries to a ledger and read entries from a ledger.
  */
+@CustomLog
 public class LedgerDescriptorImpl extends LedgerDescriptor {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptorImpl.class);
     final LedgerStorage ledgerStorage;
     private final long ledgerId;
     final byte[] masterKey;
@@ -57,8 +56,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     @Override
     void checkAccess(byte[] masterKey) throws BookieException, IOException {
         if (!Arrays.equals(this.masterKey, masterKey)) {
-            LOG.error("[{}] Requested master key {} does not match the cached master key {}",
-                    this.ledgerId, Arrays.toString(masterKey), Arrays.toString(this.masterKey));
+            log.error().attr("ledgerId", this.ledgerId)
+                .attr("requestedMasterKey", Arrays.toString(masterKey))
+                .attr("cachedMasterKey", Arrays.toString(this.masterKey))
+                .log("Requested master key does not match the cached master key");
             throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
         }
     }
@@ -127,10 +128,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
         try {
             journal.logAddEntry(entry, false /* ackBeforeSync */, (rc, ledgerId, entryId, addr, ctx) -> {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Record fenced state for ledger {} in journal with rc {}",
-                            ledgerId, BKException.codeLogger(rc));
-                }
+                log.debug()
+                        .attr("ledgerId", ledgerId)
+                        .attr("rc", BKException.codeLogger(rc))
+                    .log("Record fenced state for ledger in journal");
                 if (rc == 0) {
                     fenceEntryPersisted.compareAndSet(false, true);
                     result.complete(true);

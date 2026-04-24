@@ -22,6 +22,7 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import lombok.Cleanup;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -30,15 +31,13 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to print which node has the auditor lock.
  */
+@CustomLog
 public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorCommand.class);
 
     private static final String NAME = "whoisauditor";
     private static final String DESC = "Print the node which holds the auditor lock.";
@@ -80,10 +79,10 @@ public class WhoIsAuditorCommand extends BookieCommand<CliFlags> {
             bookieId = bka.getCurrentAuditor();
         }
         if (bookieId == null) {
-            LOG.info("No auditor elected");
+            log.info("No auditor elected");
             return false;
         }
-        LOG.info("Auditor: " + bookieId);
+        log.info().attr("auditor", bookieId).log("Current auditor");
         return true;
     }
 }

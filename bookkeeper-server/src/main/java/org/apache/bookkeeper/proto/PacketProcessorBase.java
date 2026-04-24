@@ -22,18 +22,17 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelPromise;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A base class for bookeeper packet processors.
  */
+@CustomLog
 abstract class PacketProcessorBase<T extends Request> implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
     T request;
     BookieRequestHandler requestHandler;
     BookieRequestProcessor requestProcessor;
@@ -57,10 +56,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
         byte version = request.getProtocolVersion();
         if (version < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
                 || version > BookieProtocol.CURRENT_PROTOCOL_VERSION) {
-            logger.error("Invalid protocol version, expected something between "
-                    + BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
-                    + " & " + BookieProtocol.CURRENT_PROTOCOL_VERSION
-                    + ". got " + request.getProtocolVersion());
+            log.error().attr("expectedMin", BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION)
+                    .attr("expectedMax", BookieProtocol.CURRENT_PROTOCOL_VERSION)
+                    .attr("actual", request.getProtocolVersion())
+                    .log("Invalid protocol version");
             return false;
         }
         return true;
@@ -109,8 +108,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
             }
 
             if (!channel.isWritable()) {
-                logger.warn("cannot write response to non-writable channel {} for request {}", channel,
-                    StringUtils.requestToString(request));
+                log.warn()
+                        .attr("channel", channel)
+                        .attr("request", StringUtils.requestToString(request))
+                    .log("cannot write response to non-writable channel");
                 requestProcessor.getRequestStats().getChannelWriteStats()
                     .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
@@ -124,25 +125,22 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
         }
 
         if (channel.isActive()) {
-            final ChannelPromise promise;
-            if (logger.isDebugEnabled()) {
-                promise = channel.newPromise().addListener(future -> {
-                    if (!future.isSuccess()) {
-                        logger.debug("Netty channel write exception. ", future.cause());
-                    }
-                });
-            } else {
-                promise = channel.voidPromise();
-            }
+            final ChannelPromise promise = channel.newPromise();
+
+            log.debug(e ->
+                    promise.addListener(future -> {
+                        if (!future.isSuccess()) {
+                            e.exception(future.cause()).log("Netty channel write exception");
+                        }
+                    })
+            );
             channel.writeAndFlush(response, promise);
         } else {
             if (response instanceof BookieProtocol.Response) {
                 ((BookieProtocol.Response) response).release();
             }
-            if (logger.isDebugEnabled()) {
-            logger.debug("Netty channel {} is inactive, "
-                    + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
-            }
+            log.debug().attr("channel", channel)
+                    .log("Netty channel is inactive, hence bypassing netty channel writeAndFlush during sendResponse");
         }
         if (BookieProtocol.EOK == rc) {
             statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
@@ -166,8 +164,8 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
             Channel channel = requestHandler.ctx().channel();
             ChannelFuture future = channel.writeAndFlush(response);
             future.addListener((ChannelFutureListener) f -> {
-                if (!f.isSuccess() && logger.isDebugEnabled()) {
-                    logger.debug("Netty channel write exception. ", f.cause());
+                if (!f.isSuccess()) {
+                    log.debug().exception(f.cause()).log("Netty channel write exception");
                 }
                 if (BookieProtocol.EOK == rc) {
                     statsLogger.registerSuccessfulEvent(
@@ -179,9 +177,7 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
                 processor.onReadRequestFinish();
             });
         } catch (Exception e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Netty channel write exception. ", e);
-            }
+            log.debug().exception(e).log("Netty channel write exception");
             if (BookieProtocol.EOK == rc) {
                 statsLogger.registerSuccessfulEvent(
                         MathUtils.elapsedNanos(capturedEnqueueNanos), TimeUnit.NANOSECONDS);

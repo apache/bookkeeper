@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -80,15 +81,12 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements a bookie.
  */
+@CustomLog
 public class BookieImpl implements Bookie {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
     final List<File> journalDirectories;
     final ServerConfiguration conf;
@@ -133,10 +131,12 @@ public class BookieImpl implements Bookie {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
                                   BookieId addr, Object ctx) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                        entryId, ledgerId, addr, rc);
-            }
+            log.debug()
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .attr("addr", addr)
+                    .attr("rc", rc)
+                    .log("Finished writing entry");
         }
     }
 
@@ -158,12 +158,12 @@ public class BookieImpl implements Bookie {
                 });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
-                LOG.error(err);
+                log.error(err);
                 throw new IOException(err);
             }
             if (!dir.mkdirs()) {
                 String err = "Unable to create directory " + dir;
-                LOG.error(err);
+                log.error(err);
                 throw new IOException(err);
             }
         }
@@ -214,7 +214,7 @@ public class BookieImpl implements Bookie {
             try {
                 fileStore = Files.getFileStore(dir.toPath());
             } catch (IOException e) {
-                LOG.error("Got IOException while trying to FileStore of {}", dir);
+                log.error().attr("directory", dir).log("Got IOException while trying to get FileStore");
                 throw new BookieException.DiskPartitionDuplicationException(e);
             }
             if (fileStoreDirsMap.containsKey(fileStore)) {
@@ -229,9 +229,15 @@ public class BookieImpl implements Bookie {
         fileStoreDirsMap.forEach((fileStore, dirsList) -> {
             if (dirsList.size() > 1) {
                 if (allowDiskPartitionDuplication) {
-                    LOG.warn("Dirs: {} are in same DiskPartition/FileSystem: {}", dirsList, fileStore);
+                    log.warn()
+                            .attr("dirsList", dirsList)
+                            .attr("fileStore", fileStore)
+                            .log("Dirs are in same DiskPartition/FileSystem");
                 } else {
-                    LOG.error("Dirs: {} are in same DiskPartition/FileSystem: {}", dirsList, fileStore);
+                    log.error()
+                            .attr("dirsList", dirsList)
+                            .attr("fileStore", fileStore)
+                            .log("Dirs are in same DiskPartition/FileSystem");
                     isDuplicationFoundAndNotAllowed.setValue(true);
                 }
             }
@@ -523,9 +529,9 @@ public class BookieImpl implements Bookie {
 
     void readJournal() throws IOException, BookieException {
         if (!conf.getJournalWriteData()) {
-            LOG.warn("Journal disabled for add entry requests. Running BookKeeper this way can "
-                    + "lead to data loss. It is recommended to use data integrity checking when "
-                    + "running without the journal to minimize data loss risk");
+            log.warn("Journal disabled for add entry requests. Running BookKeeper this way can lead to "
+                    + "data loss. It is recommended to use data integrity checking when running without "
+                    + "the journal to minimize data loss risk");
         }
 
         long startTs = System.currentTimeMillis();
@@ -535,9 +541,10 @@ public class BookieImpl implements Bookie {
                 long ledgerId = recBuff.getLong();
                 long entryId = recBuff.getLong();
                 try {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerId)
+                            .attr("entryId", entryId)
+                            .log("Replay journal");
                     if (entryId == METAENTRY_ID_LEDGER_KEY) {
                         if (journalVersion >= JournalChannel.V3) {
                             int masterKeyLen = recBuff.getInt();
@@ -593,8 +600,10 @@ public class BookieImpl implements Bookie {
                          * special entry while replaying journal we should skip
                          * (ignore) it.
                          */
-                        LOG.warn("Read unrecognizable entryId: {} for ledger: {} while replaying Journal. Skipping it",
-                                entryId, ledgerId);
+                        log.warn()
+                                .attr("entryId", entryId)
+                                .attr("ledgerId", ledgerId)
+                                .log("Read unrecognizable entry while replaying Journal. Skipping it");
                     } else {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
@@ -606,9 +615,9 @@ public class BookieImpl implements Bookie {
                         handle.addEntry(Unpooled.wrappedBuffer(recBuff));
                     }
                 } catch (NoLedgerException nsle) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerId)
+                            .log("Skip replaying entries of ledger since it was deleted.");
                 } catch (BookieException be) {
                     throw new IOException(be);
                 }
@@ -619,7 +628,7 @@ public class BookieImpl implements Bookie {
             replay(journal, scanner);
         }
         long elapsedTs = System.currentTimeMillis() - startTs;
-        LOG.info("Finished replaying journal in {} ms.", elapsedTs);
+        log.info().attr("elapsedMs", elapsedTs).log("Finished replaying journal");
     }
 
     /**
@@ -650,7 +659,10 @@ public class BookieImpl implements Bookie {
             if (id == markedLog.getLogFileId()) {
                 logPosition = markedLog.getLogFileOffset();
             }
-            LOG.info("Replaying journal {} from position {}", id, logPosition);
+            log.info()
+                    .attr("journalId", id)
+                    .attr("logPosition", logPosition)
+                    .log("Replaying journal");
             long scanOffset = journal.scanJournal(id, logPosition, scanner, conf.isSkipReplayJournalInvalidRecord());
             // Update LastLogMark after completely replaying journal
             // scanOffset will point to EOF position
@@ -665,10 +677,10 @@ public class BookieImpl implements Bookie {
         bookieThread.setDaemon(true);
 
         ThreadRegistry.register("BookieThread", true);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("I'm starting a bookie with journal directories {}",
-                    journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
-        }
+        log.debug(e -> e
+                .attr("journals", journalDirectories.stream()
+                        .map(File::getName).collect(Collectors.joining(", ")))
+                .log("I'm starting a bookie"));
         //Start DiskChecker thread
         dirsMonitor.start();
 
@@ -676,7 +688,7 @@ public class BookieImpl implements Bookie {
         try {
             readJournal();
         } catch (IOException | BookieException ioe) {
-            LOG.error("Exception while replaying journals, shutting down", ioe);
+            log.error().exception(ioe).log("Exception while replaying journals, shutting down");
             shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
@@ -685,36 +697,39 @@ public class BookieImpl implements Bookie {
         try {
             syncThread.requestFlush().get();
         } catch (InterruptedException e) {
-            LOG.warn("Interrupting the fully flush after replaying journals : ", e);
+            log.warn().exception(e).log("Interrupting the fully flush after replaying journals");
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-            LOG.error("Error on executing a fully flush after replaying journals.");
+            log.error("Error on executing a fully flush after replaying journals.");
             shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
 
         if (conf.isLocalConsistencyCheckOnStartup()) {
-            LOG.info("Running local consistency check on startup prior to accepting IO.");
+            log.info("Running local consistency check on startup prior to accepting IO.");
             List<LedgerStorage.DetectedInconsistency> errors = null;
             try {
                 errors = ledgerStorage.localConsistencyCheck(Optional.empty());
             } catch (IOException e) {
-                LOG.error("Got a fatal exception while checking store", e);
+                log.error().exception(e).log("Got a fatal exception while checking store");
                 shutdown(ExitCode.BOOKIE_EXCEPTION);
                 return;
             }
             if (errors != null && errors.size() > 0) {
-                LOG.error("Bookie failed local consistency check:");
+                log.error("Bookie failed local consistency check:");
                 for (LedgerStorage.DetectedInconsistency error : errors) {
-                    LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
+                    log.error()
+                            .exception(error.getException())
+                            .attr("ledgerId", error.getLedgerId())
+                            .attr("entryId", error.getEntryId())
+                            .log("Consistency check");
                 }
                 shutdown(ExitCode.BOOKIE_EXCEPTION);
                 return;
             }
         }
 
-        LOG.info("Finished reading journal, starting bookie");
-
+        log.info("Finished reading journal, starting bookie");
 
         /*
          * start sync thread first, so during replaying journals, we could do
@@ -743,7 +758,7 @@ public class BookieImpl implements Bookie {
         try {
             stateManager.registerBookie(true).get();
         } catch (Exception e) {
-            LOG.error("Couldn't register bookie with zookeeper, shutting down : ", e);
+            log.error().exception(e).log("Couldn't register bookie with metadata store, shutting down");
             shutdown(ExitCode.ZK_REG_FAIL);
         }
     }
@@ -784,7 +799,7 @@ public class BookieImpl implements Bookie {
 
             @Override
             public void fatalError() {
-                LOG.error("Fatal error reported by ledgerDirsManager");
+                log.error("Fatal error reported by ledgerDirsManager");
                 triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
             }
 
@@ -860,8 +875,10 @@ public class BookieImpl implements Bookie {
         if (!shutdownTriggered.compareAndSet(false, true)) {
             return;
         }
-        LOG.info("Triggering shutdown of Bookie-{} with exitCode {}",
-                 conf.getBookiePort(), exitCode);
+        log.info()
+                .attr("bookiePort", conf.getBookiePort())
+                .attr("exitCode", exitCode)
+                .log("Triggering shutdown of Bookie");
         BookieThread th = new BookieThread("BookieShutdownTrigger") {
             @Override
             public void run() {
@@ -884,8 +901,10 @@ public class BookieImpl implements Bookie {
         try {
             if (isRunning()) {
                 // the exitCode only set when first shutdown usually due to exception found
-                LOG.info("Shutting down Bookie-{} with exitCode {}",
-                         conf.getBookiePort(), exitCode);
+                log.info()
+                        .attr("bookiePort", conf.getBookiePort())
+                        .attr("exitCode", exitCode)
+                        .log("Shutting down Bookie");
                 if (this.exitCode == ExitCode.OK) {
                     this.exitCode = exitCode;
                 }
@@ -893,7 +912,7 @@ public class BookieImpl implements Bookie {
                 stateManager.forceToShuttingDown();
 
                 // turn bookie to read only during shutting down process
-                LOG.info("Turning bookie to read only during shut down");
+                log.info("Turning bookie to read only during shut down");
                 stateManager.forceToReadOnly();
 
                 // Shutdown Sync thread
@@ -912,9 +931,9 @@ public class BookieImpl implements Bookie {
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted during shutting down bookie : ", ie);
+            log.error().exception(ie).log("Interrupted during shutting down bookie");
         } catch (Exception e) {
-            LOG.error("Got Exception while trying to shutdown Bookie", e);
+            log.error().exception(e).log("Got Exception while trying to shutdown Bookie");
             throw e;
         } finally {
             lock.unlock();
@@ -989,10 +1008,10 @@ public class BookieImpl implements Bookie {
             }
             return;
         }
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Adding {}@{}", entryId, ledgerId);
-        }
+        log.trace()
+                .attr("entryId", entryId)
+                .attr("ledgerId", ledgerId)
+                .log("Adding entry");
         getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
     }
 
@@ -1081,9 +1100,7 @@ public class BookieImpl implements Bookie {
      */
     public void forceLedger(long ledgerId, WriteCallback cb,
                             Object ctx) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Forcing ledger {}", ledgerId);
-        }
+        log.trace().attr("ledgerId", ledgerId).log("Forcing ledger");
         Journal journal = getJournal(ledgerId);
         journal.forceLedger(ledgerId, cb, ctx);
         bookieStats.getForceLedgerOps().inc();
@@ -1146,9 +1163,10 @@ public class BookieImpl implements Bookie {
         int entrySize = 0;
         try {
             LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Reading {}@{}", entryId, ledgerId);
-            }
+            log.trace()
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Reading entry");
             ByteBuf entry = handle.readEntry(entryId);
             entrySize = entry.readableBytes();
             bookieStats.getReadBytes().addCount(entrySize);
@@ -1226,16 +1244,16 @@ public class BookieImpl implements Bookie {
                     }
 
                     if (!confirm) {
-                        LOG.error("Bookie format aborted!!");
+                        log.error("Bookie format aborted!!");
                         return false;
                     }
                 } catch (IOException e) {
-                    LOG.error("Error during bookie format", e);
+                    log.error().exception(e).log("Error during bookie format");
                     return false;
                 }
             }
             if (!cleanDir(journalDir)) {
-                LOG.error("Formatting journal directory failed");
+                log.error("Formatting journal directory failed");
                 return false;
             }
         }
@@ -1243,7 +1261,7 @@ public class BookieImpl implements Bookie {
         File[] ledgerDirs = conf.getLedgerDirs();
         for (File dir : ledgerDirs) {
             if (!cleanDir(dir)) {
-                LOG.error("Formatting ledger directory " + dir + " failed");
+                log.error().attr("directory", dir).log("Formatting ledger directory failed");
                 return false;
             }
         }
@@ -1253,7 +1271,7 @@ public class BookieImpl implements Bookie {
         if (null != indexDirs) {
             for (File dir : indexDirs) {
                 if (!cleanDir(dir)) {
-                    LOG.error("Formatting index directory " + dir + " failed");
+                    log.error().attr("directory", dir).log("Formatting index directory failed");
                     return false;
                 }
             }
@@ -1264,11 +1282,11 @@ public class BookieImpl implements Bookie {
         if (!Strings.isNullOrEmpty(conf.getGcEntryLogMetadataCachePath())) {
             File metadataDir = new File(conf.getGcEntryLogMetadataCachePath());
             if (!cleanDir(metadataDir)) {
-                LOG.error("Formatting ledger metadata directory {} failed", metadataDir);
+                log.error().attr("metadataDir", metadataDir).log("Formatting ledger metadata directory failed");
                 return false;
             }
         }
-        LOG.info("Bookie format completed successfully");
+        log.info("Bookie format completed successfully");
         return true;
     }
 
@@ -1279,13 +1297,13 @@ public class BookieImpl implements Bookie {
                 for (File child : files) {
                     boolean delete = FileUtils.deleteQuietly(child);
                     if (!delete) {
-                        LOG.error("Not able to delete " + child);
+                        log.error().attr("file", child).log("Not able to delete file");
                         return false;
                     }
                 }
             }
         } else if (!dir.mkdirs()) {
-            LOG.error("Not able to create the directory " + dir);
+            log.error().attr("directory", dir).log("Not able to create the directory");
             return false;
         }
         return true;
@@ -1305,9 +1323,7 @@ public class BookieImpl implements Bookie {
         boolean success = false;
         try {
             LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("GetEntriesOfLedger {}", ledgerId);
-            }
+            log.trace().attr("ledgerId", ledgerId).log("GetEntriesOfLedger");
             OfLong entriesOfLedger = handle.getListOfEntriesOfLedger(ledgerId);
             success = true;
             return entriesOfLedger;

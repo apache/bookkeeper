@@ -25,6 +25,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
@@ -35,15 +36,13 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ServerLifecycleComponent} that starts the core bookie server.
  */
 
+@CustomLog
 public class BookieService extends ServerLifecycleComponent {
-    private static final Logger log = LoggerFactory.getLogger(BookieService.class);
     public static final String NAME = "bookie-server";
 
     private final BookieServer server;
@@ -70,7 +69,7 @@ public class BookieService extends ServerLifecycleComponent {
         server.setExceptionHandler(handler);
         allocator.setOomHandler((ex) -> {
                 try {
-                    log.error("Unable to allocate memory, exiting bookie", ex);
+                    log.error().exception(ex).log("Unable to allocate memory, exiting bookie");
                 } finally {
                     if (uncaughtExceptionHandler != null) {
                         uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), ex);
@@ -117,7 +116,7 @@ public class BookieService extends ServerLifecycleComponent {
             componentInfoPublisher.publishEndpoint(endpoint);
 
         } catch (UnknownHostException err) {
-            log.error("Cannot compute local address", err);
+            log.error().exception(err).log("Cannot compute local address");
         }
     }
 

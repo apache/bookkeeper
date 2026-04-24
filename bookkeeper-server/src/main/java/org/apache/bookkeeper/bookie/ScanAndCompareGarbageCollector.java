@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Cleanup;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -53,8 +54,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Garbage collector implementation using scan and compare.
@@ -70,9 +69,8 @@ import org.slf4j.LoggerFactory;
  * </ul>
  * </p>
  */
+@CustomLog
 public class ScanAndCompareGarbageCollector implements GarbageCollector {
-
-    static final Logger LOG = LoggerFactory.getLogger(ScanAndCompareGarbageCollector.class);
 
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
@@ -101,8 +99,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             this.enableGcOverReplicatedLedger = true;
         }
         this.maxConcurrentRequests = conf.getGcOverreplicatedLedgerMaxConcurrentRequests();
-        LOG.info("Over Replicated Ledger Deletion : enabled={}, interval={}, maxConcurrentRequests={}",
-                enableGcOverReplicatedLedger, gcOverReplicatedLedgerIntervalMillis, maxConcurrentRequests);
+        log.info()
+                .attr("enableGcOverReplicatedLedger", enableGcOverReplicatedLedger)
+                .attr("gcOverReplicatedLedgerIntervalMillis", gcOverReplicatedLedgerIntervalMillis)
+                .attr("maxConcurrentRequests", maxConcurrentRequests)
+                .log("Over Replicated Ledger Deletion");
 
         verifyMetadataOnGc = conf.getVerifyMetadataOnGC();
         this.gcMetadataOpRateLimiter = RateLimiter.create(conf.getGcMetadataOpRateLimit());
@@ -132,14 +133,18 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             boolean checkOverreplicatedLedgers = (enableGcOverReplicatedLedger && curTime
                     - lastOverReplicatedLedgerGcTimeMillis > gcOverReplicatedLedgerIntervalMillis);
             if (checkOverreplicatedLedgers) {
-                LOG.info("Start removing over-replicated ledgers. activeLedgerCounter={}", activeLedgerCounter);
+                log.info()
+                        .attr("activeLedgerCounter", activeLedgerCounter)
+                        .log("Start removing over-replicated ledgers. activeLedgerCounter=");
 
                 // remove all the overreplicated ledgers from the local bookie
                 Set<Long> overReplicatedLedgers = removeOverReplicatedledgers(bkActiveLedgers, garbageCleaner);
                 if (overReplicatedLedgers.isEmpty()) {
-                    LOG.info("No over-replicated ledgers found.");
+                    log.info("No over-replicated ledgers found.");
                 } else {
-                    LOG.info("Removed over-replicated ledgers: {}", overReplicatedLedgers);
+                    log.info()
+                            .attr("overReplicatedLedgers", overReplicatedLedgers)
+                            .log("Removed over-replicated ledgers");
                 }
                 lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
             }
@@ -168,10 +173,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 }
 
                 Iterable<Long> subBkActiveLedgers = bkActiveLedgers.subSet(start, true, end, true);
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Active in metadata {}, Active in bookie {}", ledgersInMetadata, subBkActiveLedgers);
-                }
+                log.debug()
+                        .attr("ledgersInMetadata", ledgersInMetadata)
+                        .attr("subBkActiveLedgers", subBkActiveLedgers)
+                        .log("Active ledgers in metadata and bookie");
                 for (Long bkLid : subBkActiveLedgers) {
                     if (!ledgersInMetadata.contains(bkLid)) {
                         if (verifyMetadataOnGc) {
@@ -186,8 +191,10 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                 if (e instanceof BKException) {
                                     rc = ((BKException) e).getCode();
                                 } else {
-                                    LOG.warn("Time-out while fetching metadata for Ledger {} : {}.", bkLid,
-                                            e.getMessage());
+                                    log.warn()
+                                            .attr("bkLid", bkLid)
+                                            .exceptionMessage(e)
+                                            .log("Time-out while fetching metadata for Ledger");
 
                                     continue;
                                 }
@@ -205,8 +212,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                     continue;
                                 }
                             } else if (rc != BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                                LOG.warn("Ledger {} Missing in metadata list, but ledgerManager returned rc: {}.",
-                                        bkLid, rc);
+                                log.warn()
+                                        .attr("bkLid", bkLid)
+                                        .attr("rc", rc)
+                                        .log("Ledger missing in metadata list, "
+                                                + "but ledgerManager returned unexpected rc");
                                 continue;
                             }
                         }
@@ -216,7 +226,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             }
         } catch (Throwable t) {
             // ignore exception, collecting garbage next time
-            LOG.warn("Exception when iterating over the metadata", t);
+            log.warn().exception(t).log("Exception when iterating over the metadata");
         }
     }
 
@@ -249,8 +259,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                 }
             } catch (Throwable t) {
                 if (!(t.getCause() instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
-                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
-                            ledgerId, t.getClass().getName(), t.getMessage());
+                    log.warn()
+                            .attr("ledgerId", ledgerId)
+                            .attr("exceptionType", t.getClass().getName())
+                            .exceptionMessage(t)
+                            .log("Failed to get metadata for ledger");
                 }
                 latch.countDown();
                 continue;
@@ -280,8 +293,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                     }
                                 } else if (!(exception
                                         instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
-                                    LOG.warn("Failed to get metadata for ledger {}. {}: {}",
-                                            ledgerId, exception.getClass().getName(), exception.getMessage());
+                                    log.warn()
+                                            .attr("ledgerId", ledgerId)
+                                            .attr("exceptionType", exception.getClass().getName())
+                                            .exceptionMessage(exception)
+                                            .log("Failed to get metadata for ledger");
                                 }
                             } finally {
                                 semaphore.release();
@@ -289,13 +305,17 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
                                 try {
                                     lum.releaseUnderreplicatedLedger(ledgerId);
                                 } catch (Throwable t) {
-                                    LOG.error("Exception when removing underreplicated lock for ledger {}",
-                                              ledgerId, t);
+                                    log.error()
+                                            .exception(t)
+                                            .attr("ledgerId", ledgerId)
+                                            .log("Exception when removing underreplicated lock for ledger");
                                 }
                             }
                         });
             } catch (Throwable t) {
-                LOG.error("Exception when iterating through the ledgers to check for over-replication", t);
+                log.error()
+                        .exception(t)
+                        .log("Exception when iterating through the ledgers to check for over-replication");
                 latch.countDown();
             }
         }

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
@@ -36,12 +37,9 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
 
     protected Stopwatch lastPhaseStartTime;
     private final ExecutorService fenceThreadPool;
@@ -117,8 +115,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    LOG.error("Fence request for ledgerId {} entryId {} encountered exception",
-                            ledgerId, entryId, t);
+                    log.error()
+                            .exception(t)
+                            .attr("ledgerId", ledgerId)
+                            .attr("entryId", entryId)
+                            .log("Fence request encountered exception");
                     sendFenceResponse(readResponseBuilder, entryBody, false, startTimeSw);
                 }
             }, fenceThreadPool);
@@ -127,8 +128,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             try {
                 success = fenceResult.get(1000, TimeUnit.MILLISECONDS);
             } catch (Throwable t) {
-                LOG.error("Fence request for ledgerId {} entryId {} encountered exception : ",
-                        readRequest.getLedgerId(), readRequest.getEntryId(), t);
+                log.error()
+                        .exception(t)
+                        .attr("ledgerId", readRequest.getLedgerId())
+                        .attr("entryId", readRequest.getEntryId())
+                        .log("Fence request encountered exception");
             }
             sendFenceResponse(readResponseBuilder, entryBody, success, startTimeSw);
         }
@@ -202,12 +206,15 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         try {
             // handle fence request
             if (RequestUtils.isFenceRequest(readRequest)) {
-                LOG.info("Ledger fence request received for ledger: {} from address: {}", ledgerId,
-                    channel.remoteAddress());
+                log.info()
+                        .attr("ledgerId", ledgerId)
+                        .attr("address", channel.remoteAddress())
+                    .log("Ledger fence request received");
                 if (!readRequest.hasMasterKey()) {
-                    LOG.error(
-                        "Fence ledger request received without master key for ledger:{} from address: {}",
-                        ledgerId, channel.remoteAddress());
+                    log.error()
+                            .attr("ledgerId", ledgerId)
+                            .attr("address", channel.remoteAddress())
+                        .log("Fence ledger request received without master key");
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 } else {
                     byte[] masterKey = readRequest.getMasterKey().toByteArray();
@@ -217,32 +224,48 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             return readEntry(readResponse, entryId, startTimeSw);
         } catch (Bookie.NoLedgerException | BookieException.LedgerFencedAndDeletedException e) {
             if (RequestUtils.isFenceRequest(readRequest)) {
-                LOG.info("No ledger found(or it has been deleted) reading entry {} when fencing ledger {}",
-                    entryId, ledgerId);
+                log.info()
+                        .attr("entryId", entryId)
+                        .attr("ledgerId", ledgerId)
+                    .log("No ledger found (or it has been deleted) reading entry when fencing ledger");
             } else if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
-                LOG.info("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
-            } else if (LOG.isDebugEnabled()) {
+                log.info()
+                        .attr("entryId", entryId)
+                        .attr("ledgerId", ledgerId)
+                    .log("No ledger found while reading entry from ledger");
+            } else {
                 // this is the case of a reader which is calling readLastAddConfirmed and the ledger is empty
-                LOG.debug("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
+                log.debug()
+                        .attr("entryId", entryId)
+                        .attr("ledgerId", ledgerId)
+                    .log("No ledger found while reading entry from ledger");
             }
             return buildResponse(readResponse, StatusCode.ENOLEDGER, startTimeSw);
         } catch (Bookie.NoEntryException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No entry found while reading entry: {} from ledger: {}", entryId, ledgerId);
-            }
+            log.debug()
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("No entry found while reading entry from ledger");
             return buildResponse(readResponse, StatusCode.ENOENTRY, startTimeSw);
         } catch (IOException e) {
-            LOG.error("IOException while reading entry: {} from ledger {} ", entryId, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("IOException while reading entry from ledger");
             return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
         } catch (BookieException.DataUnknownException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger has unknown state for entry: {} from ledger {}", entryId, ledgerId);
-            }
+            log.debug()
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger has unknown state for entry");
             return buildResponse(readResponse, StatusCode.EUNKNOWNLEDGERSTATE, startTimeSw);
         } catch (BookieException e) {
-            LOG.error(
-                "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
-                    ledgerId, entryId, channel.remoteAddress());
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("address", channel.remoteAddress())
+                    .log("Unauthorized access to ledger while reading entry");
             return buildResponse(readResponse, StatusCode.EUA, startTimeSw);
         }
     }
@@ -252,9 +275,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!requestHandler.ctx().channel().isOpen()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Dropping read request for closed channel: {}", requestHandler.ctx().channel());
-            }
+            log.debug().attr("channel", requestHandler.ctx().channel()).log("Dropping read request for closed channel");
             requestProcessor.onReadRequestFinish();
             return;
         }

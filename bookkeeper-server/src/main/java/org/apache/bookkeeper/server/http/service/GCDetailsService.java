@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -29,8 +30,6 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle get garbage collection details service.
@@ -46,9 +45,9 @@ import org.slf4j.LoggerFactory;
  *           "minorCompactionCounter" : 0
  *         } ]
  */
+@CustomLog
 public class GCDetailsService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(GCDetailsService.class);
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
@@ -69,9 +68,7 @@ public class GCDetailsService implements HttpEndpointService {
                 .getLedgerStorage().getGarbageCollectionStatus();
 
             String jsonResponse = JsonUtil.toJson(details);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
+            log.debug().attr("body", jsonResponse).log("output body");
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

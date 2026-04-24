@@ -25,21 +25,19 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SASL Bookie Authentication Provider.
  */
+@CustomLog
 public class SASLBookieAuthProvider implements BookieAuthProvider {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SASLBookieAuthProvider.class);
 
     private SaslServerState server;
     private final AuthCallbacks.GenericCallback<Void> completeCb;
@@ -50,7 +48,7 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
         try {
             server = new SaslServerState(serverConfiguration, subject, allowedIdsPattern);
         } catch (IOException | LoginException error) {
-            LOG.error("Error while booting SASL server", error);
+            log.error().exception(error).log("Error while booting SASL server");
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
     }
@@ -67,9 +65,7 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
                 completeCb.operationComplete(BKException.Code.OK, null);
             }
         } catch (SaslException err) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("SASL error", err);
-            }
+            log.debug().exception(err).log("SASL error");
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
 

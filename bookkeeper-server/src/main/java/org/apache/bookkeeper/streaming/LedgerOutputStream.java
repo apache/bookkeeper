@@ -23,10 +23,9 @@ package org.apache.bookkeeper.streaming;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * this class provides a streaming api to get an output stream from a ledger
@@ -34,9 +33,8 @@ import org.slf4j.LoggerFactory;
  * ledgerhandle api and uses a buffer to cache the data written to it and writes
  * out the entry to the ledger.
  */
+@CustomLog
 public class LedgerOutputStream extends OutputStream {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
 
     private final LedgerHandle lh;
     private ByteBuffer bytebuff;
@@ -84,15 +82,15 @@ public class LedgerOutputStream extends OutputStream {
             // copy the bytes into
             // a new byte buffer and send it out
             byte[] b = new byte[bytebuff.position()];
-            LOG.info("Comment: flushing with params " + " " + bytebuff.position());
+            log.info().attr("position", bytebuff.position()).log("Flushing buffer");
             System.arraycopy(bbytes, 0, b, 0, bytebuff.position());
             try {
                 lh.addEntry(b);
             } catch (InterruptedException ie) {
-                LOG.warn("Interrupted while flushing " + ie);
+                log.warn().exception(ie).log("Interrupted while flushing");
                 Thread.currentThread().interrupt();
             } catch (BKException bke) {
-                LOG.warn("BookKeeper exception ", bke);
+                log.warn().exception(bke).log("BookKeeper exception");
             }
         }
     }
@@ -120,10 +118,10 @@ public class LedgerOutputStream extends OutputStream {
             try {
                 lh.addEntry(b);
             } catch (InterruptedException ie) {
-                LOG.warn("Interrupted while writing", ie);
+                log.warn().exception(ie).log("Interrupted while writing");
                 Thread.currentThread().interrupt();
             } catch (BKException bke) {
-                LOG.warn("BookKeeper exception", bke);
+                log.warn().exception(bke).log("BookKeeper exception");
             }
         }
     }

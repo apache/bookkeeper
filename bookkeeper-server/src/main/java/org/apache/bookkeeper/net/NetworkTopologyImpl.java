@@ -27,8 +27,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * The class represents a cluster of computer with a tree hierarchical
@@ -40,10 +39,10 @@ import org.slf4j.LoggerFactory;
  * or racks.
  *
  */
+@CustomLog
 public class NetworkTopologyImpl implements NetworkTopology {
 
     public static final int DEFAULT_HOST_LEVEL = 2;
-    public static final Logger LOG = LoggerFactory.getLogger(NetworkTopologyImpl.class);
     public static final String NODE_SEPARATOR = ",";
     public static final String INVERSE = "~";
 
@@ -414,18 +413,22 @@ public class NetworkTopologyImpl implements NetworkTopology {
         netlock.writeLock().lock();
         try {
             if ((depthOfAllLeaves != -1) && (depthOfAllLeaves != newDepth)) {
-                LOG.error("Error: can't add leaf node {} at depth {} to topology:\n{}", node, newDepth, oldTopoStr);
+                log.error()
+                        .attr("node", node)
+                        .attr("depth", newDepth)
+                        .attr("topology", oldTopoStr)
+                        .log("Error: can't add leaf node at depth to topology");
                 throw new InvalidTopologyException("Invalid network topology. "
                         + "You cannot have a rack and a non-rack node at the same level of the network topology.");
             }
             Node rack = getNodeForNetworkLocation(node);
             if (rack != null && !(rack instanceof InnerNode)) {
-                LOG.error("Unexpected data node {} at an illegal network location", node);
+                log.error().attr("node", node).log("Unexpected data node at an illegal network location");
                 throw new IllegalArgumentException("Unexpected data node " + node
                         + " at an illegal network location");
             }
             if (clusterMap.add(node)) {
-                LOG.info("Adding a new node: " + NodeBase.getPath(node));
+                log.info().attr("node", NodeBase.getPath(node)).log("Adding a new node");
                 if (rack == null) {
                     numOfRacks++;
                 }
@@ -435,9 +438,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                     }
                 }
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this);
-            }
+            log.debug().attr("topology", this.toString()).log("NetworkTopology became");
         } finally {
             netlock.writeLock().unlock();
         }
@@ -497,7 +498,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
         } else if (node instanceof InnerNode) {
             throw new IllegalArgumentException("Not allow to remove an inner node: " + NodeBase.getPath(node));
         }
-        LOG.info("Removing a node: " + NodeBase.getPath(node));
+        log.info().attr("node", NodeBase.getPath(node)).log("Removing a node");
         netlock.writeLock().lock();
         try {
             if (clusterMap.remove(node)) {
@@ -509,9 +510,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                     depthOfAllLeaves = -1;
                 }
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("NetworkTopology became:\n" + this);
-            }
+            log.debug().attr("topology", this.toString()).log("NetworkTopology became");
         } finally {
             netlock.writeLock().unlock();
         }
@@ -637,11 +636,11 @@ public class NetworkTopologyImpl implements NetworkTopology {
             netlock.readLock().unlock();
         }
         if (n1 == null) {
-            LOG.warn("The cluster does not contain node: {}", NodeBase.getPath(node1));
+            log.warn().attr("node", NodeBase.getPath(node1)).log("The cluster does not contain node");
             return Integer.MAX_VALUE;
         }
         if (n2 == null) {
-            LOG.warn("The cluster does not contain node: {}", NodeBase.getPath(node2));
+            log.warn().attr("node", NodeBase.getPath(node2)).log("The cluster does not contain node");
             return Integer.MAX_VALUE;
         }
         return dis + 2;

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -27,17 +28,15 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper who is auditor related http request.
  *
  * <p>The GET method will get the auditor bookie address
  */
+@CustomLog
 public class WhoIsAuditorService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorService.class);
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
@@ -66,7 +65,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
                     return response;
                 }
             } catch (Exception e) {
-                LOG.error("Meet Exception: ", e);
+                log.error().exception(e).log("Failed to get auditor");
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get." + e.getMessage());
                 return response;
@@ -74,9 +73,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
 
             response.setCode(HttpServer.StatusCode.OK);
             response.setBody("Auditor: " + bookieId);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("response body:" + response.getBody());
-            }
+            log.debug().attr("body", response.getBody()).log("response body");
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);

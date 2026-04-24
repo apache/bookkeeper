@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.LongStream;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -51,15 +52,12 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to read ledger entries.
  */
+@CustomLog
 public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedgerFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ReadLedgerCommand.class);
 
     private static final String NAME = "readledger";
     private static final String DESC = "Read a range of entries from a ledger.";
@@ -195,17 +193,22 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                     bookieClient.readEntry(bookie, flags.ledgerId, entryId,
                                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
                                                if (rc != BKException.Code.OK) {
-                                                   LOG.error("Failed to read entry {} -- {}", entryId1,
-                                                             BKException.getMessage(rc));
+                                                   log.error()
+                                                           .attr("entryId", entryId1)
+                                                           .attr("error", BKException.getMessage(rc))
+                                                           .log("Failed to read entry");
                                                    future.completeExceptionally(BKException.create(rc));
                                                    return;
                                                }
 
-                                               LOG.info("--------- Lid={}, Eid={} ---------",
-                                                   ledgerIdFormatter.formatLedgerId(flags.ledgerId), entryId);
+                                               var event = log.info()
+                                                       .attr("ledgerId",
+                                                               ledgerIdFormatter.formatLedgerId(flags.ledgerId))
+                                                       .attr("entryId", entryId);
                                                if (flags.msg) {
-                                                   LOG.info("Data: " + ByteBufUtil.prettyHexDump(buffer));
+                                                   event.attr("data", ByteBufUtil.prettyHexDump(buffer));
                                                }
+                                               event.log("Entry");
 
                                                future.complete(null);
                                            }, null, BookieProtocol.FLAG_NONE);
@@ -213,7 +216,10 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                     try {
                         future.get();
                     } catch (Exception e) {
-                        LOG.error("Error future.get while reading entries from ledger {}", flags.ledgerId, e);
+                        log.error()
+                                .attr("ledgerId", flags.ledgerId)
+                                .exception(e)
+                                .log("Error future.get while reading entries from ledger");
                     }
                 });
 
@@ -238,8 +244,11 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
         long entryId = entry.getEntryId();
         long entrySize = entry.getLength();
 
-        LOG.info("--------- Lid={}, Eid={}, EntrySize={} ---------",
-            ledgerIdFormatter.formatLedgerId(ledgerId), entryId, entrySize);
+        log.info()
+                .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId))
+                .attr("entryId", entryId)
+                .attr("entrySize", entrySize)
+                .log("Entry");
 
         if (printMsg) {
             entryFormatter.formatEntry(entry.getEntry());

@@ -40,16 +40,15 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.zookeeper.server.auth.KerberosName;
-import org.slf4j.LoggerFactory;
 
 /**
  * Server side Sasl implementation.
  */
+@CustomLog
 public class SaslServerState {
-
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SaslServerState.class);
 
     private final SaslServer saslServer;
     private final Pattern allowedIdsPattern;
@@ -70,9 +69,9 @@ public class SaslServerState {
             try {
                 final Object[] principals = subject.getPrincipals().toArray();
                 final Principal servicePrincipal = (Principal) principals[0];
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Authentication will use SASL/JAAS/Kerberos, servicePrincipal is {}", servicePrincipal);
-                }
+                log.debug()
+                        .attr("servicePrincipal", servicePrincipal)
+                        .log("Authentication will use SASL/JAAS/Kerberos");
 
                 final String servicePrincipalNameAndHostname = servicePrincipal.getName();
                 int indexOf = servicePrincipalNameAndHostname.indexOf("/");
@@ -110,9 +109,7 @@ public class SaslServerState {
                 throw new SaslException("error on GSSAPI boot", e);
             }
         } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Authentication will use SASL/JAAS/DIGEST-MD5");
-            }
+            log.debug("Authentication will use SASL/JAAS/DIGEST-MD5");
             return Sasl.createSaslServer("DIGEST-MD5", SaslConstants.SASL_BOOKKEEPER_PROTOCOL,
                 SaslConstants.SASL_MD5_DUMMY_HOSTNAME, null, callbackHandler);
         }
@@ -131,7 +128,7 @@ public class SaslServerState {
             byte[] retval = saslServer.evaluateResponse(token);
             return retval;
         } catch (SaslException e) {
-            LOG.error("response: Failed to evaluate client token", e);
+            log.error().exception(e).log("response: Failed to evaluate client token");
             throw e;
         }
     }
@@ -188,7 +185,7 @@ public class SaslServerState {
         private void handleNameCallback(NameCallback nc) {
             // check to see if this user is in the user password database.
             if (credentials.get(nc.getDefaultName()) == null) {
-                LOG.error("User '" + nc.getDefaultName() + "' not found in list of JAAS DIGEST-MD5 users.");
+                log.error().attr("user", nc.getDefaultName()).log("User not found in list of JAAS DIGEST-MD5 users");
                 return;
             }
             nc.setName(nc.getDefaultName());
@@ -199,14 +196,12 @@ public class SaslServerState {
             if (credentials.containsKey(userName)) {
                 pc.setPassword(credentials.get(userName).toCharArray());
             } else {
-                LOG.info("No password found for user: " + userName);
+                log.info().attr("user", userName).log("No password found for user");
             }
         }
 
         private void handleRealmCallback(RealmCallback rc) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("client supplied realm: " + rc.getDefaultText());
-            }
+            log.debug().attr("realm", rc.getDefaultText()).log("client supplied realm");
             rc.setText(rc.getDefaultText());
         }
 
@@ -215,34 +210,36 @@ public class SaslServerState {
             String authorizationID = ac.getAuthorizationID();
             if (!authenticationID.equals(authorizationID)) {
                 ac.setAuthorized(false);
-                LOG.info("Forbidden access to client: authenticationID=" + authenticationID
-                    + " is different from authorizationID=" + authorizationID + ".");
+                log.info()
+                        .attr("authenticationID", authenticationID)
+                        .attr("authorizationID", authorizationID)
+                    .log("Forbidden access to client: authenticationID is different from authorizationID");
                 return;
             }
             if (!allowedIdsPattern.matcher(authenticationID).matches()) {
                 ac.setAuthorized(false);
-                LOG.info("Forbidden access to client: authenticationID=" + authenticationID
-                    + " is not allowed (see " + SaslConstants.JAAS_CLIENT_ALLOWED_IDS + " property)");
+                log.info()
+                        .attr("authenticationID", authenticationID)
+                        .attr("configProperty", SaslConstants.JAAS_CLIENT_ALLOWED_IDS)
+                    .log("Forbidden access to client: authenticationID is not allowed");
                 return;
             }
             ac.setAuthorized(true);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Successfully authenticated client: authenticationID=" + authenticationID
-                        + ";  authorizationID=" + authorizationID + ".");
-            }
+            log.debug()
+                    .attr("authenticationID", authenticationID)
+                    .attr("authorizationID", authorizationID)
+                    .log("Successfully authenticated client");
 
             KerberosName kerberosName = new KerberosName(authenticationID);
             try {
                 StringBuilder userNameBuilder = new StringBuilder(kerberosName.getShortName());
                 userNameBuilder.append("/").append(kerberosName.getHostName());
                 userNameBuilder.append("@").append(kerberosName.getRealm());
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Setting authorizedID: " + userNameBuilder);
-                }
+                log.debug().attr("authorizedID", userNameBuilder).log("Setting authorizedID");
                 ac.setAuthorizedID(userNameBuilder.toString());
             } catch (IOException e) {
-                LOG.error("Failed to set name based on Kerberos authentication rules.");
+                log.error("Failed to set name based on Kerberos authentication rules.");
             }
         }
     }

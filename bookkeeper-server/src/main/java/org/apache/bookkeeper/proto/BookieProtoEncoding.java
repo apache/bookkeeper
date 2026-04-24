@@ -36,19 +36,18 @@ import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A class for encoding and decoding the Bookkeeper protocol.
  */
+@CustomLog
 public class BookieProtoEncoding {
-    private static final Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
 
     /**
      * Threshold under which an entry is considered to be "small".
@@ -351,7 +350,7 @@ public class BookieProtoEncoding {
                     buf.writeBytes(am.toByteArray());
                     return buf;
                 } else {
-                    LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
+                    log.error().attr("type", msg.getClass().getName()).log("Cannot encode unknown response type");
                     return msg;
                 }
             } finally {
@@ -509,9 +508,10 @@ public class BookieProtoEncoding {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Encode request {} to channel {}.", msg, ctx.channel());
-            }
+            log.trace()
+                    .attr("msg", msg)
+                    .attr("channel", ctx.channel())
+                    .log("Encode request to channel");
             if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
                 ctx.write(msg, promise);
             } else if (msg instanceof BookkeeperProtocol.Request) {
@@ -519,7 +519,10 @@ public class BookieProtoEncoding {
             } else if (msg instanceof BookieProtocol.Request) {
                 ctx.write(reqPreV3.encode(msg, ctx.alloc()), promise);
             } else {
-                LOG.error("Invalid request to encode to {}: {}", ctx.channel(), msg.getClass().getName());
+                log.error()
+                        .attr("channel", ctx.channel())
+                        .attr("type", msg.getClass().getName())
+                        .log("Invalid request to encode");
                 ctx.write(msg, promise);
             }
         }
@@ -542,12 +545,16 @@ public class BookieProtoEncoding {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Received request {} from channel {} to decode.", msg, ctx.channel());
-            }
+            log.trace()
+                    .attr("msg", msg)
+                    .attr("channel", ctx.channel())
+                    .log("Received request from channel to decode");
             try {
                 if (!(msg instanceof ByteBuf)) {
-                    LOG.error("Received invalid request {} from channel {} to decode.", msg, ctx.channel());
+                    log.error()
+                            .attr("msg", msg)
+                            .attr("channel", ctx.channel())
+                            .log("Received invalid request from channel to decode");
                     ctx.fireChannelRead(msg);
                     return;
                 }
@@ -587,9 +594,10 @@ public class BookieProtoEncoding {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
-            }
+            log.trace()
+                    .attr("msg", msg)
+                    .attr("channel", ctx.channel())
+                    .log("Encode response to channel");
 
             if (msg instanceof ByteBuf) {
                 ctx.write(msg, promise);
@@ -598,7 +606,10 @@ public class BookieProtoEncoding {
             } else if (msg instanceof BookieProtocol.Response) {
                 ctx.write(repPreV3.encode(msg, ctx.alloc()), promise);
             } else {
-                LOG.error("Invalid response to encode to {}: {}", ctx.channel(), msg.getClass().getName());
+                log.error()
+                        .attr("channel", ctx.channel())
+                        .attr("type", msg.getClass().getName())
+                        .log("Invalid response to encode");
                 ctx.write(msg, promise);
             }
         }
@@ -627,12 +638,16 @@ public class BookieProtoEncoding {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Received response {} from channel {} to decode.", msg, ctx.channel());
-            }
+            log.trace()
+                    .attr("msg", msg)
+                    .attr("channel", ctx.channel())
+                    .log("Received response from channel to decode");
             try {
                 if (!(msg instanceof ByteBuf)) {
-                    LOG.error("Received invalid response {} from channel {} to decode.", msg, ctx.channel());
+                    log.error()
+                            .attr("msg", msg)
+                            .attr("channel", ctx.channel())
+                            .log("Received invalid response from channel to decode");
                     ctx.fireChannelRead(msg);
                     return;
                 }
@@ -650,9 +665,7 @@ public class BookieProtoEncoding {
                             if (result instanceof Response
                                 && OperationType.START_TLS == ((Response) result).getHeader().getOperation()) {
                                 usingV3Protocol = false;
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Degrade bookkeeper to v2 after starting TLS.");
-                                }
+                                log.debug("Degrade bookkeeper to v2 after starting TLS.");
                             }
                         } catch (InvalidProtocolBufferException e) {
                             usingV3Protocol = false;

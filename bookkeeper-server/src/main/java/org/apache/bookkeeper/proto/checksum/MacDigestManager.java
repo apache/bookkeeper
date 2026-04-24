@@ -28,16 +28,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * A {@code SHA-1} based digest manager.
  *
  * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
  */
+@CustomLog
 public class MacDigestManager extends DigestManager {
-    private static final Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 
     public static final String DIGEST_ALGORITHM = "SHA-1";
     public static final String KEY_ALGORITHM = "HmacSHA1";
@@ -65,7 +64,7 @@ public class MacDigestManager extends DigestManager {
                 mac.init(keySpec);
                 return mac;
             } catch (GeneralSecurityException gse) {
-                LOG.error("Couldn't not get mac instance", gse);
+                log.error().exception(gse).log("Couldn't not get mac instance");
                 return null;
             }
         }

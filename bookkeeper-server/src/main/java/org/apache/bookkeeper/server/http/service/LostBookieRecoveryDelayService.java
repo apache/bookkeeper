@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -28,8 +29,6 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper lost bookie recovery delay parameter related http request.
@@ -37,9 +36,9 @@ import org.slf4j.LoggerFactory;
  * <p>The GET method will get the value of parameter lostBookieRecoveryDelay,
  * while the PUT method will set the value of parameter lostBookieRecoveryDelay,
  */
+@CustomLog
 public class LostBookieRecoveryDelayService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(LostBookieRecoveryDelayService.class);
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
@@ -85,13 +84,11 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
                 int delaySeconds = bka.getLostBookieRecoveryDelay();
                 response.setCode(HttpServer.StatusCode.OK);
                 response.setBody("lostBookieRecoveryDelay value: " + delaySeconds);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("response body:" + response.getBody());
-                }
+                log.debug().attr("body", response.getBody()).log("response body");
                 return response;
             } catch (Exception e) {
                 // may get noNode exception
-                LOG.error("Exception occurred while getting lost bookie recovery delay", e);
+                log.error().exception(e).log("Exception occurred while getting lost bookie recovery delay");
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get lostBookieRecoveryDelay." + e.getMessage());
                 return response;

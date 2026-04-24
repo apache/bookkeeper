@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -96,16 +97,13 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Admin client for BookKeeper clusters.
  */
+@CustomLog
 public class BookKeeperAdmin implements AutoCloseable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
-    private static final Logger VERBOSE = LoggerFactory.getLogger("verbose");
+    private static final io.github.merlimat.slog.Logger VERBOSE = io.github.merlimat.slog.Logger.get("verbose");
     private static final BiConsumer<Long, Long> NOOP_BICONSUMER = (l, e) -> { };
 
     // BookKeeper client instance
@@ -457,7 +455,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                         close();
                         return false;
                     }
-                    LOG.error("Error reading entry {} from ledger {}", nextEntryId, ledgerId, e);
+                    log.error()
+                            .exception(e)
+                            .attr("entryId", nextEntryId)
+                            .attr("ledgerId", ledgerId)
+                            .log("Error reading entry from ledger");
                     close();
                     throw new RuntimeException(e);
                 }
@@ -487,7 +489,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 try {
                     handle.close();
                 } catch (Exception e) {
-                    LOG.error("Error closing ledger handle {}", handle, e);
+                    log.error()
+                            .exception(e)
+                            .attr("handle", handle)
+                            .log("Error closing ledger handle");
                 }
             }
         }
@@ -512,7 +517,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         asyncGetLedgersContainBookies(bookies, new GenericCallback<SortedMap<Long, LedgerMetadata>>() {
             @Override
             public void operationComplete(int rc, SortedMap<Long, LedgerMetadata> result) {
-                LOG.info("GetLedgersContainBookies completed with rc : {}", rc);
+                log.info().attr("returnCode", rc).log("GetLedgersContainBookies completed");
                 synchronized (sync) {
                     sync.rc = rc;
                     sync.value = true;
@@ -605,7 +610,9 @@ public class BookKeeperAdmin implements AutoCloseable {
         asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, skipUnrecoverableLedgers, new RecoverCallback() {
             @Override
             public void recoverComplete(int rc, Object ctx) {
-                LOG.info("Recover bookie operation completed with rc: {}", BKException.codeLogger(rc));
+                log.info()
+                        .attr("codeLogger", BKException.codeLogger(rc))
+                        .log("Recover bookie operation completed");
                 SyncObject syncObj = (SyncObject) ctx;
                 synchronized (syncObj) {
                     syncObj.rc = rc;
@@ -634,7 +641,10 @@ public class BookKeeperAdmin implements AutoCloseable {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
         asyncRecoverBookieData(lid, bookiesSrc, dryrun, skipOpenLedgers, (rc, ctx) -> {
-            LOG.info("Recover bookie for {} completed with rc : {}", lid, BKException.codeLogger(rc));
+            log.info()
+                    .attr("ledgerId", lid)
+                    .attr("codeLogger", BKException.codeLogger(rc))
+                    .log("Recover bookie completed");
             SyncObject syncObject = (SyncObject) ctx;
             synchronized (syncObject) {
                 syncObject.rc = rc;
@@ -807,19 +817,25 @@ public class BookKeeperAdmin implements AutoCloseable {
     private void recoverLedger(final Set<BookieId> bookiesSrc, final long lId, final boolean dryrun,
                                final boolean skipOpenLedgers, final boolean skipUnrecoverableLedgers,
                                final AsyncCallback.VoidCallback finalLedgerIterCb) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Recovering ledger : {}", lId);
-        }
+
+        log.debug().attr("ledgerId", lId).log("Recovering ledger");
+
 
         asyncOpenLedgerNoRecovery(lId, new OpenCallback() {
             @Override
             public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
                 if (rc != BKException.Code.OK) {
                     if (skipUnrecoverableLedgers) {
-                        LOG.warn("BK error opening ledger: {}, skip recover it.", lId, BKException.create(rc));
+                        log.warn()
+                                .attr("ledgerId", lId)
+                                .attr("create", BKException.create(rc))
+                                .log("BK error opening ledger, skip recover it");
                         finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
                     } else {
-                        LOG.error("BK error opening ledger: {}", lId, BKException.create(rc));
+                        log.error()
+                                .attr("ledgerId", lId)
+                                .attr("create", BKException.create(rc))
+                                .log("BK error opening ledger");
                         finalLedgerIterCb.processResult(rc, null, null);
                     }
                     return;
@@ -827,13 +843,13 @@ public class BookKeeperAdmin implements AutoCloseable {
 
                 LedgerMetadata lm = lh.getLedgerMetadata();
                 if (skipOpenLedgers && lm.getState() == LedgerMetadata.State.OPEN) {
-                    LOG.info("Skip recovering open ledger {}.", lId);
+                    log.info().attr("ledgerId", lId).log("Skip recovering open ledger");
                     try {
                         lh.close();
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                     } catch (BKException bke) {
-                        LOG.warn("Error on closing ledger handle for {}.", lId);
+                        log.warn().attr("ledgerId", lId).log("Error on closing ledger handle");
                     }
                     finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
                     return;
@@ -849,18 +865,23 @@ public class BookKeeperAdmin implements AutoCloseable {
                     try {
                         lh.close();
                     } catch (Exception ie) {
-                        LOG.warn("Error closing non recovery ledger handle for ledger " + lId, ie);
+                        log.warn().exception(ie).log("Error closing non recovery ledger handle for ledger " + lId);
                     }
                     asyncOpenLedger(lId, new OpenCallback() {
                         @Override
                         public void openComplete(int newrc, final LedgerHandle newlh, Object newctx) {
                             if (newrc != BKException.Code.OK) {
                                 if (skipUnrecoverableLedgers) {
-                                    LOG.warn("BK error opening ledger: {}, skip recover it.",
-                                        lId, BKException.create(newrc));
+                                    log.warn()
+                                            .attr("ledgerId", lId)
+                                            .attr("create", BKException.create(newrc))
+                                            .log("BK error opening ledger, skip recover it");
                                     finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
                                 } else {
-                                    LOG.error("BK error close ledger: {}", lId, BKException.create(newrc));
+                                    log.error()
+                                            .attr("ledgerId", lId)
+                                            .attr("create", BKException.create(newrc))
+                                            .log("BK error close ledger");
                                     finalLedgerIterCb.processResult(newrc, null, null);
                                 }
                                 return;
@@ -880,21 +901,26 @@ public class BookKeeperAdmin implements AutoCloseable {
                     public void processResult(int rc, String path, Object ctx) {
                         if (BKException.Code.OK != rc) {
                             if (skipUnrecoverableLedgers) {
-                                LOG.warn("Failed to recover ledger: {} : {}, skip recover it.", lId,
-                                    BKException.codeLogger(rc));
+                                log.warn()
+                                        .attr("ledgerId", lId)
+                                        .attr("codeLogger", BKException.codeLogger(rc))
+                                        .log("Failed to recover ledger, skip recover it");
                                 rc = BKException.Code.OK;
                             } else {
-                                LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
+                                log.error()
+                                        .attr("ledgerId", lId)
+                                        .attr("codeLogger", BKException.codeLogger(rc))
+                                        .log("Failed to recover ledger");
                             }
                         } else {
-                            LOG.info("Recovered ledger {}.", lId);
+                            log.info().attr("ledgerId", lId).log("Recovered ledger");
                         }
                         try {
                             lh.close();
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         } catch (BKException bke) {
-                            LOG.warn("Error on closing ledger handle for {}.", lId);
+                            log.warn().attr("ledgerId", lId).log("Error on closing ledger handle");
                         }
                         finalLedgerIterCb.processResult(rc, path, ctx);
                     }
@@ -947,7 +973,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 }
 
                 if (dryrun) {
-                    VERBOSE.info("Recovered ledger {} : {}", lId, (fenceRequired ? "[fence required]" : ""));
+                    VERBOSE.info()
+                            .attr("ledgerId", lId)
+                            .attr("status", (fenceRequired ? "[fence required]" : ""))
+                            .log("Recovered ledger");
                 }
 
                 /*
@@ -971,8 +1000,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                         if (!dryrun) {
                             ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, null, null);
                         } else {
-                            VERBOSE.info("  Fragment [{} - {}] : {}", startEntryId, endEntryId,
-                                BKException.getMessage(BKException.Code.NotEnoughBookiesException));
+                            VERBOSE.info()
+                                    .attr("startEntryId", startEntryId)
+                                    .attr("endEntryId", endEntryId)
+                                    .attr("error", BKException.getMessage(BKException.Code.NotEnoughBookiesException))
+                                    .log("Fragment recovery failed");
                         }
                         continue;
                     }
@@ -980,14 +1012,25 @@ public class BookKeeperAdmin implements AutoCloseable {
                     if (dryrun) {
                         ArrayList<BookieId> newEnsemble =
                                 replaceBookiesInEnsemble(ensemble, targetBookieAddresses);
-                        VERBOSE.info("  Fragment [{} - {}] : ", startEntryId, endEntryId);
-                        VERBOSE.info("    old ensemble : {}", formatEnsemble(ensemble, bookiesSrc, '*'));
-                        VERBOSE.info("    new ensemble : {}", formatEnsemble(newEnsemble, bookiesSrc, '*'));
+                        VERBOSE.info()
+                                .attr("startEntryId", startEntryId)
+                                .attr("endEntryId", endEntryId)
+                                .log("Fragment");
+                        VERBOSE.info()
+                                .attr("oldEnsemble", formatEnsemble(ensemble, bookiesSrc, '*'))
+                                .log("Old ensemble");
+                        VERBOSE.info()
+                                .attr("newEnsemble", formatEnsemble(newEnsemble, bookiesSrc, '*'))
+                                .log("New ensemble");
                     } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Replicating fragment from [{}, {}] of ledger {} to {}",
-                                startEntryId, endEntryId, lh.getId(), targetBookieAddresses);
-                        }
+
+                        log.debug()
+                        .attr("startEntryId", startEntryId)
+                        .attr("endEntryId", endEntryId)
+                        .attr("ledgerId", lh.getId())
+                        .attr("bookieAddr", targetBookieAddresses)
+                        .log("Replicating fragment");
+
                         try {
                             LedgerFragmentReplicator.SingleFragmentCallback cb =
                                 new LedgerFragmentReplicator.SingleFragmentCallback(ledgerFragmentsMcb, lh,
@@ -1104,11 +1147,12 @@ public class BookKeeperAdmin implements AutoCloseable {
                             bookiesToExclude);
             BookieId newBookie = replaceBookieResponse.getResult();
             PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getAdheringToPolicy();
-            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL && LOG.isDebugEnabled()) {
-                LOG.debug(
-                        "replaceBookie for bookie: {} in ensemble: {} "
-                                + "is not adhering to placement policy and chose {}",
-                        oldBookie, ensemble, newBookie);
+            if (isEnsembleAdheringToPlacementPolicy == PlacementPolicyAdherence.FAIL) {
+                log.debug()
+                        .attr("oldBookie", oldBookie)
+                        .attr("ensemble", ensemble)
+                        .attr("newBookie", newBookie)
+                        .log("replaceBookie is not adhering to placement policy");
             }
             targetBookieAddresses.put(bookieIndex, newBookie);
             bookiesToExclude.add(newBookie);
@@ -1148,8 +1192,10 @@ public class BookKeeperAdmin implements AutoCloseable {
             ledgerFragment.getBookiesIndexes().addAll(targetBookieAddresses.keySet());
         }
         if (MapUtils.isEmpty(targetBookieAddresses)) {
-            LOG.warn("Could not replicate for {} ledger: {}, not find target bookie.",
-                    ledgerFragment.getReplicateType(), ledgerFragment.getLedgerId());
+            log.warn()
+                    .attr("getReplicateType", ledgerFragment.getReplicateType())
+                    .attr("ledgerId", ledgerFragment.getLedgerId())
+                    .log("Could not replicate for ledger, could not find target bookie");
             throw new BKException.BKLedgerRecoveryException();
         }
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses, onReadEntryFailureCallback);
@@ -1331,8 +1377,10 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean force) throws Exception {
         String confLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         if (!confLedgersRootPath.equals(ledgersRootPath)) {
-            LOG.error("Provided ledgerRootPath : {} is not matching with config's ledgerRootPath: {}, "
-                    + "so exiting nuke operation", ledgersRootPath, confLedgersRootPath);
+            log.error()
+                    .attr("ledgersRootPath", ledgersRootPath)
+                    .attr("confLedgersRootPath", confLedgersRootPath)
+                    .log("Provided ledgerRootPath does not match config's ledgerRootPath, exiting nuke operation");
             return false;
         }
 
@@ -1341,8 +1389,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 if (!force) {
                     String readInstanceId = rm.getClusterInstanceId();
                     if ((instanceId == null) || !instanceId.equals(readInstanceId)) {
-                        LOG.error("Provided InstanceId : {} is not matching with cluster InstanceId in ZK: {}",
-                            instanceId, readInstanceId);
+                        log.error()
+                                .attr("instanceId", instanceId)
+                                .attr("readInstanceId", readInstanceId)
+                                .log("Provided InstanceId is not matching with cluster InstanceId in ZK");
                         return false;
                     }
                 }
@@ -1390,14 +1440,18 @@ public class BookKeeperAdmin implements AutoCloseable {
                  */
                 BookieId bookieId = BookieImpl.getBookieId(conf);
                 if (rm.isBookieRegistered(bookieId)) {
-                    LOG.error("Bookie with bookieId: {} is still registered, "
-                        + "If this node is running bookie process, try stopping it first.", bookieId);
+                    log.error()
+                            .attr("bookieId", bookieId)
+                            .log("Bookie with bookieId: is still registered, "
+ + "If this node is running bookie process, try stopping it first.");
                     return false;
                 }
 
                 try {
                     rm.readCookie(bookieId);
-                    LOG.error("Cookie still exists in the ZK for this bookie: {}, try formatting the bookie", bookieId);
+                    log.error()
+                            .attr("bookieId", bookieId)
+                            .log("Cookie still exists in the ZK for this bookie, try formatting the bookie");
                     return false;
                 } catch (BookieException.CookieNotFoundException nfe) {
                     // it is expected for readCookie to fail with
@@ -1414,7 +1468,10 @@ public class BookKeeperAdmin implements AutoCloseable {
         for (File dir : dirs) {
             File[] dirFiles = dir.listFiles();
             if ((dirFiles != null) && dirFiles.length != 0) {
-                LOG.error("{}: {} is existing and its not empty, try formatting the bookie", typeOfDir, dir);
+                log.error()
+                        .attr("typeOfDir", typeOfDir)
+                        .attr("directory", dir)
+                        .log(": is existing and its not empty, try formatting the bookie");
                 return false;
             }
         }
@@ -1449,7 +1506,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                                 }
                             }
                         } catch (IOException e) {
-                            LOG.error("Error while checking if there is a next element", e);
+                            log.error().exception(e).log("Error while checking if there is a next element");
                         }
 
                         return false;
@@ -1462,7 +1519,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                                 currentRange = iterator.next().getLedgers().iterator();
                             }
                         } catch (IOException e) {
-                            LOG.error("Error while reading the next element", e);
+                            log.error().exception(e).log("Error while reading the next element");
                             throw new NoSuchElementException(e.getMessage());
                         }
 
@@ -1549,7 +1606,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws CompatibilityException, KeeperException, InterruptedException, UnavailableException, IOException {
         LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
         if (!urlManager.isLedgerReplicationEnabled()) {
-            LOG.error("Autorecovery is disabled. So giving up!");
+            log.error("Autorecovery is disabled. So giving up!");
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
 
@@ -1558,20 +1615,21 @@ public class BookKeeperAdmin implements AutoCloseable {
             auditorId = getLedgerAuditorManager().getCurrentAuditor();
         } catch (IOException e) {
             if (e.getCause() instanceof KeeperException.NoNodeException) {
-                LOG.error("Unable to find Zookeeper node: {}", e.getCause().getMessage());
+                log.error().attr("getMessage", e.getCause().getMessage()).log("Unable to find Zookeeper node");
                 throw new UnavailableException("Autorecovery is disabled due to "
                         + "missing Zookeeper node. Aborting recovery!");
             }
             throw e;
         }
         if (auditorId == null) {
-            LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
+            log.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
         }
 
         int previousLostBookieRecoveryDelayValue = urlManager.getLostBookieRecoveryDelay();
-        LOG.info("Resetting LostBookieRecoveryDelay value: {}, to kickstart audit task",
-                previousLostBookieRecoveryDelayValue);
+        log.info()
+                .attr("previousLostBookieRecoveryDelayValue", previousLostBookieRecoveryDelayValue)
+                .log("Resetting LostBookieRecoveryDelay to kickstart audit task");
         urlManager.setLostBookieRecoveryDelay(previousLostBookieRecoveryDelayValue);
     }
 
@@ -1598,7 +1656,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
             BKAuditException, TimeoutException, BKException {
         if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
-            LOG.error("Bookie: {} is not shutdown yet", bookieAddress);
+            log.error().attr("bookieAddress", bookieAddress).log("Bookie: is not shutdown yet");
             throw BKException.create(BKException.Code.IllegalOpException);
         }
 
@@ -1634,7 +1692,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         Iterator<UnderreplicatedLedger> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
         if (urLedgerIterator.hasNext()) {
             //if there are any then wait and make sure those ledgers are replicated properly
-            LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
+            log.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
             urLedgerIterator.forEachRemaining((urLedger) -> {
@@ -1655,12 +1713,14 @@ public class BookKeeperAdmin implements AutoCloseable {
         while (!ledgers.isEmpty()) {
             int sleepTimeForThisCheck = (long) ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
                     ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
-            LOG.info("Count of Ledgers which need to be rereplicated: {}, waiting {} seconds for next check",
-                ledgers.size(), sleepTimeForThisCheck / 1000);
+            log.info()
+                    .attr("size", ledgers.size())
+                    .attr("value", sleepTimeForThisCheck / 1000)
+                    .log("Count of ledgers which need to be rereplicated, waiting for next check");
             Thread.sleep(sleepTimeForThisCheck);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
-            }
+
+            log.debug().attr("ledgers", ledgers).log("Making sure ledger replication completes");
+
             ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
         }
     }
@@ -1677,12 +1737,13 @@ public class BookKeeperAdmin implements AutoCloseable {
             if (e.getCause() != null
                     && e.getCause().getClass()
                     .equals(BKException.BKNoSuchLedgerExistsOnMetadataServerException.class)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Ledger: {} has been deleted", ledgerId);
-                }
+
+                log.debug().attr("ledgerId", ledgerId).log("Ledger: has been deleted");
+
                 return false;
             } else {
-                LOG.error("Got exception while trying to read LedgerMetadata of " + ledgerId, e);
+                log.error().exception(e).attr("ledgerId", ledgerId)
+                        .log("Got exception while trying to read LedgerMetadata");
                 throw new RuntimeException(e);
             }
         }
@@ -1828,8 +1889,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 return targetMap;
             }
         } catch (UnsupportedOperationException e) {
-            LOG.warn("The placement policy: {} didn't support replaceToAdherePlacementPolicy, "
-                    + "ignore replace not adhere bookie.", bkc.getPlacementPolicy().getClass().getName());
+            log.warn()
+                    .attr("getName", bkc.getPlacementPolicy().getClass().getName())
+                    .log("The placement policy: didn't support replaceToAdherePlacementPolicy, "
+ + "ignore replace not adhere bookie.");
         }
         return Collections.emptyMap();
     }

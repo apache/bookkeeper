@@ -28,6 +28,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.InterleavedStorageRegenerateIndexOp;
@@ -35,16 +36,13 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to regenerate an index file for interleaved storage.
  */
+@CustomLog
 public class RegenerateInterleavedStorageIndexFileCommand
     extends BookieCommand<RegenerateInterleavedStorageIndexFileCommand.RISIFFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(RegenerateInterleavedStorageIndexFileCommand.class);
 
     private static final String NAME = "regenerate-interleaved-storage-index-file";
     private static final String DESC =
@@ -106,19 +104,19 @@ public class RegenerateInterleavedStorageIndexFileCommand
         } else if (!flags.b64Password.equals(DEFAULT)) {
             password = Base64.getDecoder().decode(flags.b64Password);
         } else {
-            LOG.error("The password must be specified to regenerate the index file");
+            log.error("The password must be specified to regenerate the index file");
             return false;
         }
 
         Set<Long> ledgerIds = flags.ledgerIds.stream().collect(Collectors.toSet());
 
-        LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
+        log.info().attr("ledgerIds", ledgerIds).log("Rebuilding index file");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         InterleavedStorageRegenerateIndexOp i = new InterleavedStorageRegenerateIndexOp(serverConfiguration, ledgerIds,
                                                                                         password);
         i.initiate(flags.dryRun);
 
-        LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
+        log.info().attr("ledgerIds", ledgerIds).log("Done rebuilding index file");
         return true;
     }
 

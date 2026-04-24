@@ -25,6 +25,7 @@ import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -35,8 +36,6 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper get last log mark related http request.
@@ -48,9 +47,9 @@ import org.slf4j.LoggerFactory;
  *    ...
  *  }
  */
+@CustomLog
 public class GetLastLogMarkService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(GetLastLogMarkService.class);
 
     protected ServerConfiguration conf;
 
@@ -82,25 +81,22 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 }
                 for (Journal journal : journals) {
                     LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
-                                + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
-                                + lastLogMark.getLogFileOffset());
-                    }
+                    log.debug().attr("journalId", lastLogMark.getLogFileId())
+                            .attr("journalIdHex", Long.toHexString(lastLogMark.getLogFileId()))
+                            .attr("position", lastLogMark.getLogFileOffset())
+                            .log("LastLogMark");
                     output.put("LastLogMark: Journal Id - " + lastLogMark.getLogFileId()
                         + "(" + Long.toHexString(lastLogMark.getLogFileId()) + ".txn)",
                         "Pos - " + lastLogMark.getLogFileOffset());
                 }
 
                 String jsonResponse = JsonUtil.toJson(output);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("output body:" + jsonResponse);
-                }
+                log.debug().attr("body", jsonResponse).log("output body");
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
             } catch (Throwable e) {
-                LOG.error("Exception occurred while getting last log mark", e);
+                log.error().exception(e).log("Exception occurred while getting last log mark");
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("ERROR handling request: " + e.getMessage());
                 return response;

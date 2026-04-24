@@ -20,22 +20,21 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper trigger audit related http request.
  * The PUT method will force trigger the audit by resetting the lostBookieRecoveryDelay.
  */
+@CustomLog
 public class TriggerAuditService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(TriggerAuditService.class);
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
@@ -57,7 +56,7 @@ public class TriggerAuditService implements HttpEndpointService {
             try {
                 bka.triggerAudit();
             } catch (Exception e) {
-                LOG.error("Meet Exception: ", e);
+                log.error().exception(e).log("Failed to trigger audit");
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when do operation." + e.getMessage());
                 return response;
@@ -65,9 +64,7 @@ public class TriggerAuditService implements HttpEndpointService {
 
             response.setCode(HttpServer.StatusCode.OK);
             response.setBody("Success trigger audit.");
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("response body:" + response.getBody());
-            }
+            log.debug().attr("body", response.getBody()).log("response body");
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);

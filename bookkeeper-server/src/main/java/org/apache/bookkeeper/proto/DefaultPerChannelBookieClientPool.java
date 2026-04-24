@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
@@ -31,17 +32,14 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *  Provide a simple round-robin style channel pool. We could improve it later to do more
  *  fantastic things.
  */
+@CustomLog
 class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         GenericCallback<PerChannelBookieClient> {
-
-    static final Logger LOG = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
 
     final PerChannelBookieClientFactory factory;
     final BookieId address;

@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -73,8 +73,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * MetaStore Based Ledger Manager Factory.
@@ -84,10 +82,8 @@ import org.slf4j.LoggerFactory;
  *
  * @deprecated since 4.7.0
  */
-@Slf4j
+@CustomLog
 public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
 
     private static final int MS_CONNECT_BACKOFF_MS = 200;
 
@@ -161,7 +157,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             try {
                 ledgers.add(key2LedgerId(item.getKey()));
             } catch (NumberFormatException nfe) {
-                LOG.warn("Found invalid ledger key {}", item.getKey());
+                log.warn().attr("key", item.getKey()).log("Found invalid ledger key");
             }
         }
         return ledgers;
@@ -238,15 +234,11 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             @Override
             public void run() {
                 if (null != listeners.get(ledgerId)) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Re-read ledger metadata for {}.", ledgerId);
-                    }
+                    log.debug().attr("ledgerId", ledgerId).log("Re-read ledger metadata");
                     readLedgerMetadata(ledgerId).whenComplete(
                             (metadata, exception) -> handleMetadata(metadata, exception));
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
-                    }
+                    log.debug().attr("ledgerId", ledgerId).log("Ledger metadata listener is already removed");
                 }
             }
 
@@ -254,9 +246,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 if (exception == null) {
                     final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                     if (null != listenerSet) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, metadata.getValue());
-                        }
+                        log.debug()
+                                .attr("ledgerId", ledgerId)
+                                .attr("metadata", metadata.getValue())
+                                .log("Ledger metadata is changed");
                         scheduler.submit(() -> {
                                 synchronized (listenerSet) {
                                     for (LedgerMetadataListener listener : listenerSet) {
@@ -270,14 +263,16 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
-                                    ledgerId, listenerSet.size());
-                        }
+                        log.debug()
+                                .attr("ledgerId", ledgerId)
+                                .attr("listenerCount", listenerSet.size())
+                                .log("Removed ledger metadata listener set as ledger is deleted");
                     }
                 } else {
-                    LOG.warn("Failed on read ledger metadata of ledger {}: {}",
-                             ledgerId, BKException.getExceptionCode(exception));
+                    log.warn()
+                            .attr("ledgerId", ledgerId)
+                            .attr("errorCode", BKException.getExceptionCode(exception))
+                            .log("Failed on read ledger metadata");
                     scheduler.schedule(this, MS_CONNECT_BACKOFF_MS, TimeUnit.MILLISECONDS);
                 }
             }
@@ -292,7 +287,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             try {
                 ledgerTable = metastore.createScannableTable(TABLE_NAME);
             } catch (MetastoreException mse) {
-                LOG.error("Failed to instantiate table " + TABLE_NAME + " in metastore " + metastore.getName());
+                log.error()
+                        .attr("table", TABLE_NAME)
+                        .attr("metastore", metastore.getName())
+                        .log("Failed to instantiate table in metastore");
                 throw new RuntimeException("Failed to instantiate table " + TABLE_NAME + " in metastore "
                         + metastore.getName());
             }
@@ -326,7 +324,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
                 break;
             default:
-                LOG.warn("Unknown type: {}", e.getType());
+                log.warn().attr("type", e.getType()).log("Unknown type");
                 break;
             }
         }
@@ -334,7 +332,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         @Override
         public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
             if (null != listener) {
-                LOG.info("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                log.info()
+                        .attr("listener", listener)
+                        .attr("ledgerId", ledgerId)
+                        .log("Registered ledger metadata listener");
                 Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                 if (listenerSet == null) {
                     Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
@@ -358,7 +359,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             if (listenerSet != null) {
                 synchronized (listenerSet) {
                     if (listenerSet.remove(listener)) {
-                        LOG.info("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                        log.info()
+                                .attr("listener", listener)
+                                .attr("ledgerId", ledgerId)
+                                .log("Unregistered ledger metadata listener");
                     }
                     if (listenerSet.isEmpty()) {
                         listeners.remove(ledgerId, listenerSet);
@@ -372,7 +376,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             try {
                 scheduler.shutdown();
             } catch (Exception e) {
-                LOG.warn("Error when closing MsLedgerManager : ", e);
+                log.warn().exception(e).log("Error when closing MsLedgerManager");
             }
             ledgerTable.close();
         }
@@ -391,9 +395,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Create ledger {} with version {} successfully.", lid, version);
-                    }
+                    log.debug()
+                            .attr("ledgerId", lid)
+                            .attr("version", version)
+                            .log("Create ledger successfully");
                     promise.complete(new Versioned<>(metadata, version));
                 }
             };
@@ -418,7 +423,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 public void complete(int rc, Void value, Object ctx) {
                     int bkRc;
                     if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
+                        log.warn().attr("ledgerId", ledgerId).log("Ledger entry does not exist in meta table");
                         promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         FutureUtils.complete(promise, null);
@@ -439,14 +444,18 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 @Override
                 public void complete(int rc, Versioned<Value> value, Object ctx) {
                     if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
-                                MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
+                        log.error()
+                                .attr("ledgerId", ledgerId)
+                                .exception(MSException.create(MSException.Code.get(rc), "No key " + key + " found."))
+                                .log("No ledger metadata found");
                         promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                         return;
                     }
                     if (MSException.Code.OK.getCode() != rc) {
-                        LOG.error("Could not read metadata for ledger " + ledgerId + " : ",
-                                MSException.create(MSException.Code.get(rc), "Failed to get key " + key));
+                        log.error()
+                                .attr("ledgerId", ledgerId)
+                                .exception(MSException.create(MSException.Code.get(rc), "Failed to get key " + key))
+                                .log("Could not read metadata for ledger");
                         promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
@@ -455,7 +464,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                 value.getValue().getField(META_FIELD), ledgerId, Optional.empty());
                         promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
-                        LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
+                        log.error()
+                                .attr("ledgerId", ledgerId)
+                                .exception(e)
+                                .log("Could not parse ledger metadata for ledger");
                         promise.completeExceptionally(new BKException.MetaStoreException());
                     }
                 }
@@ -479,25 +491,29 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
             Value data = new Value().setField(META_FIELD, bytes);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
-            }
+            log.debug()
+                    .attr("ledgerId", ledgerId)
+                    .attr("version", currentVersion)
+                    .log("Writing ledger metadata");
 
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
                     if (MSException.Code.BadVersion.getCode() == rc) {
-                        LOG.info("Bad version provided to update metadata for ledger {}", ledgerId);
+                        log.info().attr("ledgerId", ledgerId).log("Bad version provided to update metadata for ledger");
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
+                        log.warn()
+                                .attr("ledgerId", ledgerId)
+                                .log("Ledger doesn't exist when writing its ledger metadata");
                         promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                     } else if (MSException.Code.OK.getCode() == rc) {
                         promise.complete(new Versioned<>(metadata, version));
                     } else {
-                        LOG.warn("Conditional update ledger metadata failed: ",
-                                MSException.create(MSException.Code.get(rc), "Failed to put key " + key));
+                        log.warn()
+                                .exception(MSException.create(MSException.Code.get(rc), "Failed to put key " + key))
+                                .log("Conditional update ledger metadata failed");
                         promise.completeExceptionally(new BKException.MetaStoreException());
                     }
                 }
@@ -559,7 +575,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         try {
                             ledgers.add(key2LedgerId(item.getKey()));
                         } catch (NumberFormatException nfe) {
-                            LOG.warn("Found invalid ledger key {}", item.getKey());
+                            log.warn().attr("key", item.getKey()).log("Found invalid ledger key");
                         }
                     }
 
@@ -578,8 +594,9 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         @Override
                         public void processResult(int rc, String path, Object ctx) {
                             if (successRc != rc) {
-                                LOG.error("Failed when processing range "
-                                        + rangeToString(startLedger, true, endLedger, true));
+                                log.error()
+                                        .attr("range", rangeToString(startLedger, true, endLedger, true))
+                                        .log("Failed when processing range");
                                 finalCb.processResult(failureRc, null, context);
                                 return;
                             }
@@ -602,7 +619,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     @Override
                     public void complete(int rc, MetastoreCursor newCursor, Object ctx) {
                         if (MSException.Code.OK.getCode() != rc) {
-                            LOG.error("Error opening cursor for ledger range iterator {}", rc);
+                            log.error().attr("rc", rc).log("Error opening cursor for ledger range iterator");
                         } else {
                             cursor = newCursor;
                         }
@@ -617,7 +634,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 try {
                     openCursorLatch.await();
                 } catch (InterruptedException ie) {
-                    LOG.error("Interrupted waiting for cursor to open", ie);
+                    log.error().exception(ie).log("Interrupted waiting for cursor to open");
                     Thread.currentThread().interrupt();
                     throw new IOException("Interrupted waiting to read range", ie);
                 }
@@ -637,7 +654,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     }
                     return new LedgerRange(ledgerIds);
                 } catch (MSException mse) {
-                    LOG.error("Exception occurred reading from metastore", mse);
+                    log.error().exception(mse).log("Exception occurred reading from metastore");
                     throw new IOException("Couldn't read from metastore", mse);
                 }
             }
@@ -763,7 +780,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         } catch (MSException mse) {
             throw new IOException("Exception when cleaning up table " + TABLE_NAME, mse);
         }
-        LOG.info("Finished cleaning up table {}.", TABLE_NAME);
+        log.info().attr("table", TABLE_NAME).log("Finished cleaning up table");
         // Delete and recreate the LAYOUT information.
         Class<? extends LedgerManagerFactory> factoryClass;
         try {
@@ -790,8 +807,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         List<String> ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
         for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
             if ((!MsLedgerManager.isSpecialZnode(ledgersRootPathChildren))) {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
+                log.error()
+                        .attr("znode", ledgersRootPathChildren)
+                        .attr("ledgersRootPath", zkLedgersRootPath)
+                        .log("Found unexpected znode under ledgersRootPath, exiting nuke operation");
                 return false;
             }
         }
@@ -805,8 +824,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             if (MsLedgerManager.isSpecialZnode(ledgersRootPathChildren)) {
                 ZKUtil.deleteRecursive(zk, zkLedgersRootPath + "/" + ledgersRootPathChildren);
             } else {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
+                log.error()
+                        .attr("znode", ledgersRootPathChildren)
+                        .attr("ledgersRootPath", zkLedgersRootPath)
+                        .log("Found unexpected znode under ledgersRootPath, exiting nuke operation");
                 return false;
             }
         }
@@ -814,8 +835,10 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         // finally deleting the ledgers rootpath
         zk.delete(zkLedgersRootPath, -1);
 
-        log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
-                zkServers, zkLedgersRootPath);
+        log.info()
+                .attr("zkServers", zkServers)
+                .attr("ledgerRootPath", zkLedgersRootPath)
+                .log("Successfully nuked existing cluster");
         return true;
     }
 

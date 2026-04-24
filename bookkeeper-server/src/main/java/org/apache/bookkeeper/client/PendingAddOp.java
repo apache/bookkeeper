@@ -35,13 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This represents a pending add operation. When it has got success from all
@@ -52,8 +51,8 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
+@CustomLog
 class PendingAddOp implements WriteCallback {
-    private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
     ReferenceCounted toSend;
@@ -209,10 +208,13 @@ class PendingAddOp implements WriteCallback {
             return;
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
-                      + bookieIndex);
-        }
+
+        log.debug()
+                .attr("ledgerId", lh.ledgerId)
+                .attr("entryId", entryId)
+                .attr("bookieIndex", bookieIndex)
+                .log("Unsetting success");
+
 
         // if we had already heard a success from this array index, need to
         // increment our number of responses that are pending, since we are
@@ -266,9 +268,12 @@ class PendingAddOp implements WriteCallback {
 
         if (!ensemble.get(bookieIndex).equals(addr)) {
             // ensemble has already changed, failure of this addr is immaterial
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");
-            }
+
+            log.debug()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .log("Write did not succeed. But we have already fixed it.");
+
             return;
         }
 
@@ -324,13 +329,19 @@ class PendingAddOp implements WriteCallback {
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.LedgerFencedException:
-            LOG.warn("Fencing exception on write: L{} E{} on {}",
-                    ledgerId, entryId, addr);
+            log.warn()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("bookieAddr", addr)
+                    .log("Fencing exception on write");
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.UnauthorizedAccessException:
-            LOG.warn("Unauthorized access exception on write: L{} E{} on {}",
-                    ledgerId, entryId, addr);
+            log.warn()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("bookieAddr", addr)
+                    .log("Unauthorized access exception on write");
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
@@ -338,18 +349,31 @@ class PendingAddOp implements WriteCallback {
                 if (ackSet.failBookieAndCheck(bookieIndex, addr)
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieId> failedBookies = ackSet.getFailedBookies();
-                    LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",
-                            ledgerId, entryId, failedBookies);
+                    log.warn()
+                            .attr("ledgerId", ledgerId)
+                            .attr("entryId", entryId)
+                            .attr("failedBookies", failedBookies)
+                            .log("Failed to write entry to bookies, handling failures");
                     // we can't meet ack quorum requirement, trigger ensemble change.
                     lh.handleBookieFailure(failedBookies);
-                } else if (LOG.isDebugEnabled()) {
-                    LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
-                                    + " but it didn't break ack quorum, delaying ensemble change : {}",
-                            ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
+                } else {
+                    log.debug()
+                            .attr("ledgerId", ledgerId)
+                            .attr("entryId", entryId)
+                            .attr("bookieIndex", bookieIndex)
+                            .attr("bookieAddr", addr)
+                            .attr("error", BKException.getMessage(rc))
+                            .log("Failed to write entry to bookie,"
+                                    + " but it didn't break ack quorum, delaying ensemble change");
                 }
             } else {
-                LOG.warn("Failed to write entry ({}, {}) to bookie ({}, {}): {}",
-                        ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
+                log.warn()
+                        .attr("ledgerId", ledgerId)
+                        .attr("entryId", entryId)
+                        .attr("bookieIndex", bookieIndex)
+                        .attr("bookieAddr", addr)
+                        .attr("error", BKException.getMessage(rc))
+                        .log("Failed to write entry to bookie");
                 lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr));
             }
             return;
@@ -361,8 +385,10 @@ class PendingAddOp implements WriteCallback {
                               .areAckedBookiesAdheringToPlacementPolicy(addEntrySuccessBookies,
                                                                         lh.getLedgerMetadata().getWriteQuorumSize(),
                                                                         lh.getLedgerMetadata().getAckQuorumSize()))) {
-                LOG.warn("Write success for entry ID {} delayed, not acknowledged by bookies in enough fault domains",
-                         entryId);
+                log.warn()
+                        .attr("ledgerId", ledgerId)
+                        .attr("entryId", entryId)
+                        .log("Write success for entry ID delayed, not acknowledged by bookies in enough fault domains");
                 // Increment to indicate write did not complete due to not enough fault domains
                 clientCtx.getClientStats().getWriteDelayedDueToNotEnoughFaultDomains().inc();
 
@@ -391,15 +417,21 @@ class PendingAddOp implements WriteCallback {
     }
 
     synchronized void submitCallback(final int rc) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Submit callback (lid:{}, eid: {}). rc:{}", lh.getId(), entryId, rc);
-        }
+
+        log.debug()
+                .attr("ledgerId", lh.getId())
+                .attr("entryId", entryId)
+                .attr("rc", rc)
+                .log("Submit callback");
+
 
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (rc != BKException.Code.OK) {
             clientCtx.getClientStats().getAddOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
-            LOG.error("Write of ledger entry to quorum failed: L{} E{}",
-                      lh.getId(), entryId);
+            log.error()
+                    .attr("ledgerId", lh.getId())
+                    .attr("entryId", entryId)
+                    .log("Write of ledger entry to quorum failed");
         } else {
             clientCtx.getClientStats().getAddOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }

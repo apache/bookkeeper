@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
@@ -34,15 +35,12 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to print metadata of entry log.
  */
+@CustomLog
 public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(ReadLogMetadataCommand.class);
 
     private static final String NAME = "readlogmetadata";
     private static final String DESC = "Prints entrylog's metadata";
@@ -98,7 +96,7 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
             this.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(conf);
         }
         if (cmdFlags.logId == DEFAULT_LOGID && cmdFlags.logFilename.equals(DEFAULT_FILENAME)) {
-            LOG.error("Missing entry log id or entry log file name");
+            log.error("Missing entry log id or entry log file name");
             return false;
         }
         try {
@@ -116,7 +114,7 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
             File f = new File(flags.logFilename);
             String name = f.getName();
             if (!name.endsWith(".log")) {
-                LOG.error("ERROR: invalid entry log file name " + flags.logFilename);
+                log.error().attr("filename", flags.logFilename).log("Invalid entry log file name");
                 return false;
             }
             String idString = name.split("\\.")[0];
@@ -128,14 +126,22 @@ public class ReadLogMetadataCommand extends BookieCommand<ReadLogMetadataFlags> 
     }
 
     private void printEntryLogMetadata(ServerConfiguration conf, long logId) throws IOException {
-        LOG.info("Print entryLogMetadata of entrylog {} ({}.log)", logId, Long.toHexString(logId));
+        log.info()
+                .attr("logId", logId)
+                .attr("file", Long.toHexString(logId) + ".log")
+                .log("Print entryLogMetadata of entrylog");
         initEntryLogger(conf);
         EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(logId);
-        LOG.info("entryLogId: {}, total size: {}", entryLogMetadata.getEntryLogId(), entryLogMetadata.getTotalSize());
+        log.info()
+                .attr("entryLogId", entryLogMetadata.getEntryLogId())
+                .attr("totalSize", entryLogMetadata.getTotalSize())
+                .log("EntryLog metadata");
 
         entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
-            LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
-                     ledgerIdFormatter.formatLedgerId(ledgerId), size);
+            log.info()
+                    .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId))
+                    .attr("size", size)
+                    .log("Size of ledger's entries");
         });
     }
 

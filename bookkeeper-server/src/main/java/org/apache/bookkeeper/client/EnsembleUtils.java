@@ -27,19 +27,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class EnsembleUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(EnsembleUtils.class);
 
     static List<BookieId> replaceBookiesInEnsemble(BookieWatcher bookieWatcher,
                                                               LedgerMetadata metadata,
                                                               List<BookieId> oldEnsemble,
                                                               Map<Integer, BookieId> failedBookies,
-                                                              String logContext)
+                                                              int ensembleChangeId)
             throws BKException.BKNotEnoughBookiesException {
         List<BookieId> newEnsemble = new ArrayList<>(oldEnsemble);
 
@@ -54,15 +53,23 @@ class EnsembleUtils {
         for (Map.Entry<Integer, BookieId> entry : failedBookies.entrySet()) {
             int idx = entry.getKey();
             BookieId addr = entry.getValue();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("{} replacing bookie: {} index: {}", logContext, addr, idx);
-            }
+
+            log.debug()
+                    .attr("ledgerId", metadata.getLedgerId())
+                    .attr("ensembleChangeId", ensembleChangeId)
+                    .attr("bookieAddr", addr)
+                    .attr("idx", idx)
+                    .log("replacing bookie");
 
             if (!newEnsemble.get(idx).equals(addr)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("{} Not changing failed bookie {} at index {}, already changed to {}",
-                              logContext, addr, idx, newEnsemble.get(idx));
-                }
+                log.debug()
+                        .attr("ledgerId", metadata.getLedgerId())
+                        .attr("ensembleChangeId", ensembleChangeId)
+                        .attr("bookieAddr", addr)
+                        .attr("idx", idx)
+                        .attr("newBookie", newEnsemble.get(idx))
+                        .log("Not changing failed bookie at index, already changed");
+
                 continue;
             }
             try {

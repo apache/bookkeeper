@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -33,15 +34,12 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Watcher for receiving zookeeper server connection events.
  */
+@CustomLog
 public class ZooKeeperWatcherBase implements Watcher {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(ZooKeeperWatcherBase.class);
 
     private final int zkSessionTimeOut;
     private final boolean allowReadOnlyMode;
@@ -114,40 +112,39 @@ public class ZooKeeperWatcherBase implements Watcher {
     public void process(WatchedEvent event) {
         // If event type is NONE, this is a connection status change
         if (event.getType() != EventType.None) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Received event: {}, path: {} from ZooKeeper server", event.getType(), event.getPath());
-            }
+                log.debug()
+                        .attr("eventType", event.getType())
+                        .attr("path", event.getPath())
+                    .log("Received event from ZooKeeper server");
             getEventCounter(event.getType()).inc();
             // notify the child watchers
             notifyEvent(event);
             return;
         }
         getStateCounter(event.getState()).inc();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Received {} from ZooKeeper server", event.getState());
-        }
+        log.debug().attr("state", event.getState()).log("Received state from ZooKeeper server");
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
         //       {@link https://github.com/apache/bookkeeper/issues/284}
         switch (event.getState()) {
         case SyncConnected:
-            LOG.info("ZooKeeper client is connected now.");
+            log.info("ZooKeeper client is connected now.");
             clientConnectLatch.countDown();
             break;
         case ConnectedReadOnly:
             if (allowReadOnlyMode) {
-                LOG.info("ZooKeeper client is connected in read-only mode now.");
+                log.info("ZooKeeper client is connected in read-only mode now.");
                 clientConnectLatch.countDown();
             } else {
-                LOG.warn("ZooKeeper client is connected in read-only mode, which is not allowed.");
+                log.warn("ZooKeeper client is connected in read-only mode, which is not allowed.");
             }
             break;
         case Disconnected:
-            LOG.info("ZooKeeper client is disconnected from zookeeper now,"
+            log.info("ZooKeeper client is disconnected from zookeeper now,"
                 + " but it is OK unless we received EXPIRED event.");
             break;
         case Expired:
             clientConnectLatch = new CountDownLatch(1);
-            LOG.error("ZooKeeper client connection to the ZooKeeper server has expired!");
+            log.error("ZooKeeper client connection to the ZooKeeper server has expired!");
             break;
         default:
             // do nothing
@@ -190,7 +187,10 @@ public class ZooKeeperWatcherBase implements Watcher {
             try {
                 w.process(event);
             } catch (Exception t) {
-                LOG.warn("Encountered unexpected exception from watcher {} : ", w, t);
+                log.warn()
+                        .attr("watcher", w)
+                        .exception(t)
+                        .log("Encountered unexpected exception from watcher");
             }
         }
     }

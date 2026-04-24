@@ -21,7 +21,7 @@ import com.google.common.base.Strings;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
@@ -35,7 +35,7 @@ import org.apache.bookkeeper.util.CertUtils;
 /**
  * Authorization factory class.
  */
-@Slf4j
+@CustomLog
 public class BookieAuthZFactory implements BookieAuthProvider.Factory {
 
     public String[] allowedRoles;
@@ -82,9 +82,12 @@ public class BookieAuthZFactory implements BookieAuthProvider.Factory {
                         X509Certificate tempCert = (X509Certificate) certificates.iterator().next();
                         String[] certRole = CertUtils.getRolesFromOU(tempCert);
                         if (certRole == null || certRole.length == 0) {
-                            log.error("AuthZ failed: No cert role in OU field of certificate. Must have a role from "
-                                            + "allowedRoles list {} host: {}",
-                                    allowedRoles, addr.getRemoteAddr());
+                            log.error()
+                                    .attr("allowedRoles", allowedRoles)
+                                    .attr("host", addr.getRemoteAddr())
+                                    .log("AuthZ failed: No cert role in OU"
+                                            + " field of certificate. Must have"
+                                            + " a role from allowedRoles list");
                             completeCallback.operationComplete(BKException.Code.UnauthorizedAccessException, null);
                             return;
                         }
@@ -99,24 +102,31 @@ public class BookieAuthZFactory implements BookieAuthProvider.Factory {
                             addr.setAuthorizedId(new BookKeeperPrincipal(certRole[0]));
                             completeCallback.operationComplete(BKException.Code.OK, null);
                         } else {
-                            log.error("AuthZ failed: Cert role {} doesn't match allowedRoles list {}; host: {}",
-                                    certRole, allowedRoles, addr.getRemoteAddr());
+                            log.error()
+                                    .attr("certRole", certRole)
+                                    .attr("allowedRoles", allowedRoles)
+                                    .attr("host", addr.getRemoteAddr())
+                                    .log("AuthZ failed: Cert role doesn't match allowedRoles list");
                             completeCallback.operationComplete(BKException.Code.UnauthorizedAccessException, null);
                         }
                     } else {
                         if (!secureBookieSideChannel) {
-                            log.error("AuthZ failed: Bookie side channel is not secured; host: {}",
-                                    addr.getRemoteAddr());
+                            log.error().attr("host", addr.getRemoteAddr())
+                                    .log("AuthZ failed: Bookie side channel is not secured");
                         } else if (certificates.isEmpty()) {
-                            log.error("AuthZ failed: Certificate missing; host: {}", addr.getRemoteAddr());
+                            log.error().attr("host", addr.getRemoteAddr())
+                                    .log("AuthZ failed: Certificate missing");
                         } else {
-                            log.error("AuthZ failed: Certs are missing or not X509 type; host: {}",
-                                    addr.getRemoteAddr());
+                            log.error().attr("host", addr.getRemoteAddr())
+                                    .log("AuthZ failed: Certs are missing or not X509 type");
                         }
                         completeCallback.operationComplete(BKException.Code.UnauthorizedAccessException, null);
                     }
                 } catch (Exception e) {
-                    log.error("AuthZ failed: Failed to parse certificate; host: {}, {}", addr.getRemoteAddr(), e);
+                    log.error()
+                            .attr("host", addr.getRemoteAddr())
+                            .exception(e)
+                            .log("AuthZ failed: Failed to parse certificate");
                     completeCallback.operationComplete(BKException.Code.UnauthorizedAccessException, null);
                 }
             }

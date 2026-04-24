@@ -26,6 +26,7 @@ import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -33,8 +34,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Sequence of entries of a ledger that represents a pending read operation.
@@ -43,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * application as soon as it arrives rather than waiting for the whole thing.
  *
  */
+@CustomLog
 class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
-    private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     protected boolean parallelRead = false;
     protected final LinkedList<SingleLedgerEntryRequest> seq;
@@ -118,8 +117,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         }
 
         if (numPendingEntries < 0) {
-            LOG.error("Read too many values for ledger {} : [{}, {}].",
-                    ledgerId, startEntryId, endEntryId);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .attr("startEntryId", startEntryId)
+                    .attr("endEntryId", endEntryId)
+                    .log("Read too many values");
         }
 
     }
@@ -150,11 +152,17 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                     break;
                 }
             }
-            LOG.error(
-                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
-                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
-                    BKException.getMessage(code), firstUnread, firstRc);
+            log.error()
+                    .attr("ledgerId", lh.getId())
+                    .attr("startEntryId", startEntryId)
+                    .attr("endEntryId", endEntryId)
+                    .attr("sentToHosts", sentToHosts)
+                    .attr("heardFromHosts", heardFromHosts)
+                    .attr("heardFromHostsBitSet", heardFromHostsBitSet)
+                    .attr("error", BKException.getMessage(code))
+                    .attr("firstUnreadEntry", firstUnread)
+                    .attr("firstReturnCode", firstRc)
+                    .log("Read of ledger entry failed");
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);
@@ -248,7 +256,10 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 try {
                     sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
-                    LOG.error("Interrupted reading entry {} : ", this, ie);
+                    log.error()
+                            .exception(ie)
+                            .attr("readOp", this)
+                            .log("Interrupted reading entry");
                     Thread.currentThread().interrupt();
                     fail(BKException.Code.InterruptedException);
                     return;
@@ -363,7 +374,10 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 sentReplicas.set(replica);
                 return to;
             } catch (InterruptedException ie) {
-                LOG.error("Interrupted reading entry " + this, ie);
+                log.error()
+                        .exception(ie)
+                        .attr("readOp", this)
+                        .log("Interrupted reading entry");
                 Thread.currentThread().interrupt();
                 fail(BKException.Code.InterruptedException);
                 return null;
@@ -376,7 +390,10 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
             int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
-                LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
+                log.error()
+                        .attr("bookieAddr", host)
+                        .attr("ensemble", ensemble)
+                        .log("Received error from a host which is not in the ensemble");
                 return;
             }
             erroredReplicas.set(replica);

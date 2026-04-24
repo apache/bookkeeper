@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -40,16 +41,12 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * A command to convert bookie indexes from DbLedgerStorage to InterleavedStorage format.
  */
+@CustomLog
 public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToInterleavedStorageCommand.CTISFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ConvertToInterleavedStorageCommand.class);
     private static final String NAME = "converttointerleavedstorage";
     private static final String DESC = "Convert bookie indexes from DbLedgerStorage to InterleavedStorage format";
     private static final String NOT_INIT = "default formatter";
@@ -87,7 +84,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
     }
 
     private boolean handle(ServerConfiguration bkConf) throws Exception {
-        LOG.info("=== Converting DbLedgerStorage ===");
+        log.info("=== Converting DbLedgerStorage ===");
         ServerConfiguration conf = new ServerConfiguration(bkConf);
         DiskChecker diskChecker = new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold());
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(), diskChecker);
@@ -130,9 +127,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
 
         int convertedLedgers = 0;
         for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-            }
+            log.debug().attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
 
             interleavedStorage.setMasterKey(ledgerId, dbStorage.readMasterKey(ledgerId));
             if (dbStorage.isFenced(ledgerId)) {
@@ -152,7 +147,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
             }
 
             if (++convertedLedgers % 1000 == 0) {
-                LOG.info("Converted {} ledgers", convertedLedgers);
+                log.info().attr("convertedLedgers", convertedLedgers).log("Converted ledgers");
             }
         }
 
@@ -171,7 +166,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
         Files.move(FileSystems.getDefault().getPath(baseDir, "locations"),
             FileSystems.getDefault().getPath(baseDir, "locations.backup"));
 
-        LOG.info("---- Done Converting {} ledgers ----", convertedLedgers);
+        log.info().attr("convertedLedgers", convertedLedgers).log("Done Converting ledgers");
         return true;
     }
 
