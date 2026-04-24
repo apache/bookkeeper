@@ -446,6 +446,44 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         }
     }
 
+    @Override
+    public ByteBuf getEntryIfFits(long ledgerId, long entryId, long maxEntrySize) throws IOException, BookieException {
+        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
+            entryId = ledgerCache.getLastEntry(ledgerId);
+        }
+
+        long offset;
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            offset = ledgerCache.getEntryOffset(ledgerId, entryId);
+            if (offset == 0) {
+                throw new Bookie.NoEntryException(ledgerId, entryId);
+            }
+            success = true;
+        } finally {
+            if (success) {
+                getOffsetStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            } else {
+                getOffsetStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            }
+        }
+
+        startTimeNanos = MathUtils.nowInNano();
+        success = false;
+        try {
+            ByteBuf entry = entryLogger.readEntryIfFits(ledgerId, entryId, offset, maxEntrySize);
+            success = true;
+            return entry;
+        } finally {
+            if (success) {
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            } else {
+                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            }
+        }
+    }
+
     private void flushOrCheckpoint(boolean isCheckpointFlush)
             throws IOException {
 

@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
@@ -38,12 +40,14 @@ import java.util.stream.IntStream;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 /**
  * Testing SortedLedgerStorage.
@@ -189,6 +193,49 @@ public class SortedLedgerStorageTest {
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
                 return arrayList.get(i) == (i * entriesPerWrite);
             }));
+        }
+    }
+
+    @Test
+    public void testGetEntryIfFitsHonorsBudgetForLastAddConfirmed() throws Exception {
+        long ledgerId = 0L;
+        long lastEntryId = 1234L;
+        ByteBuf entry = Unpooled.buffer(128);
+        entry.writeLong(ledgerId);
+        entry.writeLong(lastEntryId);
+        entry.writeBytes("lac-entry".getBytes());
+
+        byte[] bytes = new byte[entry.readableBytes()];
+        entry.getBytes(entry.readerIndex(), bytes);
+
+        InterleavedLedgerStorage interleaved = Mockito.mock(InterleavedLedgerStorage.class);
+        SortedLedgerStorage storage = new SortedLedgerStorage(interleaved);
+        storage.memTable = Mockito.mock(EntryMemTable.class);
+        Mockito.when(storage.memTable.getLastEntry(ledgerId))
+                .thenReturn(new EntryKeyValue(ledgerId, lastEntryId, bytes));
+
+        long exactFitSize = entry.readableBytes() + Integer.BYTES;
+        try {
+            ByteBuf oversized = storage.getEntryIfFits(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                    exactFitSize - 1);
+            assertNull(oversized);
+
+            ByteBuf exactFit = storage.getEntryIfFits(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                    exactFitSize);
+            try {
+                assertNotNull(exactFit);
+                assertEquals(ledgerId, exactFit.getLong(0));
+                assertEquals(lastEntryId, exactFit.getLong(Long.BYTES));
+                Mockito.verifyNoInteractions(interleaved);
+            } finally {
+                if (exactFit != null) {
+                    exactFit.release();
+                }
+            }
+        } finally {
+            if (entry != null) {
+                entry.release();
+            }
         }
     }
 }

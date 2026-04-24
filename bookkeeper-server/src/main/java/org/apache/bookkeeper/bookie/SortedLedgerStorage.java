@@ -240,6 +240,38 @@ public class SortedLedgerStorage
     }
 
     @Override
+    public ByteBuf getEntryIfFits(long ledgerId, long entryId, long maxEntrySize) throws IOException, BookieException {
+        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
+            EntryKeyValue kv = memTable.getLastEntry(ledgerId);
+            if (kv != null) {
+                ByteBuf entry = kv.getValueAsByteBuffer();
+                if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
+                    entry.release();
+                    return null;
+                }
+                return entry;
+            }
+            return interleavedLedgerStorage.getEntryIfFits(ledgerId, entryId, maxEntrySize);
+        }
+
+        try {
+            return interleavedLedgerStorage.getEntryIfFits(ledgerId, entryId, maxEntrySize);
+        } catch (Bookie.NoEntryException nee) {
+            EntryKeyValue kv = memTable.getEntry(ledgerId, entryId);
+            if (kv == null) {
+                return interleavedLedgerStorage.getEntryIfFits(ledgerId, entryId, maxEntrySize);
+            }
+
+            ByteBuf entry = kv.getValueAsByteBuffer();
+            if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
+                entry.release();
+                return null;
+            }
+            return entry;
+        }
+    }
+
+    @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
     }

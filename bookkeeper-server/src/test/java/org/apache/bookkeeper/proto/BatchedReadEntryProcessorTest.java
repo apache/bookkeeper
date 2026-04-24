@@ -19,11 +19,15 @@
 package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +50,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -220,5 +225,172 @@ public class BatchedReadEntryProcessorTest {
         assertEquals(ledgerId, response.getLedgerId());
         assertEquals(BookieProtocol.BATCH_READ_ENTRY, response.getOpCode());
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
+    }
+
+    @Test
+    public void testReadDataReturnsFirstEntryWhenSecondWouldOverflowMaxSize() throws Exception {
+        long ledgerId = 1234L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+        long maxSize = 70;
+        long expectedRemainingBudget = 10;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), eq(expectedRemainingBudget))).thenReturn(null);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, times(1)).readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), eq(expectedRemainingBudget));
+        verify(bookie, times(1)).readEntry(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testReadDataReturnsFirstEntryEvenIfItAloneExceedsMaxSize() throws Exception {
+        long ledgerId = 1235L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+        long maxSize = 50;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, never()).readEntryIfFits(anyLong(), anyLong(), anyLong());
+    }
+
+    @Test
+    public void testReadDataIncludesSecondEntryWhenRemainingBudgetExactlyFitsEntryAndDelimiter() throws Exception {
+        long ledgerId = 1236L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+        int secondEntrySize = 12;
+        long exactRemainingBudget = secondEntrySize + 4L;
+        long maxSize = 24 + 8 + 4 + firstEntrySize + 4 + exactRemainingBudget;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        ByteBuf secondEntry = entryBuffer(secondEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), eq(exactRemainingBudget)))
+                .thenReturn(secondEntry);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(2, data.size());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, times(1)).readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), eq(exactRemainingBudget));
+        verify(bookie, times(1)).readEntry(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testReadDataStopsOnMissingSubsequentEntry() throws Exception {
+        long ledgerId = 1237L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new Bookie.NoEntryException(ledgerId, firstEntryId + 1));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+    }
+
+    @Test
+    public void testReadDataPropagatesIOExceptionAfterFirstEntryAndReleasesAccumulatedData() throws Exception {
+        long ledgerId = 1238L;
+        long firstEntryId = 1L;
+
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        try {
+            processor.readData();
+            fail("Should propagate the storage failure");
+        } catch (IOException expected) {
+            assertEquals(0, firstEntry.refCnt());
+        }
+    }
+
+    @Test
+    public void testProcessPacketReturnsIoErrorWhenSubsequentBoundedReadFails() throws Exception {
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = 1239L;
+        long firstEntryId = 1L;
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntryIfFits(eq(ledgerId), eq(firstEntryId + 1), anyLong()))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        processor.run();
+
+        latch.await();
+        assertTrue(writtenObject.get() instanceof Response);
+        BookieProtocol.BatchedReadResponse response = (BookieProtocol.BatchedReadResponse) writtenObject.get();
+        try {
+            assertEquals(BookieProtocol.EIO, response.getErrorCode());
+            assertEquals(0, response.getData().size());
+            assertEquals(0, firstEntry.refCnt());
+        } finally {
+            response.release();
+        }
+    }
+
+    private BatchedReadEntryProcessor createProcessor(long ledgerId, long entryId, int maxCount, long maxSize) {
+        ExecutorService service = mock(ExecutorService.class);
+        BookieProtocol.BatchedReadRequest request = BookieProtocol.BatchedReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId, BookieProtocol.FLAG_NONE, new byte[] {},
+                0L, maxCount, maxSize);
+        return BatchedReadEntryProcessor.create(request, requestHandler, requestProcessor, service, true,
+                5 * 1024 * 1024);
+    }
+
+    private static ByteBuf entryBuffer(int size) {
+        ByteBuf entry = ByteBufAllocator.DEFAULT.buffer(size);
+        entry.writeZero(size);
+        return entry;
     }
 }

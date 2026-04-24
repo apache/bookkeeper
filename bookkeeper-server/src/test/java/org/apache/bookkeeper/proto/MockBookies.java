@@ -142,17 +142,28 @@ public class MockBookies {
         }
         long frameSize = 24 + 8 + 4;
         for (long i = startEntryId; i < startEntryId + maxCount; i++) {
-             ByteBuf entry = ledger.getEntry(i);
-             frameSize += entry.readableBytes() + 4;
-             if (data == null) {
-                 data = ByteBufList.get(entry);
-             } else {
-                 if (frameSize > maxSize) {
-                     entry.release();
-                     break;
-                 }
-                 data.add(entry);
-             }
+            ByteBuf entry = ledger.getEntry(i);
+            if (data == null) {
+                if (entry == null) {
+                    LOG.warn("[{};L{}] entry({}) not found", bookieId, ledgerId, i);
+                    throw new BKException.BKNoSuchEntryException();
+                }
+                frameSize += entry.readableBytes() + 4;
+                data = ByteBufList.get(entry);
+                continue;
+            }
+
+            if (entry == null) {
+                LOG.warn("[{};L{}] entry({}) not found", bookieId, ledgerId, i);
+                break;
+            }
+
+            if (frameSize + entry.readableBytes() + 4 > maxSize) {
+                break;
+            }
+
+            frameSize += entry.readableBytes() + 4;
+            data.add(entry);
         }
         return data;
     }

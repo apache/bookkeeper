@@ -816,6 +816,16 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                         entries++;
                     }
                     assertEquals(expectEntriesNum, entries);
+
+                    // The first entry is still returned even when maxSize is smaller than a single entry frame.
+                    entries = 0;
+                    for (Enumeration<LedgerEntry> readEntries = lh.batchReadEntries(0, 20, headerSize);
+                            readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                        entries++;
+                    }
+                    assertEquals(1, entries);
                 }
             }
         }

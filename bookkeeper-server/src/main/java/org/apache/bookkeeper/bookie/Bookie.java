@@ -57,6 +57,16 @@ public interface Bookie {
     // TODO: Shouldn't this be async?
     ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException, BookieException;
+
+    /**
+     * Read a ledger entry only when it can fit the provided bound.
+     *
+     * <p>{@code maxEntrySize} includes the 4-byte per-entry delimiter used by batched-read response framing.
+     * Implementations return {@code null} when the entry exists but {@code entry.readableBytes() + 4}
+     * exceeds {@code maxEntrySize}.
+     */
+    ByteBuf readEntryIfFits(long ledgerId, long entryId, long maxEntrySize)
+            throws IOException, NoLedgerException, BookieException;
     long readLastAddConfirmed(long ledgerId) throws IOException, BookieException;
     PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException, NoLedgerException;
 

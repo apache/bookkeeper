@@ -55,6 +55,7 @@ import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -209,6 +210,41 @@ public class DirectEntryLogger implements EntryLogger {
     public ByteBuf readEntry(long ledgerId, long entryId, long entryLocation)
             throws IOException, NoEntryException {
         return internalReadEntry(ledgerId, entryId, entryLocation, true);
+    }
+
+    @Override
+    public ByteBuf readEntryIfFits(long ledgerId, long entryId, long entryLocation, long maxEntrySize)
+            throws IOException, NoEntryException {
+        int logId = (int) (entryLocation >> 32);
+        int pos = (int) (entryLocation & 0xFFFFFFFF);
+
+        long start = System.nanoTime();
+        LogReader reader = getReader(logId);
+
+        try {
+            int entrySize = reader.readEntrySizeAt(pos);
+            if (entrySize + Integer.BYTES > maxEntrySize) {
+                stats.getReadEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+                return null;
+            }
+            long thisLedgerId = reader.readLongAt(pos);
+            long thisEntryId = reader.readLongAt(pos + Long.BYTES);
+            if (thisLedgerId != ledgerId || thisEntryId != entryId) {
+                throw new IOException(
+                        exMsg("Bad location").kv("location", entryLocation)
+                        .kv("expectedLedger", ledgerId).kv("expectedEntry", entryId)
+                        .kv("foundLedger", thisLedgerId).kv("foundEntry", thisEntryId)
+                        .toString());
+            }
+            ByteBuf buf = reader.readBufferAt(pos, entrySize);
+            stats.getReadEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+            return buf;
+        } catch (EOFException eof) {
+            stats.getReadEntryStats().registerFailedEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+            throw new NoEntryException(
+                    exMsg("Entry location doesn't exist").kv("location", entryLocation).toString(),
+                    ledgerId, entryId);
+        }
     }
 
     private LogReader getReader(int logId) throws IOException {

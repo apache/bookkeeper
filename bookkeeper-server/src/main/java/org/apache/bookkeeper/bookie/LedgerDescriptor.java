@@ -78,6 +78,21 @@ public abstract class LedgerDescriptor {
     abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
     abstract ByteBuf readEntry(long entryId) throws IOException, BookieException;
 
+    /**
+     * Read an entry only when it fits within {@code maxEntrySize}.
+     *
+     * <p>{@code maxEntrySize} includes the 4-byte per-entry delimiter used in batched-read response framing,
+     * so an exact fit is {@code entry.readableBytes() + 4 == maxEntrySize}.
+     */
+    ByteBuf readEntryIfFits(long entryId, long maxEntrySize) throws IOException, BookieException {
+        ByteBuf entry = readEntry(entryId);
+        if (entry.readableBytes() + 4 > maxEntrySize) {
+            entry.release();
+            return null;
+        }
+        return entry;
+    }
+
     abstract long getLastAddConfirmed() throws IOException, BookieException;
     abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
