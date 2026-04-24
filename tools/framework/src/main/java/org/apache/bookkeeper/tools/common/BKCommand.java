@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tools.common;
 
 import com.google.common.base.Strings;
 import java.io.File;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -35,7 +35,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 /**
  * Base bk command class.
  */
-@Slf4j
+@CustomLog
 public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliCommand<BKFlags, CommandFlagsT> {
 
     protected BKCommand(CliSpec<CommandFlagsT> spec) {
@@ -69,8 +69,10 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
         if (null != bkFlags.serviceUri) {
             serviceURI = ServiceURI.create(bkFlags.serviceUri);
             if (!acceptServiceUri(serviceURI)) {
-                log.error("Unresolvable service uri by command '{}' : {}",
-                    path(), bkFlags.serviceUri);
+                log.error()
+                        .attr("command", path())
+                        .attr("serviceUri", bkFlags.serviceUri)
+                        .log("Unresolvable service uri");
                 return false;
             }
         }
@@ -82,7 +84,10 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
                         ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(new File(bkFlags.configFile)));
                 conf.addConfiguration(loadedConf);
             } catch (ConfigurationException e) {
-                log.error("Malformed configuration file : {}", bkFlags.configFile, e);
+                log.error()
+                        .attr("configFile", bkFlags.configFile)
+                        .exception(e)
+                        .log("Malformed configuration file");
                 throw new IllegalArgumentException(e);
             }
         }

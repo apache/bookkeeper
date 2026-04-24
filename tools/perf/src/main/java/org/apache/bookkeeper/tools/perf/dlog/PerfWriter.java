@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -52,7 +52,7 @@ import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 /**
  * A perf writer to evaluate write performance.
  */
-@Slf4j
+@CustomLog
 public class PerfWriter implements Runnable {
 
     /**
@@ -174,14 +174,16 @@ public class PerfWriter implements Runnable {
         try {
             execute();
         } catch (Exception e) {
-            log.error("Encountered exception at running dlog perf writer", e);
+            log.error().exception(e).log("Encountered exception at running dlog perf writer");
         }
     }
 
     void execute() throws Exception {
         ObjectMapper m = new ObjectMapper();
         ObjectWriter w = m.writerWithDefaultPrettyPrinter();
-        log.info("Starting dlog perf writer with config : {}", w.writeValueAsString(flags));
+        log.info()
+                .attr("config", w.writeValueAsString(flags))
+                .log("Starting dlog perf writer");
 
         DistributedLogConfiguration conf = newDlogConf(flags);
         try (Namespace namespace = NamespaceBuilder.newBuilder()
@@ -198,7 +200,7 @@ public class PerfWriter implements Runnable {
             String logName = String.format(flags.logName, i);
             managers.add(Pair.of(i, namespace.openLog(logName)));
         }
-        log.info("Successfully open {} logs", managers.size());
+        log.info().attr("numLogs", managers.size()).log("Successfully opened logs");
 
         // register shutdown hook to aggregate stats
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -228,11 +230,11 @@ public class PerfWriter implements Runnable {
                             numRecordsForThisThread,
                             numBytesForThisThread);
                     } catch (Exception e) {
-                        log.error("Encountered error at writing records", e);
+                        log.error().exception(e).log("Encountered error at writing records");
                     }
                 });
             }
-            log.info("Started {} write threads", flags.numThreads);
+            log.info().attr("numThreads", flags.numThreads).log("Started write threads");
             reportStats();
         } finally {
             executor.shutdown();
@@ -248,13 +250,13 @@ public class PerfWriter implements Runnable {
                int maxOutstandingBytesForThisThread,
                long numRecordsForThisThread,
                long numBytesForThisThread) throws Exception {
-        log.info("Write thread started with : logs = {}, rate = {},"
-                + " num records = {}, num bytes = {}, max outstanding bytes = {}",
-            logs.stream().map(l -> l.getStreamName()).collect(Collectors.toList()),
-            writeRate,
-            numRecordsForThisThread,
-            numBytesForThisThread,
-            maxOutstandingBytesForThisThread);
+        log.info()
+                .attr("logs", logs.stream().map(l -> l.getStreamName()).collect(Collectors.toList()))
+                .attr("rate", writeRate)
+                .attr("numRecords", numRecordsForThisThread)
+                .attr("numBytes", numBytesForThisThread)
+                .attr("maxOutstandingBytes", maxOutstandingBytesForThisThread)
+                .log("Write thread started");
 
         List<CompletableFuture<AsyncLogWriter>> writerFutures = logs.stream()
             .map(manager -> manager.openAsyncLogWriter())
@@ -325,7 +327,7 @@ public class PerfWriter implements Runnable {
                     recorder.recordValue(latencyMicros);
                     cumulativeRecorder.recordValue(latencyMicros);
                 }).exceptionally(cause -> {
-                    log.warn("Error at writing records", cause);
+                    log.warn().exception(cause).log("Error at writing records");
                     System.exit(-1);
                     return null;
                 });
@@ -367,17 +369,17 @@ public class PerfWriter implements Runnable {
 
             reportHistogram = recorder.getIntervalHistogram(reportHistogram);
 
-            log.info(
-                    "Throughput written : {}  records/s --- {} MB/s --- Latency: mean:"
-                        + " {} ms - med: {} - 95pct: {} - 99pct: {} - 99.9pct: {} - 99.99pct: {} - Max: {}",
-                    throughputFormat.format(rate), throughputFormat.format(throughput),
-                    dec.format(reportHistogram.getMean() / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                    dec.format(reportHistogram.getMaxValue() / 1000.0));
+            log.info()
+                    .attr("rate", throughputFormat.format(rate))
+                    .attr("throughputMBs", throughputFormat.format(throughput))
+                    .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                    .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                    .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                    .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                    .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                    .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                    .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                    .log("Throughput written");
 
             reportHistogram.reset();
 
@@ -406,16 +408,16 @@ public class PerfWriter implements Runnable {
     private static void printAggregatedStats(Recorder recorder) {
         Histogram reportHistogram = recorder.getIntervalHistogram();
 
-        log.info("Aggregated latency stats --- Latency: mean: {} ms - med: {} - 95pct: {} - 99pct: {}"
-                + " - 99.9pct: {} - 99.99pct: {} - 99.999pct: {} - Max: {}",
-                dec.format(reportHistogram.getMean() / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0),
-                dec.format(reportHistogram.getMaxValue() / 1000.0));
+        log.info()
+                .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                .attr("latency99999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0))
+                .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                .log("Aggregated latency stats");
     }
 
 }

@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -48,15 +49,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a simple test program to compare the performance of writing to
  * BookKeeper and to the local file system.
  */
+@CustomLog
 public class TestClient {
-    private static final Logger LOG = LoggerFactory.getLogger(TestClient.class);
 
     /**
      * First says if entries should be written to BookKeeper (0) or to the local
@@ -148,7 +147,7 @@ public class TestClient {
                     clients.add(new FileClient(streams, data, runfor));
                 }
             } else {
-                LOG.error("Unknown option: " + target);
+                log.error().attr("target", target).log("Unknown option");
                 throw new IllegalArgumentException("Unknown target " + target);
             }
 
@@ -161,35 +160,38 @@ public class TestClient {
             long count = 0;
             for (Future<Long> r : results) {
                 if (!r.isDone()) {
-                    LOG.warn("Job didn't complete");
+                    log.warn("Job didn't complete");
                     System.exit(2);
                 }
                 long c = r.get();
                 if (c == 0) {
-                    LOG.warn("Task didn't complete");
+                    log.warn("Task didn't complete");
                 }
                 count += c;
             }
             long time = end - start;
-            LOG.info("Finished processing writes (ms): {} TPT: {} op/s", time, count / ((double) time / 1000));
+            log.info()
+                    .attr("timeMs", time)
+                    .attr("throughput", count / ((double) time / 1000))
+                    .log("Finished processing writes");
             executor.shutdown();
         } catch (ExecutionException ee) {
-            LOG.error("Exception in worker", ee);
+            log.error().exception(ee).log("Exception in worker");
         } catch (BKException e) {
-            LOG.error("Error accessing bookkeeper", e);
+            log.error().exception(e).log("Error accessing bookkeeper");
         } catch (IOException ioe) {
-            LOG.error("I/O exception during benchmark", ioe);
+            log.error().exception(ioe).log("I/O exception during benchmark");
         } catch (InterruptedException ie) {
-            LOG.error("Benchmark interrupted", ie);
+            log.error().exception(ie).log("Benchmark interrupted");
             Thread.currentThread().interrupt();
         } finally {
             if (bkc != null) {
                 try {
                     bkc.close();
                 } catch (BKException bke) {
-                    LOG.error("Error closing bookkeeper client", bke);
+                    log.error().exception(bke).log("Error closing bookkeeper client");
                 } catch (InterruptedException ie) {
-                    LOG.warn("Interrupted closing bookkeeper client", ie);
+                    log.warn().exception(ie).log("Interrupted closing bookkeeper client");
                     Thread.currentThread().interrupt();
                 }
             }
@@ -228,11 +230,13 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
-                         count / ((double) time / 1000));
+                log.info()
+                        .attr("timeMs", time)
+                        .attr("throughput", count / ((double) time / 1000))
+                        .log("Worker finished processing writes");
                 return count;
             } catch (IOException ioe) {
-                LOG.error("Exception in worker thread", ioe);
+                log.error().exception(ioe).log("Exception in worker thread");
                 return 0L;
             }
         }
@@ -278,15 +282,17 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
-                         success.get() / ((double) time / 1000));
+                log.info()
+                        .attr("timeMs", time)
+                        .attr("throughput", success.get() / ((double) time / 1000))
+                        .log("Worker finished processing writes");
                 return success.get();
             } catch (BKException e) {
-                LOG.error("Exception in worker thread", e);
+                log.error().exception(e).log("Exception in worker thread");
                 return 0L;
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.error("Exception in worker thread", ie);
+                log.error().exception(ie).log("Exception in worker thread");
                 return 0L;
             }
         }

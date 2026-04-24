@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.CustomLog;
 import org.apache.bookkeeper.http.AbstractHttpHandlerFactory;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
@@ -39,15 +40,13 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Bookie http service servlet.
  *
  **/
+@CustomLog
 public class BookieHttpServiceServlet extends HttpServlet {
-  static final Logger LOG = LoggerFactory.getLogger(BookieHttpServiceServlet.class);
 
   // url to api
   private final Map<String/*url*/, ApiType/*api*/> mappings = new ConcurrentHashMap<>();
@@ -95,7 +94,7 @@ public class BookieHttpServiceServlet extends HttpServlet {
         out.write(response.getBody());
       }
     } catch (Throwable e) {
-      LOG.error("Error while service Bookie API request {}", uri, e);
+      log.error().exception(e).attr("uri", uri).log("Error while service Bookie API request");
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
   }

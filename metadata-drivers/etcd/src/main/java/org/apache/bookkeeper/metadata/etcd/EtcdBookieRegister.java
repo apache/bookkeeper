@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 /**
  * Register to register a bookie in Etcd.
  */
-@Slf4j
+@CustomLog
 class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
 
     private final Lease leaseClient;
@@ -103,26 +103,31 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             this.kaListener = leaseClient.keepAlive(leaseId, new StreamObserver<LeaseKeepAliveResponse>() {
                 @Override
                 public void onNext(LeaseKeepAliveResponse response) {
-                    log.info("KeepAlive response : lease = {}, ttl = {}",
-                            response.getID(), response.getTTL());
+                    log.info()
+                            .attr("leaseId", response.getID())
+                            .attr("ttl", response.getTTL())
+                            .log("KeepAlive response");
                 }
 
                 @Override
                 public void onError(Throwable t) {
-                    log.info("KeepAlive renewal failed, leaseId {}", leaseId, t.fillInStackTrace());
+                    log.info()
+                            .attr("leaseId", leaseId)
+                            .exception(t.fillInStackTrace())
+                            .log("KeepAlive renewal failed");
                     keepAliveFuture.completeExceptionally(t);
                 }
 
                 @Override
                 public void onCompleted() {
-                    log.info("lease completed! leaseId {}", leaseId);
+                    log.info().attr("leaseId", leaseId).log("lease completed!");
                     keepAliveFuture.cancel(true);
                 }
             });
 
             this.leaseId = leaseId;
             leaseFuture.complete(leaseId);
-            log.info("New lease '{}' is granted.", leaseId);
+            log.info().attr("leaseId", leaseId).log("New lease is granted");
         }
     }
 
@@ -132,14 +137,19 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
                 newLeaseIfNeeded();
                 nextWaitTimeMs = 100L;
             } catch (MetadataStoreException e) {
-                log.error("Failed to grant a new lease for leaseId {}", leaseId, e);
+                log.error()
+                        .attr("leaseId", leaseId)
+                        .exception(e)
+                        .log("Failed to grant a new lease");
                 try {
                     TimeUnit.MILLISECONDS.sleep(nextWaitTimeMs);
                     nextWaitTimeMs *= 2;
                     nextWaitTimeMs = Math.min(nextWaitTimeMs, TimeUnit.SECONDS.toMillis(ttlSeconds));
                 } catch (InterruptedException e1) {
                     Thread.currentThread().interrupt();
-                    log.warn("Interrupted at backing off granting a new lease for leaseId {}", leaseId);
+                    log.warn()
+                            .attr("leaseId", leaseId)
+                            .log("Interrupted at backing off granting a new lease");
                 }
                 continue;
             }
@@ -152,15 +162,18 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             waitForNewLeaseId();
             // here we get a lease, keep it alive
             try {
-                log.info("Keeping Alive at lease = {}", get());
+                log.info().attr("leaseId", get()).log("Keeping Alive");
                 keepAliveFuture.get();
                 continue;
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("Interrupted at keeping lease '{}' alive", leaseId);
+                log.warn().attr("leaseId", leaseId).log("Interrupted at keeping lease alive");
                 resetLease();
             } catch (ExecutionException ee) {
-                log.warn("Failed to keep alive lease '{}'", leaseId, ee);
+                log.warn()
+                        .attr("leaseId", leaseId)
+                        .exception(ee)
+                        .log("Failed to keep alive lease");
                 resetLease();
             }
         }
@@ -207,7 +220,7 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             try {
                 return leaseFuture.get(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                log.warn("Interrupted at getting lease id", e);
+                log.warn().exception(e).log("Interrupted at getting lease id");
                 return -1L;
             } catch (ExecutionException e) {
                 throw new IllegalArgumentException("Should never reach here");

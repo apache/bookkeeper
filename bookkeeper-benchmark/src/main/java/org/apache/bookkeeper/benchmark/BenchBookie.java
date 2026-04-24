@@ -29,6 +29,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -51,14 +52,12 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A utility class used for benchmarking the performance of bookies.
  */
+@CustomLog
 public class BenchBookie {
-    static final Logger LOG = LoggerFactory.getLogger(BenchBookie.class);
 
     static class LatencyCallback implements WriteCallback {
         boolean complete;
@@ -66,7 +65,7 @@ public class BenchBookie {
         public synchronized void writeComplete(int rc, long ledgerId, long entryId,
                 BookieId addr, Object ctx) {
             if (rc != 0) {
-                LOG.error("Got error " + rc);
+                log.error().attr("rc", rc).log("Got error");
             }
             complete = true;
             notifyAll();
@@ -88,7 +87,7 @@ public class BenchBookie {
         public synchronized void writeComplete(int rc, long ledgerId, long entryId,
                 BookieId addr, Object ctx) {
             if (rc != 0) {
-                LOG.error("Got error " + rc);
+                log.error().attr("rc", rc).log("Got error");
             }
             count++;
             if (count >= waitingCount) {
@@ -163,7 +162,9 @@ public class BenchBookie {
             try {
                 eventLoop = new EpollEventLoopGroup();
             } catch (Throwable t) {
-                LOG.warn("Could not use Netty Epoll event loop for benchmark {}", t.getMessage());
+                log.warn()
+                        .attr("exceptionMessage", t.getMessage())
+                        .log("Could not use Netty Epoll event loop for benchmark");
                 eventLoop = new NioEventLoopGroup();
             }
         } else {
@@ -196,11 +197,11 @@ public class BenchBookie {
                     entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
                     false, WriteFlag.NONE);
         }
-        LOG.info("Waiting for warmup");
+        log.info("Waiting for warmup");
         tc.waitFor(warmUpCount);
 
         ledger = getValidLedgerId(servers);
-        LOG.info("Benchmarking latency");
+        log.info("Benchmarking latency");
         long startTime = System.nanoTime();
         for (long entry = 0; entry < latencyCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
@@ -216,10 +217,12 @@ public class BenchBookie {
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
-        LOG.info("Latency: " + (((double) (endTime - startTime)) / ((double) latencyCount)) / 1000000.0);
+        log.info()
+                .attr("latencyMs", (((double) (endTime - startTime)) / ((double) latencyCount)) / 1000000.0)
+                .log("Latency");
 
         ledger = getValidLedgerId(servers);
-        LOG.info("Benchmarking throughput");
+        log.info("Benchmarking throughput");
         startTime = System.currentTimeMillis();
         tc = new ThroughputCallback();
         for (long entry = 0; entry < throughputCount; entry++) {
@@ -235,7 +238,9 @@ public class BenchBookie {
         }
         tc.waitFor(throughputCount);
         endTime = System.currentTimeMillis();
-        LOG.info("Throughput: " + ((long) throughputCount) * 1000 / (endTime - startTime));
+        log.info()
+                .attr("throughput", ((long) throughputCount) * 1000 / (endTime - startTime))
+                .log("Throughput");
 
         bc.close();
         scheduler.shutdown();
