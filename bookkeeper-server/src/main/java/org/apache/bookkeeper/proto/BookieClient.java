@@ -281,4 +281,13 @@ public interface BookieClient {
      * Close the bookie client object.
      */
     void close();
+
+    /**
+     * Close quarantined bookie channels to release byte buffers.
+     *
+     * @param bookieId bookie id
+     */
+    default void closeQuarantinedBookieChannels(BookieId bookieId) {
+        // no-op
+    }
 }
