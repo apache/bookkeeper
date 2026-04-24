@@ -23,8 +23,8 @@ package org.apache.bookkeeper.stats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import org.apache.commons.configuration2.Configuration;
 import lombok.CustomLog;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * An umbrella class for loading stats provider.

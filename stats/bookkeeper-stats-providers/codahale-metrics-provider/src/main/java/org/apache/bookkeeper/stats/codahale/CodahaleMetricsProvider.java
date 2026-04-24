@@ -33,11 +33,11 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.commons.configuration2.Configuration;
-import lombok.CustomLog;
 import org.slf4j.LoggerFactory;
 
 /**

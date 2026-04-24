@@ -19,10 +19,10 @@ package org.apache.bookkeeper.stats.prometheus;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
-import lombok.CustomLog;
 
 /**
  * OpStatsLogger implementation that lazily registers OpStatsLoggers per thread
