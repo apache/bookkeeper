@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -34,16 +35,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * TestZKAccessControlManager.
  */
+@CustomLog
 public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestZKAccessControlManager.class);
 
     private DistributedLogConfiguration conf;
     private ZooKeeperClient zkc;
@@ -96,9 +93,9 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
         String zkRootPath = "/test-zk-access-control-manager";
         String stream1 = "test-acm-1";
         String stream2 = "test-acm-2";
-        logger.info("Creating ACL Manager for {}", zkRootPath);
+        log.info().attr("zkRootPath", zkRootPath).log("Creating ACL Manager");
         ZKAccessControlManager zkcm = new ZKAccessControlManager(conf, zkc, zkRootPath, executorService);
-        logger.info("Created ACL Manager for {}", zkRootPath);
+        log.info().attr("zkRootPath", zkRootPath).log("Created ACL Manager");
         try {
             verifyStreamPermissions(zkcm, stream1, true, true, true, true, true);
 
@@ -108,7 +105,7 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
             ace1.setDenyDelete(true);
             ZKAccessControl accessControl1 = new ZKAccessControl(ace1, zkPath1);
             setACL(accessControl1);
-            logger.info("Create ACL for stream {} : {}", stream1, accessControl1);
+            log.info().attr("stream", stream1).attr("accessControl", accessControl1).log("Create ACL for stream");
             while (zkcm.allowDelete(stream1)) {
                 Thread.sleep(100);
             }
@@ -119,7 +116,7 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
             ace1.setDenyWrite(true);
             accessControl1 = new ZKAccessControl(ace1, zkPath1);
             setACL(accessControl1);
-            logger.info("Update ACL for stream {} : {}", stream1, accessControl1);
+            log.info().attr("stream", stream1).attr("accessControl", accessControl1).log("Update ACL for stream");
 
             // create stream2 (denyTruncate = true)
             String zkPath2 = zkRootPath + "/" + stream2;
@@ -127,7 +124,7 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
             ace2.setDenyTruncate(true);
             ZKAccessControl accessControl2 = new ZKAccessControl(ace2, zkPath2);
             setACL(accessControl2);
-            logger.info("Create ACL for stream {} : {}", stream2, accessControl2);
+            log.info().attr("stream", stream2).attr("accessControl", accessControl2).log("Create ACL for stream");
             while (zkcm.allowWrite(stream1)) {
                 Thread.sleep(100);
             }
@@ -140,7 +137,7 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
 
             // delete stream2
             Utils.ioResult(ZKAccessControl.delete(zkc, zkPath2));
-            logger.info("Delete ACL for stream {}", stream2);
+            log.info().attr("stream", stream2).log("Delete ACL for stream");
             while (!zkcm.allowTruncate(stream2)) {
                 Thread.sleep(100);
             }
@@ -156,14 +153,17 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
             ace1.setDenyRelease(true);
             accessControl1 = new ZKAccessControl(ace1, zkPath1);
             setACL(accessControl1);
-            logger.info("Update ACL for stream {} : {}", stream1, accessControl1);
+            log.info().attr("stream", stream1).attr("accessControl", accessControl1).log("Update ACL for stream");
 
             // create stream2 (denyTruncate = true)
             ace2 = new AccessControlEntry();
             ace2.setDenyAcquire(true);
             accessControl2 = new ZKAccessControl(ace2, zkPath2);
             setACL(accessControl2);
-            logger.info("Created ACL for stream {} again : {}", stream2, accessControl2);
+            log.info()
+                    .attr("stream", stream2)
+                    .attr("accessControl", accessControl2)
+                    .log("Created ACL for stream again");
 
             while (zkcm.allowRelease(stream1)) {
                 Thread.sleep(100);

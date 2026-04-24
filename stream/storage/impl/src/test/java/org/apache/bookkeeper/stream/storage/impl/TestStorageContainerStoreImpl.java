@@ -47,7 +47,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.grpc.proxy.ProxyHandlerRegistry;
@@ -102,7 +102,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link StorageContainerStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestStorageContainerStoreImpl {
 
     private static final StreamProperties streamProps = StreamProperties.newBuilder()

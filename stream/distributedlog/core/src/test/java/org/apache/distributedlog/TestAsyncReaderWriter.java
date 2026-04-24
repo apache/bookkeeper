@@ -41,6 +41,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -78,14 +79,12 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for AsyncReaderWriter.
  */
+@CustomLog
 public class TestAsyncReaderWriter extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestAsyncReaderWriter.class);
 
     protected DistributedLogConfiguration testConf;
 
@@ -217,17 +216,14 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                     @Override
                     public void onSuccess(DLSN value) {
                         if (value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("LogSegmentSequenceNumber: {}, Expected {}",
-                                        value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
-                            }
+                            log.debug().attr("logSegmentSequenceNumber", value.getLogSegmentSequenceNo())
+                                    .attr("expected", currentLogSegmentSeqNo).log("LogSegmentSequenceNumber mismatch");
                             errorsFound.set(true);
                         }
 
                         if (value.getEntryId() != currentEntryId) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("EntryId: {}, Expected {}", value.getEntryId(), currentEntryId);
-                            }
+                            log.debug().attr("entryId", value.getEntryId()).attr("expected", currentEntryId)
+                                    .log("EntryId mismatch");
                             errorsFound.set(true);
                         }
 
@@ -236,14 +232,14 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         }
 
                         syncLatch.countDown();
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("SyncLatch: {}", syncLatch.getCount());
-                        }
+                        log.debug().attr("syncLatch", syncLatch.getCount()).log("SyncLatch");
                     }
                     @Override
                     public void onFailure(Throwable cause) {
-                        LOG.error("Encountered exception on writing record {} in log segment {}",
-                                currentEntryId, currentLogSegmentSeqNo);
+                        log.error()
+                                .attr("entryId", currentEntryId)
+                                .attr("logSegmentSequenceNumber", currentLogSegmentSeqNo)
+                                .log("Encountered exception on writing record");
                         errorsFound.set(true);
                     }
                 });
@@ -355,16 +351,14 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         assertTrue(value.getSequenceId() < 0);
                         assertTrue(value.getSequenceId() > startSequenceId);
                     }
-                    LOG.info("Received record {} from {}", value, reader.getStreamName());
+                    log.info().attr("record", value).attr("stream", reader.getStreamName()).log("Received record");
                     assertTrue(!value.isControl());
                     assertTrue(value.getDlsn().getSlotId() == 0);
                     assertTrue(value.getDlsn().compareTo(startPosition) >= 0);
                     DLMTestUtil.verifyLargeLogRecord(value);
                 } catch (Exception exc) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Exception Encountered when verifying log record {} : ",
-                                value.getDlsn(), exc);
-                    }
+                    log.debug().attr("dlsn", value.getDlsn()).exception(exc)
+                            .log("Exception Encountered when verifying log record");
                     errorsFound.set(true);
                     completionLatch.countDown();
                     return;
@@ -385,7 +379,10 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             }
             @Override
             public void onFailure(Throwable cause) {
-                LOG.error("Encountered Exception on reading {}", reader.getStreamName(), cause);
+                log.error()
+                        .attr("stream", reader.getStreamName())
+                        .exception(cause)
+                        .log("Encountered Exception on reading");
                 errorsFound.set(true);
                 completionLatch.countDown();
             }
@@ -473,7 +470,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 break;
             }
             List<LogRecordWithDLSN> records = Utils.ioResult(reader.readBulk(20));
-            LOG.info("Bulk read {} entries.", records.size());
+            log.info().attr("numEntries", records.size()).log("Bulk read entries");
 
             assertTrue(records.size() >= 1);
             for (LogRecordWithDLSN record : records) {
@@ -673,12 +670,14 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         @Override
         public void onSuccess(DLSN value) {
             if (value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
-                LOG.error("Ledger Seq No: {}, Expected: {}", value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
+                log.error().attr("ledgerSeqNo", value.getLogSegmentSequenceNo())
+                        .attr("expected", currentLogSegmentSeqNo).log("Ledger Seq No mismatch");
                 errorsFound.set(true);
             }
 
             if (verifyEntryId && value.getEntryId() != currentEntryId) {
-                LOG.error("EntryId: {}, Expected: {}", value.getEntryId(), currentEntryId);
+                log.error().attr("entryId", value.getEntryId()).attr("expected", currentEntryId)
+                        .log("EntryId mismatch");
                 errorsFound.set(true);
             }
             syncLatch.countDown();
@@ -689,8 +688,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
          */
         @Override
         public void onFailure(Throwable cause) {
-            LOG.error("Encountered failures on writing record as (lid = {}, eid = {}) :",
-                currentLogSegmentSeqNo, currentEntryId, cause);
+            log.error().attr("lid", currentLogSegmentSeqNo).attr("eid", currentEntryId).exception(cause)
+                    .log("Encountered failures on writing record");
             errorsFound.set(true);
             syncLatch.countDown();
         }
@@ -760,7 +759,6 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         dlm.close();
     }
 
-
     /**
      * Test Case: starting reading when the streams don't exist.
      *
@@ -827,7 +825,6 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         reader.stop();
         dlm.close();
     }
-
 
     /**
      * Test Case: starting reading when the streams don't exist.
@@ -1057,7 +1054,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 } catch (ReadCancelledException rce) {
                     receiveExpectedException.set(true);
                 } catch (Throwable t) {
-                    LOG.error("Receive unexpected exception on reading stream {} : ", name, t);
+                    log.error().attr("stream", name).exception(t).log("Receive unexpected exception on reading stream");
                 }
                 readLatch.countDown();
             }
@@ -1108,9 +1105,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 @Override
                 public void onSuccess(DLSN value) {
                     syncLatch.countDown();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("SyncLatch: {} ; DLSN: {} ", syncLatch.getCount(), value);
-                    }
+                    log.debug().attr("syncLatch", syncLatch.getCount()).attr("dlsn", value).log("SyncLatch");
                 }
                 @Override
                 public void onFailure(Throwable cause) {
@@ -1137,8 +1132,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         assertTrue(success);
 
         LogRecordWithDLSN last = dlm.getLastLogRecord();
-        LOG.info("Last Entry {}; elapsed time {}",
-                last.getDlsn().getEntryId(), executionTime.elapsed(TimeUnit.MILLISECONDS));
+        log.info().attr("lastEntry", last.getDlsn().getEntryId())
+                .attr("elapsedMs", executionTime.elapsed(TimeUnit.MILLISECONDS)).log("Last Entry");
 
         // Regardless of how many records we wrote; the number of BK entries should always be bounded by the min delay.
         // Since there are two flush processes--data flush and control flush, and since control flush may also end up
@@ -1192,9 +1187,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
             fail("should have thrown");
         } catch (LockingException ex) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("caught exception ", ex);
-            }
+            log.debug().exception(ex).log("caught exception");
         }
 
         writer.close();
@@ -1349,7 +1342,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             fail("Should fail to complete a log segment when its ledger is fenced");
         } catch (IOException ioe) {
             // expected
-            LOG.error("Failed to close and complete log segment {} : ", logWriter.getFullyQualifiedLogSegment(), ioe);
+            log.error().attr("logSegment", logWriter.getFullyQualifiedLogSegment()).exception(ioe)
+                    .log("Failed to close and complete log segment");
         }
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
@@ -1643,7 +1637,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         record = Utils.ioResult(reader.readNext());
-        LOG.info("Read record {}", record);
+        log.info().attr("record", record).log("Read record");
         assertEquals(1L, record.getTransactionId());
 
         assertNotNull(reader.getReadAheadReader());
@@ -1651,7 +1645,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         for (int i = 2; i <= numRecords; i++) {
             record = Utils.ioResult(reader.readNext());
-            LOG.info("Read record {}", record);
+            log.info().attr("record", record).log("Read record");
             assertEquals((long) i, record.getTransactionId());
             TimeUnit.MILLISECONDS.sleep(20);
             int numCachedEntries = reader.getReadAheadReader().getNumCachedEntries();
@@ -2139,7 +2133,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         AsyncLogReader reader2 = readDLM2.getAsyncLogReader(DLSN.InitialDLSN);
         for (int i = 0; i < 11; i++) {
             LogRecordWithDLSN record = Utils.ioResult(reader2.readNext());
-            LOG.info("Read record {}", record);
+            log.info().attr("record", record).log("Read record");
             if (i < 5) {
                 assertEquals(new DLSN(1L, i, 0L), record.getDlsn());
                 assertEquals(1L + i, record.getTransactionId());

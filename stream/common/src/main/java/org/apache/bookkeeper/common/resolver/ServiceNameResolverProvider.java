@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 
@@ -37,7 +37,7 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
  * An implementation of {@link NameResolverProvider} that provides {@link NameResolver}s
  * to resolve {@link org.apache.bookkeeper.common.net.ServiceURI}.
  */
-@Slf4j
+@CustomLog
 public final class ServiceNameResolverProvider extends NameResolverFactoryProvider {
 
     private final NameResolverProvider dnsProvider;
@@ -76,8 +76,10 @@ public final class ServiceNameResolverProvider extends NameResolverFactoryProvid
             serviceURI = ServiceURI.create(targetUri);
         } catch (NullPointerException | IllegalArgumentException e) {
             // invalid uri here, so return null to allow grpc to use other name resolvers
-            log.info("ServiceNameResolverProvider doesn't know how to resolve {} : cause {}",
-                targetUri, e.getMessage());
+            log.info()
+                .attr("targetUri", targetUri)
+                .exceptionMessage(e)
+                .log("ServiceNameResolverProvider doesn't know how to resolve target URI");
             return null;
         }
 

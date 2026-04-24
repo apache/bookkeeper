@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -44,7 +44,7 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 /**
  * A service that is responsible for registration using bookkeeper registration api.
  */
-@Slf4j
+@CustomLog
 public class RegistrationServiceProvider
     extends AbstractLifecycleComponent<DLConfiguration>
     implements Supplier<RegistrationClient> {
@@ -99,10 +99,16 @@ public class RegistrationServiceProvider
                     .build();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.error("Interrupted at creating zookeeper client to {}", zkServers, e);
+                log.error()
+                    .attr("zkServers", zkServers)
+                    .exception(e)
+                    .log("Interrupted at creating zookeeper client");
                 throw e;
             } catch (Exception e) {
-                log.error("Failed to create zookeeper client to {}", zkServers, e);
+                log.error()
+                    .attr("zkServers", zkServers)
+                    .exception(e)
+                    .log("Failed to create zookeeper client");
                 throw e;
             }
             client = new ZKRegistrationClient(zkClient, regPath, regExecutor, bookieAddresschangeTracking);
@@ -125,7 +131,10 @@ public class RegistrationServiceProvider
                 zkClient.close();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Interrupted at closing zookeeper client to {}", zkServers, e);
+                log.warn()
+                    .attr("zkServers", zkServers)
+                    .exception(e)
+                    .log("Interrupted at closing zookeeper client");
             }
         }
         this.regExecutor.shutdown();

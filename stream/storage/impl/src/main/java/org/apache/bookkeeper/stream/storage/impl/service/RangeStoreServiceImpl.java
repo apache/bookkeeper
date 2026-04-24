@@ -28,8 +28,8 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -79,7 +79,7 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 /**
  * The service implementation running in a storage container.
  */
-@Slf4j
+@CustomLog
 class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
 
     private final long scId;

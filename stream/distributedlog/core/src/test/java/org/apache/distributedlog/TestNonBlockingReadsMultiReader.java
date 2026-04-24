@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
@@ -35,6 +36,7 @@ import org.junit.Test;
 /**
  * Test Cases for NonBlockingReadsMultiReader.
  */
+@CustomLog
 public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
 
         static class ReaderThread extends Thread {
@@ -58,7 +60,8 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
                     if (r != null) {
                         readCount.incrementAndGet();
                         if (readCount.get() % 1000 == 0) {
-                            LOG.info("{} reading {}", getName(), r.getTransactionId());
+                            log.info().attr("reader", getName()).attr("transactionId", r.getTransactionId())
+                                    .log("reading");
                         }
                     }
                 } catch (DLInterruptedException die) {
@@ -70,14 +73,15 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
         }
 
         void stopReading() {
-            LOG.info("Stopping reader.");
+            log.info("Stopping reader.");
             running = false;
             interrupt();
             try {
                 join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOG.error("Interrupted on waiting reader thread {} exiting : ", getName(), e);
+                log.error().attr("reader", getName()).exception(e)
+                        .log("Interrupted on waiting reader thread exiting");
             }
         }
 
@@ -126,10 +130,10 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
                             dlsn = Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
                             writeCount.incrementAndGet();
                             if (curTxId % 1000 == 0) {
-                                LOG.info("writer write {}", curTxId);
+                                log.info().attr("txid", curTxId).log("writer write");
                             }
                         }
-                        LOG.info("Completed writing record at {}", dlsn);
+                        log.info().attr("dlsn", dlsn).log("Completed writing record");
                         Utils.close(writer);
                     } catch (DLInterruptedException die) {
                         Thread.currentThread().interrupt();
@@ -147,16 +151,17 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
 
             TimeUnit.SECONDS.sleep(5);
 
-            LOG.info("Stopping writer");
+            log.info("Stopping writer");
 
             running.set(false);
             writerThread.join();
 
-            LOG.info("Writer stopped after writing {} records, waiting for reader to complete",
-                    writeCount.get());
+            log.info().attr("writeCount", writeCount.get())
+                    .log("Writer stopped, waiting for reader to complete");
             while (writeCount.get() > (readerThreads[0].getReadCount())) {
-                LOG.info("Write Count = {}, Read Count = {}",
-                        new Object[] { writeCount.get(), readerThreads[0].getReadCount() });
+                log.info().attr("writeCount", writeCount.get())
+                        .attr("readCount", readerThreads[0].getReadCount())
+                        .log("Progress");
                 TimeUnit.MILLISECONDS.sleep(100);
             }
             assertEquals(writeCount.get(),

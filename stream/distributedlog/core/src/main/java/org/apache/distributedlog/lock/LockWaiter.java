@@ -20,19 +20,17 @@ package org.apache.distributedlog.lock;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Lock waiter represents the attempt that application tries to lock.
  */
+@CustomLog
 public class LockWaiter {
-
-    private static final Logger logger = LoggerFactory.getLogger(LockWaiter.class);
 
     private final String lockId;
     private final String currentOwner;
@@ -89,9 +87,9 @@ public class LockWaiter {
         } catch (DLInterruptedException ie) {
             Thread.currentThread().interrupt();
         } catch (LockTimeoutException lte) {
-            logger.debug("Timeout on lock acquiring", lte);
+            log.debug().exception(lte).log("Timeout on lock acquiring");
         } catch (IOException e) {
-            logger.error("Caught exception waiting for lock acquired", e);
+            log.error().exception(e).log("Caught exception waiting for lock acquired");
         }
         return success;
     }

@@ -43,8 +43,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.CustomLog;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
@@ -57,7 +57,7 @@ import org.apache.commons.codec.binary.Hex;
 /**
  * A client interceptor that intercepting kv rpcs to attach routing information.
  */
-@Slf4j
+@CustomLog
 public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
 
     /**
@@ -164,12 +164,11 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
                                                                CallOptions callOptions,
                                                                Channel next) {
-        if (log.isTraceEnabled()) {
-            log.trace("Intercepting method {} : req marshaller = {}, resp marshaller = {}",
-                method.getFullMethodName(),
-                method.getRequestMarshaller(),
-                method.getResponseMarshaller());
-        }
+        log.trace()
+            .attr("method", method.getFullMethodName())
+            .attr("requestMarshaller", method.getRequestMarshaller())
+            .attr("responseMarshaller", method.getResponseMarshaller())
+            .log("Intercepting method");
         InterceptorDescriptor<?> descriptor = kvRpcMethods.get(method.getFullMethodName());
         return new SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
 
@@ -183,10 +182,11 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
                 sid = headers.get(SID_METADATA_KEY);
                 rid = headers.get(RID_METADATA_KEY);
                 rk  = headers.get(RK_METADATA_KEY);
-                if (log.isTraceEnabled()) {
-                    log.trace("Intercepting request with header : sid = {}, rid = {}, rk = {}",
-                        sid, rid, rk);
-                }
+                log.trace()
+                    .attr("streamId", sid)
+                    .attr("rangeId", rid)
+                    .attr("routingKey", rk)
+                    .log("Intercepting request with header");
 
                 delegate().start(responseListener, headers);
             }
@@ -220,14 +220,14 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
         try {
             bytes = is.available();
         } catch (IOException e) {
-            log.warn("Encountered exceptions in getting available bytes of message", e);
+            log.warn().exception(e).log("Encountered exceptions in getting available bytes of message");
             throw new RuntimeException("Encountered exception in intercepting message", e);
         }
         ByteBuf buffer = PooledByteBufAllocator.DEFAULT.buffer();
         try {
             buffer.writeBytes(is, bytes);
         } catch (IOException e) {
-            log.warn("Encountered exceptions in transferring bytes to the buffer", e);
+            log.warn().exception(e).log("Encountered exceptions in transferring bytes to the buffer");
             ReferenceCountUtil.release(buffer);
             throw new RuntimeException("Encountered exceptions in transferring bytes to the buffer", e);
         }
@@ -250,8 +250,12 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
             try {
                 return interceptTableRequest(method, descriptor, message, sid, rid, rk);
             } catch (Throwable t) {
-                log.error("Failed to intercept table request (sid = {}, rid = {}, rk = {}) : ",
-                    sid, rid, Hex.encodeHexString(rk), t);
+                log.error()
+                    .attr("streamId", sid)
+                    .attr("rangeId", rid)
+                    .attr("routingKey", Hex.encodeHexString(rk))
+                    .exception(t)
+                    .log("Failed to intercept table request");
                 return message;
             }
         }

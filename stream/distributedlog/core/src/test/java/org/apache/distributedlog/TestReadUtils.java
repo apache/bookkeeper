@@ -27,22 +27,19 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Test {@link ReadUtils}.
  */
+@CustomLog
 public class TestReadUtils extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestReadUtils.class);
 
     @Rule
     public TestName runtime = new TestName();

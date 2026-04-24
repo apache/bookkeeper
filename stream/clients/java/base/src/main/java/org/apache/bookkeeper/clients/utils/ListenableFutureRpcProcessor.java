@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.common.util.Backoff.Policy;
 /**
  * A process for processing rpc request on storage container channel.
  */
-@Slf4j
+@CustomLog
 public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     implements BiConsumer<StorageServerChannel, Throwable>,
     FutureCallback<ResponseT>,

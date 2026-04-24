@@ -28,13 +28,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.common.config.ConfigurationSubscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates creation of DynamicDistributedLogConfiguration instances. Ensures one instance per
@@ -42,8 +41,8 @@ import org.slf4j.LoggerFactory;
  * Notes:
  * Once loaded, stays loaded until shutdown. Caller ensures small finite number of configs are created.
  */
+@CustomLog
 public class DynamicConfigurationFactory {
-    private static final Logger LOG = LoggerFactory.getLogger(DynamicConfigurationFactory.class);
 
     private final Map<String, DynamicDistributedLogConfiguration> dynamicConfigs;
     private final List<ConfigurationSubscription> subscriptions;
@@ -72,7 +71,7 @@ public class DynamicConfigurationFactory {
                     dynConf, Collections.singletonList(configFile), executorService, reloadPeriod, reloadUnit);
             subscriptions.add(subscription);
             dynamicConfigs.put(configPath, dynConf);
-            LOG.info("Loaded dynamic configuration at {}", configPath);
+            log.info().attr("configPath", configPath).log("Loaded dynamic configuration");
         }
         return Optional.of(dynamicConfigs.get(configPath));
     }

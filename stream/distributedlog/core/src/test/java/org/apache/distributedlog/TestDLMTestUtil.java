@@ -18,20 +18,19 @@
 package org.apache.distributedlog;
 
 import java.io.File;
+import lombok.CustomLog;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Case for {@link LocalDLMEmulator}.
  */
+@CustomLog
 public class TestDLMTestUtil {
-    static final Logger LOG = LoggerFactory.getLogger(TestDLMTestUtil.class);
 
     static {
         // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words

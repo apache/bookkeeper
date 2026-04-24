@@ -17,11 +17,11 @@
  */
 package org.apache.distributedlog.impl.subscription;
 
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -32,14 +32,11 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  * The subscription state store Implementation.
  */
+@CustomLog
 public class ZKSubscriptionStateStore implements SubscriptionStateStore {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZKSubscriptionStateStore.class);
 
     private final ZooKeeperClient zooKeeperClient;
     private final String zkPath;
@@ -72,11 +69,11 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
     CompletableFuture<DLSN> getLastCommitPositionFromZK() {
         final CompletableFuture<DLSN> result = new CompletableFuture<DLSN>();
         try {
-            logger.debug("Reading last commit position from path {}", zkPath);
+            log.debug().attr("zkPath", zkPath).log("Reading last commit position");
             zooKeeperClient.get().getData(zkPath, false, new AsyncCallback.DataCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    logger.debug("Read last commit position from path {}: rc = {}", zkPath, rc);
+                    log.debug().attr("zkPath", zkPath).attr("rc", rc).log("Read last commit position");
                     if (KeeperException.Code.NONODE.intValue() == rc) {
                         result.complete(DLSN.NonInclusiveLowerBound);
                     } else if (KeeperException.Code.OK.intValue() != rc) {
@@ -86,7 +83,7 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
                             DLSN dlsn = DLSN.deserialize(new String(data, StandardCharsets.UTF_8));
                             result.complete(dlsn);
                         } catch (Exception t) {
-                            logger.warn("Invalid last commit position found from path {}", zkPath, t);
+                            log.warn().attr("zkPath", zkPath).exception(t).log("Invalid last commit position found");
                             // invalid dlsn recorded in subscription state store
                             result.complete(DLSN.NonInclusiveLowerBound);
                         }

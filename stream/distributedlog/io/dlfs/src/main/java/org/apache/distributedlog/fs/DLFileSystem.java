@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -57,7 +57,7 @@ import org.apache.hadoop.util.Progressable;
 /**
  * A FileSystem Implementation powered by replicated logs.
  */
-@Slf4j
+@CustomLog
 public class DLFileSystem extends FileSystem {
 
     //
@@ -99,13 +99,14 @@ public class DLFileSystem extends FileSystem {
         if (null != dlConfLocation) {
             try {
                 this.dlConf.loadConf(new File(dlConfLocation).toURI().toURL());
-                log.info("Loaded the distributedlog configuration from {}", dlConfLocation);
+                log.info().attr("dlConfLocation", dlConfLocation).log("Loaded the distributedlog configuration");
             } catch (ConfigurationException e) {
-                log.error("Failed to load the distributedlog configuration from " + dlConfLocation, e);
+                log.error().attr("dlConfLocation", dlConfLocation).exception(e)
+                        .log("Failed to load the distributedlog configuration");
                 throw new IOException("Failed to load distributedlog configuration from " + dlConfLocation);
             }
         }
-        log.info("Initializing the filesystem at {}", name);
+        log.info().attr("name", name).log("Initializing the filesystem");
         // initialize the namespace
         this.namespace = NamespaceBuilder.newBuilder()
                 .clientId("dlfs-client-" + InetAddress.getLocalHost().getHostName())
@@ -113,7 +114,7 @@ public class DLFileSystem extends FileSystem {
                 .regionId(DistributedLogConstants.LOCAL_REGION_ID)
                 .uri(name)
                 .build();
-        log.info("Initialized the filesystem at {}", name);
+        log.info().attr("name", name).log("Initialized the filesystem");
     }
 
     @Override

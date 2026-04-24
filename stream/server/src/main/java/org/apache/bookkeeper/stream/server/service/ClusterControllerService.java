@@ -20,7 +20,7 @@ package org.apache.bookkeeper.stream.server.service;
 
 import java.io.IOException;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterController;
@@ -29,7 +29,7 @@ import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 /**
  * A service that runs cluster controller.
  */
-@Slf4j
+@CustomLog
 public class ClusterControllerService
     extends AbstractLifecycleComponent<StorageConfiguration> {
 

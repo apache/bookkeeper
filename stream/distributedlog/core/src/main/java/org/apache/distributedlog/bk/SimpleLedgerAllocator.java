@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -41,15 +42,12 @@ import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.distributedlog.zk.ZKVersionedSetOp;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Allocator to allocate ledgers.
  */
+@CustomLog
 public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListener<LedgerHandle>, OpListener<Version> {
-
-    static final Logger LOG = LoggerFactory.getLogger(SimpleLedgerAllocator.class);
 
     enum Phase {
         ALLOCATING, ALLOCATED, HANDING_OVER, HANDED_OVER, ERROR
@@ -244,7 +242,10 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             try {
                 ledgerIdLeftFromPrevAllocation = DLUtils.bytes2LogSegmentId(data);
             } catch (NumberFormatException nfe) {
-                LOG.warn("Invalid data found in allocator path {} : ", allocatePath, nfe);
+                log.warn()
+                        .attr("allocatePath", allocatePath)
+                        .exception(nfe)
+                        .log("Invalid data found in allocator path");
             }
         }
 
@@ -252,8 +253,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     private synchronized void deleteLedgerLeftFromPreviousAllocationIfNecessary() {
         if (null != ledgerIdLeftFromPrevAllocation) {
-            LOG.info("Deleting allocated-but-unused ledger left from previous allocation {}.",
-                    ledgerIdLeftFromPrevAllocation);
+            log.info()
+                .attr("ledgerIdLeftFromPrevAllocation", ledgerIdLeftFromPrevAllocation)
+                .log("Deleting allocated-but-unused ledger left from previous allocation.");
             deleteLedger(ledgerIdLeftFromPrevAllocation);
             ledgerIdLeftFromPrevAllocation = null;
         }
@@ -332,8 +334,10 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             listenerToNotify = tryObtainListener;
             if (t instanceof KeeperException
                     && ((KeeperException) t).code() == KeeperException.Code.BADVERSION) {
-                LOG.info("Set ledger allocator {} to ERROR state after hit bad version : version = {}",
-                        allocatePath, getVersion());
+                log.info()
+                        .attr("allocatePath", allocatePath)
+                        .attr("version", getVersion())
+                        .log("Set ledger allocator to ERROR state after hit bad version");
                 setPhase(Phase.ERROR);
             } else {
                 if (Phase.HANDING_OVER == phase) {
@@ -350,8 +354,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     private synchronized void setPhase(Phase phase) {
         this.phase = phase;
-        LOG.info("Ledger allocator {} moved to phase {} : version = {}.",
-            allocatePath, phase, version);
+        log.info()
+                .attr("allocatePath", allocatePath)
+                .attr("phase", phase)
+                .attr("version", version)
+                .log("Ledger allocator moved to phase");
     }
 
     private synchronized void allocateLedger() {
@@ -361,7 +368,10 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     private synchronized void allocateLedger(LedgerMetadata ledgerMetadata) {
         // make sure previous allocation is already handed over.
         if (Phase.HANDED_OVER != phase) {
-            LOG.error("Trying allocate ledger for {} in phase {}, giving up.", allocatePath, phase);
+            log.error()
+                .attr("allocatePath", allocatePath)
+                .attr("phase", phase)
+                .log("Trying to allocate ledger in wrong phase, giving up");
             return;
         }
         setPhase(Phase.ALLOCATING);
@@ -400,7 +410,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     @Override
     public void onFailure(Throwable cause) {
-        LOG.error("Error creating ledger for allocating {} : ", allocatePath, cause);
+        log.error().attr("allocatePath", allocatePath).exception(cause).log("Error creating ledger for allocating");
         setPhase(Phase.ERROR);
         failAllocation(cause);
     }
@@ -412,12 +422,18 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     private synchronized void setVersion(LongVersion newVersion) {
         Version.Occurred occurred = newVersion.compare(version);
         if (occurred == Version.Occurred.AFTER) {
-            LOG.info("Ledger allocator for {} moved version from {} to {}.",
-                allocatePath, version, newVersion);
+            log.info()
+                .attr("allocatePath", allocatePath)
+                .attr("version", version)
+                .attr("newVersion", newVersion)
+                .log("Ledger allocator version moved");
             version = newVersion;
         } else {
-            LOG.warn("Ledger allocator for {} received an old version {}, current version is {}.",
-                allocatePath, newVersion, version);
+            log.warn()
+                .attr("allocatePath", allocatePath)
+                .attr("newVersion", newVersion)
+                .attr("version", version)
+                .log("Ledger allocator received an old version");
         }
     }
 
@@ -440,8 +456,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                 public void onFailure(Throwable cause) {
                     setPhase(Phase.ERROR);
                     deleteLedger(lh.getId());
-                    LOG.error("Fail mark ledger {} as allocated under {} : ",
-                        lh.getId(), allocatePath, cause);
+                    log.error()
+                            .attr("ledgerId", lh.getId())
+                            .attr("allocatePath", allocatePath)
+                            .exception(cause)
+                            .log("Failed to mark ledger as allocated");
                     // fail the allocation since failed to mark it as allocated
                     failAllocation(cause);
                 }
@@ -455,8 +474,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         }
         deleteFuture.whenComplete((value, cause) -> {
             if (null != cause) {
-                LOG.error("Error deleting ledger {} for ledger allocator {}, retrying : ",
-                    ledgerId, allocatePath, cause);
+                log.error()
+                        .attr("ledgerId", ledgerId)
+                        .attr("allocatePath", allocatePath)
+                        .exception(cause)
+                        .log("Error deleting ledger for ledger allocator, retrying");
                 if (!isClosing()) {
                     deleteLedger(ledgerId);
                 }
@@ -481,7 +503,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             closeFuture = closePromise;
         }
         if (!cleanup) {
-            LOG.info("Abort ledger allocator without cleaning up on {}.", allocatePath);
+            log.info().attr("allocatePath", allocatePath).log("Abort ledger allocator without cleaning up");
             FutureUtils.complete(closePromise, null);
             return closePromise;
         }
@@ -490,7 +512,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     private void cleanupAndClose(final CompletableFuture<Void> closePromise) {
-        LOG.info("Closing ledger allocator on {}.", allocatePath);
+        log.info().attr("allocatePath", allocatePath).log("Closing ledger allocator");
         final ZKTransaction txn = new ZKTransaction(zkc);
         // try obtain ledger handle
         tryObtain(txn, new OpListener<LedgerHandle>() {
@@ -508,7 +530,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
             private void complete() {
                 closePromise.complete(null);
-                LOG.info("Closed ledger allocator on {}.", allocatePath);
+                log.info().attr("allocatePath", allocatePath).log("Closed ledger allocator");
             }
         }).whenComplete(new FutureEventListener<LedgerHandle>() {
             @Override
@@ -529,10 +551,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : "
-                                    , cause);
-                        }
+                        log.debug()
+                                .exception(cause)
+                                .log("Fail to obtain the allocated ledger handle when closing the allocator");
                         FutureUtils.complete(closePromise, null);
                     }
                 });
@@ -540,10 +561,9 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
             @Override
             public void onFailure(Throwable cause) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : "
-                            , cause);
-                }
+                log.debug()
+                        .exception(cause)
+                        .log("Fail to obtain the allocated ledger handle when closing the allocator");
                 FutureUtils.complete(closePromise, null);
             }
         });

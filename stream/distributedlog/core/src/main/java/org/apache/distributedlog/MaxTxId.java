@@ -17,18 +17,17 @@
  */
 package org.apache.distributedlog;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.util.DLUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for storing and reading
  * the max seen txid in zookeeper.
  */
+@CustomLog
 class MaxTxId {
-    static final Logger LOG = LoggerFactory.getLogger(MaxTxId.class);
 
     private Version version;
     private long currentMax;
@@ -41,7 +40,7 @@ class MaxTxId {
             try {
                 this.currentMax = DLUtils.deserializeTransactionId(maxTxIdData.getValue());
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid txn id stored in ", e);
+                log.warn().exception(e).log("Invalid txn id stored");
                 this.currentMax = DistributedLogConstants.INVALID_TXID;
             }
         } else {

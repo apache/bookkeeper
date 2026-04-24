@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -46,7 +46,7 @@ import org.apache.zookeeper.KeeperException;
 /**
  * A zookeeper based implementation of cluster metadata store.
  */
-@Slf4j
+@CustomLog
 @SuppressWarnings("deprecation")
 public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
@@ -87,7 +87,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
                 try {
                     assignmentDataCache.close();
                 } catch (IOException e) {
-                    log.warn("Failed to close assignment data cache", e);
+                    log.warn().exception(e).log("Failed to close assignment data cache");
                 }
             }
         }
@@ -183,7 +183,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
                 try {
                     assignmentDataCache.close();
                 } catch (IOException e) {
-                    log.warn("Failed to close assignment data cache when there is no watcher", e);
+                    log.warn().exception(e).log("Failed to close assignment data cache when there is no watcher");
                 }
             }
         }

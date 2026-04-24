@@ -16,8 +16,8 @@ package org.apache.bookkeeper.stream.server.service;
 import java.io.IOException;
 import java.net.URI;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -39,7 +39,7 @@ import org.apache.zookeeper.KeeperException.Code;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
-@Slf4j
+@CustomLog
 public class DLNamespaceProviderService
     extends AbstractLifecycleComponent<DLConfiguration>
     implements Supplier<Namespace> {
@@ -52,17 +52,24 @@ public class DLNamespaceProviderService
         DLMetadata dlMetadata = DLMetadata.create(dlConfig);
 
         try {
-            log.info("Initializing dlog namespace at {}", dlogUri);
+            log.info()
+                .attr("dlogUri", dlogUri)
+                .log("Initializing dlog namespace");
             dlMetadata.create(dlogUri);
-            log.info("Initialized dlog namespace at {}", dlogUri);
+            log.info()
+                .attr("dlogUri", dlogUri)
+                .log("Initialized dlog namespace");
         } catch (ZKException e) {
             if (e.getKeeperExceptionCode() == Code.NODEEXISTS) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Dlog uri is already bound at {}", dlogUri);
-                }
+                log.debug()
+                    .attr("dlogUri", dlogUri)
+                    .log("Dlog uri is already bound");
                 return dlogUri;
             }
-            log.error("Failed to initialize dlog namespace at {}", dlogUri, e);
+            log.error()
+                .attr("dlogUri", dlogUri)
+                .exception(e)
+                .log("Failed to initialize dlog namespace");
             throw e;
         }
         return dlogUri;
@@ -122,7 +129,9 @@ public class DLNamespaceProviderService
             throw new RuntimeException("Failed to build the distributedlog namespace at "
                 + bkServerConf.getMetadataServiceUriUnchecked(), e);
         }
-        log.info("Provided distributedlog namespace at {}.", uri);
+        log.info()
+            .attr("uri", uri)
+            .log("Provided distributedlog namespace.");
     }
 
     @Override

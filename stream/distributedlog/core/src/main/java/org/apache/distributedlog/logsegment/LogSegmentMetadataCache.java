@@ -17,25 +17,21 @@
  */
 package org.apache.distributedlog.logsegment;
 
-
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Cache the log segment metadata.
  */
+@CustomLog
 public class LogSegmentMetadataCache implements RemovalListener<String, LogSegmentMetadata> {
-
-    private static final Logger logger = LoggerFactory.getLogger(LogSegmentMetadataCache.class);
 
     private final Cache<String, LogSegmentMetadata> cache;
     private final boolean isCacheEnabled;
@@ -52,7 +48,7 @@ public class LogSegmentMetadataCache implements RemovalListener<String, LogSegme
                 .recordStats()
                 .build();
         this.isCacheEnabled = conf.isLogSegmentCacheEnabled();
-        logger.info("Log segment cache is enabled = {}", this.isCacheEnabled);
+        log.info().attr("cacheEnabled", this.isCacheEnabled).log("Log segment cache configured");
     }
 
     /**
@@ -91,9 +87,7 @@ public class LogSegmentMetadataCache implements RemovalListener<String, LogSegme
     @Override
     public void onRemoval(RemovalNotification<String, LogSegmentMetadata> notification) {
         if (notification.wasEvicted()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Log segment of {} was evicted.", notification.getKey());
-            }
+            log.debug().attr("path", notification.getKey()).log("Log segment was evicted.");
         }
     }
 }
