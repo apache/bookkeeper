@@ -115,16 +115,13 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                 wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
-                    log.info().attr("i", i).log("entries written");
+                    log.info().logf("%d entries written", i);
                     lastReport = System.nanoTime();
                 }
             }
             lastEntryId = wh.getLastAddPushed();
-            log.info()
-                    .attr("numEntries", flags.numEntries)
-                    .attr("ledgerId", ledgerId)
-                    .attr("lastEntryId", lastEntryId)
-                    .log("Entries written to ledger");
+            log.info().logf("%d entries written to ledger %d (lastEntryId %d)",
+                    flags.numEntries, ledgerId, lastEntryId);
             if (lastEntryId != flags.numEntries - 1) {
                 throw new IllegalStateException("Last entry id doesn't match the expected value");
             }
