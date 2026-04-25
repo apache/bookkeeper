@@ -66,7 +66,7 @@ class PendingAddOp implements WriteCallback {
     boolean completed = false;
 
     LedgerHandle lh;
-    ClientContext clientCtx;
+    volatile ClientContext clientCtx;
     boolean isRecoveryAdd = false;
     volatile long requestTimeNanos;
     long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
@@ -154,6 +154,12 @@ class PendingAddOp implements WriteCallback {
     }
 
     boolean maybeTimeout() {
+        if (clientCtx == null) {
+            // Op has already been recycled: recyclePendAddOpObject() cleared clientCtx while
+            // monitorPendingAddOps() was still holding a reference to it from the iterator.
+            // The add-entry completed before the timeout monitor fired; nothing to time out.
+            return false;
+        }
         if (MathUtils.elapsedNanos(requestTimeNanos) >= clientCtx.getConf().addEntryQuorumTimeoutNanos) {
             timeoutQuorumWait();
             return true;
