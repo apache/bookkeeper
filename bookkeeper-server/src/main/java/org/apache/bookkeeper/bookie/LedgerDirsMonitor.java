@@ -153,7 +153,7 @@ class LedgerDirsMonitor {
                 } else {
                     log.debug()
                             .attr("totalDiskUsage", totalDiskUsage)
-                            .attr("lwmThreshold", conf.getDiskLowWaterMarkUsageThreshold())
+                            .attr("lwmThreshold", () -> conf.getDiskLowWaterMarkUsageThreshold())
                             .log("Current TotalDiskUsage is greater than LWMThreshold."
                                     + " So not adding any filledDir to WritableDirsList");
                 }

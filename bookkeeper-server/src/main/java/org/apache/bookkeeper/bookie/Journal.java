@@ -195,7 +195,7 @@ public class Journal implements CheckpointSource {
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
-            log.debug().attr("curMark", lastMark.getCurMark()).log("RollLog to persist last marked log");
+            log.debug().attr("curMark", () -> lastMark.getCurMark()).log("RollLog to persist last marked log");
 
             List<File> writableLedgerDirs = ledgerDirsManager
                     .getWritableLedgerDirsForNewLog();
@@ -705,7 +705,7 @@ public class Journal implements CheckpointSource {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
         }
         lastLogMark.readLog();
-        log.debug().attr("lastMark", lastLogMark.getCurMark()).log("Last Log Mark");
+        log.debug().attr("lastMark", () -> lastLogMark.getCurMark()).log("Last Log Mark");
 
         try {
             this.fileChannelProvider = FileChannelProvider.newProvider(conf.getJournalChannelProvider());

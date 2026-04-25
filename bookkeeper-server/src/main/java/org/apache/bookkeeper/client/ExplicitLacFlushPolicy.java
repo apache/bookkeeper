@@ -90,9 +90,9 @@ interface ExplicitLacFlushPolicy {
                     // bookies.
                     if (getExplicitLac() < getPiggyBackedLac()) {
                         log.debug()
-                                .attr("ledgerId", lh.getId())
-                                .attr("explicitLac", getExplicitLac())
-                                .attr("piggyBackedLac", getPiggyBackedLac())
+                                .attr("ledgerId", () -> lh.getId())
+                                .attr("explicitLac", () -> getExplicitLac())
+                                .attr("piggyBackedLac", () -> getPiggyBackedLac())
                                 .log("explicitLac / piggybackLac");
 
                         setExplicitLac(getPiggyBackedLac());
@@ -101,15 +101,15 @@ interface ExplicitLacFlushPolicy {
 
                     if (lh.getLastAddConfirmed() > getExplicitLac()) {
                         // Send Explicit LAC
-                        log.debug().attr("ledgerId", lh.getId()).log("Send explicit LAC");
+                        log.debug().attr("ledgerId", () -> lh.getId()).log("Send explicit LAC");
 
                         asyncExplicitLacFlush(lh.getLastAddConfirmed());
                         setExplicitLac(lh.getLastAddConfirmed());
 
                         log.debug()
-                                .attr("ledgerId", lh.getId())
-                                .attr("getLastAddConfirmed", lh.getLastAddConfirmed())
-                                .attr("explicitLac", getExplicitLac())
+                                .attr("ledgerId", () -> lh.getId())
+                                .attr("getLastAddConfirmed", () -> lh.getLastAddConfirmed())
+                                .attr("explicitLac", () -> getExplicitLac())
                                 .log("After sending explict LAC lac");
                     }
                 }

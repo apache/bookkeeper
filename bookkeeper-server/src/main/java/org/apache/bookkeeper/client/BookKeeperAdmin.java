@@ -1027,7 +1027,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         log.debug()
                         .attr("startEntryId", startEntryId)
                         .attr("endEntryId", endEntryId)
-                        .attr("ledgerId", lh.getId())
+                        .attr("ledgerId", () -> lh.getId())
                         .attr("bookieAddr", targetBookieAddresses)
                         .log("Replicating fragment");
 

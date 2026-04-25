@@ -84,7 +84,7 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
 
         int convertedLedgers = 0;
         for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-            log.debug().attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
+            log.debug().attr("ledgerId", () -> ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
 
             LedgerCache.LedgerIndexMetadata fi = interleavedStorage.readLedgerIndexMetadata(ledgerId);
 

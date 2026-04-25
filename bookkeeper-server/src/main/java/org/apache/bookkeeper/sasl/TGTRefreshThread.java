@@ -63,8 +63,8 @@ class TGTRefreshThread extends Thread {
         for (KerberosTicket ticket : tickets) {
             KerberosPrincipal server = ticket.getServer();
             if (server.getName().equals("krbtgt/" + server.getRealm() + "@" + server.getRealm())) {
-                    log.debug().attr("clientPrincipal", ticket.getClient().getName()).log("Client principal");
-                    log.debug().attr("serverPrincipal", ticket.getServer().getName()).log("Server principal");
+                    log.debug().attr("clientPrincipal", () -> ticket.getClient().getName()).log("Client principal");
+                    log.debug().attr("serverPrincipal", () -> ticket.getServer().getName()).log("Server principal");
                 return ticket;
             }
         }

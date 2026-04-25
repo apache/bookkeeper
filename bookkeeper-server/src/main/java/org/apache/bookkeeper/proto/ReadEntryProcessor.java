@@ -59,7 +59,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     protected void processPacket() {
         log.debug().attr("request", request).log("Received new read request");
         if (!requestHandler.ctx().channel().isOpen()) {
-            log.debug().attr("channel", requestHandler.ctx().channel()).log("Dropping read request for closed channel");
+            log.debug().attr("channel", () -> requestHandler.ctx().channel())
+                    .log("Dropping read request for closed channel");
             requestProcessor.onReadRequestFinish();
             recycle();
             return;
@@ -83,7 +84,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 }
             }
             data = readData();
-            log.debug().attr("refCount", data.refCnt()).log("Read entry");
+            final ReferenceCounted dataRef = data;
+            log.debug().attr("refCount", () -> dataRef.refCnt()).log("Read entry");
             if (fenceResult != null) {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 return;

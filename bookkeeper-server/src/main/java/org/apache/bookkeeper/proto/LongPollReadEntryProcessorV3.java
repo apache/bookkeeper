@@ -166,7 +166,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 // successfully registered watcher to lac updates
                 log.trace()
                         .attr("previousLAC", previousLAC)
-                        .attr("timeout", readRequest.getTimeOut())
+                        .attr("timeout", () -> readRequest.getTimeOut())
                         .log("Waiting For LAC Update");
                 synchronized (this) {
                     expirationTimerTask = requestTimer.newTimeout(timeout -> {
@@ -197,7 +197,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
             if (newLACNotification.getLastAddConfirmed() != Long.MAX_VALUE && !lastAddConfirmedUpdateTime.isPresent()) {
                 lastAddConfirmedUpdateTime = Optional.of(newLACNotification.getTimestamp());
             }
-            log.trace().attr("lastAddConfirmed", newLACNotification.getLastAddConfirmed())
+            log.trace().attr("lastAddConfirmed", () -> newLACNotification.getLastAddConfirmed())
                     .attr("request", request).log("Last Add Confirmed Advanced");
             scheduleDeferredRead(false);
         }

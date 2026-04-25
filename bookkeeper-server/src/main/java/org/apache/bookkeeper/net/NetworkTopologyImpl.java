@@ -438,7 +438,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                     }
                 }
             }
-            log.debug().attr("topology", this.toString()).log("NetworkTopology became");
+            log.debug().attr("topology", () -> this.toString()).log("NetworkTopology became");
         } finally {
             netlock.writeLock().unlock();
         }
@@ -510,7 +510,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
                     depthOfAllLeaves = -1;
                 }
             }
-            log.debug().attr("topology", this.toString()).log("NetworkTopology became");
+            log.debug().attr("topology", () -> this.toString()).log("NetworkTopology became");
         } finally {
             netlock.writeLock().unlock();
         }

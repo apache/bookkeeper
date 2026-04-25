@@ -2277,7 +2277,7 @@ public class LedgerHandle implements WriteHandle {
 
                     log.debug()
                             .attr("ensembleChangeId", ensembleChangeId)
-                            .attr("attempts", attempts.get())
+                            .attr("attempts", () -> attempts.get())
                             .attr("currentEnsemble", currentEnsemble)
                             .attr("newEnsemble", newEnsemble)
                             .attr("newEnsembleStartEntry", newEnsembleStartEntry)
@@ -2302,7 +2302,7 @@ public class LedgerHandle implements WriteHandle {
                     } else if (metadata.getValue().isClosed()) {
                         log.debug()
                                 .attr("ensembleChangeId", ensembleChangeId)
-                                .attr("attempts", attempts.get())
+                                .attr("attempts", () -> attempts.get())
                                 .log("Metadata closed during attempt to replace bookie."
                                         + " Another client must have recovered the ledger.");
 
@@ -2310,7 +2310,7 @@ public class LedgerHandle implements WriteHandle {
                     } else if (metadata.getValue().getState() == LedgerMetadata.State.IN_RECOVERY) {
                         log.debug()
                                 .attr("ensembleChangeId", ensembleChangeId)
-                                .attr("attempts", attempts.get())
+                                .attr("attempts", () -> attempts.get())
                                 .log("Metadata marked as in-recovery during attempt to replace bookie."
                                         + " Another client must be recovering the ledger.");
 
@@ -2318,7 +2318,7 @@ public class LedgerHandle implements WriteHandle {
                     } else {
                         log.debug()
                                 .attr("ensembleChangeId", ensembleChangeId)
-                                .attr("get", attempts.get())
+                                .attr("get", () -> attempts.get())
                                 .log("Success updating metadata");
 
                         List<BookieId> newEnsemble = null;

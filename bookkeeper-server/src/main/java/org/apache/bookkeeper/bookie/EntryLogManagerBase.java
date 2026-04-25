@@ -126,7 +126,7 @@ abstract class EntryLogManagerBase implements EntryLogManager {
     void flushLogChannel(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
         if (logChannel != null) {
             logChannel.flushAndForceWrite(forceMetadata);
-            log.debug().attr("logId", logChannel.getLogId()).log("Flush and sync current entry logger");
+            log.debug().attr("logId", () -> logChannel.getLogId()).log("Flush and sync current entry logger");
         }
     }
 

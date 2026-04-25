@@ -581,7 +581,7 @@ public class IndexPersistenceMgr {
             }
                 log.debug()
                         .attr("ledgerId", l)
-                        .attr("size", entries.size())
+                        .attr("size", () -> entries.size())
                         .log("Flushed ledger with pages.");
         } finally {
             if (fi != null) {
@@ -595,7 +595,7 @@ public class IndexPersistenceMgr {
                               int start, int count) throws IOException, Bookie.NoLedgerException {
         log.trace()
                 .attr("count", count)
-                .attr("value", Long.toHexString(ledger))
+                .attr("value", () -> Long.toHexString(ledger))
                 .log("Writing buffers");
         if (count == 0) {
             return;

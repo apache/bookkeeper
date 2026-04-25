@@ -76,7 +76,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             Provider provider = Security.getProvider(BC) != null
                 ? Security.getProvider(BC)
                 : Security.getProvider(BC_FIPS);
-                log.debug().attr("provider", provider.getName()).log("Already instantiated Bouncy Castle provider");
+                log.debug().attr("provider", () -> provider.getName())
+                        .log("Already instantiated Bouncy Castle provider");
             return provider;
         }
 
@@ -112,7 +113,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         Provider provider = (Provider) clazz.getDeclaredConstructor().newInstance();
         Security.addProvider(provider);
         log.debug()
-                .attr("provider", provider.getName())
+                .attr("provider", () -> provider.getName())
                 .log("Found and Instantiated Bouncy Castle provider in classpath");
         return provider;
     }

@@ -362,7 +362,7 @@ class PendingAddOp implements WriteCallback {
                             .attr("entryId", entryId)
                             .attr("bookieIndex", bookieIndex)
                             .attr("bookieAddr", addr)
-                            .attr("error", BKException.getMessage(rc))
+                            .attr("error", () -> BKException.getMessage(rc))
                             .log("Failed to write entry to bookie,"
                                     + " but it didn't break ack quorum, delaying ensemble change");
                 }
@@ -419,7 +419,7 @@ class PendingAddOp implements WriteCallback {
     synchronized void submitCallback(final int rc) {
 
         log.debug()
-                .attr("ledgerId", lh.getId())
+                .attr("ledgerId", () -> lh.getId())
                 .attr("entryId", entryId)
                 .attr("rc", rc)
                 .log("Submit callback");

@@ -1543,8 +1543,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
-            log.debug().attr("operationType", header.getOperation())
-                    .attr("txnId", header.getTxnId())
+            log.debug().attr("operationType", () -> header.getOperation())
+                    .attr("txnId", () -> header.getTxnId())
                     .log("Unexpected response received from bookie");
         } else {
             long orderingKey = completionValue.ledgerId;
@@ -1748,8 +1748,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void operationComplete(ChannelFuture future) {
             log.debug()
-                    .attr("success", future.isSuccess())
-                    .attr("channel", future.channel())
+                    .attr("success", () -> future.isSuccess())
+                    .attr("channel", () -> future.channel())
                     .log("Channel connected");
             int rc;
             Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
@@ -1801,7 +1801,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
                     log.debug()
                             .attr("existingChannel", channel)
-                            .attr("newChannel", future.channel())
+                            .attr("newChannel", () -> future.channel())
                             .log("Already connected with another channel, so close the new channel");
                     closeChannel(future.channel());
                     return; // pendingOps should have been completed when other channel connected

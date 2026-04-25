@@ -175,7 +175,7 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void suspendProcessing() {
-        log.debug().attr("port", conf.getBookiePort()).log("Suspending bookie server");
+        log.debug().attr("port", () -> conf.getBookiePort()).log("Suspending bookie server");
         nettyServer.suspendProcessing();
     }
 
@@ -184,7 +184,7 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void resumeProcessing() {
-        log.debug().attr("port", conf.getBookiePort()).log("Resuming bookie server");
+        log.debug().attr("port", () -> conf.getBookiePort()).log("Resuming bookie server");
         nettyServer.resumeProcessing();
     }
 

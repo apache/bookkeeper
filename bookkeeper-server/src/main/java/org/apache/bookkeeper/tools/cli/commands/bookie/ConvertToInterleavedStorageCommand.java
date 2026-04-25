@@ -127,7 +127,7 @@ public class ConvertToInterleavedStorageCommand extends BookieCommand<ConvertToI
 
         int convertedLedgers = 0;
         for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-            log.debug().attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
+            log.debug().attr("ledgerId", () -> ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
 
             interleavedStorage.setMasterKey(ledgerId, dbStorage.readMasterKey(ledgerId));
             if (dbStorage.isFenced(ledgerId)) {

@@ -80,8 +80,8 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
 
                 log.trace()
-                        .attr("lastAddConfirmed", recoveryData.getLastAddConfirmed())
-                        .attr("length", recoveryData.getLength())
+                        .attr("lastAddConfirmed", () -> recoveryData.getLastAddConfirmed())
+                        .attr("length", () -> recoveryData.getLength())
                         .attr("bookieIndex", bookieIndex)
                         .attr("ledgerId", ledgerId)
                         .log("Received lastAddConfirmed");

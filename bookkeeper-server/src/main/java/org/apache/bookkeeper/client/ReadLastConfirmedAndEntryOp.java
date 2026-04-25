@@ -204,7 +204,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
             log.debug()
                     .attr("error", errMsg)
-                    .attr("entryId", entryImpl.getEntryId())
+                    .attr("entryId", () -> entryImpl.getEntryId())
                     .attr("bookieAddr", host)
                     .log("Error while reading entry from bookie");
 
@@ -581,7 +581,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         numResponsesPending--;
         if (BKException.Code.OK == rc) {
             log.trace()
-                    .attr("getLastAddConfirmed", rCtx.getLastAddConfirmed())
+                    .attr("getLastAddConfirmed", () -> rCtx.getLastAddConfirmed())
                     .attr("bookieAddr", bookie)
                     .log("Received lastAddConfirmed");
 
@@ -619,15 +619,15 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                     completeRequest();
                 } else if (emptyResponsesFromHostsBitSet.cardinality() >= numEmptyResponsesAllowed) {
                     log.debug()
-                            .attr("cardinality", emptyResponsesFromHostsBitSet.cardinality())
+                            .attr("cardinality", () -> emptyResponsesFromHostsBitSet.cardinality())
                             .attr("emptyResponsesFromHostsBitSet", emptyResponsesFromHostsBitSet)
                             .log("Completed readLACAndEntry after received empty responses");
 
                     completeRequest();
                 } else {
                     log.debug()
-                            .attr("bookieAddr", rCtx.getBookieAddress())
-                            .attr("bookieAddr", rCtx.getBookieAddress())
+                            .attr("bookieAddr", () -> rCtx.getBookieAddress())
+                            .attr("bookieAddr", () -> rCtx.getBookieAddress())
                             .attr("lastAddConfirmed", lastAddConfirmed)
                             .log("Received empty response from bookie, reattempting reading next bookie");
 

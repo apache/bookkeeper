@@ -372,7 +372,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             LedgerData ledgerData = ledgerIndex.get(ledgerId);
             log.debug()
                     .attr("ledgerId", ledgerId)
-                    .attr("exists", ledgerData.getExists())
+                    .attr("exists", () -> ledgerData.getExists())
                     .log("Ledger exists");
             return ledgerData.getExists();
         } catch (Bookie.NoLedgerException nle) {

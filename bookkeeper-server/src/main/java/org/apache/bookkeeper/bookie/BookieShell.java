@@ -2751,7 +2751,7 @@ public class BookieShell implements Tool {
             } else {
                 shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(shell.bkConf);
             }
-            log.debug().attr("class", shell.ledgerIdFormatter.getClass()).log("Using ledgerIdFormatter");
+            log.debug().attr("class", () -> shell.ledgerIdFormatter.getClass()).log("Using ledgerIdFormatter");
 
             // entry format
             if (cmdLine.hasOption(ENTRY_FORMATTER_OPT)) {
@@ -2760,7 +2760,7 @@ public class BookieShell implements Tool {
             } else {
                 shell.entryFormatter = EntryFormatter.newEntryFormatter(shell.bkConf);
             }
-            log.debug().attr("class", shell.entryFormatter.getClass()).log("Using entry formatter");
+            log.debug().attr("class", () -> shell.entryFormatter.getClass()).log("Using entry formatter");
 
             res = shell.run(cmdLine.getArgs());
         } catch (Throwable e) {

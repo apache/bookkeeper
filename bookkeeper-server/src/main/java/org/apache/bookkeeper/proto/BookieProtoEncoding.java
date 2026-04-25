@@ -510,7 +510,7 @@ public class BookieProtoEncoding {
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             log.trace()
                     .attr("msg", msg)
-                    .attr("channel", ctx.channel())
+                    .attr("channel", () -> ctx.channel())
                     .log("Encode request to channel");
             if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
                 ctx.write(msg, promise);
@@ -547,7 +547,7 @@ public class BookieProtoEncoding {
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             log.trace()
                     .attr("msg", msg)
-                    .attr("channel", ctx.channel())
+                    .attr("channel", () -> ctx.channel())
                     .log("Received request from channel to decode");
             try {
                 if (!(msg instanceof ByteBuf)) {
@@ -596,7 +596,7 @@ public class BookieProtoEncoding {
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             log.trace()
                     .attr("msg", msg)
-                    .attr("channel", ctx.channel())
+                    .attr("channel", () -> ctx.channel())
                     .log("Encode response to channel");
 
             if (msg instanceof ByteBuf) {
@@ -640,7 +640,7 @@ public class BookieProtoEncoding {
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             log.trace()
                     .attr("msg", msg)
-                    .attr("channel", ctx.channel())
+                    .attr("channel", () -> ctx.channel())
                     .log("Received response from channel to decode");
             try {
                 if (!(msg instanceof ByteBuf)) {

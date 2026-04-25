@@ -201,7 +201,7 @@ public class SaslServerState {
         }
 
         private void handleRealmCallback(RealmCallback rc) {
-            log.debug().attr("realm", rc.getDefaultText()).log("client supplied realm");
+            log.debug().attr("realm", () -> rc.getDefaultText()).log("client supplied realm");
             rc.setText(rc.getDefaultText());
         }
 

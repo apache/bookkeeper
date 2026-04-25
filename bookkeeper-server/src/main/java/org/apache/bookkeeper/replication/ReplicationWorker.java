@@ -594,7 +594,7 @@ public class ReplicationWorker implements Runnable {
             if (!available.contains(b)) {
                 log.debug()
                         .attr("bookie", b)
-                        .attr("ledgerId", lh.getId())
+                        .attr("ledgerId", () -> lh.getId())
                         .attr("ensemble", finalEnsemble)
                         .log("Bookie is missing from the list of Available Bookies");
                 return true;

@@ -130,7 +130,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             journal.logAddEntry(entry, false /* ackBeforeSync */, (rc, ledgerId, entryId, addr, ctx) -> {
                 log.debug()
                         .attr("ledgerId", ledgerId)
-                        .attr("rc", BKException.codeLogger(rc))
+                        .attr("rc", () -> BKException.codeLogger(rc))
                     .log("Record fenced state for ledger in journal");
                 if (rc == 0) {
                     fenceEntryPersisted.compareAndSet(false, true);

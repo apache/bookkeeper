@@ -84,7 +84,7 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
                 int delaySeconds = bka.getLostBookieRecoveryDelay();
                 response.setCode(HttpServer.StatusCode.OK);
                 response.setBody("lostBookieRecoveryDelay value: " + delaySeconds);
-                log.debug().attr("body", response.getBody()).log("response body");
+                log.debug().attr("body", () -> response.getBody()).log("response body");
                 return response;
             } catch (Exception e) {
                 // may get noNode exception

@@ -90,7 +90,7 @@ public class RecoveryBookieService implements HttpEndpointService {
 
         try {
             requestJsonBody = JsonUtil.fromJson(requestBody, RecoveryRequestJsonBody.class);
-            log.debug().attr("bookieSrc", requestJsonBody.bookieSrc.get(0))
+            log.debug().attr("bookieSrc", () -> requestJsonBody.bookieSrc.get(0))
                     .attr("deleteCookie", requestJsonBody.deleteCookie)
                     .log("recovery request");
         } catch (JsonUtil.ParseJsonException e) {

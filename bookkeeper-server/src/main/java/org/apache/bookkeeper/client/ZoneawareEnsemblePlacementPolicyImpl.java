@@ -887,7 +887,7 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
                 log.debug()
                 .attr("ensembleList", ensembleList)
-                .attr("size", ensembleList.size())
+                .attr("size", () -> ensembleList.size())
                 .attr("writeQuorumSize", writeQuorumSize)
                 .log("ensembleSize is not a multiple of writeQuorumSize");
 
@@ -1013,8 +1013,8 @@ public class ZoneawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
             log.debug()
             .attr("areAckedBookiesAdheringToPlacementPolicy", areAckedBookiesAdheringToPlacementPolicy)
-            .attr("size", ackedBookies.size())
-            .attr("size", zonesOfAckedBookies.size())
+            .attr("size", () -> ackedBookies.size())
+            .attr("size", () -> zonesOfAckedBookies.size())
             .attr("minNumZonesPerWriteQuorumForThisEnsemble", minNumZonesPerWriteQuorumForThisEnsemble)
             .log("areAckedBookiesAdheringToPlacementPolicy");
 

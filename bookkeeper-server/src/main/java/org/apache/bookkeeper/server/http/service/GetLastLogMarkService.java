@@ -81,9 +81,9 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 }
                 for (Journal journal : journals) {
                     LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-                    log.debug().attr("journalId", lastLogMark.getLogFileId())
-                            .attr("journalIdHex", Long.toHexString(lastLogMark.getLogFileId()))
-                            .attr("position", lastLogMark.getLogFileOffset())
+                    log.debug().attr("journalId", () -> lastLogMark.getLogFileId())
+                            .attr("journalIdHex", () -> Long.toHexString(lastLogMark.getLogFileId()))
+                            .attr("position", () -> lastLogMark.getLogFileOffset())
                             .log("LastLogMark");
                     output.put("LastLogMark: Journal Id - " + lastLogMark.getLogFileId()
                         + "(" + Long.toHexString(lastLogMark.getLogFileId()) + ".txn)",

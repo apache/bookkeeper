@@ -464,8 +464,8 @@ public class BookieRequestProcessor implements RequestProcessor {
             try {
                 threadPool.executeOrdered(r.getAddRequest().getLedgerId(), write);
             } catch (RejectedExecutionException e) {
-                log.debug().attr("ledgerId", r.getAddRequest().getLedgerId())
-                        .attr("entryId", r.getAddRequest().getEntryId())
+                log.debug().attr("ledgerId", () -> r.getAddRequest().getLedgerId())
+                        .attr("entryId", () -> r.getAddRequest().getEntryId())
                         .log("Failed to process request to add entry. Too many pending requests");
                 getRequestStats().getAddEntryRejectedCounter().inc();
                 BookkeeperProtocol.AddResponse.Builder addResponse = BookkeeperProtocol.AddResponse.newBuilder()
@@ -499,7 +499,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             try {
                 threadPool.executeOrdered(r.getForceLedgerRequest().getLedgerId(), forceLedger);
             } catch (RejectedExecutionException e) {
-                log.debug().attr("ledgerId", r.getForceLedgerRequest().getLedgerId())
+                log.debug().attr("ledgerId", () -> r.getForceLedgerRequest().getLedgerId())
                         .log("Failed to process request to force ledger. Too many pending requests");
                 BookkeeperProtocol.ForceLedgerResponse.Builder forceLedgerResponse =
                         BookkeeperProtocol.ForceLedgerResponse.newBuilder()
@@ -551,8 +551,8 @@ public class BookieRequestProcessor implements RequestProcessor {
             try {
                 threadPool.executeOrdered(r.getReadRequest().getLedgerId(), read);
             } catch (RejectedExecutionException e) {
-                log.debug().attr("ledgerId", r.getReadRequest().getLedgerId())
-                        .attr("entryId", r.getReadRequest().getEntryId())
+                log.debug().attr("ledgerId", () -> r.getReadRequest().getLedgerId())
+                        .attr("entryId", () -> r.getReadRequest().getEntryId())
                         .log("Failed to process request to read entry. Too many pending requests");
                 getRequestStats().getReadEntryRejectedCounter().inc();
                 BookkeeperProtocol.ReadResponse.Builder readResponse = BookkeeperProtocol.ReadResponse.newBuilder()

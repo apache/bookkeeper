@@ -114,8 +114,8 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
 
                 log.debug()
                         .attr("weightedProbability", weightedProbability)
-                        .attr("key", e.getKey())
-                        .attr("value", e.getValue())
+                        .attr("key", () -> e.getKey())
+                        .attr("value", () -> e.getValue())
                         .log("Capping the probability");
 
             }
@@ -131,10 +131,10 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
             tmpCumulativeMap.put(key, e.getKey());
 
             log.debug()
-                    .attr("key", e.getKey())
-                    .attr("value", e.getValue())
+                    .attr("key", () -> e.getKey())
+                    .attr("value", () -> e.getValue())
                     .attr("assignedKey", key)
-                    .attr("assignedValue", e.getValue())
+                    .attr("assignedValue", () -> e.getValue())
                     .log("Assigned weight");
 
             key += e.getValue();

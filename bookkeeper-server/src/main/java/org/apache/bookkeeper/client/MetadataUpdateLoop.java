@@ -128,7 +128,7 @@ class MetadataUpdateLoop {
                            CompletableFuture<Versioned<LedgerMetadata>> promise) {
 
         log.debug()
-                .attr("attempt", WRITE_LOOP_COUNT_UPDATER.incrementAndGet(this))
+                .attr("attempt", () -> WRITE_LOOP_COUNT_UPDATER.incrementAndGet(this))
                 .log("Starting write loop iteration");
 
         try {

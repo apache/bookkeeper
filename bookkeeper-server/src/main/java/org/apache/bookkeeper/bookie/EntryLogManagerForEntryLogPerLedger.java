@@ -336,7 +336,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         Long ledgerId = removedLedgerEntryLogMapEntry.getKey();
         log.debug()
                 .attr("ledgerId", ledgerId)
-                .attr("cause", removedLedgerEntryLogMapEntry.getCause())
+                .attr("cause", () -> removedLedgerEntryLogMapEntry.getCause())
                 .log("LedgerId is being evicted from the cache map");
         EntryLogAndLockTuple entryLogAndLockTuple = removedLedgerEntryLogMapEntry.getValue();
         if (entryLogAndLockTuple == null) {

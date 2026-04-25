@@ -125,15 +125,11 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
         }
 
         if (channel.isActive()) {
-            final ChannelPromise promise = channel.newPromise();
-
-            log.debug(e ->
-                    promise.addListener(future -> {
-                        if (!future.isSuccess()) {
-                            e.exception(future.cause()).log("Netty channel write exception");
-                        }
-                    })
-            );
+            final ChannelPromise promise = channel.newPromise().addListener(future -> {
+                if (!future.isSuccess()) {
+                    log.debug().exception(future.cause()).log("Netty channel write exception");
+                }
+            });
             channel.writeAndFlush(response, promise);
         } else {
             if (response instanceof BookieProtocol.Response) {

@@ -336,7 +336,7 @@ public class BookieInfoReader {
         errorCnt = 0;
 
 
-        log.debug().attr("toScan", toScan).log("Getting bookie info");
+        log.debug(e -> e.attr("toScan", toScan).log("Getting bookie info"));
 
         for (BookieId b : toScan) {
             bkc.getBookieInfo(b, requested,
@@ -348,7 +348,7 @@ public class BookieInfoReader {
 
                                     log.error()
                                     .attr("bookieId", b)
-                                    .attr("codeLogger", BKException.codeLogger(rc))
+                                    .attr("codeLogger", () -> BKException.codeLogger(rc))
                                     .log("Reading bookie info from bookie failed");
 
                                     // We reread bookies missing from the map each time, so remove to ensure
@@ -393,7 +393,7 @@ public class BookieInfoReader {
         if (errorCnt > 0) {
 
             log.info()
-            .attr("getGetBookieInfoIntervalSeconds", conf.getGetBookieInfoIntervalSeconds())
+            .attr("getGetBookieInfoIntervalSeconds", () -> conf.getGetBookieInfoIntervalSeconds())
             .log("Rescheduling due to errors");
 
             instanceState.tryStartPartial();
@@ -432,14 +432,14 @@ public class BookieInfoReader {
 
                                 log.error()
                                 .attr("bookieId", b)
-                                .attr("codeLogger", BKException.codeLogger(rc))
+                                .attr("codeLogger", () -> BKException.codeLogger(rc))
                                 .log("Reading bookie info from bookie failed");
 
                             } else {
 
                                 log.debug()
                                         .attr("bookieId", b)
-                                        .attr("getFreeDiskSpace", bInfo.getFreeDiskSpace())
+                                        .attr("getFreeDiskSpace", () -> bInfo.getFreeDiskSpace())
                                         .log("Free disk space on bookie");
 
                                 map.put(b, bInfo);

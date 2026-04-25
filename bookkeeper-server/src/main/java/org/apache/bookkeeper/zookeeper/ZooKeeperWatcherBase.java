@@ -113,8 +113,8 @@ public class ZooKeeperWatcherBase implements Watcher {
         // If event type is NONE, this is a connection status change
         if (event.getType() != EventType.None) {
                 log.debug()
-                        .attr("eventType", event.getType())
-                        .attr("path", event.getPath())
+                        .attr("eventType", () -> event.getType())
+                        .attr("path", () -> event.getPath())
                     .log("Received event from ZooKeeper server");
             getEventCounter(event.getType()).inc();
             // notify the child watchers
@@ -122,7 +122,7 @@ public class ZooKeeperWatcherBase implements Watcher {
             return;
         }
         getStateCounter(event.getState()).inc();
-        log.debug().attr("state", event.getState()).log("Received state from ZooKeeper server");
+        log.debug().attr("state", () -> event.getState()).log("Received state from ZooKeeper server");
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
         //       {@link https://github.com/apache/bookkeeper/issues/284}
         switch (event.getState()) {

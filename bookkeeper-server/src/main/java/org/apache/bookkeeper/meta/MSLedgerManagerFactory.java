@@ -248,7 +248,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (null != listenerSet) {
                         log.debug()
                                 .attr("ledgerId", ledgerId)
-                                .attr("metadata", metadata.getValue())
+                                .attr("metadata", () -> metadata.getValue())
                                 .log("Ledger metadata is changed");
                         scheduler.submit(() -> {
                                 synchronized (listenerSet) {
@@ -265,7 +265,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (null != listenerSet) {
                         log.debug()
                                 .attr("ledgerId", ledgerId)
-                                .attr("listenerCount", listenerSet.size())
+                                .attr("listenerCount", () -> listenerSet.size())
                                 .log("Removed ledger metadata listener set as ledger is deleted");
                     }
                 } else {

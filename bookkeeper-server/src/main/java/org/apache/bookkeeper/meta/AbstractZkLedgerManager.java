@@ -129,7 +129,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 if (null != listenerSet) {
                     log.debug()
                             .attr("ledgerId", ledgerId)
-                            .attr("listenerCount", listenerSet.size())
+                            .attr("listenerCount", () -> listenerSet.size())
                             .log("Removed ledger metadata listener set as ledger is deleted");
                     // notify `null` as indicator that a ledger is deleted
                     // make this behavior consistent with `NodeDeleted` watched event.
@@ -261,8 +261,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             break;
         default:
             log.debug()
-                    .attr("eventType", event.getType())
-                    .attr("path", event.getPath())
+                    .attr("eventType", () -> event.getType())
+                    .attr("path", () -> event.getPath())
                     .log("Received event");
             break;
         }

@@ -983,10 +983,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 // things may have changed by then so much that whichever bookie we put second
                 // may actually not be the second-best choice any more.
 
+                final int bestBookieIdxRef = bestBookieIdx;
                 log.debug()
-                        .attr("fromBookie", ensemble.get(writeSet.get(0)))
+                        .attr("fromBookie", () -> ensemble.get(writeSet.get(0)))
                         .attr("fromPending", pendingReqs[0])
-                        .attr("toBookie", ensemble.get(writeSet.get(bestBookieIdx)))
+                        .attr("toBookie", () -> ensemble.get(writeSet.get(bestBookieIdxRef)))
                         .attr("toPending", pendingReqs[bestBookieIdx])
                         .log("read set reordered");
 
@@ -1175,8 +1176,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             // Check to make sure that ensemble is writing to `minNumberOfRacks`'s number of racks at least.
 
             log.debug()
-                    .attr("result", rackCounter.size() >= minNumRacksPerWriteQuorum)
-                    .attr("rackCount", rackCounter.size())
+                    .attr("result", () -> rackCounter.size() >= minNumRacksPerWriteQuorum)
+                    .attr("rackCount", () -> rackCounter.size())
                     .attr("minNumRacksPerWriteQuorum", minNumRacksPerWriteQuorum)
                     .log("areAckedBookiesAdheringToPlacementPolicy returning because number of racks"
                             + " and minNumRacksPerWriteQuorum");

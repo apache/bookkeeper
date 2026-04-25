@@ -671,12 +671,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             checkedLedgers++;
         }
         log.info()
-                .attr("value", TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)))
+                .attr("value", () -> TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)))
                 .attr("checkedLedgers", checkedLedgers)
                 .attr("checkedPages", checkedPages)
-                .attr("longValue", checkedEntries.longValue())
-                .attr("longValue", pageRetries.longValue())
-                .attr("size", errors.size())
+                .attr("longValue", () -> checkedEntries.longValue())
+                .attr("longValue", () -> pageRetries.longValue())
+                .attr("size", () -> errors.size())
                 .log("Finished localConsistencyCheck, took s to scan ledgers, pages, entries with retries, errors");
 
         return errors;

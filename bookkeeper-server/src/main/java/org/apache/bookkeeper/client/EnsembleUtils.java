@@ -55,7 +55,7 @@ class EnsembleUtils {
             BookieId addr = entry.getValue();
 
             log.debug()
-                    .attr("ledgerId", metadata.getLedgerId())
+                    .attr("ledgerId", () -> metadata.getLedgerId())
                     .attr("ensembleChangeId", ensembleChangeId)
                     .attr("bookieAddr", addr)
                     .attr("idx", idx)
@@ -63,11 +63,11 @@ class EnsembleUtils {
 
             if (!newEnsemble.get(idx).equals(addr)) {
                 log.debug()
-                        .attr("ledgerId", metadata.getLedgerId())
+                        .attr("ledgerId", () -> metadata.getLedgerId())
                         .attr("ensembleChangeId", ensembleChangeId)
                         .attr("bookieAddr", addr)
                         .attr("idx", idx)
-                        .attr("newBookie", newEnsemble.get(idx))
+                        .attr("newBookie", () -> newEnsemble.get(idx))
                         .log("Not changing failed bookie at index, already changed");
 
                 continue;

@@ -198,7 +198,7 @@ class SyncCallbackUtils {
             if (rc != BKException.Code.OK) {
                 log.warn().attr("error", BKException.getMessage(rc)).log("LastAddConfirmedUpdate failed");
             } else {
-                log.debug().attr("ledgerId", lh.getId()).log("Callback LAC Updated");
+                log.debug().attr("ledgerId", () -> lh.getId()).log("Callback LAC Updated");
             }
         }
     }

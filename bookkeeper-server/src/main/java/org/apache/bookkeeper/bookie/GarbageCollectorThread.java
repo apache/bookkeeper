@@ -735,7 +735,7 @@ public class GarbageCollectorThread implements Runnable {
                 if (System.currentTimeMillis() - lastPrintTimestamp >= MINUTE) {
                     lastPrintTimestamp = System.currentTimeMillis();
                     log.info()
-                            .attr("processed", processedEntryLogCnt.get())
+                            .attr("processed", () -> processedEntryLogCnt.get())
                             .attr("totalEntryLogIds", totalEntryLogIds)
                             .attr("logId", logId)
                             .log("Compaction progress");
@@ -746,8 +746,8 @@ public class GarbageCollectorThread implements Runnable {
                         return;
                     }
                     log.debug()
-                            .attr("entryLogId", meta.getEntryLogId())
-                            .attr("usage", meta.getUsage())
+                            .attr("entryLogId", () -> meta.getEntryLogId())
+                            .attr("usage", () -> meta.getUsage())
                             .attr("threshold", threshold)
                             .log("Compacting entry log with usage below threshold");
 
