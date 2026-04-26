@@ -65,11 +65,10 @@ public class LastMarkCommand extends BookieCommand<CliFlags> {
             for (int idx = 0; idx < journalDirs.length; idx++) {
                 Journal journal = new Journal(idx, journalDirs[idx], conf, dirsManager);
                 LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-                log.info()
-                        .attr("logFileId", lastLogMark.getLogFileId())
-                        .attr("logFile", Long.toHexString(lastLogMark.getLogFileId()) + ".txn")
-                        .attr("logFileOffset", lastLogMark.getLogFileOffset())
-                        .log("LastLogMark");
+                log.info().logf("LastLogMark : Journal Id - %d(%s.txn), Pos - %d",
+                        lastLogMark.getLogFileId(),
+                        Long.toHexString(lastLogMark.getLogFileId()),
+                        lastLogMark.getLogFileOffset());
             }
             return true;
         } catch (IOException e) {
