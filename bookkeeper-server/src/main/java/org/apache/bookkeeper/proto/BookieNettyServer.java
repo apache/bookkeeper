@@ -326,26 +326,29 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            // Set TCP keepalive parameters if configured
+            // Set TCP keepalive parameters if configured. Use childOption() so that these
+            // options are applied to each accepted SocketChannel (not the listening
+            // ServerSocketChannel), which is the Netty-idiomatic approach and avoids
+            // relying on OS-level socket option inheritance behavior.
             if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
                 if (conf.getServerTcpKeepIdle() > 0) {
-                    bootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
                 }
                 if (conf.getServerTcpKeepIntvl() > 0) {
-                    bootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
                 }
                 if (conf.getServerTcpKeepCnt() > 0) {
-                    bootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
                 }
             } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
                 if (conf.getServerTcpKeepIdle() > 0) {
-                    bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
                 }
                 if (conf.getServerTcpKeepIntvl() > 0) {
-                    bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
                 }
                 if (conf.getServerTcpKeepCnt() > 0) {
-                    bootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
                 }
             }
 
@@ -417,26 +420,29 @@ class BookieNettyServer {
             jvmBootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            // Set TCP keepalive parameters if configured
+            // Set TCP keepalive parameters if configured. Use childOption() so that these
+            // options are applied to each accepted SocketChannel (not the listening
+            // ServerSocketChannel), which is the Netty-idiomatic approach and avoids
+            // relying on OS-level socket option inheritance behavior.
             if (EventLoopUtil.isIoUringGroup(jvmEventLoopGroup)) {
                 if (conf.getServerTcpKeepIdle() > 0) {
-                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
                 }
                 if (conf.getServerTcpKeepIntvl() > 0) {
-                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
                 }
                 if (conf.getServerTcpKeepCnt() > 0) {
-                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
                 }
             } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
                 if (conf.getServerTcpKeepIdle() > 0) {
-                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
                 }
                 if (conf.getServerTcpKeepIntvl() > 0) {
-                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
                 }
                 if (conf.getServerTcpKeepCnt() > 0) {
-                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
                 }
             }
 
