@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
@@ -38,7 +38,7 @@ import org.apache.zookeeper.ZooKeeper;
  * Abstract ledger manager factory based on zookeeper, which provides common
  * methods such as format and validateAndNukeExistingCluster.
  */
-@Slf4j
+@CustomLog
 public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFactory {
 
     protected ZooKeeper zk;
@@ -87,8 +87,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
             if ((!AbstractZkLedgerManager.isSpecialZnode(ledgersRootPathChildren))
                     && (!zkLedgerManager.isLedgerParentNode(ledgersRootPathChildren))) {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
+                log.error()
+                        .attr("znode", ledgersRootPathChildren)
+                        .attr("ledgersRootPath", zkLedgersRootPath)
+                        .log("Found unexpected znode under ledgersRootPath, exiting nuke operation");
                 return false;
             }
         }
@@ -102,8 +104,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             if (AbstractZkLedgerManager.isSpecialZnode(ledgersRootPathChildren)) {
                 ZKUtil.deleteRecursive(zk, zkLedgersRootPath + "/" + ledgersRootPathChildren);
             } else {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
+                log.error()
+                        .attr("znode", ledgersRootPathChildren)
+                        .attr("ledgersRootPath", zkLedgersRootPath)
+                        .log("Found unexpected znode under ledgersRootPath, exiting nuke operation");
                 return false;
             }
         }
@@ -111,8 +115,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         // finally deleting the ledgers rootpath
         zk.delete(zkLedgersRootPath, -1);
 
-        log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
-                zkServers, zkLedgersRootPath);
+        log.info()
+                .attr("zkServers", zkServers)
+                .attr("ledgersRootPath", zkLedgersRootPath)
+                .log("Successfully nuked existing cluster");
         return true;
     }
 
@@ -137,7 +143,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         try {
             metadataServiceUriStr = conf.getMetadataServiceUri();
         } catch (ConfigurationException e) {
-            log.error("Failed to retrieve metadata service uri from configuration", e);
+            log.error().exception(e).log("Failed to retrieve metadata service uri from configuration");
             throw new IOException(
                 "Failed to retrieve metadata service uri from configuration", e);
         }
@@ -149,7 +155,9 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             try {
                 factoryClass = conf.getLedgerManagerFactoryClass();
             } catch (ConfigurationException e) {
-                log.error("Failed to get ledger manager factory class when using an external zookeeper client", e);
+                log.error()
+                        .exception(e)
+                        .log("Failed to get ledger manager factory class when using an external zookeeper client");
                 throw new IOException(
                     "Failed to get ledger manager factory class when using an external zookeeper client", e);
             }
@@ -181,9 +189,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             return lmFactory
                     .initialize(conf, layoutManager, lmFactory.getCurrentVersion());
         }
-        if (log.isDebugEnabled()) {
-            log.debug("read ledger layout {}", layout);
-        }
+        log.debug().attr("layout", layout).log("read ledger layout");
 
         // there is existing layout, we need to look into the layout.
         // handle pre V2 layout
@@ -267,8 +273,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             AbstractConfiguration<?> conf, String lmfClassName, Throwable cause) throws IOException {
         if (conf.isShadedLedgerManagerFactoryClassAllowed()) {
             String shadedPrefix = conf.getShadedLedgerManagerFactoryClassPrefix();
-            log.warn("Failed to instantiate ledger manager factory {}, trying its shaded class {}{}",
-                lmfClassName, shadedPrefix, lmfClassName);
+            log.warn()
+                    .attr("lmfClassName", lmfClassName)
+                    .attr("shadedPrefix", shadedPrefix)
+                    .log("Failed to instantiate ledger manager factory, trying its shaded class");
             // try shading class
             try {
                 return resolveShadedLedgerManagerFactory(lmfClassName, shadedPrefix);

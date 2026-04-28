@@ -827,7 +827,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
          */
         loggerOutput.expect((List<LoggingEvent> logEvents) -> {
             assertThat(logEvents,
-                    hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component:"))));
+                    hasItem(hasProperty("message", containsString("Triggered exceptionHandler of Component"))));
         });
     }
 

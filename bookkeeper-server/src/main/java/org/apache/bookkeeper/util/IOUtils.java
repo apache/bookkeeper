@@ -67,46 +67,6 @@ public class IOUtils {
     }
 
     /**
-     * Close the Closeable objects and <b>ignore</b> any {@link IOException} or
-     * null pointers. Must only be used for cleanup in exception handlers.
-     *
-     * <p>SLF4J overload kept for transition during the slog migration.
-     *
-     * @param log
-     *            the log to record problems to at debug level. Can be null.
-     * @param closeables
-     *            the objects to close
-     */
-    public static void close(org.slf4j.Logger log, java.io.Closeable... closeables) {
-        for (java.io.Closeable c : closeables) {
-            close(log, c);
-        }
-    }
-
-    /**
-     * Close the Closeable object and <b>ignore</b> any {@link IOException} or
-     * null pointers. Must only be used for cleanup in exception handlers.
-     *
-     * <p>SLF4J overload kept for transition during the slog migration.
-     *
-     * @param log
-     *            the log to record problems to at debug level. Can be null.
-     * @param closeable
-     *            the objects to close
-     */
-    public static void close(org.slf4j.Logger log, java.io.Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                if (log != null && log.isDebugEnabled()) {
-                    log.debug("Exception in closing " + closeable, e);
-                }
-            }
-        }
-    }
-
-    /**
      * Confirm prompt for the console operations.
      *
      * @param prompt

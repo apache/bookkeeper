@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -33,7 +33,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * An abstract lifecycle component that can perform data integrity checking.
  */
-@Slf4j
+@CustomLog
 public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfiguration> {
     private final DataIntegrityCheck check;
     private final ScheduledExecutorService scheduler;
@@ -48,9 +48,11 @@ public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfi
                 new ThreadFactoryBuilder()
                 .setNameFormat("bookie-data-integ-%d")
                 .setUncaughtExceptionHandler(
-                        (t, ex) -> log.error("Event: {}, thread: {}",
-                                Events.DATA_INTEG_SERVICE_UNCAUGHT_ERROR,
-                                t, ex))
+                        (t, ex) -> log.error()
+                                .exception(ex)
+                                .attr("event", Events.DATA_INTEG_SERVICE_UNCAUGHT_ERROR)
+                                .attr("thread", t)
+                                .log("Uncaught error in data integrity service"))
                 .build());
         scheduledFuture = null;
     }
@@ -66,8 +68,11 @@ public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfi
 
     @Override
     protected void doStart() {
-        log.info("Event: {}, interval: {}, intervalUnit: {}",
-                        Events.DATA_INTEG_SERVICE_START, interval(), intervalUnit());
+        log.info()
+                .attr("event", Events.DATA_INTEG_SERVICE_START)
+                .attr("interval", interval())
+                .attr("intervalUnit", intervalUnit())
+                .log("Data integrity service start");
         synchronized (this) {
             scheduledFuture = scheduler.scheduleAtFixedRate(() -> {
                     try {
@@ -75,10 +80,16 @@ public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfi
                             check.runFullCheck().get();
                         }
                     } catch (InterruptedException ie) {
-                        log.warn("Event: {}", Events.DATA_INTEG_SERVICE_INTERRUPTED, ie);
+                        log.warn()
+                                .exception(ie)
+                                .attr("event", Events.DATA_INTEG_SERVICE_INTERRUPTED)
+                                .log("Data integrity service interrupted");
                         Thread.currentThread().interrupt();
                     } catch (Throwable t) {
-                        log.error("Event: {}", Events.DATA_INTEG_SERVICE_ERROR, t);
+                        log.error()
+                                .exception(t)
+                                .attr("event", Events.DATA_INTEG_SERVICE_ERROR)
+                                .log("Data integrity service error");
                     }
                 }, 0, interval(), intervalUnit());
         }
@@ -86,7 +97,9 @@ public class DataIntegrityService extends AbstractLifecycleComponent<BookieConfi
 
     @Override
     protected void doStop() {
-        log.info("Event: {}", Events.DATA_INTEG_SERVICE_STOP);
+        log.info()
+                .attr("event", Events.DATA_INTEG_SERVICE_STOP)
+                .log("Data integrity service stop");
         synchronized (this) {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
