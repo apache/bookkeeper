@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.Journal;
@@ -45,8 +46,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigT
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan all entries in the journal and entry log files then rebuilds the ledgers index.
@@ -59,8 +58,8 @@ import org.slf4j.LoggerFactory;
  *   are overwritten and we cannot use the password from metadata, and cannot know 100%
  *   for sure how a digest for the password was generated.
  */
+@CustomLog
 public class LedgersIndexRebuildOp {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgersIndexRebuildOp.class);
 
     private final ServerConfiguration conf;
     private final boolean verbose;
@@ -73,13 +72,13 @@ public class LedgersIndexRebuildOp {
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean initiate()  {
-        LOG.info("Starting ledger index rebuilding");
+        log.info("Starting ledger index rebuilding");
         File[] indexDirs = conf.getIndexDirs();
         if (indexDirs == null) {
             indexDirs = conf.getLedgerDirs();
         }
         if (indexDirs.length != conf.getLedgerDirs().length) {
-            LOG.error("ledger and index dirs size not matched");
+            log.error("ledger and index dirs size not matched");
             return false;
         }
 
@@ -93,7 +92,7 @@ public class LedgersIndexRebuildOp {
             Path indexTempPath = FileSystems.getDefault().getPath(indexBasePath, tempLedgersSubPath);
             Path indexCurrentPath = FileSystems.getDefault().getPath(indexBasePath, LedgersSubPath);
 
-            LOG.info("Starting scan phase (scans journal and entry log files)");
+            log.info("Starting scan phase (scans journal and entry log files)");
 
             try {
                 Set<Long> ledgers = new HashSet<>();
@@ -102,12 +101,12 @@ public class LedgersIndexRebuildOp {
                 lDirs[0] = ledgerDir;
                 scanEntryLogFiles(ledgers, lDirs);
 
-                LOG.info("Scan complete, found {} ledgers. "
-                        + "Starting to build a new ledgers index", ledgers.size());
+                log.info().attr("count", ledgers.size())
+                        .log("Scan complete. Starting to build a new ledgers index");
 
                 try (KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(
                         indexBasePath, tempLedgersSubPath, DbConfigType.Default, conf)) {
-                    LOG.info("Created ledgers index at temp location {}", indexTempPath);
+                    log.info().attr("tempPath", indexTempPath).log("Created ledgers index at temp location");
 
                     for (Long ledgerId : ledgers) {
                         DbLedgerStorageDataFormats.LedgerData ledgerData =
@@ -124,7 +123,7 @@ public class LedgersIndexRebuildOp {
                     newIndex.sync();
                 }
             } catch (Throwable t) {
-                LOG.error("Error during rebuild, the original index remains unchanged", t);
+                log.error().exception(t).log("Error during rebuild, the original index remains unchanged");
                 delete(indexTempPath);
                 return false;
             }
@@ -133,16 +132,21 @@ public class LedgersIndexRebuildOp {
             try {
                 Path prevPath = FileSystems.getDefault().getPath(indexBasePath,
                         LedgersSubPath + ".PREV-" + timestamp);
-                LOG.info("Moving original index from original location: {} up to back-up location: {}",
-                        indexCurrentPath, prevPath);
+                log.info()
+                        .attr("from", indexCurrentPath)
+                        .attr("to", prevPath)
+                        .log("Moving original index to back-up location");
                 Files.move(indexCurrentPath, prevPath);
-                LOG.info("Moving rebuilt index from: {} to: {}", indexTempPath, indexCurrentPath);
+                log.info()
+                        .attr("from", indexTempPath)
+                        .attr("to", indexCurrentPath)
+                        .log("Moving rebuilt index");
                 Files.move(indexTempPath, indexCurrentPath);
-                LOG.info("Original index has been replaced with the new index. "
-                        + "The original index has been moved to {}", prevPath);
+                log.info().attr("backupPath", prevPath)
+                        .log("Original index has been replaced with the new index");
             } catch (IOException e) {
-                LOG.error("Could not replace original index with rebuilt index. "
-                        + "To return to the original state, ensure the original index is in its original location", e);
+                log.error().exception(e).log("Could not replace original index with rebuilt index. "
+                        + "To return to the original state, ensure the original index is in its original location");
                 return false;
             }
         }
@@ -157,7 +161,7 @@ public class LedgersIndexRebuildOp {
 
         int totalEntryLogs = entryLogs.size();
         int completedEntryLogs = 0;
-        LOG.info("Scanning {} entry logs", totalEntryLogs);
+        log.info().attr("count", totalEntryLogs).log("Scanning entry logs");
 
         for (long entryLogId : entryLogs) {
             entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
@@ -165,7 +169,7 @@ public class LedgersIndexRebuildOp {
                 public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
                     if (ledgers.add(ledgerId)) {
                         if (verbose) {
-                            LOG.info("Found ledger {} in entry log", ledgerId);
+                            log.info().attr("ledgerId", ledgerId).log("Found ledger in entry log");
                         }
                     }
                 }
@@ -177,8 +181,9 @@ public class LedgersIndexRebuildOp {
             });
 
             ++completedEntryLogs;
-            LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId), completedEntryLogs,
-                    totalEntryLogs);
+            log.info().attr("entryLogId", Long.toHexString(entryLogId))
+                    .attr("completed", completedEntryLogs).attr("total", totalEntryLogs)
+                    .log("Completed scanning of entry log");
         }
     }
 
@@ -211,7 +216,10 @@ public class LedgersIndexRebuildOp {
     }
 
     private void scanJournal(Journal journal, long journalId, Set<Long> ledgers) throws IOException {
-        LOG.info("Scanning journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
+        log.info()
+                .attr("journalId", journalId)
+                .attr("journalFile", Long.toHexString(journalId) + ".txn")
+                .log("Scanning journal");
         journal.scanJournal(journalId, 0L, new Journal.JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer entry) {
@@ -219,7 +227,7 @@ public class LedgersIndexRebuildOp {
                 long ledgerId = buf.readLong();
 
                 if (ledgers.add(ledgerId) && verbose) {
-                    LOG.info("Found ledger {} in journal", ledgerId);
+                    log.info().attr("ledgerId", ledgerId).log("Found ledger in journal");
                 }
             }
         }, false);
@@ -229,7 +237,10 @@ public class LedgersIndexRebuildOp {
         try {
             Files.delete(path);
         } catch (IOException e) {
-            LOG.warn("Unable to delete {}", path.toAbsolutePath(), e);
+            log.warn()
+                    .attr("path", path.toAbsolutePath())
+                    .exception(e)
+                    .log("Unable to delete");
         }
     }
 }

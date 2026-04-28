@@ -27,18 +27,17 @@ import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan the ledgers index to make sure it is readable.
  */
+@CustomLog
 public class LedgersIndexCheckOp {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgersIndexCheckOp.class);
 
     private final ServerConfiguration conf;
     private final boolean verbose;
@@ -64,8 +63,8 @@ public class LedgersIndexCheckOp {
             String iBasePath = BookieImpl.getCurrentDirectory(indexDir).toString();
             Path indexCurrentPath = FileSystems.getDefault().getPath(iBasePath, LedgersSubPath);
 
-            LOG.info("Loading ledgers index from {}", indexCurrentPath);
-            LOG.info("Starting index scan");
+            log.info().attr("indexPath", indexCurrentPath).log("Loading ledgers index");
+            log.info("Starting index scan");
 
             try {
                 KeyValueStorage index = new KeyValueStorageRocksDB(iBasePath, LedgersSubPath,
@@ -81,33 +80,34 @@ public class LedgersIndexCheckOp {
                         DbLedgerStorageDataFormats.LedgerData ledgerData =
                                 DbLedgerStorageDataFormats.LedgerData.parseFrom(entry.getValue());
                         if (verbose) {
-                            LOG.info(
-                                    "Scanned: {}, ledger: {}, exists: {}, isFenced: {}, masterKey: {}, explicitLAC: {}",
-                                    ctr,
-                                    ledgerId,
-                                    (ledgerData.hasExists() ? ledgerData.getExists() : "-"),
-                                    (ledgerData.hasFenced() ? ledgerData.getFenced() : "-"),
-                                    (ledgerData.hasMasterKey()
+                            log.info()
+                                    .attr("scanned", ctr)
+                                    .attr("ledgerId", ledgerId)
+                                    .attr("exists", (ledgerData.hasExists() ? ledgerData.getExists() : "-"))
+                                    .attr("isFenced", (ledgerData.hasFenced() ? ledgerData.getFenced() : "-"))
+                                    .attr("masterKey", (ledgerData.hasMasterKey()
                                             ? Base64.getEncoder()
                                             .encodeToString(ledgerData.getMasterKey().toByteArray())
-                                            : "-"),
-                                    (ledgerData.hasExplicitLac() ? ledgerData.getExplicitLac() : "-"));
+                                            : "-"))
+                                    .attr("explicitLAC", (ledgerData.hasExplicitLac()
+                                            ? ledgerData.getExplicitLac() : "-"))
+                                    .log("Scanned ledger");
                         } else if (ctr % 100 == 0) {
-                            LOG.info("Scanned {} ledgers", ctr);
+                            log.info().attr("count", ctr).log("Scanned ledgers");
                         }
                     }
                 } finally {
                     iterator.close();
                 }
-                LOG.info("Scanned {} ledgers", ctr);
+                log.info().attr("count", ctr).log("Scanned ledgers");
             } catch (Throwable t) {
-                LOG.error("Index scan has failed with error", t);
+                log.error().exception(t).log("Index scan has failed with error");
                 return false;
             }
         }
-        LOG.info("Index scan has completed successfully. Total time: {}",
-                DurationFormatUtils.formatDurationHMS(
-                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
+        log.info().attr("totalTime", DurationFormatUtils.formatDurationHMS(
+                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)))
+                .log("Index scan has completed successfully");
         return true;
     }
 }

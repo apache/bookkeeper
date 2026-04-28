@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -47,15 +48,12 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to ledger data recovery for failed bookie.
  */
+@CustomLog
 public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RecoverCommand.class);
 
     private static final String NAME = "recover";
     private static final String DESC = "Recover the ledger data for failed bookie";
@@ -137,24 +135,24 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             try {
                 bookieAddrs.add(BookieId.parse(bookieStr));
             } catch (IllegalArgumentException err) {
-                LOG.error("BookieSrcs has invalid bookie id format: {}", bookieStr);
+                log.error().attr("bookieStr", bookieStr).log("BookieSrcs has invalid bookie id format");
                 return false;
             }
         }
 
         if (!force) {
-            LOG.error("Bookies : {}", bookieAddrs);
+            log.error().attr("bookieAddrs", bookieAddrs).log("Bookies");
             if (!IOUtils.confirmPrompt("Are you sure to recover them : (Y/N)")) {
-                LOG.error("Give up!");
+                log.error("Give up!");
                 return false;
             }
         }
 
-        LOG.info("Constructing admin");
+        log.info("Constructing admin");
         conf.setReplicationRateByBytes(replicateRate);
         ClientConfiguration adminConf = new ClientConfiguration(conf);
         BookKeeperAdmin admin = newBookKeeperAdmin(adminConf);
-        LOG.info("Construct admin : {}", admin);
+        log.info().attr("admin", admin).log("Construct admin");
         try {
             if (query) {
                 return bkQuery(admin, bookieAddrs);
@@ -172,19 +170,25 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         throws InterruptedException, BKException {
         SortedMap<Long, LedgerMetadata> ledgersContainBookies =
             bkAdmin.getLedgersContainBookies(bookieAddrs);
-        LOG.error("NOTE: Bookies in inspection list are marked with '*'.");
+        log.error("NOTE: Bookies in inspection list are marked with '*'.");
         for (Map.Entry<Long, LedgerMetadata> ledger : ledgersContainBookies.entrySet()) {
-            LOG.info("ledger {} : {}", ledger.getKey(), ledger.getValue().getState());
+            log.info()
+                    .attr("key", ledger.getKey())
+                    .attr("state", ledger.getValue().getState())
+                    .log("ledger");
             Map<Long, Integer> numBookiesToReplacePerEnsemble =
                 inspectLedger(ledger.getValue(), bookieAddrs);
-            LOG.info("summary: [");
+            log.info("summary: [");
             for (Map.Entry<Long, Integer> entry : numBookiesToReplacePerEnsemble.entrySet()) {
-                LOG.info("{}={}, ", entry.getKey(), entry.getValue());
+                log.info()
+                        .attr("key", entry.getKey())
+                        .attr("value", entry.getValue())
+                        .log("log entry");
             }
-            LOG.info("]");
-            LOG.info("");
+            log.info("]");
+            log.info("");
         }
-        LOG.error("Done");
+        log.error("Done");
         return true;
     }
 
@@ -193,19 +197,19 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
         for (Map.Entry<Long, ? extends List<BookieId>> ensemble :
             metadata.getAllEnsembles().entrySet()) {
             List<BookieId> bookieList = ensemble.getValue();
-            LOG.info("{}:\t", ensemble.getKey());
+            log.info().attr("key", ensemble.getKey()).log("\t");
             int numBookiesToReplace = 0;
             for (BookieId bookie : bookieList) {
-                LOG.info("{}", bookie.toString());
+                log.info().attr("bookie", bookie.toString()).log("log entry");
                 if (bookiesToInspect.contains(bookie)) {
-                    LOG.info("*");
+                    log.info("*");
                     ++numBookiesToReplace;
                 } else {
-                    LOG.info(" ");
+                    log.info(" ");
                 }
-                LOG.info(" ");
+                log.info(" ");
             }
-            LOG.info("");
+            log.info("");
             numBookiesToReplacePerEnsemble.put(ensemble.getKey(), numBookiesToReplace);
         }
         return numBookiesToReplacePerEnsemble;
@@ -260,7 +264,10 @@ public class RecoverCommand extends BookieCommand<RecoverCommand.RecoverFlags> {
             Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
             cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
         } catch (BookieException.CookieNotFoundException nne) {
-            LOG.warn("No cookie to remove for {} : ", bookieSrc, nne);
+            log.warn()
+                    .attr("bookieSrc", bookieSrc)
+                    .exception(nne)
+                    .log("No cookie to remove");
         }
     }
 

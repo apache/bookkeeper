@@ -23,6 +23,7 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
@@ -30,15 +31,12 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An abstract class for managing hierarchical ledgers.
  */
+@CustomLog
 public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedgerManager {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractHierarchicalLedgerManager.class);
 
     /**
      * Constructor.
@@ -67,8 +65,10 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                     finalCb.processResult(successRc, null, context);
                     return;
                 } else if (rc != Code.OK.intValue()) {
-                    LOG.error("Error syncing path " + path + " when getting its children: ",
-                              KeeperException.create(KeeperException.Code.get(rc), path));
+                    log.error()
+                            .attr("path", path)
+                            .exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                            .log("Error syncing path when getting its children");
                     finalCb.processResult(failureRc, null, context);
                     return;
                 }
@@ -82,8 +82,10 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                             finalCb.processResult(successRc, null, context);
                             return;
                         } else if (rc != Code.OK.intValue()) {
-                            LOG.error("Error polling hash nodes of " + path,
-                                      KeeperException.create(KeeperException.Code.get(rc), path));
+                            log.error()
+                                    .attr("path", path)
+                                    .exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                                    .log("Error polling hash nodes");
                             finalCb.processResult(failureRc, null, context);
                             return;
                         }
@@ -190,7 +192,10 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         NavigableSet<Long> zkActiveLedgers = new TreeSet<Long>();
 
         if (!path.startsWith(ledgerRootPath)) {
-            LOG.warn("Ledger path [{}] is not a valid path name, it should start with {}", path, ledgerRootPath);
+            log.warn()
+                    .attr("path", path)
+                    .attr("ledgerRootPath", ledgerRootPath)
+                    .log("Ledger path is not a valid path name");
             return zkActiveLedgers;
         }
 

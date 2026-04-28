@@ -33,6 +33,7 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -40,8 +41,6 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IteratorUtility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@code SortedLedgerStorage} is an extension of {@link InterleavedLedgerStorage}. It
@@ -49,10 +48,10 @@ import org.slf4j.LoggerFactory;
  * entries will be first added into a {@code MemTable}, and then be flushed back to the
  * {@code InterleavedLedgerStorage} when the {@code MemTable} becomes full.
  */
+@CustomLog
 public class SortedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher,
             CompactableLedgerStorage, DefaultEntryLogger.EntryLogListener {
-    private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
@@ -133,7 +132,7 @@ public class SortedLedgerStorage
         try {
             flush();
         } catch (IOException e) {
-            LOG.error("Exception thrown while flushing ledger cache.", e);
+            log.error().exception(e).log("Exception thrown while flushing ledger cache.");
         }
         interleavedLedgerStorage.start();
     }
@@ -148,7 +147,7 @@ public class SortedLedgerStorage
         try {
             memTable.close();
         } catch (Exception e) {
-            LOG.error("Error while closing the memtable", e);
+            log.error().exception(e).log("Error while closing the memtable");
         }
         interleavedLedgerStorage.shutdown();
     }
@@ -301,10 +300,10 @@ public class SortedLedgerStorage
     // CacheCallback functions.
     @Override
     public void onSizeLimitReached(final Checkpoint cp) throws IOException {
-        LOG.info("Reached size {}", cp);
+        log.info().attr("checkpoint", cp).log("Reached size");
         // when size limit reached, we get the previous checkpoint from snapshot mem-table.
         // at this point, we are safer to schedule a checkpoint, since the entries added before
-        // this checkpoint already written to entry logger.
+        // this checkpoint already written to entry log.
         // but it would be better not to let mem-table flush to different entry log files,
         // so we roll entry log files in SortedLedgerStorage itself.
         // After that, we could make the process writing data to entry logger file not bound with checkpoint.
@@ -316,7 +315,7 @@ public class SortedLedgerStorage
             @Override
             public void run() {
                 try {
-                    LOG.info("Started flushing mem table.");
+                    log.info("Started flushing mem table.");
                     interleavedLedgerStorage.getEntryLogger().prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
                     if (interleavedLedgerStorage.getEntryLogger().commitEntryMemTableFlush()) {
@@ -324,7 +323,7 @@ public class SortedLedgerStorage
                     }
                 } catch (Exception e) {
                     stateManager.transitionToReadOnlyMode();
-                    LOG.error("Exception thrown while flushing skip list cache.", e);
+                    log.error().exception(e).log("Exception thrown while flushing skip list cache.");
                 }
             }
         });

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -29,16 +30,14 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper delete ledger related http request.
  * The DELETE method will delete ledger with provided "ledger_id".
  */
+@CustomLog
 public class DeleteLedgerService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(DeleteLedgerService.class);
 
     protected ServerConfiguration conf;
 
@@ -63,9 +62,7 @@ public class DeleteLedgerService implements HttpEndpointService {
 
                     String output = "Deleted ledger: " + ledgerId;
                     String jsonResponse = JsonUtil.toJson(output);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("output body:" + jsonResponse);
-                    }
+                    log.debug().attr("body", jsonResponse).log("output body");
                     response.setBody(jsonResponse);
                     response.setCode(HttpServer.StatusCode.OK);
                     return response;

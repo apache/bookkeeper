@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -35,7 +35,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * EntryMemTableWithParallelFlusher.
  */
-@Slf4j
+@CustomLog
 class EntryMemTableWithParallelFlusher extends EntryMemTable {
 
     final OrderedExecutor flushExecutor;
@@ -101,7 +101,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                                 }
                                 pendingNumOfLedgerFlushes.arriveAndDeregister();
                             } catch (Exception exc) {
-                                log.error("Got Exception while trying to flush process entryies: ", exc);
+                                log.error().exception(exc).log("Got Exception while trying to flush process entries");
                                 exceptionWhileFlushingParallelly.set(exc);
                                 /*
                                  * if we get any unexpected exception while
@@ -126,12 +126,12 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                          */
                         phaserTerminatedAbruptly = (pendingNumOfLedgerFlushes.arriveAndAwaitAdvance() < 0);
                     } catch (IllegalStateException ise) {
-                        log.error("Got IllegalStateException while awaiting on Phaser", ise);
+                        log.error().exception(ise).log("Got IllegalStateException while awaiting on Phaser");
                         throw new IOException("Got IllegalStateException while awaiting on Phaser", ise);
                     }
                     if (phaserTerminatedAbruptly) {
-                        log.error("Phaser is terminated while awaiting flushExecutor to complete the entry flushes",
-                                exceptionWhileFlushingParallelly.get());
+                        log.error().exception(exceptionWhileFlushingParallelly.get())
+                        .log("Phaser is terminated while awaiting flushExecutor to complete the entry flushes");
                         throw new IOException("Failed to complete the flushSnapshotByParallelizing",
                                 exceptionWhileFlushingParallelly.get());
                     }

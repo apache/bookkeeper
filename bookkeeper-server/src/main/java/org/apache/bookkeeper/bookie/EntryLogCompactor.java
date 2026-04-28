@@ -25,19 +25,18 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is the basic entry log compactor to compact entry logs.
  * The compaction is done by scanning the old entry log file, copy the active ledgers to the
  * current entry logger and remove the old entry log when the scan is over.
  */
+@CustomLog
 public class EntryLogCompactor extends AbstractLogCompactor {
-    private static final Logger LOG = LoggerFactory.getLogger(EntryLogCompactor.class);
 
     final CompactionScannerFactory scannerFactory = new CompactionScannerFactory();
     final EntryLogger entryLogger;
@@ -61,16 +60,16 @@ public class EntryLogCompactor extends AbstractLogCompactor {
             entryLogger.scanEntryLog(entryLogMeta.getEntryLogId(),
                 scannerFactory.newScanner(entryLogMeta));
             scannerFactory.flush();
-            LOG.info("Removing entry log {} after compaction", entryLogMeta.getEntryLogId());
+            log.info().attr("entryLogId", entryLogMeta.getEntryLogId()).log("Removing entry log after compaction");
             logRemovalListener.removeEntryLog(entryLogMeta.getEntryLogId());
         } catch (LedgerDirsManager.NoWritableLedgerDirException nwlde) {
-            LOG.warn("No writable ledger directory available, aborting compaction", nwlde);
+            log.warn().exception(nwlde).log("No writable ledger directory available, aborting compaction");
             return false;
         } catch (IOException ioe) {
             // if compact entry log throws IOException, we don't want to remove that
             // entry log. however, if some entries from that log have been re-added
             // to the entry log, and the offset updated, it's ok to flush that
-            LOG.error("Error compacting entry log. Log won't be deleted", ioe);
+            log.error().exception(ioe).log("Error compacting entry log. Log won't be deleted");
             return false;
         }
         return true;
@@ -108,9 +107,7 @@ public class EntryLogCompactor extends AbstractLogCompactor {
 
         void flush() throws IOException {
             if (offsets.isEmpty()) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Skipping entry log flushing, as there are no offset!");
-                }
+                log.debug("Skipping entry log flushing, as there are no offset!");
                 return;
             }
 

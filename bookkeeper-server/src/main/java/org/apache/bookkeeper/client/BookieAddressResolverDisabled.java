@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
@@ -25,7 +25,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 /**
  * Resolve legacy style BookieIDs to Network addresses.
  */
-@Slf4j
+@CustomLog
 public final class BookieAddressResolverDisabled implements BookieAddressResolver {
 
     public BookieAddressResolverDisabled() {

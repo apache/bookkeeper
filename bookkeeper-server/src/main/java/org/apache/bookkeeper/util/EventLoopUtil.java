@@ -25,8 +25,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.uring.IoUring;
 import io.netty.channel.uring.IoUringIoHandler;
 import java.util.concurrent.ThreadFactory;
+import lombok.CustomLog;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -37,7 +37,7 @@ import org.apache.commons.lang3.SystemUtils;
 /**
  * Utility class to initialize Netty event loops.
  */
-@Slf4j
+@CustomLog
 @UtilityClass
 public class EventLoopUtil {
 
@@ -87,15 +87,17 @@ public class EventLoopUtil {
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
-                            log.warn("Failed to acquire CPU core for thread {} err {} {}",
-                                    Thread.currentThread().getName(), t.getMessage(), t);
+                            log.warn()
+                                    .attr("thread", Thread.currentThread().getName())
+                                    .exception(t)
+                                    .log("Failed to acquire CPU core for thread");
                         }
                     });
                 }
 
                 return eventLoopGroup;
             } catch (ExceptionInInitializerError | NoClassDefFoundError | UnsatisfiedLinkError e) {
-                log.warn("Could not use Netty Epoll event loop: {}", e.getMessage());
+                log.warn().exceptionMessage(e).log("Could not use Netty Epoll event loop");
                 return new NioEventLoopGroup(numThreads, threadFactory);
             }
         }

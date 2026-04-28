@@ -19,18 +19,17 @@
 package org.apache.bookkeeper.client.impl;
 
 import java.util.Arrays;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Base class for open builders which does the mundane builder stuff.
  */
+@CustomLog
 public abstract class OpenBuilderBase implements OpenBuilder {
-    static final Logger LOG = LoggerFactory.getLogger(OpenBuilderBase.class);
 
     protected boolean recovery = false;
     protected long ledgerId = LedgerHandle.INVALID_LEDGER_ID;
@@ -63,7 +62,7 @@ public abstract class OpenBuilderBase implements OpenBuilder {
 
     protected int validate() {
         if (ledgerId < 0) {
-            LOG.error("invalid ledgerId {} < 0", ledgerId);
+            log.error().attr("ledgerId", ledgerId).log("invalid ledgerId < 0");
             return Code.NoSuchLedgerExistsOnMetadataServerException;
         }
         return Code.OK;

@@ -24,14 +24,13 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements a read only bookie.
@@ -39,9 +38,8 @@ import org.slf4j.LoggerFactory;
  * ReadOnlyBookie is force started as readonly, and will not change to writable.
  * </p>
  */
+@CustomLog
 public class ReadOnlyBookie extends BookieImpl {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
     public ReadOnlyBookie(ServerConfiguration conf,
                           RegistrationManager registrationManager,
@@ -58,9 +56,9 @@ public class ReadOnlyBookie extends BookieImpl {
             stateManager.forceToReadOnly();
         } else {
             String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
-            LOG.error(err);
+            log.error(err);
             throw new IOException(err);
         }
-        LOG.info("Running bookie in force readonly mode.");
+        log.info("Running bookie in force readonly mode.");
     }
 }

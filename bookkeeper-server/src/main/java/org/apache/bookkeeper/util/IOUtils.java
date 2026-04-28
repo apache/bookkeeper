@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
-import org.slf4j.Logger;
 
 /**
  * An utility class for I/O related functionality.
@@ -40,7 +39,7 @@ public class IOUtils {
      * @param closeables
      *            the objects to close
      */
-    public static void close(Logger log, java.io.Closeable... closeables) {
+    public static void close(io.github.merlimat.slog.Logger log, java.io.Closeable... closeables) {
         for (java.io.Closeable c : closeables) {
             close(log, c);
         }
@@ -55,7 +54,47 @@ public class IOUtils {
      * @param closeable
      *            the objects to close
      */
-    public static void close(Logger log, java.io.Closeable closeable) {
+    public static void close(io.github.merlimat.slog.Logger log, java.io.Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                if (log != null) {
+                    log.debug().exception(e).attr("closeable", closeable).log("Exception in closing");
+                }
+            }
+        }
+    }
+
+    /**
+     * Close the Closeable objects and <b>ignore</b> any {@link IOException} or
+     * null pointers. Must only be used for cleanup in exception handlers.
+     *
+     * <p>SLF4J overload kept for transition during the slog migration.
+     *
+     * @param log
+     *            the log to record problems to at debug level. Can be null.
+     * @param closeables
+     *            the objects to close
+     */
+    public static void close(org.slf4j.Logger log, java.io.Closeable... closeables) {
+        for (java.io.Closeable c : closeables) {
+            close(log, c);
+        }
+    }
+
+    /**
+     * Close the Closeable object and <b>ignore</b> any {@link IOException} or
+     * null pointers. Must only be used for cleanup in exception handlers.
+     *
+     * <p>SLF4J overload kept for transition during the slog migration.
+     *
+     * @param log
+     *            the log to record problems to at debug level. Can be null.
+     * @param closeable
+     *            the objects to close
+     */
+    public static void close(org.slf4j.Logger log, java.io.Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();

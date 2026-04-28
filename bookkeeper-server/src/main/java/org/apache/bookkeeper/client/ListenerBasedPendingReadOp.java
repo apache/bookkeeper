@@ -21,11 +21,11 @@
 package org.apache.bookkeeper.client;
 
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 
-@Slf4j
+@CustomLog
 class ListenerBasedPendingReadOp extends PendingReadOp {
 
     final ReadEntryListener listener;

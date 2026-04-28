@@ -23,6 +23,7 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -33,14 +34,12 @@ import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Centralizes the creation of injected resources.
  */
+@CustomLog
 public class BookieResources {
-    private static final Logger log = LoggerFactory.getLogger(BookieResources.class);
 
     /**
      * Instantiate the metadata driver for the Bookie.
@@ -102,7 +101,7 @@ public class BookieResources {
                                                     ByteBufAllocator allocator) throws IOException {
         // Instantiate the ledger storage implementation
         String ledgerStorageClass = conf.getLedgerStorageClass();
-        log.info("Using ledger storage: {}", ledgerStorageClass);
+        log.info().attr("ledgerStorageClass", ledgerStorageClass).log("Using ledger storage");
         LedgerStorage storage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
 
         storage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, statsLogger, allocator);

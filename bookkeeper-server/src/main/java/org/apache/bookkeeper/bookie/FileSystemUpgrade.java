@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException.UpgradeException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -54,14 +55,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Application for upgrading the bookkeeper filesystem between versions.
  */
+@CustomLog
 public class FileSystemUpgrade {
-    private static final Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
 
     static FilenameFilter bookieFilesFilter = new FilenameFilter() {
             private boolean containsIndexFiles(File dir, String name) {
@@ -126,10 +125,16 @@ public class FileSystemUpgrade {
         try (Scanner s = new Scanner(v2versionFile, UTF_8.name())) {
             return s.nextInt();
         } catch (NoSuchElementException nse) {
-            LOG.error("Couldn't parse version file " + v2versionFile, nse);
+            log.error()
+                    .exception(nse)
+                    .attr("versionFile", v2versionFile)
+                    .log("Couldn't parse version file");
             throw new IOException("Couldn't parse version file", nse);
         } catch (IllegalStateException ise) {
-            LOG.error("Error reading file " + v2versionFile, ise);
+            log.error()
+                    .exception(ise)
+                    .attr("versionFile", v2versionFile)
+                    .log("Error reading version file");
             throw new IOException("Error reading version file", ise);
         }
     }
@@ -162,7 +167,7 @@ public class FileSystemUpgrade {
 
     public static void upgrade(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
-        LOG.info("Upgrading...");
+        log.info("Upgrading...");
 
         try {
             runFunctionWithRegistrationManager(conf, rm -> {
@@ -179,7 +184,7 @@ public class FileSystemUpgrade {
             throw new UpgradeException(e.getCause());
         }
 
-        LOG.info("Done");
+        log.info("Done");
     }
 
     private static void upgrade(ServerConfiguration conf,
@@ -189,10 +194,10 @@ public class FileSystemUpgrade {
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
             Cookie c = cookieBuilder.build();
             for (File d : getAllDirectories(conf)) {
-                LOG.info("Upgrading {}", d);
+                log.info().attr("directory", d).log("Upgrading");
                 int version = detectPreviousVersion(d);
                 if (version == Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
-                    LOG.info("Directory is current, no need to upgrade");
+                    log.info("Directory is current, no need to upgrade");
                     continue;
                 }
                 try {
@@ -215,7 +220,7 @@ public class FileSystemUpgrade {
 
                     linkIndexDirectories(d, tmpDir);
                 } catch (IOException ioe) {
-                    LOG.error("Error upgrading {}", d);
+                    log.error().attr("directory", d).log("Error upgrading");
                     throw new BookieException.UpgradeException(ioe);
                 }
             }
@@ -226,7 +231,7 @@ public class FileSystemUpgrade {
                 } catch (IOException ioe) {
                     String err = String.format("Error moving upgraded directories into place %s -> %s ",
                                                e.getValue(), e.getKey());
-                    LOG.error(err, ioe);
+                    log.error().exception(ioe).log(err);
                     throw new BookieException.UpgradeException(ioe);
                 }
             }
@@ -238,7 +243,7 @@ public class FileSystemUpgrade {
             try {
                 c.writeToRegistrationManager(rm, conf, Version.NEW);
             } catch (BookieException ke) {
-                LOG.error("Error writing cookie to registration manager");
+                log.error("Error writing cookie to registration manager");
                 throw new BookieException.UpgradeException(ke);
             }
         } catch (IOException ioe) {
@@ -248,10 +253,10 @@ public class FileSystemUpgrade {
 
     public static void finalizeUpgrade(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
-        LOG.info("Finalizing upgrade...");
+        log.info("Finalizing upgrade...");
         // verify that upgrade is correct
         for (File d : getAllDirectories(conf)) {
-            LOG.info("Finalizing {}", d);
+            log.info().attr("directory", d).log("Finalizing");
             try {
                 int version = detectPreviousVersion(d);
                 if (version < 3) {
@@ -259,7 +264,7 @@ public class FileSystemUpgrade {
                         File v2versionFile = new File(d,
                                 BookKeeperConstants.VERSION_FILENAME);
                         if (!v2versionFile.delete()) {
-                            LOG.warn("Could not delete old version file {}", v2versionFile);
+                            log.warn().attr("v2versionFile", v2versionFile).log("Could not delete old version file");
                         }
                     }
                     File[] files = d.listFiles(bookieFilesFilter);
@@ -269,24 +274,24 @@ public class FileSystemUpgrade {
                                 FileUtils.deleteDirectory(f);
                             } else {
                                 if (!f.delete()) {
-                                    LOG.warn("Could not delete {}", f);
+                                    log.warn().attr("directory", f).log("Could not delete");
                                 }
                             }
                         }
                     }
                 }
             } catch (IOException ioe) {
-                LOG.error("Error finalizing {}", d);
+                log.error().attr("directory", d).log("Error finalizing");
                 throw new BookieException.UpgradeException(ioe);
             }
         }
         // noop at the moment
-        LOG.info("Done");
+        log.info("Done");
     }
 
     public static void rollback(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
-        LOG.info("Rolling back upgrade...");
+        log.info("Rolling back upgrade...");
 
         try {
             runFunctionWithRegistrationManager(conf, rm -> {
@@ -303,14 +308,14 @@ public class FileSystemUpgrade {
             throw new UpgradeException(e.getCause());
         }
 
-        LOG.info("Done");
+        log.info("Done");
     }
 
     private static void rollback(ServerConfiguration conf,
                                  RegistrationManager rm)
             throws BookieException.UpgradeException {
         for (File d : getAllDirectories(conf)) {
-            LOG.info("Rolling back {}", d);
+            log.info().attr("directory", d).log("Rolling back");
             try {
                 // ensure there is a previous version before rollback
                 int version = detectPreviousVersion(d);
@@ -324,7 +329,7 @@ public class FileSystemUpgrade {
                             "Cannot rollback as previous data does not exist");
                 }
             } catch (IOException ioe) {
-                LOG.error("Error rolling back {}", d);
+                log.error().attr("directory", d).log("Error rolling back");
                 throw new BookieException.UpgradeException(ioe);
             }
         }
@@ -332,7 +337,7 @@ public class FileSystemUpgrade {
             Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
             cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
         } catch (BookieException ke) {
-            LOG.error("Error deleting cookie from Registration Manager");
+            log.error("Error deleting cookie from Registration Manager");
             throw new BookieException.UpgradeException(ke);
         }
     }
@@ -360,7 +365,7 @@ public class FileSystemUpgrade {
 
         if (!cmdLine.hasOption("c")) {
             String err = "Cannot upgrade without configuration";
-            LOG.error(err);
+            log.error(err);
             printHelp(opts);
             throw new IllegalArgumentException(err);
         }
@@ -370,10 +375,16 @@ public class FileSystemUpgrade {
         try {
             conf.loadConf(new File(confFile).toURI().toURL());
         } catch (MalformedURLException mue) {
-            LOG.error("Could not open configuration file " + confFile, mue);
+            log.error()
+                    .exception(mue)
+                    .attr("confFile", confFile)
+                    .log("Could not open configuration file");
             throw new IllegalArgumentException();
         } catch (ConfigurationException ce) {
-            LOG.error("Invalid configuration file " + confFile, ce);
+            log.error()
+                    .exception(ce)
+                    .attr("confFile", confFile)
+                    .log("Invalid configuration file");
             throw new IllegalArgumentException();
         }
 
@@ -385,7 +396,7 @@ public class FileSystemUpgrade {
             finalizeUpgrade(conf);
         } else {
             String err = "Must specify -upgrade, -finalize or -rollback";
-            LOG.error(err);
+            log.error(err);
             printHelp(opts);
             throw new IllegalArgumentException(err);
         }

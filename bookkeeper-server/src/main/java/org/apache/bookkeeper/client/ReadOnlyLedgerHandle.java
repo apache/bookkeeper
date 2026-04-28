@@ -44,9 +44,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Read only ledger handle. This ledger handle allows you to
  * read from a ledger but not to write to it. It overrides all
@@ -54,7 +51,6 @@ import org.slf4j.LoggerFactory;
  * It should be returned for BookKeeper#openLedger operations.
  */
 class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListener {
-    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLedgerHandle.class);
 
     private Object metadataLock = new Object();
     private final NavigableMap<Long, List<BookieId>> newEnsemblesFromRecovery = new TreeMap<>();
@@ -75,8 +71,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 if (Version.Occurred.BEFORE == occurred) {
                     synchronized (ReadOnlyLedgerHandle.this) {
                         if (setLedgerMetadata(currentMetadata, newMetadata)) {
-                            LOG.info("Updated ledger metadata for ledger {} to {}, version {}.",
-                                     ledgerId, newMetadata.getValue().toSafeString(), newMetadata.getVersion());
+                            log.info()
+                                    .attr("newMetadata", newMetadata.getValue().toSafeString())
+                                    .attr("newMetadataVersion", newMetadata.getVersion())
+                                    .log("Updated ledger metadata");
                             break;
                         }
                     }
@@ -127,7 +125,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     @Override
     public long addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
-        LOG.error("Tried to add entry on a Read-Only ledger handle, ledgerid=" + ledgerId);
+        log.error("Tried to add entry on a Read-Only ledger handle");
         throw BKException.create(BKException.Code.IllegalOpException);
     }
 
@@ -140,16 +138,18 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     @Override
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
                               final AddCallback cb, final Object ctx) {
-        LOG.error("Tried to add entry on a Read-Only ledger handle, ledgerid=" + ledgerId);
+        log.error("Tried to add entry on a Read-Only ledger handle");
         cb.addComplete(BKException.Code.IllegalOpException, this,
                        LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 
     @Override
     public void onChanged(long lid, Versioned<LedgerMetadata> newMetadata) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Received ledger metadata update on {} : {}", lid, newMetadata);
-        }
+
+        log.debug()
+                .attr("newMetadata", newMetadata)
+                .log("Received ledger metadata update");
+
         if (this.ledgerId != lid) {
             return;
         }
@@ -158,16 +158,20 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
         Versioned<LedgerMetadata> currentMetadata = getVersionedLedgerMetadata();
         Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to update metadata from {} to {} : {}",
-                      currentMetadata, newMetadata, occurred);
-        }
+
+        log.debug()
+        .attr("currentMetadata", currentMetadata)
+        .attr("newMetadata", newMetadata)
+        .attr("occurred", occurred)
+        .log("Try to update metadata");
+
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
                 clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
-                LOG.error("Failed on submitting updater to update ledger metadata on ledger {} : {}",
-                        ledgerId, newMetadata);
+                log.error()
+                        .attr("newMetadata", newMetadata)
+                        .log("Failed on submitting updater to update ledger metadata on ledger");
             }
         }
     }
@@ -196,8 +200,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                         asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx, false);
                     }
                 } else {
-                    LOG.error("ReadException in asyncReadLastEntry, ledgerId: {}, lac: {}, rc:{}",
-                        lastConfirmed, ledgerId, rc);
+                    log.error()
+                            .attr("lastAddConfirmed", lastConfirmed)
+                            .attr("rc", rc)
+                            .log("ReadException in asyncReadLastEntry");
                     cb.readComplete(rc, ReadOnlyLedgerHandle.this, null, ctx);
                 }
             }
@@ -217,21 +223,19 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         // ledger, so this synchronized should be unnecessary, but putting it here now
         // just in case (can be removed when we validate threads)
         synchronized (metadataLock) {
-            String logContext = String.format("[RecoveryEnsembleChange(ledger:%d)]", ledgerId);
-
             long lac = getLastAddConfirmed();
             LedgerMetadata metadata = getLedgerMetadata();
             List<BookieId> currentEnsemble = getCurrentEnsemble();
             try {
                 List<BookieId> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
-                        clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
+                        clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, 0);
                 Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
                 if (!replaced.isEmpty()) {
                     newEnsemblesFromRecovery.put(lac + 1, newEnsemble);
                     unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                 }
             } catch (BKException.BKNotEnoughBookiesException e) {
-                LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);
+                log.error("Could not get additional bookie to remake ensemble, closing ledger");
 
                 handleUnrecoverableErrorDuringAdd(e.getCode());
                 return;
@@ -306,7 +310,9 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             lac = lastAddConfirmed;
             len = length.get();
         }
-        LOG.info("Closing recovered ledger {} at entry {}", getId(), lac);
+        log.info()
+                .attr("lastAddConfirmed", lac)
+                .log("Closing recovered ledger");
         CompletableFuture<Versioned<LedgerMetadata>> f = new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
                 this::getVersionedLedgerMetadata,
@@ -335,7 +341,9 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 newEnsemblesFromRecovery.clear();
             }
             if (exception != null) {
-                LOG.error("When closeRecovered,failed on clearing newEnsemblesFromRecovery.", exception);
+                log.error()
+                        .exception(exception)
+                        .log("When closeRecovered,failed on clearing newEnsemblesFromRecovery.");
             }
         });
         return f;

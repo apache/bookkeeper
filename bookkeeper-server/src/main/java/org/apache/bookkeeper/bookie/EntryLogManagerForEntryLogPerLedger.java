@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -65,7 +65,7 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 
-@Slf4j
+@CustomLog
 class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
     static class BufferedLogChannelWithDirInfo {
@@ -334,20 +334,23 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
      */
     private void onCacheEntryRemoval(RemovalNotification<Long, EntryLogAndLockTuple> removedLedgerEntryLogMapEntry) {
         Long ledgerId = removedLedgerEntryLogMapEntry.getKey();
-        if (log.isDebugEnabled()) {
-            log.debug("LedgerId {} is being evicted from the cache map because of {}", ledgerId,
-                    removedLedgerEntryLogMapEntry.getCause());
-        }
+        log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("cause", () -> removedLedgerEntryLogMapEntry.getCause())
+                .log("LedgerId is being evicted from the cache map");
         EntryLogAndLockTuple entryLogAndLockTuple = removedLedgerEntryLogMapEntry.getValue();
         if (entryLogAndLockTuple == null) {
-            log.error("entryLogAndLockTuple is not supposed to be null in entry removal listener for ledger : {}",
-                    ledgerId);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .log("entryLogAndLockTuple is not supposed to be null in entry removal listener for ledger");
             return;
         }
         Lock lock = entryLogAndLockTuple.ledgerLock;
         BufferedLogChannelWithDirInfo logChannelWithDirInfo = entryLogAndLockTuple.getEntryLogWithDirInfo();
         if (logChannelWithDirInfo == null) {
-            log.error("logChannel for ledger: {} is not supposed to be null in entry removal listener", ledgerId);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .log("logChannel for ledger: is not supposed to be null in entry removal listener");
             return;
         }
         lock.lock();
@@ -357,7 +360,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             try {
                 logChannel.appendLedgersMap();
             } catch (Exception e) {
-                log.error("Got IOException while trying to appendLedgersMap in cacheEntryRemoval callback", e);
+                log.error()
+                        .exception(e)
+                        .log("Got IOException while trying to appendLedgersMap in cacheEntryRemoval callback");
             }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
@@ -396,7 +401,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         try {
             return ledgerIdEntryLogMap.get(ledgerId).getLedgerLock();
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching lock to acquire for ledger: " + ledgerId, e);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .exception(e)
+                    .log("Received unexpected exception while fetching lock to acquire for ledger");
             throw new IOException("Received unexpected exception while fetching lock to acquire", e);
         }
     }
@@ -424,7 +432,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                 rotatedLogChannels.add(hasToRotateLogChannel);
             }
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching entry from map for ledger: " + ledgerId, e);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .exception(e)
+                    .log("Received unexpected exception while fetching entry from map");
             throw new IOException("Received unexpected exception while fetching entry from map", e);
         } finally {
             lock.unlock();
@@ -448,7 +459,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             EntryLogAndLockTuple entryLogAndLockTuple = ledgerIdEntryLogMap.get(ledgerId);
             return entryLogAndLockTuple.getEntryLogWithDirInfo();
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching entry from map for ledger: " + ledgerId, e);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .exception(e)
+                    .log("Received unexpected exception while fetching entry from map");
             throw new IOException("Received unexpected exception while fetching entry from map", e);
         } finally {
             lock.unlock();
@@ -512,7 +526,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                 lock.lock();
                 try {
                     if (reachEntryLogLimit(currentLog, 0L)) {
-                        log.info("Rolling entry logger since it reached size limitation for ledger: {}", ledgerId);
+                        log.info()
+                                .attr("ledgerId", ledgerId)
+                                .log("Rolling entry logger since it reached size limitation");
                         createNewLog(ledgerId, "after entry log file is rotated");
                     }
                 } finally {
@@ -690,7 +706,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             channel.close();
             recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
             rotatedLogChannels.remove(channel);
-            log.info("Synced entry logger {} to disk.", channel.getLogId());
+            log.info().attr("logId", channel.getLogId()).log("Synced entry logger to disk.");
         }
     }
 }

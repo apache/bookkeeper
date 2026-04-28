@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -32,17 +33,15 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
  * Command to enable or disable auto recovery in the cluster.
  */
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+@CustomLog
 public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(ToggleCommand.class);
 
     private static final String NAME = "toggle";
     private static final String DESC = "Enable or disable auto recovery in the cluster. Default is disable.";
@@ -89,22 +88,22 @@ public class ToggleCommand extends BookieCommand<ToggleCommand.AutoRecoveryFlags
                 try (LedgerUnderreplicationManager underreplicationManager = mFactory
                          .newLedgerUnderreplicationManager()) {
                     if (flags.status) {
-                        LOG.info("Autorecovery is {}", (underreplicationManager.isLedgerReplicationEnabled()
-                                                                     ? "enabled." : "disabled."));
+                        log.info().attr("status", underreplicationManager.isLedgerReplicationEnabled()
+                                ? "enabled" : "disabled").log("Autorecovery status");
                         return null;
                     }
                     if (flags.enable) {
                         if (underreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.warn("Autorecovery already enabled. Doing nothing");
+                            log.warn("Autorecovery already enabled. Doing nothing");
                         } else {
-                            LOG.info("Enabling autorecovery");
+                            log.info("Enabling autorecovery");
                             underreplicationManager.enableLedgerReplication();
                         }
                     } else {
                         if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.warn("Autorecovery already disabled. Doing nothing");
+                            log.warn("Autorecovery already disabled. Doing nothing");
                         } else {
-                            LOG.info("Disabling autorecovery");
+                            log.info("Disabling autorecovery");
                             underreplicationManager.disableLedgerReplication();
                         }
                     }

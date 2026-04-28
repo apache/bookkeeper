@@ -22,18 +22,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 public class SuspendCompactionService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(SuspendCompactionService.class);
 
     protected BookieServer bookieServer;
 
@@ -69,9 +68,7 @@ public class SuspendCompactionService implements HttpEndpointService {
                     bookieServer.getBookie().getLedgerStorage().suspendMinorGC();
                 }
                 String jsonResponse = JsonUtil.toJson(output);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("output body:" + jsonResponse);
-                }
+                log.debug().attr("body", jsonResponse).log("output body");
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
@@ -83,9 +80,7 @@ public class SuspendCompactionService implements HttpEndpointService {
             output.put("isMajorGcSuspended", Boolean.toString(isMajorGcSuspend));
             output.put("isMinorGcSuspended", Boolean.toString(isMinorGcSuspend));
             String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
+            log.debug().attr("body", jsonResponse).log("output body");
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

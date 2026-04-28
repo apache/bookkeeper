@@ -34,6 +34,7 @@ import java.net.SocketAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
@@ -42,11 +43,9 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.NettyChannelUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class AuthHandler {
-    static final Logger LOG = LoggerFactory.getLogger(AuthHandler.class);
 
     static class ServerSideHandler extends ChannelInboundHandlerAdapter {
         volatile boolean authenticated = false;
@@ -144,8 +143,9 @@ class AuthHandler {
 
         private boolean checkAuthPlugin(AuthMessage am, final Channel src) {
             if (!am.hasAuthPluginName() || !am.getAuthPluginName().equals(authProviderFactory.getPluginName())) {
-                LOG.error("Received message from incompatible auth plugin. Local = {}, Remote = {}, Channel = {}",
-                        authProviderFactory.getPluginName(), am.getAuthPluginName(), src);
+                log.error().attr("localPlugin", authProviderFactory.getPluginName())
+                        .attr("remotePlugin", am.getAuthPluginName()).attr("channel", src)
+                        .log("Received message from incompatible auth plugin");
                 return false;
             }
             return true;
@@ -167,7 +167,7 @@ class AuthHandler {
             @Override
             public void operationComplete(int rc, AuthToken newam) {
                 if (rc != BKException.Code.OK) {
-                    LOG.error("Error processing auth message, closing connection");
+                    log.error("Error processing auth message, closing connection");
                     channel.close();
                     return;
                 }
@@ -196,7 +196,7 @@ class AuthHandler {
                         .setHeader(req.getHeader());
 
                 if (rc != BKException.Code.OK) {
-                    LOG.error("Error processing auth message, closing connection");
+                    log.error("Error processing auth message, closing connection");
 
                     builder.setStatus(BookkeeperProtocol.StatusCode.EUA);
                     NettyChannelUtil.writeAndFlushWithClosePromise(
@@ -219,11 +219,9 @@ class AuthHandler {
             public void operationComplete(int rc, Void v) {
                 if (rc == BKException.Code.OK) {
                     authenticated = true;
-                    LOG.info("Authentication success on server side");
+                    log.info("Authentication success on server side");
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Authentication failed on server side");
-                    }
+                    log.debug("Authentication failed on server side");
                 }
             }
         }
@@ -277,7 +275,10 @@ class AuthHandler {
             } else if (msg instanceof BookkeeperProtocol.Response) {
                 BookkeeperProtocol.Response resp = (BookkeeperProtocol.Response) msg;
                 if (null == resp.getHeader().getOperation()) {
-                    LOG.info("dropping received malformed message {} from bookie {}", msg, ctx.channel());
+                    log.info()
+                            .attr("message", msg)
+                            .attr("bookie", ctx.channel())
+                            .log("dropping received malformed message");
                     // drop the message without header
                 } else {
                     switch (resp.getHeader().getOperation()) {
@@ -292,8 +293,8 @@ class AuthHandler {
                             BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
                             if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
                                 SocketAddress remote = ctx.channel().remoteAddress();
-                                LOG.info("Authentication is not enabled."
-                                    + "Considering this client {} authenticated", remote);
+                                log.info().attr("client", remote)
+                                    .log("Authentication is not enabled. Considering this client authenticated");
                                 AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
                                 cb.operationComplete(BKException.Code.OK, null);
                                 return;
@@ -304,7 +305,10 @@ class AuthHandler {
                         }
                         break;
                     default:
-                        LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
+                        log.warn()
+                                .attr("message", msg)
+                                .attr("bookie", ctx.channel())
+                                .log("dropping received message");
                         // else just drop the message,
                         // we're not authenticated so nothing should be coming through
                         break;
@@ -320,8 +324,8 @@ class AuthHandler {
                         BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) resp).authMessage;
                         if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())) {
                             SocketAddress remote = ctx.channel().remoteAddress();
-                            LOG.info("Authentication is not enabled."
-                                    + "Considering this client {} authenticated", remote);
+                            log.info().attr("client", remote)
+                                    .log("Authentication is not enabled. Considering this client authenticated");
                             AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
                             cb.operationComplete(BKException.Code.OK, null);
                             return;
@@ -332,7 +336,10 @@ class AuthHandler {
                     }
                     break;
                 default:
-                    LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
+                    log.warn()
+                            .attr("message", msg)
+                            .attr("bookie", ctx.channel())
+                            .log("dropping received message");
                     // else just drop the message, we're not authenticated so nothing should be coming
                     // through
                     break;
@@ -369,7 +376,10 @@ class AuthHandler {
                 } else if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
                     addMsgAndPromiseToQueue(msg, promise);
                 } else {
-                    LOG.info("[{}] dropping write of message {}", ctx.channel(), msg);
+                    log.info()
+                            .attr("channel", ctx.channel())
+                            .attr("message", msg)
+                            .log("dropping write of message");
                 }
             }
         }
@@ -389,7 +399,7 @@ class AuthHandler {
         }
 
         void authenticationError(ChannelHandlerContext ctx, int errorCode) {
-            LOG.error("Error processing auth message, erroring connection {}", errorCode);
+            log.error().attr("errorCode", errorCode).log("Error processing auth message, erroring connection");
             ctx.fireExceptionCaught(new AuthenticationException("Auth failed with error " + errorCode));
         }
 
@@ -459,7 +469,7 @@ class AuthHandler {
                         }
                     }
                 } else {
-                    LOG.warn("Client authentication failed");
+                    log.warn("Client authentication failed");
                     authenticationError(ctx, rc);
                 }
             }

@@ -72,9 +72,10 @@ class GetBookieInfoCompletion extends CompletionValue {
         long freeDiskSpace = getBookieInfoResponse.getFreeDiskSpace();
         long totalDiskSpace = getBookieInfoResponse.getTotalDiskCapacity();
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "freeDisk", freeDiskSpace, "totalDisk", totalDiskSpace);
-        }
+        logEvent(status)
+                .attr("totalDiskSpace", totalDiskSpace)
+                .attr("freeDiskSpace", freeDiskSpace)
+                .log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
         cb.getBookieInfoComplete(rc,

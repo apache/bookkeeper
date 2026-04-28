@@ -31,13 +31,12 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -48,8 +47,8 @@ import org.slf4j.LoggerFactory;
 @EqualsAndHashCode(exclude =
         "ledgerId" // ledgerId is not serialized inside ZK node data
 )
+@CustomLog
 class LedgerMetadataImpl implements LedgerMetadata {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataImpl.class);
 
     private final long ledgerId;
 

@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -112,15 +113,12 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
  */
+@CustomLog
 public class BookieShell implements Tool {
-
-    static final Logger LOG = LoggerFactory.getLogger(BookieShell.class);
 
     static final String CONF_OPT = "conf";
     static final String ENTRY_FORMATTER_OPT = "entryformat";
@@ -253,7 +251,7 @@ public class BookieShell implements Tool {
                 }
                 return runCmd(cmdLine);
             } catch (ParseException e) {
-                LOG.error("Error parsing command line arguments : ", e);
+                log.error().exception(e).log("Error parsing command line arguments");
                 printUsage();
                 return -1;
             }
@@ -1184,7 +1182,7 @@ public class BookieShell implements Tool {
             ReadLogMetadataCommand.ReadLogMetadataFlags flags = new ReadLogMetadataCommand.ReadLogMetadataFlags();
             String[] leftArgs = cmdLine.getArgs();
             if (leftArgs.length <= 0) {
-                LOG.error("ERROR: missing entry log id or entry log file name");
+                log.error("ERROR: missing entry log id or entry log file name");
                 printUsage();
                 return -1;
             }
@@ -1350,7 +1348,7 @@ public class BookieShell implements Tool {
             }
 
             if (passedCommands != 1) {
-                LOG.error("One and only one of -readwrite, -readonly and -all must be specified");
+                log.error("One and only one of -readwrite, -readonly and -all must be specified");
                 printUsage();
                 return 1;
             }
@@ -1746,7 +1744,7 @@ public class BookieShell implements Tool {
             AdminCommand.AdminFlags flags = new AdminCommand.AdminFlags();
             Option[] options = cmdLine.getOptions();
             if (options.length != 1) {
-                LOG.error("Invalid command!");
+                log.error("Invalid command!");
                 this.printUsage();
                 return -1;
             }
@@ -1754,12 +1752,12 @@ public class BookieShell implements Tool {
             if (thisCommandOption.getLongOpt().equals(BOOKIEID)) {
                 final String bookieId = cmdLine.getOptionValue(BOOKIEID);
                 if (StringUtils.isBlank(bookieId)) {
-                    LOG.error("Invalid argument list!");
+                    log.error("Invalid argument list!");
                     this.printUsage();
                     return -1;
                 }
                 if (!StringUtils.equals(bookieId, HOSTNAME) && !StringUtils.equals(bookieId, IP)) {
-                    LOG.error("Invalid option value:" + bookieId);
+                    log.error().attr("bookieId", bookieId).log("Invalid option value");
                     this.printUsage();
                     return -1;
                 }
@@ -1838,12 +1836,12 @@ public class BookieShell implements Tool {
 
             final String bookieId = cmdLine.getOptionValue("bookieId");
             if (StringUtils.isBlank(bookieId)) {
-                LOG.error("Invalid argument list!");
+                log.error("Invalid argument list!");
                 this.printUsage();
                 return -1;
             }
             if (!StringUtils.equals(bookieId, "hostname") && !StringUtils.equals(bookieId, "ip")) {
-                LOG.error("Invalid option value {} for bookieId, expected hostname/ip", bookieId);
+                log.error().attr("bookieId", bookieId).log("Invalid option value for bookieId, expected hostname/ip");
                 this.printUsage();
                 return -1;
             }
@@ -1855,7 +1853,7 @@ public class BookieShell implements Tool {
             final long printprogress;
             if (!verbose) {
                 if (cmdLine.hasOption("printprogress")) {
-                    LOG.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
+                    log.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
                 }
                 printprogress = Integer.MIN_VALUE;
             } else {
@@ -1937,12 +1935,12 @@ public class BookieShell implements Tool {
             final String srcBookie = cmdLine.getOptionValue("srcBookie");
             final String destBookie = cmdLine.getOptionValue("destBookie");
             if (StringUtils.isBlank(srcBookie) || StringUtils.isBlank(destBookie)) {
-                LOG.error("Invalid argument list (srcBookie and destBookie must be provided)!");
+                log.error("Invalid argument list (srcBookie and destBookie must be provided)!");
                 this.printUsage();
                 return -1;
             }
             if (StringUtils.equals(srcBookie, destBookie)) {
-                LOG.error("srcBookie and destBookie can't be the same.");
+                log.error("srcBookie and destBookie can't be the same.");
                 return -1;
             }
             final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
@@ -1952,7 +1950,7 @@ public class BookieShell implements Tool {
             final long printprogress;
             if (!verbose) {
                 if (cmdLine.hasOption("printprogress")) {
-                    LOG.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
+                    log.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
                 }
                 printprogress = Integer.MIN_VALUE;
             } else {
@@ -2141,26 +2139,26 @@ public class BookieShell implements Tool {
                             // Arbitrary value of 21 days chosen since current freq of all checks is less than 21 days
                             long time = System.currentTimeMillis() - (21 * 24 * 60 * 60 * 1000);
                             if (checkAllLedgersCheck) {
-                                LOG.info("Resetting CheckAllLedgersCTime to : " + new Timestamp(time));
+                                log.info().attr("time", new Timestamp(time)).log("Resetting CheckAllLedgersCTime");
                                 underreplicationManager.setCheckAllLedgersCTime(time);
                             }
                             if (placementPolicyCheck) {
-                                LOG.info("Resetting PlacementPolicyCheckCTime to : " + new Timestamp(time));
+                                log.info().attr("time", new Timestamp(time)).log("Resetting PlacementPolicyCheckCTime");
                                 underreplicationManager.setPlacementPolicyCheckCTime(time);
                             }
                             if (replicasCheck) {
-                                LOG.info("Resetting ReplicasCheckCTime to : " + new Timestamp(time));
+                                log.info().attr("time", new Timestamp(time)).log("Resetting ReplicasCheckCTime");
                                 underreplicationManager.setReplicasCheckCTime(time);
                             }
                         }
                     } catch (InterruptedException | ReplicationException e) {
-                        LOG.error("Exception while trying to reset last run time ", e);
+                        log.error().exception(e).log("Exception while trying to reset last run time ");
                         return -1;
                     }
                     return 0;
                 });
             } else {
-                LOG.error("Command line args must contain atleast one type of check. This was a no-op.");
+                log.error("Command line args must contain atleast one type of check. This was a no-op.");
                 return -1;
             }
             return 0;
@@ -2249,7 +2247,7 @@ public class BookieShell implements Tool {
             final String bookieId = cmdLine.getOptionValue("bookieid");
             flags.bookie(bookieId);
             if (StringUtils.isBlank(bookieId)) {
-                LOG.error("Invalid argument list!");
+                log.error("Invalid argument list!");
                 this.printUsage();
                 return -1;
             }
@@ -2753,9 +2751,7 @@ public class BookieShell implements Tool {
             } else {
                 shell.ledgerIdFormatter = LedgerIdFormatter.newLedgerIdFormatter(shell.bkConf);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using ledgerIdFormatter {}", shell.ledgerIdFormatter.getClass());
-            }
+            log.debug().attr("class", () -> shell.ledgerIdFormatter.getClass()).log("Using ledgerIdFormatter");
 
             // entry format
             if (cmdLine.hasOption(ENTRY_FORMATTER_OPT)) {
@@ -2764,13 +2760,11 @@ public class BookieShell implements Tool {
             } else {
                 shell.entryFormatter = EntryFormatter.newEntryFormatter(shell.bkConf);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using entry formatter {}", shell.entryFormatter.getClass());
-            }
+            log.debug().attr("class", () -> shell.entryFormatter.getClass()).log("Using entry formatter");
 
             res = shell.run(cmdLine.getArgs());
         } catch (Throwable e) {
-            LOG.error("Got an exception", e);
+            log.error().exception(e).log("Got an exception");
         } finally {
             System.exit(res);
         }
@@ -2788,12 +2782,17 @@ public class BookieShell implements Tool {
     ///
 
     protected void printEntryLogMetadata(long logId) throws IOException {
-        LOG.info("Print entryLogMetadata of entrylog {} ({}.log)", logId, Long.toHexString(logId));
+        log.info()
+                .attr("logId", logId)
+                .attr("logFile", Long.toHexString(logId) + ".log")
+                .log("Print entryLogMetadata of entrylog");
         initEntryLogger();
         EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(logId);
         entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
-            LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
-                    ledgerIdFormatter.formatLedgerId(ledgerId), size);
+            log.info()
+                    .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId))
+                    .attr("size", size)
+                    .log("--------- Size per ledger in the entrylog ---------");
         });
     }
 
