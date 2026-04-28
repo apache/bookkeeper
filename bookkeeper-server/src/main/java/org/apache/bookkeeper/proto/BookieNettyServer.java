@@ -38,6 +38,7 @@ import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.group.ChannelGroup;
@@ -48,6 +49,7 @@ import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.uring.IoUringChannelOption;
 import io.netty.channel.uring.IoUringServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.flush.FlushConsolidationHandler;
@@ -316,12 +318,36 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
             bootstrap.group(acceptorGroup, eventLoopGroup);
             bootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
+            bootstrap.childOption(ChannelOption.SO_KEEPALIVE, conf.getServerSockKeepalive());
             bootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
             bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
             bootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
+
+            // Set TCP keepalive parameters if configured
+            if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    bootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            }
 
             if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
                 bootstrap.channel(IoUringServerSocketChannel.class);
@@ -390,6 +416,29 @@ class BookieNettyServer {
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
             jvmBootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
+
+            // Set TCP keepalive parameters if configured
+            if (EventLoopUtil.isIoUringGroup(jvmEventLoopGroup)) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    jvmBootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    jvmBootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            }
 
             if (jvmEventLoopGroup instanceof DefaultEventLoopGroup) {
                 jvmBootstrap.channel(LocalServerChannel.class);
