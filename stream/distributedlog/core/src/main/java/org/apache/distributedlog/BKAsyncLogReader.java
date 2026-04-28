@@ -651,7 +651,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
                             // gap detection
                             if (recordPositionsContainsGap(record, lastPosition)) {
-                                bkDistributedLogManager.raiseAlert("Gap detected between records at record = {}",
+                                bkDistributedLogManager.raiseAlert("Gap detected between records at record = %s",
                                         record);
                                 if (positionGapDetectionEnabled) {
                                     throw new DLIllegalStateException("Gap detected between records at record = "
@@ -703,7 +703,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                         }
                         // We should never get here as we should have exited the loop if
                         // pendingRequests were empty
-                        bkDistributedLogManager.raiseAlert("Unexpected condition at dlsn = {}",
+                        bkDistributedLogManager.raiseAlert("Unexpected condition at dlsn = %s",
                                 nextRequest.records.get(0).getDlsn());
                         setLastException(ise);
                     }

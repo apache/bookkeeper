@@ -23,15 +23,14 @@ package org.apache.bookkeeper.stats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An umbrella class for loading stats provider.
  */
+@CustomLog
 public class Stats {
-    static final Logger LOG = LoggerFactory.getLogger(Stats.class);
     public static final String STATS_PROVIDER_CLASS = "statsProviderClass";
 
     static StatsProvider prov = new NullStatsProvider();
@@ -50,16 +49,27 @@ public class Stats {
                     (Constructor<? extends StatsProvider>) cls.getDeclaredConstructor();
                 prov = cons.newInstance();
             } catch (ClassNotFoundException cnfe) {
-                LOG.error("Couldn't find configured class(" + className + ")", cnfe);
+                log.error()
+                        .exception(cnfe)
+                        .attr("className", className)
+                        .log("Couldn't find configured class");
             } catch (NoSuchMethodException nsme) {
-                LOG.error("Couldn't find default constructor for class (" + className + ")", nsme);
+                log.error()
+                        .exception(nsme)
+                        .attr("className", className)
+                        .log("Couldn't find default constructor for class");
             } catch (InstantiationException ie) {
-                LOG.error("Couldn't construct class (" + className + ")", ie);
+                log.error()
+                        .exception(ie)
+                        .attr("className", className)
+                        .log("Couldn't construct class");
             } catch (IllegalAccessException iae) {
-                LOG.error("Couldn't construct class (" + className + "),"
-                          + " Is the constructor private?", iae);
+                log.error()
+                        .exception(iae)
+                        .attr("className", className)
+                        .log("Couldn't construct class, is the constructor private?");
             } catch (InvocationTargetException ite) {
-                LOG.error("Constructor threw an exception. It should not have.", ite);
+                log.error().exception(ite).log("Constructor threw an exception. It should not have.");
             }
         }
     }
