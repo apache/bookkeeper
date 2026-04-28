@@ -37,7 +37,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
 import org.apache.bookkeeper.api.StorageClient;
@@ -51,7 +51,7 @@ import org.apache.bookkeeper.tools.perf.utils.PaddingDecimalFormat;
 /**
  * Perf client to evaluate the performance of table service.
  */
-@Slf4j
+@CustomLog
 public class PerfClient implements Runnable {
 
     enum OP {
@@ -176,34 +176,33 @@ public class PerfClient implements Runnable {
             double elapsed = (now - oldTime) / 1e9;
             double rate = ops.sumThenReset() / elapsed;
             reportHistogram = recorder.getIntervalHistogram(reportHistogram);
-            log.info(
-                "[{}] Throughput: {}  ops/s --- Latency: mean:"
-                        + " {} ms - med: {} - 95pct: {} - 99pct: {} - 99.9pct: {} - 99.99pct: {} - Max: {}",
-                    name,
-                    throughputFormat.format(rate),
-                    dec.format(reportHistogram.getMean() / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                    dec.format(reportHistogram.getMaxValue() / 1000.0));
+            log.info()
+                    .attr("op", name)
+                    .attr("throughput", throughputFormat.format(rate))
+                    .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                    .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                    .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                    .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                    .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                    .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                    .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                    .log("Op throughput");
             reportHistogram.reset();
         }
 
         void printAggregatedStats() {
             Histogram reportHistogram = cumulativeRecorder.getIntervalHistogram();
-            log.info("[{}] latency stats --- Latency: mean: {} ms - med: {} - 95pct: {} - 99pct: {}"
-                    + " - 99.9pct: {} - 99.99pct: {} - 99.999pct: {} - Max: {}",
-                    name,
-                    dec.format(reportHistogram.getMean() / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0),
-                    dec.format(reportHistogram.getMaxValue() / 1000.0));
+            log.info()
+                    .attr("op", name)
+                    .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                    .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                    .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                    .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                    .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                    .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                    .attr("latency99999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0))
+                    .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                    .log("Aggregated op latency stats");
         }
     }
 
@@ -220,14 +219,16 @@ public class PerfClient implements Runnable {
         try {
             execute();
         } catch (Exception e) {
-            log.error("Encountered exception at running table perf client", e);
+            log.error().exception(e).log("Encountered exception at running table perf client");
         }
     }
 
     void execute() throws Exception {
         ObjectMapper m = new ObjectMapper();
         ObjectWriter w = m.writerWithDefaultPrettyPrinter();
-        log.info("Starting table perf client with config : {}", w.writeValueAsString(flags));
+        log.info()
+                .attr("config", w.writeValueAsString(flags))
+                .log("Starting table perf client");
 
         runBenchmarkTasks();
     }
@@ -332,8 +333,10 @@ public class PerfClient implements Runnable {
                             try {
                                 task.runTask();
                             } catch (Exception e) {
-                                log.error("Encountered issue at running benchmark task {}",
-                                    task.tid, e);
+                                log.error()
+                                        .attr("taskId", task.tid)
+                                        .exception(e)
+                                        .log("Encountered issue at running benchmark task");
                             } finally {
                                 latch.countDown();
                             }

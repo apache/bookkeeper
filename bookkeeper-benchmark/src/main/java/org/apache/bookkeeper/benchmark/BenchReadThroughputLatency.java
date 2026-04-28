@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -45,14 +46,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A benchmark that benchmarks the read throughput and latency.
  */
+@CustomLog
 public class BenchReadThroughputLatency {
-    static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
 
     private static final Pattern LEDGER_PATTERN = Pattern.compile("L([0-9]+)$");
 
@@ -75,7 +74,7 @@ public class BenchReadThroughputLatency {
     };
 
     private static void readLedger(ClientConfiguration conf, long ledgerId, byte[] passwd, int batchEntries) {
-        LOG.info("Reading ledger {}", ledgerId);
+        log.info().attr("ledgerId", ledgerId).log("Reading ledger");
         BookKeeper bk = null;
         long time = 0;
         long entriesRead = 0;
@@ -117,7 +116,10 @@ public class BenchReadThroughputLatency {
                         entriesRead++;
                         lastRead = e.getEntryId();
                         if ((entriesRead % 10000) == 0) {
-                            LOG.info("{} entries read from ledger {}", entriesRead, ledgerId);
+                            log.info()
+                                    .attr("entriesRead", entriesRead)
+                                    .attr("ledgerId", ledgerId)
+                                    .log("entries read from ledger");
                         }
                         e.getEntryBuffer().release();
                     }
@@ -132,9 +134,12 @@ public class BenchReadThroughputLatency {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            LOG.error("Exception in reader", e);
+            log.error().exception(e).log("Exception in reader");
         } finally {
-            LOG.info("Read {} in {}ms", entriesRead, time / 1000 / 1000);
+            log.info()
+                    .attr("entriesRead", entriesRead)
+                    .attr("timeMs", time / 1000 / 1000)
+                    .log("Read complete");
 
             try {
                 if (lh != null) {
@@ -144,7 +149,7 @@ public class BenchReadThroughputLatency {
                     bk.close();
                 }
             } catch (Exception e) {
-                LOG.error("Exception closing stuff", e);
+                log.error().exception(e).log("Exception closing stuff");
             }
         }
     }
@@ -185,7 +190,7 @@ public class BenchReadThroughputLatency {
         final int sockTimeout = Integer.parseInt(cmd.getOptionValue("sockettimeout", "5"));
         final int batchentries = Integer.parseInt(cmd.getOptionValue("batchentries", "1000"));
         if (cmd.hasOption("ledger") && cmd.hasOption("listen")) {
-            LOG.error("Cannot used -ledger and -listen together");
+            log.error("Cannot used -ledger and -listen together");
             usage(options);
             System.exit(-1);
         }
@@ -197,7 +202,7 @@ public class BenchReadThroughputLatency {
         } else if (cmd.hasOption("listen")) {
             numLedgers.set(Integer.parseInt(cmd.getOptionValue("listen")));
         } else {
-            LOG.error("You must use -ledger or -listen");
+            log.error("You must use -ledger or -listen");
             usage(options);
             System.exit(-1);
         }
@@ -215,7 +220,9 @@ public class BenchReadThroughputLatency {
         } else if ("longHierarchical".equals(ledgerManagerType)) {
             nodepath = String.format("/ledgers%s", StringUtils.getLongHierarchicalLedgerPath(ledger.get()));
         } else {
-            LOG.warn("Unknown ledger manager type: {}, use flat as the value", ledgerManagerType);
+            log.warn()
+                    .attr("ledgerManagerType", ledgerManagerType)
+                    .log("Unknown ledger manager type, use flat as the value");
             nodepath = String.format("/ledgers/L%010d", ledger.get());
         }
 
@@ -271,15 +278,17 @@ public class BenchReadThroughputLatency {
                                                 shutdownLatch.countDown();
                                             }
                                         } else {
-                                            LOG.error("Cant file ledger id in {}", ledger);
+                                            log.error()
+                                                    .attr("ledger", ledger)
+                                                    .log("Cant file ledger id");
                                         }
                                     }
                                 }
                             } else {
-                                LOG.warn("Unknown event {}", event);
+                                log.warn().attr("event", event).log("Unknown event");
                             }
                         } catch (Exception e) {
-                            LOG.error("Exception in watcher", e);
+                            log.error().exception(e).log("Exception in watcher");
                         }
                     }
                 });
@@ -289,13 +298,13 @@ public class BenchReadThroughputLatency {
                     readLedger(conf, ledger.get(), passwd, batchentries);
                     shutdownLatch.countDown();
                 } else {
-                    LOG.info("Watching for creation of" + nodepath);
+                    log.info().attr("nodepath", nodepath).log("Watching for creation of znode");
                 }
             } else {
                 zk.getChildren("/ledgers", true);
             }
             shutdownLatch.await();
-            LOG.info("Shutting down");
+            log.info("Shutting down");
         }
     }
 }

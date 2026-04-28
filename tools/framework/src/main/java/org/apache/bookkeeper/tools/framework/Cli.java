@@ -27,14 +27,14 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.tools.framework.CliSpec.Builder;
 
 /**
  * Cli to execute {@link CliSpec}.
  */
-@Slf4j
+@CustomLog
 public class Cli<CliFlagsT extends CliFlags> {
 
     private final CliSpec<CliFlagsT> spec;

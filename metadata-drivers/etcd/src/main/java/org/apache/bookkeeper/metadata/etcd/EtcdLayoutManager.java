@@ -33,15 +33,15 @@ import io.etcd.jetcd.options.PutOption;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerLayout;
 
 /**
  * Etcd based layout manager.
  */
-@Slf4j
+@CustomLog
 @Getter(AccessLevel.PACKAGE)
 class EtcdLayoutManager implements LayoutManager {
 
@@ -97,9 +97,8 @@ class EtcdLayoutManager implements LayoutManager {
     public void deleteLedgerLayout() throws IOException {
         DeleteResponse response = ioResult(kvClient.delete(layoutKey));
         if (response.getDeleted() > 0) {
-            if (log.isDebugEnabled()) {
-                log.debug("Successfully delete layout '{}'", layoutKey.toString(StandardCharsets.UTF_8));
-            }
+            log.debug(e -> e.attr("layoutKey", layoutKey.toString(StandardCharsets.UTF_8))
+                    .log("Successfully delete layout"));
             return;
         } else {
             throw new IOException("No ledger layout is found under '" + layoutKey.toString(StandardCharsets.UTF_8)

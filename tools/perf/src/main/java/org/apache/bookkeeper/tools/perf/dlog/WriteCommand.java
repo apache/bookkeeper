@@ -14,7 +14,7 @@
 
 package org.apache.bookkeeper.tools.perf.dlog;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -25,7 +25,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * Command to write log records to distributedlog streams.
  */
-@Slf4j
+@CustomLog
 public class WriteCommand extends BKCommand<Flags> {
 
     private static final String NAME = "write";
