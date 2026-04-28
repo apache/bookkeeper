@@ -29,7 +29,7 @@ const config = {
   favicon: 'img/favicon.ico',
   organizationName: 'apache',
   projectName: 'bookkeeper',
-  plugins: ['docusaurus-plugin-sass'],
+  plugins: ['docusaurus-plugin-sass', 'docusaurus-plugin-copy-page-button'],
   markdown: {
     format: 'detect',
     hooks: {
