@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.tests.integration.utils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 import org.arquillian.cube.docker.impl.docker.DockerClientExecutor;
 import org.arquillian.cube.docker.impl.util.Ping;
@@ -27,6 +28,8 @@ import org.arquillian.cube.spi.await.AwaitStrategy;
 /**
  * An arquillian await strategy that waits until zookeeper is up running.
  */
+// `cube` and `dockerClientExecutor` are injected by Arquillian via reflection.
+@SuppressFBWarnings({"UWF_UNWRITTEN_FIELD", "NP_UNWRITTEN_FIELD"})
 public class ZooKeeperAwaitStrategy implements AwaitStrategy {
 
     private static final int DEFAULT_POLL_ITERATIONS = 10;
