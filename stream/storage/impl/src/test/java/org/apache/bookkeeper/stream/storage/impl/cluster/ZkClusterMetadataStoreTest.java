@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
@@ -50,7 +50,7 @@ import org.junit.rules.TestName;
 /**
  * Unit test {@link ZkClusterMetadataStore}.
  */
-@Slf4j
+@CustomLog
 public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
 
     private static final int NUM_STORAGE_CONTAINERS = 1024;

@@ -25,20 +25,18 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.common.config.PropertiesWriter;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * TestDynamicConfigurationFactory.
  */
+@CustomLog
 public class TestDynamicConfigurationFactory {
-    static final Logger LOG = LoggerFactory.getLogger(TestDynamicConfigurationFactory.class);
 
     private void waitForConfig(DynamicDistributedLogConfiguration conf, int value) throws Exception {
         while (!Objects.equal(conf.getRetentionPeriodHours(), value)) {

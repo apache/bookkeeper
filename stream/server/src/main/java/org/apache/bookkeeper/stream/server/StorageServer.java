@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieResources;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
@@ -80,7 +80,7 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 /**
  * A storage server is a server that run storage service and serving rpc requests.
  */
-@Slf4j
+@CustomLog
 public class StorageServer {
 
     private static class ServerArguments {
@@ -105,10 +105,15 @@ public class StorageServer {
             Configuration loadedConf = ConfigurationUtil.newConfiguration(c -> c.propertiesBuilder(confFile));
             conf.addConfiguration(loadedConf);
         } catch (ConfigurationException e) {
-            log.error("Malformed configuration file {}", confFile, e);
+            log.error()
+                .attr("confFile", confFile)
+                .exception(e)
+                .log("Malformed configuration file");
             throw new IllegalArgumentException("Malformed configuration file " + confFile, e);
         }
-        log.info("Loaded configuration file {}", confFile);
+        log.info()
+            .attr("confFile", confFile)
+            .log("Loaded configuration file");
     }
 
     public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
@@ -120,7 +125,9 @@ public class StorageServer {
             hostname = InetAddress.getLocalHost().getHostAddress();
         }
 
-        log.warn("Decided to use hostname {}", hostname);
+        log.warn()
+            .attr("hostname", hostname)
+            .log("Decided to use hostname");
         return Endpoint.newBuilder()
             .setHostname(hostname)
             .setPort(port)
@@ -135,7 +142,10 @@ public class StorageServer {
     static int doMain(String[] args) {
         // register thread uncaught exception handler
         Thread.setDefaultUncaughtExceptionHandler((thread, exception) ->
-            log.error("Uncaught exception in thread {}: {}", thread.getName(), exception.getMessage()));
+            log.error()
+                .attr("thread", thread.getName())
+                .exceptionMessage(exception)
+                .log("Uncaught exception in thread"));
 
         // parse the commandline
         ServerArguments arguments = new ServerArguments();
@@ -163,7 +173,7 @@ public class StorageServer {
                 grpcPort,
                 grpcUseHostname);
         } catch (Exception e) {
-            log.error("Invalid storage configuration", e);
+            log.error().exception(e).log("Invalid storage configuration");
             System.err.println(e.getMessage());
             return ExitCode.INVALID_CONF.code();
         }
@@ -237,16 +247,24 @@ public class StorageServer {
             statsProviderService = new StatsProviderService(bkConf);
             rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
             serverBuilder.addComponent(statsProviderService);
-            log.info("Bookie configuration : {}", bkConf.asJson());
+            log.info()
+                .attr("bookieConfig", bkConf.asJson())
+                .log("Bookie configuration");
         } else {
             rootStatsLogger = checkNotNull(externalStatsLogger,
                 "External stats logger is not provided while not starting stats provider");
         }
 
         // dump configurations
-        log.info("Dlog configuration : {}", dlConf.asJson());
-        log.info("Storage configuration : {}", storageConf.asJson());
-        log.info("Server configuration : {}", serverConf.asJson());
+        log.info()
+            .attr("dlogConfig", dlConf.asJson())
+            .log("Dlog configuration");
+        log.info()
+            .attr("storageConfig", storageConf.asJson())
+            .log("Storage configuration");
+        log.info()
+            .attr("serverConfig", serverConf.asJson())
+            .log("Server configuration");
 
         // Create the bookie service
         ServerConfiguration bkServerConf;
@@ -276,7 +294,9 @@ public class StorageServer {
                                 new org.apache.bookkeeper.server.conf.BookieConfiguration(bkServerConf),
                                 rootStatsLogger);
                 serverBuilder.addComponent(httpService);
-                log.info("Load lifecycle component : {}", HttpService.class.getName());
+                log.info()
+                    .attr("component", HttpService.class.getName())
+                    .log("Load lifecycle component");
             }
 
         } else {

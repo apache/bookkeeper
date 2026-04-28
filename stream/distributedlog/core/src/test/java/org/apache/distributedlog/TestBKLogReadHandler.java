@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -39,16 +40,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Test {@link BKLogReadHandler}.
  */
+@CustomLog
 public class TestBKLogReadHandler extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestBKLogReadHandler.class);
 
     @Rule
     public TestName runtime = new TestName();

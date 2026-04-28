@@ -48,6 +48,7 @@ import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -86,15 +87,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test {@link ZKLogStreamMetadataStore}.
  */
+@CustomLog
 public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestZKLogStreamMetadataStore.class);
 
     private static final  int sessionTimeoutMs = 30000;
 
@@ -202,7 +200,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
                     ZooDefs.Ids.OPEN_ACL_UNSAFE,
                     CreateMode.PERSISTENT);
         } catch (KeeperException.NodeExistsException nee) {
-            logger.debug("The namespace uri already exists.");
+            log.debug("The namespace uri already exists.");
         }
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")

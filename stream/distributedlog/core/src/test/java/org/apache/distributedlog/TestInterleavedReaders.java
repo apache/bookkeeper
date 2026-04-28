@@ -20,20 +20,17 @@ package org.apache.distributedlog;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test Cases for InterleavedReaders.
  */
+@CustomLog
 public class TestInterleavedReaders extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestInterleavedReaders.class);
 
     static {
         conf.setOutputBufferSize(0);
@@ -54,7 +51,7 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
                 DLMTestUtil.verifyLogRecord(record);
                 numTrans++;
                 i++;
-                LOG.info("Read record {}", record);
+                log.info().attr("record", record).log("Read record");
             }
         }
         i = 0;
@@ -65,7 +62,7 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
                 DLMTestUtil.verifyLogRecord(record);
                 numTrans++;
                 i++;
-                LOG.info("Read record {}", record);
+                log.info().attr("record", record).log("Read record");
             }
         }
         return numTrans;
@@ -138,7 +135,7 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
             }
             Utils.ioResult(writer1.writeControlRecord(DLMTestUtil.getLogRecordInstance(txid - 1)));
             Utils.ioResult(writer0.writeControlRecord(DLMTestUtil.getLogRecordInstance(txid - 1)));
-            LOG.info("Completed {} write", j);
+            log.info().attr("j", j).log("Completed write");
             if (null == reader0) {
                 reader0 = dlmreader0.getInputStream(1);
             }
@@ -220,9 +217,9 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
                     writer1.overRideMinTimeStampToKeep(retentionPeriodOverride);
                 }
                 DLSN dlsn1 = Utils.ioResult(writer1.write(DLMTestUtil.getLogRecordInstance(txid++)));
-                LOG.info("writer1 write record {}", dlsn1);
+                log.info().attr("dlsn", dlsn1).log("writer1 write record");
                 DLSN dlsn0 = Utils.ioResult(writer0.write(DLMTestUtil.getLogRecordInstance(txid++)));
-                LOG.info("writer0 write record {}", dlsn0);
+                log.info().attr("dlsn", dlsn0).log("writer0 write record");
                 if (k == 5) {
                     writer0.setForceRolling(false);
                     writer1.setForceRolling(false);
@@ -272,9 +269,9 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
                     writer1.setForceRecovery(true);
                 }
                 DLSN dlsn1 = Utils.ioResult(writer1.write(DLMTestUtil.getLogRecordInstance(txid++)));
-                LOG.info("writer1 write record {} - txid = {}", dlsn1, txid - 1);
+                log.info().attr("dlsn", dlsn1).attr("txid", txid - 1).log("writer1 write record");
                 DLSN dlsn0 = Utils.ioResult(writer0.write(DLMTestUtil.getLogRecordInstance(txid++)));
-                LOG.info("writer0 write record {} - txid = {}", dlsn0, txid - 1);
+                log.info().attr("dlsn", dlsn0).attr("txid", txid - 1).log("writer0 write record");
                 writer0.setForceRecovery(false);
                 writer1.setForceRecovery(false);
             }

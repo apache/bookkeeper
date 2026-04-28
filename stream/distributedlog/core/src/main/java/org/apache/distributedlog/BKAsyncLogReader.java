@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -46,8 +47,6 @@ import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * BookKeeper based {@link AsyncLogReader} implementation.
@@ -67,8 +66,8 @@ import org.slf4j.LoggerFactory;
  * <li> `async_reader`/idle_reader_error: counter. the number idle reader errors.
  * </ul>
  */
+@CustomLog
 class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
-    static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReader.class);
 
     private static final Function<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
         records -> records.get(0);
@@ -192,10 +191,10 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         }
 
         void complete() {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("{} : Satisfied promise with {} records",
-                        readHandler.getFullyQualifiedName(), records.size());
-            }
+            log.trace()
+                    .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                    .attr("numRecords", records.size())
+                    .log(": Satisfied promise with records");
             delayUntilPromiseSatisfied.registerSuccessfulEvent(
                 enqueueTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -216,9 +215,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         this.scheduler = scheduler;
         this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
                 this, true);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Starting async reader at {}", startDLSN);
-        }
+        log.debug().attr("startDLSN", startDLSN).log("Starting async reader");
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
         this.readNextDelayStopwatch = Stopwatch.createStarted();
@@ -307,8 +304,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 idleReaderTimeoutTask.cancel(true);
             }
         } catch (Exception exc) {
-            LOG.info("{}: Failed to cancel the background idle reader timeout task",
-                    readHandler.getFullyQualifiedName());
+            log.info()
+                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                .log(": Failed to cancel the background idle reader timeout task");
         }
     }
 
@@ -364,7 +362,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
         Throwable cause = lastExceptionUpdater.get(this);
         if (null != cause) {
-            LOG.trace("Cancelling pending reads");
+            log.trace("Cancelling pending reads");
             cancelAllPendingReads(cause);
             return true;
         }
@@ -579,13 +577,14 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             Stopwatch runTime = Stopwatch.createStarted();
             int iterations = 0;
             long scheduleCountLocal = scheduleCountUpdater.get(this);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
-            }
+            log.debug()
+                    .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                    .log(": Scheduled Background Reader");
             while (true) {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("{}: Executing Iteration: {}", readHandler.getFullyQualifiedName(), iterations++);
-                }
+                log.trace()
+                        .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                        .attr("iteration", iterations++)
+                        .log(": Executing Iteration");
 
                 PendingReadRequest nextRequest = null;
                 synchronized (this) {
@@ -593,7 +592,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
                     // Queue is empty, nothing to read, return
                     if (null == nextRequest) {
-                        LOG.trace("{}: Queue Empty waiting for Input", readHandler.getFullyQualifiedName());
+                        log.trace()
+                                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                                .log(": Queue Empty waiting for Input");
                         scheduleCountUpdater.set(this, 0);
                         backgroundReaderRunTime.registerSuccessfulEvent(
                             runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
@@ -601,8 +602,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     }
 
                     if (disableProcessingReadRequests) {
-                        LOG.info("Reader of {} is forced to stop processing read requests",
-                            readHandler.getFullyQualifiedName());
+                        log.info()
+                                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                                .log("Reader of is forced to stop processing read requests");
                         return;
                     }
                 }
@@ -621,7 +623,10 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 if (checkClosedOrInError("readNext")) {
                     Throwable lastException = lastExceptionUpdater.get(this);
                     if (lastException != null && !(lastException.getCause() instanceof LogNotFoundException)) {
-                        LOG.warn("{}: Exception", readHandler.getFullyQualifiedName(), lastException);
+                        log.warn()
+                                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                                .exception(lastException)
+                                .log(": Exception");
                     }
                     backgroundReaderRunTime.registerFailedEvent(
                         runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
@@ -665,8 +670,10 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 } catch (IOException exc) {
                     setLastException(exc);
                     if (!(exc instanceof LogNotFoundException)) {
-                        LOG.warn("{} : read with skip Exception",
-                                readHandler.getFullyQualifiedName(), lastExceptionUpdater.get(this));
+                        log.warn()
+                                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                                .exception(lastExceptionUpdater.get(this))
+                                .log(": read with skip Exception");
                     }
                     continue;
                 }
@@ -709,7 +716,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     }
                 } else {
                     if (0 == scheduleCountLocal) {
-                        LOG.trace("Schedule count dropping to zero", lastExceptionUpdater.get(this));
+                        log.trace().exception(lastExceptionUpdater.get(this)).log("Schedule count dropping to zero");
                         backgroundReaderRunTime.registerSuccessfulEvent(
                             runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                         return;

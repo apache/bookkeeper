@@ -19,10 +19,12 @@ package org.apache.distributedlog;
 
 import java.io.IOException;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.util.Utils;
 
+@CustomLog
 class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
 
     public BKSyncLogWriter(DistributedLogConfiguration conf,
@@ -89,18 +91,14 @@ class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
     public long commit() throws IOException {
         checkClosedOrInError("commit");
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("FlushAndSync Started");
-        }
+        log.debug("FlushAndSync Started");
         long highestTransactionId = 0;
         BKLogSegmentWriter writer = getCachedLogWriter();
         if (null != writer) {
             highestTransactionId = Math.max(highestTransactionId, Utils.ioResult(writer.commit()));
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("FlushAndSync Completed");
-            }
-        } else if (LOG.isDebugEnabled()) {
-            LOG.debug("FlushAndSync Completed - Nothing to Flush");
+            log.debug("FlushAndSync Completed");
+        } else {
+            log.debug("FlushAndSync Completed - Nothing to Flush");
         }
         return highestTransactionId;
     }

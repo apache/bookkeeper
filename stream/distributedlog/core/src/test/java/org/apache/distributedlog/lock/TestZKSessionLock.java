@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.commons.lang3.tuple.Pair;
@@ -60,18 +61,15 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Distributed Lock Tests.
  */
+@CustomLog
 public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
     @Rule
     public TestName testNames = new TestName();
-
-    private static final Logger logger = LoggerFactory.getLogger(TestZKSessionLock.class);
 
     private static final  int sessionTimeoutMs = 2000;
 
@@ -666,7 +664,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                     lock1.tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                     lock1DoneLatch.countDown();
                 } catch (LockingException e) {
-                    logger.error("Failed on locking lock1 : ", e);
+                    log.error().exception(e).log("Failed on locking lock1");
                 }
             }
         }, "lock1-thread");
@@ -820,7 +818,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                 } catch (OwnershipAcquireFailedException oafe) {
                     lock1DoneLatch.countDown();
                 } catch (LockingException e) {
-                    logger.error("Failed on locking lock1 : ", e);
+                    log.error().exception(e).log("Failed on locking lock1");
                 }
             }
         }, "lock1-thread");
@@ -906,7 +904,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                     lock1_1.tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                     lock1DoneLatch.countDown();
                 } catch (LockingException e) {
-                    logger.error("Failed on locking lock1 : ", e);
+                    log.error().exception(e).log("Failed on locking lock1");
                 }
             }
         }, "lock1-thread");
@@ -915,7 +913,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         // check lock1 is waiting for lock0
         children = awaitWaiters(2, zkc, lockPath);
 
-        logger.info("Found {} lock waiters : {}", children.size(), children);
+        log.info().attr("numWaiters", children.size()).attr("children", children).log("Found lock waiters");
 
         assertEquals(2, children.size());
         assertEquals(State.CLAIMED, lock0.getLockState());
@@ -1031,7 +1029,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                     lock1.tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                     lock1DoneLatch.countDown();
                 } catch (LockingException e) {
-                    logger.error("Failed on locking lock1 : ", e);
+                    log.error().exception(e).log("Failed on locking lock1");
                 }
             }
         }, "lock1-thread");
@@ -1079,7 +1077,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                             lock0DoneLatch.countDown();
                         }
                     } catch (LockingException le) {
-                        logger.error("Failed on locking lock0_1 : ", le);
+                        log.error().exception(le).log("Failed on locking lock0_1");
                     }
                 }
             }, "lock0-thread");

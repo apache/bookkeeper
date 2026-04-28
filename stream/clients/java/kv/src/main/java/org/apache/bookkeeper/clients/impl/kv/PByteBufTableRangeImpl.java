@@ -24,7 +24,7 @@ import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Txn;
 import org.apache.bookkeeper.api.kv.impl.result.KeyValueFactory;
@@ -50,7 +50,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 /**
  * A range of a table.
  */
-@Slf4j
+@CustomLog
 class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
     private final long streamId;
@@ -263,7 +263,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             try {
                 resource.close();
             } catch (Exception e) {
-                log.warn("Fail to close resource {}", resource, e);
+                log.warn().attr("resource", resource).exception(e).log("Fail to close resource");
             }
         }
     }

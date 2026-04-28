@@ -31,6 +31,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -47,15 +48,12 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * LedgerAllocator impl.
  */
+@CustomLog
 public class LedgerAllocatorPool implements LedgerAllocator {
-
-    private static final Logger logger = LoggerFactory.getLogger(LedgerAllocatorPool.class);
 
     private final DistributedLogConfiguration conf;
     private final QuorumConfigProvider quorumConfigProvider;
@@ -131,7 +129,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             try {
                 allocators = zkc.get().getChildren(poolPath, false);
             } catch (KeeperException.NoNodeException e) {
-                logger.info("Allocator Pool {} doesn't exist. Creating it.", poolPath);
+                log.info().attr("poolPath", poolPath).log("Allocator Pool doesn't exist. Creating it.");
                 ZkUtils.createFullPathOptimistic(zkc.get(), poolPath, new byte[0], zkc.getDefaultACL(),
                         CreateMode.PERSISTENT);
                 allocators = zkc.get().getChildren(poolPath, false);
@@ -231,7 +229,10 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                 }
             }, conf.getZKRetryBackoffStartMillis(), TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.warn("Failed to schedule rescuing ledger allocator {} : ", ledgerAllocator.allocatePath, ree);
+            log.warn()
+                .attr("allocatePath", ledgerAllocator.allocatePath)
+                .exception(ree)
+                .log("Failed to schedule rescuing ledger allocator");
         }
     }
 
@@ -246,7 +247,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             oldAllocator = rescueMap.put(ledgerAllocator.allocatePath, ledgerAllocator);
         }
         if (oldAllocator != null) {
-            logger.info("ledger allocator {} is being rescued.", ledgerAllocator.allocatePath);
+            log.info().attr("allocatePath", ledgerAllocator.allocatePath).log("ledger allocator is being rescued.");
             return;
         }
         try {
@@ -258,12 +259,12 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                     if (KeeperException.Code.OK.intValue() == rc) {
                         Versioned<byte[]> allocatorData =
                                 new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
-                        logger.info("Rescuing ledger allocator {}.", path);
+                        log.info().attr("path", path).log("Rescuing ledger allocator.");
                         newAllocator = new SimpleLedgerAllocator(path, allocatorData, quorumConfigProvider, zkc, bkc);
                         newAllocator.start();
-                        logger.info("Rescued ledger allocator {}.", path);
+                        log.info().attr("path", path).log("Rescued ledger allocator.");
                     } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                        logger.info("Ledger allocator {} doesn't exist, skip rescuing it.", path);
+                        log.info().attr("path", path).log("Ledger allocator doesn't exist, skip rescuing it.");
                     } else {
                         retry = true;
                     }
@@ -280,15 +281,20 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             }, null);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            logger.warn("Interrupted on rescuing ledger allocator {} : ", ledgerAllocator.allocatePath, ie);
+            log.warn()
+                .attr("allocatePath", ledgerAllocator.allocatePath)
+                .exception(ie)
+                .log("Interrupted on rescuing ledger allocator");
             synchronized (LedgerAllocatorPool.this) {
                 rescueMap.remove(ledgerAllocator.allocatePath);
             }
             throw new DLInterruptedException("Interrupted on rescuing ledger allocator "
                     + ledgerAllocator.allocatePath, ie);
         } catch (IOException ioe) {
-            logger.warn("Failed to rescue ledger allocator {}, retry rescuing it later : ",
-                    ledgerAllocator.allocatePath, ioe);
+            log.warn()
+                .attr("allocatePath", ledgerAllocator.allocatePath)
+                .exception(ioe)
+                .log("Failed to rescue ledger allocator, retry rescuing it later");
             synchronized (LedgerAllocatorPool.this) {
                 rescueMap.remove(ledgerAllocator.allocatePath);
             }
@@ -350,7 +356,10 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                 try {
                     rescueAllocator(allocator);
                 } catch (IOException ioe) {
-                    logger.info("Failed to rescue allocator {}", allocator.allocatePath, ioe);
+                    log.info()
+                            .attr("allocatePath", allocator.allocatePath)
+                            .exception(ioe)
+                            .log("Failed to rescue allocator");
                 }
                 tryObtainPromise.completeExceptionally(cause);
             }
@@ -396,7 +405,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
         try {
             rescueAllocator(allocator);
         } catch (DLInterruptedException e) {
-            logger.warn("Interrupted on rescuing ledger allocator pool {} : ", poolPath, e);
+            log.warn().attr("poolPath", poolPath).exception(e).log("Interrupted on rescuing ledger allocator pool");
             Thread.currentThread().interrupt();
         }
     }

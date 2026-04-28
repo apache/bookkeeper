@@ -26,8 +26,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.proto.statestore.kv.Command;
 import org.apache.bookkeeper.proto.statestore.kv.DeleteRequest;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.proto.statestore.kv.PutRequest;
 /**
  * Utils for kv stores.
  */
-@Slf4j
+@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class KVUtils {
 

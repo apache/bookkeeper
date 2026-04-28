@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNull;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.commons.io.FileUtils;
@@ -43,7 +43,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link RocksdbKVStore}.
  */
-@Slf4j
+@CustomLog
 public class TestRocksdbKVAsyncStore extends TestDistributedLogBase {
 
     private static URI uri;

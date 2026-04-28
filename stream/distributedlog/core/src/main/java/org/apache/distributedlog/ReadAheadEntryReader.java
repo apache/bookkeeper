@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -51,8 +52,6 @@ import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * New ReadAhead Reader that uses {@link org.apache.distributedlog.logsegment.LogSegmentEntryReader}.
@@ -60,13 +59,12 @@ import org.slf4j.LoggerFactory;
  * <p>NOTE: all the state changes happen in the same thread. All *unsafe* methods should be submitted to the order
  * scheduler using stream name as the key.</p>
  */
+@CustomLog
 class ReadAheadEntryReader implements
         AsyncCloseable,
         LogSegmentListener,
         LogSegmentEntryReader.StateChangeListener,
         FutureEventListener<List<Entry.Reader>> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ReadAheadEntryReader.class);
 
     private enum State {
         IDLE,
@@ -225,7 +223,7 @@ class ReadAheadEntryReader implements
             try {
                 safeRun();
             } catch (Throwable cause) {
-                logger.error("Caught unexpected exception : ", cause);
+                log.error().exception(cause).log("Caught unexpected exception");
             }
         }
 
@@ -406,18 +404,22 @@ class ReadAheadEntryReader implements
         try {
             scheduler.executeOrdered(streamName, runnable);
         } catch (RejectedExecutionException ree) {
-            logger.debug("Failed to submit and execute an operation for readhead entry reader of {}",
-                    streamName, ree);
+            log.debug()
+                .attr("streamName", streamName)
+                .exception(ree)
+                .log("Failed to submit and execute an operation for readhead entry reader");
         }
     }
 
     public void start(final List<LogSegmentMetadata> segmentList) {
         // Managed to get 5mil character long log line from here.
         // Will limit the output.
-        logger.info("Starting the readahead entry reader for {} : number of segments: {}, top 10 segments = {}",
-                readHandler.getFullyQualifiedName(), segmentList.size(),
-                segmentList.size() > 10
-                        ? segmentList.stream().limit(10).collect(Collectors.toList()) : segmentList);
+        log.info()
+                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                .attr("numberOfSegments", segmentList.size())
+                .attr("topSegments", segmentList.size() > 10
+                        ? segmentList.stream().limit(10).collect(Collectors.toList()) : segmentList)
+                .log("Starting the readahead entry reader");
         started.set(true);
         processLogSegments(segmentList);
     }
@@ -465,8 +467,10 @@ class ReadAheadEntryReader implements
         try {
             scheduler.executeOrdered(streamName, () -> unsafeAsyncClose(closeFuture));
         } catch (RejectedExecutionException ree) {
-            logger.warn("Scheduler has been shutdown before closing the readahead entry reader for stream {}",
-                    streamName, ree);
+            log.warn()
+                .attr("streamName", streamName)
+                .exception(ree)
+                .log("Scheduler has been shutdown before closing the readahead entry reader for stream");
             unsafeAsyncClose(closeFuture);
         }
 
@@ -474,9 +478,7 @@ class ReadAheadEntryReader implements
     }
 
     private void unsafeAsyncClose(CompletableFuture<Void> closePromise) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("[{}][state:{}] Closing read ahead", streamName, state);
-        }
+        log.debug().attr("streamName", streamName).attr("state", state).log("Closing read ahead");
         state = State.CLOSED;
 
         List<CompletableFuture<Void>> closeFutures = Lists.newArrayListWithExpectedSize(
@@ -525,7 +527,7 @@ class ReadAheadEntryReader implements
 
     void setLastException(IOException cause) {
         if (!lastException.compareAndSet(null, cause)) {
-            logger.debug("last exception has already been set to ", lastException.get());
+            log.debug().exception(lastException.get()).log("Last exception has already been set");
         }
         // the exception is set and notify the state change
         notifyStateChangeOnFailure(cause);
@@ -533,9 +535,10 @@ class ReadAheadEntryReader implements
         orderedSubmit(new CloseableRunnable() {
                 @Override
                 public void safeRun() {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("[{}][state:{}] Read ahead errored", streamName, state);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("state", state)
+                            .log("Read ahead errored");
                     state = State.ERROR;
                 }
             });
@@ -551,9 +554,11 @@ class ReadAheadEntryReader implements
         if (reader.getSegment().isInProgress()
                 && isCatchingUp
                 && reader.hasCaughtUpOnInprogress()) {
-            logger.info("ReadAhead for {} is caught up at entry {} @ log segment {}.",
-                readHandler.getFullyQualifiedName(),
-                reader.getLastAddConfirmed(), reader.getSegment());
+            log.info()
+                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                .attr("lastAddConfirmed", reader.getLastAddConfirmed())
+                .attr("segment", reader.getSegment())
+                .log("ReadAhead for is caught up at entry @ log segment.");
             isCatchingUp = false;
         }
     }
@@ -561,7 +566,9 @@ class ReadAheadEntryReader implements
     void markCaughtup() {
         if (isCatchingUp) {
             isCatchingUp = false;
-            logger.info("ReadAhead for {} is caught up", readHandler.getFullyQualifiedName());
+            log.info()
+                .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                .log("ReadAhead for is caught up");
         }
     }
 
@@ -707,9 +714,11 @@ class ReadAheadEntryReader implements
     private boolean updateLogSegmentMetadata(SegmentReader reader,
                                              LogSegmentMetadata newMetadata) {
         if (reader.getSegment().getLogSegmentSequenceNumber() != newMetadata.getLogSegmentSequenceNumber()) {
-            logger.error("Inconsistent state found in entry reader for {} : "
-                + "current segment = {}, new segment = {}",
-                streamName, reader.getSegment(), newMetadata);
+            log.error()
+                    .attr("streamName", streamName)
+                    .attr("segment", reader.getSegment())
+                    .attr("newMetadata", newMetadata)
+                    .log("Inconsistent state found in entry reader");
             setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                     + streamName + " : current segment = " + reader.getSegment() + ", new segment = " + newMetadata));
             return false;
@@ -730,7 +739,7 @@ class ReadAheadEntryReader implements
      * Reinitialize the log segments.
      */
     private void unsafeReinitializeLogSegments(List<LogSegmentMetadata> segments) {
-        logger.info("Reinitialize log segments with {}", segments);
+        log.info().attr("segments", segments).log("Reinitialize log segments");
         int segmentIdx = 0;
         for (; segmentIdx < segments.size(); segmentIdx++) {
             LogSegmentMetadata segment = segments.get(segmentIdx);
@@ -749,9 +758,11 @@ class ReadAheadEntryReader implements
             }
         } else {
             if (currentSegmentSequenceNumber != segment.getLogSegmentSequenceNumber()) {
-                logger.error("Inconsistent state found in entry reader for {} : "
-                    + "current segment sn = {}, new segment sn = {}",
-                    streamName, currentSegmentSequenceNumber, segment.getLogSegmentSequenceNumber());
+                log.error()
+                        .attr("streamName", streamName)
+                        .attr("currentSegmentSequenceNumber", currentSegmentSequenceNumber)
+                        .attr("logSegmentSequenceNumber", segment.getLogSegmentSequenceNumber())
+                        .log("Inconsistent state found in entry reader");
                 setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                         + streamName + " : current segment sn = " + currentSegmentSequenceNumber
                         + ", new segment sn = " + segment.getLogSegmentSequenceNumber()));
@@ -829,7 +840,10 @@ class ReadAheadEntryReader implements
             }
             skipTruncatedLogSegments = false;
             if (!isAllowedToPosition(segment, dlsnToStart)) {
-                logger.error("segment {} is not allowed to position at {}", segment, dlsnToStart);
+                log.error()
+                        .attr("segment", segment)
+                        .attr("dlsnToStart", dlsnToStart)
+                        .log("Segment is not allowed to position");
                 return;
             }
 
@@ -893,8 +907,11 @@ class ReadAheadEntryReader implements
                     fromDLSN, segment);
             }
             if (!conf.getIgnoreTruncationStatus()) {
-                logger.error("{}: Trying to position reader on {} when {} is marked partially truncated",
-                    streamName, fromDLSN, segment);
+                log.error()
+                        .attr("streamName", streamName)
+                        .attr("fromDLSN", fromDLSN)
+                        .attr("segment", segment)
+                        .log(": Trying to position reader on when is marked partially truncated");
 
                 setLastException(new AlreadyTruncatedTransactionException(streamName
                         + " : trying to position read ahead at " + fromDLSN
@@ -924,13 +941,13 @@ class ReadAheadEntryReader implements
             FutureUtils.ensure(
                 currentSegmentReader.close(),
                 removeClosedSegmentReadersFunc);
-            logger.debug("close current segment reader {}", currentSegmentReader.getSegment());
+            log.debug().attr("segment", currentSegmentReader.getSegment()).log("close current segment reader");
             currentSegmentReader = null;
         }
         boolean hasSegmentToRead = false;
         if (null != nextSegmentReader) {
             currentSegmentReader = nextSegmentReader;
-            logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+            log.debug().attr("segment", currentSegmentReader.getSegment()).log("move to read segment");
             currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
             nextSegmentReader = null;
             // start reading
@@ -940,7 +957,7 @@ class ReadAheadEntryReader implements
             unsafePrefetchNextSegment(false);
             if (null != nextSegmentReader) {
                 currentSegmentReader = nextSegmentReader;
-                logger.debug("move to read segment {}", currentSegmentReader.getSegment());
+                log.debug().attr("segment", currentSegmentReader.getSegment()).log("move to read segment");
                 currentSegmentSequenceNumber = currentSegmentReader.getSegment().getLogSegmentSequenceNumber();
                 nextSegmentReader = null;
                 unsafePrefetchNextSegment(true);
@@ -949,8 +966,9 @@ class ReadAheadEntryReader implements
         }
         if (!hasSegmentToRead) { // no more segment to read, wait until new log segment arrive
             if (isCatchingUp) {
-                logger.info("ReadAhead for {} is caught up and no log segments to read now",
-                        readHandler.getFullyQualifiedName());
+                log.info()
+                        .attr("fullyQualifiedName", readHandler.getFullyQualifiedName())
+                        .log("ReadAhead for is caught up and no log segments to read now");
                 isCatchingUp = false;
             }
         }
@@ -962,9 +980,7 @@ class ReadAheadEntryReader implements
         orderedSubmit(new CloseableRunnable() {
                 @Override
                 public void safeRun() {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("[{}][state:{}] Read completed", streamName, state);
-                    }
+                    log.debug().attr("streamName", streamName).attr("state", state).log("Read completed");
                     if (state == State.READING) {
                         state = State.IDLE;
                     }
@@ -980,10 +996,12 @@ class ReadAheadEntryReader implements
                     boolean cacheFull = isCacheFull();
                     SegmentReader reader = currentSegmentReader;
                     boolean hasMoreSegments = reader != null;
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("[{}][state:{}] scheduling read, cacheFull {}, hasMoreSegments {}",
-                                     streamName, state, cacheFull, hasMoreSegments);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("state", state)
+                            .attr("cacheFull", cacheFull)
+                            .attr("hasMoreSegments", hasMoreSegments)
+                            .log("Scheduling read");
                     switch (state) {
                     case IDLE:
                         if (cacheFull || !hasMoreSegments) {
@@ -1017,7 +1035,7 @@ class ReadAheadEntryReader implements
         if (segments == null || segments.isEmpty()) {
             return;
         }
-        logger.info("segments is updated with {}", segments);
+        log.info().attr("segments", segments).log("Segments updated");
         processLogSegments(segments);
     }
 

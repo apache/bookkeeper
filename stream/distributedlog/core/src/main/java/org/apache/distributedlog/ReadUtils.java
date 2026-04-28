@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
@@ -33,15 +34,12 @@ import org.apache.distributedlog.selector.FirstDLSNNotLessThanSelector;
 import org.apache.distributedlog.selector.FirstTxIdNotLessThanSelector;
 import org.apache.distributedlog.selector.LastRecordSelector;
 import org.apache.distributedlog.selector.LogRecordSelector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility function for readers.
  */
+@CustomLog
 public class ReadUtils {
-
-    static final Logger LOG = LoggerFactory.getLogger(ReadUtils.class);
 
     private static final int MIN_SEARCH_BATCH_SIZE = 2;
 
@@ -249,18 +247,22 @@ public class ReadUtils {
         final CompletableFuture<LogRecordWithDLSN> promise = new CompletableFuture<LogRecordWithDLSN>();
         final long startEntryId = context.curStartEntryId.get();
         final long endEntryId = context.curEndEntryId.get();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("{} reading entries [{} - {}] from {}.",
-                streamName, startEntryId, endEntryId, metadata);
-        }
+        log.debug()
+            .attr("streamName", streamName)
+            .attr("startEntryId", startEntryId)
+            .attr("endEntryId", endEntryId)
+            .attr("metadata", metadata)
+            .log("Reading entries");
         FutureEventListener<List<Entry.Reader>> readEntriesListener =
             new FutureEventListener<List<Entry.Reader>>() {
                 @Override
                 public void onSuccess(final List<Entry.Reader> entries) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} finished reading entries [{} - {}] from {}",
-                            streamName, startEntryId, endEntryId, metadata);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("startEntryId", startEntryId)
+                            .attr("endEntryId", endEntryId)
+                            .attr("metadata", metadata)
+                            .log("Finished reading entries");
                     for (Entry.Reader entry : entries) {
                         try {
                             visitEntryRecords(entry, context, selector);
@@ -273,10 +275,13 @@ public class ReadUtils {
                     }
 
                     LogRecordWithDLSN record = selector.result();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} got record from entries [{} - {}] of {} : {}",
-                            streamName, startEntryId, endEntryId, metadata, record);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("startEntryId", startEntryId)
+                            .attr("endEntryId", endEntryId)
+                            .attr("metadata", metadata)
+                            .attr("record", record)
+                            .log("Got record from entries");
                     promise.complete(record);
                 }
 
@@ -345,11 +350,13 @@ public class ReadUtils {
             new FutureEventListener<LogRecordWithDLSN>() {
                 @Override
                 public void onSuccess(LogRecordWithDLSN value) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} read record from [{} - {}] of {} : {}",
-                            streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
-                            metadata, value);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("startEntryId", context.curStartEntryId.get())
+                            .attr("endEntryId", context.curEndEntryId.get())
+                            .attr("metadata", metadata)
+                            .attr("value", value)
+                            .log("Read record from entries");
                     if (null != value) {
                         promise.complete(value);
                         return;
@@ -394,9 +401,7 @@ public class ReadUtils {
             final long startEntryId) {
         final long lastAddConfirmed = reader.getLastAddConfirmed();
         if (lastAddConfirmed < 0) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Log segment {} is empty for {}.", new Object[] { metadata, streamName });
-            }
+            log.debug().attr("metadata", metadata).attr("streamName", streamName).log("Log segment is empty");
             promise.complete(null);
             return;
         }
@@ -429,13 +434,16 @@ public class ReadUtils {
             new FutureEventListener<LogSegmentRandomAccessEntryReader>() {
                 @Override
                 public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} Opened log segment {} for reading record", streamName, l);
-                    }
+                    log.debug()
+                            .attr("streamName", streamName)
+                            .attr("logSegment", l)
+                            .log("Opened log segment for reading record");
                     promise.whenComplete((value, cause) -> reader.asyncClose());
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} {} scanning {}.", (backward ? "backward" : "forward"), streamName, l);
-                    }
+                    log.debug()
+                            .attr("direction", (backward ? "backward" : "forward"))
+                            .attr("streamName", streamName)
+                            .attr("logSegment", l)
+                            .log("Scanning log segment");
                     asyncReadRecordFromLogSegment(
                             streamName, reader, l, executorService,
                             scanStartBatchSize, scanMaxBatchSize,

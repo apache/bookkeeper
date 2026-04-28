@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.bk.LedgerMetadata;
@@ -39,12 +40,9 @@ import org.apache.distributedlog.io.Abortables;
 import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-
+@CustomLog
 abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortable, AsyncAbortable {
-    static final Logger LOG = LoggerFactory.getLogger(BKAbstractLogWriter.class);
 
     protected final DistributedLogConfiguration conf;
     private final DynamicDistributedLogConfiguration dynConf;
@@ -72,10 +70,10 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         this.conf = conf;
         this.dynConf = dynConf;
         this.bkDistributedLogManager = bkdlm;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Initial retention period for {} : {}", bkdlm.getStreamName(),
-                    TimeUnit.MILLISECONDS.convert(dynConf.getRetentionPeriodHours(), TimeUnit.HOURS));
-        }
+        log.debug()
+            .attr("streamName", bkdlm.getStreamName())
+            .attr("retentionPeriodMs", TimeUnit.MILLISECONDS.convert(dynConf.getRetentionPeriodHours(), TimeUnit.HOURS))
+            .log("Initial retention period");
     }
 
     @VisibleForTesting
@@ -194,7 +192,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        LOG.error("Completing Log segments encountered exception", cause);
+                        log.error().exception(cause).log("Completing Log segments encountered exception");
                         complete(cause);
                     }
 
@@ -406,20 +404,23 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
                     // rescue function
                     cause -> {
                         if (cause instanceof LockingException) {
-                            LOG.warn("We lost lock during completeAndClose log segment for {}."
-                                            + "Disable ledger rolling until it is recovered : ",
-                                    writeHandler.getFullyQualifiedName(), cause);
+                            log.warn()
+                                    .attr("fullyQualifiedName", writeHandler.getFullyQualifiedName())
+                                    .exception(cause)
+                                    .log("We lost lock during completeAndClose log segment for."
+                                            + "Disable ledger rolling until it is recovered");
                             bkDistributedLogManager.getLogSegmentRollingPermitManager()
                                     .disallowObtainPermits(switchPermit);
                             return FutureUtils.value(oldSegmentWriter);
                         } else if (cause instanceof ZKException) {
                             ZKException zke = (ZKException) cause;
                             if (ZKException.isRetryableZKException(zke)) {
-                                LOG.warn("Encountered zookeeper connection issues during completeAndClose "
-                                                + "log segment for {}. "
-                                                + "Disable ledger rolling until it is recovered : {}",
-                                        writeHandler.getFullyQualifiedName(),
-                                        zke.getKeeperExceptionCode());
+                                log.warn()
+                                        .attr("fullyQualifiedName", writeHandler.getFullyQualifiedName())
+                                        .attr("keeperExceptionCode", zke.getKeeperExceptionCode())
+                                        .log("Encountered zookeeper connection issues during"
+                                                + " completeAndClose log segment for."
+                                                + " Disable ledger rolling until it is recovered");
                                 bkDistributedLogManager.getLogSegmentRollingPermitManager()
                                         .disallowObtainPermits(switchPermit);
                                 return FutureUtils.value(oldSegmentWriter);
@@ -447,10 +448,10 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // we switch only when we could allocate a new log segment.
         BKLogSegmentWriter newSegmentWriter = getAllocatedLogWriter();
         if (null == newSegmentWriter) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Allocating a new log segment from {} for {}.", startTxId,
-                        writeHandler.getFullyQualifiedName());
-            }
+            log.debug()
+                    .attr("startTxId", startTxId)
+                    .attr("fullyQualifiedName", writeHandler.getFullyQualifiedName())
+                    .log("Allocating a new log segment");
             return writeHandler.asyncStartLogSegment(startTxId, bestEffort, allowMaxTxID)
                     .thenCompose(new Function<BKLogSegmentWriter, CompletableFuture<BKLogSegmentWriter>>() {
                         @Override
@@ -465,10 +466,10 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
                                 }
                             }
                             cacheAllocatedLogWriter(newSegmentWriter);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Allocated a new log segment from {} for {}.", startTxId,
-                                        writeHandler.getFullyQualifiedName());
-                            }
+                            log.debug()
+                                    .attr("startTxId", startTxId)
+                                    .attr("fullyQualifiedName", writeHandler.getFullyQualifiedName())
+                                    .log("Allocated a new log segment");
                             return completeOldSegmentAndCacheNewLogSegmentWriter(oldSegmentWriter, newSegmentWriter);
                         }
                     });
@@ -534,7 +535,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     protected synchronized void checkClosedOrInError(String operation) throws AlreadyClosedException {
         if (null != closePromise) {
-            LOG.error("Executing " + operation + " on already closed Log Writer");
+            log.error("Executing " + operation + " on already closed Log Writer");
             throw new AlreadyClosedException("Executing " + operation + " on already closed Log Writer");
         }
     }

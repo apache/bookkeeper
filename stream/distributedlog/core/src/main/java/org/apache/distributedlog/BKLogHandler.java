@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -55,8 +56,6 @@ import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.logsegment.PerStreamLogSegmentCache;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The base class about log handler on managing log segments.
@@ -80,8 +79,8 @@ import org.slf4j.LoggerFactory;
  * @see BKLogWriteHandler
  * @see BKLogReadHandler
  */
+@CustomLog
 abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
-    static final Logger LOG = LoggerFactory.getLogger(BKLogHandler.class);
 
     protected final LogMetadata logMetadata;
     protected final DistributedLogConfiguration conf;
@@ -481,8 +480,10 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             return logSegmentCache.getLogSegments(comparator);
         } catch (UnexpectedException ue) {
             // the log segments cache went wrong
-            LOG.error("Unexpected exception on getting log segments from the cache for stream {}",
-                    getFullyQualifiedName(), ue);
+            log.error()
+                .attr("stream", getFullyQualifiedName())
+                .exception(ue)
+                .log("Unexpected exception on getting log segments from the cache for stream");
             METADATA_EXCEPTION_UPDATER.compareAndSet(this, null, ue);
             throw ue;
         }
@@ -514,8 +515,11 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 long elapsedMicroSec = TimeUnit.MILLISECONDS.toMicros(elapsedMillis);
                 if (elapsedMicroSec > 0) {
                     if (elapsedMillis > metadataLatencyWarnThresholdMillis) {
-                        LOG.warn("{} received inprogress log segment in {} millis: {}",
-                            getFullyQualifiedName(), elapsedMillis, metadata);
+                        log.warn()
+                                .attr("stream", getFullyQualifiedName())
+                                .attr("elapsedMillis", elapsedMillis)
+                                .attr("metadata", metadata)
+                                .log("received inprogress log segment in millis");
                     }
                     getInprogressSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
@@ -526,8 +530,11 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 long elapsedMicroSec = TimeUnit.MILLISECONDS.toMicros(elapsedMillis);
                 if (elapsedMicroSec > 0) {
                     if (elapsedMillis > metadataLatencyWarnThresholdMillis) {
-                        LOG.warn("{} received completed log segment in {} millis : {}",
-                            getFullyQualifiedName(), elapsedMillis, metadata);
+                        log.warn()
+                                .attr("stream", getFullyQualifiedName())
+                                .attr("elapsedMillis", elapsedMillis)
+                                .attr("metadata", metadata)
+                                .log("received completed log segment in millis");
                     }
                     getCompletedSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
@@ -618,9 +625,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
         removedSegments.addAll(segmentChanges.getRight());
 
         if (segmentsAdded.isEmpty()) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("No segments added for {}.", getFullyQualifiedName());
-            }
+            log.trace().attr("stream", getFullyQualifiedName()).log("No segments added");
 
             // update the cache before #getCachedLogSegments to return
             updateLogSegmentCache(removedSegments, addedSegments);
