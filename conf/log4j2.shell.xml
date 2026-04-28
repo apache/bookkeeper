@@ -31,7 +31,7 @@
             <PatternLayout pattern="%d{ABSOLUTE} %-5p %m%n"/>
         </Console>
         <RollingFile name="ROLLINGFILE" fileName="${sys:bookkeeper.shell.log.dir}/${sys:bookkeeper.shell.log.file}" filePattern="${sys:bookkeeper.shell.log.dir}/${sys:bookkeeper.shell.log.file}%d{.yyyy-MM-dd}">
-            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] %X - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true"/>
             </Policies>
