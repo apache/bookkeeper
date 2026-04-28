@@ -572,6 +572,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 if (conf.getTcpKeepCnt() > 0) {
                     bootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getTcpKeepCnt());
                 }
+            } else if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+                // Set TCP keepalive parameters for IoUring if configured
+                if (conf.getTcpKeepIdle() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getTcpKeepIdle());
+                }
+                if (conf.getTcpKeepIntvl() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getTcpKeepIntvl());
+                }
+                if (conf.getTcpKeepCnt() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getTcpKeepCnt());
+                }
             }
             // if buffer sizes are 0, let OS auto-tune it
             if (conf.getClientSendBufferSize() > 0) {
