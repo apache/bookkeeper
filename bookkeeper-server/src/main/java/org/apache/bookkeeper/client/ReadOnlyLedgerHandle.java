@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.github.merlimat.slog.Logger;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +96,16 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                          BookKeeper.DigestType digestType, byte[] password,
                          boolean watchImmediately)
             throws GeneralSecurityException, NumberFormatException {
-        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE);
+        this(clientCtx, ledgerId, metadata, digestType, password, watchImmediately, null);
+    }
+
+    ReadOnlyLedgerHandle(ClientContext clientCtx,
+                         long ledgerId, Versioned<LedgerMetadata> metadata,
+                         BookKeeper.DigestType digestType, byte[] password,
+                         boolean watchImmediately,
+                         Logger parentLogger)
+            throws GeneralSecurityException, NumberFormatException {
+        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE, parentLogger);
         if (watchImmediately) {
             registerLedgerMetadataListener();
         }

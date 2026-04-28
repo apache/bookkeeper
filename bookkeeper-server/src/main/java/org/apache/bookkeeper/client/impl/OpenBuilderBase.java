@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.client.impl;
 
+import io.github.merlimat.slog.Logger;
 import java.util.Arrays;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -35,6 +36,7 @@ public abstract class OpenBuilderBase implements OpenBuilder {
     protected long ledgerId = LedgerHandle.INVALID_LEDGER_ID;
     protected byte[] password;
     protected DigestType digestType = DigestType.CRC32;
+    protected Logger parentLogger;
 
     @Override
     public OpenBuilder withLedgerId(long ledgerId) {
@@ -57,6 +59,12 @@ public abstract class OpenBuilderBase implements OpenBuilder {
     @Override
     public OpenBuilder withDigestType(DigestType digestType) {
         this.digestType = digestType;
+        return this;
+    }
+
+    @Override
+    public OpenBuilder withLoggerContext(Logger parentLogger) {
+        this.parentLogger = parentLogger;
         return this;
     }
 
