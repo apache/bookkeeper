@@ -20,8 +20,10 @@ package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,8 +31,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
@@ -87,4 +92,77 @@ public class PendingAddOpTest {
         assertNull(op.lh);
     }
 
+    /**
+     * Verify that {@link PendingAddOp#maybeTimeout()} returns {@code false} without throwing
+     * {@link NullPointerException} when {@code clientCtx} is {@code null}.
+     *
+     * <p>This is the exact scenario that caused the production NPE reported in
+     * apache/bookkeeper#4759: {@code monitorPendingAddOps()} holds an iterator reference to
+     * an op while {@code recyclePendAddOpObject()} runs concurrently on another thread and
+     * clears {@code clientCtx} to {@code null}. After recycling the op has already completed,
+     * so the correct behaviour is to skip the timeout check (return {@code false}).
+     */
+    @Test
+    public void testMaybeTimeoutReturnsFalseWhenClientCtxIsNull() {
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {}, null);
+
+        // Simulate the race: recyclePendAddOpObject() cleared clientCtx on the writer
+        // thread while monitorPendingAddOps() is still iterating the pendingAddOps queue
+        // on the scheduler thread.
+        op.clientCtx = null;
+
+        // Before the fix this threw NullPointerException; after the fix it must return false.
+        assertFalse(op.maybeTimeout());
+    }
+
+    /**
+     * Verify that {@link PendingAddOp#maybeTimeout()} returns {@code false} when
+     * {@code clientCtx} is non-null and the quorum timeout has not yet elapsed.
+     */
+    @Test
+    public void testMaybeTimeoutReturnsFalseWhenWithinQuorumTimeout() {
+        // Configure a 1-hour quorum timeout so the op will not have expired.
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setAddEntryQuorumTimeout(3600);
+        when(mockClientContext.getConf()).thenReturn(ClientInternalConf.fromConfig(conf));
+
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {}, null);
+        // Stamp the request as starting right now so elapsed time is effectively 0.
+        op.requestTimeNanos = MathUtils.nowInNano();
+
+        assertFalse(op.maybeTimeout());
+    }
+
+    /**
+     * Verify that {@link PendingAddOp#maybeTimeout()} returns {@code true} and triggers
+     * {@link PendingAddOp#timeoutQuorumWait()} when the quorum timeout has already elapsed.
+     */
+    @Test
+    public void testMaybeTimeoutReturnsTrueWhenQuorumTimeoutExpired() {
+        // Configure a 1-second quorum timeout.
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setAddEntryQuorumTimeout(1);
+        when(mockClientContext.getConf()).thenReturn(ClientInternalConf.fromConfig(conf));
+
+        LedgerMetadata meta = mock(LedgerMetadata.class);
+        when(lh.getLedgerMetadata()).thenReturn(meta);
+        // addEntrySuccessBookies starts empty (size 0 < ackQuorumSize 3),
+        // so the fault-domain stats branch is skipped and no extra mocking is needed.
+        when(meta.getAckQuorumSize()).thenReturn(3);
+
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {}, null);
+        // Set the request start time to 0 so that elapsed nanos is enormous (>> 1 second).
+        op.requestTimeNanos = 0L;
+
+        assertTrue(op.maybeTimeout());
+    }
 }
