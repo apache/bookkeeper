@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.merlimat.slog.Logger;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -73,6 +74,7 @@ class LedgerCreateOp {
     final long startTime;
     final OpStatsLogger createOpLogger;
     final BookKeeperClientStats clientStats;
+    final Logger parentLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
 
@@ -104,6 +106,16 @@ class LedgerCreateOp {
             byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats) {
+        this(bk, ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+                customMetadata, writeFlags, clientStats, null);
+    }
+
+    LedgerCreateOp(
+            BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
+            EnumSet<WriteFlag> writeFlags,
+            BookKeeperClientStats clientStats,
+            Logger parentLogger) {
         this.bk = bk;
         this.metadataFormatVersion = bk.getConf().getLedgerMetadataFormatVersion();
         this.ensembleSize = ensembleSize;
@@ -118,6 +130,7 @@ class LedgerCreateOp {
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = clientStats.getCreateOpLogger();
         this.clientStats = clientStats;
+        this.parentLogger = parentLogger;
     }
 
     /**
@@ -242,9 +255,10 @@ class LedgerCreateOp {
             try {
                 if (adv) {
                     lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata,
-                                             digestType, passwd, writeFlags);
+                                             digestType, passwd, writeFlags, parentLogger);
                 } else {
-                    lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
+                    lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags,
+                                          parentLogger);
                 }
             } catch (GeneralSecurityException e) {
                 log.error()
@@ -302,6 +316,7 @@ class LedgerCreateOp {
         private org.apache.bookkeeper.client.api.DigestType builderDigestType =
             org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
+        private Logger builderParentLogger;
 
         CreateBuilderImpl(BookKeeper bk) {
             this.bk = bk;
@@ -347,6 +362,12 @@ class LedgerCreateOp {
         @Override
         public CreateBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             this.builderDigestType = digestType;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withLoggerContext(Logger parentLogger) {
+            this.builderParentLogger = parentLogger;
             return this;
         }
 
@@ -416,7 +437,7 @@ class LedgerCreateOp {
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, null, builderCustomMetadata, builderWriteFlags,
-                bk.getClientCtx().getClientStats());
+                bk.getClientCtx().getClientStats(), builderParentLogger);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -477,7 +498,8 @@ class LedgerCreateOp {
                     DigestType.fromApiDigestType(parent.builderDigestType),
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
                     parent.builderWriteFlags,
-                    parent.bk.getClientCtx().getClientStats());
+                    parent.bk.getClientCtx().getClientStats(),
+                    parent.builderParentLogger);
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

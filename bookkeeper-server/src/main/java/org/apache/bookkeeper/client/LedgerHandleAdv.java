@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.Serializable;
@@ -56,7 +57,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     long ledgerId, Versioned<LedgerMetadata> metadata,
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags);
+        this(clientCtx, ledgerId, metadata, digestType, password, writeFlags, null);
+    }
+
+    LedgerHandleAdv(ClientContext clientCtx,
+                    long ledgerId, Versioned<LedgerMetadata> metadata,
+                    BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags,
+                    Logger parentLogger)
+            throws GeneralSecurityException, NumberFormatException {
+        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags, parentLogger);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
