@@ -29,7 +29,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -49,7 +49,7 @@ import org.apache.zookeeper.data.ACL;
 /**
  * ZK based implementation of LedgerAuditorManager.
  */
-@Slf4j
+@CustomLog
 public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 
     private final ZooKeeper zkc;
@@ -182,10 +182,9 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                 // Ok
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("InterruptedException while deleting myVote: " + myVote,
-                        ie);
+                log.warn().exception(ie).attr("myVote", myVote).log("InterruptedException while deleting myVote");
             } catch (KeeperException ke) {
-                log.error("Exception while deleting myVote:" + myVote, ke);
+                log.error().exception(ke).attr("myVote", myVote).log("Exception while deleting myVote");
             }
         }
     }

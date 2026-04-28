@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.common.component.ComponentStarter;
@@ -48,7 +48,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
  * <p>It is a rewritten server using {@link org.apache.bookkeeper.common.component.LifecycleComponent},
  * replacing the legacy server {@link org.apache.bookkeeper.proto.BookieServer}.
  */
-@Slf4j
+@CustomLog
 public class Main {
     static final Options BK_OPTS = new Options();
     static {
@@ -93,13 +93,13 @@ public class Main {
             conf.loadConf(new File(confFile).toURI().toURL());
             conf.validate();
         } catch (MalformedURLException e) {
-            log.error("Could not open configuration file: {}", confFile, e);
+            log.error().exception(e).attr("confFile", confFile).log("Could not open configuration file");
             throw new IllegalArgumentException();
         } catch (ConfigurationException e) {
-            log.error("Malformed configuration file: {}", confFile, e);
+            log.error().exception(e).attr("confFile", confFile).log("Malformed configuration file");
             throw new IllegalArgumentException();
         }
-        log.info("Using configuration file {}", confFile);
+        log.info().attr("confFile", confFile).log("Using configuration file");
     }
 
     @SuppressWarnings("deprecation")
@@ -133,7 +133,7 @@ public class Main {
             String sZkLedgersRootPath = "/ledgers";
             if (cmdLine.hasOption('m')) {
                 sZkLedgersRootPath = cmdLine.getOptionValue('m');
-                log.info("Get cmdline zookeeper ledger path: {}", sZkLedgersRootPath);
+                log.info().attr("zkLedgersRootPath", sZkLedgersRootPath).log("Get cmdline zookeeper ledger path");
                 overwriteMetadataServiceUri = true;
             }
 
@@ -141,7 +141,7 @@ public class Main {
             String sZK = conf.getZkServers();
             if (cmdLine.hasOption('z')) {
                 sZK = cmdLine.getOptionValue('z');
-                log.info("Get cmdline zookeeper instance: {}", sZK);
+                log.info().attr("zkServers", sZK).log("Get cmdline zookeeper instance");
                 overwriteMetadataServiceUri = true;
             }
 
@@ -149,49 +149,49 @@ public class Main {
             if (overwriteMetadataServiceUri) {
                 String metadataServiceUri = "zk://" + sZK + sZkLedgersRootPath;
                 conf.setMetadataServiceUri(metadataServiceUri);
-                log.info("Overwritten service uri to {}", metadataServiceUri);
+                log.info().attr("metadataServiceUri", metadataServiceUri).log("Overwritten service uri");
             }
 
             if (cmdLine.hasOption('p')) {
                 String sPort = cmdLine.getOptionValue('p');
-                log.info("Get cmdline bookie port: {}", sPort);
+                log.info().attr("port", sPort).log("Get cmdline bookie port");
                 conf.setBookiePort(Integer.parseInt(sPort));
             }
 
             if (cmdLine.hasOption("httpport")) {
                 String sPort = cmdLine.getOptionValue("httpport");
-                log.info("Get cmdline http port: {}", sPort);
+                log.info().attr("port", sPort).log("Get cmdline http port");
                 Integer iPort = Integer.parseInt(sPort);
                 conf.setHttpServerPort(iPort.intValue());
             }
 
             if (cmdLine.hasOption('j')) {
                 String sJournalDir = cmdLine.getOptionValue('j');
-                log.info("Get cmdline journal dir: {}", sJournalDir);
+                log.info().attr("journalDir", sJournalDir).log("Get cmdline journal dir");
                 conf.setJournalDirName(sJournalDir);
             }
 
             if (cmdLine.hasOption('i')) {
                 String[] sIndexDirs = cmdLine.getOptionValues('i');
-                log.info("Get cmdline index dirs: ");
+                log.info("Get cmdline index dirs");
                 for (String index : sIndexDirs) {
-                    log.info("indexDir : {}", index);
+                    log.info().attr("indexDir", index).log("indexDir");
                 }
                 conf.setIndexDirName(sIndexDirs);
             }
 
             if (cmdLine.hasOption('l')) {
                 String[] sLedgerDirs = cmdLine.getOptionValues('l');
-                log.info("Get cmdline ledger dirs: ");
+                log.info("Get cmdline ledger dirs");
                 for (String ledger : sLedgerDirs) {
-                    log.info("ledgerdir : {}", ledger);
+                    log.info().attr("ledgerDir", ledger).log("ledgerDir");
                 }
                 conf.setLedgerDirNames(sLedgerDirs);
             }
 
             return conf;
         } catch (ParseException e) {
-            log.error("Error parsing command line arguments : ", e);
+            log.error().exception(e).log("Error parsing command line arguments");
             throw new IllegalArgumentException(e);
         }
     }
@@ -221,7 +221,7 @@ public class Main {
         try {
             server = buildBookieServer(new BookieConfiguration(conf));
         } catch (Exception e) {
-            log.error("Failed to build bookie server", e);
+            log.error().exception(e).log("Failed to build bookie server");
             System.err.println(e.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
@@ -232,10 +232,10 @@ public class Main {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             // the server is interrupted
-            log.info("Bookie server is interrupted. Exiting ...");
+            log.info("Bookie server is interrupted. Exiting");
             System.err.println(ie.getMessage());
         } catch (ExecutionException ee) {
-            log.error("Error in bookie shutdown", ee.getCause());
+            log.error().exception(ee.getCause()).log("Error in bookie shutdown");
             System.err.println(ee.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
@@ -248,7 +248,7 @@ public class Main {
         try {
             conf = parseArgs(args);
         } catch (IllegalArgumentException iae) {
-            log.error("Error parsing command line arguments : ", iae);
+            log.error().exception(iae).log("Error parsing command line arguments");
             System.err.println(iae.getMessage());
             printUsage();
             throw iae;

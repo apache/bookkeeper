@@ -20,14 +20,13 @@ package org.apache.bookkeeper.tests.integration.utils;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * A thread reaper.
  */
+@CustomLog
 public class ThreadReaper {
-    private static final Logger LOG = LoggerFactory.getLogger(ThreadReaper.class);
     private static AtomicInteger groupId = new AtomicInteger(0);
 
     public static <T> T runWithReaper(Callable<T> callable) throws Exception {
@@ -47,17 +46,17 @@ public class ThreadReaper {
         while (tg.activeCount() > 0 && i > 0) {
             tg.interrupt();
             Thread.sleep(100);
-            LOG.info("{} threads still alive", tg.activeCount());
+            log.info().attr("activeCount", tg.activeCount()).log("threads still alive");
             i--;
         }
         if (tg.activeCount() == 0) {
-            LOG.info("All threads in reaper group dead");
+            log.info("All threads in reaper group dead");
         } else {
             Thread[] threads = new Thread[tg.activeCount()];
             int found = tg.enumerate(threads);
-            LOG.info("Leaked {} threads", found);
+            log.info().attr("leakedCount", found).log("Leaked threads");
             for (int j = 0; j < found; j++) {
-                LOG.info("Leaked thread {}", threads[j]);
+                log.info().attr("thread", threads[j]).log("Leaked thread");
             }
         }
         return ret;

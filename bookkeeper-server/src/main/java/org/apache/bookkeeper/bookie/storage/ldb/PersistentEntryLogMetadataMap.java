@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException.EntryLogMetadataMapException;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.EntryLogMetadata.EntryLogMetadataRecyclable;
@@ -45,7 +45,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  * Persistent entryLogMetadata-map that stores entry-loggers metadata into
  * rocksDB.
  */
-@Slf4j
+@CustomLog
 public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     // persistent Rocksdb to store metadata-map
     private final KeyValueStorage metadataMapDB;
@@ -77,11 +77,14 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
     };
 
     public PersistentEntryLogMetadataMap(String metadataPath, ServerConfiguration conf) throws IOException {
-        log.info("Loading persistent entrylog metadata-map from {}/{}", metadataPath, METADATA_CACHE);
+        log.info()
+                .attr("metadataPath", metadataPath)
+                .attr("metadataCache", METADATA_CACHE)
+                .log("Loading persistent entrylog metadata-map");
         File dir = new File(metadataPath);
         if (!dir.mkdirs() && !dir.exists()) {
             String err = "Unable to create directory " + dir;
-            log.error(err);
+            log.error().attr("directory", dir).log("Unable to create directory");
             throw new IOException(err);
         }
         metadataMapDB = KeyValueStorageRocksDB.factory.newKeyValueStorage(metadataPath, METADATA_CACHE,
@@ -115,7 +118,10 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
                 entryLogMeta.serialize(dataos.get());
                 metadataMapDB.put(key.array, baos.get().toByteArray());
             } catch (IllegalStateException | IOException e) {
-                log.error("Failed to serialize entrylog-metadata, entryLogId {}", entryLogId);
+                log.error()
+                        .exception(e)
+                        .attr("entryLogId", entryLogId)
+                        .log("Failed to serialize entrylog-metadata");
                 throw new EntryLogMetadataMapException(e);
             }
         } finally {
@@ -147,13 +153,13 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
                 }
             }
         } catch (IOException e) {
-            log.error("Failed to iterate over entry-log metadata map {}", e.getMessage(), e);
+            log.error().exception(e).log("Failed to iterate over entry-log metadata map");
             throw new EntryLogMetadataMapException(e);
         } finally {
             try {
                 iterator.close();
             } catch (IOException e) {
-                log.error("Failed to close entry-log metadata-map rocksDB iterator {}", e.getMessage(), e);
+                log.error().exception(e).log("Failed to close entry-log metadata-map rocksDB iterator");
             }
         }
     }
@@ -179,7 +185,10 @@ public class PersistentEntryLogMetadataMap implements EntryLogMetadataMap {
                 metadata.recycle();
             }
         } catch (IOException e) {
-            log.error("Failed to get metadata for entryLogId {}: {}", entryLogId, e.getMessage(), e);
+            log.error()
+                    .exception(e)
+                    .attr("entryLogId", entryLogId)
+                    .log("Failed to get metadata for entryLogId");
             throw new EntryLogMetadataMapException(e);
         } finally {
             key.recycle();

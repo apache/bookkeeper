@@ -22,9 +22,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 public class Java9IntHash implements IntHash {
     static final boolean HAS_JAVA9_CRC32C;
     private static final Method UPDATE_BYTES;
@@ -54,9 +54,7 @@ public class Java9IntHash implements IntHash {
 
             hasJava9CRC32C = true;
         } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to use reflected methods: ", e);
-            }
+            log.debug().exception(e).log("Unable to use reflected methods");
             updateBytes = null;
             updateDirectByteBuffer = null;
         }

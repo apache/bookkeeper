@@ -21,13 +21,13 @@ package org.apache.bookkeeper.tests.containers;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import java.time.Duration;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test container that runs zookeeper.
  */
-@Slf4j
+@CustomLog
 public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStoreContainer<SelfT> {
 
     private static final int ZK_PORT = 2181;
@@ -67,8 +67,11 @@ public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStore
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
 
         super.start();
-        log.info("Start a zookeeper server at container {} : external service uri = {}, internal service uri = {}",
-            this.getContainerName(), getExternalServiceUri(), getInternalServiceUri());
+        log.info()
+                .attr("container", this.getContainerName())
+                .attr("externalServiceUri", getExternalServiceUri())
+                .attr("internalServiceUri", getInternalServiceUri())
+                .log("Start a zookeeper server at container");
     }
 
 }

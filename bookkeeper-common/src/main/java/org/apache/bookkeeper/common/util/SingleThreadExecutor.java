@@ -32,8 +32,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.collections.GrowableMpScArrayConsumerBlockingQueue;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -44,7 +44,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * <p>Tasks are executed in a safe manner: if there are exceptions they are logged and the executor will
  * proceed with the next tasks.
  */
-@Slf4j
+@CustomLog
 public class SingleThreadExecutor extends AbstractExecutorService implements ExecutorService, Runnable {
     private final BlockingQueue<Runnable> queue;
     private final Thread runner;
@@ -134,7 +134,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
             // Exit loop when interrupted
             Thread.currentThread().interrupt();
         } catch (Throwable t) {
-            log.error("Exception in executor: {}", t.getMessage(), t);
+            log.error().exception(t).log("Exception in executor");
             throw t;
         } finally {
             state = State.Terminated;
@@ -151,7 +151,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 return false;
             } else {
                 tasksFailed.increment();
-                log.error("Error while running task: {}", t.getMessage(), t);
+                log.error().exception(t).log("Error while running task");
             }
         } finally {
             decrementPendingTaskCount(1);
@@ -289,9 +289,10 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         }
 
         int currentPendingCount = pendingTaskCountUpdater.addAndGet(this, -count);
-        if (log.isDebugEnabled()) {
-            log.debug("Released {} task(s), current pending count: {}", count, currentPendingCount);
-        }
+        log.debug()
+                .attr("released", count)
+                .attr("currentPendingCount", currentPendingCount)
+                .log("Released tasks");
     }
 
     private void reject() {

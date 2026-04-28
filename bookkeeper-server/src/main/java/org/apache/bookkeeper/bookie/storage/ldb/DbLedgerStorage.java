@@ -42,7 +42,7 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -77,7 +77,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Implementation of LedgerStorage that uses RocksDB to keep the indexes for entries stored in EntryLogs.
  */
-@Slf4j
+@CustomLog
 public class DbLedgerStorage implements LedgerStorage {
 
     public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
@@ -159,9 +159,9 @@ public class DbLedgerStorage implements LedgerStorage {
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
 
         log.info("Started Db Ledger Storage");
-        log.info(" - Number of directories: {}", numberOfDirs);
-        log.info(" - Write cache size: {} MB", writeCacheMaxSize / MB);
-        log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
+        log.info().attr("numberOfDirs", numberOfDirs).log(" - Number of directories");
+        log.info().attr("writeCacheSizeMb", writeCacheMaxSize / MB).log(" - Write cache size");
+        log.info().attr("readCacheSizeMb", readCacheMaxSize / MB).log(" - Read Cache");
 
         if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.estimateMaxDirectMemory()) {
             throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
