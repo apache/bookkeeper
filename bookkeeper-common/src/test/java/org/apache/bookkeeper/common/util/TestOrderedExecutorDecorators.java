@@ -32,6 +32,7 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LogEvent;
@@ -40,14 +41,12 @@ import org.apache.logging.log4j.core.appender.NullAppender;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test that decorators applied by OrderedExecutor/Scheduler are correctly applied.
  */
+@CustomLog
 public class TestOrderedExecutorDecorators {
-    private static final Logger log = LoggerFactory.getLogger(TestOrderedExecutorDecorators.class);
     private static final String MDC_KEY = "mdc-key";
 
     private NullAppender mockAppender;
