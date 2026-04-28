@@ -411,50 +411,16 @@ class BookieNettyServer {
             ServerBootstrap jvmBootstrap = new ServerBootstrap();
             jvmBootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
             jvmBootstrap.group(jvmEventLoopGroup, jvmEventLoopGroup);
-            jvmBootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
-            jvmBootstrap.childOption(ChannelOption.SO_KEEPALIVE, conf.getServerSockKeepalive());
-            jvmBootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
             jvmBootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
             jvmBootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            // Set TCP keepalive parameters if configured. Use childOption() so that these
-            // options are applied to each accepted SocketChannel (not the listening
-            // ServerSocketChannel), which is the Netty-idiomatic approach and avoids
-            // relying on OS-level socket option inheritance behavior.
-            if (EventLoopUtil.isIoUringGroup(jvmEventLoopGroup)) {
-                if (conf.getServerTcpKeepIdle() > 0) {
-                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
-                }
-                if (conf.getServerTcpKeepIntvl() > 0) {
-                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
-                }
-                if (conf.getServerTcpKeepCnt() > 0) {
-                    jvmBootstrap.childOption(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
-                }
-            } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
-                if (conf.getServerTcpKeepIdle() > 0) {
-                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
-                }
-                if (conf.getServerTcpKeepIntvl() > 0) {
-                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
-                }
-                if (conf.getServerTcpKeepCnt() > 0) {
-                    jvmBootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
-                }
-            }
-
-            if (jvmEventLoopGroup instanceof DefaultEventLoopGroup) {
-                jvmBootstrap.channel(LocalServerChannel.class);
-            } else if (EventLoopUtil.isIoUringGroup(jvmEventLoopGroup)) {
-                jvmBootstrap.channel(IoUringServerSocketChannel.class);
-            } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
-                jvmBootstrap.channel(EpollServerSocketChannel.class);
-            } else {
-                jvmBootstrap.channel(NioServerSocketChannel.class);
-            }
+            // Local transport (BOOKKEEPER-896) is an in-VM transport that does not involve
+            // the network stack, so network-related socket options such as TCP_NODELAY,
+            // SO_KEEPALIVE, SO_LINGER and TCP_KEEP* are not applicable and must not be set here.
+            jvmBootstrap.channel(LocalServerChannel.class);
 
             jvmBootstrap.childHandler(new ChannelInitializer<LocalChannel>() {
                 @Override
