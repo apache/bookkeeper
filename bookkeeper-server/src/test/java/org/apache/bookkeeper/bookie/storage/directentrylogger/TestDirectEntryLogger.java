@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
@@ -46,7 +47,6 @@ import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.MockEntryLogIds;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +61,7 @@ import org.junit.jupiter.api.condition.OS;
 @Slf4j
 @DisabledOnOs(OS.WINDOWS)
 public class TestDirectEntryLogger {
-    private final Slogger slog = Slogger.CONSOLE;
+    private final Logger log = Logger.get(TestDirectEntryLogger.class);
 
     private static final long ledgerId1 = 1234;
 
@@ -95,7 +95,7 @@ public class TestDirectEntryLogger {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             long loc1 = elog.addEntry(ledgerId1, e1.slice());
             int logId1 = logIdFromLocation(loc1);
             assertThat(logId1, equalTo(1));
@@ -133,7 +133,7 @@ public class TestDirectEntryLogger {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             long loc1 = elog.addEntry(ledgerId1, e1.slice());
             long loc2 = elog.addEntry(ledgerId1, e2.slice());
             elog.flush();
@@ -178,7 +178,7 @@ public class TestDirectEntryLogger {
                      maxFileSize, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE) {
+                     log, NullStatsLogger.INSTANCE) {
                 @Override
                 LogReader newDirectReader(int logId) throws IOException {
                     outstandingReaders.incrementAndGet();
@@ -239,7 +239,7 @@ public class TestDirectEntryLogger {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             loc1 = elog.addEntry(ledgerId1, e1);
             loc2 = elog.addEntry(ledgerId2, e2);
             loc3 = elog.addEntry(ledgerId1, e3);
@@ -258,7 +258,7 @@ public class TestDirectEntryLogger {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             int logId = logIdFromLocation(loc1);
             assertThat(logId, equalTo(logIdFromLocation(loc2)));
             assertThat(logId, equalTo(logIdFromLocation(loc3)));
@@ -307,7 +307,7 @@ public class TestDirectEntryLogger {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             loc1 = writer.addEntry(ledgerId1, e1);
             loc2 = writer.addEntry(ledgerId2, e2);
             loc3 = writer.addEntry(ledgerId1, e3);
@@ -326,7 +326,7 @@ public class TestDirectEntryLogger {
                          64 * 1024, // read buffer size
                          1, // numReadThreads
                          300, // max fd cache time in seconds
-                         slog, NullStatsLogger.INSTANCE)) {
+                         log, NullStatsLogger.INSTANCE)) {
                 int logId = logIdFromLocation(loc1);
                 try {
                     reader.readEntryLogIndex(logId);
@@ -366,7 +366,7 @@ public class TestDirectEntryLogger {
                      16 * 1024 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             for (int i = 0; i < ledgerCount; i++) {
                 long loc = writer.addEntry(i, makeEntry(i, 1L, 1000));
                 if (lastLoc >= 0) {
@@ -390,7 +390,7 @@ public class TestDirectEntryLogger {
                      16 * 1024 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             int logId = logIdFromLocation(lastLoc);
             EntryLogMetadata metaRead = reader.readEntryLogIndex(logId);
 
@@ -436,7 +436,7 @@ public class TestDirectEntryLogger {
                 32 * 1024, // read buffer size
                 1, // numReadThreads
                 300, // max fd cache time in seconds
-                slog, NullStatsLogger.INSTANCE);
+                log, NullStatsLogger.INSTANCE);
         try { // not using try-with-resources because close needs to be unblocked in failure
             // Add entries.
             // Ledger 1 is on first entry log
@@ -503,7 +503,7 @@ public class TestDirectEntryLogger {
                 64 * 1024, // read buffer size
                 1, // numReadThreads
                 300, // max fd cache time in seconds
-                slog, NullStatsLogger.INSTANCE)) {
+                log, NullStatsLogger.INSTANCE)) {
             long loc1 = elog.addEntry(ledgerId1, e1.slice());
             int logId1 = logIdFromLocation(loc1);
             assertThat(logId1, equalTo(1));

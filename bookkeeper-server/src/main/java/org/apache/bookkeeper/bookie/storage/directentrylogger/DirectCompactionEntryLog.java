@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPAC
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
@@ -34,7 +35,6 @@ import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
     protected final int srcLogId;
     protected final int dstLogId;
-    protected final Slogger slog;
+    protected final Logger log;
 
     protected final File compactingFile;
     protected final File compactedFile;
@@ -57,10 +57,10 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
                                      BufferPool writeBuffers,
                                      NativeIO nativeIO,
                                      ByteBufAllocator allocator,
-                                     Slogger slog) throws IOException {
+                                     Logger log) throws IOException {
         return new WritingDirectCompactionEntryLog(
                 srcLogId, dstLogId, ledgerDir, maxFileSize,
-                writeExecutor, writeBuffers, nativeIO, allocator, slog);
+                writeExecutor, writeBuffers, nativeIO, allocator, log);
     }
 
     static CompactionEntryLog recoverLog(int srcLogId,
@@ -71,15 +71,15 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
                                          NativeIO nativeIO,
                                          ByteBufAllocator allocator,
                                          OpStatsLogger readBlockStats,
-                                         Slogger slog) {
+                                         Logger log) {
         return new RecoveredDirectCompactionEntryLog(srcLogId, dstLogId, ledgerDir, readBufferSize,
-                                                     maxSaneEntrySize, nativeIO, allocator, readBlockStats, slog);
+                                                     maxSaneEntrySize, nativeIO, allocator, readBlockStats, log);
     }
 
     private DirectCompactionEntryLog(int srcLogId,
                                      int dstLogId,
                                      File ledgerDir,
-                                     Slogger slog) {
+                                     Logger log) {
         compactingFile = compactingFile(ledgerDir, dstLogId);
         compactedFile = compactedFile(ledgerDir, dstLogId, srcLogId);
         completeFile = DirectEntryLogger.logFile(ledgerDir, dstLogId);
@@ -87,7 +87,11 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
         this.srcLogId = srcLogId;
         this.dstLogId = dstLogId;
 
-        this.slog = slog.kv("dstLogId", dstLogId).kv("srcLogId", srcLogId).ctx(DirectCompactionEntryLog.class);
+        this.log = Logger.get(DirectCompactionEntryLog.class).with()
+            .ctx(log)
+            .attr("dstLogId", dstLogId)
+            .attr("srcLogId", srcLogId)
+            .build();
     }
 
     @Override
@@ -95,13 +99,15 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
         try {
             Files.deleteIfExists(compactingFile.toPath());
         } catch (IOException ioe) {
-            slog.kv("compactingFile", compactingFile).warn(Events.COMPACTION_ABORT_EXCEPTION, ioe);
+            log.warn().exception(ioe).attr("compactingFile", compactingFile)
+                .log("Compaction aborted");
         }
 
         try {
             Files.deleteIfExists(compactedFile.toPath());
         } catch (IOException ioe) {
-            slog.kv("compactedFile", compactedFile).warn(Events.COMPACTION_ABORT_EXCEPTION, ioe);
+            log.warn().exception(ioe).attr("compactedFile", compactedFile)
+                .log("Compaction aborted");
         }
     }
 
@@ -109,8 +115,8 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
     @Override
     public void makeAvailable() throws IOException {
         idempotentLink(compactedFile, completeFile);
-        slog.kv("compactedFile", compactedFile).kv("completeFile", completeFile)
-            .info(Events.COMPACTION_MAKE_AVAILABLE);
+        log.info().attr("compactedFile", compactedFile).attr("completeFile", completeFile)
+            .log("Making compacted log available");
     }
 
     private static void idempotentLink(File src, File dst) throws IOException {
@@ -132,15 +138,17 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
         try {
             Files.deleteIfExists(compactingFile.toPath());
         } catch (IOException ioe) {
-            slog.kv("compactingFile", compactingFile).warn(Events.COMPACTION_DELETE_FAILURE, ioe);
+            log.warn().exception(ioe).attr("compactingFile", compactingFile)
+                .log("Failed to delete compaction artifact");
         }
 
         try {
             Files.deleteIfExists(compactedFile.toPath());
         } catch (IOException ioe) {
-            slog.kv("compactedFile", compactedFile).warn(Events.COMPACTION_DELETE_FAILURE, ioe);
+            log.warn().exception(ioe).attr("compactedFile", compactedFile)
+                .log("Failed to delete compaction artifact");
         }
-        slog.info(Events.COMPACTION_COMPLETE);
+        log.info("Compaction complete");
     }
 
     @Override
@@ -168,15 +176,15 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
                                           NativeIO nativeIO,
                                           ByteBufAllocator allocator,
                                           OpStatsLogger readBlockStats,
-                                          Slogger slog) {
-            super(srcLogId, dstLogId, ledgerDir, slog);
+                                          Logger log) {
+            super(srcLogId, dstLogId, ledgerDir, log);
             this.allocator = allocator;
             this.nativeIO = nativeIO;
             this.readBufferSize = readBufferSize;
             this.maxSaneEntrySize = maxSaneEntrySize;
             this.readBlockStats = readBlockStats;
 
-            this.slog.info(Events.COMPACTION_LOG_RECOVERED);
+            this.log.info("Recovered partially-flushed compaction log");
         }
 
         private IllegalStateException illegalOpException() {
@@ -223,16 +231,16 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
                                         BufferPool writeBuffers,
                                         NativeIO nativeIO,
                                         ByteBufAllocator allocator,
-                                        Slogger slog) throws IOException {
-            super(srcLogId, dstLogId, ledgerDir, slog);
+                                        Logger log) throws IOException {
+            super(srcLogId, dstLogId, ledgerDir, log);
 
             this.writer = new WriterWithMetadata(
                     new DirectWriter(dstLogId, compactingFile.toString(), maxFileSize,
-                                     writeExecutor, writeBuffers, nativeIO, slog),
+                                     writeExecutor, writeBuffers, nativeIO, log),
                     new EntryLogMetadata(dstLogId),
                     allocator);
 
-            this.slog.info(Events.COMPACTION_LOG_CREATED);
+            this.log.info("Created compaction log");
         }
 
         @Override
@@ -251,13 +259,13 @@ public abstract class DirectCompactionEntryLog implements CompactionEntryLog {
 
             idempotentLink(compactingFile, compactedFile);
             if (!compactingFile.delete()) {
-                slog.kv("compactingFile", compactingFile)
-                    .kv("compactedFile", compactedFile)
-                    .info(Events.COMPACTION_DELETE_FAILURE);
+                log.info().attr("compactingFile", compactingFile)
+                    .attr("compactedFile", compactedFile)
+                    .log("Failed to delete compaction artifact");
             } else {
-                slog.kv("compactingFile", compactingFile)
-                    .kv("compactedFile", compactedFile)
-                    .info(Events.COMPACTION_MARK_COMPACTED);
+                log.info().attr("compactingFile", compactingFile)
+                    .attr("compactedFile", compactedFile)
+                    .log("Marked compaction log as compacted");
             }
         }
 
