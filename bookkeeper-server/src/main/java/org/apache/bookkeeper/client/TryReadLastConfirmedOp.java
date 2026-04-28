@@ -67,7 +67,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
 
         log.trace()
-                .attr("ledgerId", ledgerId)
+                .ctx(lh.log)
                 .attr("entryId", entryId)
                 .attr("rc", rc)
                 .log("TryReadLastConfirmed received response");
@@ -80,10 +80,10 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
 
                 log.trace()
+                        .ctx(lh.log)
                         .attr("lastAddConfirmed", () -> recoveryData.getLastAddConfirmed())
                         .attr("length", () -> recoveryData.getLength())
                         .attr("bookieIndex", bookieIndex)
-                        .attr("ledgerId", ledgerId)
                         .log("Received lastAddConfirmed");
 
                 if (recoveryData.getLastAddConfirmed() > maxRecoveredData.getLastAddConfirmed()) {
@@ -94,7 +94,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 hasValidResponse = true;
             } catch (BKException.BKDigestMatchException e) {
                 log.error()
-                        .attr("ledgerId", ledgerId)
+                        .ctx(lh.log)
                         .attr("entryId", entryId)
                         .attr("bookieAddr", currentEnsemble.get(bookieIndex))
                         .log("Mac mismatch while reading last entry from bookie");

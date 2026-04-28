@@ -196,7 +196,7 @@ public abstract class ReadOpBase implements Runnable {
                 ++numBookiesMissingEntry;
 
                 log.debug()
-                .attr("ledgerId", lh.ledgerId)
+                .ctx(lh.log)
                 .attr("entryId", eId)
                 .attr("bookieAddr", host)
                 .log("No such entry found on bookie");
@@ -204,8 +204,8 @@ public abstract class ReadOpBase implements Runnable {
             } else {
 
                 log.info()
+                        .ctx(lh.log)
                         .attr("error", errMsg)
-                        .attr("ledgerId", lh.ledgerId)
                         .attr("entryId", eId)
                         .attr("bookieAddr", host)
                         .log("Error while reading from bookie");
@@ -262,6 +262,7 @@ public abstract class ReadOpBase implements Runnable {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
 
                         log.debug()
+                                .ctx(lh.log)
                                 .attr("readOp", this)
                                 .attr("sentToHosts", sentToHosts)
                                 .attr("heardFromHostsBitSet", heardFromHostsBitSet)
