@@ -1,0 +1,37 @@
+{
+  "timestamp": {
+    "$resolver": "timestamp",
+    "pattern": {"format": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "timeZone": "UTC"}
+  },
+  "observed_timestamp": {
+    "$resolver": "timestamp",
+    "pattern": {"format": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "timeZone": "UTC"}
+  },
+  "severity_text": {"$resolver": "level", "field": "name"},
+  "severity_number": {
+    "$resolver": "pattern",
+    "pattern": "%level{TRACE=1, DEBUG=5, INFO=9, WARN=13, ERROR=17, FATAL=21}"
+  },
+  "body": {"$resolver": "message", "stringified": true},
+  "trace_id": {"$resolver": "mdc", "key": "trace_id"},
+  "span_id": {"$resolver": "mdc", "key": "span_id"},
+  "trace_flags": {"$resolver": "mdc", "key": "trace_flags"},
+  "instrumentation_scope": {
+    "name": {"$resolver": "logger", "field": "name"}
+  },
+  "resource": {
+    "service.name": "${otel.service.name}",
+    "host.name": "${otel.host.name}"
+  },
+  "attributes": {"$resolver": "mdc", "flatten": true},
+  "thread_name": {"$resolver": "thread", "field": "name"},
+  "exception": {
+    "type": {"$resolver": "exception", "field": "className"},
+    "message": {"$resolver": "exception", "field": "message"},
+    "stack_trace": {
+      "$resolver": "exception",
+      "field": "stackTrace",
+      "stackTrace": {"stringified": true}
+    }
+  }
+}
