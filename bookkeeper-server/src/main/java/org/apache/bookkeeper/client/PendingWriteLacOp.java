@@ -110,7 +110,7 @@ class PendingWriteLacOp implements WriteLacCallback {
             }
         } else {
             log.warn()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("bookieAddr", addr)
                     .log("WriteLac did not succeed");
         }

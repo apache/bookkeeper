@@ -18,9 +18,9 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.github.merlimat.slog.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
@@ -32,9 +32,8 @@ import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
  * starting from the last confirmed entry (from hints in the ledger entries),
  * it reads forward until it is not able to find a particular entry.
  */
+@CustomLog
 class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
-
-    private final Logger log;
 
     final LedgerHandle lh;
     final ClientContext clientCtx;
@@ -69,7 +68,6 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public LedgerRecoveryOp(LedgerHandle lh, ClientContext clientCtx) {
-        this.log = Logger.get(LedgerRecoveryOp.class).with().attr("ledgerId", lh.getId()).build();
         readCount = new AtomicLong(0);
         writeCount = new AtomicLong(0);
         readDone = false;
@@ -196,6 +194,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                 // check whether entry id is expected, so we won't overwritten any entries by mistake
                 if (entry.getEntryId() != lh.lastAddPushed + 1) {
                     log.error()
+                            .ctx(lh.log)
                             .attr("entryId", entry.getEntryId())
                             .attr("expectedEntryId", (lh.lastAddPushed + 1))
                             .log("Unexpected entryId during recovery add");
@@ -224,18 +223,18 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         // otherwise, some other error, we can't handle
         if (BKException.Code.OK != rc && !promise.isDone()) {
             log.error()
+                    .ctx(lh.log)
                     .attr("getMessage", BKException.getMessage(rc))
                     .attr("startEntryId", startEntryToRead)
                     .attr("endEntryId", endEntryToRead)
-                    .attr("ledgerId", lh.getId())
                     .log("Failure while reading entries: ( - ), ledger: while recovering ledger");
             submitCallback(rc);
         } else if (BKException.Code.OK == rc) {
             // we are here is because we successfully read an entry but readDone was already set to true.
             // this would happen on recovery a ledger than has gaps in the tail.
             log.warn()
+                    .ctx(lh.log)
                     .attr("entryId", entry.getEntryId())
-                    .attr("ledgerId", lh.getId())
                     .attr("readDone", readDone)
                     .log("Successfully read entry, but readDone is already set");
         }
@@ -246,9 +245,9 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != BKException.Code.OK) {
             log.error()
+                    .ctx(lh.log)
                     .attr("codeLogger", BKException.codeLogger(rc))
                     .attr("entryId", entryId + 1)
-                    .attr("ledgerId", lh.ledgerId)
                     .log("Failure while writing entry while recovering ledger");
             submitCallback(rc);
             return;

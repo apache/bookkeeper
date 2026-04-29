@@ -71,7 +71,7 @@ class ForceLedgerOp implements Runnable, ForceLedgerCallback {
         this.currentNonDurableLastAddConfirmed = lh.pendingAddsSequenceHead;
 
         log.debug()
-        .attr("ledgerId", lh.ledgerId)
+        .ctx(lh.log)
         .attr("nonDurableLac", currentNonDurableLastAddConfirmed)
         .log("force clientNonDurableLac");
 
@@ -111,7 +111,7 @@ class ForceLedgerOp implements Runnable, ForceLedgerCallback {
                 // for every acknowledged entry before issuing the force() call
 
                 log.debug()
-                .attr("ledgerId", ledgerId)
+                .ctx(lh.log)
                 .attr("nonDurableLac", currentNonDurableLastAddConfirmed)
                 .log("After force on ledger, updating LastAddConfirmed");
 
@@ -122,7 +122,7 @@ class ForceLedgerOp implements Runnable, ForceLedgerCallback {
             // at least one bookie failed, as we are waiting for all the bookies
             // we can fail immediately
             log.error()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("bookieAddr", addr)
                     .log("ForceLedger did not succeed");
             errored = true;
