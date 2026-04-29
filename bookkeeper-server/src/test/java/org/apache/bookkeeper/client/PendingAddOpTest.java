@@ -24,7 +24,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
@@ -164,5 +167,34 @@ public class PendingAddOpTest {
         op.requestTimeNanos = 0L;
 
         assertTrue(op.maybeTimeout());
+    }
+
+    /**
+     * Verify that {@link PendingAddOp#timeoutQuorumWait()} is a no-op when the op has already
+     * been recycled (i.e. {@code lh} and {@code clientCtx} are {@code null}).
+     *
+     * <p>This covers the second concern raised in the review of #4760: even after
+     * {@link PendingAddOp#maybeTimeout()} captures a non-null {@code clientCtx} snapshot,
+     * {@code recyclePendAddOpObject()} may complete before {@code timeoutQuorumWait()}
+     * acquires the monitor. The pre-existing {@code if (completed) return;} guard does not
+     * cover this because recycling resets {@code completed} to {@code false}; without an
+     * explicit null check the method NPEs on {@code lh.getLedgerMetadata()} (or similar)
+     * and, worse, may invoke {@code handleUnrecoverableErrorDuringAdd} on a stale handle.
+     */
+    @Test
+    public void testTimeoutQuorumWaitIsNoOpWhenAlreadyRecycled() {
+        PendingAddOp op = PendingAddOp.create(
+                lh, mockClientContext, lh.getCurrentEnsemble(),
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {}, null);
+
+        // Simulate post-recycle state: recyclePendAddOpObject() has already nulled these fields.
+        op.lh = null;
+        op.clientCtx = null;
+
+        // Must not throw NPE — and must not invoke the unrecoverable-error handler on the
+        // (now-stale) ledger handle, which would cause spurious failures on a recycled op.
+        op.timeoutQuorumWait();
+        verify(lh, never()).handleUnrecoverableErrorDuringAdd(anyInt());
     }
 }
