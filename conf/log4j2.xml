@@ -27,27 +27,21 @@
         <Property name="bookkeeper.log.root.appender">CONSOLE</Property>
     </Properties>
     <Appenders>
+        <!--
+            The "%X" pattern element renders the structured attributes attached
+            to each log event (slog ".attr(...)" calls and any java.util.MDC /
+            Log4j2 ThreadContext entries). It is rendered as "{key=value, ...}".
+            Drop or replace it with named keys (e.g. %X{ledgerId}) for a more
+            specific format.
+        -->
         <Console name="CONSOLE" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n"/>
-        </Console>
-        <Console name="CONSOLEMDC" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] %X - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m %X%n"/>
         </Console>
         <File name="TRACEFILE" fileName="${sys:bookkeeper.log.dir}/bookkeeper-trace.log">
-            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] - %m%n"/>
-        </File>
-        <File name="TRACEFILEMDC" fileName="${sys:bookkeeper.log.dir}/bookkeeper-trace.log">
-            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] %X - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L][%ndc] - %m %X%n"/>
         </File>
         <RollingFile name="ROLLINGFILE" fileName="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}" filePattern="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}%d{.yyyy-MM-dd}">
-            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m%n"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy modulate="true"/>
-            </Policies>
-            <DefaultRolloverStrategy max="100"/>
-        </RollingFile>
-        <RollingFile name="ROLLINGFILEMDC" fileName="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}" filePattern="${sys:bookkeeper.log.dir}/${sys:bookkeeper.log.file}%d{.yyyy-MM-dd}">
-            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L] %X - %m%n"/>
+            <PatternLayout pattern="%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m %X%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true"/>
             </Policies>
@@ -58,8 +52,5 @@
         <Root level="${sys:bookkeeper.log.root.level}">
             <AppenderRef ref="${sys:bookkeeper.log.root.appender}"/>
         </Root>
-        <Logger name="org.apache.bookkeeper.bookie.storage.directentrylogger" level="INFO">
-                <AppenderRef ref="${sys:bookkeeper.log.root.appender}MDC"/>
-        </Logger>
     </Loggers>
 </Configuration>
