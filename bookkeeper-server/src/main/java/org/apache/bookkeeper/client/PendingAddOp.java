@@ -154,7 +154,16 @@ class PendingAddOp implements WriteCallback {
     }
 
     boolean maybeTimeout() {
-        if (MathUtils.elapsedNanos(requestTimeNanos) >= clientCtx.getConf().addEntryQuorumTimeoutNanos) {
+        // Snapshot clientCtx into a local: recyclePendAddOpObject() may run on another thread
+        // and null the field while monitorPendingAddOps() still holds an iterator reference
+        // to this op. A single read prevents the field from going null between the guard and
+        // the getConf() dereference below.
+        ClientContext ctx = clientCtx;
+        if (ctx == null) {
+            // Already recycled — the add-entry completed before the timeout monitor fired.
+            return false;
+        }
+        if (MathUtils.elapsedNanos(requestTimeNanos) >= ctx.getConf().addEntryQuorumTimeoutNanos) {
             timeoutQuorumWait();
             return true;
         }
@@ -162,7 +171,11 @@ class PendingAddOp implements WriteCallback {
     }
 
     synchronized void timeoutQuorumWait() {
-        if (completed) {
+        // lh / clientCtx are nulled by recyclePendAddOpObject() under this same monitor.
+        // Once we hold the lock, a recycle has either not started or fully completed; if any
+        // of these are null, the op has been recycled and there is nothing to time out.
+        // (The completed flag alone is insufficient: recycle resets it to false.)
+        if (completed || lh == null || clientCtx == null) {
             return;
         }
 
