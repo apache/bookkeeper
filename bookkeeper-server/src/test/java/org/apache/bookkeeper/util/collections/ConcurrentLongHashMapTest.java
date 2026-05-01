@@ -432,6 +432,89 @@ public class ConcurrentLongHashMapTest {
     }
 
     /**
+     * Cross-thread put-publish-then-read invariant: once a {@code put(k, v)} has returned and the
+     * writer has published k via a volatile counter, EVERY reader that observes that counter must
+     * see a non-null value for k. A failure here would mean a successful put was "lost" by the
+     * map's get path — the failure mode the Table-snapshot design exists to prevent.
+     *
+     * <p>The map starts at the smallest legal capacity with autoShrink enabled, so the rehash
+     * code path is exercised on virtually every put. This is the most aggressive workload for
+     * the rehash-vs-get race that the previous separate-volatile-arrays design couldn't survive.
+     */
+    @Test
+    public void testNoLostGetAfterPublish() throws Throwable {
+        ConcurrentLongHashMap<String> map = ConcurrentLongHashMap.<String>newBuilder()
+                .expectedItems(2)
+                .concurrencyLevel(1)
+                .autoShrink(true)
+                .mapIdleFactor(0.25f)
+                .build();
+
+        final int totalKeys = 50_000;
+        final int readerThreads = 8;
+
+        AtomicLong highestPublished = new AtomicLong(-1);
+        AtomicReference<Throwable> ex = new AtomicReference<>();
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        CyclicBarrier barrier = new CyclicBarrier(readerThreads + 1);
+        List<Future<?>> futures = new ArrayList<>();
+
+        try {
+            // Writer: put then publish. The volatile-set on highestPublished establishes
+            // happens-before with any reader that observes the published value.
+            futures.add(executor.submit(() -> {
+                barrier.await();
+                for (int i = 0; i < totalKeys; i++) {
+                    assertNull(map.put(i, "v" + i));
+                    highestPublished.set(i);
+                }
+                return null;
+            }));
+
+            // Readers: observe the published counter, then verify every key in [0, counter] is
+            // present with the expected value. The reader pulls the counter once per cycle and
+            // catches up to it before pulling again.
+            for (int r = 0; r < readerThreads; r++) {
+                futures.add(executor.submit(() -> {
+                    barrier.await();
+                    try {
+                        long lastChecked = -1;
+                        while (lastChecked < totalKeys - 1) {
+                            long target = highestPublished.get();
+                            while (lastChecked < target) {
+                                lastChecked++;
+                                String v = map.get(lastChecked);
+                                if (v == null) {
+                                    throw new AssertionError(
+                                            "lost get for key " + lastChecked
+                                                    + "; highestPublished=" + target);
+                                }
+                                if (!v.equals("v" + lastChecked)) {
+                                    throw new AssertionError(
+                                            "wrong value for key " + lastChecked + ": " + v);
+                                }
+                            }
+                        }
+                    } catch (Throwable t) {
+                        ex.compareAndSet(null, t);
+                    }
+                    return null;
+                }));
+            }
+
+            for (Future<?> f : futures) {
+                f.get(120, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertNull(ex.get());
+        assertEquals(totalKeys, map.size());
+    }
+
+    /**
      * forEach during concurrent writes is documented as not strongly thread-safe, but it must
      * never throw, never expose {@code DeletedValue}/{@code EmptyValue} sentinels, and every
      * observed (key, value) pair must be a legitimate pair that was written at some point.
